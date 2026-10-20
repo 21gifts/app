@@ -6,8 +6,8 @@ import { WalletChromeLeft } from '@/components/WalletChromeLeft';
 import { WalletScreen } from '@/components/WalletScreen';
 
 /**
- * `/wallet` shows Add recovery phrase when `passkeyCredentialId` is missing
- * or empty, otherwise Show recovery phrase under Advanced functions.
+ * `/wallet` shows the balance with Receive and Send below it. Recovery-phrase
+ * access is on `/settings`.
  *
  * @returns The wallet screen.
  */

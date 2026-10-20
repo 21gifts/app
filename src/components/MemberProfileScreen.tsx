@@ -2,9 +2,11 @@
 
 import { HandHeart, Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
   ForumBoard,
@@ -19,20 +21,22 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card, IconButton } from '@/components/ui';
 import {
+  CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchMemberShops,
+  fetchMemberCredits,
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
   markNotificationsReadForMessage,
-  openConversation,
   NoteDeletedError,
+  openConversation,
   postMessage,
   postMessageInvoice,
-  postRepaymentInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -44,19 +48,22 @@ import {
 import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast, verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import {
+  authorCannotReceive,
+  isOwnNote,
+  isReplyPaymentExempt,
+  roleAtLeast,
+  verifiedChipHiddenByStaffTag,
+} from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import {
-  latestRateDayFor,
-  paySatsFromDraft,
-  replySatsFromDraft,
-  shownFiatForSats,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -94,17 +101,15 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when the author's wallet rejected the zap invoice.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /** Roles that show a clickable tag beside the author name. */
@@ -138,7 +143,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -212,26 +216,33 @@ function FundingProgramMark({
  * Address, role pill, optional funding-program icon-only button (HandHeart;
  * accessible name is participation since the date; pressing it reveals that
  * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
- * is a number, copy-profile-link, optional Message, post/reply counts, stacked
- * activity feeds, and staff Trust Chain actions when the viewer is
- * a moderator and the subject is someone else. About me is not a forum post.
+ * is a number, copy-profile-link, optional Message, post/reply counts, optional
+ * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
+ * when the viewer is a moderator and the subject is someone else. About me is
+ * not a forum post. When the member cannot receive yet (`lightningAddress`
+ * null), the gifts block shows a "Can't receive yet" label instead of the
+ * address, QR, and shop sticker.
  *
- * @param props - Member profile and both activity series for the chart.
+ * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
- *   pills, gifts block, post/reaction counts, and activity feed.
- *   `activityFailed` (default false) is passed to the chart as `failed`.
+ *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
+ *   `activityFailed` (default false) is passed to both charts as `failed`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   factsOnly = false,
   activityFailed = false,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   factsOnly?: boolean;
   activityFailed?: boolean;
 }): ReactElement {
@@ -248,12 +259,7 @@ export function MemberProfileScreen({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
-  const [repayNotice, setRepayNotice] = useState<{
-    messageId: string;
-    error: Exclude<ForumPayError, null> | null;
-  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -268,28 +274,66 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
-  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
-  const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
+  const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops' | 'credits'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState(false);
   const [activityReplies, setActivityReplies] = useState<ForumMessage[] | null>(null);
   const [activityRepliesLoading, setActivityRepliesLoading] = useState(false);
   const [activityRepliesError, setActivityRepliesError] = useState(false);
+  const [shops, setShops] = useState<ForumMessage[] | null>(null);
+  const [shopsLoading, setShopsLoading] = useState(false);
+  const [shopsError, setShopsError] = useState(false);
+  const [credits, setCredits] = useState<ForumMessage[] | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+  const [creditsError, setCreditsError] = useState(false);
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const shown =
+      activity === 'posts'
+        ? (posts ?? [])
+        : activity === 'replies'
+          ? (activityReplies ?? [])
+          : activity === 'shops'
+            ? (shops ?? [])
+            : activity === 'credits'
+              ? (credits ?? [])
+              : [];
+    for (const message of shown) {
+      counts[message.id] = message.heartCount;
+    }
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [activity, posts, activityReplies, shops, credits, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
+  const shopsLoadGen = useRef(0);
+  const creditsLoadGen = useRef(0);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(listedProfile.username, host);
-  const qr = openCryptoPayQrValue(listedProfile.username, host);
+  // The api sends `lightningAddress: null` when this member cannot receive yet.
+  const cannotReceive = listedProfile.lightningAddress === null;
+  const address = cannotReceive ? null : giftsLightningAddress(listedProfile.username, host);
+  const qr = cannotReceive ? null : openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
   const kikambaStickerOpened = useRef(false);
@@ -306,119 +350,10 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-  const photoUrlsRef = useRef(photoUrls);
-  photoUrlsRef.current = photoUrls;
-  const [photoEpoch, setPhotoEpoch] = useState(0);
-
-  const photoSource: ForumMessage[] = [];
-  if (activity === 'posts' && posts !== null) {
-    photoSource.push(...posts);
-  }
-  if (activity === 'replies' && activityReplies !== null) {
-    photoSource.push(...activityReplies);
-  }
-  if (replies !== null) {
-    photoSource.push(...replies);
-  }
-  const photoSourceRef = useRef(photoSource);
-  photoSourceRef.current = photoSource;
-  const photoIdsKey = photoSource
-    .map((message) => ({
-      id: message.id,
-      count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
-    }))
-    .filter(({ count }) => count > 0)
-    .map(({ id, count }) => `${id}:${count}`)
-    .sort()
-    .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (session === null || photoIdsKey === '') {
-      return;
-    }
-    const listed = photoSourceRef.current;
-    let cancelled = false;
-    const missing = listed.flatMap((message) => {
-      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-      return Array.from({ length: count }, (_, index) => ({
-        id: message.id,
-        index,
-        key: `${message.id}:${index}`,
-      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
-    });
-    if (missing.length === 0) {
-      return;
-    }
-    void (async () => {
-      for (const photo of missing) {
-        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[photo.key] !== undefined) {
-          continue;
-        }
-        /* v8 ignore stop */
-        let blob: Blob;
-        try {
-          blob = await fetchMessagePhoto(session, photo.id, photo.index);
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            blob = await fetchMessagePhoto(session, photo.id, photo.index);
-          } catch {
-            if (cancelled) {
-              return;
-            }
-            // Leave the row text-only when the photo cannot load.
-            continue;
-          }
-        }
-        if (cancelled) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPhotoUrls((prev) => {
-          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
-            URL.revokeObjectURL(url);
-            return prev;
-          }
-          /* v8 ignore stop */
-          return { ...prev, [photo.key]: url };
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [photoEpoch, photoIdsKey, session]);
+  const rateDay = useSpotRate();
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
 
   const bumpPayPollGeneration = (): number => {
     payPollAbortRef.current?.abort();
@@ -429,19 +364,53 @@ export function MemberProfileScreen({
 
   useEffect(() => {
     return () => {
-      for (const url of Object.values(photoUrlsRef.current)) {
-        URL.revokeObjectURL(url);
-      }
       bumpPayPollGeneration();
     };
   }, []);
 
-  const loadActivityFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
-    const setLoading = kind === 'posts' ? setPostsLoading : setActivityRepliesLoading;
-    const setError = kind === 'posts' ? setPostsError : setActivityRepliesError;
-    const setList = kind === 'posts' ? setPosts : setActivityReplies;
-    const fetchFn = kind === 'posts' ? fetchMemberPosts : fetchMemberReplies;
-    const loadGen = kind === 'posts' ? postsLoadGen : repliesLoadGen;
+  const loadActivityFeed = async (
+    kind: 'posts' | 'replies' | 'shops' | 'credits',
+  ): Promise<void> => {
+    const setLoading =
+      kind === 'posts'
+        ? setPostsLoading
+        : kind === 'replies'
+          ? setActivityRepliesLoading
+          : kind === 'credits'
+            ? setCreditsLoading
+            : setShopsLoading;
+    const setError =
+      kind === 'posts'
+        ? setPostsError
+        : kind === 'replies'
+          ? setActivityRepliesError
+          : kind === 'credits'
+            ? setCreditsError
+            : setShopsError;
+    const setList =
+      kind === 'posts'
+        ? setPosts
+        : kind === 'replies'
+          ? setActivityReplies
+          : kind === 'credits'
+            ? setCredits
+            : setShops;
+    const fetchFn =
+      kind === 'posts'
+        ? fetchMemberPosts
+        : kind === 'replies'
+          ? fetchMemberReplies
+          : kind === 'credits'
+            ? fetchMemberCredits
+            : fetchMemberShops;
+    const loadGen =
+      kind === 'posts'
+        ? postsLoadGen
+        : kind === 'replies'
+          ? repliesLoadGen
+          : kind === 'credits'
+            ? creditsLoadGen
+            : shopsLoadGen;
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
@@ -457,7 +426,7 @@ export function MemberProfileScreen({
       }
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (loadGen.current === gen) {
@@ -477,12 +446,16 @@ export function MemberProfileScreen({
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
-  const openActivity = (next: 'posts' | 'replies'): void => {
+  const openActivity = (next: 'posts' | 'replies' | 'shops' | 'credits'): void => {
+    // A paid reaction's sheet is open over a card: the feeds stay as they are until the sheet closes.
+    if (replyPayPreview !== null) {
+      return;
+    }
     if (
       payMessageId !== null &&
       ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
@@ -501,8 +474,20 @@ export function MemberProfileScreen({
       }
       return;
     }
-    if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
-      void loadActivityFeed('replies');
+    if (next === 'replies') {
+      if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
+        void loadActivityFeed('replies');
+      }
+      return;
+    }
+    if (next === 'credits') {
+      if ((credits === null || creditsError) && !creditsLoading) {
+        void loadActivityFeed('credits');
+      }
+      return;
+    }
+    if ((shops === null || shopsError) && !shopsLoading) {
+      void loadActivityFeed('shops');
     }
   };
 
@@ -517,6 +502,7 @@ export function MemberProfileScreen({
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -525,7 +511,6 @@ export function MemberProfileScreen({
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -543,11 +528,10 @@ export function MemberProfileScreen({
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -569,9 +553,7 @@ export function MemberProfileScreen({
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -582,6 +564,36 @@ export function MemberProfileScreen({
               pendingComposeTextRef.current = null;
               setPosts((prev) => {
                 /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setShops((prev) => {
+                /* v8 ignore next 3 -- shops list is null until that feed opens */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setCredits((prev) => {
+                /* v8 ignore next 3 -- credits list is null until that feed opens */
                 if (prev === null) {
                   return prev;
                 }
@@ -607,13 +619,18 @@ export function MemberProfileScreen({
                 }
                 return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -636,6 +653,34 @@ export function MemberProfileScreen({
                     return { ...row, replyCount: row.replyCount + 1 };
                   });
                 });
+                /* v8 ignore stop */
+                setShops((prev) => {
+                  /* v8 ignore next 3 -- shops list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 3 -- other listed shop notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                setCredits((prev) => {
+                  /* v8 ignore next 3 -- credits list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 3 -- other listed credit notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                /* v8 ignore start -- compose-pay reply increment is asserted in tests; identity/empty-activity arms are fixture-only */
                 setActivityReplies((prev) => {
                   /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
                   if (prev === null) {
@@ -702,70 +747,12 @@ export function MemberProfileScreen({
     return true;
   };
 
-  startRepaymentRef.current = (messageId: string): void => {
-    if (session === null) {
-      return;
-    }
-    const generation = bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayHost(null);
-    setPayDraft('');
-    setPayInvoice(null);
-    setPayWaiting(false);
-    setPayError(null);
-    setRepayNotice({ messageId, error: null });
-    setPayBusy(true);
-    void postRepaymentInvoice(session, messageId)
-      .then((invoice) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setRepayNotice(null);
-        setPayHost('card');
-        setPayMessageId(messageId);
-        setPayInvoice({
-          messageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-      })
-      .catch((err: unknown) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        if (err instanceof MissingRequirementsError) {
-          if (openOverlayForMissing(err.missing)) {
-            pendingPostRef.current = () => {
-              startRepaymentRef.current(messageId);
-              return Promise.resolve();
-            };
-            return;
-          }
-          setRepayNotice({ messageId, error: 'request' });
-          return;
-        }
-        setRepayNotice({
-          messageId,
-          error: isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        });
-      })
-      .finally(() => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayBusy(false);
-      });
-  };
-
   const runReplyPost = async (
     token: string,
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -799,6 +786,38 @@ export function MemberProfileScreen({
               : message,
           );
         });
+        setShops((prev) => {
+          /* v8 ignore next 3 -- shops list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 3 -- other listed shop notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
+        });
+        setCredits((prev) => {
+          /* v8 ignore next 3 -- credits list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 3 -- other listed credit notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
+        });
       }
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -810,7 +829,7 @@ export function MemberProfileScreen({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -819,6 +838,11 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -860,7 +884,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -872,6 +896,8 @@ export function MemberProfileScreen({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -886,6 +912,10 @@ export function MemberProfileScreen({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -923,14 +953,14 @@ export function MemberProfileScreen({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -941,15 +971,19 @@ export function MemberProfileScreen({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
@@ -970,7 +1004,9 @@ export function MemberProfileScreen({
           ? 'tooLong'
           : isRateLimitError(err)
             ? 'rateLimit'
-            : 'request',
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
       );
     } finally {
       setReplyPosting(false);
@@ -1048,7 +1084,7 @@ export function MemberProfileScreen({
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -1058,6 +1094,8 @@ export function MemberProfileScreen({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -1083,7 +1121,7 @@ export function MemberProfileScreen({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -1092,6 +1130,7 @@ export function MemberProfileScreen({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -1114,6 +1153,11 @@ export function MemberProfileScreen({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -1140,6 +1184,10 @@ export function MemberProfileScreen({
 
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
+      return;
+    }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
       return;
     }
     if (
@@ -1202,13 +1250,36 @@ export function MemberProfileScreen({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
-    const parentRow = posts?.find((message) => message.id === parentId);
+    const parentList = activity === 'credits' ? credits : activity === 'shops' ? shops : posts;
+    const parentRow = parentList?.find((message) => message.id === parentId);
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(token, trimmed, parentId, isRetry)
+          : runComposePay(token, trimmed, parentId, 1, isRetry);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -1268,16 +1339,16 @@ export function MemberProfileScreen({
   };
 
   const sharedForumProps = {
-    photoUrls,
+    photoUrls: {},
+    photoVersions,
     rateDay,
     payMessageId,
     payHost,
     payDraft,
     payBusy,
     payError,
-    repayNotice,
     payInvoice,
-    payWaiting,
+    replyPayPreview,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
@@ -1291,9 +1362,7 @@ export function MemberProfileScreen({
     ...(factsOnly
       ? {}
       : {
-          onRepay: (messageId: string): void => {
-            startRepaymentRef.current(messageId);
-          },
+          repayLink: true,
         }),
     expandedId,
     onToggleExpand: handleToggleExpand,
@@ -1314,12 +1383,44 @@ export function MemberProfileScreen({
     replyFormError,
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
+    heartViewerId: account?.id ?? null,
+    onHeartTip,
+    heartTipViews,
   };
 
-  const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);
-  const activityCount = activity === 'posts' ? profile.postCount : profile.replyCount;
-  const activityLoading = activity === 'posts' ? postsLoading : activityRepliesLoading;
-  const activityError = activity === 'posts' ? postsError : activityRepliesError;
+  const creditCount = typeof profile.creditCount === 'number' ? profile.creditCount : 0;
+  const activityMessages =
+    activity === 'posts'
+      ? (posts ?? [])
+      : activity === 'replies'
+        ? (activityReplies ?? [])
+        : activity === 'credits'
+          ? (credits ?? [])
+          : (shops ?? []);
+  const activityCount =
+    activity === 'posts'
+      ? profile.postCount
+      : activity === 'replies'
+        ? profile.replyCount
+        : activity === 'credits'
+          ? creditCount
+          : (profile.shopCount ?? 0);
+  const activityLoading =
+    activity === 'posts'
+      ? postsLoading
+      : activity === 'replies'
+        ? activityRepliesLoading
+        : activity === 'credits'
+          ? creditsLoading
+          : shopsLoading;
+  const activityError =
+    activity === 'posts'
+      ? postsError
+      : activity === 'replies'
+        ? activityRepliesError
+        : activity === 'credits'
+          ? creditsError
+          : shopsError;
   const profileMessagePhotoId =
     profile.profileMessage !== null && profile.profileMessage.hasPhoto
       ? profile.profileMessage.id
@@ -1330,7 +1431,11 @@ export function MemberProfileScreen({
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.giftsHeading')}
       </p>
-      {address !== null && address.trim() !== '' ? (
+      {cannotReceive ? (
+        <p className="text-center">
+          <CannotReceiveLabel />
+        </p>
+      ) : address !== null && address.trim() !== '' ? (
         <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
       ) : (
         <p className="min-w-0 truncate text-center text-sm text-app-fg">
@@ -1383,10 +1488,35 @@ export function MemberProfileScreen({
       >
         {t('profile.replyCount', { count: String(profile.replyCount) })}
       </Button>
+      {typeof profile.shopCount === 'number' && profile.shopCount > 0 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={activity === 'shops' ? 'primary' : 'secondary'}
+          aria-pressed={activity === 'shops'}
+          onClick={() => openActivity('shops')}
+        >
+          {t('profile.shopCount', { count: String(profile.shopCount) })}
+        </Button>
+      ) : null}
+      {creditCount > 0 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={activity === 'credits' ? 'primary' : 'secondary'}
+          aria-pressed={activity === 'credits'}
+          onClick={() => openActivity('credits')}
+        >
+          {t('profile.creditCount', { count: String(creditCount) })}
+        </Button>
+      ) : null}
     </div>
   );
   const activityFeed =
-    activity === 'posts' || activity === 'replies' ? (
+    activity === 'posts' ||
+    activity === 'replies' ||
+    activity === 'shops' ||
+    activity === 'credits' ? (
       activityLoading ? (
         <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
       ) : activityError ? (
@@ -1400,31 +1530,21 @@ export function MemberProfileScreen({
         </div>
       ) : (
         <>
-          {activity === 'posts' ? (
+          {activity === 'posts' || activity === 'shops' || activity === 'credits' ? (
             <ForumBoard
               {...IDLE_BOARD}
               messages={activityMessages}
               {...sharedForumProps}
-              {...(account !== null && roleAtLeast(account.role, 'moderator')
+              {...(activity !== 'credits' &&
+              account !== null &&
+              roleAtLeast(account.role, 'moderator')
                 ? {
                     shopNoteEdit: true as const,
                     onShopNoteUpdated: (updated: ForumMessage) => {
-                      setPhotoUrls((prev) => {
-                        const prefix = `${updated.id}:`;
-                        let changed = false;
-                        const next = { ...prev };
-                        for (const [key, url] of Object.entries(next)) {
-                          if (!key.startsWith(prefix)) {
-                            continue;
-                          }
-                          URL.revokeObjectURL(url);
-                          delete next[key];
-                          changed = true;
-                        }
-                        return changed ? next : prev;
-                      });
-                      setPhotoEpoch((n) => n + 1);
-                      setPosts((prev) => {
+                      setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
+                      const applyShopEdit = (
+                        prev: ForumMessage[] | null,
+                      ): ForumMessage[] | null => {
                         /* v8 ignore next 3 -- the pencil mounts only after the post list has loaded */
                         if (prev === null) {
                           return prev;
@@ -1452,7 +1572,9 @@ export function MemberProfileScreen({
                           }
                           return next;
                         });
-                      });
+                      };
+                      setPosts(applyShopEdit);
+                      setShops(applyShopEdit);
                     },
                   }
                 : {})}
@@ -1562,6 +1684,7 @@ export function MemberProfileScreen({
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
+          <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
           <AboutMeSection
             mode="public"
             aboutMe={profile.aboutMe}

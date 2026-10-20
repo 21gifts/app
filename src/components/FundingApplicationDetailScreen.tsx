@@ -3,16 +3,41 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
-import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
+import {
+  FUNDING_PLACES_FULL_ERROR,
+  fetchFundingApplication,
+  postFundingAdmit,
+  postFundingReject,
+} from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Applicant account ids whose staff decision POST is still in flight, across screen instances. */
+const decisionsInFlight = new Set<string>();
+
+/** Screens told when a decision settles, with the account id and the screen that started it. */
+const decisionSettledListeners = new Set<(accountId: string, origin: symbol) => void>();
+
+/**
+ * Marks a decision as settled and tells every open detail screen.
+ *
+ * @param accountId - Applicant whose decision POST settled.
+ * @param origin - The screen instance that started it.
+ */
+function settleDecision(accountId: string, origin: symbol): void {
+  decisionsInFlight.delete(accountId);
+  for (const listener of [...decisionSettledListeners]) {
+    listener(accountId, origin);
+  }
+}
 
 /**
  * Display name for an applicant, or the unnamed fallback.
@@ -50,9 +75,45 @@ export function FundingApplicationDetailScreen({
   const [detail, setDetail] = useState<FundingApplicationDetail | null>(null);
   const [detailError, setDetailError] = useState(false);
   const [detailAttempt, setDetailAttempt] = useState(0);
-  const [deciding, setDeciding] = useState(false);
+  const [deciding, setDeciding] = useState(() => decisionsInFlight.has(accountId));
   const [decideFailed, setDecideFailed] = useState(false);
+  const [placesFull, setPlacesFull] = useState(false);
   const [step, setStep] = useState<'principles' | 'truth'>('principles');
+  /** The application on screen; a decision answer for another one is dropped. */
+  const shownAccountId = useRef(accountId);
+  /** This screen instance, so it can tell its own decisions from another screen's. */
+  const instance = useRef(Symbol('funding-application-detail'));
+  /** False after unmount, so a late decision answer neither navigates nor alerts. */
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    const onSettled = (settled: string, origin: symbol): void => {
+      // Another screen's decision for the person shown here settled: drop the stale detail
+      // so its buttons cannot fire a second decision, then unlock and reload.
+      if (origin === instance.current || settled !== shownAccountId.current) {
+        return;
+      }
+      setDetail(null);
+      setStep('principles');
+      setDeciding(false);
+      setDetailAttempt((current) => current + 1);
+    };
+    decisionSettledListeners.add(onSettled);
+    return () => {
+      mounted.current = false;
+      decisionSettledListeners.delete(onSettled);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Another application: start from its first question with no stale detail, and keep
+    // the buttons locked only while a decision for this same person is still in flight.
+    shownAccountId.current = accountId;
+    setDetail(null);
+    setStep('principles');
+    setDeciding(decisionsInFlight.has(accountId));
+  }, [accountId]);
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -61,6 +122,7 @@ export function FundingApplicationDetailScreen({
     let cancelled = false;
     setDetailError(false);
     setDecideFailed(false);
+    setPlacesFull(false);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
@@ -107,13 +169,29 @@ export function FundingApplicationDetailScreen({
     }
     setDeciding(true);
     setDecideFailed(false);
+    setPlacesFull(false);
     const run = kind === 'admit' ? postFundingAdmit : postFundingReject;
+    const target = accountId;
+    const origin = instance.current;
+    decisionsInFlight.add(target);
     void (async () => {
       try {
-        await run(session, accountId);
-        router.push('/grants/applications');
-      } catch {
-        setDecideFailed(true);
+        await run(session, target);
+        settleDecision(target, origin);
+        if (!mounted.current || shownAccountId.current !== target) {
+          return;
+        }
+        returnToView('/grants/applications', router);
+      } catch (err) {
+        settleDecision(target, origin);
+        if (!mounted.current || shownAccountId.current !== target) {
+          return;
+        }
+        if (err instanceof Error && err.message === FUNDING_PLACES_FULL_ERROR) {
+          setPlacesFull(true);
+        } else {
+          setDecideFailed(true);
+        }
         setDeciding(false);
       }
     })();
@@ -154,12 +232,12 @@ export function FundingApplicationDetailScreen({
           {step === 'truth' ? t('funding.review.truth') : t('funding.review.question.staff')}
         </p>
         {step === 'principles' ? (
-          <a
-            href="https://21.gifts/about"
+          <Link
+            href="/about"
             className="text-center text-sm text-app-fg underline underline-offset-2"
           >
             {t('nav.about')}
-          </a>
+          </Link>
         ) : null}
         {detail.messages.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>
@@ -190,6 +268,11 @@ export function FundingApplicationDetailScreen({
         {decideFailed ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('trustChain.actionFailed')}
+          </p>
+        ) : null}
+        {placesFull ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('funding.detail.placesFull')}
           </p>
         ) : null}
         {open ? (

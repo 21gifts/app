@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
   type ForumFormError,
@@ -10,8 +10,8 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
+  CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
@@ -19,18 +19,15 @@ import {
   NoteDeletedError,
   postMessage,
   postMessageInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
+import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import {
-  latestRateDayFor,
-  paySatsFromDraft,
-  replySatsFromDraft,
-  shownFiatForSats,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -68,17 +65,15 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when the api rejected a zap because the author's wallet cannot receive.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /* v8 ignore start -- ForumBoard defaults for a composerHidden permalink board */
@@ -98,7 +93,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -157,7 +151,9 @@ function withSeededHiddenReply(
 /**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
  * same copy, expand/reply, photo, translate, and staff delete actions as
- * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
+ * `/welcome`. Gift only on a payable nested reply, shown disabled with
+ * `CannotReceiveLabel` when that reply's author cannot receive yet; a reply
+ * to such an author never invoices a gift. Auto-expands the root so
  * the thread and in-card reply composer are available. No top-level composer,
  * feed filters, or envelope.
  *
@@ -188,7 +184,6 @@ export function PublicMessageThread(props: {
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -199,25 +194,40 @@ export function PublicMessageThread(props: {
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = { [note.id]: note.heartCount };
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [note, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
+  const rateDay = useSpotRate();
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
-  const [photoEpoch, setPhotoEpoch] = useState(0);
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
 
   const photoSource: ForumMessage[] = [note];
   if (replies !== null) {
@@ -225,7 +235,8 @@ export function PublicMessageThread(props: {
   }
   const photoSourceRef = useRef(photoSource);
   photoSourceRef.current = photoSource;
-  const photoIdsKey = photoSource
+  const deletedPhotoIdsKey = photoSource
+    .filter((message) => message.deletedAt !== undefined)
     .map((message) => ({
       id: message.id,
       count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
@@ -236,30 +247,15 @@ export function PublicMessageThread(props: {
     .join('\0');
 
   useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (session === null || photoIdsKey === '') {
+    if (session === null || deletedPhotoIdsKey === '') {
       return;
     }
     const listed = photoSourceRef.current;
     let cancelled = false;
     const missing = listed.flatMap((message) => {
+      if (message.deletedAt === undefined) {
+        return [];
+      }
       const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
       return Array.from({ length: count }, (_, index) => ({
         id: message.id,
@@ -320,7 +316,7 @@ export function PublicMessageThread(props: {
     return () => {
       cancelled = true;
     };
-  }, [photoEpoch, photoIdsKey, session]);
+  }, [deletedPhotoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -382,6 +378,7 @@ export function PublicMessageThread(props: {
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -390,7 +387,6 @@ export function PublicMessageThread(props: {
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -408,11 +404,10 @@ export function PublicMessageThread(props: {
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -436,9 +431,7 @@ export function PublicMessageThread(props: {
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -469,13 +462,18 @@ export function PublicMessageThread(props: {
                   return { ...row, ...next };
                 });
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
               if (current.session !== session) {
@@ -552,6 +550,7 @@ export function PublicMessageThread(props: {
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -590,7 +589,7 @@ export function PublicMessageThread(props: {
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -599,6 +598,11 @@ export function PublicMessageThread(props: {
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -640,7 +644,7 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -652,6 +656,8 @@ export function PublicMessageThread(props: {
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -666,6 +672,10 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -709,14 +719,14 @@ export function PublicMessageThread(props: {
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -728,19 +738,23 @@ export function PublicMessageThread(props: {
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the reply invoice failed */
       if (generation !== payPollGeneration.current) {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
@@ -759,7 +773,9 @@ export function PublicMessageThread(props: {
           ? 'tooLong'
           : isRateLimitError(err)
             ? 'rateLimit'
-            : 'request',
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
       );
     } finally {
       setReplyPosting(false);
@@ -794,7 +810,7 @@ export function PublicMessageThread(props: {
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -804,6 +820,8 @@ export function PublicMessageThread(props: {
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -828,7 +846,7 @@ export function PublicMessageThread(props: {
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -837,6 +855,7 @@ export function PublicMessageThread(props: {
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -862,6 +881,11 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -895,13 +919,17 @@ export function PublicMessageThread(props: {
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
+      return;
+    }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
       return;
     }
     if (
@@ -967,11 +995,33 @@ export function PublicMessageThread(props: {
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
+    const own = isOwnNote(account?.id, note.accountId);
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
+    const blocked = authorCannotReceive(note, account?.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(token, trimmed, parentId, isRetry)
+          : runComposePay(token, trimmed, parentId, 1, isRetry);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -1072,21 +1122,7 @@ export function PublicMessageThread(props: {
           ? {
               shopNoteEdit: true as const,
               onShopNoteUpdated: (updated: ForumMessage) => {
-                setPhotoUrls((prev) => {
-                  const prefix = `${updated.id}:`;
-                  let changed = false;
-                  const next = { ...prev };
-                  for (const [key, url] of Object.entries(next)) {
-                    if (!key.startsWith(prefix)) {
-                      continue;
-                    }
-                    URL.revokeObjectURL(url);
-                    delete next[key];
-                    changed = true;
-                  }
-                  return changed ? next : prev;
-                });
-                setPhotoEpoch((n) => n + 1);
+                setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
                 setNote((prev) => {
                   /* v8 ignore next 3 -- the thread pencil edits only the note on screen */
                   if (prev.id !== updated.id) {
@@ -1115,6 +1151,7 @@ export function PublicMessageThread(props: {
             }
           : {})}
         photoUrls={photoUrls}
+        photoVersions={photoVersions}
         rateDay={rateDay}
         payMessageId={payMessageId}
         payHost={payHost}
@@ -1122,8 +1159,12 @@ export function PublicMessageThread(props: {
         payBusy={payBusy}
         payError={payError}
         payInvoice={payInvoice}
-        payWaiting={payWaiting}
+        replyPayPreview={replyPayPreview}
         onPayOpen={handlePayOpen}
+        viewerAccountId={account?.id ?? null}
+        heartViewerId={account?.id ?? null}
+        onHeartTip={onHeartTip}
+        heartTipViews={heartTipViews}
         onPayDraftChange={(value: string): void => {
           setPayDraft(value);
           setPayError(null);

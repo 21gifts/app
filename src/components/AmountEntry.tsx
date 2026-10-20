@@ -4,13 +4,16 @@ import { Delete } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Collapse } from '@/components/Collapse';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
-import { setAmountUnit } from '@/lib/api';
+import { useActiveSession } from '@/hooks/useActiveSession';
+import { saveAmountUnit } from '@/lib/amount-unit';
 import type { AmountUnit } from '@/lib/api-types';
 import { separatorsFor } from '@/lib/number-format';
 import {
   fiatDraftForSats,
+  fiatToSats,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
@@ -41,7 +44,11 @@ export interface AmountEntryProps {
    * is disabled. Used after an invoice is minted.
    */
   lockedSats?: number | null;
-  /** Latest gift day for the counter and for conversion. */
+  /**
+   * Current exchange rate for the counter and for conversion. Without a
+   * usable rate for the preferred fiat, that fiat is disabled and the field
+   * stays in bitcoin.
+   */
   rateDay: FiatRateDay | null;
   /**
    * Unit the current `value` is written in, when that differs from the
@@ -104,84 +111,13 @@ function nextKeypadDraft(
   return `${current}${key}`;
 }
 
-const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
-
-/** Shared across fields so a slower save cannot overwrite a later choice. */
-let unitRequest = 0;
-let unitRequestOpen = false;
-let confirmedRequest = 0;
-let savedUnit: AmountUnit = 'btc';
-let unitRequestSession: string | null = null;
-
-/**
- * Starts one account-wide amount-unit save.
- * A different session drops the previous burst so its unit cannot leak.
- *
- * @param current - Unit already stored before this click's optimistic update.
- * @param sessionToken - Session that owns this save.
- * @returns Id of this save. Higher ids happened later.
- */
-function beginUnitRequest(current: AmountUnit, sessionToken: string): number {
-  if (unitRequestSession !== sessionToken) {
-    unitRequestSession = sessionToken;
-    unitRequestOpen = false;
-    savedUnit = current;
-  } else if (!unitRequestOpen) {
-    savedUnit = current;
-  }
-  unitRequestOpen = true;
-  unitRequest += 1;
-  return unitRequest;
-}
-
-/**
- * Whether this save is still the latest one.
- *
- * @param request - Id from {@link beginUnitRequest}.
- * @returns True when no newer save has started.
- */
-function isLatestUnitRequest(request: number): boolean {
-  return request === unitRequest;
-}
-
-/**
- * Marks the latest save finished so the next click starts a new burst.
- *
- * @param request - Id from {@link beginUnitRequest}.
- */
-function finishUnitRequest(request: number): void {
-  if (request === unitRequest) {
-    unitRequestOpen = false;
-  }
-}
-
-/**
- * Records a successful save. A newer success replaces an older one.
- * An older success still counts after a later failure, so the rollback
- * keeps the unit the server already stored.
- *
- * @param request - Id from {@link beginUnitRequest}.
- * @param chosen - Unit the server stored.
- * @returns True when the account should show `chosen` now.
- */
-function confirmUnitRequest(request: number, chosen: AmountUnit): boolean {
-  if (request <= confirmedRequest) {
-    return false;
-  }
-  confirmedRequest = request;
-  savedUnit = chosen;
-  const apply = request === unitRequest || !unitRequestOpen;
-  finishUnitRequest(request);
-  return apply;
-}
-
 /**
  * Converts a draft from one typing unit to the other.
  *
  * @param from - Unit the draft is written in.
  * @param to - Unit to write.
  * @param draft - Current field value.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns The converted draft, or `''` when empty, unparseable, or without a rate.
  */
@@ -231,18 +167,22 @@ export function AmountEntry({
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
   const decimal = separatorsFor(numberFormat).decimal;
-  const session = useAuthStore((state) => state.session);
+  // A login still opening its wallet counts as signed out: the unit stays local.
+  const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
-  const setAccount = useAuthStore((state) => state.setAccount);
   const [localUnit, setLocalUnit] = useState<AmountUnit>('btc');
   const rateRef = useRef(rateDay);
   rateRef.current = rateDay;
   const fiatRef = useRef(fiat);
   fiatRef.current = fiat;
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
-  const unit: AmountUnit = session === null ? localUnit : storedUnit;
+  const fiatReady = fiatToSats(1, rateDay, fiat) !== null;
+  const chosenUnit: AmountUnit = session === null ? localUnit : storedUnit;
+  const unit: AmountUnit = chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit;
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const [shownUnit, setShownUnit] = useState<AmountUnit>(valueUnit ?? unit);
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(() =>
+    valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit),
+  );
   const applied = useRef(shownUnit);
   const posting = useRef(false);
   const draftRef = useRef(value);
@@ -351,7 +291,8 @@ export function AmountEntry({
     const previousDraft = value;
     const previousUnit = shownUnit;
     const converted = draftForUnit(previousUnit, next, value, rateDay, fiat);
-    if (value.trim() !== '' && converted === '') {
+    // A fiat draft that cannot be converted may still switch to bitcoin; it starts empty.
+    if (value.trim() !== '' && converted === '' && next !== 'btc') {
       return;
     }
     draftRef.current = converted;
@@ -367,60 +308,28 @@ export function AmountEntry({
       }
       return;
     }
-    const token = session;
-    const currentAccount = account;
-    const request = beginUnitRequest(currentAccount.amountUnit ?? 'btc', token);
     posting.current = true;
-    setAccount({ ...currentAccount, amountUnit: next });
+    // The account shows `next` before the converted draft arrives.
+    const saving = saveAmountUnit(session, account, next, (rollback) => {
+      const live = draftRef.current;
+      const restored =
+        rollback === previousUnit && live === converted
+          ? previousDraft
+          : draftForUnit(next, rollback, live, rateRef.current, fiatRef.current);
+      const keepTyped = restored === '' && live.trim() !== '';
+      applied.current = keepTyped ? next : rollback;
+      setShownUnit(keepTyped ? next : rollback);
+      onUnitChange?.(keepTyped ? next : rollback);
+      if (!keepTyped) {
+        onValueChange(restored);
+      }
+    });
     if (converted !== value) {
       onValueChange(converted);
     }
-    void setAmountUnit(token, next)
-      .then((updated) => {
-        if (useAuthStore.getState().session !== token) {
-          finishUnitRequest(request);
-          return;
-        }
-        const chosen = updated.amountUnit ?? next;
-        if (!confirmUnitRequest(request, chosen)) {
-          return;
-        }
-        const current = useAuthStore.getState().account;
-        if (current === null) {
-          return;
-        }
-        setAccount({ ...current, amountUnit: savedUnit });
-      })
-      .catch(() => {
-        if (useAuthStore.getState().session !== token) {
-          finishUnitRequest(request);
-          return;
-        }
-        if (!isLatestUnitRequest(request)) {
-          return;
-        }
-        const rollback = savedUnit;
-        finishUnitRequest(request);
-        const current = useAuthStore.getState().account;
-        if (current !== null) {
-          setAccount({ ...current, amountUnit: rollback });
-        }
-        const live = draftRef.current;
-        const restored =
-          rollback === previousUnit && live === converted
-            ? previousDraft
-            : draftForUnit(next, rollback, live, rateRef.current, fiatRef.current);
-        const keepTyped = restored === '' && live.trim() !== '';
-        applied.current = keepTyped ? next : rollback;
-        setShownUnit(keepTyped ? next : rollback);
-        onUnitChange?.(keepTyped ? next : rollback);
-        if (!keepTyped) {
-          onValueChange(restored);
-        }
-      })
-      .finally(() => {
-        posting.current = false;
-      });
+    void saving.finally(() => {
+      posting.current = false;
+    });
   };
 
   const shown = locked ? String(lockedSats) : value;
@@ -430,15 +339,15 @@ export function AmountEntry({
     const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
     counter =
       fiatAmount === null ? t('amount.noRate') : formatFiatDisplay(fiatAmount, fiat, numberFormat);
+  } else if (!fiatReady) {
+    counter = t('amount.noRate');
   } else if (value.trim() !== '') {
     const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
-    if (entryUnit === 'btc' && parsed.kind === 'sats') {
-      const fiatAmount = satsToFiatAmount(parsed.sats, rateDay, fiat);
-      counter = fiatAmount === null ? null : formatFiatDisplay(fiatAmount, fiat, numberFormat);
-    } else if (entryUnit === 'fiat' && parsed.kind === 'sats') {
-      counter = formatBitcoin(parsed.sats, numberFormat);
-    } else if (entryUnit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
-      counter = t('amount.noRate');
+    if (parsed.kind === 'sats') {
+      counter =
+        entryUnit === 'btc'
+          ? formatFiatDisplay(satsToFiatAmount(parsed.sats, rateDay, fiat), fiat, numberFormat)
+          : formatBitcoin(parsed.sats, numberFormat);
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
@@ -452,7 +361,7 @@ export function AmountEntry({
         value={entryUnit}
         options={[
           { value: 'btc', label: '\u20BF' },
-          { value: 'fiat', label: fiat },
+          { value: 'fiat', label: fiat, disabled: !fiatReady },
         ]}
         onChange={changeUnit}
         ariaLabel={t('amount.unit')}
@@ -498,9 +407,9 @@ export function AmountEntry({
         <p id={fieldId} aria-label={label} className={`${amountClass} text-center`}>
           {shown === '' ? (placeholder ?? '') : shown}
         </p>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
         <div className="grid w-full grid-cols-3 gap-2">
           {digits.map((digit, index) =>
             digit === null ? (
@@ -570,9 +479,9 @@ export function AmountEntry({
           {unitSwitch}
           {amountInput}
         </div>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -587,9 +496,9 @@ export function AmountEntry({
           {amountInput}
           {unitSwitch}
         </div>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -603,9 +512,9 @@ export function AmountEntry({
         {unitSwitch}
       </div>
       {amountInput}
-      {counter !== null ? (
+      <Collapse show={counter !== null}>
         <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-      ) : null}
+      </Collapse>
     </div>
   );
 }

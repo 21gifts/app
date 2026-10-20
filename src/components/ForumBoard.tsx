@@ -1,11 +1,13 @@
 'use client';
 
-import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+import { MOTION_SETTLE_EVENT } from '@/lib/motion';
+import { revealInScrollport, SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 
 import {
   ArrowUp,
   Check,
   Gift,
+  Heart,
   ImagePlus,
   Link2,
   Loader2,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { flushSync } from 'react-dom';
 import {
   useEffect,
   useLayoutEffect,
@@ -27,20 +30,26 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import {
   ForumPaySheet,
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
-import { useAppShellScroller } from '@/components/AppShell';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
+import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
   type ForumAskCadence,
   type ForumAskObligation,
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
+import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
+import { AutoHeight } from '@/components/AutoHeight';
+import { Collapse } from '@/components/Collapse';
+import { PAY_SHEET_HOLD_MS, usePaySheetHold } from '@/components/PaySheet';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -54,6 +63,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
+import { Scrollport } from '@/components/ui/Scrollport';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
@@ -72,20 +82,20 @@ import {
   type ForumFeedMode,
   visibleForumMessages,
 } from '@/lib/forum-feed';
-import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { forumPhotoSrc, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
+import type { HeartTipView } from '@/lib/heart-tip';
 import type { MessageKey } from '@/lib/messages';
 import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
-
 /** Top-level compose mode: messenger post or Ask wizard. */
 export type ForumComposeIntent = 'post' | 'ask';
 
@@ -103,23 +113,71 @@ export type ForumFormError =
   | 'ask'
   | null;
 
-/** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
+/**
+ * Reply composer validation; `amount` is the paid-reply sats field and
+ * `authorWallet` means the note author's wallet cannot take the paid reply.
+ */
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'authorWallet';
 
-/** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
+/** Local composer preview or public still for one index. Never a public URL on a deleted row. */
+function displayStillSrc(
+  message: ForumMessage,
+  index: number,
+  photoUrls: Readonly<Record<string, string>>,
+  version: string | undefined,
+): string | undefined {
+  const local = photoUrls[`${message.id}:${index}`];
+  if (typeof local === 'string' && local.startsWith('blob:')) {
+    return local;
+  }
+  if (message.deletedAt !== undefined) {
+    return undefined;
+  }
+  if (typeof local === 'string' && local.startsWith('data:')) {
+    return local;
+  }
+  return forumPhotoSrc(
+    message.id,
+    index,
+    version !== undefined && version !== '' ? version : undefined,
+  );
+}
+
+/** Eager first stills on the first two cards; everything else is lazy. */
+function stillPriority(
+  cardIndex: number,
+  photoIndex: number,
+): { loading: 'eager' | 'lazy'; fetchPriority: 'high' | 'low' } {
+  if ((cardIndex === 0 || cardIndex === 1) && photoIndex === 0) {
+    return { loading: 'eager', fetchPriority: 'high' };
+  }
+  return { loading: 'lazy', fetchPriority: 'low' };
+}
+
+/** Blob or data stills for the shop editor. A public still is omitted. An incomplete list is empty so the editor loads every still itself. */
 function editStillUrls(
-  messageId: string,
+  message: ForumMessage,
   photoCount: number,
   photoUrls: Readonly<Record<string, string>>,
 ): string[] {
   const found: string[] = [];
   for (let index = 0; index < photoCount; index += 1) {
-    const url = photoUrls[`${messageId}:${index}`];
-    if (typeof url === 'string') {
-      found.push(url);
+    const local = photoUrls[`${message.id}:${index}`];
+    if (typeof local === 'string' && (local.startsWith('blob:') || local.startsWith('data:'))) {
+      found.push(local);
     }
   }
+  if (found.length < photoCount) {
+    return [];
+  }
   return found;
+}
+
+/** Dead-still set key; includes version so a new `?v=` is not treated as the failed load. */
+function deadStillKey(messageId: string, photoIndex: number, version: string | undefined): string {
+  return version === undefined
+    ? `${messageId}:${photoIndex}`
+    : `${messageId}:${photoIndex}:${version}`;
 }
 
 /** Roles that show a clickable tag beside the author name. */
@@ -148,6 +206,16 @@ function forumTaggedRole(role: string): ForumTaggedRole | null {
 }
 
 const COPY_RESET_MS = 1200;
+
+/** The forum home's writer: whether it is open, and how it opens and closes. */
+export interface ForumWriter {
+  /** True while the writer covers the frame under the header row. */
+  open: boolean;
+  /** Opens the writer (the **+** button, or a compose request while it is closed). */
+  onOpen: () => void;
+  /** Closes the writer; drafts stay. `ForumLoader` calls it after a successful post. */
+  onClose: () => void;
+}
 
 /** Props for {@link ForumBoard}. */
 export interface ForumBoardProps {
@@ -219,6 +287,11 @@ export interface ForumBoardProps {
   /** New-post composer `maxLength`. Default {@link FORUM_MESSAGE_MAX_LENGTH}. */
   composerMaxLength?: number;
   /**
+   * When true, the message composer says under Post that this member's first
+   * post is free. Default false.
+   */
+  firstPostFree?: boolean;
+  /**
    * When true, the shops feed shows Add a shop instead of the message composer.
    * Default false.
    */
@@ -244,23 +317,22 @@ export interface ForumBoardProps {
   payBusy: boolean;
   /** Pay-sheet validation or request failure. */
   payError: ForumPayError;
-  /** Issued invoice for QR / wallet link, or `null`. */
+  /** Issued invoice for the in-app wallet pay slot, or `null`. */
   payInvoice: ForumPayInvoice | null;
   /**
    * Submitted reaction text shown on {@link ForumReplyPayPage}, or `null`
    * when the reply composer stays mounted. Default `null`.
    */
   replyPayPreview?: string | null;
-  /** True while polling for an updated sats total after pay. */
-  payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
-  /** Signed-in account id, used to show repayment only on the author's credit. */
+  /**
+   * Signed-in account id. Shows repayment only on the author's credit, and on
+   * the viewer's own notes hides the reply amount field and the gift button.
+   */
   viewerAccountId?: string | null;
-  /** Requests today's repayment invoice for the author's own funded credit. */
-  onRepay?: (messageId: string) => void;
-  /** Failure of today's repayment, shown without the gift amount form. */
-  repayNotice?: { messageId: string; error: Exclude<ForumPayError, null> | null } | null;
+  /** Shows **Repay your loan** (a link to `/loans/repay`) on the viewer's own funded credit. */
+  repayLink?: boolean;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Unit the pay field is actually showing. */
@@ -270,9 +342,9 @@ export interface ForumBoardProps {
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /**
-   * Latest gift-day totals for unsent previews (pay sheet, unpaid invoice).
+   * Current spot rate for unsent previews (pay sheet, unpaid invoice).
    * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
-   * stats have not loaded — previews stay ₿-only.
+   * the spot rate has not loaded — previews stay ₿-only.
    */
   rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
@@ -281,8 +353,11 @@ export interface ForumBoardProps {
   onModeChange: (mode: ForumFeedMode) => void;
   /** When false, omit the Active / No gifts yet / All / Most popular control and show every loaded row (same as mode all). Default true. */
   modeSelector?: boolean;
-  /** Optional ref attached near the end of the visible feed for loader pagination. */
-  nearEndRef?: (node: HTMLLIElement | null) => void;
+  /**
+   * Optional ref attached near the end of the visible feed for loader pagination,
+   * or to the empty-feed line when the loaded page kept no row.
+   */
+  nearEndRef?: (node: HTMLElement | null) => void;
   /**
    * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
    * only when this is \> 0 and unpaid is not selected. Default 0.
@@ -302,8 +377,10 @@ export interface ForumBoardProps {
   onRemovePhoto: (index: number) => void;
   /** Clears the pending video and photos. */
   onClearPhoto: () => void;
-  /** Message id plus index → blob/object URL for inline photos already loaded. */
+  /** Message id plus index → local blob/data URL for a composer preview or a deleted staff still. */
   photoUrls: Readonly<Record<string, string>>;
+  /** Message id → cache-busting token appended as `?v=` on the public still path. Default `{}`. */
+  photoVersions?: Readonly<Record<string, string>>;
   /** Message id → blob/object URL for a just-posted video (local preview). */
   videoUrls?: Readonly<Record<string, string>>;
   /** Expanded note id, or `null` when all cards are collapsed. */
@@ -336,6 +413,13 @@ export interface ForumBoardProps {
   replyFormError: ForumReplyFormError;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
+  /**
+   * Forum home only: the composer lives in the writer instead of on the page.
+   * While `open`, the writer covers the frame under the header row; closed,
+   * the page shows no composer. Omit for the inline composer of every other
+   * board.
+   */
+  writer?: ForumWriter;
   /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
   readOnly?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
@@ -379,6 +463,23 @@ export interface ForumBoardProps {
   shopNoteEdit?: boolean;
   /** Apply a saved shop-note body to the listed row. */
   onShopNoteUpdated?: (message: ForumMessage) => void;
+  /**
+   * Signed-in account id, used to hide the 1-sat heart on the viewer's own
+   * note. Default null. Only {@link ForumHeartControl} reads it.
+   */
+  heartViewerId?: string | null;
+  /**
+   * Sends a 1-sat heart. Omit to hide the heart on every note, as on a board
+   * that cannot pay one.
+   */
+  onHeartTip?: (messageId: string) => void;
+  /** Per-message heart visuals from `useHeartTip`. Default none. */
+  heartTipViews?: Readonly<Record<string, HeartTipView>>;
+  /**
+   * Runs once per shop-note save: after a complete save, or after a partly
+   * written one when its editor closes or unmounts.
+   */
+  onShopNoteSaved?: () => void;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -413,6 +514,121 @@ function fallbackCopy(text: string): boolean {
   }
   ta.remove();
   return ok;
+}
+
+/**
+ * 1-sat heart in a note or reply action row. Hidden on a deleted note, on the
+ * viewer's own note, on a note that is not payable, and on a board without a
+ * heart handler. When the author cannot receive yet (`cannotReceive`), the
+ * heart and its count show disabled instead, so nobody taps a heart that can
+ * only fail; a tap still in its +1 window keeps its fill, +1, and count there.
+ * An author-wallet line from an earlier refused heart (`view.cannotReceive`)
+ * stays until the next tap: under a heart a refresh disables, and alone when a
+ * refresh makes the note not payable. Click stops the card from expanding. The
+ * count sits immediately to the right of the icon; the fill remains after a
+ * tap. Who does not see the heart does not see the count.
+ *
+ * @param props - Message id, author id, deleted stamp, payable, cannotReceive,
+ *   heartViewerId, server `heartCount` / `hearted`, visual state, click.
+ * @returns The heart control, the author-wallet line alone, or `null` when
+ *   neither must show.
+ */
+function ForumHeartControl({
+  messageId,
+  accountId,
+  deletedAt,
+  payable,
+  cannotReceive,
+  heartViewerId,
+  heartCount,
+  hearted,
+  view,
+  onHeartTip,
+}: {
+  messageId: string;
+  accountId: string | undefined;
+  deletedAt: string | undefined;
+  payable: boolean;
+  cannotReceive: boolean;
+  heartViewerId: string | null;
+  heartCount: number;
+  hearted: boolean;
+  view: HeartTipView | undefined;
+  onHeartTip: ((id: string) => void) | undefined;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (onHeartTip === undefined || deletedAt !== undefined || heartViewerId === accountId) {
+    return null;
+  }
+  const authorWalletLine =
+    view?.cannotReceive === true ? (
+      <p role="alert" className="text-xs text-app-danger">
+        {t('forum.payErrorAuthorWallet')}
+      </p>
+    ) : null;
+  if (!cannotReceive && !payable) {
+    // No heart on a note that is not payable; a line from an earlier refused heart stays
+    // (an older api sends `payable: false` without `authorCanReceive`).
+    return authorWalletLine;
+  }
+  const extra = view?.extra ?? 0;
+  const plusOne = view !== undefined && view.plusOne;
+  const filled = hearted || (view !== undefined && view.pressed) || plusOne || extra > 0;
+  const needsBalance = view !== undefined && view.needsBalance;
+  const count = heartCount + extra;
+  const buttonClass = plusOne
+    ? 'scale-110 text-app-accent'
+    : filled
+      ? 'text-app-accent'
+      : undefined;
+  return (
+    <>
+      <span className="inline-flex items-center gap-1">
+        <span className="relative inline-flex">
+          <IconButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={t('forum.heart')}
+            title={t('forum.heart')}
+            className={buttonClass}
+            disabled={cannotReceive}
+            onClick={(event) => {
+              event.stopPropagation();
+              onHeartTip(messageId);
+            }}
+          >
+            <Heart
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0"
+              fill={filled ? 'currentColor' : 'none'}
+            />
+          </IconButton>
+          {plusOne ? (
+            <span
+              className="forum-heart-plus-one absolute inset-x-0 -top-3 text-center text-xs font-semibold text-app-accent"
+              aria-hidden="true"
+            >
+              +1
+            </span>
+          ) : null}
+        </span>
+        <span
+          className={
+            filled ? 'text-xs tabular-nums text-app-accent' : 'text-xs tabular-nums text-app-subtle'
+          }
+        >
+          {count}
+        </span>
+      </span>
+      {needsBalance ? (
+        <p role="alert" className="text-xs text-app-danger">
+          {t('forum.heartNeedsBalance')}
+        </p>
+      ) : null}
+      {authorWalletLine}
+    </>
+  );
 }
 
 /**
@@ -457,13 +673,62 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
 }
 
 /**
- * The open pay sheet inside the board, if one is mounted.
+ * Whether `target` is still moving into its place: a fold around it is opening or about to open
+ * (`Collapse`), or a box around it is gliding to a new height (`AutoHeight`, for example the
+ * replies block when its list arrives).
+ *
+ * @param target - The open gift amount form or the reaction form.
+ * @param ended - A box whose move has just ended (it still carries its moving mark), or null.
+ * @param outerGlides - False counts only the height box right around `target`: a glide of a box
+ * further out then comes from other content in it (a reply above opening its own controls), which
+ * does not move `target` into place.
+ * @returns True while such a move runs.
+ */
+function movingIntoPlace(
+  target: HTMLElement,
+  ended: EventTarget | null = null,
+  outerGlides = true,
+): boolean {
+  // A fold still `closed` but not inert has just been told to open (its first frame).
+  const glide = '[data-auto-height][data-gliding]';
+  const selector = `[data-collapse="opening"], [data-collapse="closed"]:not([inert]), ${glide}`;
+  const own = target.closest('[data-auto-height]');
+  for (
+    let box = target.closest(selector);
+    box !== null;
+    box = box.parentElement?.closest(selector) ?? null
+  ) {
+    if (box !== ended && (outerGlides || box === own || !box.matches(glide))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The open gift amount form inside the board, if one is mounted. A form that is folding away
+ * (inside an `inert` `Collapse`) is already closed. The pay sheet itself is drawn over the frame
+ * body (`PaySheet`), not in the board, so it is never scrolled to.
  *
  * @param root - Board root, or null before mount.
- * @returns The sheet element, or null.
+ * @returns The form element, or null.
  */
 function paySheetElement(root: HTMLElement | null): HTMLElement | null {
-  return root?.querySelector<HTMLElement>('[data-pay-sheet]') ?? null;
+  return (
+    root?.querySelector<HTMLElement>('[data-pay-amount]:not([data-collapse][inert] *)') ?? null
+  );
+}
+
+/**
+ * The open reaction form, if its composer is mounted. A form that is folding away with its card
+ * (inside an `inert` `Collapse`) is already closed, so the page is not pulled back to it.
+ *
+ * @param field - The reply composer's text field, or null when none is mounted.
+ * @returns The form element, or null.
+ */
+function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | null {
+  const form = field === null ? null : field.form;
+  return form === null || form.closest('[data-collapse][inert]') !== null ? null : form;
 }
 
 /**
@@ -473,8 +738,10 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
  * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
- * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
- * feed) or empty/loading/error, per-card expand for oldest-first replies +
+ * Post is a photo icon row (camera, attach, place), a chosen place on its own
+ * line between that row and the text field, then text + send, Ask is
+ * the four-step wizard), newest-first list (social feed) or
+ * empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (amount and the bitcoin/fiat switch on one line, text and
  * send on the next; reply money is `ReplyDirectionAmounts`: gift-only rows
  * use `forum.giftReply`, text-plus-gift shows the bare amount under the
@@ -483,16 +750,26 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * and the two lines share a left rule. The amounts are not added),
  * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
- * expands the reply composer; omitted when `deletedAt` is set), payable-reply
+ * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
+ * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
+ * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
+ * (shown disabled instead when the author cannot receive yet,
+ * `authorCanReceive: false`; shown signed-out; omitted on the viewer's own note; the count sits
+ * immediately to the right of the icon and the fill remains after a tap), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
- * notes; the control hides non-shop text), optional shops staff
+ * notes; the control hides non-shop text; `onShopNoteSaved` runs once per
+ * save: after a whole save, or after a partly written one when its editor closes
+ * or unmounts, at the latest once a running save settles), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
  * `onShopPlaceUpdated` are set, then the shops account editor when
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
  * staff Delete omitted
  * when `deletedAt` is set, optional inline photos, and optional inline videos.
+ * Toward an author who cannot receive yet (`authorCanReceive: false`), the
+ * heart, Gift, **Lend**, and the reply amount show disabled and
+ * `CannotReceiveLabel` sits in the action row (`authorCannotReceive`).
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill
@@ -501,8 +778,29 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * language marks it read; pills are sticky in the AppShell scroller under the
  * frame header (`top-2`, or `top-14` for New posts when both show).
  * Optional `permalinkTargetId` rings the matching nested reply only; optional
- * `nearEndRef` attaches to the note about eight rows from the visible end.
+ * `nearEndRef` attaches to the note about eight rows from the visible end, or
+ * to the empty-feed line when no row is loaded, so a page whose notes were all
+ * dropped still leads on to the next page.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
+ * With `writer` (the forum home) the page shows no composer. While the writer
+ * is open, an {@link AppShellOverlay} layer covers the frame under the header
+ * row (frame background, rounded bottom corners, its own scrollport): a
+ * centred title (`forum.composePost` or `forum.composeAsk`, per the switch),
+ * the Post / Ask pill, then the composer as on every other board (or the Ask
+ * wizard), the composer pay slot (`payHost` `composer`: the posting fee, or the
+ * 1-sat fee of a text reaction), and the composer's errors. That pay slot stays
+ * where it opened: in the writer when it opened there (a posting fee; it waits
+ * there while the writer is closed), on the page above the feed when it opened
+ * with the writer closed (a text reaction's fee), so closing or opening the
+ * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
+ * brings up the keyboard. A compose request opens it first (or focuses its
+ * field when it is already open). Its Post composer has the same two rows on
+ * every device: the photo icon row (camera, photo, place), then the text field
+ * with send on its right; a chosen place shows on its own line between them.
+ * The writer is marked `data-writing-composer` for
+ * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
+ * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
+ * so the sheet in the page scrollport shows; it comes back when the Menu closes.
  *
  * @param props - Messages payload plus loading/error/composer (including
  * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -541,6 +839,7 @@ export function ForumBoard({
   onRetry,
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
+  firstPostFree = false,
   shopComposer = false,
   shopUsername = '',
   onShopUsernameChange,
@@ -552,11 +851,9 @@ export function ForumBoard({
   payError,
   payInvoice,
   replyPayPreview = null,
-  payWaiting,
   onPayOpen,
   viewerAccountId = null,
-  onRepay,
-  repayNotice = null,
+  repayLink = false,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
@@ -575,9 +872,10 @@ export function ForumBoard({
   onRemovePhoto,
   onClearPhoto,
   photoUrls,
+  photoVersions = {},
   videoUrls = {},
   expandedId,
-  onToggleExpand,
+  onToggleExpand: onToggleExpandProp,
   replies,
   repliesLoading,
   repliesError,
@@ -591,6 +889,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   composerHidden = false,
+  writer,
   readOnly = false,
   onDeleted,
   permalinkTargetId = null,
@@ -603,6 +902,10 @@ export function ForumBoard({
   onShopAccountUpdated,
   shopNoteEdit = false,
   onShopNoteUpdated,
+  heartViewerId = null,
+  onHeartTip,
+  heartTipViews,
+  onShopNoteSaved,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -613,17 +916,75 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const [placeSlot, setPlaceSlot] = useState<HTMLDivElement | null>(null);
+  // The reaction form sits beside the held reaction sheet: it stays disabled through the success step.
+  const reactionHold = usePaySheetHold(
+    replyPayPreview !== null &&
+      payInvoice !== null &&
+      payHost === 'card' &&
+      payMessageId === payInvoice.messageId
+      ? payInvoice.messageId
+      : null,
+  );
+  // Through the success step the card stays as it is: folding it would cut the held sheet short.
+  const onToggleExpand = (messageId: string): void => {
+    if (reactionHold.held !== null) {
+      return;
+    }
+    onToggleExpandProp(messageId);
+  };
+  const postComposerShown =
+    !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
+  const writerOpen = writer !== undefined && writer.open;
+  const writerRef = useRef(writer);
+  writerRef.current = writer;
+  const writerOpenRef = useRef(writerOpen);
+  writerOpenRef.current = writerOpen;
+  // In the same task as the tap that opened the writer, so the keyboard comes up.
+  useLayoutEffect(() => {
+    if (writerOpen) {
+      composerRef.current?.focus({ preventScroll: true });
+    }
+  }, [writerOpen]);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
+  // A gift sheet or gift invoice whose author a refresh now reports as unable to
+  // receive is cancelled; the posting fee (`payHost` composer) pays 21.gifts, not
+  // the author, and stays.
+  const payTargetBlocked =
+    payMessageId !== null &&
+    payHost !== 'composer' &&
+    [...(messages ?? []), ...(Array.isArray(replies) ? replies : [])].some(
+      (row) => row.id === payMessageId && authorCannotReceive(row, viewerAccountId),
+    );
+  const onPayCancelRef = useRef(onPayCancel);
+  onPayCancelRef.current = onPayCancel;
+  useEffect(() => {
+    if (payTargetBlocked) {
+      onPayCancelRef.current();
+    }
+  }, [payTargetBlocked]);
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
+  // Where the page last came to rest: the reveal at the end of a move starts from here.
+  const restTop = useRef(0);
+  // The reply count the reveal last saw, to tell when a list has just arrived.
+  const repliesShown = useRef(shownReplies);
+  // A follow that ended before the open card's reply list arrived: where it started, and where it
+  // placed the page by the layout of that moment (with **Loading reactions…** still above the form).
+  const restBeforeList = useRef<{ from: number; placed: number } | null>(null);
   useEffect(() => {
     if (scroller === null) {
       return;
     }
     const remember = (): void => {
+      // A reveal that follows a move scrolls frame by frame: only where it comes to rest counts.
+      if (scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        return;
+      }
+      restTop.current = scroller.scrollTop;
       if (!sheetWasOpen.current) {
         scrollBeforeSheet.current = scroller.scrollTop;
       }
@@ -632,47 +993,187 @@ export function ForumBoard({
     scroller.addEventListener('scroll', remember);
     return () => {
       scroller.removeEventListener('scroll', remember);
+      scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
     };
   }, [scroller]);
   useLayoutEffect(() => {
-    const field = replyComposerRef.current;
-    const form = field === null ? null : field.form;
-    const sheet = paySheetElement(rootRef.current);
-    if (sheet !== null) {
-      if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
-        scroller.scrollTop = scrollBeforeSheet.current;
-      }
-      sheetWasOpen.current = true;
-      revealPaySheet(scroller, sheet);
-    } else {
-      sheetWasOpen.current = false;
-      revealReplyForm(scroller, form);
-    }
-    if (scroller === null || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver(() => {
+    // Read the amount form and the reaction form each time: either one can mount after this effect
+    // ran (a fold opens it in steps).
+    const reveal = (): void => {
       const liveSheet = paySheetElement(rootRef.current);
       if (liveSheet !== null) {
+        if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
+          scroller.scrollTop = scrollBeforeSheet.current;
+        }
+        sheetWasOpen.current = true;
         revealPaySheet(scroller, liveSheet);
         return;
       }
-      revealReplyForm(scroller, form);
-    });
+      sheetWasOpen.current = false;
+      // A posting fee has no amount box in the board and its sheet is drawn over the page: the
+      // feed behind it stays where it is.
+      if (payInvoice !== null && payHost === 'composer') {
+        return;
+      }
+      revealReplyForm(scroller, replyFormElement(replyComposerRef.current));
+    };
+    // While a move runs, each step reveals from where the page last rested. The target already
+    // sits at its final place inside the moving box (a fold clips its content, it does not squeeze
+    // it); only the room to scroll into grows. So every step lands on the same final position or
+    // as close to it as the page allows yet, whatever the frames in between did.
+    const follow = (): void => {
+      if (scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        scroller.scrollTop = restTop.current;
+      }
+      reveal();
+    };
+    /** The open gift amount form, else the reaction form, as they are now. */
+    const liveTarget = (): HTMLElement | null =>
+      paySheetElement(rootRef.current) ?? replyFormElement(replyComposerRef.current);
+    // While the sheet or the form is still moving into place, the reveal follows the move frame by
+    // frame; the port carries `SCROLL_FOLLOW_ATTR` then, so the footer's slim/full progress and the
+    // scroll memory skip those in-between scrolls and count only where the page comes to rest.
+    // A run of this effect in the middle of a move keeps the rest position from before it; when
+    // it ends that move (the card closes while its form is still easing open), it announces where
+    // the page rests, as the end of a move does below.
+    // A list that has just arrived makes the replies block glide: that glide moves the target into
+    // place too. Any other glide of a box further out than the target's own does not.
+    let listArrived = shownReplies !== repliesShown.current;
+    repliesShown.current = shownReplies;
+    // The list of the open card is still on its way.
+    const listPending = shownReplies === -1 && repliesLoading;
+    const target = liveTarget();
+    const wasFollowing = scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+    if (scroller !== null && !wasFollowing) {
+      restTop.current = scroller.scrollTop;
+      // The fold ended before the list arrived, and the reader has not scrolled since: the list
+      // moving the form is part of the same move, so it starts from where the first one started.
+      // The page then rests by the final layout whichever came first, the list or the end of the
+      // fold.
+      const before = restBeforeList.current;
+      if (listArrived && before !== null && scroller.scrollTop === before.placed) {
+        restTop.current = before.from;
+        scroller.scrollTop = before.from;
+      }
+    }
+    if (!listPending) {
+      restBeforeList.current = null;
+    }
+    scroller?.toggleAttribute(
+      SCROLL_FOLLOW_ATTR,
+      target !== null && movingIntoPlace(target, null, listArrived || wasFollowing),
+    );
+    follow();
+    if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+      scroller.dispatchEvent(new Event('scroll'));
+    }
+    if (scroller === null) {
+      return;
+    }
+    // When a move around the target ends, place the page once more from where it last rested, by
+    // the final layout. The frames in between (and anything that scrolled during them) do not
+    // decide where the page comes to rest. Once nothing around the target moves any more, the
+    // marker goes and the board announces where the page rests with one scroll event of its own
+    // (the browser sends none when the placement lands where the last step already was), so the
+    // footer and the scroll memory count it as one move.
+    const root = rootRef.current as HTMLElement;
+    const onSettle = (event: Event): void => {
+      const settled = liveTarget();
+      const wasFollowing = scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+      scroller.toggleAttribute(
+        SCROLL_FOLLOW_ATTR,
+        wasFollowing && settled !== null && movingIntoPlace(settled, event.target),
+      );
+      // Only a move the reveal was following places the page; a glide that never moved the target
+      // into place leaves it where the reader has it.
+      if (
+        wasFollowing &&
+        settled !== null &&
+        event.target instanceof Node &&
+        event.target.contains(settled)
+      ) {
+        scroller.scrollTop = restTop.current;
+        follow();
+      }
+      if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        listArrived = false;
+        restBeforeList.current = listPending
+          ? { from: restTop.current, placed: scroller.scrollTop }
+          : null;
+        scroller.dispatchEvent(new Event('scroll'));
+      }
+    };
+    root.addEventListener(MOTION_SETTLE_EVENT, onSettle);
+    // A browser without `ResizeObserver` does not follow the steps, but the end of a move still
+    // places the page and clears the mark.
+    if (typeof ResizeObserver === 'undefined') {
+      return () => {
+        root.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
+      };
+    }
+    const form = replyFormElement(replyComposerRef.current);
+    const sheet = paySheetElement(rootRef.current);
+    const observer = new ResizeObserver(follow);
     if (sheet !== null) {
       observer.observe(sheet);
     }
     if (form !== null) {
       observer.observe(form);
     }
+    // The fold around the sheet or the form eases open, and the box around them glides when the
+    // reply form swaps for the pay page; follow those moves, so the reveal tracks the move instead
+    // of its start. Other changes inside the fold (a reply above opening its own controls) do not
+    // move the page.
+    const foldObserver = new ResizeObserver(() => {
+      const moving = liveTarget();
+      const outerGlides = listArrived || scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+      if (moving !== null && movingIntoPlace(moving, null, outerGlides)) {
+        scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+        follow();
+      }
+    });
+    const folds = new Set([sheet, form].map((el) => el?.closest('[data-collapse]') ?? null));
+    for (const fold of folds) {
+      if (fold !== null) {
+        foldObserver.observe(fold);
+      }
+    }
     return () => {
       observer.disconnect();
+      foldObserver.disconnect();
+      root.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
     };
-  }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
+  }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice, payHost]);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Lend opens the card's money reaction and puts the focus in its amount field once it is enabled.
+  // Every host opens the card in the same click, so a card that is not open (refused, or closed
+  // again before its form was ready) drops the intent, and a later open does not take the focus.
+  const [lendIntentId, setLendIntentId] = useState<string | null>(null);
+  const sunday = useLocalSunday();
+  useEffect(() => {
+    if (lendIntentId === null) {
+      return;
+    }
+    if (lendIntentId !== expandedId) {
+      setLendIntentId(null);
+      return;
+    }
+    if (repliesLoading || replies === null) {
+      return;
+    }
+    setLendIntentId(null);
+    const field = document.getElementById('forum-reply-amount');
+    if (field instanceof HTMLInputElement && !field.disabled) {
+      field.focus({ preventScroll: true });
+      const port = scrollerRef.current;
+      if (port !== null && field.form !== null) {
+        revealInScrollport(port, field.form);
+      }
+    }
+  }, [lendIntentId, expandedId, repliesLoading, replies]);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [deadPhotoKeys, setDeadPhotoKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
@@ -707,7 +1208,7 @@ export function ForumBoard({
     };
 
     const onTouchStart = (event: TouchEvent): void => {
-      if (refreshingRef.current || loadingRef.current) {
+      if (refreshingRef.current || loadingRef.current || writerOpenRef.current) {
         return;
       }
       if (pageScrollTop() >= 8) {
@@ -777,10 +1278,6 @@ export function ForumBoard({
   }, [onRefresh, scroller]);
 
   useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
-
-  useEffect(() => {
     copyMounted.current = true;
     return () => {
       copyMounted.current = false;
@@ -798,18 +1295,35 @@ export function ForumBoard({
       }
       el.focus({ preventScroll: true });
       const port = scrollerRef.current;
-      if (port !== null) {
+      if (port !== null && port.contains(el)) {
         revealInScrollport(port, el);
       }
       return true;
     };
     const onCompose = (): void => {
+      const home = writerRef.current;
+      if (home !== undefined) {
+        if (writerOpenRef.current) {
+          // Already open (on Ask for money there is no text field to focus).
+          tryFocusComposer();
+        } else {
+          // Synchronously, so the writer's field takes the focus inside the request's tap.
+          flushSync(home.onOpen);
+        }
+        consumePendingForumCompose();
+        return;
+      }
       if (tryFocusComposer()) {
         consumePendingForumCompose();
       }
     };
     window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    if (composerRef.current !== null && consumePendingForumCompose()) {
+    const home = writerRef.current;
+    if (home !== undefined) {
+      if (consumePendingForumCompose()) {
+        home.onOpen();
+      }
+    } else if (composerRef.current !== null && consumePendingForumCompose()) {
       tryFocusComposer();
     }
     return () => {
@@ -893,7 +1407,14 @@ export function ForumBoard({
   } else if (error && messages === null) {
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
-    middle = <p className="text-center text-sm text-app-muted">{t(emptyKey)}</p>;
+    middle = (
+      <p
+        {...(nearEndRef !== undefined ? { ref: nearEndRef } : {})}
+        className="text-center text-sm text-app-muted"
+      >
+        {t(emptyKey)}
+      </p>
+    );
   } else if (messages !== null && visible !== null && visible.length === 0) {
     middle = (
       <p className="text-center text-sm text-app-muted">
@@ -910,11 +1431,35 @@ export function ForumBoard({
       >
         {displayed.map((message, index) => {
           const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
-            index,
-            url: photoUrls[`${message.id}:${index}`],
-          })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
-          const photoUrl = photoUrls[`${message.id}:0`];
+          const rawVersion = photoVersions[message.id];
+          const versionToken =
+            rawVersion !== undefined && rawVersion !== '' ? rawVersion : undefined;
+          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, photoIndex) => {
+            if (deadPhotoKeys.has(deadStillKey(message.id, photoIndex, versionToken))) {
+              return null;
+            }
+            const url = displayStillSrc(message, photoIndex, photoUrls, versionToken);
+            if (url === undefined) {
+              return null;
+            }
+            const priority = stillPriority(index, photoIndex);
+            return { index: photoIndex, url, ...priority };
+          }).filter(
+            (
+              photo,
+            ): photo is {
+              index: number;
+              url: string;
+              loading: 'eager' | 'lazy';
+              fetchPriority: 'high' | 'low';
+            } => photo !== null,
+          );
+          const firstStill = loadedPhotoUrls[0];
+          const hasStill = message.hasPhoto || photoCount >= 1;
+          const posterSrc =
+            hasStill && !deadPhotoKeys.has(deadStillKey(message.id, 0, versionToken))
+              ? displayStillSrc(message, 0, photoUrls, versionToken)
+              : undefined;
           const videoSrc =
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
@@ -924,21 +1469,36 @@ export function ForumBoard({
           const roleKeys = taggedRole === null || hideVerified ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
+          const cannotReceive = authorCannotReceive(message, viewerAccountId);
           const replyPayLocked =
-            payInvoice !== null && payMessageId === message.id && payHost !== 'composer';
+            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
+            reactionHold.held === message.id;
           const reactionPay =
             replyPayPreview !== null &&
             payInvoice !== null &&
+            !cannotReceive &&
             payMessageId === message.id &&
             payHost === 'card' &&
             payInvoice.messageId === message.id
               ? {
-                  preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
+          const loanOfCard: LoanPayTarget | null =
+            message.parentId === undefined &&
+            message.goalRepayable === true &&
+            typeof message.goalSats === 'number' &&
+            message.goalSats > 0
+              ? {
+                  name: message.name,
+                  days: message.goalTermDays,
+                  // Funded as the api counts it: collected sats reached the asked sats.
+                  full: message.sats >= message.goalSats,
+                }
+              : null;
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1062,7 +1622,7 @@ export function ForumBoard({
                 {videoSrc !== undefined ? (
                   <ForumVideo
                     src={videoSrc}
-                    poster={photoUrl}
+                    poster={posterSrc}
                     preload="metadata"
                     className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
                     onClick={stopCardToggle}
@@ -1070,13 +1630,21 @@ export function ForumBoard({
                       setDeadVideoIds((prev) => new Set(prev).add(message.id));
                     }}
                   />
-                ) : photoCount <= 1 && photoUrl !== undefined ? (
-                  /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
+                ) : photoCount <= 1 && firstStill !== undefined ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */
                   <img
-                    src={photoUrl}
+                    src={firstStill.url}
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+                    decoding="async"
+                    loading={firstStill.loading}
+                    fetchPriority={firstStill.fetchPriority}
                     onClick={stopCardToggle}
+                    onError={() => {
+                      setDeadPhotoKeys((prev) =>
+                        new Set(prev).add(deadStillKey(message.id, 0, versionToken)),
+                      );
+                    }}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
                   <ForumPhotoGallery
@@ -1084,6 +1652,11 @@ export function ForumBoard({
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2"
                     onPhotoClick={stopCardToggle}
+                    onPhotoError={(photoIndex) => {
+                      setDeadPhotoKeys((prev) =>
+                        new Set(prev).add(deadStillKey(message.id, photoIndex, versionToken)),
+                      );
+                    }}
                   />
                 ) : null}
                 {displayText !== '' ? (
@@ -1129,7 +1702,7 @@ export function ForumBoard({
                 ) : null}
                 {message.parentId === undefined && message.place !== undefined ? (
                   <Link
-                    href={`/map?pin=${encodeURIComponent(message.id)}`}
+                    href={`/shops?pin=${encodeURIComponent(message.id)}#map`}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
                     onClick={stopCardToggle}
                   >
@@ -1170,6 +1743,21 @@ export function ForumBoard({
                   goalTermDays={message.goalTermDays}
                   messageId={message.id}
                   ledgerCollapsed={truncate}
+                  onLend={
+                    !readOnly &&
+                    !sunday &&
+                    message.payable &&
+                    message.deletedAt === undefined &&
+                    !isOwnNote(viewerAccountId, message.accountId)
+                      ? () => {
+                          setLendIntentId(message.id);
+                          if (expandedId !== message.id) {
+                            onToggleExpand(message.id);
+                          }
+                        }
+                      : undefined
+                  }
+                  lendBlocked={!readOnly && !sunday && cannotReceive}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -1200,6 +1788,19 @@ export function ForumBoard({
                 </div>
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
+                  {cannotReceive ? <CannotReceiveLabel /> : null}
+                  <ForumHeartControl
+                    messageId={message.id}
+                    accountId={message.accountId}
+                    deletedAt={message.deletedAt}
+                    payable={message.payable}
+                    cannotReceive={cannotReceive}
+                    heartViewerId={heartViewerId}
+                    heartCount={message.heartCount}
+                    hearted={message.hearted}
+                    view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
+                    onHeartTip={onHeartTip}
+                  />
                   {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
                   {message.parentId === undefined &&
                   message.deletedAt === undefined &&
@@ -1227,7 +1828,7 @@ export function ForumBoard({
                       <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
                     </IconButton>
                   ) : null}
-                  {onRepay !== undefined &&
+                  {repayLink === true &&
                   viewerAccountId !== null &&
                   message.accountId === viewerAccountId &&
                   message.parentId === undefined &&
@@ -1235,35 +1836,19 @@ export function ForumBoard({
                   typeof message.goalSats === 'number' &&
                   message.sats >= message.goalSats &&
                   message.deletedAt === undefined ? (
-                    <SundayWritingGate notice="zap">
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-app-fg underline"
-                        disabled={payBusy || payInvoice?.messageId === message.id}
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          onRepay(message.id);
-                        }}
-                      >
-                        {t('forum.repayToday')}
-                      </button>
-                    </SundayWritingGate>
-                  ) : null}
-                  {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
-                    <p role="alert" className="text-xs text-app-danger">
-                      {t(
-                        repayNotice.error === 'rateLimit'
-                          ? 'forum.payErrorRateLimit'
-                          : repayNotice.error === 'authorWallet'
-                            ? 'forum.payErrorAuthorWallet'
-                            : 'forum.payErrorRequest',
-                      )}
-                    </p>
+                    <Link
+                      href="/loans/repay"
+                      className="text-xs font-medium text-app-fg underline"
+                      onClick={stopCardToggle}
+                    >
+                      {t('forum.repayOpen')}
+                    </Link>
                   ) : null}
                   {message.parentId !== undefined &&
                   message.payable &&
                   message.deletedAt === undefined &&
-                  !readOnly ? (
+                  !readOnly &&
+                  !isOwnNote(viewerAccountId, message.accountId) ? (
                     <SundayWritingGate notice="zap">
                       <IconButton
                         type="button"
@@ -1275,6 +1860,18 @@ export function ForumBoard({
                           stopCardToggle(event);
                           onPayOpen(message.id);
                         }}
+                      >
+                        <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      </IconButton>
+                    </SundayWritingGate>
+                  ) : message.parentId !== undefined && cannotReceive && !readOnly ? (
+                    <SundayWritingGate notice="zap">
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('forum.pay')}
+                        disabled
                       >
                         <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
                       </IconButton>
@@ -1304,7 +1901,8 @@ export function ForumBoard({
                     <ShopNoteEditControl
                       message={message}
                       onUpdated={onShopNoteUpdated}
-                      existingPhotos={editStillUrls(message.id, photoCount, photoUrls)}
+                      {...(onShopNoteSaved !== undefined ? { onSaved: onShopNoteSaved } : {})}
+                      existingPhotos={editStillUrls(message, photoCount, photoUrls)}
                       {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
                     />
                   ) : null}
@@ -1326,386 +1924,476 @@ export function ForumBoard({
                 </div>
               </div>
 
-              {!reactionPayPage && payMessageId === message.id && payHost !== 'composer' ? (
+              <Collapse
+                show={
+                  !reactionPayPage &&
+                  !cannotReceive &&
+                  payMessageId === message.id &&
+                  payHost !== 'composer'
+                }
+                holdMs={PAY_SHEET_HOLD_MS}
+              >
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
+                    {...(loanOfCard === null ? {} : { loan: loanOfCard })}
+                    recipient={message.name}
                     messageId={message.id}
                     payDraft={payDraft}
                     payBusy={payBusy}
                     payError={payError}
                     payInvoice={payInvoice}
-                    payWaiting={payWaiting}
                     onPayDraftChange={onPayDraftChange}
                     {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                     onPaySubmit={onPaySubmit}
                     onPayCancel={onPayCancel}
                     rateDay={rateDay}
-                    showPaymentQr={showPaymentQr}
                     onInteract={stopCardToggle}
                   />
                 </SundayWritingGate>
-              ) : null}
+              </Collapse>
 
-              {expanded ? (
-                <div
-                  onClick={stopCardToggle}
-                  className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
-                >
-                  {repliesLoading ? (
-                    <p className="text-center text-sm text-app-muted">
-                      {t('forum.repliesLoading')}
-                    </p>
-                  ) : null}
-                  {repliesError ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.repliesError')}
+              {/* Built for the open card only; Collapse keeps the last view while it folds. When
+                  another card opens instead, this one closes at once, so there is only ever one
+                  reply form (one composer ref, one `forum-reply-amount`). */}
+              <Collapse show={expanded} instant={expandedId !== null}>
+                {expanded ? (
+                  <div
+                    onClick={stopCardToggle}
+                    className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
+                  >
+                    {repliesLoading && replies === null ? (
+                      <p className="text-center text-sm text-app-muted">
+                        {t('forum.repliesLoading')}
                       </p>
-                      <Button type="button" variant="secondary" onClick={onRetryReplies}>
-                        {t('forum.retry')}
-                      </Button>
-                    </div>
-                  ) : null}
-                  {replies !== null && !repliesLoading && !repliesError ? (
-                    <ul className="flex flex-col gap-3">
-                      {(Array.isArray(replies) ? replies : []).map((reply) => {
-                        const replyTaggedRole = forumTaggedRole(reply.role);
-                        const hideReplyVerified = verifiedChipHiddenByStaffTag(
-                          reply.role,
-                          reply.staffTag,
-                        );
-                        const replyRoleKeys =
-                          replyTaggedRole === null || hideReplyVerified
-                            ? null
-                            : ROLE_TAG_KEYS[replyTaggedRole];
-                        const replyHintOpen = openRoleMessageId === reply.id;
-                        return (
-                          <li
-                            key={reply.id}
-                            data-reply-id={reply.id}
-                            {...(permalinkTargetId === reply.id
-                              ? { 'data-permalink-target': 'true' }
-                              : {})}
-                            className={
-                              permalinkTargetId === reply.id
-                                ? 'rounded-xl border border-app-border bg-app-card px-3 py-2 ring-1 ring-app-fg'
-                                : 'rounded-xl border border-app-border bg-app-card px-3 py-2'
-                            }
-                          >
-                            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
-                                  <button
-                                    type="button"
-                                    aria-label={t('forum.authorProfile')}
-                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      router.push(`/members/${reply.accountId}`);
-                                    }}
-                                  >
-                                    {reply.name}
-                                  </button>
-                                ) : reply.via === 'nostr' ? (
-                                  <button
-                                    type="button"
-                                    aria-label={t('forum.authorProfile')}
-                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      router.push(
-                                        `/messages/${reply.id}/author?name=${encodeURIComponent(reply.name)}`,
-                                      );
-                                    }}
-                                  >
-                                    {reply.name}
-                                  </button>
-                                ) : (
-                                  <span className="text-sm font-medium text-app-fg">
-                                    {reply.name}
-                                  </span>
-                                )}
-                                {replyRoleKeys !== null ? (
-                                  <button
-                                    type="button"
-                                    aria-expanded={replyHintOpen}
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
-                                    }}
-                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                                  >
-                                    {t(replyRoleKeys.label)}
-                                  </button>
-                                ) : reply.via === 'nostr' && !hideReplyVerified ? (
-                                  <button
-                                    type="button"
-                                    aria-expanded={replyHintOpen}
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
-                                    }}
-                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                                  >
-                                    {t('forum.via.nostr')}
-                                  </button>
-                                ) : null}
-                                {reply.staffTag === 'software_developer' ? (
-                                  <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                                    {t('forum.staff.softwareDeveloper')}
-                                  </span>
-                                ) : null}
+                    ) : null}
+                    {repliesError ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.repliesError')}
+                        </p>
+                        <Button type="button" variant="secondary" onClick={onRetryReplies}>
+                          {t('forum.retry')}
+                        </Button>
+                      </div>
+                    ) : null}
+                    {replies !== null && !repliesError ? (
+                      <ul className="flex flex-col gap-3">
+                        {(Array.isArray(replies) ? replies : []).map((reply) => {
+                          const replyTaggedRole = forumTaggedRole(reply.role);
+                          const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
+                          const hideReplyVerified = verifiedChipHiddenByStaffTag(
+                            reply.role,
+                            reply.staffTag,
+                          );
+                          const replyRoleKeys =
+                            replyTaggedRole === null || hideReplyVerified
+                              ? null
+                              : ROLE_TAG_KEYS[replyTaggedRole];
+                          const replyHintOpen = openRoleMessageId === reply.id;
+                          return (
+                            <li
+                              key={reply.id}
+                              data-reply-id={reply.id}
+                              {...(permalinkTargetId === reply.id
+                                ? { 'data-permalink-target': 'true' }
+                                : {})}
+                              className={
+                                permalinkTargetId === reply.id
+                                  ? 'animate-fade-in rounded-xl border border-app-border bg-app-card px-3 py-2 ring-1 ring-app-fg'
+                                  : 'animate-fade-in rounded-xl border border-app-border bg-app-card px-3 py-2'
+                              }
+                            >
+                              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                                    <button
+                                      type="button"
+                                      aria-label={t('forum.authorProfile')}
+                                      className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        router.push(`/members/${reply.accountId}`);
+                                      }}
+                                    >
+                                      {reply.name}
+                                    </button>
+                                  ) : reply.via === 'nostr' ? (
+                                    <button
+                                      type="button"
+                                      aria-label={t('forum.authorProfile')}
+                                      className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        router.push(
+                                          `/messages/${reply.id}/author?name=${encodeURIComponent(reply.name)}`,
+                                        );
+                                      }}
+                                    >
+                                      {reply.name}
+                                    </button>
+                                  ) : (
+                                    <span className="text-sm font-medium text-app-fg">
+                                      {reply.name}
+                                    </span>
+                                  )}
+                                  {replyRoleKeys !== null ? (
+                                    <button
+                                      type="button"
+                                      aria-expanded={replyHintOpen}
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                      }}
+                                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                    >
+                                      {t(replyRoleKeys.label)}
+                                    </button>
+                                  ) : reply.via === 'nostr' && !hideReplyVerified ? (
+                                    <button
+                                      type="button"
+                                      aria-expanded={replyHintOpen}
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                      }}
+                                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                    >
+                                      {t('forum.via.nostr')}
+                                    </button>
+                                  ) : null}
+                                  {reply.staffTag === 'software_developer' ? (
+                                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                                      {t('forum.staff.softwareDeveloper')}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <time
+                                  dateTime={reply.createdAt}
+                                  className="text-xs text-app-subtle"
+                                >
+                                  {formatForumTime(reply.createdAt, locale)}
+                                </time>
                               </div>
-                              <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
-                                {formatForumTime(reply.createdAt, locale)}
-                              </time>
-                            </div>
-                            {replyHintOpen && replyRoleKeys !== null ? (
-                              <p role="status" className="mt-1 text-xs text-app-muted">
-                                {t(replyRoleKeys.hint)}
-                              </p>
-                            ) : replyHintOpen && reply.via === 'nostr' ? (
-                              <p role="status" className="mt-1 text-xs text-app-muted">
-                                {t('forum.via.nostrHint')}
-                              </p>
-                            ) : null}
-                            {reply.text !== '' ? (
-                              <div className="mt-1">
-                                {reply.via === 'nostr' ? (
-                                  <TranslatableNoteBody
-                                    messageId={reply.id}
-                                    plain
-                                    text={reply.text}
-                                    truncate={truncate}
-                                    className="whitespace-pre-wrap text-sm text-app-fg"
-                                    controlSlotId={`note-translate-${reply.id}`}
-                                    {...(!readOnly &&
-                                    typeof reply.accountId === 'string' &&
-                                    reply.accountId !== '' &&
-                                    reply.mentions !== undefined
-                                      ? { mentions: reply.mentions }
-                                      : {})}
-                                  />
-                                ) : (
-                                  <ForumQuotedBody
-                                    text={reply.text}
-                                    knownNotes={[...messages, ...replies]}
-                                    excludeId={reply.id}
-                                    rateDay={rateDay ?? null}
-                                    fiat={fiat}
-                                    truncate={truncate}
-                                    controlSlotId={`note-translate-${reply.id}`}
-                                    {...(!readOnly &&
-                                    typeof reply.accountId === 'string' &&
-                                    reply.accountId !== '' &&
-                                    reply.mentions !== undefined
-                                      ? { mentions: reply.mentions }
-                                      : {})}
-                                    onActivate={(event) => {
-                                      event.stopPropagation();
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            ) : null}
-                            <ReplyDirectionAmounts
-                              text={reply.text}
-                              sats={reply.sats}
-                              receivedSats={reply.receivedSats}
-                              rateDay={rateDay ?? null}
-                              fiat={fiat}
-                              numberFormat={numberFormat}
-                              sent={reply}
-                              received={{
-                                amountUsd: reply.receivedAmountUsd,
-                                amountChf: reply.receivedAmountChf,
-                                amountEur: reply.receivedAmountEur,
-                                amountPhp: reply.receivedAmountPhp,
-                              }}
-                            />
-                            <div className="mt-2 flex flex-wrap items-center gap-5">
-                              <div id={`note-translate-${reply.id}`} className="contents" />
-                              {reply.deletedAt === undefined && reply.payable && !readOnly ? (
-                                <SundayWritingGate notice="zap">
-                                  <IconButton
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    aria-label={t('forum.pay')}
-                                    disabled={payBusy}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      onPayOpen(reply.id);
-                                    }}
-                                  >
-                                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                                  </IconButton>
-                                </SundayWritingGate>
+                              {replyHintOpen && replyRoleKeys !== null ? (
+                                <p role="status" className="mt-1 text-xs text-app-muted">
+                                  {t(replyRoleKeys.hint)}
+                                </p>
+                              ) : replyHintOpen && reply.via === 'nostr' ? (
+                                <p role="status" className="mt-1 text-xs text-app-muted">
+                                  {t('forum.via.nostrHint')}
+                                </p>
                               ) : null}
-                              <IconButton
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                aria-label={t('forum.copyReplyLink')}
-                                title={t('forum.copyReplyLink')}
-                                data-copied={copiedId === reply.id ? 'true' : undefined}
-                                onClick={(event) => {
-                                  stopCardToggle(event);
-                                  void copyMessageLink(reply.id);
+                              {reply.text !== '' ? (
+                                <div className="mt-1">
+                                  {reply.via === 'nostr' ? (
+                                    <TranslatableNoteBody
+                                      messageId={reply.id}
+                                      plain
+                                      text={reply.text}
+                                      truncate={truncate}
+                                      className="whitespace-pre-wrap text-sm text-app-fg"
+                                      controlSlotId={`note-translate-${reply.id}`}
+                                      {...(!readOnly &&
+                                      typeof reply.accountId === 'string' &&
+                                      reply.accountId !== '' &&
+                                      reply.mentions !== undefined
+                                        ? { mentions: reply.mentions }
+                                        : {})}
+                                    />
+                                  ) : (
+                                    <ForumQuotedBody
+                                      text={reply.text}
+                                      knownNotes={[...messages, ...replies]}
+                                      excludeId={reply.id}
+                                      rateDay={rateDay ?? null}
+                                      fiat={fiat}
+                                      truncate={truncate}
+                                      controlSlotId={`note-translate-${reply.id}`}
+                                      {...(!readOnly &&
+                                      typeof reply.accountId === 'string' &&
+                                      reply.accountId !== '' &&
+                                      reply.mentions !== undefined
+                                        ? { mentions: reply.mentions }
+                                        : {})}
+                                      onActivate={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              ) : null}
+                              <ReplyDirectionAmounts
+                                text={reply.text}
+                                sats={reply.sats}
+                                receivedSats={reply.receivedSats}
+                                rateDay={rateDay ?? null}
+                                fiat={fiat}
+                                numberFormat={numberFormat}
+                                sent={reply}
+                                received={{
+                                  amountUsd: reply.receivedAmountUsd,
+                                  amountChf: reply.receivedAmountChf,
+                                  amountEur: reply.receivedAmountEur,
+                                  amountPhp: reply.receivedAmountPhp,
                                 }}
+                              />
+                              <div className="mt-2 flex flex-wrap items-center gap-5">
+                                <div id={`note-translate-${reply.id}`} className="contents" />
+                                {replyCannotReceive ? <CannotReceiveLabel /> : null}
+                                <ForumHeartControl
+                                  messageId={reply.id}
+                                  accountId={reply.accountId}
+                                  deletedAt={reply.deletedAt}
+                                  payable={reply.payable}
+                                  cannotReceive={replyCannotReceive}
+                                  heartViewerId={heartViewerId}
+                                  heartCount={reply.heartCount}
+                                  hearted={reply.hearted}
+                                  view={
+                                    heartTipViews === undefined
+                                      ? undefined
+                                      : heartTipViews[reply.id]
+                                  }
+                                  onHeartTip={onHeartTip}
+                                />
+                                {reply.deletedAt === undefined &&
+                                reply.payable &&
+                                !readOnly &&
+                                !isOwnNote(viewerAccountId, reply.accountId) ? (
+                                  <SundayWritingGate notice="zap">
+                                    <IconButton
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      aria-label={t('forum.pay')}
+                                      disabled={payBusy}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        onPayOpen(reply.id);
+                                      }}
+                                    >
+                                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                    </IconButton>
+                                  </SundayWritingGate>
+                                ) : replyCannotReceive && !readOnly ? (
+                                  <SundayWritingGate notice="zap">
+                                    <IconButton
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      aria-label={t('forum.pay')}
+                                      disabled
+                                    >
+                                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                    </IconButton>
+                                  </SundayWritingGate>
+                                ) : null}
+                                <IconButton
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={t('forum.copyReplyLink')}
+                                  title={t('forum.copyReplyLink')}
+                                  data-copied={copiedId === reply.id ? 'true' : undefined}
+                                  onClick={(event) => {
+                                    stopCardToggle(event);
+                                    void copyMessageLink(reply.id);
+                                  }}
+                                >
+                                  {copiedId === reply.id ? (
+                                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                                  )}
+                                </IconButton>
+                                {reply.deletedAt === undefined && onDeleted !== undefined ? (
+                                  <DeletePostControl
+                                    kind="reply"
+                                    messageId={reply.id}
+                                    onDeleted={onDeleted}
+                                  />
+                                ) : null}
+                              </div>
+                              <Collapse
+                                show={
+                                  !replyCannotReceive &&
+                                  payMessageId === reply.id &&
+                                  payHost !== 'composer'
+                                }
+                                holdMs={PAY_SHEET_HOLD_MS}
                               >
-                                {copiedId === reply.id ? (
-                                  <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                                <SundayWritingGate notice="zap">
+                                  <ForumPaySheet
+                                    recipient={reply.name}
+                                    messageId={reply.id}
+                                    payDraft={payDraft}
+                                    payBusy={payBusy}
+                                    payError={payError}
+                                    payInvoice={payInvoice}
+                                    onPayDraftChange={onPayDraftChange}
+                                    {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+                                    onPaySubmit={onPaySubmit}
+                                    onPayCancel={onPayCancel}
+                                    rateDay={rateDay}
+                                    onInteract={stopCardToggle}
+                                  />
+                                </SundayWritingGate>
+                              </Collapse>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                    {!readOnly && message.deletedAt === undefined ? (
+                      // The form's own height box: a glide of the replies block around it (a reply above
+                      // opening its own controls) does not move the form into place.
+                      <AutoHeight>
+                        {/* The sheet draws itself over the page, with the form behind it,
+                            disabled; the fold only keeps it for its success step. */}
+                        <Collapse
+                          show={reactionPay !== null && !cannotReceive}
+                          holdMs={PAY_SHEET_HOLD_MS}
+                        >
+                          {reactionPay === null ? null : (
+                            <SundayWritingGate notice="zap">
+                              <ForumReplyPayPage
+                                {...(loanOfCard === null ? {} : { loan: loanOfCard })}
+                                recipient={message.name}
+                                amountSats={reactionPay.amountSats}
+                                pr={reactionPay.pr}
+                                sparkInvoice={reactionPay.sparkInvoice}
+                                rateDay={rateDay}
+                                onCancel={() => {
+                                  reactionHold.closedByMember();
+                                  onPayCancel();
+                                }}
+                                onSentChange={(sent) => reactionHold.sentChange(message.id, sent)}
+                              />
+                            </SundayWritingGate>
+                          )}
+                        </Collapse>
+                        <SundayWritingGate>
+                          <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                            {/* How a loan comes back stays on the page; the sheet shows no notice.
+                                No lending to an author who cannot receive, so no promise either. */}
+                            {loanOfCard !== null &&
+                            !cannotReceive &&
+                            !isOwnNote(viewerAccountId, message.accountId) ? (
+                              <LoanPayNotice {...loanOfCard} />
+                            ) : null}
+                            {/* On your own note the reply is free: no amount to gift yourself. */}
+                            {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                              <AmountEntry
+                                id="forum-reply-amount"
+                                layout="inline"
+                                label={t(
+                                  loanOfCard !== null && !loanOfCard.full
+                                    ? 'forum.loan.amountLabel'
+                                    : 'forum.replyAmountLabel',
+                                )}
+                                placeholder={t('forum.payAmountPlaceholder')}
+                                value={replyAmountDraft}
+                                disabled={
+                                  cannotReceive ||
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                rateDay={rateDay}
+                                onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                                {...(onReplyUnitChange === undefined
+                                  ? {}
+                                  : { onUnitChange: onReplyUnitChange })}
+                              />
+                            )}
+                            <div className="flex items-center gap-2">
+                              <MentionTextarea
+                                textareaRef={replyComposerRef}
+                                ariaLabel={t('forum.replyComposerLabel')}
+                                placeholder={t('forum.replyPlaceholder')}
+                                value={replyDraft}
+                                onChange={onReplyDraftChange}
+                                maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                                rows={1}
+                                disabled={
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                wrapperClassName="relative min-w-0 flex-1"
+                                className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                              />
+                              <IconButton
+                                type="submit"
+                                size="lg"
+                                variant="primary"
+                                disabled={
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                aria-label={t('forum.post')}
+                              >
+                                {replyPosting ? (
+                                  <Loader2
+                                    aria-hidden="true"
+                                    className="block h-5 w-5 shrink-0 animate-spin"
+                                  />
                                 ) : (
-                                  <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
                                 )}
                               </IconButton>
-                              {reply.deletedAt === undefined && onDeleted !== undefined ? (
-                                <DeletePostControl
-                                  kind="reply"
-                                  messageId={reply.id}
-                                  onDeleted={onDeleted}
-                                />
-                              ) : null}
                             </div>
-                            {payMessageId === reply.id && payHost !== 'composer' ? (
-                              <SundayWritingGate notice="zap">
-                                <ForumPaySheet
-                                  messageId={reply.id}
-                                  payDraft={payDraft}
-                                  payBusy={payBusy}
-                                  payError={payError}
-                                  payInvoice={payInvoice}
-                                  payWaiting={payWaiting}
-                                  onPayDraftChange={onPayDraftChange}
-                                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-                                  onPaySubmit={onPaySubmit}
-                                  onPayCancel={onPayCancel}
-                                  rateDay={rateDay}
-                                  showPaymentQr={showPaymentQr}
-                                  onInteract={stopCardToggle}
-                                />
-                              </SundayWritingGate>
-                            ) : null}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-                  {!readOnly && message.deletedAt === undefined ? (
-                    reactionPay !== null ? (
-                      <SundayWritingGate notice="zap">
-                        <ForumReplyPayPage
-                          preview={reactionPay.preview}
-                          amountSats={reactionPay.amountSats}
-                          pr={reactionPay.pr}
-                          payWaiting={payWaiting}
-                          payBusy={payBusy}
-                          showPaymentQr={showPaymentQr}
-                          rateDay={rateDay}
-                          onCancel={onPayCancel}
-                        />
-                      </SundayWritingGate>
-                    ) : (
-                      <SundayWritingGate>
-                        <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                          <AmountEntry
-                            id="forum-reply-amount"
-                            layout="inline"
-                            label={t('forum.replyAmountLabel')}
-                            placeholder={t('forum.payAmountPlaceholder')}
-                            value={replyAmountDraft}
-                            disabled={
-                              replyPayLocked ||
-                              replyPosting ||
-                              repliesLoading ||
-                              repliesError ||
-                              replies === null
-                            }
-                            rateDay={rateDay}
-                            onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                            {...(onReplyUnitChange === undefined
-                              ? {}
-                              : { onUnitChange: onReplyUnitChange })}
-                          />
-                          <div className="flex items-center gap-2">
-                            <MentionTextarea
-                              textareaRef={replyComposerRef}
-                              ariaLabel={t('forum.replyComposerLabel')}
-                              placeholder={t('forum.replyPlaceholder')}
-                              value={replyDraft}
-                              onChange={onReplyDraftChange}
-                              maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                              rows={1}
-                              disabled={
-                                replyPayLocked ||
-                                replyPosting ||
-                                repliesLoading ||
-                                repliesError ||
-                                replies === null
-                              }
-                              wrapperClassName="relative min-w-0 flex-1"
-                              className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
-                            />
-                            <IconButton
-                              type="submit"
-                              size="lg"
-                              variant="primary"
-                              disabled={
-                                replyPayLocked ||
-                                replyPosting ||
-                                repliesLoading ||
-                                repliesError ||
-                                replies === null
-                              }
-                              aria-label={t('forum.post')}
-                            >
-                              {replyPosting ? (
-                                <Loader2
-                                  aria-hidden="true"
-                                  className="block h-5 w-5 shrink-0 animate-spin"
-                                />
-                              ) : (
-                                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                              )}
-                            </IconButton>
-                          </div>
-                          {replyFormError === 'empty' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorEmpty')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'amount' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorReplyPayment')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'tooLong' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorTooLong')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'request' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorRequest')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'rateLimit' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorRateLimit')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'deleted' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorNoteDeleted')}
-                            </p>
-                          ) : null}
-                        </form>
-                      </SundayWritingGate>
-                    )
-                  ) : null}
-                </div>
-              ) : null}
+                            <Collapse show={replyFormError !== null}>
+                              {replyFormError === 'empty' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorEmpty')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'amount' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorReplyPayment')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'tooLong' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorTooLong')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'request' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorRequest')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'rateLimit' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorRateLimit')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'deleted' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorNoteDeleted')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'authorWallet' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.payErrorAuthorWallet')}
+                                </p>
+                              ) : null}
+                            </Collapse>
+                          </form>
+                        </SundayWritingGate>
+                      </AutoHeight>
+                    ) : null}
+                  </div>
+                ) : null}
+              </Collapse>
             </li>
           );
         })}
@@ -1716,101 +2404,39 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
-
-  return (
-    <div
-      ref={rootRef}
-      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
-    >
-      {moderatorAppointedAvailable ? (
-        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowModeratorAppointed}
-          >
-            {t('forum.moderatorAppointed')}
-          </Button>
-        </div>
-      ) : null}
-      {newPostsAvailable ? (
-        <div
-          className={
-            moderatorAppointedAvailable
-              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
-              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
-          }
-        >
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowNewPosts}
-          >
-            {t('forum.newPosts')}
-          </Button>
-        </div>
-      ) : null}
-      {showRefreshStatus ? (
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label={t('forum.refreshing')}
-          className="sr-only"
+  const composerPay = payInvoice !== null && payHost === 'composer';
+  // The posting fee has no amount box: its pay sheet draws over the frame. On the forum home its
+  // host sits on the page, not in the writer, so a paid post that closes the writer keeps the sheet
+  // for its success step.
+  const loosePay =
+    payInvoice !== null &&
+    payHost !== 'composer' &&
+    payHost !== 'card' &&
+    payMessageId !== null &&
+    !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
+    !(replies !== null && replies.some((row) => row.id === payMessageId));
+  const paySheet =
+    payInvoice === null ? null : (
+      <SundayWritingGate notice="zap">
+        <ForumPaySheet
+          messageId={payInvoice.messageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          onPayDraftChange={onPayDraftChange}
+          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={onPayCancel}
+          rateDay={rateDay}
+          onInteract={(event) => {
+            event.stopPropagation();
+          }}
         />
-      ) : null}
-      {lawsVisible ? (
-        <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.lawsDismiss')}
-            onClick={onDismissLaws}
-            className="absolute right-2 top-2"
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
-            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
-            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-              <Link href="/rules" className="text-app-fg underline underline-offset-2">
-                {t('forum.rulesLink')}
-              </Link>
-              <Link href="/contact" className="text-app-fg underline underline-offset-2">
-                {t('forum.contactLink')}
-              </Link>
-            </nav>
-          </div>
-        </div>
-      ) : null}
-
-      {modeSelector && !composerHidden ? (
-        <ForumModeSelect
-          value={mode}
-          options={FORUM_FEED_MODES.map((next) => {
-            const label = t(MODE_LABEL_KEY[next]);
-            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
-              return { value: next, label };
-            }
-            return {
-              value: next,
-              label,
-              badge: unpaidNewCount,
-              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
-            };
-          })}
-          onChange={onModeChange}
-          ariaLabel={t('forum.modeLabel')}
-        />
-      ) : null}
-
+      </SundayWritingGate>
+    );
+  const composeParts = (
+    <>
       {!hideCompose && allowAsk ? (
         <SegmentedControl
           value={composeIntent}
@@ -1880,10 +2506,16 @@ export function ForumBoard({
           />
         </SundayWritingGate>
       ) : null}
-      {!hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer ? (
+      {postComposerShown ? (
         <SundayWritingGate>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting}
+                onChange={handleFileChange}
+              />
               <IconButton
                 type="button"
                 size="lg"
@@ -1896,9 +2528,6 @@ export function ForumBoard({
               >
                 <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
               </IconButton>
-              {onPlaceDraftChange !== undefined ? (
-                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
-              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1908,6 +2537,19 @@ export function ForumBoard({
                 disabled={posting}
                 onChange={handleFileChange}
               />
+              {onPlaceDraftChange !== undefined ? (
+                <PlaceField
+                  place={placeDraft}
+                  disabled={posting}
+                  onChange={onPlaceDraftChange}
+                  previewSlot={placeSlot}
+                />
+              ) : null}
+            </div>
+            {onPlaceDraftChange !== undefined ? (
+              <div ref={setPlaceSlot} className="empty:hidden" />
+            ) : null}
+            <div className="flex items-center gap-2">
               <MentionTextarea
                 textareaRef={composerRef}
                 ariaLabel={t('forum.composerLabel')}
@@ -1934,6 +2576,9 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {firstPostFree ? (
+              <p className="text-center text-sm text-app-muted">{t('forum.firstPostFree')}</p>
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
@@ -2006,32 +2651,9 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {payInvoice !== null &&
-      (payHost === 'composer' ||
-        (payHost !== 'card' &&
-          payMessageId !== null &&
-          !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
-          !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
-        <SundayWritingGate notice="zap">
-          <ForumPaySheet
-            messageId={payInvoice.messageId}
-            payDraft={payDraft}
-            payBusy={payBusy}
-            payError={payError}
-            payInvoice={payInvoice}
-            payWaiting={payWaiting}
-            onPayDraftChange={onPayDraftChange}
-            {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-            onPaySubmit={onPaySubmit}
-            onPayCancel={onPayCancel}
-            rateDay={rateDay}
-            showPaymentQr={showPaymentQr}
-            onInteract={(event) => {
-              event.stopPropagation();
-            }}
-          />
-        </SundayWritingGate>
-      ) : null}
+      <Collapse show={writer === undefined && (composerPay || loosePay)} holdMs={PAY_SHEET_HOLD_MS}>
+        {paySheet}
+      </Collapse>
 
       <div className="sunday-write-field">
         {!hideCompose && formError === 'empty' ? (
@@ -2075,6 +2697,127 @@ export function ForumBoard({
           </p>
         ) : null}
       </div>
+    </>
+  );
+  const composeSection =
+    writer === undefined ? (
+      composeParts
+    ) : writerOpen ? (
+      <AppShellOverlay>
+        <Scrollport className="absolute inset-0 z-30 rounded-b-3xl bg-app-card [html[data-menu-sheet='1']_&]:hidden">
+          <div data-writing-composer="" className="flex flex-col gap-4 px-5 pt-6 pb-6">
+            <h2 className="text-center text-base font-semibold text-app-fg">
+              {composeIntent === 'ask' ? t('forum.composeAsk') : t('forum.composePost')}
+            </h2>
+            {composeParts}
+          </div>
+        </Scrollport>
+      </AppShellOverlay>
+    ) : null;
+
+  return (
+    <div
+      ref={rootRef}
+      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+    >
+      {moderatorAppointedAvailable ? (
+        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowModeratorAppointed}
+          >
+            {t('forum.moderatorAppointed')}
+          </Button>
+        </div>
+      ) : null}
+      {newPostsAvailable ? (
+        <div
+          className={
+            moderatorAppointedAvailable
+              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
+              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
+          }
+        >
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowNewPosts}
+          >
+            {t('forum.newPosts')}
+          </Button>
+        </div>
+      ) : null}
+      {showRefreshStatus ? (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('forum.refreshing')}
+          className="sr-only"
+        />
+      ) : null}
+      {lawsVisible ? (
+        <div
+          data-laws-card=""
+          className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
+        >
+          <div className="absolute right-3 top-3">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.lawsDismiss')}
+              onClick={onDismissLaws}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
+            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+              <Link href="/rules" className="text-app-fg underline underline-offset-2">
+                {t('forum.rulesLink')}
+              </Link>
+              <Link href="/contact" className="text-app-fg underline underline-offset-2">
+                {t('forum.contactLink')}
+              </Link>
+            </nav>
+          </div>
+        </div>
+      ) : null}
+
+      {modeSelector && !composerHidden ? (
+        <ForumModeSelect
+          value={mode}
+          options={FORUM_FEED_MODES.map((next) => {
+            const label = t(MODE_LABEL_KEY[next]);
+            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
+              return { value: next, label };
+            }
+            return {
+              value: next,
+              label,
+              badge: unpaidNewCount,
+              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
+            };
+          })}
+          onChange={onModeChange}
+          ariaLabel={t('forum.modeLabel')}
+        />
+      ) : null}
+
+      {composeSection}
+
+      <Collapse show={writer !== undefined && (loosePay || composerPay)} holdMs={PAY_SHEET_HOLD_MS}>
+        {paySheet}
+      </Collapse>
 
       {middle}
       {error && messages !== null ? errorBlock : null}

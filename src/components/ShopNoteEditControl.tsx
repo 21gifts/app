@@ -27,8 +27,13 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface ShopNoteEditControlProps {
   /** Top-level shop note to edit. */
   message: ForumMessage;
-  /** Apply the saved note to the listed row. */
+  /** Apply the saved note to the listed row. Runs after each saved part of the note. */
   onUpdated: (message: ForumMessage) => void;
+  /**
+   * Runs once after a complete save. When a save stops after some parts were
+   * written, it runs once when the editor closes or unmounts instead.
+   */
+  onSaved?: () => void;
   /** Still previews already loaded for this note, in order. */
   existingPhotos?: readonly string[];
   /** Video preview already loaded for this note. */
@@ -163,12 +168,14 @@ async function ownFeedStills(
  * and 21.gifts user. Absent on replies, hidden notes, non-shop text, and ranks
  * below moderator.
  *
- * @param props - Note, loaded media, and successful-save callback.
+ * @param props - Note, loaded media, the per-part update callback, and the optional
+ * whole-save callback.
  * @returns The pencil, or null when it must not edit.
  */
 export function ShopNoteEditControl({
   message,
   onUpdated,
+  onSaved,
   existingPhotos = [],
   existingVideoUrl,
   startOpen = false,
@@ -182,8 +189,59 @@ export function ShopNoteEditControl({
   const [username, setUsername] = useState('');
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  // The lists a pick appends to. Two picks can overlap while photos are
+  // prepared, so room and the too-many sentence read these, not the render.
+  const keptRef = useRef<ShopKeptMedia[]>([]);
+  const photoDraftsRef = useRef<ForumPhotoPayload[]>([]);
+  // Opening or closing the editor starts a new session; a pick still being
+  // prepared from an earlier session is dropped. Picks in flight keep the
+  // steps busy so Save cannot run before their stills land.
+  const pickSession = useRef(0);
+  const [picking, setPicking] = useState(0);
   const [saving, setSaving] = useState(false);
+  // Written parts not reported to `onSaved` yet. A complete save reports at once;
+  // a save that stopped part-way reports when the editor closes or unmounts (for
+  // example when the Shops view switches), and never while a save is in flight.
+  const unreportedSave = useRef(false);
+  const saveInFlight = useRef(false);
+  // Closed or unmounted while a save ran: report once that save settles.
+  const reportWhenSettled = useRef(false);
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
+
+  /** Report written parts once, if any are waiting. */
+  function reportSave(): void {
+    if (unreportedSave.current) {
+      unreportedSave.current = false;
+      onSavedRef.current?.();
+    }
+  }
+
+  /** Report now, or once the running save settles. */
+  function reportNowOrWhenSettled(): void {
+    if (saveInFlight.current) {
+      reportWhenSettled.current = true;
+    } else {
+      reportSave();
+    }
+  }
+
+  /** Close the steps and report written parts. */
+  function closeEditor(): void {
+    setOpen(false);
+    reportNowOrWhenSettled();
+  }
+
+  const reportOnUnmount = useRef(reportNowOrWhenSettled);
+  reportOnUnmount.current = reportNowOrWhenSettled;
+  useEffect(
+    () => () => {
+      reportOnUnmount.current();
+    },
+    [],
+  );
   const [saveError, setSaveError] = useState(false);
+  const [pickError, setPickError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
@@ -194,6 +252,21 @@ export function ShopNoteEditControl({
   // Bytes read before the feed revokes preview URLs. A later step can fail
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
+
+  function endPickSession(): void {
+    pickSession.current += 1;
+    setPicking(0);
+  }
+
+  function replaceKept(next: ShopKeptMedia[]): void {
+    keptRef.current = next;
+    setKept(next);
+  }
+
+  function replacePhotoDrafts(next: ForumPhotoPayload[]): void {
+    photoDraftsRef.current = next;
+    setPhotoDrafts(next);
+  }
 
   function revokeOwnedPhotos(): void {
     for (const url of ownedPhotoUrls.current) {
@@ -228,22 +301,25 @@ export function ShopNoteEditControl({
   const token = session;
 
   async function openEditor(): Promise<void> {
-    if (openingRef.current) {
+    // A save still running would close the reopened steps when it settles.
+    if (openingRef.current || saveInFlight.current) {
       return;
     }
     openingRef.current = true;
+    endPickSession();
     try {
       keptStillBytes.current.clear();
       setDraft(stripShopHashtag(message.text));
       setPlace(message.place ?? null);
       setUsername(message.shopAccount?.username ?? '');
-      setPhotoDrafts([]);
+      replacePhotoDrafts([]);
       setSaveError(false);
+      setPickError(null);
       setHistory(null);
       setHistoryError(false);
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
       if (photos.length < message.photoCount) {
-        setKept([]);
+        replaceKept([]);
         setPhotoBaseline([]);
         revokeOwnedPhotos();
         try {
@@ -256,7 +332,7 @@ export function ShopNoteEditControl({
           }
           photos = loaded;
         } catch {
-          setKept([]);
+          replaceKept([]);
           setPhotoBaseline([]);
           revokeOwnedPhotos();
           setPhotosReady(false);
@@ -268,7 +344,7 @@ export function ShopNoteEditControl({
         try {
           photos = await ownFeedStills(photos, ownedPhotoUrls.current, keptStillBytes.current);
         } catch {
-          setKept([]);
+          replaceKept([]);
           setPhotoBaseline([]);
           setPhotosReady(false);
           setSaveError(true);
@@ -281,7 +357,7 @@ export function ShopNoteEditControl({
         existingVideoUrl ??
         (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
       setPhotoBaseline(photos);
-      setKept([
+      replaceKept([
         ...photos.map((url) => ({ url, kind: 'photo' as const })),
         ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
       ]);
@@ -304,32 +380,51 @@ export function ShopNoteEditControl({
 
   /* v8 ignore start -- edit mode never has a pending video to clear */
   function clearPendingPhotos(): void {
-    setPhotoDrafts([]);
+    replacePhotoDrafts([]);
   }
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
+    const session = pickSession.current;
     const prepared: ForumPhotoPayload[] = [];
-    for (const file of files) {
-      const result = await prepareForumPhoto(file);
-      if (result.ok) {
-        prepared.push(result.photo);
+    let error: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
+    setPicking((count) => count + 1);
+    try {
+      for (const file of files) {
+        try {
+          const result = await prepareForumPhoto(file);
+          if (result.ok) {
+            prepared.push(result.photo);
+          } else {
+            error = result.error;
+          }
+        } catch {
+          error = 'unsupported';
+        }
+      }
+    } finally {
+      if (session === pickSession.current) {
+        setPicking((count) => count - 1);
       }
     }
-    if (prepared.length > 0) {
-      setPhotoDrafts((current) => {
-        const keptCount = kept.filter((item) => item.kind === 'photo').length;
-        const room = 10 - keptCount - current.length;
-        if (room <= 0) {
-          return current;
-        }
-        return current.concat(prepared.slice(0, room));
-      });
+    if (session !== pickSession.current) {
+      return;
+    }
+    const keptCount = keptRef.current.filter((item) => item.kind === 'photo').length;
+    const current = photoDraftsRef.current;
+    const room = Math.max(0, 10 - keptCount - current.length);
+    if (prepared.length > room) {
+      error = 'tooMany';
+    }
+    setPickError(error);
+    if (prepared.length > 0 && room > 0) {
+      replacePhotoDrafts(current.concat(prepared.slice(0, room)));
     }
   }
 
   async function save(): Promise<void> {
     setSaving(true);
+    saveInFlight.current = true;
     setSaveError(false);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
@@ -378,26 +473,37 @@ export function ShopNoteEditControl({
       if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (!placesEqual(place, message.place ?? null)) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       const nextUser = usernameOf(username);
       const prevUser = message.shopAccount?.username ?? '';
       if (nextUser !== prevUser) {
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (photosChanged) {
         latest = await setMessageShopPhotos(token, message.id, stills);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       onUpdated(latest);
+      unreportedSave.current = true;
       setOpen(false);
+      reportSave();
     } catch {
       setSaveError(true);
     } finally {
+      saveInFlight.current = false;
+      if (reportWhenSettled.current) {
+        reportWhenSettled.current = false;
+        reportSave();
+      }
       setSaving(false);
     }
   }
@@ -421,7 +527,8 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
-            setOpen(false);
+            endPickSession();
+            closeEditor();
             return;
           }
           openEditor();
@@ -434,7 +541,7 @@ export function ShopNoteEditControl({
           <SundayWritingGate>
             <ShopAddWizard
               mode="edit"
-              posting={saving}
+              posting={saving || picking > 0}
               draft={draft}
               onDraftChange={setDraft}
               photoDrafts={photoDrafts}
@@ -443,8 +550,9 @@ export function ShopNoteEditControl({
                 void onPickFiles(files);
               }}
               onRemovePhoto={(index) => {
-                setPhotoDrafts((current) =>
-                  current.filter((_, photoIndex) => photoIndex !== index),
+                setPickError(null);
+                replacePhotoDrafts(
+                  photoDraftsRef.current.filter((_, photoIndex) => photoIndex !== index),
                 );
               }}
               onClearPhoto={clearPendingPhotos}
@@ -456,19 +564,36 @@ export function ShopNoteEditControl({
                 void save();
               }}
               onCancel={() => {
+                endPickSession();
                 setSaveError(false);
-                setOpen(false);
+                closeEditor();
               }}
               resetToken={0}
               maxLength={FORUM_MESSAGE_MAX_LENGTH - '\n\n#21GiftsShop'.length}
               submitLabel={t('shops.saveChanges')}
               keptMedia={kept}
               onRemoveKept={(index) => {
-                setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
+                setPickError(null);
+                replaceKept(keptRef.current.filter((_, keptIndex) => keptIndex !== index));
               }}
               imagesOnly
             />
           </SundayWritingGate>
+          {pickError === 'unsupported' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('inbox.errorUnsupported')}
+            </p>
+          ) : null}
+          {pickError === 'tooLarge' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('inbox.errorTooLarge')}
+            </p>
+          ) : null}
+          {pickError === 'tooMany' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('forum.errorTooMany')}
+            </p>
+          ) : null}
           {saveError ? (
             <p role="alert" className="text-xs text-app-danger">
               {t('forum.editShopNoteFailed')}

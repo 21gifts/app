@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import type { Account } from '@/lib/api-types';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -27,6 +28,9 @@ vi.mock('next/link', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: () => void } => ({ push: () => undefined }),
 }));
+
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 
 vi.mock('@/lib/api', () => ({
   fetchForumMessage: vi.fn(),
@@ -82,6 +86,8 @@ const quotedNote: ForumMessage = {
   videoContentType: null,
   role: 'founder',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const parentNote: ForumMessage = {
@@ -97,6 +103,8 @@ const parentNote: ForumMessage = {
   videoContentType: null,
   role: 'verified',
   replyCount: 1,
+  heartCount: 0,
+  hearted: false,
 };
 
 beforeEach(() => {
@@ -229,6 +237,32 @@ describe('ForumQuotedBody', () => {
       expect(translateConversation).not.toHaveBeenCalled();
     },
   );
+
+  it('loads a missing quote publicly while a login is still opening its wallet', async () => {
+    useAuthStore.setState({ session: 'tok', account: { id: 'acc' } as Account });
+    walletOpen.value = false;
+    fetchMessage.mockResolvedValue({ ...quotedNote, text: 'Nested' });
+    try {
+      renderWithLocale(
+        <ForumQuotedBody
+          text={`hello ${QUOTED_URL}`}
+          knownNotes={[]}
+          excludeId={PARENT_ID}
+          rateDay={null}
+          fiat="USD"
+          translate={false}
+        />,
+      );
+      await waitFor(() => {
+        expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
+      });
+      expect(fetchForum).not.toHaveBeenCalled();
+    } finally {
+      walletOpen.value = true;
+      cleanup();
+      useAuthStore.setState({ session: null, account: null });
+    }
+  });
 
   it('loads a missing quote with the session and passes marks through', async () => {
     useAuthStore.setState({ session: 'tok', account: null });
@@ -514,15 +548,8 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
 
-  it('ignores a photo blob if the nested post unmounts during fetch', async () => {
-    let resolvePhoto: ((blob: Blob) => void) | undefined;
-    fetchPhoto.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    const { unmount } = renderWithLocale(
+  it('renders the public still without fetching a photo blob', () => {
+    renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
         knownNotes={[quotedNote]}
@@ -531,13 +558,26 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    await waitFor(() => {
-      expect(fetchPhoto).toHaveBeenCalledWith(QUOTED_ID);
-    });
-    unmount();
-    resolvePhoto?.(new Blob(['photo'], { type: 'image/jpeg' }));
-    await Promise.resolve();
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    const img = screen.getByAltText('Photo from Cyrill');
+    expect(img.getAttribute('src')).toBe(`/messages/${QUOTED_ID}/photo.jpg`);
+    expect(img.getAttribute('loading')).toBe('lazy');
+    expect(img.getAttribute('fetchpriority')).toBe('low');
+    expect(img.getAttribute('decoding')).toBe('async');
+    expect(fetchPhoto).not.toHaveBeenCalled();
+  });
+
+  it('hides the quoted still after img error', () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[quotedNote]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Cyrill'));
+    expect(screen.queryByAltText('Photo from Cyrill')).toBeNull();
   });
 
   it('renders a nested post with no caption when the quoted note has empty text', async () => {
@@ -583,7 +623,6 @@ describe('ForumQuotedBody', () => {
 
   it('fetches a missing quoted note and strips the url after it resolves', async () => {
     fetchMessage.mockImplementation(async (id: string) => (id === QUOTED_ID ? quotedNote : null));
-    fetchPhoto.mockResolvedValue(new Blob(['photo'], { type: 'image/jpeg' }));
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
@@ -617,8 +656,10 @@ describe('ForumQuotedBody', () => {
         'object-contain',
       ]),
     );
-    expect(fetchPhoto).toHaveBeenCalledWith(QUOTED_ID);
-    expect(URL.createObjectURL).toHaveBeenCalled();
+    expect(screen.getByAltText('Photo from Cyrill').getAttribute('src')).toBe(
+      `/messages/${QUOTED_ID}/photo.jpg`,
+    );
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('leaves the url visible when fetchPublicMessage returns null', async () => {
@@ -741,7 +782,6 @@ describe('ForumQuotedBody', () => {
   });
 
   it('opens the original note from the caption, photo, and amount', async () => {
-    fetchPhoto.mockResolvedValue(new Blob(['photo'], { type: 'image/jpeg' }));
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}

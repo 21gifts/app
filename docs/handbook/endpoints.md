@@ -9,23 +9,23 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Settlement stays on the linked Wallet of Satoshi callback.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet.
 - **Errors:** Upstream 404/502.
 - **Used by:** Lightning wallets.
 - **Auth:** none.
 
 ## Endpoint: GET /pay/[username]
 
-- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
-- **Errors:** Upstream 404 when the person cannot be paid, 502 when the linked address cannot be resolved.
-- **Used by:** `PayLinkScreen`.
+- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`, and `charge`, the shop's pending charge or `null`) from the api.
+- **Errors:** Upstream 404 when the person cannot be paid, 502 when the payee's wallet cannot be resolved.
+- **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
 ## Endpoint: POST /pay/[username]/invoice
 
-- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**.
+- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
@@ -52,14 +52,14 @@
 ## Endpoint: POST /auth/passkey/authenticate/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/begin`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build.
 - **Used by:** `startPasskeyAuthentication`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/authenticate/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `finishPasskeyAuthentication`.
 - **Auth:** Public.
 
@@ -70,17 +70,32 @@
 - **Used by:** `reportDiagnostic`.
 - **Auth:** Public. No session.
 
+## Endpoint: POST /monitoring
+
+- **Purpose:** Same-origin tunnel for browser error reports and sampled performance transactions (`forwardSentryEnvelope`). Forwards the envelope to the project of `NEXT_PUBLIC_SENTRY_DSN`, and to nothing else.
+- **Errors:** 404 while error reporting is off (no DSN), 413 above 1 MiB, 400 when the envelope names another host or project, its header is missing or broken, it has no item, an item header is broken (also a `length` that is not a whole number of bytes inside the envelope, or that does not end at a newline or at the end of the envelope), or an item is anything but an error or a transaction; 502 when the Sentry server cannot be reached; otherwise the upstream status.
+- **Used by:** The browser SDK (`sentryOptions('browser')`).
+- **Auth:** Public. No session; the visitor's IP address, cookies, and headers are not forwarded.
+
+## Endpoint: POST /monitoring/csp
+
+- **Purpose:** Same-origin endpoint for Content-Security-Policy violation reports (`forwardCspReport`), named by `report-uri` and by the `csp` group of `Reporting-Endpoints`. Forwards each violation to the security endpoint of the `NEXT_PUBLIC_SENTRY_DSN` project, reduced to the directive, the blocked origin or keyword (`inline`, `eval`, `data`, …), the page's origin and first path segment when it is a route of `src/app`, the script's origin, the disposition (`report` or `enforce`), and line, column, and status numbers, then passed through the privacy scrubber.
+- **Inputs:** The legacy `{ "csp-report": {…} }` body (`application/csp-report`) or a Reporting API array (`application/reports+json`) whose `csp-violation` entries count. At most ten violations per request.
+- **Errors:** 404 while error reporting is off (no DSN), 413 above 64 KiB, 400 when the body is not JSON or holds no violation with a directive and an http(s) page, 502 when the Sentry server cannot be reached; otherwise 204.
+- **Used by:** Browsers, for the policy the middleware sends (`buildCsp`).
+- **Auth:** Public. No session; the visitor's IP address, cookies, headers, query strings, fragments, member paths, script samples, and referrers are not forwarded.
+
 ## Endpoint: POST /auth/passkey/register/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. A new account posts JSON `{ name }`. `{ viewKey }` (64 hex) claims an existing public profile and sends no `name`. The empty body remains the old unnamed path; the new-account path of this app does not use it.
-- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable.
+- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `startPasskeyRegistration`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/register/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 
@@ -132,7 +147,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the people-count chart on `/statistics` (every visitor, including signed-out, no goal).
+- **Used by:** `fetchGiftStats` on `/stats` and the people-count chart on `/statistics` (every visitor, including signed-out, no goal). Historical amounts there stay on each day's rate; live amounts use `GET /fx/spot`.
 - **Auth:** Public.
 
 ## Endpoint: GET /habits
@@ -149,6 +164,13 @@
 - **Used by:** `postMemberHabit` on `/habit-tracker`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
 
+## Endpoint: GET /fx/spot
+
+- **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
+- **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, and the payment fiat suffixes).
+- **Auth:** Public. No bearer.
+
 ## Endpoint: GET /shops/activity
 
 - **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
@@ -156,19 +178,19 @@
 - **Used by:** `fetchShopActivity` on `/statistics`.
 - **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
+## Endpoint: GET /funding/places
+
+- **Purpose:** Same-origin proxy of the public api `GET /funding/places`: the current grant round, its places, how many are admitted, how many are left, and the active-shop goal that opens the next round.
+- **Errors:** The proxy forwards the upstream status. Expected upstream error is 503 when funding is unavailable, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchGrantPlaces` in `GrantPlacesPanel` on `/grants` and `/grants/goals`.
+- **Auth:** No bearer. Every visitor can read the free places.
+
 ## Endpoint: GET /funding/goal
 
 - **Purpose:** Same-origin proxy of api `GET /funding/goal` (7 UTC days of shop till-charge counts, plus how many shops had a charge on 5 of those days). Not the public 30-day shop series.
 - **Errors:** The proxy forwards the upstream status. Expected upstream errors are 401 without a bearer session and 503 when the goal is unavailable, or 502 if this proxy cannot reach the api.
 - **Used by:** `fetchGrantContinuation` on `/grants/goals`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
-
-## Endpoint: GET /lightning-address
-
-- **Purpose:** Same-origin proxy of public LUD-16 resolve.
-- **Errors:** Upstream 400/502, or 502 if the api is unreachable.
-- **Used by:** `resolveLightningAddress` (LUD-16 helper).
-- **Auth:** Public.
 
 ## Endpoint: POST /me/name
 
@@ -247,6 +269,72 @@
 - **Used by:** `postWalletBackupSeen`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/report
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/report`. While the member is signed in, sends the wallet's balance (`balanceSats`, `syncedAt`) and the payments the api has not acknowledged yet (`payments`, at most 200 per request, each with `id`, `direction`, `status`, `amountSats`, `feeSats`, `timestamp`, `method`, `paymentHash`, `invoice`, `destination`, `description`, `lnurlComment`). Never a recovery phrase, private key, PRF output, or preimage.
+- **Returns:** Upstream `{ acknowledgedIds }`.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `postWalletReport` (from `reportWallet`).
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/wallet/hearts
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member.
+- **Returns:** Upstream `{ hearts }`, whose rows contain `paymentHash`, `messageId`, `authorName`, `text`, and `deleted`; hashes that are not this member's hearts are absent.
+- **Errors:** Upstream 400, 401, 413, or 502 if the api is unreachable. The wallet UI keeps its ordinary gift title when the lookup fails or has a bad body.
+- **Used by:** `fetchHeartPosts` (from `useHeartContext`).
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/events
+
+- **Purpose:** Same-origin proxy of api `POST /me/events`. Sends a batch of at most 50 interaction events of the signed-in member, each `{ name, at, path, props }`.
+- **Returns:** The upstream status.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `flushInteractions` and `logLogout` (the logout event in a request of its own).
+- **Auth:** Bearer.
+
+## Endpoint: PUT /me/wallet
+
+- **Purpose:** Same-origin proxy of api `PUT /me/wallet`. Claims the in-app wallet's identity public key for the account. Write-once after the wallet is verified.
+- **Errors:** Upstream 400, 401, 404 (feature off), 409 (wallet already verified), or 502 if the api is unreachable.
+- **Used by:** `putWallet`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurlpay/[pubkey]
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey`. The in-app wallet registers the account's username as its address on the app's own host; success marks the wallet verified.
+- **Errors:** Upstream 404 (feature off or not the account's own username and key), 409, other 4xx from the address server, 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet (`registerWalletAddress`).
+- **Auth:** Signed by the wallet (`X-Breez-Signature`, `X-Breez-Timestamp` forwarded).
+
+## Endpoint: POST /lnurlpay/[pubkey]/recover
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey/recover`. The in-app wallet looks up the address it registered.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlpay/[pubkey]/metadata
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlpay/:pubkey/metadata`. The in-app wallet reads the notes payers left on received payments.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlp/[username]/invoice
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlp/:username/invoice`. A payer's wallet asks for a payment request to a member's verified in-app wallet. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets, after `GET /.well-known/lnurlp/[username]`.
+- **Auth:** none.
+
+## Endpoint: GET /verify/[paymentHash]
+
+- **Purpose:** Same-origin proxy of api `GET /verify/:paymentHash`. A payer's wallet checks whether a payment to a member's in-app wallet settled. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets.
+- **Auth:** none.
+
 ## Endpoint: POST /me/passkey-renew/report
 
 - **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is the six safe fields plus optional public authenticator facts and browser capability names.
@@ -263,7 +351,7 @@
 
 ## Endpoint: POST /me/setup/skip
 
-- **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).
+- **Purpose:** Same-origin proxy to skip the name onboarding step (`{ step: 'name' }`). Rules and username cannot be skipped.
 - **Errors:** Upstream 400/401, or 502 if the api is unreachable.
 - **Used by:** `skipSetup`.
 - **Auth:** Bearer.
@@ -289,6 +377,20 @@
 - **Used by:** `fetchMemberPosts` via `MemberProfileScreen`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/members/[accountId]/shops
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/shops` for a signed-in member's top-level forum shop notes.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberShops` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]/credits
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/credits` for a signed-in member's top-level forum credit notes.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberCredits` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/members/[accountId]/replies
 
 - **Purpose:** Same-origin proxy of api `GET /members/:accountId/replies` for a signed-in member's forum replies.
@@ -303,11 +405,25 @@
 - **Used by:** `dismissForumLaws`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet-intro-seen
+
+- **Purpose:** Same-origin proxy that records that the member finished or skipped the one-time wallet tour on `/welcome` (`walletIntroSeen: true` on the account), so it is not shown again on any device. No body; idempotent.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `markWalletIntroSeen`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/notification-level
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/me/notification-level`. JSON body `{ level: "all"|"active"|"mentions" }` returns the owner Account.
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/notification-level`. JSON body `{ level: "all"|"active"|"mentions"|"none" }` returns the owner Account.
 - **Errors:** Upstream 401, 400 invalid level, or 502 if the api is unreachable.
 - **Used by:** `postNotificationLevel`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/heart-notifications
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/heart-notifications`. JSON body `{ enabled: boolean }` returns the owner Account (`notifyHearts`).
+- **Errors:** Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Used by:** `postHeartNotifications`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/amount-unit
@@ -340,9 +456,9 @@
 
 ## Endpoint: GET /pos/charge
 
-- **Purpose:** Same-origin proxy of api `GET /pos`. Returns the open charge or null, plus history.
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till asks it every three seconds while a charge is open and for one minute after it ran out.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
-- **Used by:** `fetchPosState`.
+- **Used by:** `fetchPosState` (`PosTill`, `PosAmount`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /pos/charge
@@ -431,7 +547,7 @@
 
 ## Endpoint: GET /public-messages/[id]/external-profile
 
-- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount` and `replyCount` are nonnegative integers; absent still parses.
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount`, `replyCount`, `shopCount`, and `creditCount` are nonnegative integers; absent still parses.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, upstream 503, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorProfile`.
 - **Auth:** Public.
@@ -441,6 +557,20 @@
 - **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-posts`, body `{ messages }` for that external author, no Bearer.
 - **Errors:** Upstream failure, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorPosts`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-shops
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-shops`, body `{ messages }` for that external author's shop notes, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorShops`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-credits
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-credits`, body `{ messages }` for that external author's credit notes, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorCredits`.
 - **Auth:** Public.
 
 ## Endpoint: GET /public-messages/[id]/external-replies
@@ -466,7 +596,7 @@
 
 ## Endpoint: GET /messages/compose-target
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats }` for the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats, firstPostFree }`: the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying, and whether this member's next top-level post is their free first post (no live or hidden top-level note of their own besides About me).
 - **Errors:** Upstream 401/409/400/503, or 502 if the api is unreachable.
 - **Used by:** `fetchComposeTarget`.
 - **Auth:** Bearer.
@@ -494,16 +624,44 @@
 
 ## Endpoint: POST /messages/[id]/repayment
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
-- **Used by:** `postRepaymentInvoice`.
+- **Used by:** No screen since `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`); kept as the api's single-share proxy.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).
-- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error. A heart (`heart: true`) the api cannot issue as a fee-free Spark invoice is 503 `{ error: 'HEART_UNAVAILABLE' }` with no `pr`; the proxy passes it through unchanged.
 - **Used by:** `postMessageInvoice`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurl/pay-request
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/pay-request`. Body `{ target }` (`user@domain` or a bech32 LNURL on another host). 200 `{ target, minSendableMsat, maxSendableMsat, commentAllowed, description, domain }`.
+- **Errors:** Upstream 400 `Not a payable address` (malformed, not https, not a pay request, or on this app's own host), 404 `Address not found`, 502 `Address could not be reached`, 401 without a session; 502 `Upstream api unreachable` when the api is unreachable.
+- **Used by:** `postLnurlPayRequest`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /me/loans
+
+- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag.
+- **Errors:** Upstream 401 or service errors, or 502 if the api is unreachable.
+- **Used by:** `getMyLoans` through `useMyLoans` for the loans card, Menu row, and `/loans/repay`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /messages/[id]/repayment/due
+
+- **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/due`. It returns every currently payable recipient bill for the author's funded loan, oldest first, plus waiting shares whose recipients cannot receive; one call is capped at 60 bills.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
+- **Used by:** `postRepaymentDue` through `useLoanRepay` before wallet preparation.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurl/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/invoice`. Body `{ target, amountMsat, comment? }`. The api resolves the target again, never takes a callback URL from the client, and checks amount, comment, invoice amount, and description hash. 200 `{ pr }`.
+- **Errors:** The errors of `POST /lnurl/pay-request`, plus 400 `Amount out of range` and 400 `Comment too long`.
+- **Used by:** `postLnurlInvoice`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /contact/submit
@@ -515,16 +673,23 @@
 
 ## Endpoint: GET /messages/[id]/photo
 
-- **Purpose:** Same-origin proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). Signed-in clients send Authorization (`fetchMessagePhoto`); the public note page fetches without Bearer (`fetchPublicMessagePhoto`). Always render via blob URLs — not bare `<img src>`.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). The extensionless route stays for `fetchMessagePhoto` and `fetchPublicMessagePhoto` (inbox, deleted staff row, shop-editor fallback, profile picture). Public forum stills use `<img src>` `/messages/{id}/photo.jpg` without Authorization.
 - **Errors:** Upstream 401/404, or 502 if the api is unreachable.
 - **Used by:** `fetchMessagePhoto`, `fetchPublicMessagePhoto`.
-- **Auth:** Optional Bearer (api photo is public; forum board still sends Bearer).
+- **Auth:** Optional Bearer.
+
+## Endpoint: GET /messages/[id]/photo.jpg
+
+- **Purpose:** Same-origin proxy of the api file of that extension. Authorization is removed before the upstream call so the edge can store the public still; `cache-control` is copied from the api.
+- **Errors:** Upstream 404, or 502 when the api is unreachable.
+- **Used by:** `forumPhotoSrc`.
+- **Auth:** None.
 
 ## Endpoint: GET /messages/[id]/photo/[file]
 
-- **Purpose:** Same-origin proxy of api extra stills at GET `/messages/:id/photo/{1-9}.jpg`. App Router `file` must match `{1-9}.{jpg|jpeg|png|webp}`; other names 404 without proxying. The proxy always requests `{n}.jpg` from the api (same bytes as `.jpeg`/`.png`/`.webp` aliases).
+- **Purpose:** Same-origin proxy of api extra stills at GET `/messages/:id/photo/{1-9}.jpg`. App Router `file` must match `{1-9}.jpg`; other names 404 without proxying.
 - **Errors:** Route 404 for unknown `file`; upstream 404/502 when the extra still is missing or unreachable.
-- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9.
+- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9, and `forumPhotoSrc`, which builds `/messages/{id}/photo/{n}.jpg` for index >= 1. `ForumBoard` and `PublicMessageLoader` attach public extra stills through that path.
 - **Auth:** Optional Bearer.
 
 ## Endpoint: GET /messages/[id]/[file]
@@ -534,32 +699,18 @@
 - **Used by:** Feed `<video src>` via `forumVideoSrc`.
 - **Auth:** None required.
 
-## Endpoint: POST /me/lightning-address
-
-- **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.
-- **Errors:** Upstream 400, or 502 if the api is unreachable.
-- **Used by:** `setLightningAddress`.
-- **Auth:** Bearer.
-
-## Endpoint: DELETE /me/lightning-address
-
-- **Purpose:** Same-origin proxy to unlink a Wallet of Satoshi address.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
-- **Used by:** `unlinkLightningAddress`.
-- **Auth:** Bearer.
-
 ## Endpoint: GET /push/vapid-public
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/push/vapid-public` (VAPID application server public key for Web Push subscribe).
 - **Errors:** Upstream 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/profile` and via `enablePush` from the SignedInChrome Notifications click.
+- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/settings` and via `enablePush` from the SignedInChrome Notifications click.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/push-subscriptions
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/push-subscriptions` (register a browser push subscription: `{ endpoint, keys: { p256dh, auth } }`).
 - **Errors:** Upstream 400 `{ error: "Invalid subscription" }`, 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `postPushSubscription` via `enablePush` on `/profile`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
+- **Used by:** `postPushSubscription` via `enablePush` on `/settings`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /conversations
@@ -613,7 +764,7 @@
 
 ## Endpoint: POST /conversations/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId, sparkInvoice? }` for the inbox pay sheet; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
 - **Auth:** Bearer.
@@ -671,7 +822,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).
 - **Errors:** Upstream 400, 401, 404, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `deletePushSubscription` via `disablePush` on `/profile`.
+- **Used by:** `deletePushSubscription` via `disablePush` on `/settings` and from `LogoutButton` (Menu and the Settings Account section).
 - **Auth:** Bearer.
 
 ## Endpoint: GET /trust/graph
@@ -725,9 +876,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. While applications are paused the api returns 403 `{ error: 'Applications are paused' }` for a caller whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. Role `basis` is 403 Forbidden, including those three usernames, and does not write a grant. The paused screen does not call this route. The apply walk calls it when `grantApplicationsPaused` is false, and, while paused, only for a verified account named one of those three with status `none` or `rejected`.
-- **Errors:** While applications are paused for everyone else: upstream 401/403, or 502 if the api is unreachable. When the apply walk is open: also upstream 400, 409, and 503, matching `postFundingApply`.
-- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it when the apply walk is open: a verified account with status `none` or `rejected`, and while paused only when that account is named `joey-rosima`, `vincent`, or `jewel-bacolbas`. A basis account does not call it.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Applications are open to every verified member. Role `basis` is 403 Forbidden and does not write a grant.
+- **Errors:** Upstream 400/401/403/409/503, matching `postFundingApply`, or 502 if the api is unreachable.
+- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it after Yes on the truth question for a verified account with status `none` or `rejected`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/payout-days
@@ -746,9 +897,9 @@
 
 ## Endpoint: GET /funding/daily-roster
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, and recipient rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment` and `/grants/payments/amounts`.
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, recipient rows, moderator payments switch, and moderator rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment`, `/grants/payments/amounts`, and `/grants/payments/moderators`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not an initiator or founder, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
-- **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment` and `DailyPaymentAmountsScreen` on `/grants/payments/amounts`.
+- **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment`, `DailyPaymentAmountsScreen` on `/grants/payments/amounts`, and `DailyPaymentModeratorsScreen` on `/grants/payments/moderators`.
 - **Auth:** Bearer session. The api allows an initiator or founder only. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /funding/daily-roster/comment
@@ -786,6 +937,34 @@
 - **Used by:** `deleteDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
 - **Auth:** Bearer session. The api allows an initiator or founder only.
 
+## Endpoint: POST /funding/daily-roster/moderators
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators` with `{ accountId, amountUsd }`. Appends one moderator stipend for that person.
+- **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `addDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/update
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/update` with `{ address, amountUsd }`. Changes one moderator stipend.
+- **Errors:** Upstream 400 `Unknown address` or `Invalid address or amount`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `updateDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/delete
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/delete` with `{ address }`. Removes one moderator.
+- **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `deleteDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/payments
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/payments` with `{ enabled }` (boolean). Sets the moderator payments switch only.
+- **Errors:** Upstream 400 `Invalid payments switch`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `saveDailyRosterModeratorPayments` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
 ## Endpoint: GET /funding/applications/[accountId]
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications/:accountId` (staff review payload: account, grant, living-room posts).
@@ -803,7 +982,7 @@
 ## Endpoint: POST /funding/admit
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/admit` with `{ accountId }`. Target pending or trial.
-- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable. A 409 `{ error: 'All grant places are taken' }` means the round has no free place; `postFundingAdmit` throws `FUNDING_PLACES_FULL_ERROR` for it.
 - **Used by:** `postFundingAdmit` in `FundingApplicationDetailScreen`.
 - **Auth:** Bearer (founder or moderator).
 

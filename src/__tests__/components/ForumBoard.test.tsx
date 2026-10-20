@@ -1,11 +1,15 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
+import { MOTION_FOLD_MS, MOTION_SETTLE_EVENT, MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import {
   ForumBoard,
+  type ForumPayInvoice,
   revealPaySheet,
   revealReplyForm,
   type ForumBoardProps,
@@ -24,7 +28,25 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
+import { payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  sentWalletPay,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const push = vi.fn();
 
@@ -56,38 +78,36 @@ vi.mock('@/lib/api', () => ({
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
+  fetchMessagePhoto: vi.fn(),
+  fetchShopNoteEdits: vi.fn().mockResolvedValue([]),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';
+import { fetchMessagePhoto } from '@/lib/api';
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-const originalUserAgent = navigator.userAgent;
-const locationAssign = vi.fn();
-const locationStub = { assign: locationAssign, href: 'http://localhost/' };
 
-const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
-const ANDROID_MOBILE_UA =
-  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+/** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Asserts that no pay sheet shows an invoice QR or hands the payment to a wallet app. */
+function expectWalletOnly(): void {
+  expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
+}
 
 beforeEach(() => {
   push.mockClear();
   consumePendingForumCompose();
   consumeSkipIntroduceOverlay();
   HTMLElement.prototype.scrollIntoView = vi.fn();
-  locationAssign.mockReset();
-  locationStub.href = 'http://localhost/';
-  vi.stubGlobal('location', locationStub);
 });
 
 afterEach(() => {
   cleanup();
   useAuthStore.getState().clearAuth();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
-  Object.defineProperty(navigator, 'userAgent', {
-    configurable: true,
-    value: originalUserAgent,
-  });
-  vi.unstubAllGlobals();
+  vi.mocked(useWalletPay).mockRestore();
 });
 
 const SAMPLE: ForumMessage = {
@@ -103,6 +123,8 @@ const SAMPLE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const MULTILINE: ForumMessage = {
@@ -118,6 +140,8 @@ const MULTILINE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -133,6 +157,8 @@ const FIVE_SATS: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const PHOTO: ForumPhotoPayload = {
@@ -160,7 +186,6 @@ const idleProps: Pick<
   | 'payBusy'
   | 'payError'
   | 'payInvoice'
-  | 'payWaiting'
   | 'onPayOpen'
   | 'onPayDraftChange'
   | 'onPaySubmit'
@@ -193,7 +218,6 @@ const idleProps: Pick<
   payBusy: false,
   payError: null,
   payInvoice: null,
-  payWaiting: false,
   onPayOpen: () => undefined,
   onPayDraftChange: () => undefined,
   onPaySubmit: () => undefined,
@@ -385,10 +409,10 @@ describe('ForumBoard', () => {
       />,
     );
     const labeled = screen.getByRole('link', { name: 'Happyland' });
-    expect(labeled.getAttribute('href')).toBe('/map?pin=m1');
+    expect(labeled.getAttribute('href')).toBe('/shops?pin=m1#map');
     fireEvent.click(labeled);
     expect(screen.getByRole('link', { name: '1.00000, 2.00000' }).getAttribute('href')).toBe(
-      '/map?pin=m-coords',
+      '/shops?pin=m-coords#map',
     );
     expect(screen.queryByRole('link', { name: 'Stall' })).toBeNull();
     expect(screen.queryByRole('link', { name: '5.00000, 6.00000' })).toBeNull();
@@ -850,7 +874,13 @@ describe('ForumBoard', () => {
         onDismissLaws={onDismissLaws}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    const dismiss = screen.getByRole('button', { name: 'Dismiss' });
+    expect(dismiss.className.split(' ')).not.toContain('absolute');
+    expect(dismiss.parentElement?.className).toBe('absolute right-3 top-3');
+    const card = dismiss.closest('[data-laws-card]');
+    expect(card?.className).toContain('px-12');
+    expect(card?.className).toContain('py-5');
+    fireEvent.click(dismiss);
     expect(onDismissLaws).toHaveBeenCalledTimes(1);
   });
 
@@ -1200,7 +1230,7 @@ describe('ForumBoard', () => {
       id: `m${index + 1}`,
       text: `Message ${index + 1}`,
     }));
-    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
       void node;
     });
     renderWithLocale(
@@ -1223,8 +1253,34 @@ describe('ForumBoard', () => {
     expect(nearEndRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m3"]'));
   });
 
+  it('attaches nearEndRef to the empty-feed line when no row is loaded', () => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
+      void node;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        nearEndRef={nearEndRef}
+      />,
+    );
+
+    expect(nearEndRef).toHaveBeenCalledWith(
+      screen.getByText('No messages yet — be the first to write one.'),
+    );
+  });
+
   it('attaches nearEndRef to the first visible note when fewer than eight render', () => {
-    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
       void node;
     });
     renderWithLocale(
@@ -1492,6 +1548,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1540,6 +1598,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1625,6 +1685,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1662,6 +1724,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1685,6 +1749,525 @@ describe('ForumBoard', () => {
     expect(photo.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+  });
+
+  it('renders a public photo.jpg src without a blob URL', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const img = screen.getByAltText('Photo from Ada');
+    expect(img.getAttribute('src')).toBe('/messages/m-photo/photo.jpg');
+    expect(img.getAttribute('loading')).toBe('eager');
+    expect(img.getAttribute('fetchpriority')).toBe('high');
+    expect(img.getAttribute('decoding')).toBe('async');
+  });
+
+  it('keeps a data URL composer preview ahead of the public still path', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo:0': 'data:image/jpeg;base64,abc' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      'data:image/jpeg;base64,abc',
+    );
+  });
+
+  it('keeps a blob photo URL ahead of the public still path', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo:0': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+  });
+
+  it('renders extra stills as photo/{n}.jpg when photoCount is greater than one', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-gallery', hasPhoto: true, photoCount: 2, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('src')).toBe('/messages/m-gallery/photo.jpg');
+    expect(photos[1]?.getAttribute('src')).toBe('/messages/m-gallery/photo/1.jpg');
+    expect(photos[0]?.getAttribute('loading')).toBe('eager');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('high');
+    expect(photos[1]?.getAttribute('loading')).toBe('lazy');
+    expect(photos[1]?.getAttribute('fetchpriority')).toBe('low');
+  });
+
+  it('does not render a public still for a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-hidden',
+            hasPhoto: true,
+            photoCount: 1,
+            text: '',
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('keeps a blob still on a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-hidden',
+            hasPhoto: true,
+            photoCount: 1,
+            text: '',
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-hidden:0': 'blob:hidden' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:hidden');
+  });
+
+  it('appends ?v= from photoVersions only on that note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-a', hasPhoto: true, photoCount: 1, text: '', sats: 5 },
+          { ...SAMPLE, id: 'm-b', name: 'Bob', hasPhoto: true, photoCount: 1, text: '', sats: 5 },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-a': '2', 'm-b': '' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/m-a/photo.jpg?v=2',
+    );
+    expect(screen.getByAltText('Photo from Bob').getAttribute('src')).toBe(
+      '/messages/m-b/photo.jpg',
+    );
+  });
+
+  it('uses lazy low priority for the third card still', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-0', hasPhoto: true, photoCount: 1, text: 'one', sats: 5 },
+          {
+            ...SAMPLE,
+            id: 'm-1',
+            name: 'Bob',
+            hasPhoto: true,
+            photoCount: 1,
+            text: 'two',
+            sats: 5,
+          },
+          {
+            ...SAMPLE,
+            id: 'm-2',
+            name: 'Carol',
+            hasPhoto: true,
+            photoCount: 1,
+            text: 'three',
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const third = screen.getByAltText('Photo from Carol');
+    expect(third.getAttribute('loading')).toBe('lazy');
+    expect(third.getAttribute('fetchpriority')).toBe('low');
+  });
+
+  it('does not pass a public still into the shop editor for a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-shop',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            hasPhoto: true,
+            photoCount: 1,
+            deletedAt: '2026-08-29T15:00:00.000Z',
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopNoteEdit
+        onShopNoteUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+  });
+
+  it('loads a public shop still through fetchMessagePhoto', async () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const createObjectURL = URL.createObjectURL;
+    const revokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob([Uint8Array.of(1)]));
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[
+            {
+              ...SAMPLE,
+              id: 'm-shop',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              hasPhoto: true,
+              photoCount: 1,
+              sats: 5,
+            },
+          ]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          photoUrls={{ 'm-shop:0': '/messages/m-shop/photo.jpg' }}
+          shopNoteEdit
+          onShopNoteUpdated={() => undefined}
+          {...modeProps('all')}
+        />,
+      );
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-shop/photo.jpg',
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      await waitFor(() => {
+        expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
+      });
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('token', 'm-shop', 0);
+    } finally {
+      cleanup();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: createObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: revokeObjectURL,
+      });
+    }
+  });
+
+  it('keeps blob and data stills in the shop editor', async () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const createObjectURL = URL.createObjectURL;
+    const revokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:copy'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (url === 'blob:kept-0' || url === 'data:image/jpeg;base64,aaa') {
+        return {
+          ok: true,
+          blob: async () => ({
+            type: 'image/jpeg',
+            arrayBuffer: async () => Uint8Array.of(1).buffer,
+          }),
+        };
+      }
+      return {
+        ok: false,
+        blob: async () => ({ type: '', arrayBuffer: async () => new ArrayBuffer(0) }),
+      };
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    vi.mocked(fetchMessagePhoto).mockClear();
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-shop',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            hasPhoto: true,
+            photoCount: 2,
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-shop:0': 'blob:kept-0', 'm-shop:1': 'data:image/jpeg;base64,aaa' }}
+        shopNoteEdit
+        onShopNoteUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledWith('blob:kept-0');
+        expect(fetchSpy).toHaveBeenCalledWith('data:image/jpeg;base64,aaa');
+      });
+      expect(fetchMessagePhoto).not.toHaveBeenCalled();
+      expect(fetchSpy.mock.calls.some((call) => String(call[0]).includes('/messages/'))).toBe(
+        false,
+      );
+    } finally {
+      cleanup();
+      vi.unstubAllGlobals();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: createObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: revokeObjectURL,
+      });
+    }
+  });
+
+  it('removes a still after img error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('shows a new still version after a failed load', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-photo': '1' }}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    rerender(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-photo': '2' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/m-photo/photo.jpg?v=2',
+    );
+  });
+
+  it('omits a dead gallery slide and drops the gallery when none remain', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-gallery', hasPhoto: true, photoCount: 2, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    fireEvent.error(photos[1] as HTMLElement);
+    expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
   });
 
   it('omits Send Bitcoin when payable is false', () => {
@@ -1725,6 +2308,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -1779,6 +2364,107 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(onPayOpen).toHaveBeenCalledWith('m1');
     expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it("hides the reply amount field on the viewer's own note and keeps it on another note", () => {
+    const own: ForumMessage = { ...SAMPLE, accountId: 'acc-ada' };
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[own]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    const replyForm = screen.getByLabelText('Your reaction').closest('form')!;
+    expect(within(replyForm).getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    rerender(
+      <ForumBoard
+        messages={[{ ...own, accountId: 'acc-bob' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.getElementById('forum-reply-amount')).not.toBeNull();
+  });
+
+  it("hides Send Bitcoin on the viewer's own payable reply, nested or listed", () => {
+    const ownReply: ForumMessage = {
+      ...SAMPLE,
+      id: 'r-own',
+      accountId: 'acc-ada',
+      text: 'My own reply',
+      parentId: 'p1',
+    };
+    const foreignReply: ForumMessage = {
+      ...ownReply,
+      id: 'r-bob',
+      accountId: 'acc-bob',
+      text: 'Bob reply',
+    };
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-bob' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[ownReply, foreignReply]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    const ownCard = document.querySelector('[data-reply-id="r-own"]') as HTMLElement;
+    const bobCard = document.querySelector('[data-reply-id="r-bob"]') as HTMLElement;
+    expect(within(ownCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(within(bobCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    rerender(
+      <ForumBoard
+        messages={[ownReply]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('My own reply')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
   it('shows a photo draft preview and removes it by index', () => {
@@ -1902,7 +2588,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     expect(input.hasAttribute('multiple')).toBe(true);
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     fireEvent.click(screen.getByLabelText('Add a photo or video'));
@@ -1913,6 +2599,27 @@ describe('ForumBoard', () => {
     expect(onPickFiles).toHaveBeenCalledWith([first, second]);
     fireEvent.change(input, { target: { files: [] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo or video' });
+    const placeButton = screen.getByRole('button', { name: 'Add a place' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      attachButton.compareDocumentPosition(placeButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenLastCalledWith([shot]);
   });
 
   it('renders the amount sheet and submits pay', async () => {
@@ -1953,7 +2660,6 @@ describe('ForumBoard', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(locationAssign).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
@@ -1975,12 +2681,11 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
         payMessageId="fee-note"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
         replies={[{ ...SAMPLE, id: 'r1' }]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expectWalletOnly();
   });
 
   it('shows a composer pay sheet when the fee note is hidden on Active', () => {
@@ -1999,10 +2704,10 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
         payMessageId="fee-note"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
       />,
     );
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expectWalletOnly();
   });
 
   it('keeps the composer pay sheet when payHost is composer and the fee note is listed', () => {
@@ -2022,10 +2727,9 @@ describe('ForumBoard', () => {
         payMessageId="fee-note"
         payHost="composer"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
       />,
     );
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
   });
 
@@ -2045,18 +2749,13 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
         payMessageId="r1"
         payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
         replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id }]}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
   });
 
-  it('labels the iPhone amount CTA Continue in English and Weiter in German', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('labels the amount CTA Continue in English and Weiter in German', () => {
     const { unmount } = renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2099,44 +2798,6 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Bezahlen' })).toBeNull();
   });
 
-  it('does not assign the wallet href on iPhone after Continue', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
-    const onPaySubmit = vi.fn().mockResolvedValue({
-      messageId: 'm1',
-      pr: 'lnbc21n1example',
-      amountSats: 21,
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe('http://localhost/');
-  });
-
   it('shows a live CHF equivalent on the German pay sheet without a picker', () => {
     renderWithLocale(
       <ForumBoard
@@ -2167,47 +2828,7 @@ describe('ForumBoard', () => {
     expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
   });
 
-  it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: ANDROID_MOBILE_UA,
-    });
-    const onPaySubmit = vi.fn().mockResolvedValue({
-      messageId: 'm1',
-      pr: 'lnbc21n1example',
-      amountSats: 21,
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe('http://localhost/');
-  });
-
-  it('keeps ₿-only when the preferred fiat has no rate on that gift day', () => {
+  it('keeps ₿-only when the preferred fiat has no rate', () => {
     renderWithLocale(
       <ForumBoard
         messages={[FIVE_SATS]}
@@ -2322,6 +2943,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
+  it('shows the author-wallet alert in the reply composer when replyFormError is authorWallet', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="authorWallet"
+        {...modeProps('all')}
+      />,
+    );
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe("The author's wallet cannot receive this Bitcoin payment");
+    expect(alert.closest('form')).toBe(screen.getByLabelText('Your reaction').closest('form'));
+  });
+
   it('shows pay author-wallet error', () => {
     renderWithLocale(
       <ForumBoard
@@ -2345,7 +2990,7 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('shows the invoice QR and wallet button', async () => {
+  it('shows the wallet slot without an invoice QR or wallet-app button', () => {
     const onPayCancel = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -2361,29 +3006,33 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         onPayCancel={onPayCancel}
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    const walletButton = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
-    expect(walletButton.textContent).toContain('Pay');
-    expect(walletButton.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send to Ada');
+    expect(within(sheet).getByText('₿21')).toBeTruthy();
+    expect(within(sheet).getByRole('status').textContent).toBe(WALLET_UNAVAILABLE);
+    expectWalletOnly();
+    expect(sheet.querySelector('img')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
-    const back = screen.getByRole('button', { name: 'Close' });
-    expect(back.parentElement?.className).toContain('absolute');
-    expect(back.parentElement?.className).toContain('left-2');
-    expect(back.parentElement?.className).toContain('top-2');
-    expect(back.closest('[data-pay-sheet]')).toBeTruthy();
-    fireEvent.click(back);
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    // The amount form stays behind the sheet, with its own Close in the corner.
+    const form = document.querySelector('form[data-pay-amount]');
+    expect(form).not.toBeNull();
+    const formClose = within(form as HTMLElement).getByRole('button', { name: 'Close' });
+    expect(formClose.parentElement?.className).toContain('absolute');
+    expect(formClose.parentElement?.className).toContain('left-3');
+    expect(formClose.parentElement?.className).toContain('top-3');
+    const close = within(sheet).getByRole('button', { name: 'Close' });
+    fireEvent.click(close);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
-  it('shows a fiat equivalent on the pay confirm line', async () => {
+  it('shows a fiat equivalent on the pay confirm line', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2398,7 +3047,6 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         rateDay={{
           sats: 100_000_000,
           usd: '100000.00',
@@ -2409,50 +3057,15 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
-    expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('₿21')).toBeTruthy();
+    // The fiat sits on its own line under the amount, without a separator.
+    expect(within(sheet).getByText('$0.02').tagName).toBe('P');
+    expect(within(sheet).queryByText(/·/)).toBeNull();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
   });
 
-  it('hides the invoice QR on iPhone and keeps the wallet button', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        {...modeProps('all')}
-      />,
-    );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc21n1example'));
-  });
-
-  it('shows the invoice amount on iPhone when payDraft is empty', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('shows the invoice amount when payDraft is empty', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2478,17 +3091,13 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText(/Pay ₿42/)).toBeTruthy();
-    expect(screen.getByText('$0.04')).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('₿42')).toBeTruthy();
+    expect(within(sheet).getByText('$0.04')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
-  it('shows waiting copy on iPhone after the invoice is minted', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('keeps the amount form behind the sheet, disabled, once the invoice is minted', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2503,14 +3112,97 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    const form = document.querySelector('form[data-pay-amount]') as HTMLElement;
+    expect(form).not.toBeNull();
+    expect((within(form).getByRole('textbox') as HTMLInputElement).disabled).toBe(true);
+    expect(
+      (within(form).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('names the author of a reply in the title of its pay sheet', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id, name: 'Bob', text: 'Hi' }]}
+        payMessageId="r1"
+        payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 5 }}
+        {...modeProps('all')}
+      />,
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(within(sheet).getByText('₿5')).toBeTruthy();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  });
+
+  it('shows the success step when the payment closes the card sheet, then unmounts after the hold', () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+      const board = (open: boolean): ReactElement => (
+        <ForumBoard
+          messages={[{ ...SAMPLE, parentId: 'p1' }]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          {...(open
+            ? {
+                payMessageId: 'm1',
+                payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
+              }
+            : {})}
+          {...modeProps('all')}
+        />
+      );
+      const view = renderWithLocale(board(true));
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      // The host's poll saw the payment and closed the slot: the sheet says so for a moment.
+      view.rerender(board(false));
+      const sheet = screen.getByRole('dialog');
+      expect(sheet.getAttribute('data-pay-sheet')).toBe('success');
+      // The pay step fades out while the success step fades in.
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(within(sheet).getByRole('status').textContent).toContain('Sent to Ada');
+      expect(within(sheet).getByText('₿21')).toBeTruthy();
+      expect(within(sheet).queryByText(WALLET_UNAVAILABLE)).toBeNull();
+      // The closed amount form stays mounted, inert, for the hold.
+      expect(document.querySelector('form[data-pay-amount]')?.closest('[inert]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_HOLD_MS - MOTION_SWAP_FADE_MS - 1);
+      });
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(document.querySelector('form[data-pay-amount]')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('disables the amount field and Continue while pay is busy', () => {
@@ -2538,41 +3230,6 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value:
-        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        {...modeProps('all')}
-      />,
-    );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toMatch(/^intent:lightning:/);
-  });
-
   it('shows German invoice sheet labels', () => {
     renderWithLocale(
       <ForumBoard
@@ -2592,12 +3249,15 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    // The laws hint's dismiss reads Schließen too, so look inside the pay sheet.
+    const sheet = document.querySelector('[data-pay-sheet]') as HTMLElement;
+    expect(within(sheet).getByRole('button', { name: 'Schließen' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
     expect(screen.queryByText('Zurück')).toBeNull();
-    const walletButton = screen.getByRole('button', { name: 'Mit Wallet of Satoshi zahlen' });
-    expect(walletButton.textContent).toContain('Zahlen');
-    expect(walletButton.textContent).not.toContain('Pay');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden.',
+    );
+    expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
   });
 
   it('shows formError empty alert', () => {
@@ -3157,7 +3817,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('not paid back');
   });
 
-  it("disables Pay today's repayment while that note's invoice is open", () => {
+  it("shows the loan repayment link only for the viewer's own funded live credit", () => {
     const funded = {
       ...SAMPLE,
       accountId: 'acc-ada',
@@ -3165,9 +3825,10 @@ describe('ForumBoard', () => {
       goalSats: 21000,
       goalRepayable: true as const,
     };
-    const board = (invoice: ForumBoardProps['payInvoice']) => (
+    const onToggleExpand = vi.fn();
+    const board = (message: ForumMessage, showRepayLink = true) => (
       <ForumBoard
-        messages={[funded]}
+        messages={[message]}
         error={false}
         loading={false}
         posting={false}
@@ -3177,22 +3838,26 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        payInvoice={invoice}
         viewerAccountId="acc-ada"
-        onRepay={() => undefined}
+        repayLink={showRepayLink}
+        onToggleExpand={onToggleExpand}
         {...modeProps('all')}
       />
     );
-    const { rerender } = renderWithLocale(
-      board({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }),
-    );
-    const repayButton = (): HTMLButtonElement =>
-      screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement;
-    expect(repayButton().disabled).toBe(true);
-    rerender(board(null));
-    expect(repayButton().disabled).toBe(false);
-    rerender(board({ messageId: 'm-other', pr: 'lnbc21n1other', amountSats: 21 }));
-    expect(repayButton().disabled).toBe(false);
+    const { rerender } = renderWithLocale(board(funded));
+    const link = screen.getByRole('link', { name: 'Repay your loan' });
+    expect(link.getAttribute('href')).toBe('/loans/repay');
+    fireEvent.click(link);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    rerender(board(funded, false));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, accountId: 'acc-bob' }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, sats: 20999 }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, deletedAt: '2026-08-29T15:00:00.000Z' }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
   });
 
   it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {
@@ -3299,7 +3964,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3341,7 +4006,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3395,7 +4060,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3496,7 +4161,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3538,7 +4203,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3592,7 +4257,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3715,6 +4380,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'founder',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     vi.mocked(fetchPublicMessage).mockImplementation(async (id: string) => {
       if (id.toLowerCase() === 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec') {
@@ -3738,6 +4405,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'verified',
             replyCount: 1,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -3765,6 +4434,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'founder',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -3798,6 +4469,8 @@ describe('ForumBoard', () => {
           videoContentType: null,
           role: 'founder',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         };
       }
       return null;
@@ -3850,6 +4523,8 @@ describe('ForumBoard', () => {
           videoContentType: null,
           role: 'founder',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         };
       }
       return null;
@@ -4423,6 +5098,36 @@ describe('ForumBoard', () => {
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:preview');
   });
 
+  it('uses the public still as the video poster when both are present', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-poster',
+            hasPhoto: true,
+            photoCount: 1,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('poster')).toBe(
+      '/messages/vid-poster/photo.jpg',
+    );
+  });
+
   it('uses the photo URL as the video poster when both are present', () => {
     renderWithLocale(
       <ForumBoard
@@ -4525,6 +5230,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -4598,6 +5305,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const { rerender } = renderWithLocale(
       <ForumBoard
@@ -5061,6 +5770,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5121,6 +5832,8 @@ describe('ForumBoard', () => {
               videoContentType: null,
               role: 'basis',
               replyCount: 0,
+              heartCount: 0,
+              hearted: false,
             },
           ]}
           {...modeProps('all')}
@@ -5191,6 +5904,8 @@ describe('ForumBoard', () => {
               videoContentType: null,
               role: 'basis',
               replyCount: 0,
+              heartCount: 0,
+              hearted: false,
             },
           ]}
           {...modeProps('all')}
@@ -5249,6 +5964,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5291,6 +6008,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5311,7 +6030,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -5350,6 +6069,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -5390,6 +6111,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -5433,6 +6156,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5653,6 +6378,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5689,6 +6416,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5733,6 +6462,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5778,6 +6509,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5822,6 +6555,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5862,6 +6597,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5909,6 +6646,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5955,6 +6694,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5995,6 +6736,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6033,6 +6776,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6070,6 +6815,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6107,6 +6854,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6151,6 +6900,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6806,6 +7557,49 @@ describe('ForumBoard', () => {
     expect(top).toBe(12);
   });
 
+  it('leaves the feed in place behind a posting-fee sheet', () => {
+    const board = (payInvoice: ForumPayInvoice | null): ReactElement => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          payMessageId={payInvoice === null ? null : 'compose'}
+          payHost={payInvoice === null ? null : 'composer'}
+          payInvoice={payInvoice}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    // The open note's reaction form is not pulled into view while the fee sheet is open.
+    view.rerender(
+      board({ messageId: 'compose', pr: 'lnbc1n1example', amountSats: 1, postsOnPay: true }),
+    );
+    expect(top).toBe(0);
+  });
+
   it('consumes pending compose when the composer is hidden', () => {
     renderWithLocale(
       <ForumBoard
@@ -6901,7 +7695,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -6940,6 +7734,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -6965,7 +7761,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -7004,6 +7800,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -7023,7 +7821,7 @@ describe('ForumBoard', () => {
         role: 'founder',
         name: 'Ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -7146,6 +7944,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
     expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
@@ -7252,6 +8051,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -7293,6 +8094,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const { rerender } = renderWithLocale(
       <ForumBoard
@@ -7382,6 +8185,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -7403,7 +8208,7 @@ describe('ForumBoard', () => {
         role: 'founder',
         name: 'Ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -7442,6 +8247,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -7457,6 +8264,367 @@ describe('ForumBoard', () => {
 });
 
 describe('reply form size', () => {
+  it('places the page by the final layout when the reaction form has settled', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1'));
+    // The first reveal (jsdom: every box at 0, so it moves the port by its 12px margin). The fold
+    // is opening, so the port is marked while the reveal follows it.
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const settle = (el: Element): void => {
+      act(() => {
+        el.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+      });
+    };
+    // In-between scrolls do not move the rest position.
+    port.scrollTop = 200;
+    port.dispatchEvent(new Event('scroll'));
+    // The box around the form glides too: its settle places the page, the mark stays for the fold.
+    const glide = form.closest('[data-auto-height]') as HTMLElement;
+    glide.toggleAttribute('data-gliding', true);
+    const fold = form.closest('[data-collapse]') as HTMLElement;
+    port.scrollTop = 200;
+    settle(fold);
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    // The fold marks itself open after its settle event (its timer is not run here).
+    fold.setAttribute('data-collapse', 'open');
+    // While the reveal still follows, a box settling that does not hold the form neither places the
+    // page nor ends the follow.
+    const outside = document.createElement('div');
+    (form.closest('li') as HTMLElement).append(outside);
+    port.scrollTop = 200;
+    settle(outside);
+    expect(port.scrollTop).toBe(200);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    // The last move ends: placed from the rest position by the final layout, mark gone, and one
+    // scroll event announces where the page rests.
+    let scrolls = 0;
+    const onScroll = (): void => {
+      scrolls += 1;
+    };
+    port.addEventListener('scroll', onScroll);
+    port.scrollTop = 200;
+    settle(glide);
+    port.removeEventListener('scroll', onScroll);
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toBe(1);
+    glide.toggleAttribute('data-gliding', false);
+    // Nor once the follow is over.
+    port.scrollTop = 200;
+    settle(outside);
+    expect(port.scrollTop).toBe(200);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('starts the move of a list that arrives after the fold has settled from where the fold started', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const board = (
+      expandedId: string | null,
+      replies: ForumMessage[] | null,
+      repliesLoading: boolean,
+    ) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={replies}
+          repliesLoading={repliesLoading}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const settleFold = (): void => {
+      const fold = screen.getByLabelText('Your reaction').closest('[data-collapse]') as HTMLElement;
+      act(() => {
+        fold.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+      });
+    };
+    const view = renderWithLocale(board(null, null, false));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    // The card opens while its replies load; the fold settles first (jsdom: each reveal adds the
+    // 12px margin to where it starts).
+    view.rerender(board('m1', null, true));
+    settleFold();
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    port.dispatchEvent(new Event('scroll'));
+    // The list arrives: placed from 30 again, not from the 42 the first move ended on.
+    view.rerender(board('m1', [], false));
+    expect(port.scrollTop).toBe(42);
+
+    // When the reader scrolls before the list arrives, the list moves the page from there.
+    view.rerender(board(null, null, false));
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1', null, true));
+    settleFold();
+    expect(port.scrollTop).toBe(42);
+    port.scrollTop = 100;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1', [], false));
+    expect(port.scrollTop).toBe(112);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('ends a follow when the fold settles in a browser without ResizeObserver', () => {
+    const previous = globalThis.ResizeObserver;
+    Reflect.deleteProperty(globalThis, 'ResizeObserver');
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1'));
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    const fold = screen.getByLabelText('Your reaction').closest('[data-collapse]') as HTMLElement;
+    let scrolls = 0;
+    const onScroll = (): void => {
+      scrolls += 1;
+    };
+    port.addEventListener('scroll', onScroll);
+    port.scrollTop = 200;
+    act(() => {
+      fold.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    port.removeEventListener('scroll', onScroll);
+    // Placed by the final layout from where the page rested, the mark gone, one scroll announced.
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toBe(1);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('ignores a settle when no reaction form or sheet is open', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={null}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 200;
+    act(() => {
+      port.querySelector('li')?.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.scrollTop).toBe(200);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('follows the fold only while the reaction form moves into place', () => {
+    const made: { onResize: ResizeObserverCallback; observed: Element[] }[] = [];
+    class FakeResizeObserver {
+      readonly entry: { onResize: ResizeObserverCallback; observed: Element[] };
+
+      constructor(onResize: ResizeObserverCallback) {
+        this.entry = { onResize, observed: [] };
+        made.push(this.entry);
+      }
+
+      observe(target: Element): void {
+        this.entry.observed.push(target);
+      }
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    vi.useFakeTimers();
+    const boardWith = (expandedId: string | null, replies: ForumMessage[]) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={replies}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const board = (expandedId: string | null) => boardWith(expandedId, []);
+    const view = renderWithLocale(board(null));
+    view.rerender(board('m1'));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    // The latest watch on the fold: each run of the reveal effect makes its own.
+    const resize = (): void => {
+      const foldWatch = made.findLast((entry) =>
+        entry.observed.some((node) => node.hasAttribute('data-collapse')),
+      );
+      if (foldWatch === undefined) {
+        throw new Error('the fold is not observed');
+      }
+      act(() => {
+        foldWatch.onResize([], {} as ResizeObserver);
+      });
+    };
+    // The fold is still opening: the reveal follows it (in jsdom every box is at 0, so the
+    // reveal of the form always moves the port by its 12px margin).
+    port.scrollTop = 0;
+    resize();
+    expect(port.scrollTop).toBe(12);
+    act(() => {
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
+    });
+    // Open and at rest: a change elsewhere in the fold does not move the page.
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    resize();
+    expect(port.scrollTop).toBe(0);
+    // A reply above opening its own controls makes the whole replies block glide: the form is
+    // not moving into place, so neither that glide nor its end moves the page.
+    const replyForm = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const outer = replyForm
+      .closest('[data-collapse]')
+      ?.querySelector('[data-auto-height]') as HTMLElement;
+    expect(outer).not.toBe(replyForm.closest('[data-auto-height]'));
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(0);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    act(() => {
+      outer.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.scrollTop).toBe(0);
+    outer.toggleAttribute('data-gliding', false);
+    // A list that has just arrived makes the same block glide: that moves the form into place.
+    view.rerender(boardWith('m1', [{ ...SAMPLE, id: 'r1', name: 'Bob', text: 'Hi', sats: 0 }]));
+    port.scrollTop = 0;
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(12);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    act(() => {
+      outer.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    outer.toggleAttribute('data-gliding', false);
+    // Once that move has ended, a later glide of the block is again someone else's.
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(0);
+    outer.toggleAttribute('data-gliding', false);
+    // The box right around the form glides (a line in the form folds in): the reveal follows again.
+    const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const box = form.closest('[data-auto-height]') as HTMLElement;
+    box.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(12);
+    // Closed card: nothing left to reveal.
+    view.rerender(board(null));
+    act(() => {
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
+    });
+    port.scrollTop = 0;
+    resize();
+    expect(port.scrollTop).toBe(0);
+    vi.useRealTimers();
+    globalThis.ResizeObserver = previous;
+  });
+
   it('scrolls again when the open reply form changes size', () => {
     const observed: Element[] = [];
     let disconnected = false;
@@ -7503,7 +8671,7 @@ describe('reply form size', () => {
     globalThis.ResizeObserver = previous;
   });
 
-  it('watches the pay sheet instead of pinning the reply form', () => {
+  it('keeps watching the reply form, disabled, behind the reaction pay sheet', () => {
     const observed: Element[] = [];
     class FakeResizeObserver {
       constructor(private readonly onResize: ResizeObserverCallback) {
@@ -7542,22 +8710,136 @@ describe('reply form size', () => {
           payMessageId="m1"
           payHost="card"
           payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-          payWaiting
           {...modeProps('all')}
         />
       </AppShell>,
     );
+    // The sheet draws itself in the frame's overlay, outside the board: the reveal keeps the
+    // reaction form, which stays in place behind it, disabled, with the text kept.
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(sheet.closest('[data-message-id]')).toBeNull();
     expect(
-      observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-sheet')),
-    ).toBe(true);
-    expect(
-      observed.some(
-        (node) => node instanceof HTMLElement && node.hasAttribute('data-reply-pay-page'),
-      ),
-    ).toBe(true);
-    expect(screen.getByText('Hi Bob')).toBeTruthy();
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+      observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-amount')),
+    ).toBe(false);
+    expect(observed.some((node) => node instanceof HTMLFormElement)).toBe(true);
+    const field = screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+    expect(field.value).toBe('Hi Bob');
+    expect(field.disabled).toBe(true);
+    expect(within(sheet).queryByText('Hi Bob')).toBeNull();
     globalThis.ResizeObserver = previous;
+  });
+
+  it('does not take the in-between scrolls of a followed move as the reader position', () => {
+    const board = (withSheet: boolean) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={withSheet ? 'm1' : null}
+          replies={[]}
+          {...(withSheet
+            ? {
+                payMessageId: 'm1' as const,
+                payHost: 'card' as const,
+                payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
+              }
+            : {})}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(false));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    // Opening the card reveals its reaction form (jsdom: the port moves by its 12px margin).
+    view.rerender(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    expect(port.scrollTop).toBe(42);
+    // The reveal follows the opening fold: its scroll events are not the reader's position.
+    port.dispatchEvent(new Event('scroll'));
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    view.rerender(board(true));
+    expect(port.scrollTop).toBe(30);
+    view.unmount();
+    // Leaving the page takes the mark off the port.
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+  });
+
+  it('does not pull the page back to the reaction form of a closing card', () => {
+    vi.useFakeTimers();
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    const scrolls = vi.fn();
+    port.addEventListener('scroll', scrolls);
+    // Closed while the form still eases open: the follow ends where the page is, and the board
+    // announces that resting position (jsdom: the reveal of the form moves the port by 12px).
+    view.rerender(board('m1'));
+    expect(port.scrollTop).toBe(12);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    port.scrollTop = 30;
+    view.rerender(board(null));
+    expect(port.scrollTop).toBe(30);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toHaveBeenCalledTimes(1);
+    act(() => {
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
+    });
+    // Closed once open and at rest: the folding form stays mounted, inert, and is not revealed.
+    view.rerender(board('m1'));
+    act(() => {
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
+    });
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board(null));
+    expect(screen.getByLabelText('Your reaction').closest('[inert]')).not.toBeNull();
+    expect(port.scrollTop).toBe(0);
+    vi.useRealTimers();
   });
 
   it('restores the scroll position when the pay sheet opens', () => {
@@ -7582,14 +8864,27 @@ describe('reply form size', () => {
                 payMessageId: 'm1' as const,
                 payHost: 'card' as const,
                 payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
-                payWaiting: true,
-                replyPayPreview: 'Hi Bob',
               }
             : {})}
           {...modeProps('all')}
         />
       </AppShell>
     );
+    const resized: ResizeObserverCallback[] = [];
+    class FakeResizeObserver {
+      constructor(private readonly onResize: ResizeObserverCallback) {
+        resized.push(onResize);
+      }
+
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    vi.useFakeTimers();
     const view = renderWithLocale(board(false, []));
     const port = document.querySelector('[data-scrollport]');
     if (!(port instanceof HTMLElement)) {
@@ -7598,9 +8893,21 @@ describe('reply form size', () => {
     port.scrollTop = 48;
     port.dispatchEvent(new Event('scroll'));
     view.rerender(board(true, []));
+    // The card's amount form opens in its fold under the note, with the sheet over the page.
+    expect(document.querySelector('form[data-pay-amount]')).not.toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
+    expect(port.scrollTop).toBe(48);
+    // The fold glides open, and the observer of the fold hears it.
+    act(() => {
+      for (const onResize of resized) {
+        onResize([], {} as ResizeObserver);
+      }
+    });
     expect(port.scrollTop).toBe(48);
     view.rerender(board(true, [{ ...SAMPLE, id: 'r-extra', text: 'Later' }]));
     expect(port.scrollTop).toBe(48);
+    vi.useRealTimers();
+    globalThis.ResizeObserver = previous;
   });
 
   it('keeps the card pay sheet under a note when the reaction pay preview is absent', () => {
@@ -7624,8 +8931,10 @@ describe('reply form size', () => {
         {...modeProps('all')}
       />,
     );
-    expect(document.querySelector('[data-pay-sheet]')).toBeTruthy();
-    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    // The card's amount form and its sheet, not the reaction pay sheet (no reaction text).
+    expect(document.querySelector('form[data-pay-amount]')).not.toBeNull();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
     expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 });
@@ -7719,5 +9028,1825 @@ describe('revealPaySheet', () => {
     sheet.getBoundingClientRect = () => box(480, 900);
     revealPaySheet(scroller, sheet);
     expect(scroller.scrollTop).toBe(0);
+  });
+});
+
+describe('ForumBoard in-app wallet pay', () => {
+  function cardBoard(sparkInvoice: string | null): ReactElement {
+    return (
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21, sparkInvoice }}
+        {...modeProps('all')}
+      />
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays a gift from a ready wallet, with no invoice QR and no wallet-app button', async () => {
+    setWalletUsable('ready');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    const button = await within(sheet).findByRole('button', { name: 'Send ₿21' });
+    expect(button.className).toContain('w-full');
+    expect(screen.queryByText(/Fee ₿/)).toBeNull();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expectWalletOnly();
+    fireEvent.click(button);
+    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('says Pay and post on the posting fee, and keeps Send on other invoices', async () => {
+    setWalletUsable('ready');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{
+          messageId: 'm1',
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: SPARK_INVOICE,
+          postsOnPay: true,
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const button = await screen.findByRole('button', { name: /^Pay ₿21 and post/ });
+    expect(button.textContent).toBe('Pay ₿21 and post');
+    const sheet = screen.getByRole('dialog', { name: 'Pay to post' });
+    // The posting fee has no amount form.
+    expect(document.querySelector('[data-pay-amount]')).toBeNull();
+    expect(within(sheet).queryByRole('button', { name: /^Send/ })).toBeNull();
+    fireEvent.click(button);
+    expect(send).toHaveBeenCalledTimes(1);
+    cleanup();
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /and post/ })).toBeNull();
+  });
+
+  it('pays the payment request from the wallet without a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(cardBoard(null));
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
+    expectWalletOnly();
+  });
+
+  it('offers no other way to pay when the wallet is not configured', () => {
+    setWalletUsable('disabled');
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
+    expectWalletOnly();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('pays the posting fee in the composer sheet from the wallet', async () => {
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payInvoice={{
+          messageId: 'fee-note',
+          pr: 'lnbc1',
+          amountSats: 1,
+          sparkInvoice: SPARK_INVOICE,
+        }}
+        replies={[{ ...SAMPLE, id: 'r1' }]}
+      />,
+    );
+    // The composer sheet has no one to name: it reads Send.
+    const sheet = screen.getByRole('dialog', { name: 'Send' });
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send');
+    expect(await within(sheet).findByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+    expectWalletOnly();
+  });
+
+  describe('reaction form behind the reaction pay sheet', () => {
+    function reactionBoard(
+      open: boolean,
+      onPayCancel: () => void = () => undefined,
+      onToggleExpand: (messageId: string) => void = () => undefined,
+    ): ReactElement {
+      return (
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          onPayCancel={onPayCancel}
+          onToggleExpand={onToggleExpand}
+          expandedId="m1"
+          replies={[]}
+          replyDraft="Hi Bob"
+          replyAmountDraft="21"
+          replyPayPreview={open ? 'Hi Bob' : null}
+          payMessageId={open ? 'm1' : null}
+          payHost={open ? 'card' : null}
+          payInvoice={open ? { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 } : null}
+          {...modeProps('all')}
+        />
+      );
+    }
+
+    it('stays disabled through the success step after the payment, then frees up', () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+        const view = renderWithLocale(reactionBoard(true));
+        const field = screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+        expect(field.disabled).toBe(true);
+        view.rerender(reactionBoard(false));
+        expect(field.disabled).toBe(true);
+        act(() => {
+          vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
+        });
+        expect(field.disabled).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps the card as it is through the success step', () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+        const onToggleExpand = vi.fn();
+        const view = renderWithLocale(reactionBoard(true, () => undefined, onToggleExpand));
+        view.rerender(reactionBoard(false, () => undefined, onToggleExpand));
+        fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+        expect(onToggleExpand).not.toHaveBeenCalled();
+        act(() => {
+          vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+        expect(onToggleExpand).toHaveBeenCalledWith('m1');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    describe('two cards one after the other', () => {
+      const cardB: ForumMessage = { ...SAMPLE, id: 'm2', accountId: 'acc-bea', name: 'Bea' };
+
+      function deferredSend(): {
+        send: () => Promise<WalletSendResult>;
+        settle: (result: WalletSendResult) => void;
+      } {
+        let settle: (result: WalletSendResult) => void = () => undefined;
+        const pending = new Promise<WalletSendResult>((resolve) => {
+          settle = resolve;
+        });
+        return { send: vi.fn(() => pending), settle };
+      }
+
+      function twoCards(expanded: 'm1' | 'm2', open: boolean): ReactElement {
+        return (
+          <ForumBoard
+            messages={[SAMPLE, cardB]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId={expanded}
+            replies={[]}
+            replyDraft="Hi"
+            replyAmountDraft="21"
+            replyPayPreview={open ? 'Hi' : null}
+            payMessageId={open ? expanded : null}
+            payHost={open ? 'card' : null}
+            payInvoice={
+              open
+                ? {
+                    messageId: expanded,
+                    pr: `lnbc21n1${expanded}`,
+                    amountSats: 21,
+                    sparkInvoice: `spark-${expanded}`,
+                  }
+                : null
+            }
+            {...modeProps('all')}
+          />
+        );
+      }
+
+      function field(): HTMLTextAreaElement {
+        return screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+      }
+
+      afterEach(resetWallet);
+
+      it("never lets card A's late failed send free card B's form through B's success step", async () => {
+        setWalletUsable('ready');
+        const a = deferredSend();
+        const b = deferredSend();
+        vi.mocked(payFromWallet)
+          .mockReset()
+          .mockResolvedValueOnce(confirmResult(a.send))
+          .mockResolvedValueOnce(confirmResult(b.send));
+        const view = renderWithLocale(twoCards('m1', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        // A's host closes while A's send is pending: A's form is held.
+        view.rerender(twoCards('m1', false));
+        expect(field().disabled).toBe(true);
+        view.rerender(twoCards('m2', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        await act(async () => {
+          a.settle({
+            kind: 'failed',
+            failure: {
+              stage: 'send',
+              reason: 'sdk_error',
+              method: 'spark',
+              amountSats: 21,
+              feeSats: 0,
+            },
+          });
+          b.settle({ kind: 'paid' });
+          await Promise.resolve();
+        });
+        view.rerender(twoCards('m2', false));
+        expect(await screen.findByText('Sent to Bea')).toBeTruthy();
+        expect(field().disabled).toBe(true);
+      });
+
+      it("never lets card A's late paid send hold card B's form when B sent nothing", async () => {
+        setWalletUsable('ready');
+        const a = deferredSend();
+        vi.mocked(payFromWallet)
+          .mockReset()
+          .mockResolvedValueOnce(confirmResult(a.send))
+          .mockResolvedValueOnce(confirmResult());
+        const view = renderWithLocale(twoCards('m1', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        view.rerender(twoCards('m1', false));
+        view.rerender(twoCards('m2', true));
+        await screen.findByRole('button', { name: /^Send ₿21/ });
+        await act(async () => {
+          a.settle({ kind: 'paid' });
+          await Promise.resolve();
+        });
+        // B closes without a send: nothing to hold.
+        view.rerender(twoCards('m2', false));
+        expect(field().disabled).toBe(false);
+        expect(screen.queryByText('Sent to Bea')).toBeNull();
+      });
+    });
+
+    it('frees up at once when the member closes the sheet', () => {
+      const onPayCancel = vi.fn();
+      const view = renderWithLocale(reactionBoard(true, onPayCancel));
+      const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+      fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+      expect(onPayCancel).toHaveBeenCalledTimes(1);
+      view.rerender(reactionBoard(false, onPayCancel));
+      expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+    });
+  });
+
+  it('passes the sparkInvoice to the reaction pay page', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyDraft="Hi Bob"
+        replyAmountDraft="21"
+        replyPayPreview="Hi Bob"
+        payMessageId="m1"
+        payHost="card"
+        payInvoice={{
+          messageId: 'm1',
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: SPARK_INVOICE,
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(await within(sheet).findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('shows Send ₿1 on a post and on a reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onHeartTip={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Bob',
+            accountId: 'acc-bob',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it('hides Send ₿1 on a post and a reply whose author cannot receive', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', payable: false }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        onHeartTip={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Bob',
+            accountId: 'acc-bob',
+            parentId: 'm1',
+            payable: false,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Bob')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
+  it('hides Send ₿1 on the viewer own post and reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-ada"
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Ada',
+            accountId: 'acc-ada',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
+  it('does not hide Send ₿1 when only viewerAccountId matches the author', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        onHeartTip={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Ada',
+            accountId: 'acc-ada',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it('shows the balance sentence without +1 when needsBalance', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-viewer"
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: false, plusOne: false, needsBalance: true },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('A Bitcoin balance is required for this.');
+    expect(screen.queryByText('+1')).toBeNull();
+  });
+
+  it('shows +1 when the heart is paid', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-viewer"
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, needsBalance: false },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('+1')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Send ₿1' }).querySelector('svg')?.getAttribute('fill'),
+    ).toBe('currentColor');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('calls onHeartTip with the message id when Send ₿1 is clicked', () => {
+    const onHeartTip = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        onHeartTip={onHeartTip}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+    expect(onHeartTip).toHaveBeenCalledWith('m1');
+  });
+
+  it('hides Send ₿1 on a board without onHeartTip', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText(SAMPLE.text)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
+  it('shows the server heart count to the right of the icon', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('4');
+  });
+
+  it('fills the icon when hearted without a view', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', hearted: true }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(heart.className.split(' ')).toContain('text-app-accent');
+    expect(heart.className.split(' ')).not.toContain('scale-110');
+  });
+
+  it('adds extra onto the server heart count', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: false, needsBalance: false, extra: 2 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('6');
+  });
+
+  it('shows +1 when plusOne and keeps the button labelled Send ₿1', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('+1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it('shows the count 0 when heartCount is 0 and there is no extra', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('0');
+  });
+
+  it('hides the heart and the count without onHeartTip, on the own note, when not payable, and when deleted', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            heartViewerId="acc-ada"
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, accountId: 'acc-ada', payable: false, heartCount: 4 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[
+              {
+                ...SAMPLE,
+                accountId: 'acc-ada',
+                deletedAt: '2026-08-29T15:00:00.000Z',
+                heartCount: 4,
+              },
+            ]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+  });
+
+  it('scales only while plusOne; hearted without plusOne is filled and accent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', hearted: true }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const withPlusOne = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(withPlusOne.className.split(' ')).toContain('scale-110');
+    expect(withPlusOne.className.split(' ')).toContain('text-app-accent');
+  });
+});
+
+describe('ForumBoard writer', () => {
+  /** `matchMedia` answering a coarse (touch) or fine primary pointer. */
+  function stubPointer(coarse: boolean): void {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query.includes('pointer: coarse') && coarse,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      })),
+    );
+  }
+
+  /** The forum home: a board with a writer whose state lives in the parent, as on `/welcome`. */
+  function renderHome(
+    props: Partial<ForumBoardProps> = {},
+    startOpen = false,
+  ): ReturnType<typeof renderWithLocale> & {
+    rerenderHome: (next: Partial<ForumBoardProps>) => void;
+    onOpen: ReturnType<typeof vi.fn>;
+    setOpen: (open: boolean) => void;
+  } {
+    let setProps: (next: Partial<ForumBoardProps>) => void = () => undefined;
+    let setWriterOpen: (open: boolean) => void = () => undefined;
+    const onOpen = vi.fn();
+    function Home(): ReactElement {
+      const [current, setCurrent] = useState(props);
+      const [open, setOpen] = useState(startOpen);
+      setProps = setCurrent;
+      setWriterOpen = setOpen;
+      return (
+        <AppShell mode="fill">
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            allowAsk
+            composeIntent="post"
+            {...idleProps}
+            {...modeProps('all')}
+            writer={{
+              open,
+              onOpen: () => {
+                onOpen();
+                setOpen(true);
+              },
+              onClose: () => {
+                setOpen(false);
+              },
+            }}
+            {...current}
+          />
+        </AppShell>
+      );
+    }
+    const view = renderWithLocale(<Home />);
+    return {
+      ...view,
+      onOpen,
+      rerenderHome: (next) => {
+        act(() => {
+          setProps(next);
+        });
+      },
+      setOpen: (open) => {
+        act(() => {
+          setWriterOpen(open);
+        });
+      },
+    };
+  }
+
+  /** The writer layer, or null while it is closed. */
+  function writerLayer(container: HTMLElement): HTMLElement | null {
+    return container.querySelector('[data-app-body] > .contents > [data-scrollport]');
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('leaves every other ForumBoard as it was, even on a touch device', () => {
+    stubPointer(true);
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError="empty"
+          allowAsk
+          composeIntent="post"
+          {...idleProps}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const field = screen.getByRole('textbox', { name: 'Your message' });
+    const form = field.closest('form')!;
+    const root = form.closest('[class*="border-t"]') as HTMLElement;
+    expect(root.className).toBe(
+      'flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6',
+    );
+    expect(screen.getByRole('group', { name: 'Compose' }).parentElement).toBe(root);
+    expect(form.closest('.sunday-write-field')!.parentElement).toBe(root);
+    expect((form.firstElementChild as HTMLElement).className).toBe('flex items-center gap-2');
+    expect(field.className).not.toContain('pointer-coarse');
+    expect(screen.getByRole('button', { name: 'Post' }).className).not.toContain('pointer-coarse');
+    expect(form.hasAttribute('data-writing-composer')).toBe(false);
+    expect(document.querySelector('[data-writing-composer]')).toBeNull();
+    expect(root.contains(screen.getByRole('alert'))).toBe(true);
+    expect(screen.queryByRole('heading', { name: 'Send a post' })).toBeNull();
+  });
+
+  it('shows no composer, Post / Ask pill or composer error on the page while the writer is closed', () => {
+    const { container } = renderHome({ formError: 'empty' });
+    expect(screen.queryByRole('textbox', { name: 'Your message' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Compose' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(writerLayer(container)).toBeNull();
+    // The laws hint, the view filter and the feed stay where they were.
+    expect(screen.getByText(getCatalog('en')['forum.laws1'])).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByText(SAMPLE.text)).toBeTruthy();
+  });
+
+  it('opens over the frame body with the title, the pill and the composer, and focuses the field', () => {
+    stubPointer(true);
+    const view = renderHome({ formError: 'empty' });
+    view.setOpen(true);
+    const layer = writerLayer(view.container)!;
+    expect(layer).not.toBeNull();
+    expect(layer.className).toBe(
+      "min-h-0 min-w-0 absolute inset-0 z-30 rounded-b-3xl bg-app-card [html[data-menu-sheet='1']_&]:hidden",
+    );
+    const inner = layer.firstElementChild as HTMLElement;
+    expect(inner.hasAttribute('data-writing-composer')).toBe(true);
+    expect(inner.className).toBe('flex flex-col gap-4 px-5 pt-6 pb-6');
+    const heading = within(layer).getByRole('heading', { name: 'Send a post' });
+    expect(heading.className).toBe('text-center text-base font-semibold text-app-fg');
+    const pill = within(layer).getByRole('group', { name: 'Compose' });
+    const field = within(layer).getByRole('textbox', { name: 'Your message' });
+    expect(heading.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(pill.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.activeElement).toBe(field);
+    // The same two rows on a touch device: the photo icon row, then the field with send.
+    const photoRow = field.closest('form')!.firstElementChild as HTMLElement;
+    expect(photoRow.className).toBe('flex items-center gap-2');
+    expect(photoRow.contains(within(layer).getByRole('button', { name: 'Take a photo' }))).toBe(
+      true,
+    );
+    expect(
+      photoRow.contains(within(layer).getByRole('button', { name: 'Add a photo or video' })),
+    ).toBe(true);
+    expect(photoRow.contains(field)).toBe(false);
+    const post = within(layer).getByRole('button', { name: 'Post' });
+    expect(photoRow.contains(post)).toBe(false);
+    const textRow = [...(photoRow.parentElement?.children ?? [])].find((child) =>
+      child.contains(field),
+    ) as HTMLElement;
+    expect(textRow.contains(field)).toBe(true);
+    expect(textRow.contains(post)).toBe(true);
+    expect(field.compareDocumentPosition(post) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field.className).not.toContain('pointer-coarse:');
+    expect(within(layer).getByRole('button', { name: 'Post' }).className).not.toContain(
+      'pointer-coarse:',
+    );
+    expect(within(layer).getByRole('alert').textContent).toBe(getCatalog('en')['forum.errorEmpty']);
+    // The feed stays on the page under the writer.
+    expect(layer.contains(screen.getByText(SAMPLE.text))).toBe(false);
+    expect(document.querySelector('[data-scroll-page]')!.contains(layer)).toBe(false);
+  });
+
+  it('shows a chosen place on its own line between the photo row and the text field', () => {
+    const view = renderHome(
+      {
+        placeDraft: { lat: 1, lng: 2, label: 'Stall' },
+        onPlaceDraftChange: () => undefined,
+      },
+      true,
+    );
+    const layer = writerLayer(view.container)!;
+    const stall = within(layer).getByText('Stall');
+    const placeButton = within(layer).getByRole('button', { name: 'Add a place' });
+    const field = within(layer).getByRole('textbox', {
+      name: getCatalog('en')['forum.composerLabel'],
+    });
+    const form = field.closest('form')!;
+    const photoRow = form.firstElementChild as HTMLElement;
+    const textRow = [...form.children].find((child) => child.contains(field)) as HTMLElement;
+    expect(photoRow.contains(placeButton)).toBe(true);
+    expect(photoRow.compareDocumentPosition(stall) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(stall.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.contains(stall)).toBe(true);
+    expect(photoRow.contains(stall)).toBe(false);
+    expect(textRow.contains(stall)).toBe(false);
+  });
+
+  it('titles the writer Ask for money and shows the Ask wizard when Ask is chosen', () => {
+    const view = renderHome({ composeIntent: 'ask' }, true);
+    const layer = writerLayer(view.container)!;
+    expect(within(layer).getByRole('heading', { name: 'Ask for money' })).toBeTruthy();
+    expect(within(layer).getByText('How much?')).toBeTruthy();
+    expect(within(layer).queryByRole('textbox', { name: 'Your message' })).toBeNull();
+  });
+
+  /** The amount form of the open pay slot: it sits where the slot is placed (writer or page). */
+  function payAmountForm(): HTMLElement {
+    const forms = document.querySelectorAll<HTMLElement>(
+      'form[data-pay-amount]:not([data-collapse][inert] *)',
+    );
+    expect(forms).toHaveLength(1);
+    return forms[0] as HTMLElement;
+  }
+
+  it('hosts the posting-fee sheet on the page, not in the writer, and a loose amount box on the page', () => {
+    const composer = renderHome(
+      {
+        payMessageId: 'fee-note',
+        payHost: 'composer',
+        payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1, postsOnPay: true },
+      },
+      true,
+    );
+    // The posting fee has no amount box; its sheet draws over the frame, outside the writer.
+    const sheet = screen.getByRole('dialog', { name: 'Pay to post' });
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(writerLayer(composer.container)!.contains(sheet)).toBe(false);
+    expect(document.querySelector('form[data-pay-amount]')).toBeNull();
+    // Its host is on the page, so a paid post that closes the writer keeps it for the success step.
+    const host = document.querySelector('[data-scroll-page] [data-collapse]:not([inert])');
+    expect(host).not.toBeNull();
+    expect(writerLayer(composer.container)!.contains(host)).toBe(false);
+    composer.setOpen(false);
+    expect(screen.getByRole('dialog', { name: 'Pay to post' })).toBe(sheet);
+    composer.unmount();
+    const loose = renderHome(
+      {
+        payMessageId: 'elsewhere',
+        payInvoice: { messageId: 'elsewhere', pr: 'lnbc1', amountSats: 1 },
+      },
+      true,
+    );
+    const form = payAmountForm();
+    expect(writerLayer(loose.container)!.contains(form)).toBe(false);
+    expect(document.querySelector('[data-scroll-page]')!.contains(form)).toBe(true);
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    // A tap in the loose amount box stays in it.
+    const stop = vi.spyOn(Event.prototype, 'stopPropagation');
+    fireEvent.click(form);
+    expect(stop).toHaveBeenCalled();
+    stop.mockRestore();
+  });
+
+  it('keeps a composer pay slot opened with the writer closed on the page, also once the writer opens', () => {
+    const view = renderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+    });
+    const page = document.querySelector('[data-scroll-page]')!;
+    const form = payAmountForm();
+    expect(page.contains(form)).toBe(true);
+    view.setOpen(true);
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(payAmountForm()).toBe(form);
+    expect(page.contains(form)).toBe(true);
+  });
+
+  it('takes a compose request on an open writer without a text field (Ask for money)', () => {
+    const view = renderHome({ composeIntent: 'ask' }, true);
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).not.toHaveBeenCalled();
+    expect(consumePendingForumCompose()).toBe(false);
+  });
+
+  it('opens the closed writer on a compose request and focuses its field', () => {
+    const view = renderHome();
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Your message' }));
+  });
+
+  it('focuses the open writer on a compose request without moving the page', () => {
+    const view = renderHome({}, true);
+    const port = document.querySelector('[data-scroll-page]')!.parentElement as HTMLElement;
+    let top = 40;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    const field = screen.getByRole('textbox', { name: 'Your message' });
+    field.blur();
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(field);
+    expect(top).toBe(40);
+  });
+
+  it('opens the writer for a compose request left pending before it mounted', () => {
+    requestForumCompose();
+    const view = renderHome();
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Your message' }));
+  });
+
+  it('takes a compose request left pending for a writer that is already open at mount', () => {
+    requestForumCompose();
+    const view = renderHome({}, true);
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(screen.getByRole('textbox', { name: 'Your message' })).toBeTruthy();
+  });
+
+  it('does not pull to refresh while the writer is open', () => {
+    const onRefresh = vi.fn();
+    const view = renderHome({ onRefresh }, true);
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+    view.setOpen(false);
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on the owner and keeps nothing of the writer on the page', () => {
+    const view = renderHome({}, true);
+    expect(writerLayer(view.container)).not.toBeNull();
+    view.setOpen(false);
+    expect(writerLayer(view.container)).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Your message' })).toBeNull();
+    view.rerenderHome({ draft: 'Kept draft' });
+    view.setOpen(true);
+    expect(screen.getByRole('textbox', { name: 'Your message' })).toHaveProperty(
+      'value',
+      'Kept draft',
+    );
+  });
+});
+
+describe('ForumBoard loan block', () => {
+  const LOAN: ForumMessage = {
+    ...SAMPLE,
+    id: 'loan1',
+    name: 'Maria',
+    accountId: 'acc-maria',
+    text: 'A new burner for the stall',
+    sats: 10_500,
+    goalSats: 21_000,
+    goalRepayable: true,
+    goalTermDays: 30,
+  };
+
+  function board(props: Partial<ForumBoardProps> = {}): ReactElement {
+    return (
+      <ForumBoard
+        messages={[LOAN]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+        {...props}
+      />
+    );
+  }
+
+  afterEach(() => {
+    delete document.documentElement.dataset['localSunday'];
+  });
+
+  /** A host that opens and closes the card in the same click, unless it refuses to. */
+  function Host({
+    refuse = false,
+    repliesLoading = false,
+    replies = null,
+  }: {
+    refuse?: boolean;
+    repliesLoading?: boolean;
+    replies?: ForumMessage[] | null;
+  }): ReactElement {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    return board({
+      expandedId,
+      repliesLoading,
+      replies,
+      onToggleExpand: (id) => {
+        if (!refuse) {
+          setExpandedId((current) => (current === id ? null : id));
+        }
+      },
+    });
+  }
+
+  function amountField(): HTMLElement | null {
+    return document.getElementById('forum-reply-amount');
+  }
+
+  it('opens the money reaction from Lend and puts the focus in its amount field', () => {
+    const view = renderWithLocale(<Host repliesLoading />);
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
+    expect(document.activeElement).not.toBe(amountField());
+    view.rerender(<Host replies={[]} />);
+    expect(document.activeElement).toBe(amountField());
+    expect(screen.getByLabelText('Amount to lend')).toBe(amountField());
+  });
+
+  it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <AppShell mode="fill">
+        {board({ onToggleExpand, expandedId: 'loan1', replies: [] })}
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    const form = amountField()?.closest('form');
+    if (!(form instanceof HTMLElement)) {
+      throw new Error('missing reaction form');
+    }
+    vi.spyOn(port, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 400, 300));
+    vi.spyOn(form, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 500, 400, 100));
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(amountField());
+    expect(top).toBeGreaterThan(0);
+  });
+
+  it('drops the Lend intent when the card is closed before its form is ready', () => {
+    const view = renderWithLocale(<Host repliesLoading />);
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
+  });
+
+  it('drops the Lend intent when the host refuses to open the card', () => {
+    const view = renderWithLocale(<Host refuse replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(amountField()).toBeNull();
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
+  });
+
+  it('drops the Lend focus when the amount field cannot take it', () => {
+    const view = renderWithLocale(board({ expandedId: 'loan1', replies: [], replyPosting: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+    view.rerender(board({ expandedId: 'loan1', replies: [], replyPosting: false }));
+    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+  });
+
+  it.each([
+    ['on the viewer’s own loan', { viewerAccountId: 'acc-maria' }, LOAN],
+    ['on a read-only board', { readOnly: true }, LOAN],
+    ['when the author cannot receive', {}, { ...LOAN, payable: false }],
+    ['on a deleted loan', {}, { ...LOAN, deletedAt: '2026-09-01T00:00:00.000Z' }],
+  ])('offers no Lend %s', (_label, props, message) => {
+    renderWithLocale(board({ ...props, messages: [message] }));
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('offers no Lend on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    renderWithLocale(board());
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('keeps the plain amount label on a loan that is already full', () => {
+    renderWithLocale(
+      board({ messages: [{ ...LOAN, sats: 21_000 }], expandedId: 'loan1', replies: [] }),
+    );
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+  });
+
+  it('lets the sats, not the fiat percent, decide between lending and a gift', () => {
+    const fiatLoan = {
+      ...LOAN,
+      goalCurrency: 'USD' as const,
+      goalAmount: '20',
+    };
+    const view = renderWithLocale(
+      board({
+        messages: [{ ...fiatLoan, sats: 21_000, amountUsd: '10.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    view.rerender(
+      board({
+        messages: [{ ...fiatLoan, sats: 5_000, amountUsd: '25.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount to lend')).toBe(
+      document.getElementById('forum-reply-amount'),
+    );
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+  });
+
+  it('words the reaction pay page of a loan as lending', () => {
+    renderWithLocale(
+      board({
+        expandedId: 'loan1',
+        replies: [],
+        replyPayPreview: 'Count me in!',
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Lend to Maria' });
+    expect(within(sheet).getByText('₿210')).toBeTruthy();
+    // The notice stays in the reaction form behind the sheet; the sheet shows none.
+    const notice = screen.getByText(
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+    );
+    expect(sheet.contains(notice)).toBe(false);
+    expect(notice.closest('form')?.contains(screen.getByLabelText('Your reaction'))).toBe(true);
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+  });
+
+  it('labels the reaction pay button of a loan Lend, with the amount and its fiat', async () => {
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 210));
+    try {
+      renderWithLocale(
+        board({
+          expandedId: 'loan1',
+          replies: [],
+          replyPayPreview: 'Count me in!',
+          payMessageId: 'loan1',
+          payHost: 'card',
+          payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+          rateDay: {
+            sats: 100_000_000,
+            usd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+          },
+        }),
+      );
+      const sheet = screen.getByRole('dialog', { name: 'Lend to Maria' });
+      const button = await within(sheet).findByRole('button', { name: 'Lend ₿210 · $0.21' });
+      expect(button.textContent).toBe('Lend ₿210 · $0.21');
+    } finally {
+      resetWallet();
+    }
+  });
+
+  it('shows the loan notice in the reaction form without a pay sheet, but not on the own loan', () => {
+    const notice =
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.';
+    const view = renderWithLocale(board({ expandedId: 'loan1', replies: [] }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText(notice).closest('form')).not.toBeNull();
+    view.unmount();
+    renderWithLocale(board({ expandedId: 'loan1', replies: [], viewerAccountId: 'acc-maria' }));
+    expect(screen.queryByText(notice)).toBeNull();
+  });
+
+  it('shows no loan notice in the reaction form when the borrower cannot receive', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, authorCanReceive: false }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+  });
+
+  it('words the note page pay sheet of a full loan as a gift', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, sats: 21_000 }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Maria' });
+    expect(within(sheet).getByText('₿210')).toBeTruthy();
+    const notices = screen.getAllByText(
+      'This loan is already fully funded. What you send now is a gift to Maria.',
+    );
+    expect(notices.length).toBeGreaterThan(0);
+    for (const notice of notices) {
+      expect(sheet.contains(notice)).toBe(false);
+    }
+    expect(notices.some((notice) => notice.closest('form[data-pay-amount]') !== null)).toBe(true);
+  });
+
+  it('writes no loan sentence on a donation', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalRepayable: undefined }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Loan request' })).toBeNull();
+  });
+});
+
+describe('ForumBoard author who cannot receive', () => {
+  const NOTE: ForumMessage = {
+    ...SAMPLE,
+    accountId: 'acc-bob',
+    payable: false,
+    authorCanReceive: false,
+    heartCount: 3,
+  };
+
+  function board(props: Partial<ForumBoardProps> = {}): ReactElement {
+    return (
+      <ForumBoard
+        messages={[NOTE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+        {...props}
+      />
+    );
+  }
+
+  it('shows the label and a disabled heart with its count, and a tap sends nothing', () => {
+    const onHeartTip = vi.fn();
+    renderWithLocale(board({ onHeartTip }));
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    const heart = screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(screen.getByText('3')).toBeTruthy();
+    fireEvent.click(heart);
+    expect(onHeartTip).not.toHaveBeenCalled();
+  });
+
+  it('disables the amount of a reaction on that note', () => {
+    renderWithLocale(board({ expandedId: 'm1', replies: [] }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('shows the label and a disabled gift on a reply in the thread', () => {
+    const onPayOpen = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+        expandedId: 'm1',
+        onPayOpen,
+        replies: [
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            accountId: 'acc-bob',
+            payable: false,
+            authorCanReceive: false,
+            text: 'A reply from Bob',
+          },
+        ],
+      }),
+    );
+    expect(screen.getAllByText("Can't receive yet")).toHaveLength(1);
+    const gift = screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement;
+    expect(gift.disabled).toBe(true);
+    fireEvent.click(gift);
+    expect(onPayOpen).not.toHaveBeenCalled();
+  });
+
+  it('shows a disabled gift on a listed reply unless the board is read-only', () => {
+    const reply: ForumMessage = { ...NOTE, id: 'r2', parentId: 'm1' };
+    const { rerender } = renderWithLocale(board({ messages: [reply] }));
+    expect(
+      (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board({ messages: [reply], readOnly: true })}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
+  it('gates the disabled gift like a live one on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderWithLocale(board({ messages: [{ ...NOTE, id: 'r2', parentId: 'm1' }] }));
+      expect(screen.getByText('Zapping is paused on Sunday.')).toBeTruthy();
+      expect(
+        screen
+          .getByRole('button', { name: 'Send Bitcoin', hidden: true })
+          .closest('.sunday-write-field'),
+      ).toBeTruthy();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('shows no label on the own note, a deleted note, an external note, or an older api body', () => {
+    const { rerender } = renderWithLocale(board({ viewerAccountId: 'acc-bob' }));
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+    for (const message of [
+      { ...NOTE, deletedAt: '2026-08-29T15:00:00.000Z' },
+      { ...NOTE, accountId: undefined },
+      { ...NOTE, authorCanReceive: undefined },
+    ]) {
+      rerender(
+        <LocaleProvider locale="en" messages={getCatalog('en')}>
+          <ThemeProvider>{board({ messages: [message] })}</ThemeProvider>
+        </LocaleProvider>,
+      );
+      expect(screen.queryByText("Can't receive yet")).toBeNull();
+    }
+  });
+
+  it('shows Lend disabled on a loan whose borrower cannot receive', () => {
+    renderWithLocale(
+      board({
+        messages: [
+          { ...NOTE, sats: 10_500, goalSats: 21_000, goalRepayable: true, goalTermDays: 30 },
+        ],
+      }),
+    );
+    expect((screen.getByRole('button', { name: 'Lend' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows the author-wallet line after a heart the api refused', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: {
+          m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+        },
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const reply: ForumMessage = {
+      ...SAMPLE,
+      id: 'r1',
+      parentId: 'm1',
+      accountId: 'acc-bob',
+      payable: true,
+      text: 'A reply from Bob',
+    };
+    const props: Partial<ForumBoardProps> = {
+      messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+      expandedId: 'm1',
+      payMessageId: 'r1',
+      payHost: 'card',
+      payDraft: '21',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, replies: [reply] }));
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(onPayCancel).not.toHaveBeenCalled();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            replies: [{ ...reply, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('cancels a reaction gift invoice when a refresh says the note author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const note: ForumMessage = { ...SAMPLE, accountId: 'acc-carol' };
+    const props: Partial<ForumBoardProps> = {
+      expandedId: 'm1',
+      replies: [],
+      payMessageId: 'm1',
+      payHost: 'card',
+      payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 21 },
+      replyPayPreview: 'Thanks for the bread',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, messages: [note] }));
+    // The reaction's sheet is open over the card, the form behind it disabled.
+    expect(screen.getByRole('dialog', { name: `Send to ${note.name}` })).toBeTruthy();
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            messages: [{ ...note, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    // The sheet leaves like a cancel: nothing went out, so no success step.
+    expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
+  });
+
+  it('keeps the posting-fee sheet on a note whose author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol', payable: false, authorCanReceive: false }],
+        payMessageId: 'm1',
+        payHost: 'composer',
+        payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 1 },
+        onPayCancel,
+      }),
+    );
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(onPayCancel).not.toHaveBeenCalled();
+  });
+
+  it('keeps a tap in its +1 window when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+    };
+    const live: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', heartCount: 3 };
+    const { rerender } = renderWithLocale(
+      board({ messages: [live], onHeartTip: () => undefined, heartTipViews: views }),
+    );
+    const card = (): HTMLElement => document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [{ ...live, payable: false, authorCanReceive: false }],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const heart = within(card()).getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+  });
+
+  it('keeps the author-wallet line when an older api answer makes the note not payable', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    const legacy: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', payable: false };
+    delete legacy.authorCanReceive;
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({ messages: [legacy], onHeartTip: () => undefined, heartTipViews: views })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('keeps the author-wallet line when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [
+              { ...SAMPLE, accountId: 'acc-bob', payable: false, authorCanReceive: false },
+            ],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect((screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
   });
 });

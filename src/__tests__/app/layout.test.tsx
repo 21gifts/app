@@ -11,14 +11,17 @@ import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
+import { InteractionLog } from '@/components/InteractionLog';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
+import { MoveFundsLink } from '@/components/MoveFundsLink';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { WalletSync } from '@/components/WalletSync';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
@@ -35,8 +38,16 @@ vi.mock('@/lib/request-fiat', () => ({
   getRequestFiat: vi.fn(async () => 'USD' as const),
 }));
 
+/** Nonce the middleware set on the request, or `null` when none. */
+let requestNonce: string | null = 'n0nce';
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => new Headers(requestNonce === null ? {} : { 'x-nonce': requestNonce })),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
+  requestNonce = 'n0nce';
 });
 
 describe('metadata', () => {
@@ -169,6 +180,35 @@ describe('RootLayout', () => {
     expect(scriptNodes[3]?.props.dangerouslySetInnerHTML.__html).toContain('@graph');
   });
 
+  /**
+   * Head `<script>` props of one render.
+   *
+   * @returns Props of each head script, in order.
+   */
+  async function headScriptProps(): Promise<Array<{ nonce?: string; type?: string }>> {
+    const tree = await RootLayout({ children: 'content' });
+    const children = (tree.props as { children: ReactElement[] }).children;
+    const head = children.find((child) => child.type === 'head') as ReactElement<{
+      children: Array<ReactElement<{ nonce?: string; type?: string }> | null>;
+    }>;
+    return head.props.children
+      .filter((child) => child !== null && child.type === 'script')
+      .map((child) => (child as ReactElement<{ nonce?: string; type?: string }>).props);
+  }
+
+  it('puts the request nonce on the three bootstrap scripts', async () => {
+    const props = await headScriptProps();
+    expect(props.slice(0, 3).map((p) => p.nonce)).toEqual(['n0nce', 'n0nce', 'n0nce']);
+    expect(props[3]?.type).toBe('application/ld+json');
+    expect(props[3]?.nonce).toBeUndefined();
+  });
+
+  it('leaves the nonce off when the request has none', async () => {
+    requestNonce = null;
+    const props = await headScriptProps();
+    expect(props.map((p) => p.nonce)).toEqual([undefined, undefined, undefined, undefined]);
+  });
+
   it('emits the e2e clock meta when NEXT_PUBLIC_E2E_NOW is set', async () => {
     const previous = process.env['NEXT_PUBLIC_E2E_NOW'];
     process.env['NEXT_PUBLIC_E2E_NOW'] = '2026-01-07T12:00:00.000Z';
@@ -198,7 +238,7 @@ describe('RootLayout', () => {
     }
   });
 
-  it('wraps children LocaleProvider → NumberFormatProvider → FiatPreferenceProvider → ThemeProvider with AppHeightSync first on body', async () => {
+  it('mounts the providers, root listeners, and AppHeightSync in order', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
@@ -241,14 +281,23 @@ describe('RootLayout', () => {
     expect(Array.isArray(themeChildren)).toBe(true);
     expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
     expect((themeChildren[1] as ReactElement).type).toBe(PushOpenListener);
-    const suspense = themeChildren[2] as ReactElement<{
+    expect((themeChildren[2] as ReactElement).type).toBe(WalletSync);
+    expect((themeChildren[3] as ReactElement).type).toBe(InteractionLog);
+    const suspense = themeChildren[4] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const viewHistory = themeChildren[3] as ReactElement<{ children: ReactNode }>;
+    const moveSuspense = themeChildren[5] as ReactElement<{
+      fallback: null;
+      children: ReactElement;
+    }>;
+    expect(moveSuspense.type).toBe(Suspense);
+    expect(moveSuspense.props.fallback).toBe(null);
+    expect(moveSuspense.props.children.type).toBe(MoveFundsLink);
+    const viewHistory = themeChildren[6] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROLE_ORDER,
+  authorCannotReceive,
   canEditDailyPayoutRoster,
+  isOwnNote,
   isReplyPaymentExempt,
   roleAtLeast,
   roleRank,
@@ -71,6 +73,39 @@ describe('canEditDailyPayoutRoster', () => {
   });
 });
 
+describe('authorCannotReceive', () => {
+  const note = { authorCanReceive: false, accountId: 'acc_2' };
+
+  it('is true for a live member note whose author cannot receive', () => {
+    expect(authorCannotReceive(note, 'acc_1')).toBe(true);
+    expect(authorCannotReceive(note, null)).toBe(true);
+  });
+
+  it('is false when the api says the author can receive or sends no field', () => {
+    expect(authorCannotReceive({ ...note, authorCanReceive: true }, 'acc_1')).toBe(false);
+    expect(authorCannotReceive({ accountId: 'acc_2' }, 'acc_1')).toBe(false);
+  });
+
+  it('is false on an own note, a note without an author, and a deleted note', () => {
+    expect(authorCannotReceive(note, 'acc_2')).toBe(false);
+    expect(authorCannotReceive({ authorCanReceive: false }, 'acc_1')).toBe(false);
+    expect(authorCannotReceive({ ...note, deletedAt: '2026-08-28T10:00:00.000Z' }, 'acc_1')).toBe(
+      false,
+    );
+  });
+});
+
+describe('isOwnNote', () => {
+  it('is true only when both ids are present and equal', () => {
+    expect(isOwnNote('acc_1', 'acc_1')).toBe(true);
+    expect(isOwnNote('acc_1', 'acc_2')).toBe(false);
+    expect(isOwnNote('acc_1', undefined)).toBe(false);
+    expect(isOwnNote(null, 'acc_1')).toBe(false);
+    expect(isOwnNote(undefined, undefined)).toBe(false);
+    expect(isOwnNote('', '')).toBe(false);
+  });
+});
+
 describe('isReplyPaymentExempt', () => {
   function account(role: Role): { id: string; role: Role } {
     return { id: 'acc_1', role };
@@ -90,8 +125,8 @@ describe('isReplyPaymentExempt', () => {
     },
   );
 
-  it('is false for a basis parent author', () => {
-    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(false);
+  it('is true for a basis parent author', () => {
+    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(true);
   });
 
   it('is false for a basis account that is not the parent author', () => {

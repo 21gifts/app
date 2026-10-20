@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
   fetchConversationMessagePhoto,
@@ -15,6 +16,7 @@ import {
   markConversationRead,
   postConversationInvoice,
   postConversationMessage,
+  WalletRequiredError,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
@@ -49,17 +51,15 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**
@@ -101,7 +101,8 @@ function appendUnseenMessages(
  * prepends unique older pages.
  * Prepending keeps the loaded thread visible and does not toggle its loading
  * state; {@link InboxScreen} stays pinned while stuck to the bottom.
- * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP stills via
+ * Open Direct / Contact / Damus threads attach camera photos or JPEG/PNG/WebP
+ * gallery stills via
  * {@link prepareForumPhoto} (cap 10); photo-only send is allowed. Thread stills
  * load via {@link fetchConversationMessagePhoto} (no fetch without a session).
  * Blob URLs are revoked on unmount, when leaving a thread, and on session loss.
@@ -125,7 +126,7 @@ export function InboxLoader(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);
@@ -600,6 +601,28 @@ export function InboxLoader(): ReactElement | null {
     };
   }, [session, openId, threadAllowed, threadLoaded]);
 
+  // The api says the open thread's counterpart cannot receive yet (`canReceive: false`):
+  // a reply sends no amount, and a typed amount or an open invoice from before is dropped.
+  const openCannotReceive =
+    openId !== null &&
+    conversations !== null &&
+    conversations.some((row) => row.id === openId && row.canReceive === false);
+  // A reply invoice still being created when the flip arrives is dropped on its return.
+  const mintGeneration = useRef(0);
+  const openCannotReceiveRef = useRef(openCannotReceive);
+  openCannotReceiveRef.current = openCannotReceive;
+  useEffect(() => {
+    if (!openCannotReceive) {
+      return;
+    }
+    mintGeneration.current += 1;
+    payPollRef.current?.abort();
+    payPollRef.current = null;
+    setAmountDraft('');
+    setInvoice(null);
+    setPayWaiting(false);
+  }, [openCannotReceive]);
+
   if (session === null) {
     return null;
   }
@@ -670,7 +693,9 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     const trimmed = draft.trim();
-    const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
+    const sats = openCannotReceive
+      ? 'empty'
+      : replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
@@ -690,6 +715,7 @@ export function InboxLoader(): ReactElement | null {
       pickGeneration.current += 1;
       setPhotoDrafts([]);
       setPreparing(false);
+      const mint = mintGeneration.current;
       void (async () => {
         let minted;
         try {
@@ -703,11 +729,13 @@ export function InboxLoader(): ReactElement | null {
         } catch (err) {
           if (openIdRef.current === conversationId) {
             setFormError(
-              isRateLimitError(err)
-                ? 'rateLimit'
-                : isAuthorWalletError(err)
-                  ? 'authorWallet'
-                  : 'request',
+              err instanceof WalletRequiredError
+                ? 'walletRequired'
+                : isRateLimitError(err)
+                  ? 'rateLimit'
+                  : isAuthorWalletError(err)
+                    ? 'authorWallet'
+                    : 'request',
             );
           }
           setPosting(false);
@@ -715,10 +743,18 @@ export function InboxLoader(): ReactElement | null {
         }
 
         setPosting(false);
-        if (openIdRef.current !== conversationId) {
+        if (
+          openIdRef.current !== conversationId ||
+          mint !== mintGeneration.current ||
+          openCannotReceiveRef.current
+        ) {
           return;
         }
-        setInvoice({ pr: minted.pr, amountSats: minted.amountSats });
+        setInvoice({
+          pr: minted.pr,
+          amountSats: minted.amountSats,
+          sparkInvoice: minted.sparkInvoice,
+        });
         setPayWaiting(true);
         const controller = new AbortController();
         /* v8 ignore next -- no in-flight poll on first mint */

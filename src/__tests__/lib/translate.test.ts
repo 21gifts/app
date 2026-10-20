@@ -4,17 +4,17 @@ import { translate } from '@/lib/translate';
 
 describe('translate', () => {
   it('interpolates named placeholders', () => {
-    expect(translate(getCatalog('en'), 'forum.payConfirm', { amount: '₿21' })).toBe('Pay ₿21');
+    expect(translate(getCatalog('en'), 'paySheet.sendAmount', { amount: '₿21' })).toBe('Send ₿21');
   });
 
   it('throws when a placeholder is missing', () => {
-    expect(() => translate(getCatalog('en'), 'forum.payConfirm', {})).toThrow(
+    expect(() => translate(getCatalog('en'), 'paySheet.sendAmount', {})).toThrow(
       /Missing placeholder \{amount\}/,
     );
   });
 
   it('throws when vars are omitted but placeholders exist', () => {
-    expect(() => translate(getCatalog('en'), 'forum.payConfirm')).toThrow(
+    expect(() => translate(getCatalog('en'), 'paySheet.sendAmount')).toThrow(
       /Missing placeholder \{amount\}/,
     );
   });
@@ -125,7 +125,7 @@ describe('translate', () => {
 
   it('throws when a placeholder value is undefined', () => {
     expect(() =>
-      translate(getCatalog('en'), 'forum.payConfirm', {
+      translate(getCatalog('en'), 'paySheet.sendAmount', {
         amount: undefined as unknown as string,
       }),
     ).toThrow(/Missing placeholder \{amount\}/);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getBuildId } from '@/lib/config';
 import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
@@ -12,15 +13,19 @@ import {
   notificationListSchema,
   notificationSchema,
   forumListSchema,
+  forumMessageRowsSchema,
   forumMessageSchema,
   externalAuthorProfileSchema,
   forumPlacesResponseSchema,
   hiddenListSchema,
-  lnAddressResolvedSchema,
+  lnurlInvoiceSchema,
+  lnurlPayRequestSchema,
   giftDaySchema,
   giftStatsSchema,
+  fxSpotSchema,
   shopActivitySchema,
   grantContinuationSchema,
+  grantPlacesSchema,
   postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
@@ -39,6 +44,8 @@ import {
   pushSubscriptionResponseSchema,
   vapidPublicSchema,
   viewProfileSchema,
+  fiatAmountSchema,
+  FORUM_GOAL_CURRENCIES,
   type Account,
   type AmountUnit,
   type NotificationLevel,
@@ -55,11 +62,14 @@ import {
   type HiddenMessage,
   type GiftDay,
   type GiftStats,
+  type FxSpot,
   type ShopActivityDay,
   type GrantContinuation,
+  type GrantPlaces,
   type PostStats,
   type AccountActivity,
-  type LnAddressResolved,
+  type LnurlInvoice,
+  type LnurlPayRequest,
   type MemberProfile,
   type MessageInvoice,
   type ModeratorProposal,
@@ -76,7 +86,9 @@ import {
   type ForumGoalCurrency,
   type ViewProfile,
 } from '@/lib/api-types';
+import { logInteraction } from '@/lib/interaction-log';
 import type { Locale } from '@/lib/locale';
+import type { WalletReportPayment } from '@/lib/wallet/wallet-sdk';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
 import type { FiatCode } from '@/lib/stats-money';
@@ -87,13 +99,6 @@ import type { FiatCode } from '@/lib/stats-money';
  * {@link deleteMessage} throws an `Error` with exactly this message.
  */
 export const OPEN_CREDIT_DELETE_ERROR = 'An open credit cannot be deleted';
-
-/**
- * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
- * Matched literally (English) before visitor-facing rewrite.
- */
-export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
-  'This Wallet of Satoshi address cannot receive these Bitcoin payments';
 
 /**
  * Exact api 403 body when the visitor signed in with a refused account.
@@ -122,6 +127,153 @@ export class NoteDeletedError extends Error {
   constructor() {
     super('This note was deleted');
     this.name = 'NoteDeletedError';
+  }
+}
+
+/**
+ * Api 403 on a forum note create that needs a Bitcoin payment first: a
+ * member below verified posting text without a paid fee, including a free
+ * first post the api no longer allows. The message is the same visitor copy
+ * a plain `Error` carried before, so screens that show it are unchanged.
+ */
+export class PostFeeRequiredError extends Error {
+  /**
+   * @param message - Visitor copy for the refusal.
+   */
+  public constructor(message: string) {
+    super(message);
+    this.name = 'PostFeeRequiredError';
+  }
+}
+
+/** Api error `code` (HTTP 400) when the signed-in member has no verified in-app wallet yet. */
+export const WALLET_REQUIRED_CODE = 'wallet_required';
+
+/**
+ * Api error `code` when the receiving wallet cannot take this payment (HTTP 400,
+ * or 409 on a habit donation).
+ */
+export const CANNOT_RECEIVE_CODE = 'cannot_receive';
+
+/**
+ * Api answer with `code` {@link WALLET_REQUIRED_CODE}: the action needs the
+ * member's own wallet to be set up first. Recognised by the body's `code`,
+ * never by status or text; screens show catalog copy.
+ */
+export class WalletRequiredError extends Error {
+  constructor() {
+    super('wallet_required');
+    this.name = 'WalletRequiredError';
+  }
+}
+
+/**
+ * Api answer with `code` {@link CANNOT_RECEIVE_CODE}: the receiving wallet
+ * cannot take this payment. Recognised by the body's `code`, never by status
+ * or text; screens show catalog copy.
+ */
+export class CannotReceiveError extends Error {
+  constructor() {
+    super('cannot_receive');
+    this.name = 'CannotReceiveError';
+  }
+}
+
+/** Api error `code` (HTTP 503) when operators closed new logins for an update. */
+export const LOGINS_CLOSED_CODE = 'logins_closed';
+
+/** Api error `code` (HTTP 403) when this app build is older than the one the api requires. */
+export const APP_OUTDATED_CODE = 'app_outdated';
+
+/**
+ * Api answer with `code` {@link LOGINS_CLOSED_CODE} on a step that would
+ * create a session. Recognised by the 503 status together with the body's
+ * `code`, never by text; screens show catalog copy.
+ */
+export class LoginsClosedError extends Error {
+  constructor() {
+    super('logins_closed');
+    this.name = 'LoginsClosedError';
+  }
+}
+
+/**
+ * Api answer with `code` {@link APP_OUTDATED_CODE} on a step that would
+ * create a session: a newer app build is live and this tab must reload.
+ * Recognised by the 403 status together with the body's `code`, never by
+ * text; screens show catalog copy.
+ */
+export class AppOutdatedError extends Error {
+  constructor() {
+    super('app_outdated');
+    this.name = 'AppOutdatedError';
+  }
+}
+
+/**
+ * Throws the typed login refusal when a 503 body carries `code`
+ * {@link LOGINS_CLOSED_CODE} or a 403 body carries {@link APP_OUTDATED_CODE}.
+ * Reads a clone, so the caller can still read the body; any other status,
+ * body, or code passes through.
+ *
+ * @param response - The raw fetch response of a passkey begin or finish.
+ * @returns Resolves when the response is not a login refusal.
+ * @throws {@link LoginsClosedError} for `logins_closed`, {@link AppOutdatedError} for `app_outdated`.
+ */
+async function throwIfLoginBlocked(response: Response): Promise<void> {
+  if (response.status !== 503 && response.status !== 403) {
+    return;
+  }
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const code =
+    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  if (response.status === 503 && code === LOGINS_CLOSED_CODE) {
+    throw new LoginsClosedError();
+  }
+  if (response.status === 403 && code === APP_OUTDATED_CODE) {
+    throw new AppOutdatedError();
+  }
+}
+
+/**
+ * Headers every passkey begin and finish sends: this build's id, which the
+ * api compares with the build it requires.
+ *
+ * @param extra - Further headers for this request.
+ * @returns Headers with `X-App-Build`.
+ */
+function passkeyHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...extra, 'X-App-Build': getBuildId() };
+}
+
+/**
+ * Throws the typed wallet answer when a 400 body carries `code`
+ * {@link WALLET_REQUIRED_CODE} or {@link CANNOT_RECEIVE_CODE}. Reads a clone,
+ * so the caller can still read the body; any other status, body, or code
+ * passes through.
+ *
+ * @param response - The raw fetch response.
+ * @returns Resolves when the response is not a wallet answer.
+ * @throws {@link WalletRequiredError} for `wallet_required`, {@link CannotReceiveError} for `cannot_receive`.
+ */
+export async function throwIfWalletAnswer(response: Response): Promise<void> {
+  if (response.status !== 400) {
+    return;
+  }
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const code =
+    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  if (code === WALLET_REQUIRED_CODE) {
+    throw new WalletRequiredError();
+  }
+  if (code === CANNOT_RECEIVE_CODE) {
+    throw new CannotReceiveError();
   }
 }
 
@@ -204,36 +356,27 @@ function sundayWriteHeaders(mode: 'enforce' | 'setup'): Record<string, string> {
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
 
-/** Statuses whose bodies carry a human-readable `{ error }` from the api. */
-const API_MESSAGE_STATUSES = new Set([400, 502]);
-
 /**
  * Rewrites api error text so the visitor never sees Lightning / LNURL jargon.
  *
  * @param raw - The api's `error` string.
- * @returns Copy that speaks only of Bitcoin and Wallet of Satoshi.
+ * @returns Copy that speaks only of Bitcoin, addresses, and login.
  */
 function toUserFacingError(raw: string): string {
-  if (/^Invalid Lightning Address$/i.test(raw)) {
-    return 'That Wallet of Satoshi address is not valid';
-  }
-  if (/^Not a valid Lightning Address/i.test(raw)) {
-    return 'Enter an address like you@walletofsatoshi.com';
-  }
-  if (/Lightning Address could not be resolved/i.test(raw)) {
-    return 'That Wallet of Satoshi address could not be found';
-  }
   if (/upstream api unreachable/i.test(raw)) {
     return 'Something went wrong. Please try again.';
   }
   return raw
-    .replace(/Lightning Address/gi, 'Wallet of Satoshi address')
+    .replace(/Lightning Address/gi, 'address')
     .replace(/LNURL-auth/gi, 'login')
     .replace(/LNURL auth/gi, 'login')
     .replace(/\bLNURL\b/gi, 'login')
     .replace(/\binvoice\b/gi, 'payment')
     .replace(/\bLightning\b/gi, 'Bitcoin');
 }
+
+/** Error the api returns with 503 when it cannot issue a heart as a fee-free Spark invoice. */
+const HEART_UNAVAILABLE_CODE = 'HEART_UNAVAILABLE';
 
 /**
  * Reads `{ error }` from an api error body, or `null` when the body is not that
@@ -249,26 +392,6 @@ async function readApiError(response: Response): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * Throws rewritten api error text when the response is a known client or
- * upstream failure, so the form can surface the reason without jargon.
- * Malformed bodies are left for the caller fallback.
- *
- * @param response - The raw fetch response.
- * @throws Error with user-facing copy when the status is 400 or 502 and the
- * body carries a usable `error` string.
- */
-async function throwIfApiMessage(response: Response): Promise<void> {
-  if (!API_MESSAGE_STATUSES.has(response.status)) {
-    return;
-  }
-  const raw = await readApiError(response);
-  if (raw === null) {
-    return;
-  }
-  throw new Error(toUserFacingError(raw));
 }
 
 /**
@@ -622,14 +745,11 @@ export async function fetchViewProfile(viewKey: string): Promise<ViewProfile | n
  * Skips one onboarding setup step without filling the field.
  *
  * @param sessionToken - Bearer session.
- * @param step - `name` or `lightning-address` (rules cannot be skipped).
+ * @param step - `name` (rules cannot be skipped).
  * @returns The updated {@link Account} with advanced `setup` and refreshed `missing`.
  * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
  */
-export async function skipSetup(
-  sessionToken: string,
-  step: 'name' | 'lightning-address',
-): Promise<Account> {
+export async function skipSetup(sessionToken: string, step: 'name'): Promise<Account> {
   const response = await fetch('/me/setup/skip', {
     method: 'POST',
     headers: {
@@ -649,7 +769,8 @@ export async function skipSetup(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The {@link MemberProfile}, or `null` on 401/404.
+ * @returns The {@link MemberProfile}, or `null` on 401/404. A profile note that
+ * fails the note schema (an empty About me) is `profileMessage: null`.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error on other non-2xx or a body that fails {@link memberProfileSchema}.
  */
@@ -683,19 +804,19 @@ export async function fetchMember(
 }
 
 /**
- * Fetches a member's top-level forum posts or replies (newest first).
+ * Fetches a member's top-level forum posts, replies, shops, or credits (newest first).
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @param suffix - `posts` or `replies`.
- * @returns The message list.
+ * @param suffix - `posts`, `replies`, `shops`, or `credits`.
+ * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 async function fetchMemberForumList(
   sessionToken: string,
   accountId: string,
-  suffix: 'posts' | 'replies',
+  suffix: 'posts' | 'replies' | 'shops' | 'credits',
 ): Promise<ForumMessage[]> {
   try {
     const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/${suffix}`, {
@@ -731,9 +852,9 @@ async function fetchMemberForumList(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list.
+ * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberPosts(
   sessionToken: string,
@@ -743,13 +864,46 @@ export async function fetchMemberPosts(
 }
 
 /**
+ * Fetches a member's top-level forum shop notes (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberShops(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'shops');
+}
+
+/**
+ * Fetches a member's top-level forum credit notes (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberCredits(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'credits');
+}
+
+/**
  * Fetches a member's forum replies (newest first, api cap 200).
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list (reply rows may be payable; optional `parentId`).
+ * @returns The message list (reply rows may be payable; optional `parentId`); rows
+ * that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberReplies(
   sessionToken: string,
@@ -794,62 +948,38 @@ export async function setUsername(
 }
 
 /**
- * Links or replaces the account's receiving Lightning Address.
+ * Claims the in-app wallet's identity public key for the account.
  *
- * @param sessionToken - A bearer token from a completed challenge.
- * @param address - The `name@domain.tld` Lightning Address to store.
- * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
+ * @param sessionToken - Bearer session.
+ * @param sparkPubkey - Wallet identity public key (66 lower-case hex).
  * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400) — rewritten to
- * visitor-facing copy — on any other non-2xx status, or when the body fails
- * {@link accountSchema} validation.
+ * @throws Error `wallet-verified` on 409 (the account's wallet is already
+ * verified), `wallet-unavailable` on 404 (the feature is off), and
+ * `wallet-request` on any other failure or an invalid body.
  */
-export async function setLightningAddress(
-  sessionToken: string,
-  address: string,
-  sundayWrite: 'enforce' | 'setup' = 'enforce',
-): Promise<Account> {
-  const response = await fetch('/me/lightning-address', {
-    method: 'POST',
+export async function putWallet(sessionToken: string, sparkPubkey: string): Promise<Account> {
+  const response = await fetch('/me/wallet', {
+    method: 'PUT',
     headers: {
       Authorization: `Bearer ${sessionToken}`,
       'Content-Type': 'application/json',
-      ...sundayWriteHeaders(sundayWrite),
     },
-    body: JSON.stringify({ address }),
+    body: JSON.stringify({ sparkPubkey }),
   });
-  if (response.status === 400) {
-    const raw = await readApiError(response);
-    if (raw === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
-      throw new Error(LIGHTNING_ADDRESS_NOT_ZAP_ERROR);
-    }
-    throw new Error(
-      raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),
-    );
+  if (response.status === 409) {
+    throw new Error('wallet-verified');
+  }
+  if (response.status === 404) {
+    throw new Error('wallet-unavailable');
   }
   if (!response.ok) {
-    throw new Error('Could not save your Wallet of Satoshi address');
+    throw new Error('wallet-request');
   }
-  return accountSchema.parse(await response.json());
-}
-
-/**
- * Unlinks the account's Lightning Address, clearing it.
- *
- * @param sessionToken - A bearer token from a completed challenge.
- * @returns The updated {@link Account}, with `lightningAddress` set to `null`.
- * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
- * validation.
- */
-export async function unlinkLightningAddress(sessionToken: string): Promise<Account> {
-  const response = await fetch('/me/lightning-address', {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
-  });
-  if (!response.ok) {
-    throw new Error('Could not remove your Wallet of Satoshi address');
+  const parsed = accountSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) {
+    throw new Error('wallet-request');
   }
-  return accountSchema.parse(await response.json());
+  return parsed.data;
 }
 
 /**
@@ -872,10 +1002,30 @@ export async function dismissForumLaws(sessionToken: string): Promise<Account> {
 }
 
 /**
+ * Records that the member finished or skipped the one-time wallet tour, so it
+ * is not shown again on any device.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `walletIntroSeen` set to `true`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function markWalletIntroSeen(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/wallet-intro-seen', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save the wallet tour');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Sets the signed-in account notification level.
  *
  * @param session - A bearer token from a completed challenge.
- * @param level - `all`, `active`, or `mentions`.
+ * @param level - `all`, `active`, `mentions`, or `none`.
  * @returns The updated {@link Account}.
  * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
  * validation.
@@ -894,6 +1044,30 @@ export async function postNotificationLevel(
   });
   if (!response.ok) {
     throw new Error('Could not save notification level.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets whether the signed-in account is notified of received hearts.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param enabled - `true` to notify, `false` to stop.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function postHeartNotifications(session: string, enabled: boolean): Promise<Account> {
+  const response = await fetch('/me/heart-notifications', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save the heart setting.');
   }
   return accountSchema.parse(await response.json());
 }
@@ -1000,24 +1174,6 @@ export async function agreeToRules(sessionToken: string): Promise<Account> {
 }
 
 /**
- * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
- *
- * @param address - The `name@domain` address to look up.
- * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
- * @throws Error when the api rejects the address (400, 502) — rewritten to
- * visitor-facing copy — on any other non-2xx status, or when the body fails
- * {@link lnAddressResolvedSchema} validation.
- */
-export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
-  const response = await fetch(`/lightning-address?address=${encodeURIComponent(address)}`);
-  await throwIfApiMessage(response);
-  if (!response.ok) {
-    throw new Error('Could not find that Wallet of Satoshi address');
-  }
-  return lnAddressResolvedSchema.parse(await response.json());
-}
-
-/**
  * Fetches outbound gifts for one UTC calendar day.
  *
  * @param day - UTC `YYYY-MM-DD`.
@@ -1062,6 +1218,25 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
 }
 
 /**
+ * Fetches the current price of 1 BTC in USD, CHF, EUR, and PHP. No session.
+ *
+ * @returns The parsed {@link FxSpot} body.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link fxSpotSchema}.
+ */
+export async function fetchFxSpot(): Promise<FxSpot> {
+  try {
+    const response = await fetch('/fx/spot');
+    if (!response.ok) {
+      throw new Error('Could not load the exchange rate. Please try again.');
+    }
+    return fxSpotSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load the exchange rate. Please try again.');
+  }
+}
+
+/**
  * Fetches public shop counts per UTC day. No session.
  *
  * @returns The 30 {@link ShopActivityDay} rows, oldest first.
@@ -1077,6 +1252,27 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
     throw new Error('Could not load shop activity. Please try again.');
+  }
+}
+
+const GRANT_PLACES_LOAD_ERROR = 'Could not load the grant places. Please try again.';
+
+/**
+ * Fetches the public grant round places. No session.
+ *
+ * @returns Round, places, admitted, places left, and the next shop goal.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link grantPlacesSchema}.
+ */
+export async function fetchGrantPlaces(): Promise<GrantPlaces> {
+  try {
+    const response = await fetch('/funding/places');
+    if (!response.ok) {
+      throw new Error(GRANT_PLACES_LOAD_ERROR);
+    }
+    return grantPlacesSchema.parse(await response.json());
+  } catch {
+    throw new Error(GRANT_PLACES_LOAD_ERROR);
   }
 }
 
@@ -1300,6 +1496,11 @@ const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Plea
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
 const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
 const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
+/**
+ * Thrown by {@link postFundingAdmit} when the api answers 409
+ * `All grant places are taken`: the current round has no free place.
+ */
+export const FUNDING_PLACES_FULL_ERROR = 'All grant places are taken';
 const FUNDING_DAILY_ROSTER_LOAD_ERROR = 'Could not load daily payments. Please try again.';
 const FUNDING_DAILY_ROSTER_SAVE_ERROR = 'funding.daily.saveError';
 
@@ -1474,9 +1675,10 @@ export async function fetchFundingPayoutDays(sessionToken: string): Promise<Fund
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param accountId - Subject account id.
- * @returns Account, grant, and living-room posts.
+ * @returns Account, grant, and living-room posts; posts that fail the note
+ * schema are dropped and counted in one `console.warn`.
  * @throws Error with visitor-facing copy on 401/403/404/503, other non-2xx, a
- * network failure, or a body that fails {@link fundingApplicationDetailSchema}.
+ * network failure, or an envelope that fails {@link fundingApplicationDetailSchema}.
  */
 export async function fetchFundingApplication(
   sessionToken: string,
@@ -1501,14 +1703,19 @@ export async function fetchFundingApplication(
  * @param path - Same-origin proxy path.
  * @param sessionToken - Bearer session.
  * @param accountId - Subject account id.
+ * @param mapPlacesFull - When true (admit only), a 409 whose `error` is
+ *   exactly {@link FUNDING_PLACES_FULL_ERROR} throws that error.
  * @returns Parsed {@link FundingDecisionResult}.
- * @throws Error with visitor-facing copy on any failure.
+ * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) for that admit 409;
+ *   Error with visitor-facing copy on any other failure.
  */
 async function postFundingAction(
   path: string,
   sessionToken: string,
   accountId: string,
+  mapPlacesFull: boolean,
 ): Promise<FundingDecisionResult> {
+  let placesFull = false;
   try {
     const response = await fetch(path, {
       method: 'POST',
@@ -1519,12 +1726,22 @@ async function postFundingAction(
       },
       body: JSON.stringify({ accountId }),
     });
+    if (mapPlacesFull && response.status === 409) {
+      const body: unknown = await response.json().catch(() => null);
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        (body as { error?: unknown }).error === FUNDING_PLACES_FULL_ERROR
+      ) {
+        placesFull = true;
+      }
+    }
     if (!response.ok) {
       throw new Error(FUNDING_ACTION_ERROR);
     }
     return fundingDecisionResultSchema.parse(await response.json());
   } catch {
-    throw new Error(FUNDING_ACTION_ERROR);
+    throw new Error(placesFull ? FUNDING_PLACES_FULL_ERROR : FUNDING_ACTION_ERROR);
   }
 }
 
@@ -1534,13 +1751,15 @@ async function postFundingAction(
  * @param sessionToken - Bearer session of a founder or moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
- * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) when the round has no free
+ * place; Error with visitor-facing copy on 401/403/404/other 409/503 or any
+ * other failure.
  */
 export async function postFundingAdmit(
   sessionToken: string,
   accountId: string,
 ): Promise<FundingDecisionResult> {
-  return postFundingAction('/funding/admit', sessionToken, accountId);
+  return postFundingAction('/funding/admit', sessionToken, accountId, true);
 }
 
 /**
@@ -1555,15 +1774,15 @@ export async function postFundingReject(
   sessionToken: string,
   accountId: string,
 ): Promise<FundingDecisionResult> {
-  return postFundingAction('/funding/reject', sessionToken, accountId);
+  return postFundingAction('/funding/reject', sessionToken, accountId, false);
 }
 
 /**
  * Fetches the daily payout roster for founder and initiator editors.
  *
  * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
- * `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`,
- * so the proxy lives at this path.
+ * `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`,
+ * and `/grants/payments/moderators`, so the proxy lives at this path.
  *
  * @param session - A bearer token from a completed challenge.
  * @returns The parsed {@link DailyRoster}.
@@ -1693,10 +1912,94 @@ export async function deleteDailyRosterRecipient(
 }
 
 /**
+ * Adds a moderator to the stipend list.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators` with
+ * `{ accountId, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param accountId - Member account id.
+ * @param amountUsd - Daily stipend in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`,
+ * and `Address already listed`.
+ */
+export async function addDailyRosterModerator(
+  session: string,
+  accountId: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators', session, { accountId, amountUsd });
+}
+
+/**
+ * Updates one moderator stipend amount.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/update` with
+ * `{ address, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Moderator address already on the list.
+ * @param amountUsd - New daily stipend in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid address or amount` and `Unknown address`.
+ */
+export async function updateDailyRosterModerator(
+  session: string,
+  address: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/update', session, {
+    address,
+    amountUsd,
+  });
+}
+
+/**
+ * Removes a moderator from the stipend list.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/delete` with
+ * `{ address }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Moderator address to remove.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Unknown address`.
+ */
+export async function deleteDailyRosterModerator(
+  session: string,
+  address: string,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/delete', session, { address });
+}
+
+/**
+ * Sets whether moderator stipend payments are on.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/payments` with
+ * `{ enabled }`.
+ *
+ * @param session - Bearer session.
+ * @param enabled - `true` to turn moderator payments on, `false` to turn them off.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid payments switch` to `funding.daily.invalidSwitch`.
+ */
+export async function saveDailyRosterModeratorPayments(
+  session: string,
+  enabled: boolean,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/payments', session, { enabled });
+}
+
+/**
  * Fetches given and received activity for the signed-in account.
  *
  * Hits same-origin `GET /me/activity` (Bearer). Totals include house gifts and
- * forum zaps and do not require a Lightning Address.
+ * forum zaps and do not require a verified wallet.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The {@link AccountActivity} payload.
@@ -1792,15 +2095,17 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
  * Fetches one page of public top-level forum messages (newest first).
  *
  * Sends `GET /forum/messages` with an optional mode, optional hashtag (the
- * name without a leading `#`), and cursor and an always present limit (20 by
- * default).
+ * name without a leading `#`), optional country (ISO 3166-1 alpha-2; only
+ * notes pinned in that country), and cursor and an always present limit (20
+ * by default).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param args - Optional feed mode, hashtag name without `#`, page size, and
- * non-empty page cursor.
- * @returns The validated page; `nextCursor` is `null` when the response omits it.
+ * @param args - Optional feed mode, hashtag name without `#`, country code,
+ * page size, and non-empty page cursor.
+ * @returns The validated page; rows that fail the note schema are dropped and
+ * `nextCursor` is kept (`null` when the response omits it).
  * @throws Error with visitor-facing copy when the api is unavailable or the
- * body fails {@link forumListSchema}.
+ * envelope fails {@link forumListSchema}.
  */
 export async function fetchMessages(
   sessionToken: string,
@@ -1809,6 +2114,7 @@ export async function fetchMessages(
     limit?: number;
     cursor?: string | null;
     hashtag?: string;
+    country?: string;
   } = {},
 ): Promise<ForumFeedPage> {
   try {
@@ -1818,6 +2124,9 @@ export async function fetchMessages(
     }
     if (args.hashtag !== undefined && args.hashtag !== '') {
       query.set('hashtag', args.hashtag);
+    }
+    if (args.country !== undefined && args.country !== '') {
+      query.set('country', args.country);
     }
     query.set('limit', String(args.limit ?? 20));
     if (args.cursor !== undefined && args.cursor !== null && args.cursor !== '') {
@@ -1864,9 +2173,9 @@ export class PublicForumUnauthorizedError extends Error {
  * Active living-room page with no Authorization header.
  *
  * @param args - Page size (default 20) and optional cursor.
- * @returns The validated page.
+ * @returns The validated page; rows that fail the note schema are dropped.
  * @throws PublicForumUnauthorizedError on HTTP 401.
- * @throws Error when the api is unavailable or the body fails {@link forumListSchema}.
+ * @throws Error when the api is unavailable or the envelope fails {@link forumListSchema}.
  */
 export async function fetchPublicForumMessages(
   args: { limit?: number; cursor?: string | null } = {},
@@ -2073,7 +2382,7 @@ export async function fetchExternalAuthorProfile(
 const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
 
 /**
- * GET `{ messages }` for an external author's public posts or replies.
+ * GET `{ messages }` for an external author's public posts, replies, shops, or credits.
  *
  * @param id - Forum message UUID.
  * @param kind - Path segment after the id.
@@ -2083,7 +2392,7 @@ const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
  */
 async function fetchExternalAuthorFeed(
   id: string,
-  kind: 'external-posts' | 'external-replies',
+  kind: 'external-posts' | 'external-replies' | 'external-shops' | 'external-credits',
 ): Promise<ForumMessage[]> {
   try {
     const response = await fetch(`/public-messages/${encodeURIComponent(id)}/${kind}`);
@@ -2099,14 +2408,7 @@ async function fetchExternalAuthorFeed(
     ) {
       throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
   }
@@ -2127,6 +2429,40 @@ async function fetchExternalAuthorFeed(
  */
 export async function fetchExternalAuthorPosts(id: string): Promise<ForumMessage[]> {
   return fetchExternalAuthorFeed(id, 'external-posts');
+}
+
+/**
+ * Fetches this external author's public shop notes without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Shop-note list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorShops(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-shops');
+}
+
+/**
+ * Fetches this external author's public credit notes without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Credit-note list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorCredits(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-credits');
 }
 
 /**
@@ -2208,14 +2544,7 @@ export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
@@ -2249,14 +2578,7 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
@@ -2323,7 +2645,9 @@ function forumAskGoalFields(
  * @returns The created {@link ForumMessage}.
  * @throws {@link NoteDeletedError} on 404 unless the api error is exactly
  * `No account with that username`.
- * @throws Error when the api rejects the body (400, 403, or 429), or on 404
+ * @throws {@link PostFeeRequiredError} on 403 (the post or reply needs a
+ * Bitcoin payment), with the api error string when present.
+ * @throws Error when the api rejects the body (400 or 429), or on 404
  * whose error is exactly `No account with that username` — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
  * on 409, on any other non-2xx status, or when the body fails
@@ -2389,7 +2713,9 @@ export async function postMessage(
   }
   if (response.status === 403) {
     const raw = await readApiError(response);
-    throw new Error(raw === null ? 'A reply needs a Bitcoin payment' : toUserFacingError(raw));
+    throw new PostFeeRequiredError(
+      raw === null ? 'A reply needs a Bitcoin payment' : toUserFacingError(raw),
+    );
   }
   if (response.status === 409) {
     let body: unknown;
@@ -2414,7 +2740,17 @@ export async function postMessage(
   if (!response.ok) {
     throw new Error('Could not post your message');
   }
-  return forumMessageSchema.parse(await response.json());
+  const created = forumMessageSchema.parse(await response.json());
+  if (inReplyTo === undefined) {
+    logInteraction(
+      'post_created',
+      { messageId: created.id, photos: stills.length, ask: askGoal !== null },
+      sessionToken,
+    );
+  } else {
+    logInteraction('reply_created', { messageId: created.id, parentId: inReplyTo }, sessionToken);
+  }
+  return created;
 }
 
 /**
@@ -2427,6 +2763,7 @@ export async function postMessage(
  * and optional `place` pin (omit when unset; form fields only when set),
  * and optional `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
+ * @throws {@link PostFeeRequiredError} on 403 (the post needs a Bitcoin payment).
  * @throws Error when the api rejects the body (400, 404, or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
  * when the body fails {@link forumMessageSchema} validation.
@@ -2488,6 +2825,9 @@ export async function postMessageVideo(
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
+  if (response.status === 403) {
+    throw new PostFeeRequiredError('Could not post your message');
+  }
   if (response.status === 409) {
     let body: unknown;
     try {
@@ -2504,21 +2844,29 @@ export async function postMessageVideo(
   if (!response.ok) {
     throw new Error('Could not post your message');
   }
-  return forumMessageSchema.parse(await response.json());
+  const created = forumMessageSchema.parse(await response.json());
+  logInteraction(
+    'post_created',
+    { messageId: created.id, video: true, ask: askGoal !== null },
+    sessionToken,
+  );
+  return created;
 }
 
 /**
  * Loads the official platform profile note so a basis account can invoice
- * 1 sat to 21.gifts before posting or replying.
+ * 1 sat to 21.gifts before posting or replying, and whether this member's
+ * next top-level post is their free first post.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`.
+ * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`, plus
+ * `firstPostFree` (true only when the api sends `true`).
  * @throws Error with collapsed visitor copy on non-2xx, or when the body is
  * not `{ messageId, sats }`.
  */
 export async function fetchComposeTarget(
   sessionToken: string,
-): Promise<{ messageId: string; sats: number }> {
+): Promise<{ messageId: string; sats: number; firstPostFree: boolean }> {
   const response = await fetch('/messages/compose-target', {
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
@@ -2538,6 +2886,7 @@ export async function fetchComposeTarget(
   return {
     messageId: (body as { messageId: string }).messageId,
     sats: (body as { sats: number }).sats,
+    firstPostFree: (body as { firstPostFree?: unknown }).firstPostFree === true,
   };
 }
 
@@ -2552,11 +2901,18 @@ export async function fetchComposeTarget(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
+ * @param heart - When true, the body includes `heart: true` (a 1-sat heart with
+ *   no comment). Omitted by existing callers.
+ * @returns `{ pr, amountSats }` for the in-app wallet. The body may also carry
+ *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
- * @throws Error with collapsed visitor copy on 400/429/503 (and other
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
+ * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
- * {@link messageInvoiceSchema}.
+ * {@link messageInvoiceSchema}. A 403 `SUNDAY_REST` keeps that code in the
+ * thrown message so a heart click can show the Sunday copy. A 503
+ * `HEART_UNAVAILABLE` (the api cannot issue a heart as a fee-free Spark
+ * invoice) keeps that code in the thrown message the same way.
  */
 export async function postMessageInvoice(
   sessionToken: string,
@@ -2569,6 +2925,7 @@ export async function postMessageInvoice(
     amountEur: string | null;
     amountPhp: string | null;
   },
+  heart?: boolean,
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
     method: 'POST',
@@ -2581,9 +2938,11 @@ export async function postMessageInvoice(
       sats,
       ...(text === undefined || text === '' ? {} : { text }),
       ...(shown === undefined ? {} : shown),
+      ...(heart === true ? { heart: true } : {}),
     }),
   });
-  if (response.status === 400 || response.status === 429) {
+  await throwIfWalletAnswer(response);
+  if (response.status === 400 || response.status === 403 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
   }
@@ -2604,7 +2963,12 @@ export async function postMessageInvoice(
     throw new NoteDeletedError();
   }
   if (response.status === 503) {
-    throw new Error('Could not start the Bitcoin payment');
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === HEART_UNAVAILABLE_CODE
+        ? HEART_UNAVAILABLE_CODE
+        : 'Could not start the Bitcoin payment',
+    );
   }
   if (!response.ok) {
     throw new Error('Could not start the Bitcoin payment');
@@ -2620,6 +2984,8 @@ const repaymentLineSchema = z.object({
   username: z.string().nullable(),
   amount: z.string().nullable(),
   sats: z.number().int().nonnegative().nullable(),
+  /** Optional until every deployed api includes the live sats value for due fiat shares. */
+  dueSats: z.number().int().nonnegative().nullable().optional().default(null),
   status: z.enum(['scheduled', 'due', 'paid']),
   via: z.literal('lightning'),
 });
@@ -2639,6 +3005,8 @@ const repaymentLedgerSchema = z.object({
       username: z.string().nullable(),
       givenSats: z.number().int().nonnegative(),
       givenAmount: z.string().nullable(),
+      /** Optional until every deployed api includes receiver availability. */
+      canReceive: z.boolean().optional().default(true),
     }),
   ),
   repayments: z.array(repaymentLineSchema),
@@ -2651,10 +3019,16 @@ const repaymentLedgerSchema = z.object({
     .nullable(),
 });
 
-/** Public credit ledger from `GET /messages/:id/repayment`. */
+/**
+ * Public credit ledger from `GET /messages/:id/repayment`.
+ * `givers[].canReceive` defaults to true while older api bodies omit it.
+ */
 export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 
-/** One row of {@link RepaymentLedger}. */
+/**
+ * One row of {@link RepaymentLedger}; `dueSats` defaults to null while older
+ * api bodies omit it.
+ */
 export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
 
 /**
@@ -2675,23 +3049,126 @@ export async function getRepayment(messageId: string): Promise<RepaymentLedger |
   }
 }
 
+const myLoanSchema = z.object({
+  messageId: z.string(),
+  text: z.string(),
+  createdAt: z.string(),
+  goalSats: z.number().int().positive(),
+  sats: z.number().int().nonnegative(),
+  goalCurrency: z.enum(FORUM_GOAL_CURRENCIES),
+  goalAmount: z.string(),
+  goalAmountUsd: fiatAmountSchema,
+  goalAmountChf: fiatAmountSchema,
+  goalAmountEur: fiatAmountSchema,
+  goalAmountPhp: fiatAmountSchema,
+  amountUsd: fiatAmountSchema,
+  amountChf: fiatAmountSchema,
+  amountEur: fiatAmountSchema,
+  amountPhp: fiatAmountSchema,
+  termDays: z.number().int().positive(),
+  fundedAt: z.string().nullable(),
+  daysDue: z.number().int().nonnegative(),
+  daysPaid: z.number().int().nonnegative(),
+  repaidSats: z.number().int().nonnegative(),
+  totalSats: z.number().int().nonnegative(),
+  due: z.object({
+    payableSats: z.number().int().nonnegative(),
+    payablePeople: z.number().int().nonnegative(),
+    waitingSats: z.number().int().nonnegative(),
+    waitingPeople: z.number().int().nonnegative(),
+    behindDays: z.number().int().nonnegative(),
+    payableAmount: z.string().nullable(),
+    waitingAmount: z.string().nullable(),
+    lastPayment: z.boolean(),
+  }),
+  next: z
+    .object({
+      dueOn: z.string(),
+      sats: z.number().int().nonnegative().nullable(),
+      amount: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+const myLoansSchema = z.object({
+  sundayRest: z.boolean(),
+  loans: z.array(myLoanSchema),
+});
+
+/** `GET /me/loans` body. */
+export type MyLoans = z.infer<typeof myLoansSchema>;
+
+/** One loan of {@link MyLoans}. */
+export type MyLoan = MyLoans['loans'][number];
+
 /**
- * Asks for a BOLT11 that pays the next giver their share of the next due day.
+ * Loads the signed-in member's loans that are still collecting or being repaid.
+ *
+ * @param sessionToken - Bearer session of the member.
+ * @returns The member's live loans and the current Sunday-rest flag.
+ * @throws Error `Could not load your loans` on any non-2xx response, network
+ *   failure, or invalid body.
+ */
+export async function getMyLoans(sessionToken: string): Promise<MyLoans> {
+  try {
+    const response = await fetch('/me/loans', {
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load your loans');
+    }
+    return myLoansSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load your loans');
+  }
+}
+
+const repaymentBillSchema = z.object({
+  dayIndex: z.number().int().nonnegative(),
+  recipientAccountId: z.string(),
+  name: z.string(),
+  username: z.string().nullable(),
+  amountSats: z.number().int().positive(),
+  amount: z.string().nullable(),
+  pr: z.string().min(1),
+  sparkInvoice: z.string().min(1).nullable().optional().default(null),
+});
+
+const repaymentWaitingSchema = repaymentBillSchema.omit({ pr: true, sparkInvoice: true });
+
+const repaymentDueSchema = z.object({
+  bills: z.array(repaymentBillSchema),
+  waiting: z.array(repaymentWaitingSchema),
+});
+
+/**
+ * `POST /messages/:id/repayment/due` body; a missing bill `sparkInvoice` defaults to null.
+ */
+export type RepaymentDue = z.infer<typeof repaymentDueSchema>;
+
+/** One bill of {@link RepaymentDue}. */
+export type RepaymentBill = RepaymentDue['bills'][number];
+
+/**
+ * Asks for every payable bill of the author's funded loan at once.
  *
  * @param sessionToken - Bearer session of the credit's author.
  * @param messageId - Credit note id.
- * @returns The invoice the author pays from their wallet.
- * @throws Error with visitor copy when the api refuses.
+ * @returns Payable bills plus due shares whose recipients cannot receive yet.
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
+ * @throws {@link MissingRequirementsError} on a matching 409 response,
+ *   otherwise Error with payment copy.
  */
-export async function postRepaymentInvoice(
+export async function postRepaymentDue(
   sessionToken: string,
   messageId: string,
-): Promise<MessageInvoice> {
-  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
+): Promise<RepaymentDue> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/due`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
-  if (response.status === 400 || response.status === 429 || response.status === 404) {
+  await throwIfWalletAnswer(response);
+  if (response.status === 400 || response.status === 404 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
   }
@@ -2708,10 +3185,10 @@ export async function postRepaymentInvoice(
     }
     throw new Error('Could not start the Bitcoin payment');
   }
-  if (response.status === 503 || !response.ok) {
+  if (!response.ok) {
     throw new Error('Could not start the Bitcoin payment');
   }
-  return messageInvoiceSchema.parse(await response.json());
+  return repaymentDueSchema.parse(await response.json());
 }
 
 /**
@@ -2872,7 +3349,8 @@ export async function fetchConversation(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional comment shown as the gift body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll.
+ * @returns `{ pr, amountSats, messageId }` (plus `sparkInvoice`) for the in-app wallet and poll.
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link conversationInvoiceSchema}.
@@ -2901,6 +3379,7 @@ export async function postConversationInvoice(
       ...(shown === undefined ? {} : shown),
     }),
   });
+  await throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
@@ -3251,9 +3730,9 @@ export async function markVisibleForumNoteRead(
 /**
  * Fetches the JPEG/PNG/WebP bytes for one indexed forum message photo.
  *
- * Auth is a Bearer token in JS memory, so callers must use the returned blob
- * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
- * same-origin photo path.
+ * Private bytes (inbox, a deleted staff row, shop editor when the list is
+ * shorter than `photoCount`, profile picture) stay as a blob. Public forum
+ * stills use `forumPhotoSrc` on an `<img>` without Authorization.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Forum message id.
@@ -3286,10 +3765,10 @@ export async function fetchMessagePhoto(
 }
 
 /**
- * Fetches an indexed forum message photo without a session (public note page).
+ * Fetches an indexed forum message photo for `MemberProfileScreen` when the session is null; public stills use `forumPhotoSrc`.
  *
- * Api `GET /messages/:id/photo` is public; the same-origin proxy forwards
- * without Authorization. Callers must use a blob URL, not a bare `<img src>`.
+ * Private bytes stay as a blob. Public forum stills use `forumPhotoSrc` on an
+ * `<img>` without Authorization.
  *
  * @param id - Forum message id.
  * @param index - Zero-based photo index. Index zero uses the legacy route.
@@ -3408,6 +3887,7 @@ export async function deletePushSubscription(
  * when `viewKey` is absent or empty: a non-empty string POSTs JSON `{ name }`.
  * Otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
  * a status fallback; or when the body fails validation.
  */
@@ -3420,16 +3900,17 @@ export async function startPasskeyRegistration(
   const response = hasViewKey
     ? await fetch('/auth/passkey/register/begin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ viewKey }),
       })
     : hasName
       ? await fetch('/auth/passkey/register/begin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ name }),
         })
-      : await fetch('/auth/passkey/register/begin', { method: 'POST' });
+      : await fetch('/auth/passkey/register/begin', { method: 'POST', headers: passkeyHeaders() });
+  await throwIfLoginBlocked(response);
   if (!response.ok) {
     const raw = await readApiError(response);
     throw new Error(
@@ -3445,6 +3926,7 @@ export async function startPasskeyRegistration(
  * @param challengeId - Id returned by {@link startPasskeyRegistration}.
  * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
  * @returns Token plus account (`linkingKey` is null).
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws Error `'Username is already in use'` on 409 with that exact api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
@@ -3455,9 +3937,10 @@ export async function finishPasskeyRegistration(
 ): Promise<PasskeySession> {
   const response = await fetch('/auth/passkey/register/finish', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfLoginBlocked(response);
   await throwIfWrongAccount(response);
   if (response.status === 409) {
     const raw = await readApiError(response);
@@ -3475,10 +3958,16 @@ export async function finishPasskeyRegistration(
  * Starts a passkey authentication ceremony.
  *
  * @returns Challenge id plus WebAuthn request options JSON.
+ * @throws {@link AppOutdatedError} on api `code` `app_outdated` (the api
+ *   checks closed logins on authenticate finish, not here).
  * @throws Error on a non-2xx status or a body that fails validation.
  */
 export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
-  const response = await fetch('/auth/passkey/authenticate/begin', { method: 'POST' });
+  const response = await fetch('/auth/passkey/authenticate/begin', {
+    method: 'POST',
+    headers: passkeyHeaders(),
+  });
+  await throwIfLoginBlocked(response);
   if (!response.ok) {
     throw new Error(`Failed to start passkey authentication: ${response.status}`);
   }
@@ -3491,6 +3980,7 @@ export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
  * @param challengeId - Id returned by {@link startPasskeyAuthentication}.
  * @param credential - Browser assertion JSON.
  * @returns Token plus account.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws {@link UnknownCredentialError} on 400 with the unknown-credential api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
@@ -3501,9 +3991,10 @@ export async function finishPasskeyAuthentication(
 ): Promise<PasskeySession> {
   const response = await fetch('/auth/passkey/authenticate/finish', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfLoginBlocked(response);
   await throwIfWrongAccount(response);
   if (response.status === 400) {
     const raw = await readApiError(response);
@@ -3602,6 +4093,53 @@ export async function postWalletBackupSeen(sessionToken: string): Promise<Accoun
     throw new Error('Could not save wallet backup');
   }
   return accountSchema.parse(await response.json());
+}
+
+/** Body of `POST /me/wallet/report`: the balance and payments the api has not acknowledged. */
+export type WalletReportBody = {
+  /** Balance in whole satoshis at `syncedAt`. */
+  balanceSats: number;
+  /** When the wallet read that balance, ISO 8601. */
+  syncedAt: string;
+  /** Payments the api has not acknowledged yet, at most {@link WALLET_REPORT_PAGE_SIZE}. */
+  payments: WalletReportPayment[];
+};
+
+/** Most payments one wallet data report carries. */
+export const WALLET_REPORT_PAGE_SIZE = 200;
+
+const walletReportResponseSchema = z.object({ acknowledgedIds: z.array(z.string()) });
+
+/**
+ * Sends the wallet's balance and the payments the api has not acknowledged.
+ * The body holds only the fields of {@link WalletReportBody}: never the
+ * recovery phrase, a private key, PRF output, or a preimage.
+ *
+ * @param sessionToken - Bearer session.
+ * @param body - Balance, sync time, and at most {@link WALLET_REPORT_PAGE_SIZE} payments.
+ * @returns The payment ids the api acknowledged.
+ * @throws Error on a non-2xx status or a body without `acknowledgedIds`.
+ */
+export async function postWalletReport(
+  sessionToken: string,
+  body: WalletReportBody,
+): Promise<string[]> {
+  const response = await fetch('/me/wallet/report', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      balanceSats: body.balanceSats,
+      syncedAt: body.syncedAt,
+      payments: body.payments,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Could not report wallet data: ${response.status}`);
+  }
+  return walletReportResponseSchema.parse(await response.json()).acknowledgedIds;
 }
 
 /** Safe browser report body for `POST /me/passkey-renew/report`. */
@@ -3911,4 +4449,136 @@ export async function fetchShopNoteEdits(
     throw new Error('Could not load edit history');
   }
   return shopNoteEditsSchema.parse(await response.json()).edits;
+}
+
+/**
+ * Why the api refused a `/lnurl/…` request.
+ *
+ * - `notPayable`: malformed, not https, not a pay request, or on the app's own host.
+ * - `notFound`: the receiver's server does not know the address.
+ * - `unreachable`: the receiver's server did not answer the api.
+ * - `amount`: the amount is outside the receiver's bounds.
+ * - `comment`: the comment is longer than the receiver accepts.
+ * - `failed`: any other status, a network error, or an unreadable body.
+ */
+export type LnurlRelayErrorReason =
+  'notPayable' | 'notFound' | 'unreachable' | 'amount' | 'comment' | 'failed';
+
+/** Exact api `{ error }` bodies of the `/lnurl/…` endpoints and their reasons. */
+const LNURL_RELAY_ERRORS: Record<string, { status: number; reason: LnurlRelayErrorReason }> = {
+  'Not a payable address': { status: 400, reason: 'notPayable' },
+  'Address not found': { status: 404, reason: 'notFound' },
+  'Address could not be reached': { status: 502, reason: 'unreachable' },
+  'Amount out of range': { status: 400, reason: 'amount' },
+  'Comment too long': { status: 400, reason: 'comment' },
+};
+
+/**
+ * Rejection of `POST /lnurl/pay-request` or `POST /lnurl/invoice`.
+ */
+export class LnurlRelayError extends Error {
+  /** Why the request was refused. */
+  public readonly reason: LnurlRelayErrorReason;
+
+  /**
+   * @param reason - Why the request was refused.
+   */
+  public constructor(reason: LnurlRelayErrorReason) {
+    super(`Lightning address request refused: ${reason}`);
+    this.name = 'LnurlRelayError';
+    this.reason = reason;
+  }
+}
+
+/**
+ * Posts one `/lnurl/…` request and maps a refusal to {@link LnurlRelayError}.
+ *
+ * @param path - Same-origin path.
+ * @param sessionToken - Bearer session.
+ * @param body - JSON body.
+ * @returns The parsed JSON success body.
+ * @throws {@link LnurlRelayError} on a network error or a non-2xx status.
+ */
+async function postLnurlRelay(path: string, sessionToken: string, body: unknown): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new LnurlRelayError('failed');
+  }
+  if (!response.ok) {
+    const raw = await readApiError(response);
+    const known = raw === null ? undefined : LNURL_RELAY_ERRORS[raw];
+    throw new LnurlRelayError(
+      known !== undefined && known.status === response.status ? known.reason : 'failed',
+    );
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new LnurlRelayError('failed');
+  }
+}
+
+/**
+ * Reads the pay request of a Lightning address or LNURL on another host
+ * through the api (`POST /lnurl/pay-request`), for its amount bounds and
+ * comment length.
+ *
+ * @param sessionToken - Bearer session.
+ * @param target - `user@domain` or a bech32 LNURL.
+ * @returns The receiver's bounds, comment length, and normalised target.
+ * @throws {@link LnurlRelayError} with `notPayable`, `notFound`, `unreachable`,
+ * or `failed` (also when the body fails {@link lnurlPayRequestSchema}).
+ */
+export async function postLnurlPayRequest(
+  sessionToken: string,
+  target: string,
+): Promise<LnurlPayRequest> {
+  const parsed = lnurlPayRequestSchema.safeParse(
+    await postLnurlRelay('/lnurl/pay-request', sessionToken, { target }),
+  );
+  if (!parsed.success) {
+    throw new LnurlRelayError('failed');
+  }
+  return parsed.data;
+}
+
+/**
+ * Asks the receiver of a Lightning address or LNURL on another host for an
+ * invoice through the api (`POST /lnurl/invoice`). The api checks amount,
+ * comment, and the returned invoice before it answers.
+ *
+ * @param sessionToken - Bearer session.
+ * @param target - Normalised target from {@link postLnurlPayRequest}.
+ * @param amountMsat - Amount in millisats.
+ * @param comment - Optional comment; omitted when empty.
+ * @returns `{ pr }`, the BOLT11 invoice to pay.
+ * @throws {@link LnurlRelayError} with `notPayable`, `notFound`, `unreachable`,
+ * `amount`, `comment`, or `failed` (also when the body fails {@link lnurlInvoiceSchema}).
+ */
+export async function postLnurlInvoice(
+  sessionToken: string,
+  target: string,
+  amountMsat: number,
+  comment?: string,
+): Promise<LnurlInvoice> {
+  const parsed = lnurlInvoiceSchema.safeParse(
+    await postLnurlRelay('/lnurl/invoice', sessionToken, {
+      target,
+      amountMsat,
+      ...(comment === undefined || comment === '' ? {} : { comment }),
+    }),
+  );
+  if (!parsed.success) {
+    throw new LnurlRelayError('failed');
+  }
+  return parsed.data;
 }

@@ -1,7 +1,23 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { HandbookMarkdown, parseHandbookMarkdown } from '@/lib/handbook-markdown';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} data-client-link="true" {...rest}>
+      {children}
+    </a>
+  ),
+}));
 
 afterEach(cleanup);
 
@@ -153,6 +169,7 @@ describe('HandbookMarkdown', () => {
     expect(screen.getByText('x')).toBeTruthy();
     expect(screen.getByText('y')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'z' }).getAttribute('href')).toBe('/legal');
+    expect(screen.getByRole('link', { name: 'z' }).getAttribute('data-client-link')).toBe('true');
     expect(screen.getByAltText('login').getAttribute('src')).toBe('/handbook-images/login.png');
     expect(document.getElementById('screens-image-login')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link to login' })).toBeTruthy();
@@ -179,6 +196,22 @@ describe('HandbookMarkdown', () => {
     expect(screen.getByText(/Before/)).toBeTruthy();
     expect(screen.getByAltText('shot').getAttribute('src')).toBe('/handbook-images/x.png');
     expect(document.getElementById('x-image-shot')).toBeNull();
+  });
+
+  it('opens in-app paths client-side and keeps other sites and hashes plain', () => {
+    renderWithLocale(
+      <HandbookMarkdown
+        markdown={
+          '[app](/handbook/screens) [site](https://example.com) [far](//example.com) [here](#top)\n'
+        }
+        idPrefix="readme"
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'app' }).getAttribute('data-client-link')).toBe('true');
+    for (const name of ['site', 'far', 'here']) {
+      expect(screen.getByRole('link', { name }).getAttribute('data-client-link')).toBeNull();
+    }
+    expect(screen.getByRole('link', { name: 'here' }).getAttribute('href')).toBe('#readme-top');
   });
 
   it('uses link text and image alt as the copy-link label', () => {

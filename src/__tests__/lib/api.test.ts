@@ -1,6 +1,10 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  APP_OUTDATED_CODE,
+  AppOutdatedError,
+  LOGINS_CLOSED_CODE,
+  LoginsClosedError,
   deleteMessage,
   OPEN_CREDIT_DELETE_ERROR,
   setMessagePlace,
@@ -10,6 +14,7 @@ import {
   fetchShopNoteEdits,
   deletePushSubscription,
   dismissForumLaws,
+  markWalletIntroSeen,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
@@ -19,7 +24,10 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchShopActivity,
+  fetchFxSpot,
   fetchGrantContinuation,
+  fetchGrantPlaces,
+  FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
@@ -30,6 +38,8 @@ import {
   fetchMember,
   fetchMemberActivity,
   fetchMemberPosts,
+  fetchMemberShops,
+  fetchMemberCredits,
   fetchMemberReplies,
   fetchTrustChain,
   fetchTrustProposals,
@@ -47,6 +57,8 @@ import {
   fetchPublicMessage,
   fetchExternalAuthorProfile,
   fetchExternalAuthorPosts,
+  fetchExternalAuthorShops,
+  fetchExternalAuthorCredits,
   fetchExternalAuthorReplies,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -60,7 +72,6 @@ import {
   finishPasskeySeed,
   isUnknownCredentialError,
   isWrongAccountError,
-  LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   UNKNOWN_CREDENTIAL_ERROR,
   UnknownCredentialError,
   WRONG_ACCOUNT_ERROR,
@@ -79,37 +90,50 @@ import {
   postTrustReject,
   postTrustVerify,
   postConversationInvoice,
+  postLnurlInvoice,
+  postLnurlPayRequest,
+  LnurlRelayError,
   postConversationMessage,
   fetchPlaces,
   postMessage,
   fetchComposeTarget,
   NoteDeletedError,
+  PostFeeRequiredError,
+  WALLET_REQUIRED_CODE,
+  CANNOT_RECEIVE_CODE,
+  WalletRequiredError,
+  CannotReceiveError,
+  throwIfWalletAnswer,
   postMessageInvoice,
   getRepayment,
-  postRepaymentInvoice,
+  getMyLoans,
+  postRepaymentDue,
   postMessageVideo,
   postNotificationLevel,
+  postHeartNotifications,
   setAccountFiat,
   setAccountLocale,
   setAmountUnit,
   postPushSubscription,
   postWalletBackupSeen,
+  postWalletReport,
   postPasskeyRenewAck,
   postPasskeyRenewReport,
   agreeToRules,
   putAboutMe,
-  setLightningAddress,
   setLocation,
   setName,
   setUsername,
+  putWallet,
   skipSetup,
-  resolveLightningAddress,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   startPasskeySeed,
-  unlinkLightningAddress,
 } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 const account = {
   id: 'acc_1',
@@ -138,11 +162,13 @@ interface FakeResponse {
 
 /** Installs a `fetch` mock resolving to a minimal Response-like value. */
 function stubFetch(response: FakeResponse): Mock {
-  const fetchMock = vi.fn().mockResolvedValue({
+  const fake = {
     ok: response.ok,
     status: response.status,
     json: () => Promise.resolve(response.body),
-  } as unknown as Response);
+    clone: () => fake,
+  };
+  const fetchMock = vi.fn().mockResolvedValue(fake as unknown as Response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 }
@@ -160,8 +186,16 @@ function installNavigator(value: unknown): () => void {
   };
 }
 
+/** Build id the passkey requests send as `X-App-Build` under test. */
+const BUILD = 'build-under-test';
+
+beforeEach(() => {
+  process.env.NEXT_PUBLIC_BUILD_ID = BUILD;
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('fetchMe', () => {
@@ -215,7 +249,7 @@ describe('fetchViewProfile', () => {
   const profile = {
     name: 'Ada',
     location: null,
-    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddress: null,
     lightningAddressVerified: false,
     createdAt: 1,
     hasPasskey: false,
@@ -276,7 +310,7 @@ describe('fetchMember', () => {
     name: 'Carol',
     location: null,
     role: 'verified' as const,
-    lightningAddress: 'carol@walletofsatoshi.com',
+    lightningAddress: null,
     createdAt: '2026-01-15T12:00:00.000Z',
     aboutMe: null,
     aboutMeHasPhoto: false,
@@ -294,6 +328,32 @@ describe('fetchMember', () => {
     expect(fetchMock).toHaveBeenCalledWith(`/forum/members/${encodeURIComponent(member.id)}`, {
       headers: { Authorization: 'Bearer sess' },
     });
+  });
+
+  it('reads an empty About me note as no profile note', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...member, aboutMe: '', profileMessage: { ...emptyForumNote, accountId: member.id } },
+    });
+    await expect(fetchMember('sess', member.id)).resolves.toMatchObject({
+      aboutMe: '',
+      profileMessage: null,
+    });
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('keeps a valid profile note', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...member, profileMessage: forumMessage } });
+    await expect(fetchMember('sess', member.id)).resolves.toMatchObject({
+      profileMessage: forumMessage,
+    });
+  });
+
+  it('throws visitor copy when the profile note is not an object', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...member, profileMessage: 'nope' } });
+    await expect(fetchMember('sess', member.id)).rejects.toThrow();
   });
 
   it('returns null on 401 and 404', async () => {
@@ -357,6 +417,8 @@ describe('fetchMemberPosts', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated post list', async () => {
@@ -406,6 +468,126 @@ describe('fetchMemberPosts', () => {
       'Could not load messages. Please try again.',
     );
   });
+
+  it('drops an empty About me note and keeps the other posts', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [post, { ...emptyForumNote, accountId }] },
+    });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([post]);
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('returns an empty list when every post fails validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({ ok: true, status: 200, body: { messages: [emptyForumNote] } });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy when the envelope fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: null } });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberShops', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const shop = {
+    id: 'shop-1',
+    accountId,
+    name: 'Carol',
+    text: 'A shop from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+    heartCount: 0,
+    hearted: false,
+  };
+
+  it('returns the validated shop list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [shop] } });
+    await expect(fetchMemberShops('sess', accountId)).resolves.toEqual([shop]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/shops`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberShops('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberShops('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberCredits', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const credit = {
+    id: 'credit-1',
+    accountId,
+    name: 'Carol',
+    text: 'A credit from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+    heartCount: 0,
+    hearted: false,
+  };
+
+  it('returns the validated credit list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [credit] } });
+    await expect(fetchMemberCredits('sess', accountId)).resolves.toEqual([credit]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/credits`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberCredits('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberCredits('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
 });
 
 describe('fetchMemberReplies', () => {
@@ -425,6 +607,8 @@ describe('fetchMemberReplies', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated reply list', async () => {
@@ -452,6 +636,18 @@ describe('fetchMemberReplies', () => {
     await expect(fetchMemberReplies('sess', accountId)).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+
+  it('drops a reply that fails validation and keeps the other replies', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...reply, text: '' }, reply] },
+    });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([reply]);
+    stubFetch({ ok: true, status: 200, body: { messages: [{ ...reply, text: '' }] } });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([]);
   });
 });
 
@@ -626,6 +822,27 @@ describe('setName', () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setName('sess', 'x')).rejects.toThrow();
   });
+
+  it('rewrites Lightning Address jargon to address', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
+    await expect(setName('sess', 'x')).rejects.toThrow('address is taken');
+  });
+
+  it('rewrites login, payment, and Bitcoin jargon', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'LNURL-auth, LNURL auth, and LNURL failed for this Lightning invoice' },
+    });
+    await expect(setName('sess', 'x')).rejects.toThrow(
+      'login, login, and login failed for this Bitcoin payment',
+    );
+  });
+
+  it('rewrites an upstream-unreachable error', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Upstream api unreachable' } });
+    await expect(setName('sess', 'x')).rejects.toThrow('Something went wrong. Please try again.');
+  });
 });
 
 describe('setUsername', () => {
@@ -657,6 +874,47 @@ describe('setUsername', () => {
   it('throws username-request on other failures', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setUsername('sess', 'ada')).rejects.toThrow('username-request');
+  });
+});
+
+describe('putWallet', () => {
+  const key = `02${'a'.repeat(64)}`;
+
+  it('puts the key and returns the validated account', async () => {
+    const claimed = { ...account, sparkPubkey: key, sparkWalletVerified: false };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: claimed });
+    await expect(putWallet('sess', key)).resolves.toEqual(claimed);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sparkPubkey: key }),
+    });
+  });
+
+  it('throws wallet-verified on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-verified');
+  });
+
+  it('throws wallet-unavailable on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-unavailable');
+  });
+
+  it('throws wallet-request on other failures and invalid bodies', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
+    stubFetch({ ok: true, status: 200, body: { id: 'x' } });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      }),
+    );
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
   });
 });
 
@@ -715,113 +973,21 @@ describe('setLocation', () => {
   });
 });
 
-describe('setLightningAddress', () => {
-  it('posts the address and returns the validated account', async () => {
-    const linked = { ...account, lightningAddress: 'me@walletofsatoshi.com' };
-    const fetchMock = stubFetch({ ok: true, status: 200, body: linked });
+describe('markWalletIntroSeen', () => {
+  it('posts and returns the validated account', async () => {
+    const seen = { ...account, walletIntroSeen: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: seen });
 
-    await expect(setLightningAddress('sess', 'me@walletofsatoshi.com')).resolves.toEqual(linked);
-    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
+    await expect(markWalletIntroSeen('sess')).resolves.toEqual(seen);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/wallet-intro-seen`, {
       method: 'POST',
-      headers: {
-        Authorization: 'Bearer sess',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ address: 'me@walletofsatoshi.com' }),
-    });
-  });
-
-  it('throws the api error message on a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Invalid Lightning Address' } });
-    await expect(setLightningAddress('sess', 'nope')).rejects.toThrow(
-      'That Wallet of Satoshi address is not valid',
-    );
-  });
-
-  it('throws the not-found message when the address could not be resolved', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'Lightning Address could not be resolved' },
-    });
-    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
-      'That Wallet of Satoshi address could not be found',
-    );
-  });
-
-  it('rewrites remaining Lightning jargon in a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Wallet of Satoshi address is taken',
-    );
-  });
-
-  it('falls back when a 400 body is not an error envelope', async () => {
-    stubFetch({ ok: false, status: 400, body: {} });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('falls back when a 400 body is not JSON', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 400,
-        json: () => Promise.reject(new SyntaxError('not json')),
-      } as unknown as Response),
-    );
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws on a non-400 non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow();
-  });
-
-  it('throws the exact not-zap English string without rewriting', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: LIGHTNING_ADDRESS_NOT_ZAP_ERROR },
-    });
-    await expect(setLightningAddress('sess', 'nozap@walletofsatoshi.com')).rejects.toThrow(
-      LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
-    );
-  });
-});
-
-describe('unlinkLightningAddress', () => {
-  it('deletes the address and returns the validated account', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
-
-    await expect(unlinkLightningAddress('sess')).resolves.toEqual(account);
-    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
-      method: 'DELETE',
       headers: { Authorization: 'Bearer sess' },
     });
   });
 
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
-    await expect(unlinkLightningAddress('sess')).rejects.toThrow(
-      'Could not remove your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
-    await expect(unlinkLightningAddress('sess')).rejects.toThrow();
+    await expect(markWalletIntroSeen('sess')).rejects.toThrow('Could not save the wallet tour');
   });
 });
 
@@ -876,6 +1042,30 @@ describe('postNotificationLevel', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(postNotificationLevel('sess', 'active')).rejects.toThrow();
+  });
+});
+
+describe('postHeartNotifications', () => {
+  it('posts enabled and returns the validated account', async () => {
+    const updated = { ...account, notifyHearts: false };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(postHeartNotifications('sess', false)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/heart-notifications', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ enabled: false }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postHeartNotifications('sess', true)).rejects.toThrow(
+      'Could not save the heart setting.',
+    );
   });
 });
 
@@ -980,75 +1170,6 @@ describe('agreeToRules', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(agreeToRules('sess')).rejects.toThrow();
-  });
-});
-
-describe('resolveLightningAddress', () => {
-  const resolved = {
-    address: 'me@walletofsatoshi.com',
-    callback: 'https://walletofsatoshi.com/lnurlp/callback',
-    minSendable: 1000,
-    maxSendable: 100_000_000,
-  };
-
-  it('returns the validated metadata and encodes the address', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: resolved });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).resolves.toEqual(resolved);
-    expect(fetchMock).toHaveBeenCalledWith(
-      `/lightning-address?address=${encodeURIComponent('me@walletofsatoshi.com')}`,
-    );
-  });
-
-  it('throws the api error message on a 400', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'Not a valid Lightning Address (expected name@domain)' },
-    });
-    await expect(resolveLightningAddress('nope')).rejects.toThrow(
-      'Enter an address like you@walletofsatoshi.com',
-    );
-  });
-
-  it('throws the api error message on a 502', async () => {
-    stubFetch({
-      ok: false,
-      status: 502,
-      body: { error: 'Lightning Address could not be resolved' },
-    });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'That Wallet of Satoshi address could not be found',
-    );
-  });
-
-  it('rewrites an upstream-unreachable 502', async () => {
-    stubFetch({
-      ok: false,
-      status: 502,
-      body: { error: 'Upstream api unreachable' },
-    });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Something went wrong. Please try again.',
-    );
-  });
-
-  it('falls back when a 502 body is not an error envelope', async () => {
-    stubFetch({ ok: false, status: 502, body: { error: 123 } });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Could not find that Wallet of Satoshi address',
-    );
-  });
-
-  it('throws on a non-api-message non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Could not find that Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { address: 'x' } });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow();
   });
 });
 
@@ -1214,6 +1335,47 @@ describe('fetchGiftStats', () => {
   });
 });
 
+describe('fetchFxSpot', () => {
+  const spot = {
+    asOf: '2026-10-07T12:00:00.000Z',
+    source: 'exchange',
+    rates: { USD: '62345.12', CHF: '55000' },
+  };
+
+  it('returns the prices without an Authorization header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: spot });
+    await expect(fetchFxSpot()).resolves.toEqual(spot);
+    expect(fetchMock).toHaveBeenCalledWith('/fx/spot');
+  });
+
+  it('accepts the answer without a quote', async () => {
+    const none = { asOf: null, source: null, rates: {} };
+    stubFetch({ ok: true, status: 200, body: none });
+    await expect(fetchFxSpot()).resolves.toEqual(none);
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'down' } });
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
+  });
+
+  it('throws when a price is not a decimal number', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...spot, rates: { USD: '-1' } } });
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
+  });
+});
+
 describe('fetchShopActivity', () => {
   function thirtyDays(): { day: string; shopCount: number }[] {
     const start = Date.parse('2026-08-22T00:00:00.000Z');
@@ -1248,6 +1410,37 @@ describe('fetchShopActivity', () => {
     stubFetch({ ok: true, status: 200, body: { days: [] } });
     await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
+    );
+  });
+});
+
+describe('fetchGrantPlaces', () => {
+  const places = {
+    round: 1,
+    startsAt: '2026-10-16T00:00:00.000Z',
+    places: 10,
+    admitted: 3,
+    placesLeft: 7,
+    nextGoalShops: 20,
+  };
+
+  it('returns the places without an Authorization header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: places });
+    await expect(fetchGrantPlaces()).resolves.toEqual(places);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/places');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Funding is unavailable' } });
+    await expect(fetchGrantPlaces()).rejects.toThrow(
+      'Could not load the grant places. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...places, placesLeft: -1 } });
+    await expect(fetchGrantPlaces()).rejects.toThrow(
+      'Could not load the grant places. Please try again.',
     );
   });
 });
@@ -1526,7 +1719,12 @@ const forumMessage = {
   videoContentType: null,
   role: 'basis' as const,
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
+
+/** An empty About me note: no text, no media, no sats. */
+const emptyForumNote = { ...forumMessage, id: 'm-empty', text: '' };
 
 describe('fetchPlaces', () => {
   const placeRow = {
@@ -1619,6 +1817,24 @@ describe('fetchPublicForumMessages', () => {
     stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
     await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
   });
+
+  it('drops a row that fails validation and keeps the other rows and the cursor', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [emptyForumNote, forumMessage], nextCursor: 'next' },
+    });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'next',
+    });
+    stubFetch({ ok: true, status: 200, body: { messages: [emptyForumNote] } });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [],
+      nextCursor: null,
+    });
+  });
 });
 
 describe('fetchMessages', () => {
@@ -1645,6 +1861,8 @@ describe('fetchMessages', () => {
           hasVideo: false,
           videoContentType: null,
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
           photoCount: 0,
         },
       ],
@@ -1678,6 +1896,19 @@ describe('fetchMessages', () => {
       '/forum/messages?mode=active&hashtag=21GiftsShop&limit=20',
       { headers: { Authorization: 'Bearer sess' } },
     );
+  });
+
+  it('sends country after hashtag and before limit, and omits an empty one', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'all', hashtag: '21GiftsShop', country: 'PH' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/forum/messages?mode=all&hashtag=21GiftsShop&country=PH&limit=20',
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+    await fetchMessages('sess', { mode: 'all', country: '' });
+    expect(fetchMock).toHaveBeenLastCalledWith('/forum/messages?mode=all&limit=20', {
+      headers: { Authorization: 'Bearer sess' },
+    });
   });
 
   it('omits an empty hashtag', async () => {
@@ -1759,8 +1990,39 @@ describe('fetchMessages', () => {
     );
   });
 
-  it('throws visitor copy when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { messages: [{ id: 'm1' }] } });
+  it('drops a row that fails validation and keeps the other rows and the cursor', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, emptyForumNote, { id: 'm3' }], nextCursor: 'next' },
+    });
+    await expect(fetchMessages('sess', { mode: 'all' })).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'next',
+    });
+    expect(warn).toHaveBeenCalledWith('Skipped 2 forum note(s) that failed the note schema');
+  });
+
+  it('returns an empty page with its cursor when every row fails validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [emptyForumNote], nextCursor: 'next' },
+    });
+    await expect(fetchMessages('sess', { mode: 'all' })).resolves.toEqual({
+      messages: [],
+      nextCursor: 'next',
+    });
+  });
+
+  it('throws visitor copy when the envelope fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: [], nextCursor: '' } });
     await expect(fetchMessages('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
@@ -1849,7 +2111,27 @@ describe('fetchComposeTarget', () => {
     await expect(fetchComposeTarget('sess')).resolves.toEqual({
       messageId: 'fee-note',
       sats: 0,
+      firstPostFree: false,
     });
+  });
+
+  it('passes on a free first post only when the api says true', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0, firstPostFree: true },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toEqual({
+      messageId: 'fee-note',
+      sats: 0,
+      firstPostFree: true,
+    });
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0, firstPostFree: 'yes' },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toMatchObject({ firstPostFree: false });
   });
 
   it('throws collapsed copy when the request fails', async () => {
@@ -1905,49 +2187,234 @@ const LEDGER = {
   next: { dayIndex: 0, sats: 21, recipientAccountId: '11111111-1111-4111-8111-111111111111' },
 };
 
+describe('wallet answers', () => {
+  /** A 400 whose body is read through `clone()`, like a fetch `Response`. */
+  function answer(status: number, body: Promise<unknown>): Response {
+    const fake = { status, json: () => body, clone: () => fake };
+    return fake as unknown as Response;
+  }
+
+  it('names the wallet codes', () => {
+    expect(WALLET_REQUIRED_CODE).toBe('wallet_required');
+    expect(CANNOT_RECEIVE_CODE).toBe('cannot_receive');
+  });
+
+  it('builds typed errors with stable names and messages', () => {
+    const required = new WalletRequiredError();
+    expect(required).toBeInstanceOf(Error);
+    expect(required.name).toBe('WalletRequiredError');
+    expect(required.message).toBe('wallet_required');
+    const cannot = new CannotReceiveError();
+    expect(cannot).toBeInstanceOf(Error);
+    expect(cannot.name).toBe('CannotReceiveError');
+    expect(cannot.message).toBe('cannot_receive');
+  });
+
+  it('throws WalletRequiredError for a 400 with code wallet_required', async () => {
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.resolve({ error: 'x', code: 'wallet_required' }))),
+    ).rejects.toBeInstanceOf(WalletRequiredError);
+  });
+
+  it('throws CannotReceiveError for a 400 with code cannot_receive', async () => {
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.resolve({ error: 'x', code: 'cannot_receive' }))),
+    ).rejects.toBeInstanceOf(CannotReceiveError);
+  });
+
+  it('passes a 400 without a wallet code through, whatever its text', async () => {
+    for (const body of [
+      { error: 'Set up your wallet first' },
+      { error: "The author's wallet cannot receive this Bitcoin payment", code: 'other' },
+      'not an object',
+      null,
+    ]) {
+      await expect(
+        throwIfWalletAnswer(answer(400, Promise.resolve(body))),
+      ).resolves.toBeUndefined();
+    }
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.reject(new Error('not json')))),
+    ).resolves.toBeUndefined();
+  });
+
+  it('decides by code only, so other statuses pass through even with a wallet code', async () => {
+    for (const status of [200, 404, 409, 412, 422, 500]) {
+      await expect(
+        throwIfWalletAnswer(answer(status, Promise.resolve({ code: 'wallet_required' }))),
+      ).resolves.toBeUndefined();
+    }
+  });
+});
+
 describe('getRepayment', () => {
   it('returns the public ledger and null when it is missing or unusable', async () => {
     stubFetch({ ok: true, status: 200, body: LEDGER });
-    await expect(getRepayment('m1')).resolves.toEqual(LEDGER);
+    await expect(getRepayment('m1')).resolves.toEqual({
+      ...LEDGER,
+      givers: LEDGER.givers.map((giver) => ({ ...giver, canReceive: true })),
+      repayments: LEDGER.repayments.map((row) => ({ ...row, dueSats: null })),
+    });
     stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
     await expect(getRepayment('m1')).resolves.toBeNull();
     stubFetch({ ok: true, status: 200, body: { currency: 'nope' } });
     await expect(getRepayment('m1')).resolves.toBeNull();
   });
+
+  it('keeps explicit receiver availability and live due sats', async () => {
+    const body = {
+      ...LEDGER,
+      givers: LEDGER.givers.map((giver) => ({ ...giver, canReceive: false })),
+      repayments: LEDGER.repayments.map((row) => ({ ...row, sats: null, dueSats: 20 })),
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(getRepayment('m1')).resolves.toEqual(body);
+  });
 });
 
-describe('postRepaymentInvoice', () => {
-  it('returns the giver invoice', async () => {
-    stubFetch({
-      ok: true,
-      status: 200,
-      body: { pr: 'lnbc21n1repay', amountSats: 21 },
-    });
-    await expect(postRepaymentInvoice('sess', 'm1')).resolves.toEqual({
-      pr: 'lnbc21n1repay',
-      amountSats: 21,
+const MY_LOAN = {
+  messageId: 'm1',
+  text: 'Train ticket',
+  createdAt: '2026-10-01T12:00:00.000Z',
+  goalSats: 30_000,
+  sats: 18_000,
+  goalCurrency: 'BTC',
+  goalAmount: '30000',
+  goalAmountUsd: null,
+  goalAmountChf: null,
+  goalAmountEur: null,
+  goalAmountPhp: null,
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+  termDays: 30,
+  fundedAt: '2026-10-02T12:00:00.000Z',
+  daysDue: 12,
+  daysPaid: 11,
+  repaidSats: 11_000,
+  totalSats: 30_000,
+  due: {
+    payableSats: 800,
+    payablePeople: 2,
+    waitingSats: 200,
+    waitingPeople: 1,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: { dueOn: '2026-10-11', sats: 1_000, amount: null },
+};
+
+describe('getMyLoans', () => {
+  it('returns a validated body with bearer and the same-origin path', async () => {
+    const body = { sundayRest: false, loans: [MY_LOAN] };
+    const fetchMock = stubFetch({ ok: true, status: 200, body });
+    await expect(getMyLoans('sess')).resolves.toEqual(body);
+    expect(fetchMock).toHaveBeenCalledWith('/me/loans', {
+      headers: { Authorization: 'Bearer sess' },
     });
   });
 
-  it('surfaces a 400 and a missing-requirements 409', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Nothing is due' } });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow('Nothing is due');
+  it('uses one stable error for non-ok, invalid, and rejected reads', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+    stubFetch({ ok: true, status: 200, body: { sundayRest: false, loans: [{}] } });
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+  });
+});
+
+describe('postRepaymentDue', () => {
+  it('returns bills, defaults sparkInvoice, and encodes the note id', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        bills: [
+          {
+            dayIndex: 3,
+            recipientAccountId: 'acc_1',
+            name: 'Bruno',
+            username: 'bruno',
+            amountSats: 500,
+            amount: null,
+            pr: 'lnbc500n1repay',
+          },
+        ],
+        waiting: [
+          {
+            dayIndex: 3,
+            recipientAccountId: 'acc_2',
+            name: 'Diego',
+            username: null,
+            amountSats: 200,
+            amount: null,
+          },
+        ],
+      },
+    });
+    await expect(postRepaymentDue('sess', 'a/b')).resolves.toEqual({
+      bills: [
+        {
+          dayIndex: 3,
+          recipientAccountId: 'acc_1',
+          name: 'Bruno',
+          username: 'bruno',
+          amountSats: 500,
+          amount: null,
+          pr: 'lnbc500n1repay',
+          sparkInvoice: null,
+        },
+      ],
+      waiting: [
+        {
+          dayIndex: 3,
+          recipientAccountId: 'acc_2',
+          name: 'Diego',
+          username: null,
+          amountSats: 200,
+          amount: null,
+        },
+      ],
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment/due', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('surfaces user-facing 400, 404, and 429 errors and their fallback', async () => {
+    for (const status of [400, 404, 429]) {
+      stubFetch({ ok: false, status, body: { error: 'Lightning invoice failed' } });
+      await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow('Bitcoin payment failed');
+    }
     stubFetch({ ok: false, status: 400, body: {} });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+  });
+
+  it('throws typed wallet and missing-requirements errors', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toBeInstanceOf(WalletRequiredError);
     stubFetch({
       ok: false,
       status: 409,
       body: { error: 'missing_requirements', missing: ['rules'] },
     });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(Error);
-    stubFetch({ ok: false, status: 503, body: {} });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
-      'Could not start the Bitcoin payment',
-    );
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toBeInstanceOf(MissingRequirementsError);
+  });
+
+  it('uses generic payment copy for unusable 409 and other non-ok answers', async () => {
     stubFetch({ ok: false, status: 409, body: { error: 'busy' } });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
     vi.stubGlobal(
@@ -1955,16 +2422,41 @@ describe('postRepaymentInvoice', () => {
       vi.fn().mockResolvedValue({
         ok: false,
         status: 409,
-        json: () => Promise.reject(new Error('not json')),
-      }),
+        json: () => Promise.reject(new SyntaxError('bad json')),
+        clone() {
+          return this;
+        },
+      } as unknown as Response),
     );
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('rejects an invalid success body', async () => {
+    stubFetch({ ok: true, status: 200, body: { bills: [{}], waiting: [] } });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow();
   });
 });
 
 describe('postMessageInvoice', () => {
+  it('returns sparkInvoice when the api issues one', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, sparkInvoice: 'spark1x' },
+    });
+    await expect(postMessageInvoice('sess', 'm1', 21)).resolves.toEqual({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+      sparkInvoice: 'spark1x',
+    });
+  });
+
   it('returns pr and amountSats', async () => {
     const fetchMock = stubFetch({
       ok: true,
@@ -2021,6 +2513,19 @@ describe('postMessageInvoice', () => {
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       sats: 21,
       ...shown,
+    });
+  });
+
+  it('sends heart true when the heart flag is set', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc1', amountSats: 1 },
+    });
+    await postMessageInvoice('sess', 'm1', 1, undefined, undefined, true);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 1,
+      heart: true,
     });
   });
 
@@ -2088,11 +2593,43 @@ describe('postMessageInvoice', () => {
     );
   });
 
+  it('keeps HEART_UNAVAILABLE from a 503 in the thrown message', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'HEART_UNAVAILABLE' } });
+    await expect(postMessageInvoice('sess', 'm1', 1, undefined, undefined, true)).rejects.toThrow(
+      /^HEART_UNAVAILABLE$/,
+    );
+  });
+
+  it('collapses any other 503 error to the payment copy', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Payments are unavailable' } });
+    await expect(postMessageInvoice('sess', 'm1', 1, undefined, undefined, true)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
   it('throws on other non-ok statuses', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+  });
+
+  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(WalletRequiredError);
+  });
+
+  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'cannot receive', code: 'cannot_receive' },
+    });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });
 
@@ -2103,6 +2640,20 @@ const parsedForumMessage = {
 };
 
 describe('postMessage', () => {
+  it('records a created post or reply without its text', async () => {
+    vi.mocked(logInteraction).mockClear();
+    stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('tok', { text: 'Secret words', photos: [] });
+    await postMessage('tok', { text: 'Ask', goalCurrency: 'CHF', goalAmount: '10' });
+    await postMessage('tok', { text: 'Reply', inReplyTo: 'parent-1' });
+    expect(vi.mocked(logInteraction).mock.calls).toEqual([
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: true }, 'tok'],
+      ['reply_created', { messageId: forumMessage.id, parentId: 'parent-1' }, 'tok'],
+    ]);
+    expect(JSON.stringify(vi.mocked(logInteraction).mock.calls)).not.toContain('Secret words');
+  });
+
   it('includes place only when set', async () => {
     const fetchMock = stubFetch({
       ok: true,
@@ -2277,6 +2828,12 @@ describe('postMessage', () => {
     expect(JSON.parse((fetchMock.mock.calls[2]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
     });
+    expect(
+      vi
+        .mocked(logInteraction)
+        .mock.calls.slice(-3)
+        .map(([, props]) => props?.['ask']),
+    ).toEqual([false, false, false]);
   });
 
   it('sends a capture time and drops a blank one', async () => {
@@ -2377,6 +2934,14 @@ describe('postMessage', () => {
     );
   });
 
+  it('throws PostFeeRequiredError when a top-level post needs a payment', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'A post needs a Bitcoin payment' } });
+    const err = await postMessage('sess', { text: 'x' }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PostFeeRequiredError);
+    expect((err as Error).name).toBe('PostFeeRequiredError');
+    expect((err as Error).message).toBe('A post needs a Bitcoin payment');
+  });
+
   it('falls back when a 403 body is not an error envelope', async () => {
     stubFetch({ ok: false, status: 403, body: {} });
     await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
@@ -2434,6 +2999,23 @@ describe('postMessage', () => {
 });
 
 describe('postMessageVideo', () => {
+  it('records a created video post', async () => {
+    vi.mocked(logInteraction).mockClear();
+    stubFetch({ ok: true, status: 200, body: { ...forumMessage, hasVideo: true } });
+    const file = new File(['vid'], 'clip.mp4', { type: 'video/mp4' });
+    await postMessageVideo('tok', { text: 'Hi', video: file });
+    await postMessageVideo('tok', {
+      text: 'Hi',
+      video: file,
+      goalCurrency: 'CHF',
+      goalAmount: '5',
+    });
+    expect(vi.mocked(logInteraction).mock.calls).toEqual([
+      ['post_created', { messageId: forumMessage.id, video: true, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, video: true, ask: true }, 'tok'],
+    ]);
+  });
+
   it('includes place fields only when set', async () => {
     const created = {
       ...forumMessage,
@@ -2604,6 +3186,11 @@ describe('postMessageVideo', () => {
     expect(form.get('goalCurrency')).toBeNull();
     expect(form.get('goalAmount')).toBeNull();
     expect(form.get('goalSats')).toBeNull();
+    expect(vi.mocked(logInteraction).mock.calls.at(-1)?.[1]).toEqual({
+      messageId: created.id,
+      video: true,
+      ask: false,
+    });
   });
 
   it('throws the api error message on a 400', async () => {
@@ -2618,6 +3205,14 @@ describe('postMessageVideo', () => {
     await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
       'Too many messages',
     );
+  });
+
+  it('throws PostFeeRequiredError on a 403', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'A post needs a Bitcoin payment' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    const err = await postMessageVideo('sess', { text: 'x', video }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PostFeeRequiredError);
+    expect((err as Error).message).toBe('Could not post your message');
   });
 
   it('throws the api error message on a 404', async () => {
@@ -3229,6 +3824,46 @@ describe('fetchExternalAuthorPosts', () => {
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchExternalAuthorShops', () => {
+  it('GETs /public-messages/:id/external-shops without bearer and skips invalid items', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, { ...forumMessage, id: 'bad', name: '' }] },
+    });
+    await expect(fetchExternalAuthorShops('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/external-shops');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('throws visitor copy on failures', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchExternalAuthorShops('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchExternalAuthorCredits', () => {
+  it('GETs /public-messages/:id/external-credits without bearer and skips invalid items', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, { ...forumMessage, id: 'bad', name: '' }] },
+    });
+    await expect(fetchExternalAuthorCredits('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/external-credits');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('throws visitor copy on failures', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchExternalAuthorCredits('parent')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });
@@ -3908,6 +4543,28 @@ describe('postConversationInvoice', () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
       'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
+      WalletRequiredError,
+    );
+  });
+
+  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'cannot receive', code: 'cannot_receive' },
+    });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
+      CannotReceiveError,
     );
   });
 });
@@ -4619,7 +5276,10 @@ describe('startPasskeyRegistration', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('posts JSON viewKey when provided', async () => {
@@ -4628,7 +5288,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey)).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -4638,7 +5298,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(undefined, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -4649,7 +5309,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -4659,7 +5319,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration('', 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -4667,7 +5327,10 @@ describe('startPasskeyRegistration', () => {
   it('posts with no body when name is empty', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration(undefined, '')).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws the exact invalid-username string on 400', async () => {
@@ -4719,7 +5382,7 @@ describe('finishPasskeyRegistration', () => {
     await expect(finishPasskeyRegistration('ch', { id: 'cred' })).resolves.toEqual(passkeySession);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/finish', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
     });
   });
@@ -4767,7 +5430,10 @@ describe('startPasskeyAuthentication', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyAuthentication()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws on a non-ok response', async () => {
@@ -4817,6 +5483,154 @@ describe('finishPasskeyAuthentication', () => {
     const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
     expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
     expect(isUnknownCredentialError(error)).toBe(false);
+  });
+});
+
+describe('passkey login refusals', () => {
+  const steps: Array<[string, () => Promise<unknown>]> = [
+    ['startPasskeyRegistration', () => startPasskeyRegistration()],
+    ['finishPasskeyRegistration', () => finishPasskeyRegistration('ch', {})],
+    ['startPasskeyAuthentication', () => startPasskeyAuthentication()],
+    ['finishPasskeyAuthentication', () => finishPasskeyAuthentication('ch', {})],
+  ];
+
+  /** The api answers `logins_closed` on these steps only, never on authenticate begin. */
+  const closedSteps = steps.filter(([name]) => name !== 'startPasskeyAuthentication');
+
+  it.each(closedSteps)('%s throws LoginsClosedError on 503 logins_closed', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 503,
+      body: {
+        error: 'Logins are paused for an update. Try again later.',
+        code: LOGINS_CLOSED_CODE,
+      },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(LoginsClosedError);
+    expect((error as Error).message).toBe('logins_closed');
+  });
+
+  it.each(steps)('%s throws AppOutdatedError on 403 app_outdated', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 403,
+      body: { error: 'A new app version is ready. Reload the page.', code: APP_OUTDATED_CODE },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(AppOutdatedError);
+    expect((error as Error).message).toBe('app_outdated');
+  });
+
+  /**
+   * Installs a real `Response` per call, so a body read by the refusal check
+   * on the original instead of a clone leaves the caller an already-read body.
+   */
+  function stubRealResponse(status: number, body: unknown): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+  }
+
+  it('startPasskeyRegistration still reads the api error of a plain 403 after the check', async () => {
+    stubRealResponse(403, { error: 'Registration is not allowed here' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Registration is not allowed here');
+  });
+
+  it('startPasskeyRegistration still reads the api error of a plain 503 after the check', async () => {
+    stubRealResponse(503, { error: 'Try again shortly' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Try again shortly');
+  });
+
+  it('finishPasskeyRegistration still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('finishPasskeyAuthentication still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it.each(closedSteps)(
+    '%s keeps the generic failure for logins_closed on 403',
+    async (_name, run) => {
+      stubFetch({ ok: false, status: 403, body: { code: LOGINS_CLOSED_CODE } });
+      const closedOn403 = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(closedOn403).toBeInstanceOf(Error);
+      expect(closedOn403).not.toBeInstanceOf(LoginsClosedError);
+      expect(closedOn403).not.toBeInstanceOf(AppOutdatedError);
+    },
+  );
+
+  it('startPasskeyAuthentication keeps the generic failure for another 403 code', async () => {
+    stubFetch({ ok: false, status: 403, body: { code: 'other_forbidden' } });
+    const error = await startPasskeyAuthentication().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toEqual(new Error('Failed to start passkey authentication: 403'));
+  });
+
+  it.each(steps)('%s keeps the generic failure for app_outdated on 503', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
+    const outdatedOn503 = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(outdatedOn503).toBeInstanceOf(Error);
+    expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
+    expect(outdatedOn503).not.toBeInstanceOf(LoginsClosedError);
+  });
+
+  it.each(steps)(
+    '%s keeps the generic failure for a 503 without a JSON body',
+    async (_name, run) => {
+      const fake = {
+        ok: false,
+        status: 503,
+        json: () => Promise.reject(new Error('not json')),
+        clone: () => fake,
+      };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fake as unknown as Response));
+      const error = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(error).toBeInstanceOf(Error);
+      expect(error).not.toBeInstanceOf(LoginsClosedError);
+    },
+  );
+
+  it.each(steps)('%s keeps the generic failure for a null body', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: null });
+    const error = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(LoginsClosedError);
+  });
+
+  it('sends X-App-Build on authenticate finish', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeySession });
+    await finishPasskeyAuthentication('ch', { id: 'cred' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
   });
 });
 
@@ -5506,6 +6320,19 @@ describe('fetchFundingApplication', () => {
     });
   });
 
+  it('drops a post that fails validation and keeps the other posts', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...detail, messages: [emptyForumNote, forumMessage] },
+    });
+    await expect(fetchFundingApplication('sess', 'acc_rose')).resolves.toEqual({
+      ...detail,
+      messages: [forumMessage],
+    });
+  });
+
   it('throws visitor copy on 404', async () => {
     stubFetch({ ok: false, status: 404, body: {} });
     await expect(fetchFundingApplication('sess', 'acc_1')).rejects.toThrow(loadError);
@@ -5554,6 +6381,36 @@ describe('postFundingAdmit', () => {
       'Could not update this member. Please try again.',
     );
   });
+
+  it('throws the places-full error on 409 All grant places are taken', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'All grant places are taken' } });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(FUNDING_PLACES_FULL_ERROR);
+  });
+
+  it.each([
+    ['another 409 error', { error: 'Conflict' }],
+    ['a null body', null],
+    ['a string body', 'full'],
+  ])('throws visitor copy on 409 with %s', async (_label, body) => {
+    stubFetch({ ok: false, status: 409, body });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on 409 with an unreadable body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      } as unknown as Response),
+    );
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
 });
 
 describe('postFundingReject', () => {
@@ -5591,6 +6448,13 @@ describe('postFundingReject', () => {
 
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
+    await expect(postFundingReject('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('keeps the generic copy on a 409 places-full body (only admit maps it)', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'All grant places are taken' } });
     await expect(postFundingReject('sess', 'acc_1')).rejects.toThrow(
       'Could not update this member. Please try again.',
     );
@@ -5819,7 +6683,6 @@ describe('sunday write header', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: named });
     await setName('sess', 'Ada', 'setup');
     await setUsername('sess', 'ada', 'setup');
-    await setLightningAddress('sess', 'ada@walletofsatoshi.com', 'setup');
     await setName('sess', 'Ada', 'enforce');
     const headersOf = (index: number): Record<string, string> => {
       const init = fetchMock.mock.calls[index]?.[1] as { headers: Record<string, string> };
@@ -5827,7 +6690,202 @@ describe('sunday write header', () => {
     };
     expect(headersOf(0)).not.toHaveProperty('Time-Zone');
     expect(headersOf(1)).not.toHaveProperty('Time-Zone');
-    expect(headersOf(2)).not.toHaveProperty('Time-Zone');
-    expect(headersOf(3)['Time-Zone']).toBe('Europe/Zurich');
+    expect(headersOf(2)['Time-Zone']).toBe('Europe/Zurich');
+  });
+});
+
+const PAY_REQUEST = {
+  target: 'bob@example.com',
+  minSendableMsat: 1000,
+  maxSendableMsat: 100_000_000,
+  commentAllowed: 255,
+  description: 'Pay bob',
+  domain: 'example.com',
+};
+
+/**
+ * Reads the reason of a {@link LnurlRelayError} rejection.
+ *
+ * @param promise - Request that rejects.
+ * @returns The reason.
+ */
+async function relayReason(promise: Promise<unknown>): Promise<string> {
+  const error: unknown = await promise.catch((err: unknown) => err);
+  expect(error).toBeInstanceOf(LnurlRelayError);
+  return (error as LnurlRelayError).reason;
+}
+
+describe('postLnurlPayRequest', () => {
+  it('posts the target with the bearer and returns the pay request', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: PAY_REQUEST });
+    await expect(postLnurlPayRequest('sess', 'bob@example.com')).resolves.toEqual(PAY_REQUEST);
+    expect(fetchMock).toHaveBeenCalledWith('/lnurl/pay-request', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'bob@example.com' }),
+    });
+  });
+
+  it.each([
+    [400, 'Not a payable address', 'notPayable'],
+    [404, 'Address not found', 'notFound'],
+    [502, 'Address could not be reached', 'unreachable'],
+    [400, 'Amount out of range', 'amount'],
+    [400, 'Comment too long', 'comment'],
+  ])('maps %i %s to %s', async (status, error, reason) => {
+    stubFetch({ ok: false, status, body: { error } });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(reason);
+  });
+
+  it.each([
+    ['an unknown error text', 400, { error: 'Something else' }],
+    ['a known text with another status', 502, { error: 'Address not found' }],
+    ['a proxy 502 without the api', 502, { error: 'Upstream api unreachable' }],
+    ['a 401', 401, { error: 'Unauthorized' }],
+    ['a body without error', 500, {}],
+  ])('maps %s to failed', async (_label, status, body) => {
+    stubFetch({ ok: false, status, body });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps a network error to failed', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps an unreadable success body to failed', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      } as unknown as Response),
+    );
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps a body that fails the schema to failed', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...PAY_REQUEST, minSendableMsat: 'x' } });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+});
+
+describe('postLnurlInvoice', () => {
+  it('posts target, amount, and comment and returns the invoice', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21u1test' } });
+    await expect(postLnurlInvoice('sess', 'bob@example.com', 21_000, 'Thanks')).resolves.toEqual({
+      pr: 'lnbc21u1test',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/lnurl/invoice', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'bob@example.com', amountMsat: 21_000, comment: 'Thanks' }),
+    });
+  });
+
+  it.each([undefined, ''])('omits the comment %j', async (comment) => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21u1test' } });
+    await postLnurlInvoice('sess', 'bob@example.com', 21_000, comment);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      target: 'bob@example.com',
+      amountMsat: 21_000,
+    });
+  });
+
+  it.each([
+    [400, 'Amount out of range', 'amount'],
+    [400, 'Comment too long', 'comment'],
+    [400, 'Not a payable address', 'notPayable'],
+    [404, 'Address not found', 'notFound'],
+    [502, 'Address could not be reached', 'unreachable'],
+  ])('maps %i %s to %s', async (status, error, reason) => {
+    stubFetch({ ok: false, status, body: { error } });
+    await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
+      reason,
+    );
+  });
+
+  it('maps a body without pr to failed', async () => {
+    stubFetch({ ok: true, status: 200, body: { pr: '' } });
+    await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
+      'failed',
+    );
+  });
+});
+
+describe('postWalletReport', () => {
+  const payment = {
+    id: 'pay-1',
+    direction: 'in' as const,
+    status: 'completed' as const,
+    amountSats: 21,
+    feeSats: 0,
+    timestamp: '2026-10-07T00:00:00.000Z',
+    method: 'lightning' as const,
+    paymentHash: 'e'.repeat(64),
+    invoice: 'lnbc1example',
+    destination: null,
+    description: null,
+    lnurlComment: null,
+  };
+
+  it('posts the balance and payments and returns the acknowledged ids', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { acknowledgedIds: ['pay-1'] } });
+    await expect(
+      postWalletReport('sess', {
+        balanceSats: 5_000,
+        syncedAt: '2026-10-07T00:00:01.000Z',
+        payments: [payment],
+      }),
+    ).resolves.toEqual(['pay-1']);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet/report', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        balanceSats: 5_000,
+        syncedAt: '2026-10-07T00:00:01.000Z',
+        payments: [payment],
+      }),
+    });
+  });
+
+  it('sends only balance, sync time, and payments', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { acknowledgedIds: [] } });
+    const body = {
+      balanceSats: 1,
+      syncedAt: 'now',
+      payments: [],
+      mnemonic:
+        'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    };
+    await postWalletReport('sess', body);
+    const sent = JSON.parse((fetchMock.mock.calls[0]?.[1] as { body: string }).body) as Record<
+      string,
+      unknown
+    >;
+    expect(Object.keys(sent)).toEqual(['balanceSats', 'syncedAt', 'payments']);
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 429, body: {} });
+    await expect(
+      postWalletReport('sess', { balanceSats: 0, syncedAt: 'now', payments: [] }),
+    ).rejects.toThrow('Could not report wallet data: 429');
+  });
+
+  it('throws when the body has no acknowledged ids', async () => {
+    stubFetch({ ok: true, status: 200, body: {} });
+    await expect(
+      postWalletReport('sess', { balanceSats: 0, syncedAt: 'now', payments: [] }),
+    ).rejects.toThrow();
   });
 });

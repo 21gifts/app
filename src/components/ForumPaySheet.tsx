@@ -3,19 +3,14 @@
 import { Loader2, X } from 'lucide-react';
 import { type FormEvent, type MouseEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
-import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { QrCode } from '@/components/QrCode';
+import { Collapse } from '@/components/Collapse';
+import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
+import { PaySheet } from '@/components/PaySheet';
+import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import {
-  isAndroidUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
+import type { FiatRateDay } from '@/lib/stats-money';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
@@ -29,13 +24,27 @@ export interface ForumPayInvoice {
   pr: string;
   /** Whole sats the payer confirmed. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null | undefined;
+  /** True for the posting fee of a new post or reply: paying it also posts that text. */
+  postsOnPay?: boolean;
 }
 
 /**
- * Amount form and invoice card for one payable note, reply, or habit comment.
+ * Amount form and pay sheet for one payable note, reply, or habit comment. The amount is chosen in
+ * the card; **Continue** mints the invoice, and the last tap happens in the {@link PaySheet} that
+ * then slides up, while the form stays behind it, disabled. A pay error folds in and out
+ * ({@link Collapse}). The host renders this inside a `Collapse` with `holdMs` `PAY_SHEET_HOLD_MS`,
+ * so the sheet can show its success step after the payment closed it.
  *
- * @param props - Open pay-sheet state for `messageId`.
- * @returns The in-card sheet.
+ * The sheet reads **Send to Ana** (`recipient`), **Lend to Ana** on a loan that still
+ * collects, **Pay to post** on a posting fee (which has no amount form), or **Send** without a
+ * name, and its button **Send ₿500**, **Lend ₿500**, or **Pay ₿500 and post**. On a
+ * loan, {@link LoanPayNotice} says in the amount form how the money comes back, or that it is a
+ * gift on a loan that is already full; the sheet shows no notice.
+ *
+ * @param props - Open pay state for `messageId`.
+ * @returns The amount form and, while an invoice is open, the pay sheet.
  */
 export function ForumPaySheet({
   messageId,
@@ -43,22 +52,21 @@ export function ForumPaySheet({
   payBusy,
   payError,
   payInvoice,
-  payWaiting,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
   onPayCancel,
   rateDay,
   ratePending = false,
-  showPaymentQr,
   onInteract,
+  loan,
+  recipient,
 }: {
   messageId: string;
   payDraft: string;
   payBusy: boolean;
   payError: ForumPayError;
   payInvoice: ForumPayInvoice | null;
-  payWaiting: boolean;
   onPayDraftChange: (value: string) => void;
   onPayUnitChange?: (unit: AmountUnit) => void;
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
@@ -66,24 +74,17 @@ export function ForumPaySheet({
   rateDay: FiatRateDay | null;
   /** When true, Continue does not submit. The rate request is still loading. */
   ratePending?: boolean;
-  showPaymentQr: boolean;
   onInteract: (event: MouseEvent) => void;
+  /** Set when the paid note is a loan: borrower, term, and whether it is already fully funded. */
+  loan?: LoanPayTarget | undefined;
+  /** Display name of the person paid, for the sheet's title; without it the sheet reads **Send**. */
+  recipient?: string | undefined;
 }): ReactElement {
   const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
-  /* v8 ignore start -- Android vs iOS wallet href */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-  const wosHref =
-    invoiceForCard === null
-      ? null
-      : android
-        ? walletOfSatoshiIntentHref(invoiceForCard.pr)
-        : walletOfSatoshiHref(invoiceForCard.pr);
-  /* v8 ignore stop */
+  const postsOnPay = invoiceForCard?.postsOnPay === true;
+  const lending = loan !== undefined && !loan.full && !postsOnPay;
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -93,58 +94,34 @@ export function ForumPaySheet({
     void Promise.resolve(onPaySubmit());
   };
 
-  const walletButton =
-    wosHref === null ? null : (
-      <Button
-        type="button"
-        aria-label={t('forum.payOpenWalletAria')}
-        disabled={payBusy}
-        icon={
-          <img
-            src="/wos-icon.png"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden="true"
-            className="h-5 w-5 rounded-md ring-1 ring-white/30"
-          />
-        }
-        onClick={() => {
-          window.location.href = wosHref;
-        }}
-      >
-        {t('forum.payOpenWallet')}
-      </Button>
-    );
-
-  if (invoiceForCard === null) {
-    return (
-      <form
-        onSubmit={handlePaySubmit}
-        onClick={onInteract}
-        data-pay-sheet=""
-        className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
-      >
-        <div className="absolute left-2 top-2">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.payClose')}
-            onClick={onPayCancel}
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </div>
-        <AmountEntry
-          label={t('forum.payAmountLabel')}
-          placeholder={t('forum.payAmountPlaceholder')}
-          value={payDraft}
-          disabled={payBusy}
-          rateDay={rateDay}
-          onValueChange={onPayDraftChange}
-          {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
-        />
+  const amountForm = postsOnPay ? null : (
+    <form
+      onSubmit={handlePaySubmit}
+      onClick={onInteract}
+      data-pay-amount=""
+      className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-12 pt-12"
+    >
+      <div className="absolute left-3 top-3">
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.payClose')}
+          onClick={onPayCancel}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      </div>
+      <AmountEntry
+        label={t('forum.payAmountLabel')}
+        placeholder={t('forum.payAmountPlaceholder')}
+        value={payDraft}
+        disabled={payBusy || invoiceForCard !== null}
+        rateDay={rateDay}
+        onValueChange={onPayDraftChange}
+        {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
+      />
+      <Collapse show={payError !== null}>
         {payError === 'amount' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorAmount')}
@@ -175,49 +152,56 @@ export function ForumPaySheet({
             {t('forum.errorNoteDeleted')}
           </p>
         ) : null}
-        <Button
-          type="submit"
-          disabled={payBusy || ratePending}
-          icon={
-            payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-          }
-        >
-          {t('forum.payContinue')}
-        </Button>
-      </form>
-    );
-  }
+      </Collapse>
+      {loan === undefined ? null : <LoanPayNotice {...loan} />}
+      <Button
+        type="submit"
+        disabled={payBusy || ratePending || invoiceForCard !== null}
+        icon={payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+      >
+        {t('forum.payContinue')}
+      </Button>
+    </form>
+  );
 
   return (
-    <div
-      onClick={onInteract}
-      data-pay-sheet=""
-      className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
-    >
-      <div className="absolute left-2 top-2">
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t('forum.payClose')}
-          onClick={onPayCancel}
+    <>
+      {amountForm}
+      {invoiceForCard === null ? null : (
+        <PaySheet
+          title={
+            postsOnPay
+              ? t('paySheet.titlePost')
+              : recipient === undefined
+                ? t('paySheet.titleSend')
+                : t(lending ? 'paySheet.titleLendTo' : 'paySheet.titleSendTo', {
+                    name: recipient,
+                  })
+          }
+          amountSats={invoiceForCard.amountSats}
+          rateDay={rateDay}
+          successTitle={
+            postsOnPay
+              ? t('paySheet.posted')
+              : recipient === undefined
+                ? t('paySheet.sent')
+                : t(lending ? 'paySheet.lentTo' : 'paySheet.sentTo', { name: recipient })
+          }
+          onClose={onPayCancel}
         >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      </div>
-      <p className="px-10 text-center text-sm text-app-muted">
-        {t('forum.payConfirm', {
-          amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
-        })}
-        {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
-      </p>
-      {showPaymentQr ? <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} /> : null}
-      {walletButton}
-      {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
-      {payWaiting ? (
-        <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
-      ) : null}
-      {/* v8 ignore stop */}
-    </div>
+          <WalletPay
+            sparkInvoice={invoiceForCard.sparkInvoice}
+            pr={invoiceForCard.pr}
+            amountSats={invoiceForCard.amountSats}
+            rateDay={rateDay}
+            postsOnPay={postsOnPay}
+            flow={postsOnPay ? 'post_fee' : 'gift'}
+            confirmLabel={(amount) =>
+              t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', { amount })
+            }
+          />
+        </PaySheet>
+      )}
+    </>
   );
 }

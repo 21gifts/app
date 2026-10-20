@@ -73,8 +73,6 @@ vi.mock('@/lib/api', () => ({
   }),
   setName: vi.fn(),
   setLocation: vi.fn(),
-  setLightningAddress: vi.fn(),
-  unlinkLightningAddress: vi.fn(),
   putAboutMe: vi.fn(),
   postFundingApply: vi.fn(),
   fetchAboutMePhoto: vi
@@ -87,7 +85,11 @@ vi.mock('@/lib/api', () => ({
   fetchMember: vi.fn(),
   fetchComposeTarget: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMemberPosts: vi.fn().mockResolvedValue([]),
+  fetchMemberShops: vi.fn().mockResolvedValue([]),
   fetchMemberReplies: vi.fn().mockResolvedValue([]),
   fetchMessagePhoto: vi.fn(),
   fetchPublicMessage: vi.fn(),
@@ -189,7 +191,7 @@ const OWN_MEMBER: MemberProfile = {
   username: 'alice',
   location: null,
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'alice@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -240,7 +242,7 @@ beforeEach(() => {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
@@ -260,34 +262,28 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, name form, address form, chart, theme group, and number format group', async () => {
+  it('shows the heading, name form, and chart, without an address field or any setting', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
-    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.queryByLabelText(/address/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
     expect(screen.queryByText('You are not verified yet.')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'Deutsch' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Español' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Filipino' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Number format' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: "10'000.23" }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
+    for (const name of [
+      'Language',
+      'Theme',
+      'Number format',
+      'Fiat currency',
+      'Notification level',
+      'Hearts',
+      'Posts',
+      'This device',
+    ]) {
+      expect(screen.queryByRole('group', { name })).toBeNull();
+    }
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -301,7 +297,7 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();
@@ -483,7 +479,7 @@ describe('ProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
-    const aboutInput = [...document.querySelectorAll('input[type="file"]')].find(
+    const aboutInput = [...document.querySelectorAll('input[type="file"]:not([capture])')].find(
       (input) => input.getAttribute('name') === null,
     );
     fireEvent.change(aboutInput as HTMLInputElement, {
@@ -657,13 +653,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Software Developer')).toBeNull();
   });
 
-  it('shows forum.error and keeps address editors when fetchMember rejects, and retry fetches again', async () => {
+  it('shows forum.error and keeps the name editor when fetchMember rejects, and retry fetches again', async () => {
     vi.mocked(fetchMember).mockRejectedValue(new Error('network'));
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
-    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(fetchMember).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
@@ -861,7 +856,7 @@ describe('ProfileScreen', () => {
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     renderWithLocale(<ProfileScreen />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = [...document.querySelectorAll('input[type="file"]')].filter(
+    const inputs = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
       (input) => input.getAttribute('name') === null,
     );
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
@@ -909,6 +904,87 @@ describe('ProfileScreen', () => {
         data: 'pic',
       });
     });
+  });
+
+  it('takes the profile photo and the wide image with the camera beside each empty slot', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'selfie',
+        previewUrl: 'data:image/jpeg;base64,selfie',
+      },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    expect(screen.queryByText('Take a profile photo')).toBeNull();
+    expect(screen.queryByText('Take a wide photo')).toBeNull();
+    const slotPairs = [
+      ['Take a profile photo', 'Add a profile photo'],
+      ['Take a wide photo', 'Add a wide image'],
+    ] as const;
+    for (const [cameraName, attachName] of slotPairs) {
+      const cameraButton = screen.getByRole('button', { name: cameraName });
+      const attachButton = screen.getByRole('button', { name: attachName });
+      expect(
+        cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+    const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
+    const wide = document.querySelector('input[name="profile-banner-camera"]') as HTMLInputElement;
+    expect(selfie.getAttribute('capture')).toBe('user');
+    expect(selfie.getAttribute('accept')).toBe('image/*');
+    expect(wide.getAttribute('capture')).toBe('environment');
+    expect(wide.getAttribute('accept')).toBe('image/*');
+    const selfieClick = vi.spyOn(selfie, 'click').mockImplementation(() => undefined);
+    const wideClick = vi.spyOn(wide, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a profile photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Take a wide photo' }));
+    expect(selfieClick).toHaveBeenCalledTimes(1);
+    expect(wideClick).toHaveBeenCalledTimes(1);
+
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(wide, { target: { files: [shot] } });
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'wide',
+      });
+    });
+    fireEvent.change(selfie, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(prepareForumPhoto).toHaveBeenCalledWith(shot);
+      expect(putProfilePhoto).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'selfie',
+      });
+    });
+  });
+
+  it('says a camera photo cannot be used when the browser cannot read it', async () => {
+    vi.mocked(prepareForumPhoto).mockRejectedValueOnce(new Error('decode'));
+    vi.mocked(putProfilePhoto).mockClear();
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Take a profile photo' });
+    const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
+    fireEvent.change(selfie, {
+      target: { files: [new File(['h'], 'IMG_0001.HEIC', { type: 'image/heic' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(putProfilePhoto).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Take a profile photo' }).hasAttribute('disabled'),
+    ).toBe(false);
   });
 
   it('frames a wide image from the empty-slot button instead of rejecting it', async () => {
@@ -1105,7 +1181,7 @@ describe('ProfileScreen', () => {
     });
     fireEvent.change(bannerInput, { target: { files: [wide] } });
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const aboutPicture = [...document.querySelectorAll('input[type="file"]')].filter(
+    const aboutPicture = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
       (input) => input.getAttribute('name') === null,
     )[1] as HTMLInputElement;
     const portrait = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'face.jpg', {

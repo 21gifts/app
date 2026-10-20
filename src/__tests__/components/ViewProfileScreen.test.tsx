@@ -22,8 +22,8 @@ const named: ViewProfile = {
   name: 'Ada',
   username: 'alice',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
-  lightningAddressVerified: false,
+  lightningAddress: 'alice@21.gifts',
+  lightningAddressVerified: true,
   createdAt: 1,
   hasPasskey: false,
   aboutMe: null,
@@ -87,7 +87,22 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Unnamed')).toBeTruthy();
   });
 
-  it('still shows the 21.gifts address when the Wallet of Satoshi address is null', () => {
+  it('shows the cannot-receive label instead of the address and QR', () => {
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, lightningAddress: null, lightningAddressVerified: false }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.queryByText('No 21.gifts address')).toBeNull();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
+  });
+
+  it('shows the 21.gifts address from the username', () => {
     renderWithLocale(
       <ViewProfileScreen
         profile={{ ...named, lightningAddress: null }}
@@ -145,11 +160,11 @@ describe('ViewProfileScreen', () => {
     expect(screen.queryByRole('button', { name: 'Edit name' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit location' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Edit Wallet of Satoshi address' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /edit .*address/i })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy view-only link' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
     expect(screen.queryByText('Copy link to this profile')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Remove Wallet of Satoshi address' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /remove .*address/i })).toBeNull();
   });
 
   it('does not show Loading… on the card with an empty series', () => {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ROLE_ORDER } from '@/lib/roles';
 
 /** Notification stages stored on the signed-in account. */
-export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
+export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions', 'none'] as const;
 
 /** One of {@link NOTIFICATION_LEVELS}. */
 export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
@@ -68,7 +68,8 @@ export const accountSchema = z.object({
   missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
   /**
    * True when a recovery phrase is required for this account (new register or
-   * first-passkey claim). The app does not read this for Wallet view.
+   * first-passkey claim). The wallet balance block reads it together with
+   * `passkeyCredentialId` (`canUnlockWallet`); the recovery-phrase view does not.
    * Optional so older api bodies still parse; omitted or false means an
    * existing member.
    */
@@ -80,11 +81,35 @@ export const accountSchema = z.object({
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
+   * True once the member finished or skipped the one-time wallet tour on the
+   * forum home (`POST /me/wallet-intro-seen`). Optional so older api bodies
+   * still parse; a missing field counts as seen.
+   */
+  walletIntroSeen: z.boolean().optional(),
+  /**
+   * True when the member used a wallet outside 21.gifts before the in-app
+   * wallet: the Receive view then offers to move that Bitcoin here. Optional
+   * so older api bodies still parse; a missing field hides the offer.
+   */
+  hadExternalWallet: z.boolean().optional(),
+  /**
    * Seed passkey credential id (base64url). Present once a seed passkey
    * exists: new accounts from the start, and older accounts after seed
    * finish (which also sets `walletRequired`). Missing or null means no seed.
    */
   passkeyCredentialId: z.string().min(1).nullable().optional(),
+  /**
+   * Identity public key of the in-app wallet claimed by `PUT /me/wallet`
+   * (66 lower-case hex), or `null` before a claim. Optional so older api
+   * bodies still parse.
+   */
+  sparkPubkey: z.string().nullable().optional(),
+  /**
+   * True once the in-app wallet registered the account's address. The wallet
+   * and the username are then fixed. Optional so older api bodies still
+   * parse; the setup step only opens when this is strictly `false`.
+   */
+  sparkWalletVerified: z.boolean().optional(),
   /**
    * True after a passkey-renew ceremony failed and the member has not
    * acknowledged the notice. Optional; missing means false.
@@ -105,9 +130,21 @@ export const accountSchema = z.object({
   hasPosted: z.boolean().optional(),
   /**
    * In-app and Web Push filter. Optional so current develop api bodies still
-   * parse; missing means {@link accountNotificationLevel} returns `all`.
+   * parse; missing or an unknown string, including the dropped value
+   * `messages`, means {@link accountNotificationLevel} returns `all`.
    */
-  notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
+  notificationLevel: z.preprocess(
+    (value) =>
+      typeof value === 'string' && !(NOTIFICATION_LEVELS as readonly string[]).includes(value)
+        ? undefined
+        : value,
+    z.enum(NOTIFICATION_LEVELS).optional(),
+  ),
+  /**
+   * True when the owner wants a notification for each received heart. Optional
+   * so older api bodies still parse; missing means true in the UI.
+   */
+  notifyHearts: z.boolean().optional(),
   /**
    * Typing unit for amount fields (`btc` or `fiat`). Optional so older api
    * bodies still parse. Missing means bitcoin in the UI.
@@ -135,10 +172,10 @@ export const accountSchema = z.object({
  * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
- * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
- * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
- * control flag) but unused in the UI — live verification payments are not
- * configured on the api. `forumLawsDismissed` is true after the user dismissed
+ * `lightningAddress` and `lightningAddressVerified` are accepted from the api
+ * for older accounts but unused in the UI: a member receives only on the
+ * in-app wallet (`sparkWalletVerified`), and the app cannot link an external
+ * address. `forumLawsDismissed` is true after the user dismissed
  * the welcome-forum living-room laws hint; false for new accounts and until
  * they click the X. Forum role tags use `role`, not this flag.
  * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
@@ -163,14 +200,26 @@ export const accountSchema = z.object({
  * `passkeyRenewClosed !== true`. `passkeyRenewFailed` only selects the failure
  * step. `passkeyRenewPrfUnsupported` selects the missing-key wording on that
  * step. `walletBackupSeenAt` is epoch ms the api may
- * record; the app does not read it. `passkeyCredentialId` is set once a seed
+ * record; the app does not read it. `walletIntroSeen` is false until the
+ * member finished or skipped the wallet tour on `/welcome`; omitted on older
+ * api builds, which counts as seen (no tour). `hadExternalWallet` is true
+ * when the member used an outside wallet before; omitted on older api builds,
+ * which hides the Receive view's move offer. `passkeyCredentialId` is set once a seed
  * passkey exists; missing or null means no seed.
+ * `sparkPubkey` is the claimed in-app wallet key and `sparkWalletVerified`
+ * is true once that wallet registered the account's address; then the
+ * username can no longer change. Both are omitted on older api builds.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
- * `active` (posts with gifts), or `mentions` (replies to the owner, gifts
- * they receive, and @username marks). Omitted on older api builds; treat as `all`.
+ * `active` (only posts with a gift), `mentions` (replies to the owner, gifts
+ * they receive, and @username marks), or `none` (none of that living-room
+ * stream, including the dedicated @username channel). Omitted on older api
+ * builds and on an unknown string, including the dropped value `messages`;
+ * treat as `all`.
+ * `notifyHearts` is true when the owner wants a notification for each received
+ * heart. Omitted on older api builds; treat as true.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
  * `locale` is the stored UI language and `fiat` is the stored preferred
@@ -186,7 +235,7 @@ export type Account = z.infer<typeof accountSchema>;
  * Notification stage stored on an account, defaulting to `all` when omitted.
  *
  * @param account - Parsed {@link Account} (field may be missing).
- * @returns `all`, `active`, or `mentions`.
+ * @returns `all`, `active`, `mentions`, or `none`.
  */
 export function accountNotificationLevel(account: Account): NotificationLevel {
   return account.notificationLevel ?? 'all';
@@ -223,27 +272,6 @@ export const viewProfileSchema = z.object({
  * `aboutMeHasPhoto` is true when the live profile note has a photo.
  */
 export type ViewProfile = z.infer<typeof viewProfileSchema>;
-
-/**
- * Runtime schema for the payload of `GET /lightning-address`.
- *
- * `callback` is the LNURL-pay URL the browser uses to fetch an invoice.
- * `minSendable` / `maxSendable` are millisatoshis. `commentAllowed` is
- * omitted when the provider does not accept a LUD-12 comment.
- */
-export const lnAddressResolvedSchema = z.object({
-  address: z.string(),
-  callback: z.string().url(),
-  minSendable: z.number().int().nonnegative(),
-  maxSendable: z.number().int().nonnegative(),
-  commentAllowed: z.number().int().optional(),
-});
-
-/**
- * Cached LUD-16 metadata from the api, used to fetch a gift invoice in the
- * browser.
- */
-export type LnAddressResolved = z.infer<typeof lnAddressResolvedSchema>;
 
 /** BTC amount string from the api: whole sats as BTC with exactly 8 decimals. */
 export const btcAmountStringSchema = z.string().regex(/^\d+\.\d{8}$/);
@@ -347,6 +375,33 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * A decimal price string from the api, such as `"62345.12"`. `"0"` parses here
+ * and is treated as no price by `spotRateDay`.
+ */
+const spotPriceSchema = z.string().regex(/^\d+(\.\d+)?$/);
+
+/**
+ * Runtime schema for the payload of `GET /fx/spot`: the current price of
+ * 1 BTC in each fiat the api could price. A missing code has no rate now.
+ * Without any quote the api answers `asOf` and `source` `null` and empty `rates`.
+ */
+export const fxSpotSchema = z.object({
+  asOf: z.string().nullable(),
+  source: z.string().nullable(),
+  rates: z
+    .object({
+      USD: spotPriceSchema,
+      CHF: spotPriceSchema,
+      EUR: spotPriceSchema,
+      PHP: spotPriceSchema,
+    })
+    .partial(),
+});
+
+/** Parsed `GET /fx/spot` body. */
+export type FxSpot = z.infer<typeof fxSpotSchema>;
+
+/**
  * One UTC day of shop activity from `GET /shops/activity`.
  */
 export const shopActivityDaySchema = z.object({
@@ -427,6 +482,27 @@ export const grantContinuationSchema = z.object({
 export type GrantContinuation = z.infer<typeof grantContinuationSchema>;
 
 /**
+ * Runtime schema for the public payload of `GET /funding/places`.
+ *
+ * The current grant round: how many people moderators may admit, how many
+ * they have admitted, how many places are left, and the active-shop goal
+ * that opens the next round.
+ */
+export const grantPlacesSchema = z.object({
+  round: z.number().int().positive(),
+  startsAt: z.string(),
+  places: z.number().int().nonnegative(),
+  admitted: z.number().int().nonnegative(),
+  placesLeft: z.number().int().nonnegative(),
+  nextGoalShops: z.number().int().positive(),
+});
+
+/**
+ * Grant round places from `GET /funding/places`.
+ */
+export type GrantPlaces = z.infer<typeof grantPlacesSchema>;
+
+/**
  * Runtime schema for `GET /messages/stats`.
  * `postCount` counts living notes and replies together.
  */
@@ -472,17 +548,71 @@ export const activitySpendDaySchema = spendDaySchema
   });
 
 /**
+ * One UTC day on a loan balance series (`owedOverTime` / `creditOverTime`).
+ *
+ * Unlike {@link activitySpendDaySchema} / {@link spendDaySchema}, sats and
+ * amount strings may be negative (open debt or credit can fall below zero).
+ * Own signed regexes — does not relax the unsigned gift-day schemas.
+ */
+export const loanSpendDaySchema = z.object({
+  day: z.string(),
+  giftCount: z.number().int().nonnegative().optional(),
+  officialCount: z.number().int().nonnegative().optional(),
+  sats: z.number().int(),
+  cumulativeSats: z.number().int(),
+  btc: z.string().regex(/^-?\d+\.\d{8}$/),
+  cumulativeBtc: z.string().regex(/^-?\d+\.\d{8}$/),
+  usd: z.string().regex(/^-?\d+\.\d{2}$/),
+  cumulativeUsd: z.string().regex(/^-?\d+\.\d{2}$/),
+  chf: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  eur: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  php: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativeChf: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativeEur: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativePhp: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+});
+
+/**
+ * One day on an owed or credit loan series.
+ */
+export type LoanSpendDay = z.infer<typeof loanSpendDaySchema>;
+
+/**
  * Runtime schema for signed-in, member, and public-view activity
  * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
  *
  * Series share the gift-stats day shape, with optional CHF/EUR/PHP and
- * nullable USD. Totals include house gifts and forum zaps.
+ * nullable USD. Totals include house gifts and forum zaps. Optional loan
+ * balance fields (`owedSats` / `creditSats` and their over-time series) are
+ * omitted on older api bodies; the app treats missing as empty / 0.
  */
 export const accountActivitySchema = z.object({
   donatedSats: z.number().int().nonnegative(),
   receivedSats: z.number().int().nonnegative(),
   donatedOverTime: z.array(activitySpendDaySchema),
   receivedOverTime: z.array(activitySpendDaySchema),
+  owedSats: z.number().int().optional(),
+  creditSats: z.number().int().optional(),
+  owedOverTime: z.array(loanSpendDaySchema).optional(),
+  creditOverTime: z.array(loanSpendDaySchema).optional(),
   fx: activityFxSchema,
 });
 
@@ -598,6 +728,10 @@ export const forumPlacesResponseSchema = z.object({
       createdAt: z.string().min(1),
       accountId: z.string().min(1).optional(),
       shop: z.boolean().optional(),
+      countryCode: z
+        .string()
+        .regex(/^[A-Z]{2}$/)
+        .nullish(),
     }),
   ),
 });
@@ -612,6 +746,11 @@ export type ForumPlaceRow = ForumPlacePin & {
   accountId?: string | undefined;
   /** True when the note is a shop. Omitted by an older api. */
   shop?: boolean | undefined;
+  /**
+   * ISO 3166-1 alpha-2 code of the country that contains the pin, read by the
+   * api from the coordinates. Null in the open sea; omitted by an older api.
+   */
+  countryCode?: string | null | undefined;
 };
 
 /**
@@ -619,11 +758,16 @@ export type ForumPlaceRow = ForumPlacePin & {
  *
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
+ * `authorCanReceive` is false when the author cannot receive yet (no verified
+ * wallet); optional so an older payload still parses, and absent shows no label.
  * `photoCount` defaults from `hasPhoto` when an older api omits it.
  * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
+ * `heartCount` is the server count of hearts sent on this note; omitted payloads
+ * parse as 0. `hearted` is true when the signed-in viewer already sent a heart
+ * on this note; omitted payloads parse as false.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
@@ -677,6 +821,11 @@ export const forumMessageSchema = z
     goalAmountEur: fiatAmountSchema.optional(),
     goalAmountPhp: fiatAmountSchema.optional(),
     payable: z.boolean(),
+    /**
+     * False when the author is a member who cannot receive yet. Absent on an
+     * older api body; absent means unknown and shows no label.
+     */
+    authorCanReceive: z.boolean().optional(),
     hasPhoto: z.boolean(),
     photoCount: z.number().int().min(0).max(10).optional(),
     photoTakenAts: z.array(z.string().nullable()).max(10).optional(),
@@ -689,6 +838,10 @@ export const forumMessageSchema = z
       .default(null),
     role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
+    /** Hearts sent on this note. Older payloads parse as 0. */
+    heartCount: z.number().int().nonnegative().default(0),
+    /** True when the signed-in viewer already sent a heart on this note. Older payloads parse as false. */
+    hearted: z.boolean().default(false),
     via: z.literal('nostr').optional(),
     deletedAt: z.string().datetime({ offset: true }).optional(),
     deletedBy: z
@@ -727,13 +880,47 @@ export const forumMessageSchema = z
   }));
 
 /**
+ * Parses each row with {@link forumMessageSchema} and keeps the rows that pass.
+ *
+ * One note that cannot be shown (for example an empty About me note) must not
+ * hide the rest of a page. Dropped rows are counted in one `console.warn`
+ * without their content.
+ *
+ * @param rows - Raw rows from a list payload.
+ * @returns The rows that pass, in their original order.
+ */
+function keepForumMessageRows(rows: readonly unknown[]): z.infer<typeof forumMessageSchema>[] {
+  const kept: z.infer<typeof forumMessageSchema>[] = [];
+  for (const row of rows) {
+    const parsed = forumMessageSchema.safeParse(row);
+    if (parsed.success) {
+      kept.push(parsed.data);
+    }
+  }
+  const dropped = rows.length - kept.length;
+  if (dropped > 0) {
+    console.warn(`Skipped ${dropped} forum note(s) that failed the note schema`);
+  }
+  return kept;
+}
+
+/**
+ * Runtime schema for a list of forum notes, parsed row by row.
+ *
+ * The list must be an array; a row that fails {@link forumMessageSchema} is
+ * dropped instead of failing the whole list.
+ */
+export const forumMessageRowsSchema = z.array(z.unknown()).transform(keepForumMessageRows);
+
+/**
  * Runtime schema for `GET /messages` and member posts/replies payloads.
  *
  * The forum feed may include a cursor for the next page; member activity
- * endpoints may omit it.
+ * endpoints may omit it. Rows are parsed with {@link forumMessageRowsSchema},
+ * so only an invalid envelope fails the page.
  */
 export const forumListSchema = z.object({
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
   nextCursor: z.string().min(1).optional(),
 });
 
@@ -789,9 +976,11 @@ export type HiddenMessage = z.infer<typeof hiddenMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
+ *
+ * Rows are parsed with {@link forumMessageRowsSchema}.
  */
 export const forumRepliesSchema = z.object({
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
 });
 
 /**
@@ -801,8 +990,8 @@ export type ForumMessage = z.infer<typeof forumMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
- * `postCount` and `replyCount` are optional nonnegative integers so today's
- * API still parses.
+ * `postCount`, `replyCount`, `shopCount`, and `creditCount` are optional
+ * nonnegative integers so today's API still parses.
  */
 export const externalAuthorProfileSchema = z.object({
   name: z.string(),
@@ -811,6 +1000,8 @@ export const externalAuthorProfileSchema = z.object({
   lud16: z.string().optional(),
   postCount: z.number().int().nonnegative().optional(),
   replyCount: z.number().int().nonnegative().optional(),
+  shopCount: z.number().int().nonnegative().optional(),
+  creditCount: z.number().int().nonnegative().optional(),
 });
 
 /**
@@ -824,12 +1015,50 @@ export type ExternalAuthorProfile = z.infer<typeof externalAuthorProfileSchema>;
 export const messageInvoiceSchema = z.object({
   pr: z.string().min(1),
   amountSats: z.number().int().positive(),
+  /**
+   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
+   * api issued none. Optional so bodies from an api without it still parse.
+   */
+  sparkInvoice: z.string().min(1).nullable().optional(),
 });
 
 /**
  * BOLT11 invoice issued for paying a forum message.
  */
 export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
+
+/**
+ * Runtime schema for the `POST /lnurl/pay-request` success body: the pay
+ * request of a Lightning address or LNURL on another host, as read by the api.
+ */
+export const lnurlPayRequestSchema = z.object({
+  /** Normalised target to pass back to `POST /lnurl/invoice`. */
+  target: z.string().min(1),
+  minSendableMsat: z.number().int().nonnegative(),
+  maxSendableMsat: z.number().int().nonnegative(),
+  /** Longest comment the receiver accepts; `0` means none. */
+  commentAllowed: z.number().int().nonnegative(),
+  description: z.string(),
+  domain: z.string().min(1),
+});
+
+/**
+ * Pay request of an outside Lightning address or LNURL.
+ */
+export type LnurlPayRequest = z.infer<typeof lnurlPayRequestSchema>;
+
+/**
+ * Runtime schema for the `POST /lnurl/invoice` success body.
+ */
+export const lnurlInvoiceSchema = z.object({
+  /** BOLT11 invoice for exactly the requested amount. */
+  pr: z.string().min(1),
+});
+
+/**
+ * Invoice issued by an outside LNURL server through the api.
+ */
+export type LnurlInvoice = z.infer<typeof lnurlInvoiceSchema>;
 
 /**
  * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
@@ -868,7 +1097,7 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `unread` is true when the viewer has inbound mail newer than last-read.
  * `unreadMessageCount` is inbound unread messages (defaults 0 so an older
  * api that omits it still parses). List envelope `unreadCount` stays unread
- * thread count.
+ * thread count. `canReceive` is false when the counterpart cannot receive yet.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -887,6 +1116,11 @@ export const conversationSchema = z.object({
   accountId: z.string().min(1).optional(),
   unread: z.boolean().default(false),
   unreadMessageCount: z.number().int().nonnegative().default(0),
+  /**
+   * False when the counterpart cannot receive yet. Optional so an older api
+   * body still parses; absent means unknown and shows no label.
+   */
+  canReceive: z.boolean().optional(),
 });
 
 /**
@@ -983,6 +1217,11 @@ export const conversationInvoiceSchema = z.object({
   pr: z.string().min(1),
   amountSats: z.number().int().positive(),
   messageId: z.string().min(1),
+  /**
+   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
+   * api issued none. Optional so bodies from an api without it still parse.
+   */
+  sparkInvoice: z.string().min(1).nullable().optional(),
 });
 
 /**
@@ -994,11 +1233,12 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  * Runtime schema for one notification from `GET /notifications`.
  *
  * `type` is `forum_post` (new living-room post), `forum_reply`, `zap`
- * (payment), `moderator_appointed` (the session was appointed moderator), or
- * `moderator_proposal` (a staff member proposed a moderator). Unknown `type`
- * values fail parse. `text` may be empty when a post or reply is photo-only,
- * when a zap has no amount string, or when a moderator appointment or
- * proposal has no body. `parentId` / `replyId` are a forum note id except on
+ * (payment), `heart` (a 1-sat heart), `moderator_appointed` (the session was
+ * appointed moderator), or `moderator_proposal` (a staff member proposed a
+ * moderator). Unknown `type` values fail parse. `text` may be empty when a
+ * post or reply is photo-only, when a zap has no amount string, when a heart
+ * carries no extra body, or when a moderator appointment or proposal has no
+ * body. `parentId` / `replyId` are a forum note id except on
  * `moderator_appointed` and `moderator_proposal`, where they are the subject
  * account id. `readAt` is `null` until the session marks the row read.
  */
@@ -1008,6 +1248,7 @@ export const notificationSchema = z.object({
     'forum_post',
     'forum_reply',
     'zap',
+    'heart',
     'moderator_appointed',
     'moderator_proposal',
     'forum_mention',
@@ -1029,8 +1270,8 @@ export const notificationListSchema = z.object({
 });
 
 /**
- * One notification from the api (post, reply, zap, moderator appointment, or
- * moderator proposal).
+ * One notification from the api (post, reply, zap, heart, moderator
+ * appointment, or moderator proposal).
  */
 export type Notification = z.infer<typeof notificationSchema>;
 
@@ -1102,7 +1343,9 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  *
  * `profileMessage` is the member's profile forum note when present (card Message
  * and posts-feed source, not a pinned ForumBoard card).
- * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
+ * `postCount` / `replyCount` are required uncapped totals; optional `shopCount`
+ * is the shop-note total and optional `creditCount` is the credit-note total.
+ * Activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
  * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
@@ -1115,9 +1358,15 @@ export const memberProfileSchema = z.object({
   role: z.enum(ROLE_ORDER),
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
-  profileMessage: forumMessageSchema.nullable(),
+  /** A note that fails {@link forumMessageSchema} (an empty About me) reads as `null`. */
+  profileMessage: z
+    .record(z.unknown())
+    .nullable()
+    .transform((note) => (note === null ? null : (keepForumMessageRows([note])[0] ?? null))),
   postCount: z.number().int().nonnegative(),
   replyCount: z.number().int().nonnegative(),
+  shopCount: z.number().int().nonnegative().optional(),
+  creditCount: z.number().int().nonnegative().optional(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
@@ -1316,7 +1565,7 @@ export const fundingApplicationDetailSchema = z.object({
     lightningAddress: z.string().nullable(),
   }),
   grant: fundingGrantSchema,
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
 });
 
 /**
@@ -1356,9 +1605,19 @@ export const dailyRosterSchema = z.object({
       name: z.string().nullable(),
     }),
   ),
+  moderatorPaymentsEnabled: z.boolean(),
+  moderators: z.array(
+    z.object({
+      address: z.string(),
+      amountUsd: z.number(),
+      accountId: z.string().min(1).nullable(),
+      name: z.string().nullable(),
+    }),
+  ),
 });
 
 /**
- * Daily payout comment, payments switch, unlisted grant default, and recipient list.
+ * Daily payout comment, payments switch, unlisted grant default, recipient list,
+ * moderator payments switch, and moderator stipend list.
  */
 export type DailyRoster = z.infer<typeof dailyRosterSchema>;

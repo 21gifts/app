@@ -1,19 +1,24 @@
 import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
+import { headers } from 'next/headers';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
+import { InteractionLog } from '@/components/InteractionLog';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
+import { MoveFundsLink } from '@/components/MoveFundsLink';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { WalletSync } from '@/components/WalletSync';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
+import { CSP_NONCE_HEADER } from '@/lib/csp';
 import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getRequestNumberFormat } from '@/lib/request-number-format';
@@ -122,7 +127,8 @@ export const viewport: Viewport = {
 
 /**
  * Root layout: the `<html>`/`<body>` shell shared by every page (locale, number
- * format, fiat preference, theme bootstrap, providers).
+ * format, fiat preference, theme bootstrap, providers). The inline bootstrap
+ * scripts carry the Content-Security-Policy nonce the middleware set.
  *
  * @param props - Layout children.
  * @returns The document wrapper with negotiated `lang`, theme bootstrap, and locale messages.
@@ -135,14 +141,15 @@ export default async function RootLayout({
   const locale = await getRequestLocale();
   const numberFormat = await getRequestNumberFormat();
   const fiat = await getRequestFiat(locale);
+  const nonce = (await headers()).get(CSP_NONCE_HEADER) ?? undefined;
   const e2eNow = getE2eNow();
   return (
     <html lang={locale} suppressHydrationWarning className={outfit.variable}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: APP_HEIGHT_BOOTSTRAP_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
         {e2eNow !== null ? <meta name="e2e-now" content={e2eNow} /> : null}
-        <script dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: SUNDAY_BOOTSTRAP_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -160,8 +167,13 @@ export default async function RootLayout({
               <ThemeProvider>
                 <AccountPreferenceSync />
                 <PushOpenListener />
+                <WalletSync />
+                <InteractionLog />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <MoveFundsLink />
                 </Suspense>
                 <ViewHistoryRoot>{children}</ViewHistoryRoot>
               </ThemeProvider>

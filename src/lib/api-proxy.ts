@@ -9,6 +9,12 @@ const FORWARDED_HEADERS = [
   'origin',
   'user-agent',
   'range',
+  // Build id of the browser's bundle (passkey begin and finish). Passed through
+  // as sent, never set here: the server's own build would hide an outdated tab.
+  'x-app-build',
+  // Signature headers the in-app wallet sends with its address calls.
+  'x-breez-signature',
+  'x-breez-timestamp',
 ] as const;
 
 /** Upstream response headers copied onto the client response when present. */

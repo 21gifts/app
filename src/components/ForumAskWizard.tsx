@@ -11,6 +11,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -299,6 +300,12 @@ export function ForumAskWizard({
       {step === 2 ? (
         <>
           <div className="flex items-center gap-2">
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={handleFiles}
+            />
             <IconButton
               type="button"
               size="lg"

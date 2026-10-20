@@ -6,7 +6,7 @@ export type HandbookOutlineTopic = {
   topic: HandbookTopic;
   /** Hash id for the figure (`topicAnchor`). */
   id: string;
-  /** Short variant label (`default`, `pay-qr`, …). */
+  /** Short variant label (`default`, `wallet-pay-unavailable`, …). */
   label: string;
 };
 

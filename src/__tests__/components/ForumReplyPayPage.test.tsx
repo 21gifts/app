@@ -1,11 +1,28 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Collapse } from '@/components/Collapse';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { useWalletPay } from '@/hooks/useWalletPay';
+import { payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
 
-const locationAssign = vi.fn();
-const locationStub = { assign: locationAssign, href: 'http://localhost/' };
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const RATE_DAY = {
   sats: 100_000_000,
@@ -15,101 +32,289 @@ const RATE_DAY = {
   php: '5600000.00',
 };
 
-beforeEach(() => {
-  locationAssign.mockReset();
-  locationStub.href = 'http://localhost/';
-  vi.stubGlobal('location', locationStub);
-});
-
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-});
+afterEach(cleanup);
 
 describe('ForumReplyPayPage', () => {
-  it('shows the preview, fiat suffix, QR, waiting line, and Close', async () => {
+  it('pays as a paid reaction', () => {
+    renderWithLocale(
+      <ForumReplyPayPage
+        amountSats={21}
+        pr="lnbc21n1example"
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('reaction');
+  });
+
+  it('shows the title, amount with fiat, wallet slot, and Close in a sheet', () => {
     const onCancel = vi.fn();
     renderWithLocale(
       <ForumReplyPayPage
-        preview="Hi Bob"
         amountSats={21}
         pr="lnbc21n1example"
-        payWaiting
-        payBusy={false}
-        showPaymentQr
         rateDay={RATE_DAY}
         onCancel={onCancel}
+        recipient="Bob"
       />,
     );
-    const root = document.querySelector('[data-reply-pay-page]');
-    expect(root).toBeTruthy();
-    expect(root?.hasAttribute('data-pay-sheet')).toBe(true);
-    expect(screen.getByText('Hi Bob')).toBeTruthy();
-    expect(screen.getByText('Hi Bob').className).toContain('pl-12');
-    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
-    expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(dialog.getAttribute('aria-label')).toBe('Send to Bob');
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Send to Bob');
+    expect(within(dialog).getByText('₿21')).toBeTruthy();
+    expect(within(dialog).getByText('$0.02')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe(
+      'Your 21.gifts wallet is not available here, so this cannot be paid.',
+    );
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.queryByText(/Waiting for payment/)).toBeNull();
     expect(screen.queryByLabelText('Your reaction')).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(document.querySelector('textarea')).toBeNull();
-    const close = screen.getByRole('button', { name: 'Close' });
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(close.parentElement?.className).toContain('absolute');
-    expect(close.parentElement?.className).toContain('left-2');
-    expect(close.parentElement?.className).toContain('top-2');
-    fireEvent.click(close);
+    const closes = screen.getAllByRole('button', { name: 'Close' });
+    // The dimmed page comes first, then the sheet's X.
+    expect(closes).toHaveLength(2);
+    expect(dialog.contains(closes[0] as HTMLElement)).toBe(false);
+    expect(dialog.contains(closes[1] as HTMLElement)).toBe(true);
+    fireEvent.click(closes[1] as HTMLElement);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('omits the preview paragraph when the preview is empty', () => {
-    const { container } = renderWithLocale(
-      <ForumReplyPayPage
-        preview=""
-        amountSats={21}
-        pr="lnbc21n1example"
-        payWaiting={false}
-        payBusy={false}
-        showPaymentQr={false}
-        rateDay={null}
-        onCancel={() => undefined}
-      />,
+  it('reads Send without a name and shows no fiat line without a rate', () => {
+    renderWithLocale(
+      <ForumReplyPayPage amountSats={21} pr="lnbc21n1example" rateDay={null} onCancel={vi.fn()} />,
     );
-    expect(container.querySelector('p.whitespace-pre-wrap')).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Send');
+    expect(within(dialog).queryByText(/\$/)).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
   });
+});
 
-  it('omits the preview paragraph when the preview is whitespace only', () => {
-    const { container } = renderWithLocale(
-      <ForumReplyPayPage
-        preview="   "
-        amountSats={21}
-        pr="lnbc21n1example"
-        payWaiting={false}
-        payBusy={false}
-        showPaymentQr={false}
-        rateDay={null}
-        onCancel={() => undefined}
-      />,
-    );
-    expect(container.querySelector('p.whitespace-pre-wrap')).toBeNull();
-  });
-
-  it('sets the wallet href when Pay with Wallet of Satoshi is clicked', () => {
+describe('ForumReplyPayPage in-app wallet', () => {
+  function renderPage(sparkInvoice?: string | null): void {
     renderWithLocale(
       <ForumReplyPayPage
-        preview="Hi Bob"
         amountSats={21}
         pr="lnbc21n1example"
-        payWaiting={false}
-        payBusy={false}
-        showPaymentQr={false}
-        rateDay={null}
-        onCancel={() => undefined}
+        {...(sparkInvoice === undefined ? {} : { sparkInvoice })}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        recipient="Bob"
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc21n1example'));
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays the sparkInvoice from the wallet, with no invoice QR and no wallet-app button', async () => {
+    setWalletUsable('ready');
+    renderPage(SPARK_INVOICE);
+    const send = await screen.findByRole('button', { name: 'Send ₿21 · $0.02' });
+    expect(send.textContent).toBe('Send ₿21 · $0.02');
+    fireEvent.click(send);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(
+      screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Close', 'Close']);
+    expect(screen.queryByText(/Waiting for payment/)).toBeNull();
+  });
+
+  it('pays the payment request from the wallet without a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    renderPage(null);
+    expect(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('words a loan that still collects as lending, with a Lend button and no notice', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 210));
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        amountSats={210}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: false }}
+        recipient="Maria"
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Lend to Maria');
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send/ })).toBeNull();
+  });
+
+  it('keeps Lend bitcoin-only without a rate and without a name', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 210));
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        amountSats={210}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        rateDay={null}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: false }}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Send');
+    expect(await screen.findByRole('button', { name: 'Lend ₿210' })).toBeTruthy();
+  });
+
+  it('keeps Send on a full loan', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        amountSats={21}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: true }}
+        recipient="Maria"
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Send to Maria');
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' })).toBeTruthy();
+  });
+
+  it.each([
+    ['a gift to a named member', 'Bob', undefined, 'Sent to Bob'],
+    ['a loan that still collects', 'Maria', false, 'Lent to Maria'],
+    ['a full loan', 'Maria', true, 'Sent to Maria'],
+    ['a gift without a name', undefined, undefined, 'Sent'],
+  ] as const)(
+    'shows the success step of %s once the host closes the payment',
+    async (_label, recipient, full, success) => {
+      vi.mocked(payFromWallet).mockResolvedValue(confirmResult());
+      setWalletUsable('ready');
+      const ui = (show: boolean): ReactElement => (
+        <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+          <ForumReplyPayPage
+            amountSats={21}
+            pr="lnbc21n1example"
+            sparkInvoice={SPARK_INVOICE}
+            rateDay={RATE_DAY}
+            onCancel={vi.fn()}
+            {...(recipient === undefined ? {} : { recipient })}
+            {...(full === undefined ? {} : { loan: { name: 'Maria', days: 30, full } })}
+          />
+        </Collapse>
+      );
+      const { rerender } = renderWithLocale(ui(true));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
+      rerender(ui(false));
+      const status = (await screen.findByText(success)).closest('[role="status"]');
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+      expect(status?.textContent).toContain('₿21');
+    },
+  );
+
+  describe('a host close while the send is still pending', () => {
+    function pendingSend(): {
+      send: () => Promise<WalletSendResult>;
+      settle: (result: WalletSendResult) => void;
+    } {
+      let settle: (result: WalletSendResult) => void = () => undefined;
+      const pending = new Promise<WalletSendResult>((resolve) => {
+        settle = resolve;
+      });
+      return { send: vi.fn(() => pending), settle };
+    }
+
+    const ui = (show: boolean): ReactElement => (
+      <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+        <ForumReplyPayPage
+          amountSats={21}
+          pr="lnbc21n1example"
+          sparkInvoice={SPARK_INVOICE}
+          rateDay={RATE_DAY}
+          onCancel={vi.fn()}
+          recipient="Bob"
+        />
+      </Collapse>
+    );
+
+    it('shows no success step when the send then fails', async () => {
+      const { send, settle } = pendingSend();
+      vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+      setWalletUsable('ready');
+      const { rerender } = renderWithLocale(ui(true));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
+      expect(send).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(
+          document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+        ).toBe('open');
+      });
+      rerender(ui(false));
+      // The wallet has not answered: the sheet waits on its pay step.
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(
+        document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+      ).toBe('open');
+      await act(async () => {
+        settle({
+          kind: 'failed',
+          failure: {
+            stage: 'send',
+            reason: 'sdk_error',
+            method: 'spark',
+            amountSats: 21,
+            feeSats: 0,
+          },
+        });
+        await Promise.resolve();
+      });
+      expect(
+        document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+      ).toBe('closed');
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(screen.queryByText('Sent to Bob')).toBeNull();
+    });
+
+    it('shows the success step once the send then goes out', async () => {
+      const { send, settle } = pendingSend();
+      vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+      setWalletUsable('ready');
+      const { rerender } = renderWithLocale(ui(true));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
+      rerender(ui(false));
+      expect(screen.queryByText('Sent to Bob')).toBeNull();
+      await act(async () => {
+        settle({ kind: 'paid' });
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+      expect(await screen.findByText('Sent to Bob')).toBeTruthy();
+    });
+  });
+
+  it('says the wallet is not available when it is not configured, and offers nothing else', () => {
+    setWalletUsable('disabled');
+    renderPage(SPARK_INVOICE);
+    expect(
+      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send/ })).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(
+      screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Close', 'Close']);
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 });

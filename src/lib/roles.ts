@@ -51,10 +51,60 @@ export function roleAtLeast(role: Role | null | undefined, min: Role): boolean {
 }
 
 /**
+ * True when the signed-in account wrote this note.
+ *
+ * A wallet cannot pay its own invoice, so nothing on your own note asks you to
+ * pay: no reply fee, no amount, no gift, no heart.
+ *
+ * @param viewerAccountId - Signed-in account id, or missing when signed out.
+ * @param noteAccountId - The note's `accountId`, if the api sent one.
+ * @returns Whether both ids are present and equal.
+ */
+export function isOwnNote(
+  viewerAccountId: string | null | undefined,
+  noteAccountId: string | undefined,
+): boolean {
+  return (
+    typeof viewerAccountId === 'string' &&
+    viewerAccountId !== '' &&
+    viewerAccountId === noteAccountId
+  );
+}
+
+/**
+ * True when a pay action on this note targets a member who cannot receive yet:
+ * the api sent `authorCanReceive: false` for a live member note that is not
+ * the viewer's own. An older api body without the field is not this case.
+ *
+ * Every pay control toward that author shows disabled, and a reply to that
+ * note never invoices a gift to the author.
+ *
+ * @param note - The note's `authorCanReceive`, `accountId`, and `deletedAt`.
+ * @param viewerAccountId - Signed-in account id, or missing when signed out.
+ * @returns Whether the pay controls toward the author show disabled.
+ */
+export function authorCannotReceive(
+  note: {
+    authorCanReceive?: boolean | undefined;
+    accountId?: string | undefined;
+    deletedAt?: string | undefined;
+  },
+  viewerAccountId: string | null | undefined,
+): boolean {
+  return (
+    note.authorCanReceive === false &&
+    note.accountId !== undefined &&
+    note.deletedAt === undefined &&
+    !isOwnNote(viewerAccountId, note.accountId)
+  );
+}
+
+/**
  * True when the signed-in account may reply without paying.
  *
- * Anyone at least verified is exempt. Basis, including the parent author, must
- * pay 1 sat to 21.gifts to write.
+ * Anyone at least verified is exempt, and every role is exempt on its own
+ * note ({@link isOwnNote}). Basis on someone else's note must pay 1 sat to
+ * 21.gifts to write.
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
@@ -65,11 +115,10 @@ export function isReplyPaymentExempt(
   account: { id: string; role: Role } | null,
   parentAccountId: string | undefined,
 ): boolean {
-  void parentAccountId;
   if (account === null) {
     return false;
   }
-  return roleAtLeast(account.role, 'verified');
+  return isOwnNote(account.id, parentAccountId) || roleAtLeast(account.role, 'verified');
 }
 
 /**

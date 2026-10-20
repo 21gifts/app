@@ -1,5 +1,7 @@
 # 21.gifts app handbook
 
+[docs/fiat-amounts.md](../fiat-amounts.md) is binding. A sentence below that tells a committed amount to use the current spot rate, a later daily close, or a round trip through sats describes code that breaks that rule. It is not permission to keep doing so. The typed or frozen figure wins.
+
 This handbook is **mandatory**. Every exported function, every UI screen, and
 every HTTP endpoint in this repository must have a section here. CI
 (`npm run handbook:check`) fails the PR if a heading is missing or the section

@@ -1,7 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PushToggle } from '@/components/PushToggle';
-import { postNotificationLevel } from '@/lib/api';
+import { postHeartNotifications, postNotificationLevel } from '@/lib/api';
 import type { Account, NotificationLevel } from '@/lib/api-types';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
@@ -16,6 +16,7 @@ vi.mock('@/lib/push', () => ({
 
 vi.mock('@/lib/api', () => ({
   postNotificationLevel: vi.fn(),
+  postHeartNotifications: vi.fn(),
 }));
 
 const VIEW_KEY = 'a'.repeat(64);
@@ -26,7 +27,7 @@ const ACCOUNT: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1,
@@ -72,6 +73,10 @@ beforeEach(() => {
   vi.mocked(postNotificationLevel).mockImplementation(async (_session, level) =>
     accountWithLevel(level),
   );
+  vi.mocked(postHeartNotifications).mockImplementation(async (_session, enabled) => ({
+    ...ACCOUNT,
+    notifyHearts: enabled,
+  }));
   stubPushApis();
 });
 
@@ -95,7 +100,7 @@ describe('PushToggle', () => {
       value: { getRegistration: vi.fn().mockResolvedValue(undefined) },
     });
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -110,7 +115,7 @@ describe('PushToggle', () => {
       value: { getRegistration: vi.fn().mockRejectedValue(new Error('boom')) },
     });
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -125,7 +130,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     const onButton = within(device).getByRole('button', { name: 'On' });
     fireEvent.click(onButton);
     fireEvent.click(onButton);
@@ -142,7 +147,7 @@ describe('PushToggle', () => {
 
   it('treats Off while unsubscribed as a no-op', async () => {
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     fireEvent.click(within(device).getByRole('button', { name: 'Off' }));
     expect(enablePush).not.toHaveBeenCalled();
     expect(disablePush).not.toHaveBeenCalled();
@@ -151,37 +156,39 @@ describe('PushToggle', () => {
     );
   });
 
-  it('hides the this-device pill when service worker or PushManager is missing and keeps the level control', async () => {
+  it('hides the device section when service worker or PushManager is missing and keeps the living room', async () => {
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: undefined,
     });
     renderWithLocale(<PushToggle />);
-    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(within(room).getByRole('button', { name: /^All$/ })).toBeTruthy();
+    expect(screen.queryByText('On this device')).toBeNull();
     await waitFor(() => {
-      expect(screen.queryByRole('group', { name: 'This device' })).toBeNull();
+      expect(screen.queryByRole('group', { name: 'Notifications' })).toBeNull();
     });
-    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
   });
 
-  it('shows a labeled On/Off this-device control when not subscribed', async () => {
+  it('shows a labeled On/Off notifications control when not subscribed', async () => {
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
-    const offButton = within(device).getByRole('button', { name: 'Off' });
-    const onButton = within(device).getByRole('button', { name: 'On' });
-    expect(screen.getByText('Notifications')).toBeTruthy();
+    const device = await screen.findByRole('group', { name: 'Notifications' });
+    const offButton = within(device).getByRole('button', { name: /^Off$/ });
+    const onButton = within(device).getByRole('button', { name: /^On$/ });
+    expect(screen.getByText('Notify me about:')).toBeTruthy();
+    expect(screen.getByText('On this device')).toBeTruthy();
     expect(offButton.textContent).toBe('Off');
     expect(onButton.textContent).toBe('On');
     expect(offButton.getAttribute('aria-pressed')).toBe('true');
     expect(onButton.getAttribute('aria-pressed')).toBe('false');
     expect(offButton.className).toContain('bg-app-btn');
     expect(onButton.className).not.toContain('bg-app-btn');
-    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Active' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(room.className).toContain('w-auto');
+    expect(room.className).not.toContain('w-full');
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('shows the iOS install hint when Safari is not standalone', async () => {
@@ -191,13 +198,13 @@ describe('PushToggle', () => {
     expect(
       await screen.findByText('On iPhone, add 21.gifts to your Home Screen to get notifications.'),
     ).toBeTruthy();
-    const device = screen.getByRole('group', { name: 'This device' });
+    const device = screen.getByRole('group', { name: 'Notifications' });
     expect(within(device).getByRole('button', { name: 'Off' })).toBeTruthy();
   });
 
   it('enables push on On', async () => {
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     fireEvent.click(within(device).getByRole('button', { name: 'On' }));
     await waitFor(() => {
       expect(enablePush).toHaveBeenCalledWith('tok');
@@ -214,7 +221,7 @@ describe('PushToggle', () => {
   it('treats On while subscribed as a no-op', async () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     fireEvent.click(within(device).getByRole('button', { name: 'On' }));
     expect(enablePush).not.toHaveBeenCalled();
     expect(disablePush).not.toHaveBeenCalled();
@@ -226,7 +233,7 @@ describe('PushToggle', () => {
   it('disables push when already subscribed', async () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     const onButton = within(device).getByRole('button', { name: 'On' });
     const offButton = within(device).getByRole('button', { name: 'Off' });
     expect(onButton.getAttribute('aria-pressed')).toBe('true');
@@ -248,7 +255,7 @@ describe('PushToggle', () => {
     stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
     vi.mocked(disablePush).mockRejectedValueOnce(new Error('delete failed'));
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     expect(within(device).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -266,64 +273,78 @@ describe('PushToggle', () => {
   it('shows unavailable copy when enable fails', async () => {
     vi.mocked(enablePush).mockRejectedValue(new Error('Notification permission denied'));
     renderWithLocale(<PushToggle />);
-    const device = await screen.findByRole('group', { name: 'This device' });
+    const device = await screen.findByRole('group', { name: 'Notifications' });
     fireEvent.click(within(device).getByRole('button', { name: 'On' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Notifications are not available in this browser.')).toBeTruthy();
   });
 
-  it('shows the three notification stages and selects All when the field is missing', () => {
+  it('selects All on the living room when the level field is missing', () => {
     renderWithLocale(<PushToggle />);
-    expect(screen.getByRole('group', { name: 'Notification level' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-      'false',
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
     );
-    expect(screen.getByRole('button', { name: 'Mentions' }).getAttribute('aria-pressed')).toBe(
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only to me$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('false');
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
       'false',
     );
     expect(
-      screen.getByText(
-        'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is replies to you, gifts you receive, and @username marks.',
-      ),
-    ).toBeTruthy();
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+    expect(screen.getByText('Notify me about:')).toBeTruthy();
+    expect(room.className).toContain('w-auto');
+    expect(room.className).not.toContain('w-full');
   });
 
-  it('selects Mentions when the account stores that level', () => {
+  it('selects Only to me when the account stores mentions', () => {
     useAuthStore.setState({ account: accountWithLevel('mentions') });
     renderWithLocale(<PushToggle />);
-    expect(screen.getByRole('button', { name: 'Mentions' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Mentions' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('false');
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only to me$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
-  it('posts Active and presses that option', async () => {
+  it('posts none when Off is chosen on the living room', async () => {
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
-      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'active');
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
     });
-    expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
+    expect(useAuthStore.getState().account?.notificationLevel).toBe('none');
   });
 
   it('does not post when All is already selected', () => {
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
     expect(postNotificationLevel).not.toHaveBeenCalled();
   });
 
-  it('keeps All and shows an error when the level POST fails', async () => {
+  it('keeps All selected and shows an error when the level POST fails', async () => {
     vi.mocked(postNotificationLevel).mockRejectedValue(new Error('boom'));
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not save notification level.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
     expect(useAuthStore.getState().account?.notificationLevel).toBeUndefined();
   });
 
@@ -336,17 +357,20 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Mentions' }));
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     expect(postNotificationLevel).toHaveBeenCalledTimes(1);
-    resolvePost?.(accountWithLevel('active'));
+    resolvePost?.(accountWithLevel('none'));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Active' }).getAttribute('aria-pressed')).toBe(
-        'true',
-      );
+      expect(
+        within(screen.getByRole('group', { name: 'Posts' }))
+          .getByRole('button', { name: /^Off$/ })
+          .getAttribute('aria-pressed'),
+      ).toBe('true');
     });
   });
 
@@ -359,16 +383,17 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
     });
     const current = useAuthStore.getState().account;
     expect(current).not.toBeNull();
     useAuthStore.getState().setAccount({ ...current!, name: 'Grace' });
-    resolvePost?.({ ...accountWithLevel('active'), name: 'Ada' });
+    resolvePost?.({ ...accountWithLevel('mentions'), name: 'Ada' });
     await waitFor(() => {
-      expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
+      expect(useAuthStore.getState().account?.notificationLevel).toBe('mentions');
     });
     expect(useAuthStore.getState().account?.name).toBe('Grace');
   });
@@ -382,12 +407,13 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
-      expect(postNotificationLevel).toHaveBeenCalledTimes(1);
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
     });
     useAuthStore.getState().clearAuth();
-    resolvePost?.(accountWithLevel('active'));
+    resolvePost?.(accountWithLevel('none'));
     await waitFor(() => {
       expect(useAuthStore.getState().session).toBeNull();
     });
@@ -404,12 +430,13 @@ describe('PushToggle', () => {
     );
     const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
-      expect(postNotificationLevel).toHaveBeenCalledTimes(1);
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
     });
     useAuthStore.setState({ account: null });
-    resolvePost?.(accountWithLevel('active'));
+    resolvePost?.(accountWithLevel('mentions'));
     await waitFor(() => {
       expect(useAuthStore.getState().account).toBeNull();
     });
@@ -421,16 +448,270 @@ describe('PushToggle', () => {
   it('uses the posted level when the response omits notificationLevel', async () => {
     vi.mocked(postNotificationLevel).mockResolvedValueOnce(ACCOUNT);
     renderWithLocale(<PushToggle />);
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }));
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
-      expect(useAuthStore.getState().account?.notificationLevel).toBe('active');
+      expect(useAuthStore.getState().account?.notificationLevel).toBe('mentions');
     });
   });
 
   it('selects All when the account is missing', () => {
     useAuthStore.setState({ account: null, session: 'tok' });
     renderWithLocale(<PushToggle />);
-    expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText('Notify me about:')).toBeTruthy();
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('selects Off when the account stores none', () => {
+    useAuthStore.setState({ account: accountWithLevel('none') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('shows Only with a gift when the account stores active', () => {
+    useAuthStore.setState({ account: accountWithLevel('active') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only with a gift$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only to me$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('false');
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('does not post when Only with a gift is pressed again', () => {
+    useAuthStore.setState({ account: accountWithLevel('active') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only with a gift$/ }));
+    expect(postNotificationLevel).not.toHaveBeenCalled();
+  });
+
+  it('posts active when Only with a gift is chosen', async () => {
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only with a gift$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'active');
+    });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only with a gift$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('posts all from stored active and keeps Only with a gift', async () => {
+    useAuthStore.setState({ account: accountWithLevel('active') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'all');
+    });
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('posts mentions from stored active and keeps Only with a gift', async () => {
+    useAuthStore.setState({ account: accountWithLevel('active') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
+    });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only to me$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('posts none from stored active and keeps Only with a gift', async () => {
+    useAuthStore.setState({ account: accountWithLevel('active') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
+    });
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
+  it('posts all when All is chosen from stored none', async () => {
+    useAuthStore.setState({ account: accountWithLevel('none') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'all');
+    });
+  });
+
+  it('posts mentions when Only to me is chosen from stored none', async () => {
+    useAuthStore.setState({ account: accountWithLevel('none') });
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
+    });
+  });
+
+  it('selects Hearts On when notifyHearts is omitted', () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    expect(within(hearts).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('posts enabled false when Hearts is turned off', async () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledWith('tok', false);
+    });
+    expect(useAuthStore.getState().account?.notifyHearts).toBe(false);
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('does not post when Hearts On is already selected', () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'On' }));
+    expect(postHeartNotifications).not.toHaveBeenCalled();
+  });
+
+  it('ignores a second Hearts Off click while the POST is in flight', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    await waitFor(() => {
+      expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
+  });
+
+  it('shows an error when the heart POST fails', async () => {
+    vi.mocked(postHeartNotifications).mockRejectedValue(new Error('boom'));
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not save the heart setting.')).toBeTruthy();
+  });
+
+  it('does not update notifyHearts when the session changes during the heart POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.setState({ session: 'other' });
+    await act(async () => {
+      resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    });
+    expect(useAuthStore.getState().session).toBe('other');
+    expect(useAuthStore.getState().account?.notifyHearts).toBeUndefined();
+  });
+
+  it('does not restore a null account while the session remains during the heart POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.setState({ account: null });
+    await act(async () => {
+      resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(setAccountSpy).not.toHaveBeenCalled();
+    setAccountSpy.mockRestore();
+  });
+
+  it('uses the posted heart flag when the response omits notifyHearts', async () => {
+    vi.mocked(postHeartNotifications).mockResolvedValueOnce(ACCOUNT);
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.notifyHearts).toBe(false);
+    });
   });
 });

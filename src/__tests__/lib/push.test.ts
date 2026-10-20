@@ -609,6 +609,12 @@ describe('pushTagForNotification', () => {
       pushTagForNotification({ type: 'moderator_proposal', parentId: 'p', replyId: 'r' }),
     ).toBeNull();
   });
+
+  it('tags a heart by replyId', () => {
+    expect(pushTagForNotification({ type: 'heart', parentId: 'p', replyId: 'r1' })).toBe(
+      'heart:r1',
+    );
+  });
 });
 
 describe('currentPushEndpoint', () => {

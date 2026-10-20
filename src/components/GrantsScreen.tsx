@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
+import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { fetchFundingApplications } from '@/lib/api';
@@ -9,7 +10,8 @@ import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in grants page: the owner grant card, the continuation-goals link,
+ * Signed-in grants page: the owner grant card, the public grant places
+ * ({@link GrantPlacesPanel}), the continuation-goals link,
  * the daily-payment text and amounts links, plus the staff queue for moderators.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
@@ -102,6 +104,7 @@ export function GrantsScreen(): ReactElement | null {
   return (
     <Card surface={false}>
       <FundingStatusCard />
+      <GrantPlacesPanel />
       {account !== null ? (
         <ButtonLink href="/grants/goals" variant="secondary" size="lg">
           {t('funding.goals.link')}
@@ -114,6 +117,9 @@ export function GrantsScreen(): ReactElement | null {
           </ButtonLink>
           <ButtonLink href="/grants/payments/amounts" variant="secondary" size="lg">
             {t('funding.daily.amountsLink')}
+          </ButtonLink>
+          <ButtonLink href="/grants/payments/moderators" variant="secondary" size="lg">
+            {t('funding.daily.moderatorsLink')}
           </ButtonLink>
         </>
       ) : null}

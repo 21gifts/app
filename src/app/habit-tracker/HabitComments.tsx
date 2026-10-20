@@ -7,8 +7,11 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { Collapse } from '@/components/Collapse';
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Field, IconButton } from '@/components/ui';
 import type { Account, AmountUnit } from '@/lib/api-types';
@@ -30,7 +33,6 @@ type HabitCommentsProps = {
   payInvoice: ForumPayInvoice | null;
   rateDay: FiatRateDay | null;
   ratePending: boolean;
-  showPaymentQr: boolean;
   onPayOpen: (commentId: string) => void;
   onPayDraftChange: (value: string) => void;
   onPayUnitChange: (unit: AmountUnit) => void;
@@ -45,7 +47,9 @@ type HabitCommentsProps = {
  * Public comments on one habit, including delete and the Bitcoin gift sheet.
  *
  * Comment, delete, and the gift sit in {@link SundayWritingGate}. Rating,
- * edit, archive, and add do not. Does not log comment text or invoices.
+ * edit, archive, and add do not. A comment whose author cannot receive yet
+ * (`canReceive: false`) shows the gift disabled with a "Can't receive yet"
+ * label and never opens the sheet. Does not log comment text or invoices.
  *
  * @param props - The habit, the viewer, and the pay-sheet state owned by
  *   {@link MemberHabits}.
@@ -72,7 +76,6 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
     payInvoice,
     rateDay,
     ratePending,
-    showPaymentQr,
     onPayOpen,
     onPayDraftChange,
     onPayUnitChange,
@@ -95,6 +98,8 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
         <ul className="flex flex-col gap-3">
           {habit.comments.map((comment) => {
             const showGift = canPay && account !== null && comment.accountId !== account.id;
+            // The api sends `canReceive: false` when the author has no verified wallet yet.
+            const giftBlocked = showGift && comment.canReceive === false;
             return (
               <li key={comment.id} className="flex flex-col gap-2 text-sm text-app-fg">
                 <p>
@@ -136,7 +141,20 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                         )}
                       </SundayWritingGate>
                     ) : null}
-                    {showGift ? (
+                    {giftBlocked ? (
+                      <SundayWritingGate notice="zap">
+                        <CannotReceiveLabel />
+                        <IconButton
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('forum.pay')}
+                          disabled
+                        >
+                          <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                        </IconButton>
+                      </SundayWritingGate>
+                    ) : showGift ? (
                       <SundayWritingGate notice="zap">
                         <IconButton
                           type="button"
@@ -154,26 +172,29 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                     ) : null}
                   </div>
                 ) : null}
-                {showGift && payCommentId === comment.id ? (
+                {/* Kept for the pay sheet's success step after the payment closed it. */}
+                <Collapse
+                  show={showGift && !giftBlocked && payCommentId === comment.id}
+                  holdMs={PAY_SHEET_HOLD_MS}
+                >
                   <SundayWritingGate notice="zap">
                     <ForumPaySheet
+                      recipient={comment.name}
                       messageId={comment.id}
                       payDraft={payDraft}
                       payBusy={payBusy}
                       payError={payError}
                       payInvoice={payInvoice}
-                      payWaiting={false}
                       onPayDraftChange={onPayDraftChange}
                       onPayUnitChange={onPayUnitChange}
                       onPaySubmit={onPaySubmit}
                       onPayCancel={onPayCancel}
                       rateDay={rateDay}
                       ratePending={ratePending}
-                      showPaymentQr={showPaymentQr}
                       onInteract={() => undefined}
                     />
                   </SundayWritingGate>
-                ) : null}
+                </Collapse>
               </li>
             );
           })}

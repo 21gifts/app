@@ -52,11 +52,11 @@ async function seedAda(page: Page, role: 'basis' | 'initiator' = 'basis'): Promi
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: '{"spendOverTime":[]}',
+      body: '{"asOf":null,"source":null,"rates":{}}',
     });
   });
   await page.route(/\/me$/, async (route) => {
@@ -149,7 +149,7 @@ test('screen /habit-tracker donate', async ({ page }) => {
 
 async function openHabitPay(
   page: Page,
-  post: { status: number; error: string } | null,
+  post: { status: number; error: string; code?: string } | null,
 ): Promise<void> {
   await seedAda(page);
   await page.route('**/habits', async (route) => {
@@ -157,7 +157,9 @@ async function openHabitPay(
       await route.fulfill({
         status: post.status,
         contentType: 'application/json',
-        body: JSON.stringify({ error: post.error }),
+        body: JSON.stringify(
+          post.code === undefined ? { error: post.error } : { error: post.error, code: post.code },
+        ),
       });
       return;
     }
@@ -289,10 +291,35 @@ test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
   ).toHaveText('Too many payments. Please wait a moment and try again.');
 });
 
+test('Function: CannotReceiveLabel — a comment whose author cannot receive shows the label and a disabled gift', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...PUBLIC_LIST,
+        habits: PUBLIC_LIST.habits.map((habit) => ({
+          ...habit,
+          comments: habit.comments.map((comment) => ({ ...comment, canReceive: false })),
+        })),
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText("Can't receive yet")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+});
+
 test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
   await openHabitPay(page, {
     status: 409,
     error: "The author's wallet cannot receive this Bitcoin payment",
+    code: 'cannot_receive',
   });
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -323,7 +350,9 @@ test('screen /habit-tracker donate-invoice', async ({ page }) => {
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
 });
 
 test('screen /habit-tracker sunday', async ({ page }) => {
@@ -376,8 +405,8 @@ test('screen /habit-tracker archive-confirm', async ({ page }) => {
 
 test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   await seedAda(page);
-  await page.unroute('**/gifts/stats**');
-  await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+  await page.unroute('**/fx/spot');
+  await page.route('**/fx/spot', () => new Promise(() => undefined));
   await stubHabits(page, PUBLIC_LIST);
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -890,8 +919,13 @@ test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', asy
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
+  await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+  await expect(
+    sheet.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
+  // The amount box stays behind the sheet, disabled.
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
 });
 
 test('Function: HabitTrackerPage — a signed-out visitor reads the public list', async ({
@@ -1021,7 +1055,7 @@ test('Function: postMemberHabit — the owner logs the open period through the p
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: useLatestRateDayState — Continue stays disabled until the gift-day rate settles', async ({
+test('Function: useSpotRateState — Continue stays disabled until the spot rate read settles', async ({
   page,
 }) => {
   await seedAda(page);
@@ -1029,12 +1063,12 @@ test('Function: useLatestRateDayState — Continue stays disabled until the gift
   const pending = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await pending;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: '{"spendOverTime":[]}',
+      body: '{"asOf":null,"source":null,"rates":{}}',
     });
   });
   await stubHabits(page, PUBLIC_LIST);
@@ -1140,6 +1174,8 @@ test('Function: postMemberHabit — Time-Zone is sent only for add, comment, del
   await expect(cont).toBeEnabled();
   await cont.click();
   await expect.poll(() => posts.length).toBe(6);
+  // The pay sheet covers the page until it is closed.
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Archive' }).click();
   await page.getByRole('button', { name: 'Confirm archive' }).click();
@@ -1154,4 +1190,38 @@ test('Function: postMemberHabit — Time-Zone is sent only for add, comment, del
   expect(zoneOf('comment')).toBeTruthy();
   expect(zoneOf('deleteComment')).toBeTruthy();
   expect(zoneOf('invoice')).toBeTruthy();
+});
+
+test('Function: useReceiveLink — Add Bitcoin away from the forum home opens the wallet with Receive, and the arrow closes Receive first', async ({
+  page,
+}) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker?visual=wallet-pay-insufficient');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
+  await sheet.getByRole('button', { name: 'Add Bitcoin' }).click();
+  // The wallet opens on Receive, and the address no longer asks for it.
+  await expect(page).toHaveURL(/\/wallet$/);
+  await expect(page.getByText(/^alice@/)).toBeVisible();
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page.getByText(/^alice@/)).toHaveCount(0);
+  await expect(page).toHaveURL(/\/wallet$/);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(/\/habit-tracker/);
 });

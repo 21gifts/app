@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+import { installFakeWebAuthn } from './fake-webauthn';
+import { installNoPrfWebAuthn, NO_PRF_REGISTER_BEGIN, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 
 async function agreeToLivingRoomRules(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/rules/);
@@ -15,79 +17,6 @@ async function agreeToLivingRoomRules(page: Page): Promise<void> {
   }
 }
 
-async function installFakeWebAuthn(page: Page, alreadyRegistered = false): Promise<void> {
-  await page.addInitScript((registeredStart: boolean) => {
-    const pk = globalThis.PublicKeyCredential as unknown as {
-      parseCreationOptionsFromJSON?: unknown;
-      parseRequestOptionsFromJSON?: unknown;
-    };
-    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
-      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
-        value: undefined,
-        configurable: true,
-      });
-      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
-        value: undefined,
-        configurable: true,
-      });
-    }
-    const rawId = crypto.getRandomValues(new Uint8Array(16)).buffer;
-    const idBytes = new Uint8Array(rawId);
-    let binary = '';
-    for (const byte of idBytes) {
-      binary += String.fromCharCode(byte);
-    }
-    const id = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/u, '');
-    const attestation = {
-      id,
-      rawId,
-      type: 'public-key',
-      getClientExtensionResults: () => ({
-        prf: { results: { first: new Uint8Array(32).fill(7) } },
-      }),
-      response: {
-        clientDataJSON: new Uint8Array([123]).buffer,
-        attestationObject: new Uint8Array([2]).buffer,
-      },
-    };
-    const assertion = {
-      ...attestation,
-      response: {
-        clientDataJSON: new Uint8Array([123]).buffer,
-        authenticatorData: new Uint8Array([3]).buffer,
-        signature: new Uint8Array([4]).buffer,
-        userHandle: null,
-      },
-    };
-    const isBytes = (value: unknown): boolean =>
-      value instanceof ArrayBuffer || ArrayBuffer.isView(value);
-    let registered = registeredStart;
-    Object.defineProperty(navigator, 'credentials', {
-      configurable: true,
-      value: {
-        create: async (options?: CredentialCreationOptions) => {
-          const publicKey = options?.publicKey;
-          if (!publicKey || !isBytes(publicKey.challenge) || !isBytes(publicKey.user?.id)) {
-            throw new Error('invalid creation options');
-          }
-          registered = true;
-          return attestation;
-        },
-        get: async (options?: CredentialRequestOptions) => {
-          const publicKey = options?.publicKey;
-          if (!publicKey || !isBytes(publicKey.challenge)) {
-            throw new Error('invalid request options');
-          }
-          if (!registered) {
-            throw new DOMException('No credentials', 'NotAllowedError');
-          }
-          return assertion;
-        },
-      },
-    });
-  }, alreadyRegistered);
-}
-
 async function confirmNewAccount(page: Page): Promise<string> {
   await expect(
     page.getByRole('heading', { name: 'Do you already have an account?' }),
@@ -100,14 +29,16 @@ async function confirmNewAccount(page: Page): Promise<string> {
   );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   return handle;
 }
 
-test('login page renders a single Log in button', async ({ page }) => {
+test('login page shows only Log in from the start', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
+  await expect(page.getByText('New to 21.gifts?')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Create a passkey' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continue with passkey' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Create a login' })).toHaveCount(0);
@@ -137,7 +68,7 @@ test('login shows an error when passkey begin fails', async ({ page }) => {
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
 });
 
-test('login Try again restarts the single-button flow', async ({ page }) => {
+test('login Try again restarts the Log in flow', async ({ page }) => {
   let authenticateBegins = 0;
   let registerBegins = 0;
   let release: () => void = () => undefined;
@@ -196,7 +127,50 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
+});
+
+test('sign-up on a browser whose passkey has no PRF says it cannot hold a wallet', async ({
+  page,
+}) => {
+  let finishes = 0;
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(NO_PRF_REGISTER_BEGIN),
+    });
+  });
+  await page.route(/\/auth\/passkey\/register\/finish$/, async (route) => {
+    finishes += 1;
+    await route.abort();
+  });
+  await installNoPrfWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE })).toBeVisible();
+  await expect(page.getByText('Something went wrong. Please try again.')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/login/);
+  expect(finishes).toBe(0);
+});
+
+test('a failed sign-up request keeps the generic error, not the PRF message', async ({ page }) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    await route.fulfill({ status: 503, body: 'unavailable' });
+  });
+  await installNoPrfWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Something went wrong. Please try again.' }),
+  ).toBeVisible();
+  await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toHaveCount(0);
 });
 
 test('login Log in with existing account does not start register', async ({ page }) => {
@@ -267,7 +241,58 @@ test('login with an existing passkey skips the account choice', async ({ page })
   );
 });
 
-test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
+test('login opened from the forum home steps back to it instead of adding a second forum entry', async ({
+  page,
+}) => {
+  const ready = {
+    ...E2E_ACCOUNT,
+    name: 'Ada',
+    username: 'ada',
+    rulesAgreedAt: 1_700_000_001,
+    setup: null,
+    missing: [],
+  };
+  await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ token: 'sess-e2e', account: ready }),
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(ready),
+    });
+  });
+  await installFakeWebAuthn(page, true);
+  await page.goto('/welcome');
+  // Mark the forum entry, so the test can tell a step back from a second forum entry.
+  await page.evaluate(() => {
+    window.history.replaceState({ ...window.history.state, e2eForumEntry: true }, '');
+  });
+  await page.getByRole('link', { name: 'Log in' }).first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(/\/welcome$/, { timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => (window.history.state as { e2eForumEntry?: boolean } | null)?.e2eForumEntry,
+    ),
+  ).toBe(true);
+});
+
+test('signed-in session hydrates, saves a name, agrees to the rules, and reaches welcome', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -281,42 +306,11 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify({
         ...E2E_ACCOUNT,
         name: 'Ada',
+        username: 'ada',
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
     });
-  });
-  await page.route(/\/me\/lightning-address$/, async (route) => {
-    const method = route.request().method();
-    if (method === 'POST') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          setup: 'rules',
-          missing: ['rules'],
-        }),
-      });
-      return;
-    }
-    if (method === 'DELETE') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: null,
-          setup: 'lightning-address',
-          missing: ['lightning-address', 'rules'],
-        }),
-      });
-      return;
-    }
-    await route.continue();
   });
   await page.route(/\/me\/rules-agreement$/, async (route) => {
     await route.fulfill({
@@ -325,7 +319,8 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify({
         ...E2E_ACCOUNT,
         name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
+        username: 'ada',
+        lightningAddress: null,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
         aboutMe: null,
@@ -338,7 +333,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(E2E_ACCOUNT),
+      body: JSON.stringify({ ...E2E_ACCOUNT, username: 'ada' }),
     });
   });
   await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -357,21 +352,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
-  await expect(
-    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
-  ).toHaveCount(0);
-
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-  await expect(page.getByText('Hi, Ada')).toBeVisible();
-  await expect(
-    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
-  ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
-
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page).toHaveURL(/\/setup\/rules/);
@@ -380,7 +361,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Send a gift' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);

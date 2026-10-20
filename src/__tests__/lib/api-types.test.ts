@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   accountNotificationLevel,
   accountActivitySchema,
@@ -7,6 +7,9 @@ import {
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
   conversationInvoiceSchema,
+  messageInvoiceSchema,
+  lnurlInvoiceSchema,
+  lnurlPayRequestSchema,
   conversationListSchema,
   conversationMessageSchema,
   conversationResponseSchema,
@@ -15,9 +18,12 @@ import {
   notificationListSchema,
   notificationSchema,
   FORUM_MESSAGE_MAX_LENGTH,
+  forumListSchema,
+  forumMessageRowsSchema,
   forumMessageSchema,
+  externalAuthorProfileSchema,
+  forumRepliesSchema,
   hiddenMessageSchema,
-  lnAddressResolvedSchema,
   giftStatsSchema,
   shopActivitySchema,
   memberProfileSchema,
@@ -65,7 +71,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -85,7 +91,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       profileMessage: null,
     };
@@ -94,13 +100,53 @@ describe('memberProfileSchema', () => {
     expect(() => memberProfileSchema.parse({ ...profile, replyCount: 0 })).toThrow();
   });
 
-  it('defaults omitted aboutMeHasPhoto to false', () => {
+  it('accepts optional shopCount and rejects invalid shop counts', () => {
     const profile = {
       id: '22222222-2222-4222-8222-222222222222',
       name: 'Carol',
       location: null,
       role: 'verified' as const,
       lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).shopCount).toBeUndefined();
+    expect(memberProfileSchema.parse({ ...profile, shopCount: 2 }).shopCount).toBe(2);
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: -1 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: 1.5 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: '2' })).toThrow();
+  });
+
+  it('accepts optional creditCount and rejects invalid credit counts', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).creditCount).toBeUndefined();
+    expect(memberProfileSchema.parse({ ...profile, creditCount: 2 }).creditCount).toBe(2);
+    expect(() => memberProfileSchema.parse({ ...profile, creditCount: -1 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, creditCount: 1.5 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, creditCount: '2' })).toThrow();
+  });
+
+  it('defaults omitted aboutMeHasPhoto to false', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -117,7 +163,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: true,
@@ -135,7 +181,7 @@ describe('memberProfileSchema', () => {
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         aboutMeHasPhoto: 'yes',
@@ -170,7 +216,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -187,7 +233,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -208,7 +254,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -232,7 +278,7 @@ describe('memberProfileSchema', () => {
         name: 'Carol',
         location: '',
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
@@ -312,6 +358,26 @@ describe('memberProfileSchema', () => {
         staffTag: null,
       }),
     ).toThrow();
+  });
+});
+
+describe('externalAuthorProfileSchema', () => {
+  const profile = { name: 'Robin', npub: 'npub1example' };
+
+  it('accepts optional shopCount and rejects invalid shop counts', () => {
+    expect(externalAuthorProfileSchema.parse(profile).shopCount).toBeUndefined();
+    expect(externalAuthorProfileSchema.parse({ ...profile, shopCount: 2 }).shopCount).toBe(2);
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: -1 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: 1.5 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: '2' })).toThrow();
+  });
+
+  it('accepts optional creditCount and rejects invalid credit counts', () => {
+    expect(externalAuthorProfileSchema.parse(profile).creditCount).toBeUndefined();
+    expect(externalAuthorProfileSchema.parse({ ...profile, creditCount: 2 }).creditCount).toBe(2);
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, creditCount: -1 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, creditCount: 1.5 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, creditCount: '2' })).toThrow();
   });
 });
 
@@ -918,6 +984,35 @@ describe('conversationInvoiceSchema', () => {
     const invoice = { pr: 'lnbc21n1test', amountSats: 21, messageId: 'm-gift' };
     expect(conversationInvoiceSchema.parse(invoice)).toEqual(invoice);
   });
+
+  it('accepts sparkInvoice as a string or null and rejects an empty one', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21, messageId: 'm-gift' };
+    expect(conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: 'spark1x' })).toEqual({
+      ...invoice,
+      sparkInvoice: 'spark1x',
+    });
+    expect(conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+    expect(() => conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: '' })).toThrow();
+  });
+});
+
+describe('messageInvoiceSchema', () => {
+  it('parses bodies with and without sparkInvoice and keeps the other fields', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21 };
+    expect(messageInvoiceSchema.parse(invoice)).toEqual(invoice);
+    expect(messageInvoiceSchema.parse({ ...invoice, sparkInvoice: 'spark1x' })).toEqual({
+      ...invoice,
+      sparkInvoice: 'spark1x',
+    });
+    expect(messageInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+    expect(() => messageInvoiceSchema.parse({ ...invoice, sparkInvoice: 7 })).toThrow();
+  });
 });
 
 describe('notificationSchema', () => {
@@ -947,6 +1042,11 @@ describe('notificationSchema', () => {
 
   it('accepts zap', () => {
     const row = { ...base, type: 'zap' as const, text: '21' };
+    expect(notificationSchema.parse(row)).toEqual(row);
+  });
+
+  it('accepts heart', () => {
+    const row = { ...base, type: 'heart' as const, text: '1' };
     expect(notificationSchema.parse(row)).toEqual(row);
   });
 
@@ -998,6 +1098,95 @@ describe('pushSubscriptionResponseSchema', () => {
   });
 });
 
+describe('forumMessageRowsSchema', () => {
+  const good = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+  };
+  const emptyAboutMe = { ...good, id: 'm2', text: '' };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('keeps the valid rows in order and warns with the dropped count only', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const rows = forumMessageRowsSchema.parse([good, emptyAboutMe, { ...good, id: 'm3' }]);
+    expect(rows.map((row) => row.id)).toEqual(['m1', 'm3']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('returns no rows when every row fails, without failing the list', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(forumMessageRowsSchema.parse([emptyAboutMe, null, 'x'])).toEqual([]);
+  });
+
+  it('does not warn when every row passes', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(forumMessageRowsSchema.parse([good])).toHaveLength(1);
+    expect(forumMessageRowsSchema.parse([])).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('rejects a list that is not an array', () => {
+    expect(() => forumMessageRowsSchema.parse({ 0: good })).toThrow();
+  });
+
+  it('parses forum list and reply pages row by row and keeps the cursor', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page = forumListSchema.parse({ messages: [emptyAboutMe, good], nextCursor: 'next' });
+    expect(page.messages.map((row) => row.id)).toEqual(['m1']);
+    expect(page.nextCursor).toBe('next');
+    expect(forumRepliesSchema.parse({ messages: [good, emptyAboutMe] }).messages).toHaveLength(1);
+    expect(() => forumListSchema.parse({ messages: 'nope' })).toThrow();
+    expect(() => forumListSchema.parse({ messages: [], nextCursor: '' })).toThrow();
+  });
+
+  it('reads an empty About me profile note as null and keeps a valid one', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: null,
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: '',
+      profileMessage: emptyAboutMe,
+      postCount: 1,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).profileMessage).toBeNull();
+    expect(memberProfileSchema.parse({ ...profile, profileMessage: good }).profileMessage?.id).toBe(
+      'm1',
+    );
+    expect(() => memberProfileSchema.parse({ ...profile, profileMessage: 'nope' })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, profileMessage: undefined })).toThrow();
+  });
+
+  it('keeps the valid posts of a grant application', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const detail = fundingApplicationDetailSchema.parse({
+      account: { id: 'acc_rose', name: 'Rose', role: 'verified', lightningAddress: null },
+      grant: {
+        status: 'pending',
+        appliedAt: 1,
+        trialUtcDate: null,
+        admittedAt: null,
+        decidedAt: null,
+      },
+      messages: [emptyAboutMe, good],
+    });
+    expect(detail.messages.map((row) => row.id)).toEqual(['m1']);
+  });
+});
+
 describe('forumMessageSchema', () => {
   const base = {
     id: 'm1',
@@ -1017,6 +1206,8 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       photoCount: 0,
     });
   });
@@ -1114,6 +1305,8 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       photoCount: 1,
     });
   });
@@ -1133,6 +1326,8 @@ describe('forumMessageSchema', () => {
       ...videoOnly,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       photoCount: 0,
     });
   });
@@ -1148,6 +1343,8 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       photoCount: 0,
     });
   });
@@ -1341,14 +1538,14 @@ describe('forumMessageSchema place', () => {
 });
 
 describe('accountSchema', () => {
-  it('accepts a well-formed account without a linked address', () => {
+  it('accepts a well-formed account', () => {
     expect(accountSchema.parse(account)).toEqual(account);
   });
 
-  it('accepts a linked, verified account', () => {
+  it('accepts the legacy address-verified flag from the api', () => {
     const linked = {
       ...account,
-      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: true,
     };
     expect(accountSchema.parse(linked)).toEqual(linked);
@@ -1471,7 +1668,15 @@ describe('accountSchema', () => {
     expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
   });
 
-  it('accepts all, active, and mentions notification levels', () => {
+  it('accepts a missing notifyHearts so older api bodies still parse', () => {
+    expect(accountSchema.parse(account).notifyHearts).toBeUndefined();
+  });
+
+  it('accepts notifyHearts false', () => {
+    expect(accountSchema.parse({ ...account, notifyHearts: false }).notifyHearts).toBe(false);
+  });
+
+  it('accepts all, active, mentions, and none notification levels', () => {
     expect(accountSchema.parse({ ...account, notificationLevel: 'all' }).notificationLevel).toBe(
       'all',
     );
@@ -1481,11 +1686,20 @@ describe('accountSchema', () => {
     expect(
       accountSchema.parse({ ...account, notificationLevel: 'mentions' }).notificationLevel,
     ).toBe('mentions');
+    expect(accountSchema.parse({ ...account, notificationLevel: 'none' }).notificationLevel).toBe(
+      'none',
+    );
   });
 
-  it('rejects a garbage notificationLevel', () => {
-    expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
+  it('treats an unknown string notificationLevel as omitted', () => {
+    const messages = accountSchema.parse({ ...account, notificationLevel: 'messages' });
+    expect(messages.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(messages)).toBe('all');
+    const nope = accountSchema.parse({ ...account, notificationLevel: 'nope' });
+    expect(nope.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(nope)).toBe('all');
     expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: null })).toThrow();
   });
 
   it('accepts omitted funding', () => {
@@ -1559,7 +1773,7 @@ describe('viewProfileSchema', () => {
   const profile = {
     name: 'Ada',
     location: null,
-    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddress: null,
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
     hasPasskey: false,
@@ -1620,6 +1834,8 @@ describe('forumMessageSchema', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       photoCount: 0,
     });
   });
@@ -1700,28 +1916,6 @@ describe('passkeySessionSchema', () => {
       token: 'tok',
       account: { ...account, linkingKey: null },
     });
-  });
-});
-
-describe('lnAddressResolvedSchema', () => {
-  const resolved = {
-    address: 'me@walletofsatoshi.com',
-    callback: 'https://walletofsatoshi.com/lnurlp/callback',
-    minSendable: 1000,
-    maxSendable: 100_000_000,
-  };
-
-  it('accepts metadata without commentAllowed', () => {
-    expect(lnAddressResolvedSchema.parse(resolved)).toEqual(resolved);
-  });
-
-  it('accepts metadata with commentAllowed', () => {
-    const withComment = { ...resolved, commentAllowed: 255 };
-    expect(lnAddressResolvedSchema.parse(withComment)).toEqual(withComment);
-  });
-
-  it('rejects a non-url callback', () => {
-    expect(() => lnAddressResolvedSchema.parse({ ...resolved, callback: 'not-a-url' })).toThrow();
   });
 });
 
@@ -1964,5 +2158,98 @@ describe('accountActivitySchema', () => {
       },
     };
     expect(accountActivitySchema.parse(activity)).toEqual(activity);
+  });
+
+  it('accepts signed loan balance fields and days', () => {
+    const activity = {
+      donatedSats: 0,
+      receivedSats: 0,
+      donatedOverTime: [],
+      receivedOverTime: [],
+      owedSats: -60,
+      creditSats: 40,
+      owedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: -160,
+          cumulativeSats: -60,
+          btc: '-0.00000160',
+          cumulativeBtc: '-0.00000060',
+          usd: '-0.06',
+          cumulativeUsd: '-0.06',
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 40,
+          cumulativeSats: 40,
+          btc: '0.00000040',
+          cumulativeBtc: '0.00000040',
+          usd: '0.04',
+          cumulativeUsd: '0.04',
+          chf: '0.03',
+          eur: '0.04',
+          php: '2.20',
+          cumulativeChf: '0.03',
+          cumulativeEur: '0.04',
+          cumulativePhp: '2.20',
+        },
+      ],
+      fx: {
+        quote: 'BTC-USD' as const,
+        dayBasis: 'utc' as const,
+        source: 'coinbase-exchange-daily-close' as const,
+        quotes: [
+          { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+          { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+          { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+          { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+        ],
+      },
+    };
+    const parsed = accountActivitySchema.parse(activity);
+    expect(parsed.owedSats).toBe(-60);
+    expect(parsed.creditSats).toBe(40);
+    expect(parsed.owedOverTime).toEqual(activity.owedOverTime);
+    expect(parsed.creditOverTime).toEqual(activity.creditOverTime);
+    expect(parsed.owedOverTime?.[0]?.sats).toBe(-160);
+    expect(parsed.owedOverTime?.[0]?.cumulativeSats).toBe(-60);
+    expect(parsed.owedOverTime?.[0]?.btc).toBe('-0.00000160');
+    expect(parsed.owedOverTime?.[0]?.usd).toBe('-0.06');
+    expect(parsed.owedOverTime?.[0]?.chf).toBeNull();
+  });
+});
+
+describe('lnurlPayRequestSchema', () => {
+  const body = {
+    target: 'bob@example.com',
+    minSendableMsat: 1000,
+    maxSendableMsat: 100_000_000,
+    commentAllowed: 0,
+    description: '',
+    domain: 'example.com',
+  };
+
+  it('parses the contract body', () => {
+    expect(lnurlPayRequestSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a fractional bound or an empty target', () => {
+    expect(() => lnurlPayRequestSchema.parse({ ...body, minSendableMsat: 1.5 })).toThrow();
+    expect(() => lnurlPayRequestSchema.parse({ ...body, target: '' })).toThrow();
+  });
+});
+
+describe('lnurlInvoiceSchema', () => {
+  it('parses { pr } and rejects an empty pr', () => {
+    expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
+    expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
   });
 });

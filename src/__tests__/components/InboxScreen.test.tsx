@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
@@ -10,6 +10,9 @@ import {
   type InboxScreenProps,
   type ThreadGiftGroup,
 } from '@/components/InboxScreen';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import { fetchPublicMessage } from '@/lib/api';
 import type { Conversation, ConversationMessage, ForumMessage } from '@/lib/api-types';
 import { searchMentionAccounts } from '@/lib/mention-search';
@@ -17,9 +20,42 @@ import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  sentWalletPay,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+/** The pay card's labeled **Send** (the composer's icon Send carries an aria-label instead). */
+function paySend(): HTMLElement | null {
+  return (
+    screen
+      .queryAllByRole('button', { name: `Send ${formatBitcoin(21)}` })
+      .find((b) => !b.hasAttribute('aria-label')) ?? null
+  );
+}
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const push = vi.fn();
-const originalUserAgent = navigator.userAgent;
+/** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Asserts that the pay sheet shows no invoice QR and no wallet-app button. */
+function expectWalletOnly(): void {
+  expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
+}
 const locationStub = { href: 'http://localhost/' };
 const htmlElementScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
 const htmlElementScrollHeight = Object.getOwnPropertyDescriptor(
@@ -74,11 +110,8 @@ afterEach(() => {
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(searchMentionAccounts).mockReset();
   vi.mocked(searchMentionAccounts).mockResolvedValue([]);
-  Object.defineProperty(navigator, 'userAgent', {
-    configurable: true,
-    value: originalUserAgent,
-  });
   restoreHtmlElementScroll();
+  vi.mocked(useWalletPay).mockRestore();
 });
 
 const THREAD: Conversation = {
@@ -172,6 +205,64 @@ function inboxScreenProps(overrides: Partial<InboxScreenProps> = {}): InboxScree
     ...overrides,
   };
 }
+
+describe('InboxScreen counterpart who cannot receive', () => {
+  it('disables the amount and shows the label when canReceive is false', () => {
+    renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ conversations: [{ ...THREAD, canReceive: false }] })} />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
+  it('keeps the amount enabled when canReceive is true or absent', () => {
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ conversations: [{ ...THREAD, canReceive: true }] })} />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <InboxScreen {...inboxScreenProps()} />
+      </LocaleProvider>,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('shows no label without the amount field', () => {
+    renderWithLocale(
+      <InboxScreen
+        {...inboxScreenProps({
+          conversations: [{ ...THREAD, canReceive: false }],
+          showAmount: false,
+        })}
+      />,
+    );
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+  });
+
+  it('hides an invoice the loader still holds while the counterpart cannot receive', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21 };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ invoice, payWaiting: true })} />,
+    );
+    expect(document.querySelector('[role="dialog"][data-pay-sheet]')).not.toBeNull();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <InboxScreen
+          {...inboxScreenProps({
+            conversations: [{ ...THREAD, canReceive: false }],
+            invoice,
+            payWaiting: true,
+          })}
+        />
+      </LocaleProvider>,
+    );
+    // The sheet leaves like a cancel: nothing went out, so no success step.
+    expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
+  });
+});
 
 describe('groupThreadGifts', () => {
   it('returns one empty-gifts group per plain message in list order', () => {
@@ -1485,15 +1576,17 @@ describe('InboxScreen', () => {
     expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('opens Wallet of Satoshi from the smartphone pay sheet', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    const onPayCancel = vi.fn();
-    renderWithLocale(
+  function payInbox(
+    props: {
+      conversations?: Conversation[];
+      invoice?: { pr: string; amountSats: number } | null;
+      onPayCancel?: () => void;
+      rateDay?: FiatRateDay | null;
+    } = {},
+  ): ReactElement {
+    return (
       <InboxScreen
-        conversations={[DIRECT]}
+        conversations={props.conversations ?? [DIRECT]}
         error={false}
         loading={false}
         onRetry={() => undefined}
@@ -1509,114 +1602,115 @@ describe('InboxScreen', () => {
         posting={false}
         formError={null}
         showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-        onPayCancel={onPayCancel}
-        payWaiting={true}
-      />,
+        invoice={
+          props.invoice === undefined ? { pr: 'lnbc21n1test', amountSats: 21 } : props.invoice
+        }
+        {...(props.onPayCancel === undefined ? {} : { onPayCancel: props.onPayCancel })}
+        {...(props.rateDay === undefined ? {} : { rateDay: props.rateDay })}
+      />
     );
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationStub.href.toLowerCase()).toContain('lnbc21n1test');
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  }
+
+  it('shows the wallet slot in the pay sheet, with no invoice QR and no wallet-app button', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(payInbox({ onPayCancel }));
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send to Bob');
+    expect(within(sheet).getByText(formatBitcoin(21))).not.toBeNull();
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).not.toBeNull();
+    expectWalletOnly();
+    expect(sheet.querySelector('img')).toBeNull();
+    // The amount stays on the page, disabled behind the sheet.
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('inbox');
+    expect(locationStub.href).toBe('http://localhost/');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the Android wallet intent from the pay sheet without the QR', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value:
-        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-      />,
-    );
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationStub.href).toMatch(/^intent:lightning:/);
+  it('lets the pay sheet close without a cancel handler', () => {
+    renderWithLocale(payInbox());
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+    expect(
+      document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+    ).toBe('closed');
   });
 
-  it('shows the desktop invoice QR', async () => {
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-      />,
-    );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  it('closes the pay sheet from the dimmed page too', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(payInbox({ onPayCancel }));
+    const [scrim] = screen.getAllByRole('button', { name: 'Close' });
+    expect(scrim?.closest('[role="dialog"]')).toBeNull();
+    fireEvent.click(scrim as HTMLElement);
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the fiat value next to the amount in the pay sheet', async () => {
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-        rateDay={RATE_DAY}
-      />,
-    );
-    await screen.findByRole('img', { name: 'Bitcoin payment QR code' });
-    const confirm = screen.getByText(
-      (_, node) =>
-        node?.tagName === 'P' &&
-        /\$0\.02/.test(node.textContent ?? '') &&
-        new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(
-          node.textContent ?? '',
-        ),
-    );
-    expect(confirm).toBeTruthy();
+  it('titles the pay sheet Send when the open conversation is not in the list', () => {
+    renderWithLocale(payInbox({ conversations: [] }));
+    const sheet = screen.getByRole('dialog', { name: 'Send' });
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send');
+  });
+
+  it('shows the success step when the invoice closes without the member closing it', () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+      const onPayCancel = vi.fn();
+      const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
+      rerender(payInbox({ onPayCancel, invoice: null }));
+      const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+      expect(sheet.getAttribute('data-pay-sheet')).toBe('success');
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(within(sheet).getByRole('status').textContent).toContain('Sent to Bob');
+      expect(onPayCancel).not.toHaveBeenCalled();
+      // The amount row stays disabled behind the success step, then frees up.
+      const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+      expect(amount.disabled).toBe(true);
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - MOTION_SWAP_FADE_MS);
+      });
+      expect(amount.disabled).toBe(false);
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_HOLD_MS);
+      });
+      expect(screen.queryByRole('dialog')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('frees the amount row at once when the member closes the sheet', () => {
+    const onPayCancel = vi.fn();
+    const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    rerender(payInbox({ onPayCancel, invoice: null }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('says Sent on the success step without a conversation name', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+    const { rerender } = renderWithLocale(payInbox({ conversations: [] }));
+    rerender(payInbox({ conversations: [], invoice: null }));
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    const status = await screen.findByText('Sent');
+    expect(status.closest('[role="status"]')).not.toBeNull();
+  });
+
+  it('shows the fiat value under the amount in the pay sheet', () => {
+    renderWithLocale(payInbox({ rateDay: RATE_DAY }));
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).not.toBeNull();
+    const amount = within(sheet).getByText(formatBitcoin(21));
+    const fiat = amount.nextElementSibling;
+    expect(fiat?.tagName).toBe('P');
+    expect(fiat?.textContent).toBe('$0.02');
   });
 
   it('nests a gift under the parent listitem and not as its own listitem', () => {
@@ -3383,7 +3477,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: 'Add a photo' })).toBeNull();
-    expect(document.querySelector('input[type="file"]')).toBeNull();
+    expect(document.querySelector('input[type="file"]:not([capture])')).toBeNull();
   });
 
   it('previews one or many attached stills', () => {
@@ -3475,10 +3569,28 @@ describe('InboxScreen', () => {
         onPickFiles={onPickFiles}
       />,
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     fireEvent.change(input, { target: { files: [file] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenCalledTimes(2);
+    expect(Array.from(onPickFiles.mock.calls[1]?.[0] as ArrayLike<File>)).toEqual([shot]);
   });
 
   it('shows the attach control when showAttach is true', () => {
@@ -3506,8 +3618,8 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
     expect(screen.queryByText('Add a photo')).toBeNull();
-    expect(document.querySelector('input[type="file"]')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(document.querySelector('input[type="file"]:not([capture])')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
     expect(clickSpy).toHaveBeenCalled();
@@ -3540,7 +3652,7 @@ describe('InboxScreen', () => {
       />,
     );
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File(['x'], 'p.jpg', { type: 'image/jpeg' })] },
     });
@@ -3626,6 +3738,8 @@ describe('InboxScreen', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       role: 'founder',
     };
     vi.mocked(fetchPublicMessage).mockResolvedValue(quoted);
@@ -3723,5 +3837,78 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('links the wallet-required error to the wallet', () => {
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ formError: 'walletRequired' })} />);
+    const alert = screen.getByRole('alert');
+    expect(alert.tagName).toBe('P');
+    expect(alert.textContent).toBe('Set up your wallet first.');
+    const link = within(alert).getByRole('link', { name: 'Set up your wallet first.' });
+    expect(link.getAttribute('href')).toBe('/wallet');
+  });
+});
+
+describe('InboxScreen in-app wallet pay', () => {
+  function inbox(sparkInvoice: string | null): ReactElement {
+    return (
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21, sparkInvoice }}
+        onPayCancel={() => undefined}
+      />
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays the gift from a ready wallet, with no invoice QR and no wallet-app button', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(inbox(SPARK_INVOICE));
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expectWalletOnly();
+  });
+
+  it('pays the payment request from the wallet without a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(inbox(null));
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1test' });
+    expectWalletOnly();
+  });
+
+  it('offers Try again when the wallet failed, and no other way to pay', () => {
+    setWalletUsable('error');
+    renderWithLocale(inbox(SPARK_INVOICE));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your wallet could not prepare this payment. Please try again.',
+    );
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expectWalletOnly();
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 });

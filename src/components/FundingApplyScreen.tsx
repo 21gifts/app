@@ -1,21 +1,21 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
-import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';
-import { grantApplicationStillOpen, grantApplicationsPaused } from '@/lib/grant-applications';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 type FillStep = 'about' | 'photo' | 'location';
@@ -67,67 +67,25 @@ export function nextFillStep(account: Account): FillStep | null {
 }
 
 /**
- * Paused grant-applications card. Shown while `grantApplicationsPaused` is
- * true, the signed-in username is not in
- * `GRANT_APPLICATION_STILL_OPEN_USERNAMES`, and funding status is not
- * pending, trial, or admitted.
+ * Signed-in grant apply screen. Applications are open to every verified
+ * member: this is always the apply card. Pending, trial, and admitted keep
+ * their copy. A basis account sees "You are not verified yet." and does not
+ * post. The walk: fill About me, photo, and location, then two yes/no
+ * questions. The first asks whether the posts match the core principles and
+ * links to the about page. The second asks whether the posts are true.
+ * Missing fields are next steps, not errors. Yes on the truth question posts
+ * apply. No does not apply. The page chrome owns the back; this screen
+ * renders none.
  *
- * @returns The paused applications card.
- */
-function PausedGrantApply(): ReactElement {
-  const { t } = useTranslations();
-
-  return (
-    <Card maxWidth="xl" surface={false}>
-      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-        {t('funding.heading')}
-      </h1>
-      <div className="flex w-full flex-col items-center gap-3 text-center">
-        <FundingPausedCopy />
-      </div>
-    </Card>
-  );
-}
-
-/**
- * Signed-in grant apply screen. While applications are paused this is the
- * pause card unless the username is in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`
- * or the status is pending, trial, or admitted.
- * A verified account with one of those names and status none or rejected still
- * sees the apply walk. Pending, trial, and admitted keep their copy for every
- * verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas
- * sees "You are not verified yet." and does not post. Any other basis account
- * whose status is not pending, trial, or admitted sees the pause card. A basis
- * account with one of those statuses sees "You are not verified yet." and does
- * not post. A missing account still shows the pause card. The walk stays
- * in the code: fill About me, photo, and location, then two yes/no questions.
- * The first asks whether the posts match the core principles and links to the
- * about page. The second asks whether the posts are true. Missing fields are
- * next steps, not errors. Yes on the truth question posts apply. No does not
- * apply. The page chrome owns the back; this screen renders none.
- *
- * @returns The pause card, the apply card, the not-verified card for a basis
- * account on the named roster, or `null` without a session when the walk is open.
+ * @returns The apply card, or `null` without a session.
  */
 export function FundingApplyScreen(): ReactElement | null {
-  const account = useAuthStore((state) => state.account);
-  const status = account?.funding?.status;
-  const keepsExistingStatus = status === 'pending' || status === 'trial' || status === 'admitted';
-  if (
-    grantApplicationsPaused() &&
-    !grantApplicationStillOpen(account?.username) &&
-    !keepsExistingStatus
-  ) {
-    return <PausedGrantApply />;
-  }
   return <OpenGrantApply />;
 }
 
 /**
- * The apply card used when `grantApplicationsPaused` is false, when
- * `grantApplicationStillOpen` is true, or when funding status is pending,
- * trial, or admitted. A basis account stops at "You are not verified yet."
- * and does not post.
+ * The apply card. Pending, trial, and admitted keep their copy. A basis
+ * account stops at "You are not verified yet." and does not post.
  *
  * @returns The apply card, the not-verified card, or `null` without a session.
  */
@@ -260,7 +218,7 @@ function OpenGrantApply(): ReactElement | null {
         return false;
       }
       if (err instanceof MissingRequirementsError && err.missing.includes('rules')) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       throw err;
@@ -328,7 +286,7 @@ function OpenGrantApply(): ReactElement | null {
           return;
         }
         setAccount({ ...current.account, funding: next });
-        router.push('/grants');
+        returnToView('/grants', router);
       } catch {
         /* v8 ignore next 3 — session gone during apply */
         if (useAuthStore.getState().session !== session) {
@@ -368,12 +326,12 @@ function OpenGrantApply(): ReactElement | null {
           {reviewStep === 'truth' ? t('funding.review.truth') : t('funding.review.question.self')}
         </p>
         {reviewStep === 'principles' ? (
-          <a
-            href="https://21.gifts/about"
+          <Link
+            href="/about"
             className="text-center text-sm text-app-fg underline underline-offset-2"
           >
             {t('nav.about')}
-          </a>
+          </Link>
         ) : null}
         {posts.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>

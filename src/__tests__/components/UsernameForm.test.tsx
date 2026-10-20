@@ -117,6 +117,39 @@ describe('UsernameForm', () => {
     });
   });
 
+  it('freezes the field with the current username once the wallet is verified', () => {
+    useAuthStore.setState({
+      account: { ...base, username: 'ada', sparkWalletVerified: true },
+    });
+    renderWithLocale(<UsernameForm variant="overlay" />);
+    const field = screen.getByRole('textbox') as HTMLInputElement;
+    expect(field.value).toBe('ada');
+    expect(field.disabled).toBe(true);
+    const reason = screen.getByText(
+      'Your username can no longer be changed because your wallet address uses it.',
+    );
+    expect(field.getAttribute('aria-describedby')).toBe(reason.id);
+    const button = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.submit(field.closest('form') as HTMLFormElement);
+    expect(setUsername).not.toHaveBeenCalled();
+  });
+
+  it('shows an empty frozen field when a verified account has no username', () => {
+    useAuthStore.setState({ account: { ...base, sparkWalletVerified: true } });
+    renderWithLocale(<UsernameForm />);
+    expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('');
+  });
+
+  it('stays editable while the wallet is not verified', () => {
+    useAuthStore.setState({ account: { ...base, sparkWalletVerified: false } });
+    renderWithLocale(<UsernameForm />);
+    const field = screen.getByRole('textbox') as HTMLInputElement;
+    expect(field.disabled).toBe(false);
+    expect(field.getAttribute('aria-describedby')).toBeNull();
+    expect(screen.queryByText(/can no longer be changed/)).toBeNull();
+  });
+
   it('does nothing without a session', () => {
     useAuthStore.setState({ session: null, account: base });
     renderWithLocale(<UsernameForm />);

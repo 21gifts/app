@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
 import type { ForumAskCadence, ForumAskObligation } from '@/components/ForumAskWizard';
@@ -13,10 +13,12 @@ import {
   type ForumReplyFormError,
   type ForumPayError,
   type ForumPayInvoice,
+  type ForumWriter,
 } from '@/components/ForumBoard';
+import { PaySheetFailed } from '@/components/PaySheet';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
@@ -25,25 +27,25 @@ import {
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   dismissForumLaws,
-  fetchMessagePhoto,
+  fetchComposeTarget,
   fetchMessages,
   fetchNotifications,
   fetchPublicForumMessages,
   fetchPublicMessage,
-  fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
-  PublicForumUnauthorizedError,
   markNotificationRead,
   markNotificationsReadForMessage,
   markVisibleForumNoteRead,
   NoteDeletedError,
   postMessage,
-  fetchComposeTarget,
   postMessageInvoice,
-  postRepaymentInvoice,
   postMessageVideo,
+  PostFeeRequiredError,
+  PublicForumUnauthorizedError,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -68,9 +70,11 @@ import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
+import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for payable status. */
@@ -131,17 +135,15 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**
@@ -267,9 +269,9 @@ function appendMessages(
 }
 
 /**
- * Updates sats, payable, and the four payment snapshots on ids already in
- * `prev`. Does not insert unseen ids (those wait behind the New posts pill
- * while the visitor is scrolled down).
+ * Updates sats, payable, `authorCanReceive`, and the four payment snapshots on
+ * ids already in `prev`. Does not insert unseen ids (those wait behind the New
+ * posts pill while the visitor is scrolled down).
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the payable poll GET.
@@ -286,6 +288,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
     if (
       fresh === undefined ||
       (fresh.payable === row.payable &&
+        fresh.authorCanReceive === row.authorCanReceive &&
         fresh.sats === row.sats &&
         fresh.amountUsd === row.amountUsd &&
         fresh.amountChf === row.amountChf &&
@@ -297,6 +300,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
     return {
       ...row,
       payable: fresh.payable,
+      authorCanReceive: fresh.authorCanReceive,
       sats: fresh.sats,
       amountUsd: fresh.amountUsd,
       amountChf: fresh.amountChf,
@@ -352,14 +356,29 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * `markVisibleForumNoteRead` and does not mark replies that are not that card.
  * Renders nothing when there is no session.
  *
- * @param feed - Optional `'living-room'` (default) or `'shops'`.
+ * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
+ * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
+ * country. The parent remounts the loader when the country changes. Optional
+ * `onShopsChanged` runs after a shop is created, or a moderator saves a shop note or
+ * its place or hides a shop, so the parent can reload what depends on the pins.
+ * Optional `writer` (the forum home): the living-room composer lives in that
+ * writer instead of on the page (see `ForumBoard`), and every successful own
+ * post closes it, also one that the posting fee's payment created.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
   feed = 'living-room',
+  country = null,
+  onShopsChanged,
+  writer,
 }: {
   feed?: 'living-room' | 'shops';
+  country?: string | null;
+  onShopsChanged?: () => void;
+  writer?: ForumWriter;
 } = {}): ReactElement | null {
+  const writerRef = useRef(writer);
+  writerRef.current = writer;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const { fiat } = useFiatPreference();
@@ -410,9 +429,9 @@ export function ForumLoader({
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-  const [photoEpoch, setPhotoEpoch] = useState(0);
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const videoUrlsRef = useRef(videoUrls);
   videoUrlsRef.current = videoUrls;
@@ -430,7 +449,7 @@ export function ForumLoader({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const nextCursorRef = useRef(nextCursor);
   nextCursorRef.current = nextCursor;
-  const [nearEndElement, setNearEndElement] = useState<HTMLLIElement | null>(null);
+  const [nearEndElement, setNearEndElement] = useState<HTMLElement | null>(null);
   const loadingMoreRef = useRef(false);
   const paginationGeneration = useRef(0);
   const optimisticMessages = useRef(new Map<string, ForumMessage>());
@@ -439,17 +458,21 @@ export function ForumLoader({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
-  const [repayNotice, setRepayNotice] = useState<{
-    messageId: string;
-    error: Exclude<ForumPayError, null> | null;
-  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  // The post behind a paid posting fee failed, so its sheet leaves without Paid and posted. The next
+  // payment that opens starts clean.
+  const [payPostFailed, setPayPostFailed] = useState(false);
+  if (payPostFailed && payInvoice !== null) {
+    setPayPostFailed(false);
+  }
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   useEffect(() => {
     if (askUnit.current === amountUnit) {
       return;
@@ -492,6 +515,31 @@ export function ForumLoader({
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const listed =
+      messages === null
+        ? null
+        : feed === 'shops'
+          ? messages.filter((row) => isShopNote(row.text))
+          : messages;
+    if (listed !== null) {
+      for (const message of listed) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [messages, feed, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [repliesAttempt, setRepliesAttempt] = useState(0);
@@ -500,10 +548,9 @@ export function ForumLoader({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
-  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
@@ -519,6 +566,39 @@ export function ForumLoader({
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const pendingComposeShopUsernameRef = useRef<string | null>(null);
   const composeFeePaidRef = useRef(false);
+  const [firstPostFree, setFirstPostFree] = useState(false);
+  /** Bumps whenever the hint is decided, so an older compose-target answer cannot bring it back. */
+  const firstPostFreeGeneration = useRef(0);
+  const decideFirstPostFree = (free: boolean): void => {
+    firstPostFreeGeneration.current += 1;
+    setFirstPostFree(free);
+  };
+  const belowVerified = account !== null && !roleAtLeast(account.role, 'verified');
+  const missingCount = (account?.missing ?? []).length;
+
+  useEffect(() => {
+    if (session === null || !belowVerified || missingCount > 0) {
+      setFirstPostFree(false);
+      return;
+    }
+    let cancelled = false;
+    const generation = firstPostFreeGeneration.current;
+    void (async () => {
+      let free = false;
+      try {
+        free = (await fetchComposeTarget(session)).firstPostFree;
+      } catch {
+        // No hint when the fee note cannot be read; Post still asks the api.
+      }
+      if (!cancelled && generation === firstPostFreeGeneration.current) {
+        setFirstPostFree(free);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, belowVerified, missingCount]);
+
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -553,20 +633,8 @@ export function ForumLoader({
   payMessageIdRef.current = payMessageId;
   const replyPostingRef = useRef(replyPosting);
   replyPostingRef.current = replyPosting;
-  const photoIdsKey =
-    messages === null
-      ? ''
-      : visibleForumMessages(messages, feedMode)
-          .map((message) => ({
-            id: message.id,
-            count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
-          }))
-          .filter(({ count }) => count > 0)
-          .map(({ id, count }) => `${id}:${count}`)
-          .sort()
-          .join('\0');
-
   const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const feedCountry = feed === 'shops' && country !== null ? country : undefined;
   const forumPageArgs = (
     mode: ForumFeedMode,
     extras: { cursor?: string } = {},
@@ -574,11 +642,13 @@ export function ForumLoader({
     mode: ForumFeedMode;
     limit: number;
     hashtag?: string;
+    country?: string;
     cursor?: string;
   } => ({
     mode,
     limit: FORUM_PAGE_LIMIT,
     ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(feedCountry !== undefined ? { country: feedCountry } : {}),
     ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
   });
 
@@ -653,6 +723,12 @@ export function ForumLoader({
       const currentListed = listedNotes(messagesRef.current);
       const fetchedListed = filterListed(visibleNext);
       if (!replace && !forceApply && !atTop && hasUnseenForumPosts(currentListed, fetchedListed)) {
+        // Hold the unseen posts, but keep the rows already shown current: a
+        // note whose author can no longer receive must not stay payable.
+        setMessages((prev) =>
+          /* v8 ignore next -- a hold needs a shown list (hasUnseenForumPosts is false for null) */
+          prev === null ? prev : mergePayableStatus(prev, visibleNext),
+        );
         setNewPostsAvailable(true);
         return 'ok';
       }
@@ -719,65 +795,6 @@ export function ForumLoader({
     return true;
   };
 
-  startRepaymentRef.current = (messageId: string): void => {
-    if (session === null) {
-      return;
-    }
-    const generation = bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayHost(null);
-    setPayDraft('');
-    setPayInvoice(null);
-    setPayWaiting(false);
-    setPayError(null);
-    setRepayNotice({ messageId, error: null });
-    setPayBusy(true);
-    void postRepaymentInvoice(session, messageId)
-      .then((invoice) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setRepayNotice(null);
-        setPayHost('card');
-        setPayMessageId(messageId);
-        setPayInvoice({
-          messageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-      })
-      .catch((err: unknown) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        if (err instanceof MissingRequirementsError) {
-          if (openOverlayForMissing(err.missing)) {
-            pendingPostRef.current = () => {
-              startRepaymentRef.current(messageId);
-              return Promise.resolve();
-            };
-            return;
-          }
-          setRepayNotice({ messageId, error: 'request' });
-          return;
-        }
-        setRepayNotice({
-          messageId,
-          error: isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        });
-      })
-      .finally(() => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayBusy(false);
-      });
-  };
-
   const refreshMessages = (): boolean => {
     /* v8 ignore next 3 -- board unmounts without a session */
     if (session === null) {
@@ -827,7 +844,7 @@ export function ForumLoader({
           if (result === 'ok') {
             setError(false);
           } else if (result === 'requirements') {
-            router.replace('/setup/rules');
+            returnToView('/setup/rules', router);
           } else if (result === 'error') {
             if (messagesRef.current === null) {
               setError(true);
@@ -855,7 +872,7 @@ export function ForumLoader({
     };
   }, []);
 
-  const nearEndRef = useCallback((node: HTMLLIElement | null): void => {
+  const nearEndRef = useCallback((node: HTMLElement | null): void => {
     setNearEndElement(node);
   }, []);
 
@@ -908,7 +925,7 @@ export function ForumLoader({
           }
         } catch (err) {
           if (!cancelled && activeSession === null && err instanceof PublicForumUnauthorizedError) {
-            router.replace('/login');
+            returnToView('/login', router);
             return;
           }
           // Keep the current pages and cursor so a later intersection may retry.
@@ -925,7 +942,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-    /* router.replace is used on 401; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 401; next/navigation's identity is not stable */
   }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
@@ -952,7 +969,7 @@ export function ForumLoader({
       return;
     }
     if (session === null && feedMode !== 'active') {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     let cancelled = false;
@@ -987,7 +1004,7 @@ export function ForumLoader({
             })()
           : await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (!cancelled && result === 'error') {
@@ -1009,7 +1026,7 @@ export function ForumLoader({
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [attempt, feed, feedMode, session]);
 
   useEffect(() => {
@@ -1199,83 +1216,6 @@ export function ForumLoader({
   }, [feedMode, renderedMessageIdsKey, scroller, session]);
 
   useEffect(() => {
-    if (photoIdsKey === '' || (session === null && feed === 'shops')) {
-      return;
-    }
-    const listed = messagesRef.current;
-    /* v8 ignore start -- photoIdsKey is empty when messages is null */
-    if (listed === null) {
-      return;
-    }
-    /* v8 ignore stop */
-    let cancelled = false;
-    const visible = visibleForumMessages(listed, feedMode);
-    const missing = visible.flatMap((message) => {
-      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-      return Array.from({ length: count }, (_, index) => ({
-        id: message.id,
-        index,
-        key: `${message.id}:${index}`,
-      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
-    });
-    if (missing.length === 0) {
-      return;
-    }
-    void (async () => {
-      for (const photo of missing) {
-        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[photo.key] !== undefined) {
-          continue;
-        }
-        /* v8 ignore stop */
-        let blob: Blob;
-        try {
-          blob =
-            session === null
-              ? await fetchPublicMessagePhoto(photo.id, photo.index)
-              : await fetchMessagePhoto(session, photo.id, photo.index);
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            blob =
-              session === null
-                ? await fetchPublicMessagePhoto(photo.id, photo.index)
-                : await fetchMessagePhoto(session, photo.id, photo.index);
-          } catch {
-            if (cancelled) {
-              return;
-            }
-            // Leave the row text-only when the photo cannot load.
-            continue;
-          }
-        }
-        if (cancelled) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPhotoUrls((prev) => {
-          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
-            URL.revokeObjectURL(url);
-            return prev;
-          }
-          /* v8 ignore stop */
-          return { ...prev, [photo.key]: url };
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [feed, photoEpoch, photoIdsKey, session]);
-
-  useEffect(() => {
     return () => {
       bumpPayPollGeneration();
       payablePollGeneration.current += 1;
@@ -1446,6 +1386,8 @@ export function ForumLoader({
     postAfterPay = false,
     clearReplyDraft = false,
     baselineReceivedSats?: number,
+    // The visitor's own top-level post behind the posting fee: once it exists, the writer closes.
+    ownPost = false,
   ): void => {
     /* v8 ignore next -- pay polling starts only after a signed-in invoice */
     if (session === null) return;
@@ -1478,11 +1420,10 @@ export function ForumLoader({
       if (composePay && !postAfterPay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -1506,9 +1447,7 @@ export function ForumLoader({
               ownContent = true;
             } else if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -1565,6 +1504,7 @@ export function ForumLoader({
                   pendingComposeShopUsernameRef.current = null;
                 } catch {
                   setFormError('request');
+                  setPayPostFailed(true);
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
                   if (keptCaption !== null && keptCaption !== '') {
@@ -1626,6 +1566,10 @@ export function ForumLoader({
               setPosting(false);
               setReplyPosting(false);
               notePostInFlightRef.current = false;
+              if (ownPost && !postAfterPay) {
+                // The payment itself created the note (no media to send afterwards).
+                writerRef.current?.onClose();
+              }
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -1783,6 +1727,10 @@ export function ForumLoader({
     /* v8 ignore next -- a created note is only applied for a signed-in post */
     if (session === null) return;
     composeFeePaidRef.current = false;
+    decideFirstPostFree(false);
+    if (feed === 'shops') {
+      onShopsChanged?.();
+    }
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -1852,6 +1800,66 @@ export function ForumLoader({
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
+    writerRef.current?.onClose();
+  };
+
+  const createNote = (
+    trimmed: string,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    askGoal:
+      | {
+          goalCurrency: ForumGoalCurrency;
+          goalAmount: string;
+          goalRepayable?: true;
+          goalTermDays?: number;
+        }
+      | undefined,
+    pendingPlace: ForumPlacePin | null,
+    sessionToken: string,
+  ): Promise<ForumMessage> => {
+    const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
+    const shopHandle = composeShopUsername(feed, shopUsername);
+    const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
+    return pendingVideo !== null
+      ? postMessageVideo(sessionToken, {
+          text: trimmed,
+          video: pendingVideo.file,
+          poster: pendingVideo.poster,
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        })
+      : postMessage(sessionToken, {
+          text: trimmed,
+          ...(pendingPhotos.length === 0
+            ? {}
+            : {
+                photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
+                  contentType,
+                  data,
+                  ...(takenAt === undefined ? {} : { takenAt }),
+                })),
+              }),
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        });
+  };
+
+  const showCreatedNote = (
+    created: ForumMessage,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    sessionToken: string,
+  ): void => {
+    applyCreatedNote(created, pendingPhotos, pendingVideo);
+    pendingPostRef.current = null;
+    const current = useAuthStore.getState();
+    if (current.session !== sessionToken || current.account === null) {
+      return;
+    }
+    setAccount({ ...current.account, hasPosted: true });
   };
 
   const runNotePost = async (
@@ -1880,13 +1888,33 @@ export function ForumLoader({
         !roleAtLeast(account.role, 'verified') &&
         !composeFeePaidRef.current
       ) {
+        const target = await fetchComposeTarget(session);
+        decideFirstPostFree(target.firstPostFree);
+        if (target.firstPostFree) {
+          try {
+            const created = await createNote(
+              trimmed,
+              pendingPhotos,
+              pendingVideo,
+              askGoal,
+              pendingPlace,
+              session,
+            );
+            showCreatedNote(created, pendingPhotos, pendingVideo, session);
+            return;
+          } catch (err) {
+            if (!(err instanceof PostFeeRequiredError)) {
+              throw err;
+            }
+            decideFirstPostFree(false);
+          }
+        }
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const shopHandle = composeShopUsername(feed, shopUsername);
         const postAfterPay =
           hasMedia || askGoal !== undefined || pendingPlace !== null || shopHandle !== null;
         pendingComposePlaceRef.current = pendingPlace;
         pendingComposeShopUsernameRef.current = shopHandle;
-        const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
           target.messageId,
@@ -1900,13 +1928,24 @@ export function ForumLoader({
           messageId: target.messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
+          sparkInvoice: invoice.sparkInvoice,
+          postsOnPay: true,
         });
         setPayHost('composer');
         pendingComposeTextRef.current = trimmed;
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
         pendingComposeGoalRef.current = askGoal;
-        startPayPoll(target.messageId, target.sats, askGoal === undefined, null, postAfterPay);
+        startPayPoll(
+          target.messageId,
+          target.sats,
+          askGoal === undefined,
+          null,
+          postAfterPay,
+          false,
+          undefined,
+          true,
+        );
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
@@ -1916,42 +1955,20 @@ export function ForumLoader({
         awaitingPay = true;
         return;
       }
-      const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
-      const shopHandle = composeShopUsername(feed, shopUsername);
-      const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
-      const created =
-        pendingVideo !== null
-          ? await postMessageVideo(session, {
-              text: trimmed,
-              video: pendingVideo.file,
-              poster: pendingVideo.poster,
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            })
-          : await postMessage(session, {
-              text: trimmed,
-              ...(pendingPhotos.length === 0
-                ? {}
-                : {
-                    photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
-                      contentType,
-                      data,
-                      ...(takenAt === undefined ? {} : { takenAt }),
-                    })),
-                  }),
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            });
-      applyCreatedNote(created, pendingPhotos, pendingVideo);
-      pendingPostRef.current = null;
-      const current = useAuthStore.getState();
-      if (current.session !== session || current.account === null) {
+      const created = await createNote(
+        trimmed,
+        pendingPhotos,
+        pendingVideo,
+        askGoal,
+        pendingPlace,
+        session,
+      );
+      showCreatedNote(created, pendingPhotos, pendingVideo, session);
+    } catch (err) {
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
-      setAccount({ ...current.account, hasPosted: true });
-    } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
@@ -2061,6 +2078,8 @@ export function ForumLoader({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -2079,7 +2098,7 @@ export function ForumLoader({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -2088,6 +2107,7 @@ export function ForumLoader({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -2110,6 +2130,11 @@ export function ForumLoader({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -2139,7 +2164,7 @@ export function ForumLoader({
       return;
     }
     if (session === null) {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     const listedParent =
@@ -2262,6 +2287,7 @@ export function ForumLoader({
     parentId: string,
     parentBaseline: number,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     /* v8 ignore next -- reactions are not posted without a session */
     if (session === null) return;
@@ -2279,13 +2305,19 @@ export function ForumLoader({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+          pendingPostRef.current = () =>
+            runReplyPost(trimmed, parentId, parentBaseline, true, ownNote);
           return;
         }
         setReplyFormError('request');
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
@@ -2325,14 +2357,14 @@ export function ForumLoader({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               session,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -2343,6 +2375,7 @@ export function ForumLoader({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyPayPreview(trimmed);
@@ -2351,6 +2384,10 @@ export function ForumLoader({
       startPayPoll(parentId, baselineSats, false, null, false, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
@@ -2374,7 +2411,9 @@ export function ForumLoader({
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
-              : 'request',
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
         );
       }
     } finally {
@@ -2406,7 +2445,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -2418,6 +2457,8 @@ export function ForumLoader({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -2432,6 +2473,10 @@ export function ForumLoader({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
@@ -2462,20 +2507,42 @@ export function ForumLoader({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     const parentSats = parentRow === undefined ? 0 : parentRow.sats;
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
     if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(trimmed, parentId, parentBaseline, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(trimmed, parentId, parentBaseline, isRetry)
+          : runComposePay(trimmed, parentId, 1, isRetry);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -2539,292 +2606,301 @@ export function ForumLoader({
           onSatisfied={onOverlaySatisfied}
         />
       ) : null}
-      <ForumBoard
-        readOnly={session === null}
-        messages={listed}
-        {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
-        {...(feed === 'shops' ? { modeSelector: false as const } : {})}
-        {...(feed === 'shops' ? { allowAsk: false as const } : {})}
-        {...(feed === 'shops' ? { composerMaxLength } : {})}
-        {...(feed === 'shops'
-          ? {
-              shopComposer: true as const,
-              shopUsername,
-              onShopUsernameChange: (value: string) => {
-                setShopUsername(value);
-                setFormError(null);
-              },
-              shopResetToken,
-            }
-          : {})}
-        {...(feed === 'shops'
-          ? {
-              shopPlaceEdit: true as const,
-              onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== messageId) {
-                      return row;
-                    }
-                    if (place === null) {
-                      const next = { ...row };
-                      delete next.place;
-                      return next;
-                    }
-                    return { ...row, place };
-                  }),
-                );
-              },
-              shopAccountEdit: true as const,
-              onShopAccountUpdated: (
-                messageId: string,
-                shopAccount: { id: string; username: string; name: string } | null,
-              ) => {
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== messageId) {
-                      return row;
-                    }
-                    if (shopAccount === null) {
-                      const next = { ...row };
-                      delete next.shopAccount;
-                      return next;
-                    }
-                    return { ...row, shopAccount };
-                  }),
-                );
-              },
-            }
-          : {})}
-        newPostsAvailable={newPostsAvailable}
-        onShowNewPosts={showNewPosts}
-        moderatorAppointedAvailable={moderatorAppointedId !== null}
-        onShowModeratorAppointed={showModeratorAppointed}
-        {...(account !== null && roleAtLeast(account.role, 'moderator')
-          ? {
-              shopNoteEdit: true as const,
-              onShopNoteUpdated: (updated: ForumMessage) => {
-                setPhotoUrls((prev) => {
-                  const prefix = `${updated.id}:`;
-                  let changed = false;
-                  const next = { ...prev };
-                  for (const [key, url] of Object.entries(next)) {
-                    if (!key.startsWith(prefix)) {
-                      continue;
-                    }
-                    URL.revokeObjectURL(url);
-                    delete next[key];
-                    changed = true;
-                  }
-                  return changed ? next : prev;
-                });
-                setPhotoEpoch((n) => n + 1);
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== updated.id) {
-                      return row;
-                    }
-                    const next = {
-                      ...row,
-                      text: updated.text,
-                      hasPhoto: updated.hasPhoto,
-                      photoCount: updated.photoCount,
-                      hasVideo: updated.hasVideo,
-                    };
-                    if (updated.place === undefined) {
-                      delete next.place;
-                    } else {
-                      next.place = updated.place;
-                    }
-                    if (updated.shopAccount === undefined) {
-                      delete next.shopAccount;
-                    } else {
-                      next.shopAccount = updated.shopAccount;
-                    }
-                    return next;
-                  }),
-                );
-              },
-            }
-          : {})}
-        {...(account !== null && roleAtLeast(account.role, 'moderator')
-          ? {
-              onDeleted: (messageId: string) => {
-                /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
-                if (deletedIds.current.has(messageId)) {
-                  return;
-                }
-                deletedIds.current.add(messageId);
-                const isListedPost =
-                  messagesRef.current?.some((row) => row.id === messageId) === true;
-                if (!isListedPost) {
-                  const parentId = replyParentById.current.get(messageId);
-                  if (expandedIdRef.current === parentId) {
-                    setReplies((prev) => {
-                      /* v8 ignore next 3 -- replies are null only before the first fetch returns */
-                      if (prev === null) {
-                        return prev;
-                      }
-                      return prev.filter((row) => !deletedIds.current.has(row.id));
-                    });
-                  }
-                  if (payMessageIdRef.current === messageId) {
-                    clearPaySheet();
-                  }
-                  /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
-                  if (parentId === undefined) {
-                    return;
-                  }
-                  /* v8 ignore next -- applySessionReplyCount seeds the parent id with 0 before any delete */
-                  const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
-                  hiddenReplyCounts.current.set(parentId, prevHidden + 1);
+      <PaySheetFailed failed={payPostFailed}>
+        <ForumBoard
+          readOnly={session === null}
+          messages={listed}
+          {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
+          {...(feed === 'shops' ? { modeSelector: false as const } : {})}
+          {...(feed === 'shops' ? { allowAsk: false as const } : {})}
+          {...(feed === 'shops' ? { composerMaxLength } : {})}
+          {...(writer === undefined ? {} : { writer })}
+          {...(feed === 'shops'
+            ? {
+                shopComposer: true as const,
+                shopUsername,
+                onShopUsernameChange: (value: string) => {
+                  setShopUsername(value);
+                  setFormError(null);
+                },
+                shopResetToken,
+              }
+            : {})}
+          {...(feed === 'shops'
+            ? {
+                shopPlaceEdit: true as const,
+                onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
+                  onShopsChanged?.();
                   setMessages((prev) =>
                     prev!.map((row) => {
-                      if (row.id !== parentId) {
+                      if (row.id !== messageId) {
                         return row;
                       }
-                      return {
-                        ...row,
-                        replyCount: Math.max(0, row.replyCount - 1),
-                      };
+                      if (place === null) {
+                        const next = { ...row };
+                        delete next.place;
+                        return next;
+                      }
+                      return { ...row, place };
                     }),
                   );
-                  return;
-                }
-                setMessages((prev) => prev!.filter((row) => row.id !== messageId));
-                const wasExpanded = expandedIdRef.current === messageId;
-                if (wasExpanded) {
-                  setExpandedId(null);
-                  setReplies(null);
-                }
-                if (payMessageIdRef.current === messageId || wasExpanded) {
-                  clearPaySheet();
-                }
-              },
+                },
+                shopAccountEdit: true as const,
+                onShopAccountUpdated: (
+                  messageId: string,
+                  shopAccount: { id: string; username: string; name: string } | null,
+                ) => {
+                  setMessages((prev) =>
+                    prev!.map((row) => {
+                      if (row.id !== messageId) {
+                        return row;
+                      }
+                      if (shopAccount === null) {
+                        const next = { ...row };
+                        delete next.shopAccount;
+                        return next;
+                      }
+                      return { ...row, shopAccount };
+                    }),
+                  );
+                },
+              }
+            : {})}
+          newPostsAvailable={newPostsAvailable}
+          onShowNewPosts={showNewPosts}
+          moderatorAppointedAvailable={moderatorAppointedId !== null}
+          onShowModeratorAppointed={showModeratorAppointed}
+          {...(account !== null && roleAtLeast(account.role, 'moderator')
+            ? {
+                shopNoteEdit: true as const,
+                ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
+                onShopNoteUpdated: (updated: ForumMessage) => {
+                  setPhotoUrls((prev) => {
+                    const prefix = `${updated.id}:`;
+                    let changed = false;
+                    const next = { ...prev };
+                    for (const [key, url] of Object.entries(next)) {
+                      if (!key.startsWith(prefix)) {
+                        continue;
+                      }
+                      URL.revokeObjectURL(url);
+                      delete next[key];
+                      changed = true;
+                    }
+                    return changed ? next : prev;
+                  });
+                  setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
+                  setMessages((prev) =>
+                    prev!.map((row) => {
+                      if (row.id !== updated.id) {
+                        return row;
+                      }
+                      const next = {
+                        ...row,
+                        text: updated.text,
+                        hasPhoto: updated.hasPhoto,
+                        photoCount: updated.photoCount,
+                        hasVideo: updated.hasVideo,
+                      };
+                      if (updated.place === undefined) {
+                        delete next.place;
+                      } else {
+                        next.place = updated.place;
+                      }
+                      if (updated.shopAccount === undefined) {
+                        delete next.shopAccount;
+                      } else {
+                        next.shopAccount = updated.shopAccount;
+                      }
+                      return next;
+                    }),
+                  );
+                },
+              }
+            : {})}
+          {...(account !== null && roleAtLeast(account.role, 'moderator')
+            ? {
+                onDeleted: (messageId: string) => {
+                  /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
+                  if (deletedIds.current.has(messageId)) {
+                    return;
+                  }
+                  deletedIds.current.add(messageId);
+                  const isListedPost =
+                    messagesRef.current?.some((row) => row.id === messageId) === true;
+                  if (!isListedPost) {
+                    const parentId = replyParentById.current.get(messageId);
+                    if (expandedIdRef.current === parentId) {
+                      setReplies((prev) => {
+                        /* v8 ignore next 3 -- replies are null only before the first fetch returns */
+                        if (prev === null) {
+                          return prev;
+                        }
+                        return prev.filter((row) => !deletedIds.current.has(row.id));
+                      });
+                    }
+                    if (payMessageIdRef.current === messageId) {
+                      clearPaySheet();
+                    }
+                    /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
+                    if (parentId === undefined) {
+                      return;
+                    }
+                    /* v8 ignore next -- applySessionReplyCount seeds the parent id with 0 before any delete */
+                    const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
+                    hiddenReplyCounts.current.set(parentId, prevHidden + 1);
+                    setMessages((prev) =>
+                      prev!.map((row) => {
+                        if (row.id !== parentId) {
+                          return row;
+                        }
+                        return {
+                          ...row,
+                          replyCount: Math.max(0, row.replyCount - 1),
+                        };
+                      }),
+                    );
+                    return;
+                  }
+                  if (feed === 'shops') {
+                    onShopsChanged?.();
+                  }
+                  setMessages((prev) => prev!.filter((row) => row.id !== messageId));
+                  const wasExpanded = expandedIdRef.current === messageId;
+                  if (wasExpanded) {
+                    setExpandedId(null);
+                    setReplies(null);
+                  }
+                  if (payMessageIdRef.current === messageId || wasExpanded) {
+                    clearPaySheet();
+                  }
+                },
+              }
+            : {})}
+          error={error}
+          loading={loading}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          posting={posting || preparing}
+          draft={draft}
+          placeDraft={placeDraft}
+          onPlaceDraftChange={setPlaceDraft}
+          onDraftChange={(value) => {
+            setDraft(value);
+            setFormError(null);
+          }}
+          askDraft={askDraft}
+          askDraftUnit={askDraftUnit}
+          onAskDraftUnit={setAskDraftUnit}
+          onAskDraftChange={(value) => {
+            setAskDraft(value);
+            setFormError(null);
+          }}
+          composeIntent={composeIntent}
+          onComposeIntentChange={(intent) => {
+            setComposeIntent(intent);
+            if (intent === 'ask') {
+              setPlaceDraft(null);
+              pendingComposePlaceRef.current = null;
             }
-          : {})}
-        error={error}
-        loading={loading}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        posting={posting || preparing}
-        draft={draft}
-        placeDraft={placeDraft}
-        onPlaceDraftChange={setPlaceDraft}
-        onDraftChange={(value) => {
-          setDraft(value);
-          setFormError(null);
-        }}
-        askDraft={askDraft}
-        askDraftUnit={askDraftUnit}
-        onAskDraftUnit={setAskDraftUnit}
-        onAskDraftChange={(value) => {
-          setAskDraft(value);
-          setFormError(null);
-        }}
-        composeIntent={composeIntent}
-        onComposeIntentChange={(intent) => {
-          setComposeIntent(intent);
-          if (intent === 'ask') {
-            setPlaceDraft(null);
-            pendingComposePlaceRef.current = null;
+            if (intent === 'post') {
+              setAskStep(1);
+            }
+            setFormError(null);
+          }}
+          askStep={askStep}
+          onAskStepChange={setAskStep}
+          askCadence={askCadence}
+          onAskCadenceChange={setAskCadence}
+          askObligation={askObligation}
+          onAskObligationChange={setAskObligation}
+          onCreditTermDays={setCreditTermDays}
+          authorName={account?.name ?? ''}
+          onPost={onPost}
+          onRetry={() => {
+            setAttempt((n) => n + 1);
+          }}
+          formError={formError}
+          firstPostFree={firstPostFree}
+          photoDrafts={photoDrafts}
+          videoDraft={videoDraft}
+          onPickFiles={onPickFiles}
+          onRemovePhoto={onRemovePhoto}
+          onClearPhoto={() => {
+            revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
+            pickGeneration.current += 1;
+            setPhotoDrafts([]);
+            setVideoDraft(null);
+            setFormError(null);
+          }}
+          photoUrls={photoUrls}
+          photoVersions={photoVersions}
+          videoUrls={videoUrls}
+          payMessageId={payMessageId}
+          payHost={payHost}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          replyPayPreview={replyPayPreview}
+          onPayOpen={(messageId) => {
+            bumpPayPollGeneration();
+            setPayMessageId(messageId);
+            setPayHost('card');
+            setPayDraft('');
+            setPayError(null);
+            setPayInvoice(null);
+            setReplyPayPreview(null);
+            setPayWaiting(false);
+            setPayBusy(false);
+          }}
+          viewerAccountId={account?.id ?? null}
+          heartViewerId={account?.id ?? null}
+          onHeartTip={onHeartTip}
+          heartTipViews={heartTipViews}
+          repayLink
+          onPayUnitChange={setPayShownUnit}
+          onReplyUnitChange={setReplyShownUnit}
+          onPayDraftChange={(value) => {
+            setPayDraft(value);
+            setPayError(null);
+          }}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={clearPaySheet}
+          rateDay={rateDay}
+          mode={feedMode}
+          onModeChange={onModeChange}
+          nearEndRef={nearEndRef}
+          unpaidNewCount={
+            feedMode === 'unpaid' || messages === null
+              ? 0
+              : unpaidNewCount(filterListed(messages), unpaidSeenAt)
           }
-          if (intent === 'post') {
-            setAskStep(1);
-          }
-          setFormError(null);
-        }}
-        askStep={askStep}
-        onAskStepChange={setAskStep}
-        askCadence={askCadence}
-        onAskCadenceChange={setAskCadence}
-        askObligation={askObligation}
-        onAskObligationChange={setAskObligation}
-        onCreditTermDays={setCreditTermDays}
-        authorName={account?.name ?? ''}
-        onPost={onPost}
-        onRetry={() => {
-          setAttempt((n) => n + 1);
-        }}
-        formError={formError}
-        photoDrafts={photoDrafts}
-        videoDraft={videoDraft}
-        onPickFiles={onPickFiles}
-        onRemovePhoto={onRemovePhoto}
-        onClearPhoto={() => {
-          revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
-          pickGeneration.current += 1;
-          setPhotoDrafts([]);
-          setVideoDraft(null);
-          setFormError(null);
-        }}
-        photoUrls={photoUrls}
-        videoUrls={videoUrls}
-        payMessageId={payMessageId}
-        payHost={payHost}
-        payDraft={payDraft}
-        payBusy={payBusy}
-        payError={payError}
-        repayNotice={repayNotice}
-        payInvoice={payInvoice}
-        replyPayPreview={replyPayPreview}
-        payWaiting={payWaiting}
-        onPayOpen={(messageId) => {
-          bumpPayPollGeneration();
-          setPayMessageId(messageId);
-          setPayHost('card');
-          setPayDraft('');
-          setPayError(null);
-          setPayInvoice(null);
-          setReplyPayPreview(null);
-          setPayWaiting(false);
-          setPayBusy(false);
-        }}
-        viewerAccountId={account?.id ?? null}
-        onRepay={(messageId) => {
-          startRepaymentRef.current(messageId);
-        }}
-        onPayUnitChange={setPayShownUnit}
-        onReplyUnitChange={setReplyShownUnit}
-        onPayDraftChange={(value) => {
-          setPayDraft(value);
-          setPayError(null);
-        }}
-        onPaySubmit={onPaySubmit}
-        onPayCancel={clearPaySheet}
-        rateDay={rateDay}
-        mode={feedMode}
-        onModeChange={onModeChange}
-        nearEndRef={nearEndRef}
-        unpaidNewCount={
-          feedMode === 'unpaid' || messages === null
-            ? 0
-            : unpaidNewCount(filterListed(messages), unpaidSeenAt)
-        }
-        lawsVisible={feed === 'shops' ? false : lawsVisible}
-        onDismissLaws={onDismissLaws}
-        expandedId={expandedId}
-        onToggleExpand={onToggleExpand}
-        replies={expandedId === null ? null : replies}
-        repliesLoading={expandedId !== null && repliesLoading}
-        repliesError={expandedId !== null && repliesError}
-        onRetryReplies={() => {
-          setRepliesAttempt((n) => n + 1);
-        }}
-        replyDraft={replyDraft}
-        onReplyDraftChange={(value) => {
-          setReplyDraft(value);
-          setReplyFormError(null);
-        }}
-        replyAmountDraft={replyAmountDraft}
-        onReplyAmountDraftChange={(value) => {
-          setReplyAmountDraft(value);
-          setReplyFormError(null);
-        }}
-        onReplyPost={onReplyPost}
-        replyPosting={replyPosting}
-        replyFormError={replyFormError}
-      />
+          lawsVisible={feed === 'shops' ? false : lawsVisible}
+          onDismissLaws={onDismissLaws}
+          expandedId={expandedId}
+          onToggleExpand={onToggleExpand}
+          replies={expandedId === null ? null : replies}
+          repliesLoading={expandedId !== null && repliesLoading}
+          repliesError={expandedId !== null && repliesError}
+          onRetryReplies={() => {
+            setRepliesAttempt((n) => n + 1);
+          }}
+          replyDraft={replyDraft}
+          onReplyDraftChange={(value) => {
+            setReplyDraft(value);
+            setReplyFormError(null);
+          }}
+          replyAmountDraft={replyAmountDraft}
+          onReplyAmountDraftChange={(value) => {
+            setReplyAmountDraft(value);
+            setReplyFormError(null);
+          }}
+          onReplyPost={onReplyPost}
+          replyPosting={replyPosting}
+          replyFormError={replyFormError}
+        />
+      </PaySheetFailed>
     </>
   );
 }

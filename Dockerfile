@@ -8,20 +8,52 @@
 #   docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/app:beta
 #   docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://api.21.gifts 21gifts/app:latest
 #
-# One image, multiple environments: `next build` inlines NEXT_PUBLIC_* values
-# into the emitted bundles, so the image is built with literal placeholders
-# (__NEXT_PUBLIC_API_URL__) and entrypoint.sh substitutes the real runtime
-# values at container start — the same image runs DEV and PRD without rebuild.
+# One image per environment: each deploy builds its own image, because the
+# Breez API key (NEXT_PUBLIC_BREEZ_API_KEY) and the build id
+# (NEXT_PUBLIC_BUILD_ID) are baked in at `next build`; an image built for one
+# environment is not deployed to another. NEXT_PUBLIC_APP_VERSION is baked in
+# at `next build` too (from APP_VERSION, below). NEXT_PUBLIC_API_URL and the
+# optional entrypoint.sh variables are runtime placeholders: `next build`
+# inlines NEXT_PUBLIC_* values into the emitted bundles, so the image is built
+# with literal placeholders (__NEXT_PUBLIC_API_URL__) and entrypoint.sh
+# substitutes the real runtime values at container start.
 #
 # APP_VERSION is a Docker build-arg (default `dev`), baked into
 # NEXT_PUBLIC_APP_VERSION at `next build` and shown as Version in the
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
+# NEXT_PUBLIC_BUILD_ID is a build-arg (default `dev`), passed by every deploy
+# as the commit SHA and baked at `next build`. The app sends it as
+# `X-App-Build` on passkey begin and finish so the api can refuse an outdated
+# tab. Not an entrypoint.sh placeholder.
+#
+# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed by every
+# deploy from that environment's repository secret and baked at `next build`.
+# It is not an entrypoint.sh placeholder; an unset or empty value still builds
+# (the in-app wallet is then off). deploy-prd.yaml refuses to build without it.
+#
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
+#   NEXT_PUBLIC_BUILD_ID — deployed commit of this image (from ARG NEXT_PUBLIC_BUILD_ID), or `dev`
+#   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
+#                               (each deploy's own secret); empty when unset
+#   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
+#                         page shows its wallet address for donations to the project.
+#                         Optional placeholder: empty or unset hides that address.
+#   NEXT_PUBLIC_SENTRY_DSN — error-reporting DSN. Optional placeholder: empty or unset
+#                         turns error reporting off.
+#   NEXT_PUBLIC_SENTRY_ENVIRONMENT — error-reporting environment name (e.g. staging).
+#                         Optional placeholder: empty or unset uses the SDK default.
+#   NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE — share (0 to 1) of browser traces sent while
+#                         error reporting is on. Optional placeholder: empty, unset, or
+#                         invalid uses 0.1.
+#
+# entrypoint.sh refuses to start when a placeholder's variable is unset or
+# empty, except for the optional ones above, which it substitutes with an
+# empty string.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -36,6 +68,14 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
 ARG APP_VERSION=dev
 ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
+ARG NEXT_PUBLIC_BUILD_ID=dev
+ENV NEXT_PUBLIC_BUILD_ID=$NEXT_PUBLIC_BUILD_ID
+ARG NEXT_PUBLIC_BREEZ_API_KEY
+ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
+ENV NEXT_PUBLIC_PLATFORM_USERNAME=__NEXT_PUBLIC_PLATFORM_USERNAME__
+ENV NEXT_PUBLIC_SENTRY_DSN=__NEXT_PUBLIC_SENTRY_DSN__
+ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=__NEXT_PUBLIC_SENTRY_ENVIRONMENT__
+ENV NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=__NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE__
 RUN npm run build
 
 FROM node:22-alpine AS runtime

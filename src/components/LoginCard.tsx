@@ -3,6 +3,7 @@
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
+import { LoginBlockedNotice } from '@/components/LoginBlockedNotice';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
@@ -11,6 +12,9 @@ import { androidPasskeyBlock } from '@/lib/android-passkey';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosPasskeyBlock } from '@/lib/ios-passkey';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** `usePasskeyLogin` error when the new passkey returned no PRF output. */
+const PRF_UNSUPPORTED_ERROR = 'wallet.prfUnsupported';
 
 /** Installed OS version below the sign-in minimum, plus which sentence to show. */
 type VersionBlock = {
@@ -21,16 +25,41 @@ type VersionBlock = {
 
 /**
  * The `/login` card: Log in, account choice, unknown passkey, name,
- * preparing, error, or in-app browser escape.
+ * preparing, error, logins closed, new version ready, or in-app browser escape.
+ *
+ * When the api refuses to create a session because operators closed logins
+ * (`logins_closed`) or this tab runs an older build (`app_outdated`), the card
+ * shows {@link LoginBlockedNotice} instead of every other view, also over a
+ * held-back session (that session stays held).
+ *
+ * While a stored session is held back (`lockedSession`), the start view is
+ * the same, with **Welcome back, {name}** above the heading when the account
+ * has a name or username, and **Confirm to open your wallet** directly above
+ * **Log in**. **Log in** is then one passkey prompt
+ * (authenticate only): whichever passkey answers decides the account, so a
+ * different account replaces the held session. A dismissed prompt, an
+ * unknown passkey, or any other failure of that prompt stays on this start
+ * view with **Something went wrong. Please try again.** (`login.error`)
+ * above **Log in**; a refused account (the wrong-account 403) shows
+ * `login.wrongAccount` there instead and keeps the held session. Only this
+ * held start view adds **Open a new account** under **New to 21.gifts?**: it
+ * is registration, and a new account replaces the held session as well.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
- * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
+ * `/setup/name`, `/setup/username`, `/setup/rules`,
  * or `/welcome`.
  *
- * @returns The card element.
+ * @param props - `heldProblem`: why the last wallet open of the held-back
+ *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
+ *   `login.error`), shown on the held start view until its next **Log in**.
+ * @returns The card.
  */
-export function LoginCard(): ReactElement {
+export function LoginCard({
+  heldProblem = null,
+}: { heldProblem?: 'noPrf' | 'failed' | null } = {}): ReactElement {
   const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const lockedName = useAuthStore((state) => state.lockedName);
   const wrongAccount = useAuthStore((state) => state.wrongAccount);
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
@@ -38,6 +67,8 @@ export function LoginCard(): ReactElement {
   const [versionBlock, setVersionBlock] = useState<VersionBlock | null>(null);
   const [nameDraft, setNameDraft] = useState('');
   const [nameInvalid, setNameInvalid] = useState(false);
+  // The held start view's Log in ended without a session (dismissed or failed).
+  const [heldTried, setHeldTried] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
@@ -57,6 +88,7 @@ export function LoginCard(): ReactElement {
   useEffect(() => {
     if (account !== null) {
       passkey.cancel();
+      setHeldTried(false);
     }
   }, [account, passkey.cancel]);
 
@@ -65,6 +97,7 @@ export function LoginCard(): ReactElement {
     passkey.error === 'login.iosVersion' || passkey.error === 'login.androidVersion'
       ? passkey.error
       : null;
+  const prfUnsupported = passkey.error === PRF_UNSUPPORTED_ERROR;
 
   let body: ReactElement;
   if (account !== null) {
@@ -73,12 +106,45 @@ export function LoginCard(): ReactElement {
     body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
+  } else if (passkey.status === 'closed' || passkey.status === 'outdated') {
+    body = <LoginBlockedNotice kind={passkey.status} />;
+  } else if (
+    lockedSession !== null &&
+    passkey.status !== 'name' &&
+    (heldTried || passkey.status === 'idle')
+  ) {
+    body = (
+      <StartView
+        held
+        greeting={lockedName}
+        alert={
+          wrongAccountHint
+            ? 'login.wrongAccount'
+            : heldTried || heldProblem === 'failed'
+              ? 'login.error'
+              : heldProblem === 'noPrf'
+                ? 'wallet.prfUnsupported'
+                : null
+        }
+        onLogin={() => {
+          clearWrongAccount();
+          setHeldTried(true);
+          passkey.authenticate();
+        }}
+        onRegister={() => {
+          setHeldTried(false);
+          passkey.register();
+        }}
+        versionBlock={versionBlock}
+      />
+    );
   } else if (wrongAccountHint || passkey.status === 'error') {
     body = (
       <ErrorView
         wrongAccount={wrongAccountHint}
         versionBlock={versionBlock}
         versionErrorKey={versionErrorKey}
+        prfUnsupported={prfUnsupported}
         onRetry={() => {
           clearWrongAccount();
           if (wrongAccountHint) {
@@ -153,23 +219,52 @@ function VersionNote({ block }: { block: VersionBlock | null }): ReactElement | 
 interface StartViewProps {
   /** Called to start authenticate-first login. */
   onLogin: () => void;
+  /** Open the name form; does not start create. Held start view only, else null. */
+  onRegister?: (() => void) | null;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
+  /** Held-back member to greet (**Welcome back, {name}**), or null. */
+  greeting?: string | null;
+  /** True for a held-back session: **Confirm to open your wallet** above **Log in**. */
+  held?: boolean;
+  /** Alert above **Log in**, or null. */
+  alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
 }
 
 /**
- * The initial logged-out state: a single Log in button.
+ * The initial logged-out state: a single **Log in** button.
+ * For a held-back session, a greeting above the heading, an alert,
+ * **Confirm to open your wallet** above **Log in**, and **Open a new account**
+ * under a short line.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onLogin, versionBlock }: StartViewProps): ReactElement {
+function StartView({
+  onLogin,
+  onRegister = null,
+  versionBlock,
+  greeting = null,
+  held = false,
+  alert = null,
+}: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      {greeting === null ? null : (
+        <p className="text-center text-sm text-app-muted">
+          {t('login.heldGreeting', { name: greeting })}
+        </p>
+      )}
       <h1 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h1>
       <VersionNote block={versionBlock} />
+      {alert === null ? null : (
+        <p role="alert" className="max-w-sm text-center text-sm text-app-danger">
+          {t(alert)}
+        </p>
+      )}
+      {held ? <p className="text-center text-sm text-app-muted">{t('login.heldConfirm')}</p> : null}
       <Button
         type="button"
         onClick={onLogin}
@@ -177,6 +272,14 @@ function StartView({ onLogin, versionBlock }: StartViewProps): ReactElement {
       >
         {t('login.submit')}
       </Button>
+      {onRegister === null ? null : (
+        <>
+          <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
+          <Button type="button" variant="secondary" onClick={onRegister}>
+            {t('login.create')}
+          </Button>
+        </>
+      )}
     </>
   );
 }
@@ -334,11 +437,14 @@ interface ErrorViewProps {
   versionBlock: VersionBlock | null;
   /** Version-error message key when the alert should be that sentence. */
   versionErrorKey: 'login.iosVersion' | 'login.androidVersion' | null;
+  /** When true, the new passkey cannot hold a wallet on this phone or browser. */
+  prfUnsupported: boolean;
 }
 
 /**
- * The error state: a request failed, a response was malformed, or the visitor
- * signed in with an account whose session is refused.
+ * The error state: a request failed, a response was malformed, the visitor
+ * signed in with an account whose session is refused, or the new passkey
+ * cannot hold a wallet on this phone or browser (no PRF output).
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
@@ -348,6 +454,7 @@ function ErrorView({
   wrongAccount,
   versionBlock,
   versionErrorKey,
+  prfUnsupported,
 }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   const matchingBlock =
@@ -356,12 +463,14 @@ function ErrorView({
       : null;
   const alert = wrongAccount
     ? t('login.wrongAccount')
-    : matchingBlock !== null
-      ? t(matchingBlock.messageKey, {
-          version: matchingBlock.installed,
-          required: matchingBlock.required,
-        })
-      : t('login.error');
+    : prfUnsupported
+      ? t('wallet.prfUnsupported')
+      : matchingBlock !== null
+        ? t(matchingBlock.messageKey, {
+            version: matchingBlock.installed,
+            required: matchingBlock.required,
+          })
+        : t('login.error');
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />

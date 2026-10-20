@@ -10,13 +10,12 @@ import {
   formatUsdTick,
   fiatDraftForSats,
   fiatToSats,
-  latestRateDay,
-  latestRateDayFor,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
   satsToFiatAmount,
   shownFiatForSats,
+  spotRateDay,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -122,31 +121,22 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-describe('latestRateDay', () => {
-  it('returns the last day with gifts', () => {
-    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }, RATE_DAY])).toEqual(RATE_DAY);
+describe('spotRateDay', () => {
+  it('prices 100,000,000 sats at each code the api priced', () => {
+    expect(spotRateDay({ USD: '100000', CHF: '80000.5' })).toEqual({
+      sats: 100_000_000,
+      usd: '100000',
+      chf: '80000.5',
+      eur: null,
+      php: null,
+    });
+    expect(satsToFiatAmount(1_000, spotRateDay({ CHF: '80000' }), 'CHF')).toBe('0.80');
+    expect(satsToFiatAmount(1_000, spotRateDay({ CHF: '80000' }), 'USD')).toBeNull();
   });
 
-  it('returns null when every day is empty', () => {
-    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }])).toBeNull();
-    expect(latestRateDay([])).toBeNull();
-  });
-});
-
-describe('latestRateDayFor', () => {
-  const poisoned = { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null };
-
-  it('skips a newer day that cannot convert the currency', () => {
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'PHP')).toEqual(RATE_DAY);
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'USD')).toEqual(poisoned);
-  });
-
-  it('returns null when no day can convert that currency', () => {
-    expect(latestRateDayFor([poisoned], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, sats: 0, php: '1.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: '0.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: 'nope' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([], 'CHF')).toBeNull();
+  it('returns null when no code has a usable price', () => {
+    expect(spotRateDay({})).toBeNull();
+    expect(spotRateDay({ USD: '0', EUR: '0.00' })).toBeNull();
   });
 });
 
