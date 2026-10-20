@@ -1,5 +1,5 @@
 import { captureMessage } from '@sentry/nextjs';
-import { getBreezApiKey } from '@/lib/config';
+import { getBreezApiKey, getE2eNow } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet, type WalletSpanAttributes } from '@/lib/sentry';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
@@ -571,6 +571,23 @@ export function onPaymentReceived(listener: (payment: WalletPayment) => void): (
   return () => {
     receivedListeners.delete(listener);
   };
+}
+
+/**
+ * In a Playwright build only (`getE2eNow()`), tells every
+ * {@link onPaymentReceived} listener about `payment` as if the wallet had just
+ * reported it, so e2e drives a screen that waits for the money through the
+ * same listener without a wallet. Does nothing in any other build.
+ *
+ * @param payment - The received, completed payment to report.
+ */
+export function announceReceivedForE2e(payment: WalletPayment): void {
+  if (getE2eNow() === null) {
+    return;
+  }
+  for (const listener of receivedListeners) {
+    listener(payment);
+  }
 }
 
 /**

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import {
+  announceReceivedForE2e,
   connectWallet,
   disconnectWallet,
   ensureWalletConnected,
@@ -2771,6 +2772,29 @@ describe('onIncomingPayment', () => {
     emit({ type: 'paymentSucceeded', payment: payment('after') });
     await settle();
     expect(now).toEqual(['new']);
+  });
+
+  it('lets only a Playwright build announce a received payment for e2e', () => {
+    const seen: string[] = [];
+    const unsubscribe = onPaymentReceived((p) => {
+      seen.push(p.id);
+    });
+    const before = process.env.NEXT_PUBLIC_E2E_NOW;
+    try {
+      delete process.env.NEXT_PUBLIC_E2E_NOW;
+      announceReceivedForE2e(payment('production'));
+      expect(seen).toEqual([]);
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-09-20T12:00:00.000Z';
+      announceReceivedForE2e(payment('playwright'));
+      expect(seen).toEqual(['playwright']);
+    } finally {
+      if (before === undefined) {
+        delete process.env.NEXT_PUBLIC_E2E_NOW;
+      } else {
+        process.env.NEXT_PUBLIC_E2E_NOW = before;
+      }
+      unsubscribe();
+    }
   });
 
   it('tells the listeners of two payments close together only once the newest balance is in', async () => {

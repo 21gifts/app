@@ -30,7 +30,7 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { returnToView } from '@/lib/view-history';
 import { visualPin } from '@/lib/visual-pin';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
-import { onPaymentReceived } from '@/lib/wallet/wallet-service';
+import { announceReceivedForE2e, onPaymentReceived } from '@/lib/wallet/wallet-service';
 import type { AmountUnit } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import {
@@ -92,7 +92,7 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
  */
 const POS_LATE_PAID_MS = 60_000;
 
-/** Screenshot pin: the open charge is paid the moment it shows (Playwright builds only). */
+/** Screenshot pin: the wallet reports the open charge paid the moment it shows (Playwright builds only). */
 const POS_RECEIVED_VISUAL_PIN = 'pos-received';
 
 /** The later-created of two charges, or the one that is not `null`. */
@@ -532,10 +532,17 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
-      settleOpen(settledFor(session), {
+      // Through the wallet listener, as if this tab's wallet had received the charge amount.
+      announceReceivedForE2e({
+        id: `pos-received-${charge.id}`,
+        direction: 'received',
         amountSats: charge.amountSats,
         feesSats: 0,
         timestamp: Date.now(),
+        status: 'completed',
+        method: 'spark',
+        senderComment: null,
+        info: {},
       });
     }
   }, [charge, session]);

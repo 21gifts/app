@@ -10583,6 +10583,40 @@ test('Function: onPaymentReceived — without a wallet payment an open charge st
   expect(loads()).toBe(1);
 });
 
+test('Function: onPaymentReceived — the reported payment pays the open charge at once, without asking the api', async ({
+  page,
+}) => {
+  const loads = await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  });
+  // The pin reports the charge amount through the wallet listener (announceReceivedForE2e).
+  await page.goto('/pos?visual=pos-received');
+  await expect(page.getByRole('alertdialog', { name: 'Paid' })).toBeVisible();
+  expect(loads()).toBe(1);
+});
+
+test('Function: announceReceivedForE2e — the pos-received pin reports the open amount to the wallet listener', async ({
+  page,
+}) => {
+  await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 42,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  });
+  await page.goto('/pos?visual=pos-received');
+  const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+  await expect(dialog.getByText('₿42')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+});
+
 test('Function: PosHistory — the till list gains the charge once it is paid', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {
