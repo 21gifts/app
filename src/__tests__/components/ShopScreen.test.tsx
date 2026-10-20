@@ -70,7 +70,7 @@ describe('ShopScreen', () => {
     renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
     expect(screen.getByRole('heading', { name: 'Cafe Luna' })).toBeTruthy();
     expect(screen.getByText('Coffee, gifts, and moonlight.')).toBeTruthy();
-    expect(screen.getByAltText('Photo of Cafe Luna')).toBeTruthy();
+    expect(screen.getByAltText('Photo from Cafe Luna')).toBeTruthy();
     expect(screen.getByText('Old Town')).toBeTruthy();
     expect(screen.getByText('Moon Street 21')).toBeTruthy();
     expect(screen.getByText('8000 Zurich')).toBeTruthy();

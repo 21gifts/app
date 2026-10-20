@@ -1,8 +1,8 @@
 {
   "/[npub]:default": {
-    "de": "Gelistetes Cafe Luna mit Beschreibung, einem Foto, vollständiger Adresse, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und Open-CryptoPay-QR. Kein Kartenschlüssel, daher kein Kartenrahmen. Die Adresse bleibt sichtbar.",
-    "es": "Cafe Luna listado con descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y QR de Open CryptoPay. No hay clave de mapas, así que no aparece el marco del mapa. La dirección permanece visible.",
-    "fil": "Nakalistang Cafe Luna na may paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at Open CryptoPay QR. Walang maps key kaya walang frame ng mapa. Nananatiling nakikita ang address."
+    "de": "Gelistetes Cafe Luna mit Beschreibung, einem Foto, vollständiger Adresse, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und dem Zahlungsblock (luna@21.gifts und Open-CryptoPay-QR mit Logo). Kein Kartenschlüssel, daher kein Kartenrahmen. Die Adresse bleibt sichtbar.",
+    "es": "Cafe Luna listado con descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago (luna@21.gifts y QR de Open CryptoPay con logotipo). No hay clave de mapas, así que no aparece el marco del mapa. La dirección permanece visible.",
+    "fil": "Nakalistang Cafe Luna na may paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block (luna@21.gifts at Open CryptoPay QR na may logo). Walang maps key kaya walang frame ng mapa. Nananatiling nakikita ang address."
   },
   "/[npub]:map": {
     "de": "Dasselbe gelistete Geschäft mit einem Browser-Kartenschlüssel. Ein deterministischer Kartenrahmen zeichnet genau eine Markierung für das Geschäft; die vollständige Ortsliste wird nie geladen.",
@@ -15,9 +15,9 @@
     "fil": "Pagkatapos pindutin ang icon-only na kontrol na Kopyahin, ang check icon ay may accessible na pangalang Nakopya. Nananatiling nakikita ang npub."
   },
   "/[npub]:no-payment": {
-    "de": "Gelistetes Quiet Shop mit payUsername: null und nip05: null. Adresse, Forumslink und npub bleiben; der Abschnitt mit der verifizierten Adresse und der Zahlungs-QR fehlen.",
-    "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y el QR de pago.",
-    "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at payment QR."
+    "de": "Gelistetes Quiet Shop mit payUsername: null und nip05: null. Adresse, Forumslink und npub bleiben; der Abschnitt mit der verifizierten Adresse und der ganze Zahlungsblock (Überschrift, Adresse, QR) fehlen.",
+    "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y todo el bloque de pago (título, dirección, QR).",
+    "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at ang buong payment block (heading, address, QR)."
   },
   "/[npub]:gone": {
     "de": "API 410. Die Seite sagt Dieses Geschäft ist nicht mehr gelistet. und zeigt weder den Geschäftsnamen noch andere verborgene Geschäftsdaten.",

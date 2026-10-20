@@ -95,7 +95,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
       <p className="w-full whitespace-pre-wrap text-center text-sm text-app-fg">
         {props.shop.description}
       </p>
-      <ForumPhotoGallery photos={photos} alt={t('shop.photoAlt', { name: props.shop.name })} />
+      <ForumPhotoGallery photos={photos} alt={t('forum.photoAlt', { name: props.shop.name })} />
       <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
           {t('shop.address')}
@@ -145,11 +145,16 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
           <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
           </h2>
-          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{payAddress}</p>
+          {/* The address and QR use the browser host, so they render after mount. */}
           {showQr && qr !== null ? (
-            <div className="flex justify-center">
-              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-            </div>
+            <>
+              <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">
+                {payAddress}
+              </p>
+              <div className="flex justify-center">
+                <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+              </div>
+            </>
           ) : null}
         </section>
       ) : null}
