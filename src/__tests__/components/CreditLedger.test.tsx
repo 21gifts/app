@@ -824,6 +824,35 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).not.toContain('Dec 1, 2026');
   });
 
+  it('names one usual daily total when the unlisted days share it under a different split', async () => {
+    const plan = longPlan({
+      dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+      cyrillAmount: (day) => {
+        if (day < 3) {
+          return '40.00';
+        }
+        if (day === 7) {
+          return '40.02';
+        }
+        return '39.99';
+      },
+    });
+    plan.repayments = plan.repayments.map((row) =>
+      row.accountId === '22222222-2222-4222-8222-222222222222' &&
+      row.dayIndex >= 3 &&
+      row.dayIndex <= 6
+        ? { ...row, amount: '0.81' }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('3 days at');
+    expect(document.body.textContent).toContain('4 days at');
+    expect(document.body.textContent).toContain('Dec 5, 2026');
+    expect(document.body.textContent).toContain('All other days are');
+  });
+
   it('lists only a month exception when the other days do not share one total', async () => {
     ledger(
       longPlan({

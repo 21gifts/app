@@ -498,11 +498,20 @@ function monthCountLabel(count: number, rows: readonly RepaymentLine[], t: Trans
 
 function uniformDay(groups: readonly DayGroup[], fiat: FiatCode | null): DayGroup | null {
   const first = groups[0]!;
-  const key = daySignature(first.rows, fiat);
-  if (groups.every((group) => daySignature(group.rows, fiat) === key)) {
+  const key = dayTotalKey(first.rows, fiat);
+  if (groups.every((group) => dayTotalKey(group.rows, fiat) === key)) {
     return first;
   }
   return null;
+}
+
+function dayTotalKey(rows: readonly RepaymentLine[], fiat: FiatCode | null): number {
+  const total = dayAmount(rows, fiat);
+  if (fiat === null) {
+    return total;
+  }
+  // 39.99 + 0.81 and 40.00 + 0.80 both show 40.80, but the sums are not bitwise equal.
+  return Math.round(total * 100);
 }
 
 function daySignature(rows: readonly RepaymentLine[], fiat: FiatCode | null): string {
