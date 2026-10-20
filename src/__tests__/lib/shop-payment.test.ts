@@ -372,6 +372,8 @@ describe('openShopPayment', () => {
       () => new Response(null, { status: 409 }),
       () => Response.json(null, { status: 409 }),
       () => Response.json('payment_open', { status: 409 }),
+      // JSON, but not a JSON object.
+      () => Response.json([], { status: 409 }),
     ];
     for (const answer of unreadable) {
       const mock = stubFetch(async () => answer());

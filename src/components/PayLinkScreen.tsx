@@ -201,6 +201,13 @@ interface ShopPaymentView {
   /** Whole sats of the payment. */
   sats: number;
   /**
+   * Whether the page showed this payment for the till's open charge (`true`)
+   * or opened it for the amount this payer entered (`false`). Fixed when the
+   * payment is shown: a till charge that runs out on the page stays in the
+   * profile, so the charge alone does not tell the two apart.
+   */
+  till: boolean;
+  /**
    * The fiat amount exactly as the payer typed it on this page, with its
    * currency; `null` for a till charge or an amount typed in bitcoin. The pay
    * link stores no fiat figure, so nothing else shows beside the bitcoin.
@@ -268,7 +275,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; when the wait route first answers that the api does not know the payment, the page reads the pay link once: the same payment for the same sats stays shown and its status is followed from the start, while anything else loads a till again or asks the payer for the amount again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; when the wait route first answers that the api does not know the payment, the page reads the pay link once: the same payment for the same sats stays shown and its status is followed from the start, while anything else loads the pay profile again for a payment the page showed for the till's charge, or asks the payer for the amount again for a payment the payer opened (also after a till charge ran out on the page); otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -452,6 +459,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     (
       id: string,
       sats: number,
+      till: boolean,
       typedFiat: ShopPaymentView['typedFiat'],
       windowEndsAt: string | null,
       request: ShopPayRequest | null,
@@ -462,6 +470,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setShop({
         id,
         sats,
+        till,
         typedFiat,
         windowEndsAt,
         request,
@@ -524,6 +533,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           showShopPayment(
             link.request.payment,
             charge.amountSats,
+            true,
             null,
             charge.expiresAt,
             link.request,
@@ -645,8 +655,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   }, [shopId, quoteExpiresAt, profile, patchShop]);
 
   const payUsername = profile?.username ?? null;
-  // A till's shop payment has a charge; a payer's entered amount has none.
-  const tillPayment = charge !== null;
+  // Fixed when the payment was shown: a till charge that ran out on the page stays in `charge`,
+  // and the payer's own payment opened after it is still the payer's.
+  const shopTill = shop?.till ?? false;
 
   useEffect(() => {
     if (shopId === null || shopSats === null || payUsername === null) {
@@ -686,12 +697,14 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
               since = null;
               continue;
             }
-            if (tillPayment) {
-              // Anything else: the till's flow starts again from its profile.
+            if (shopTill) {
+              // Anything else, for a payment shown for the till's charge: the till's flow starts
+              // again from its profile.
               setReloadNonce((nonce) => nonce + 1);
               return;
             }
-            // Another payment, other sats, or the plain request: this payer's amount was replaced.
+            // Another payment, other sats, or the plain request, for a payment this payer opened
+            // (even after a till charge ran out on the page): this payer's amount was replaced.
             generationRef.current += 1;
             setShop(null);
             setFormError('replaced');
@@ -725,7 +738,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       clearTimeout(pause);
       wake?.();
     };
-  }, [shopId, shopSats, payUsername, tillPayment, patchShop, loadShopInvoice]);
+  }, [shopId, shopSats, shopTill, payUsername, patchShop, loadShopInvoice]);
 
   useEffect(() => {
     if (shop === null || !shop.final || shop.paymentStatus !== 'ended') {
@@ -824,6 +837,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         showShopPayment(
           start.payment,
           amountSats,
+          false,
           typedFiat,
           start.expiresAt,
           link.kind === 'payment' ? link.request : null,

@@ -1309,14 +1309,20 @@ describe('PayLinkScreen shop payment', () => {
     expect(postedInvoice()).toBe(false);
   }, 10_000);
 
-  it("drops the restart's pay link read when the page left the payment meanwhile", async () => {
+  it.each([
+    ["a till's payment", true],
+    ["a payer's payment", false],
+  ])("drops the restart's pay link read when the page left %s meanwhile", async (_name, till) => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
-    let profiles = 0;
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
     let links = 0;
     let waits = 0;
     let releaseRestart: (response: Response) => void = () => undefined;
     mockShopFetch(async (input) => {
       const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({ payment: 'p1' });
+      }
       if (url === '/.well-known/lnurlp/ada') {
         links += 1;
         if (links === 2) {
@@ -1333,22 +1339,38 @@ describe('PayLinkScreen shop payment', () => {
         waits += 1;
         return Response.json(API_NOT_FOUND, { status: 404 });
       }
-      if (url === '/pay/ada') {
-        profiles += 1;
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
       }
-      return Response.json(chargeProfile);
+      if (url === '/pay/bob') {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      return Response.json(till ? chargeProfile : profile);
     });
-    const { unmount } = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    if (!till) {
+      await enterAmount();
+    }
     await waitFor(() => {
       expect(links).toBe(2);
     });
-    unmount();
+    // The page leaves the payment while the restart's read is held: another pay link is shown.
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
     await act(async () => {
       releaseRestart(Response.json(shopPayLink({ payment: 'p2' })));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+      });
     });
+    // The late answer neither loads a profile again nor asks Bob's payer for an amount again.
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Bob' })).toBeTruthy();
+    expect(fetchedUrls().filter((url) => url === '/pay/ada')).toHaveLength(1);
+    expect(fetchedUrls().filter((url) => url === '/pay/bob')).toHaveLength(1);
     expect(waits).toBe(1);
     expect(links).toBe(2);
-    expect(profiles).toBe(1);
+    expect(postedInvoice()).toBe(false);
   });
 
   it("loads a till's profile again when the restart's pay link names another payment", async () => {
@@ -1484,6 +1506,57 @@ describe('PayLinkScreen shop payment', () => {
       expect(postedInvoice()).toBe(false);
     },
   );
+
+  it("asks for a payer's amount again after a till charge ran out on the page", async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({ payment: 'p1' });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        if (links === 1) {
+          // The till's read fails; its charge then runs out on the page.
+          return new Response('busy', { status: 503 });
+        }
+        return Response.json(shopPayLink({ payment: links === 2 ? 'p1' : 'p2' }));
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return waits === 1 ? Response.json(API_NOT_FOUND, { status: 404 }) : pending();
+      }
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 21, expiresAt: new Date(FIXED + 1_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    now.mockReturnValue(FIXED + 1_001);
+    expect(await screen.findByRole('button', { name: 'Continue' }, { timeout: 4000 })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    // The charge stays in the profile; the payment this payer opens is still the payer's.
+    await enterAmount();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Another payer entered an amount first. Enter yours again.',
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(links).toBe(3);
+    expect(waits).toBe(1);
+    expect(fetchedUrls().filter((url) => url === '/pay/ada')).toHaveLength(1);
+    expect(fetchedUrls().filter((url) => url === '/pay/ada/payment')).toHaveLength(1);
+    expect(postedInvoice()).toBe(false);
+  }, 10_000);
 
   it("keeps a payer's payment when the restart's pay link cannot be read, and reads it again", async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);

@@ -306,7 +306,9 @@ export async function fetchShopInvoice(request: ShopPayRequest): Promise<string 
  */
 async function errorBody(response: Response): Promise<{ code?: unknown } | null> {
   try {
-    return fields<'code'>(await response.json());
+    const body: unknown = await response.json();
+    // `fields` takes any object; an array is JSON but not a JSON object.
+    return Array.isArray(body) ? null : fields<'code'>(body);
   } catch {
     return null;
   }
