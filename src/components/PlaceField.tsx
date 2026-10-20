@@ -567,7 +567,7 @@ export function PlaceField(props: {
       .filter((field) => addressDraft[field].trim() === '')
       .map((field) => fieldLabel[field]),
   ];
-  // A shop text of the wrong length is explained under the name; the name itself is fine.
+  // A shop text of the wrong length blocks the name; the name itself is fine.
   const nameBlockedByTextLength =
     (shopTextProblem === 'short' || shopTextProblem === 'long') && nameError === shopTextNameError;
   const fieldsToFix = [
@@ -592,6 +592,7 @@ export function PlaceField(props: {
   const liveFooterReasons = [
     // The hint under the map says how; the footer only summarises it.
     ...(markerPos === null ? [t('shops.setPinAbove')] : []),
+    ...(nameBlockedByTextLength ? [t('shops.editShopTextFirst')] : []),
     ...(missingFields.length > 0 ? [t('shops.fillIn', { fields: missingFields.join(', ') })] : []),
     ...(fieldsToFix.length > 0
       ? [t('shops.fixFieldsNamed', { fields: fieldsToFix.join(', ') })]

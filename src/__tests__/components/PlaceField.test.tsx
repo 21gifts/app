@@ -1343,6 +1343,7 @@ describe('PlaceField', () => {
       expect(name.getAttribute('aria-describedby')).toContain(message.id);
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.queryByText('Fix: Shop name.')).toBeNull();
+      expect(screen.getByText('Edit the shop text first.')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
         'disabled',
         true,
