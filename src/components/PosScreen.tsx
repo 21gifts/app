@@ -647,11 +647,13 @@ function usePosTillState(): PosTillState {
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
  * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
  * It never asks the api on a timer: the moment this tab's wallet reports a
- * payment that pays the charge ({@link onPaymentReceived}: its amount, made
- * from its creation to a minute after its end), the charge is paid, and
+ * payment that pays the charge ({@link onPaymentReceived}: its amount, or
+ * that amount after the fee, made from one second before its creation to a
+ * minute after its end), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and fiat.
- * The till reads the api only on open, when a charge runs out, when the tab
- * becomes visible again, after Cancel, and when the confirmation is closed. A paid charge
+ * The till reads the api only on open, when the session or the language
+ * changes, when a charge runs out, when the tab becomes visible again, after
+ * Cancel, and when the confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
  * paid already as paid. An
