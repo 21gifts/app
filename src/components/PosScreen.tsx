@@ -739,7 +739,8 @@ function usePosTillState(): PosTillState {
             // Unknown: fall back to the charge before.
           }
         }
-        // Back to the charge before, with any payment reported while the create was on its way.
+        // Back to the charge before, with any payment reported while the create was on its way; a
+        // read applied above that no longer shows it open ends it again (the arming effect).
         rearm(creating, before);
         whenCurrent(generation, mine, () => {
           if (err instanceof WalletRequiredError) {
