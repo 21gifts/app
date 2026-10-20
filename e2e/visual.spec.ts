@@ -9800,7 +9800,11 @@ test.describe('onboarding screens', () => {
           ? { charge: null, history: [{ ...created, status: 'cancelled' }] }
           : { charge: created, history: [created] };
       }
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
     });
     // The operator typed $5.00 on this till and cancels: History keeps that typed figure.
     await page.goto('/pos/amount');

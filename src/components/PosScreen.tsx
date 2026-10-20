@@ -658,7 +658,7 @@ function usePosTillState(): PosTillState {
             const next = await fetchPosState(session);
             // This create's charge: the amount requested, made no earlier than 30 s before the click
             // (the api's clock may lag) and after the one before. Any other charge the read finds is
-            // set as the till's answer without this create's figure, and the error shows.
+            // set as the till's answer, and the error shows.
             const found = next.charge;
             const made =
               found !== null &&
@@ -677,8 +677,10 @@ function usePosTillState(): PosTillState {
               }
             });
             if (made !== null) {
-              // The charge was made: the till shows it and counts the payments kept meanwhile.
-              rememberFigure(creating, made.id, figure);
+              // The charge was made: the till shows it and counts the payments kept meanwhile. Without
+              // the create's answer another tab's charge of the same amount cannot be told apart, so it
+              // gets no typed figure and shows bitcoin only: a missing figure is allowed, a wrong one
+              // is not (docs/fiat-amounts.md).
               if (made.status === 'paid') {
                 // Already paid while the answer was lost: confirm it like a payment the wallet saw.
                 creating.paid.set(made.id, made);

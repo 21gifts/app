@@ -2343,18 +2343,25 @@ describe('PosScreen', () => {
       expect(screen.queryByText(/CHF/)).toBeNull();
     });
 
-    it('gives a charge found after a lost create answer the typed figure when it is that create', async () => {
-      await loseCreateAnswer({
+    it('takes over the charge a lost create made, in bitcoin only and without an error', async () => {
+      const alerted = await loseCreateAnswer({
         ...OPEN,
         id: 'c5',
         amountSats: 85_000,
         createdAt: new Date().toISOString(),
       });
-      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
+      expect(alerted).toBe(false);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText("₿85'000")).toBeTruthy();
+      // Without the create's answer it cannot be told from another tab's charge: no typed figure.
+      expect(within(dialog).queryByText(/CHF/)).toBeNull();
     });
 
-    /** Types CHF 68 on the amount page; the create's answer is lost and the till then reads `found`. */
-    async function loseCreateAnswer(found: Record<string, unknown>): Promise<void> {
+    /**
+     * Types CHF 68 on the amount page; the create's answer is lost and the till then reads `found`.
+     * Resolves whether the amount page showed an error, that is, whether `found` was not taken over.
+     */
+    async function loseCreateAnswer(found: Record<string, unknown>): Promise<boolean> {
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
       let lost = false;
@@ -2376,11 +2383,13 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(replace).toHaveBeenCalledWith('/pos');
       });
+      const alerted = screen.queryByRole('alert') !== null;
       amountPage.unmount();
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(Number(found['amountSats']));
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
+      return alerted;
     }
 
     it('confirms at once a charge the lost create made that is already paid', async () => {
@@ -2416,22 +2425,30 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alert')).toBeNull();
       amountPage.unmount();
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
-      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
+      const dialog = await confirmation();
+      expect(within(dialog).getByText("₿85'000")).toBeTruthy();
+      expect(within(dialog).queryByText(/CHF/)).toBeNull();
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
-    it('gives no typed figure to another amount found after a lost create answer', async () => {
-      await loseCreateAnswer({ ...OPEN, id: 'c6', createdAt: new Date().toISOString() });
+    it('does not take over another amount found after a lost create answer', async () => {
+      const alerted = await loseCreateAnswer({
+        ...OPEN,
+        id: 'c6',
+        createdAt: new Date().toISOString(),
+      });
+      expect(alerted).toBe(true);
       expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
     });
 
-    it('gives no typed figure to a charge made well before a lost create', async () => {
-      await loseCreateAnswer({
+    it('does not take over a charge made well before a lost create', async () => {
+      const alerted = await loseCreateAnswer({
         ...OPEN,
         id: 'c10',
         amountSats: 85_000,
         createdAt: new Date(Date.now() - 60_000).toISOString(),
       });
+      expect(alerted).toBe(true);
       expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
     });
 
