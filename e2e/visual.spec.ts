@@ -9697,28 +9697,31 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    let created: Record<string, unknown> | null = null;
     await page.route(/\/pos\/charge$/, async (route) => {
       if (route.request().method() === 'POST') {
         const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        created = {
+          id: 'pos-e2e',
+          amountSats,
+          status: 'pending',
+          createdAt: '2026-09-20T12:00:00.000Z',
+          expiresAt: '2026-09-20T12:05:00.000Z',
+        };
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
-          body: JSON.stringify({
-            charge: {
-              id: 'pos-e2e',
-              amountSats,
-              status: 'pending',
-              createdAt: '2026-09-20T12:00:00.000Z',
-              expiresAt: '2026-09-20T12:05:00.000Z',
-            },
-          }),
+          body: JSON.stringify({ charge: created }),
         });
         return;
       }
+      // After the create the api returns the new charge as open.
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ charge: null, history: [] }),
+        body: JSON.stringify(
+          created === null ? { charge: null, history: [] } : { charge: created, history: [created] },
+        ),
       });
     });
     // The operator types $5.00 on this till: the open charge shows that typed figure.
