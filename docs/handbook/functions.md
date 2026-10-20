@@ -45,9 +45,9 @@
 
 ## Function: PosHistory
 
-- **Purpose:** Past till charges under the `/pos` QR and charge, newest first, as the api returns them. Heading **History**. Each row: the status (**Paid ✓** with the local time it was paid, in green; **Paid ✓** alone when the api sent no valid `paidAt`; **Expired**; or **Cancelled**), the amount in bitcoin with the currency figure the operator typed, and the date and time the charge was created. The open charge is shown above the list and is left out of it. Any other `pending` row is shown as **Expired**, because the api has at most one open charge and returns it as `charge`. With no past charge: **No payments yet.** The api returns at most its newest 20 charges; the list shows what it returns and has no paging.
-- **Inputs:** `history` (`PosCharge[]` from `GET /pos/charge`) and `openChargeId` (the charge shown as open above, or `null`). Each row calls `committedFiatFigure` with the visitor's fiat as preferred. It also reads `useSpotRate`.
-- **Returns / side effects:** A section named **History**. A stored figure is shown as-is beside bitcoin. A row with no stored figure shows the current spot beside bitcoin, and bitcoin alone only when that spot is not loaded. That spot is not written onto the charge. No I/O of its own beyond the spot read.
+- **Purpose:** Past till charges under the `/pos` QR and charge, newest first, in the api's order; `PosTill` may already show a row the api still has open as paid, with `paidAt` the time this tab's wallet saw the payment. Heading **History**. Each row: the status (**Paid ✓** with the local time it was paid, in green; **Paid ✓** alone when the api sent no valid `paidAt`; **Expired**; or **Cancelled**), the amount in bitcoin with the default fiat from the current spot rate, and the date and time the charge was created. The open charge is shown above the list and is left out of it. Any other `pending` row is shown as **Expired**, because the api has at most one open charge and returns it as `charge`. With no past charge: **No payments yet.** The api returns at most its newest 20 charges; the list shows what it returns and has no paging.
+- **Inputs:** `history` (`PosCharge[]` from `GET /pos/charge`), `openChargeId` (the charge shown as open above, or `null`), `rateDay` (current spot rate, or `null`; without it each row is bitcoin only).
+- **Returns / side effects:** A section named **History**. No I/O.
 - **Used by:** `PosTill`.
 
 ## Function: resetPosTillWriteForTests
@@ -4371,7 +4371,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Subscribes to the same received payments as `onIncomingPayment` (received, completed, not held by the wallet when it connected, once per payment id, after the known payments of the connection were read), but tells the listener the moment the SDK reports the payment complete: right after its id is added to the known ids, before the balance is read again (`refreshWallet`). For a screen that must react to the money arriving without waiting for that read. A payment announced when the connection ended meanwhile was still told here.
 - **Inputs:** `listener(payment: WalletPayment)`.
 - **Returns / side effects:** Unsubscribe function. No network of its own.
-- **Used by:** `PosTill`.
+- **Used by:** `usePosTillState` (`PosTill`, `PosAmount`).
 
 ## Function: refreshWallet
 
