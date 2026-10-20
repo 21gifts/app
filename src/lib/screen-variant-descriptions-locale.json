@@ -4359,6 +4359,11 @@
     "es": "Lugar y dirección de la tienda está abierto en Bienvenida desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
     "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
+  "/welcome:shop-edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist in Willkommen geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert.",
+    "es": "El paso 2 de 5 · Lugar está abierto en Bienvenida después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado.",
+    "fil": "Bukas sa Welcome ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod."
+  },
   "/welcome:shop-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
@@ -4368,6 +4373,11 @@
     "de": "Ort und Adresse des Shops ist im Mitgliederprofil aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
     "es": "Lugar y dirección de la tienda está abierto en el perfil de miembro desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
     "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
+  },
+  "/members/[accountId]:shop-edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist im Mitgliederprofil geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert.",
+    "es": "El paso 2 de 5 · Lugar está abierto en el perfil de miembro después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado.",
+    "fil": "Bukas sa profile ng member ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod."
   },
   "/members/[accountId]:shop-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
@@ -4379,6 +4389,11 @@
     "es": "Lugar y dirección de la tienda está abierto en el mensaje público desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
     "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
+  "/messages/[id]:shop-edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist in der öffentlichen Nachricht geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert.",
+    "es": "El paso 2 de 5 · Lugar está abierto en el mensaje público después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado.",
+    "fil": "Bukas sa public message ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod."
+  },
   "/messages/[id]:shop-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
@@ -4389,6 +4404,16 @@
     "es": "Lugar y dirección de la tienda está abierto en Mapa desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa, Usar este lugar está deshabilitado y Mapa sigue seleccionado.",
     "fil": "Bukas sa Mapa ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa, disabled ang Gamitin ang lugar na ito, at napili pa ang Mapa."
   },
+  "/shops:map-edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist auf Karte geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert und Karte bleibt ausgewählt.",
+    "es": "El paso 2 de 5 · Lugar está abierto en Mapa después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado y Mapa sigue seleccionado.",
+    "fil": "Bukas sa Mapa ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod at napili pa ang Mapa."
+  },
+  "/shops:map-edit-save-rejected": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. Karte bleibt ausgewählt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Mapa sigue seleccionado.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Mapa."
+  },
   "/shops:map-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
@@ -4398,6 +4423,16 @@
     "de": "Ort und Adresse des Shops ist auf Tabelle aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, Diesen Ort verwenden ist deaktiviert und Tabelle bleibt ausgewählt.",
     "es": "Lugar y dirección de la tienda está abierto en Tabla desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa, Usar este lugar está deshabilitado y Tabla sigue seleccionada.",
     "fil": "Bukas sa Talahanayan ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa, disabled ang Gamitin ang lugar na ito, at napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist auf Tabelle geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert und Tabelle bleibt ausgewählt.",
+    "es": "El paso 2 de 5 · Lugar está abierto en Tabla después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado y Tabla sigue seleccionada.",
+    "fil": "Bukas sa Talahanayan ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod at napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-save-rejected": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna zu luna-new geändert und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. Tabelle bleibt ausgewählt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el Texto de la tienda, cambió luna a luna-new en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Tabla sigue seleccionada.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang Teksto ng shop, pinalitan ang luna ng luna-new sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Talahanayan."
   },
   "/shops:table-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu _ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
@@ -4418,6 +4453,11 @@
     "de": "Ort und Adresse des Shops ist im Post aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
     "es": "Lugar y dirección de la tienda está abierto en Publicación desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
     "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:edit-place-removed-unavailable": {
+    "de": "Schritt 2 von 5 · Ort ist im Post geöffnet, nachdem im Ortsformular ohne verfügbare Karte Ort entfernen gedrückt wurde. Das Dialogfeld ist geschlossen. Im Assistenten steht Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. Weiter ist deaktiviert.",
+    "es": "El paso 2 de 5 · Lugar está abierto en Publicación después de pulsar Quitar el lugar en el formulario sin un mapa disponible. El diálogo está cerrado. En el asistente aparece El mapa no está disponible, por lo que no se puede añadir el lugar. Siguiente está deshabilitado.",
+    "fil": "Bukas sa Post ang hakbang 2 sa 5 · Lugar matapos pindutin ang Alisin ang lugar sa form nang walang available na mapa. Sarado ang dialog. Makikita sa wizard ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. Disabled ang Susunod."
   },
   "/shops:edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",

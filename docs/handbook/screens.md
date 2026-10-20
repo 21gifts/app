@@ -1805,6 +1805,14 @@ disabled.
 
 ![21.gifts welcome shop edit place unavailable open](images/welcome-shop-edit-place-unavailable-open.png)
 
+### Variant: shop-edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form without an available map and
+pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
+be added.** is visible in the wizard and **Next** is disabled.
+
+![21.gifts welcome shop edit place removed unavailable](images/welcome-shop-edit-place-removed-unavailable.png)
+
 ### Variant: shop-edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -2003,6 +2011,14 @@ and **Map** stays selected.
 
 ![21.gifts shops map edit place unavailable open](images/shops-map-edit-place-unavailable-open.png)
 
+### Variant: map-edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form without an available map and
+pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
+be added.** is visible, **Next** is disabled, and **Map** stays selected.
+
+![21.gifts shops map edit place removed unavailable](images/shops-map-edit-place-removed-unavailable.png)
+
 ### Variant: map-edit-place-name-address
 
 The place form is open on **Map** with **Bahnhofstrasse Bakery** as **Shop name** and
@@ -2081,6 +2097,16 @@ Bakery** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna
 morning.**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
+
+### Variant: map-edit-save-rejected
+
+A moderator opened **Edit shop note** on **Map**, changed **Shop text**, entered **luna** on step
+**4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was inconclusive, then
+the API rejected the account update. The editor returns to step **4 / 5 · 21.gifts user** and
+shows **No account with that username. Check the spelling of the 21.gifts username.** **Map**
+stays selected.
+
+![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
 
 ### Variant: map-edit-load-failed
 
@@ -2208,6 +2234,14 @@ and **Table** stays selected.
 
 ![21.gifts shops table edit place unavailable open](images/shops-table-edit-place-unavailable-open.png)
 
+### Variant: table-edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form without an available map and
+pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
+be added.** is visible, **Next** is disabled, and **Table** stays selected.
+
+![21.gifts shops table edit place removed unavailable](images/shops-table-edit-place-removed-unavailable.png)
+
 ### Variant: table-edit-place-name-address
 
 The place form is open on **Table** with **Bahnhofstrasse Bakery** as **Shop name** and
@@ -2288,6 +2322,16 @@ digit.** is visible and **Next** is disabled. **History** still says there are n
 **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
+
+### Variant: table-edit-save-rejected
+
+A moderator opened **Edit shop note** on **Table**, changed **Shop text**, changed **luna** to
+**luna-new** on step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was
+inconclusive, then the API rejected the account update. The editor returns to step
+**4 / 5 · 21.gifts user** and shows **No account with that username. Check the spelling of the
+21.gifts username.** **Table** stays selected.
+
+![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
 
 ### Variant: add-photos
 
@@ -2663,6 +2707,14 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts shops edit place unavailable open](images/shops-edit-place-unavailable-open.png)
+
+### Variant: edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form without an available map and
+pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
+be added.** is visible in the wizard and **Next** is disabled.
+
+![21.gifts shops edit place removed unavailable](images/shops-edit-place-removed-unavailable.png)
 
 ### Variant: edit-place-name-address
 
@@ -3527,6 +3579,14 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts member shop edit place unavailable open](images/members-shop-edit-place-unavailable-open.png)
+
+### Variant: shop-edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form from the member profile without an
+available map and pressed **Remove place**. The dialog is closed. **The map is unavailable, so a
+shop place cannot be added.** is visible in the wizard and **Next** is disabled.
+
+![21.gifts member shop edit place removed unavailable](images/members-shop-edit-place-removed-unavailable.png)
 
 ### Variant: shop-edit-place-name-address
 
@@ -5489,6 +5549,14 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts public message shop edit place unavailable open](images/messages-id-shop-edit-place-unavailable-open.png)
+
+### Variant: shop-edit-place-removed-unavailable
+
+On step **2 / 5 · Place**, the moderator opened the place form from the public message without an
+available map and pressed **Remove place**. The dialog is closed. **The map is unavailable, so a
+shop place cannot be added.** is visible in the wizard and **Next** is disabled.
+
+![21.gifts public message shop edit place removed unavailable](images/messages-id-shop-edit-place-removed-unavailable.png)
 
 ### Variant: shop-edit-place-name-address
 

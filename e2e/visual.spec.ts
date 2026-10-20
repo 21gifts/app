@@ -736,13 +736,13 @@ const UNKNOWN_LUNA_MENTION_ACCOUNTS = Array.from({ length: 20 }, (_, index) => (
   name: `Luna ${String(index + 1)}`,
 }));
 
-/** Enter luna after a full, inconclusive mention page and wait for the lookup to settle. */
-async function fillUnknownShopUsername(page: Page): Promise<void> {
+/** Enter a username after a full, inconclusive mention page and wait for the lookup to settle. */
+async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<void> {
   const lookup = page.waitForResponse((response) => {
     const url = new URL(response.url());
-    return url.pathname === '/forum/mentions' && url.searchParams.get('q') === 'luna';
+    return url.pathname === '/forum/mentions' && url.searchParams.get('q') === username;
   });
-  await page.getByLabel('21.gifts username').fill('luna');
+  await page.getByLabel('21.gifts username').fill(username);
   await lookup;
   await expect(page.getByText('Checking that account…')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
@@ -965,6 +965,17 @@ async function openUnavailableShopPlace(page: Page): Promise<void> {
 async function closeUnavailableShopPlace(page: Page): Promise<void> {
   const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const reason = page.getByText('The map is unavailable, so a shop place cannot be added.');
+  await expect(reason).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await reason.scrollIntoViewIfNeeded();
+}
+
+/** Remove the current place from an unavailable-map dialog and wait for the wizard reason. */
+async function removeUnavailableShopPlace(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+  await dialog.getByRole('button', { name: 'Remove place' }).click();
   await expect(dialog).toHaveCount(0);
   const reason = page.getByText('The map is unavailable, so a shop place cannot be added.');
   await expect(reason).toBeVisible();
@@ -3684,6 +3695,14 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-welcome-shop-edit-place-unavailable-open');
+  });
+
+  test('welcome shop-edit-place-removed-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-welcome-shop-edit-place-removed-unavailable');
   });
 
   test('welcome shop-edit-photos-unsupported', async ({ page }) => {
@@ -7139,6 +7158,14 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-members-shop-edit-place-unavailable-open');
+  });
+
+  test('state /members shop-edit-place-removed-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'members', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-members-shop-edit-place-removed-unavailable');
   });
 
   test('state /members shop-edit-photos-unsupported', async ({ page }) => {
@@ -11945,6 +11972,14 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-messages-id-shop-edit-place-unavailable-open');
+  });
+
+  test('state /messages/[id] shop-edit-place-removed-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-place-removed-unavailable');
   });
 
   test('state /messages/[id] shop-edit-photos-unsupported', async ({ page }) => {
@@ -19444,6 +19479,53 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-summary');
   });
 
+  test('shops map-edit-save-rejected', async ({ page }) => {
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          place: COMPLETE_SHOP_PLACE,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
+    await openShopsEditor(page, 'map');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-save-rejected');
+  });
+
   test('shops map-edit-place-open', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
@@ -19499,6 +19581,15 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-shops-map-edit-place-unavailable-open');
+  });
+
+  test('shops map-edit-place-removed-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'map');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-map-edit-place-removed-unavailable');
   });
 
   test('shops map-edit-photos-unsupported', async ({ page }) => {
@@ -19894,6 +19985,60 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-table-edit-summary');
   });
 
+  test('shops table-edit-save-rejected', async ({ page }) => {
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: COMPLETE_SHOP_PLACE.address,
+          },
+          shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page, 'luna-new');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-save-rejected');
+  });
+
   test('shops table-edit-place-open', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
@@ -19949,6 +20094,15 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-shops-table-edit-place-unavailable-open');
+  });
+
+  test('shops table-edit-place-removed-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-table-edit-place-removed-unavailable');
   });
 
   test('shops table-edit-photos-unsupported', async ({ page }) => {
@@ -20612,6 +20766,15 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
     await shotScreen(page, 'state-shops-edit-place-unavailable-open');
+  });
+
+  test('shops edit-place-removed-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'post');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await removeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-edit-place-removed-unavailable');
   });
 
   test('shops edit-photos-unsupported', async ({ page }) => {
