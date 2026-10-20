@@ -107,9 +107,11 @@ export interface ShopPaymentWait {
   paymentStatus: ShopPaymentStatus;
 }
 
-/** The named fields of a JSON object, or `null` when `value` is not one. */
+/** The named fields of a JSON object, or `null` when `value` is not one (an array is not). */
 function fields<K extends string>(value: unknown): { [P in K]?: unknown } | null {
-  return value !== null && typeof value === 'object' ? (value as { [P in K]?: unknown }) : null;
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as { [P in K]?: unknown })
+    : null;
 }
 
 type PayLinkField =
@@ -306,9 +308,7 @@ export async function fetchShopInvoice(request: ShopPayRequest): Promise<string 
  */
 async function errorBody(response: Response): Promise<{ code?: unknown } | null> {
   try {
-    const body: unknown = await response.json();
-    // `fields` takes any object; an array is JSON but not a JSON object.
-    return Array.isArray(body) ? null : fields<'code'>(body);
+    return fields<'code'>(await response.json());
   } catch {
     return null;
   }

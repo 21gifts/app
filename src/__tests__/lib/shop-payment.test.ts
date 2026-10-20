@@ -217,6 +217,9 @@ describe('fetchShopPayLink', () => {
     expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
     stubFetch(async () => Response.json(null));
     expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
+    // JSON, but not a JSON object.
+    stubFetch(async () => Response.json([]));
+    expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
     stubFetch(async () => new Response('not json', { status: 200 }));
     expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
     stubFetch(async () => {
@@ -226,6 +229,7 @@ describe('fetchShopPayLink', () => {
     const broken: unknown[] = [
       { callback: 1 },
       { quote: null },
+      { quote: [] },
       { quote: { ...OPEN_AMOUNT.quote, id: 1 } },
       { quote: { ...OPEN_AMOUNT.quote, payment: 1 } },
       { quote: { ...OPEN_AMOUNT.quote, expiration: 1 } },

@@ -1558,6 +1558,96 @@ describe('PayLinkScreen shop payment', () => {
     expect(postedInvoice()).toBe(false);
   }, 10_000);
 
+  it.each([
+    ['another payment', () => Response.json(shopPayLink({ payment: 'p2' }))],
+    ['the plain request', () => Response.json(plainPayLink())],
+  ])(
+    "loads a till's profile again when its charge ran out on the page and the restart's pay link shows %s",
+    async (_name, restartLink) => {
+      const now = vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+      let profiles = 0;
+      let links = 0;
+      let waits = 0;
+      let releaseWait: (response: Response) => void = () => undefined;
+      mockShopFetch(async (input) => {
+        const url = String(input);
+        if (url === '/.well-known/lnurlp/ada') {
+          links += 1;
+          if (links === 1) {
+            return Response.json(shopPayLink());
+          }
+          return links === 2 ? restartLink() : Response.json(shopPayLink({ payment: 'p2' }));
+        }
+        if (url === DETAIL) {
+          return Response.json({ pr: 'lnbc210n1shop' });
+        }
+        if (url.startsWith('/lnurlp/wait/')) {
+          waits += 1;
+          if (waits === 1) {
+            return new Promise((resolve) => {
+              releaseWait = resolve;
+            });
+          }
+          // A later read of p1 would come only from a restarted follow of the same payment.
+          return url.startsWith('/lnurlp/wait/p1')
+            ? Response.json(API_NOT_FOUND, { status: 404 })
+            : pending();
+        }
+        if (url.endsWith('/invoice') || url === '/pay/ada/payment') {
+          throw new Error('should not mint');
+        }
+        if (url === '/pay/ada') {
+          profiles += 1;
+        }
+        // The first charge runs out 1 s after the page loaded; the reloaded one is live.
+        const expiresAt = profiles <= 1 ? FIXED + 1_000 : FIXED + 301_001;
+        return Response.json({
+          ...chargeProfile,
+          charge: { amountSats: 21, expiresAt: new Date(expiresAt).toISOString() },
+        });
+      });
+      renderWithLocale(<PayLinkScreen lightning={ADA} />);
+      expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+      expect(waits).toBe(1);
+      // The till's own payment p1 is shown with its charge's window; the charge then runs out
+      // on the page, while the quote (90 s) stays live.
+      expect(screen.getByText('0:01 left')).toBeTruthy();
+      now.mockReturnValue(FIXED + 1_001);
+      await waitFor(
+        () => {
+          expect(screen.getAllByText(/left/).map((node) => node.textContent)).toEqual([
+            '1:29 left',
+          ]);
+        },
+        { timeout: 3000 },
+      );
+      expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+      // Only now does the first wait answer that the api does not know p1.
+      await act(async () => {
+        releaseWait(Response.json(API_NOT_FOUND, { status: 404 }));
+      });
+      // The payment was shown for the till's charge: the till's flow starts again from its
+      // profile, and the payer is never asked for an amount.
+      await waitFor(() => {
+        expect(profiles).toBe(2);
+      });
+      await waitFor(() => {
+        expect(fetchedUrls()).toContain('/lnurlp/wait/p2');
+      });
+      expect(fetchedUrls().filter((url) => url === '/pay/ada')).toHaveLength(2);
+      expect(links).toBe(3);
+      expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/p1'))).toHaveLength(1);
+      expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+      expect(
+        screen.queryByText('Another payer entered an amount first. Enter yours again.'),
+      ).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+      expect(postedInvoice()).toBe(false);
+    },
+    10_000,
+  );
+
   it("keeps a payer's payment when the restart's pay link cannot be read, and reads it again", async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let links = 0;
