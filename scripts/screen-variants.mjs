@@ -332,6 +332,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'shop-typed-fiat',
+    image: 'pl-shop-typed-fiat.png',
+    visual: 'state-pl-shop-typed-fiat',
+    needle: "shotScreen(page, 'state-pl-shop-typed-fiat')",
+  },
+  {
+    route: '/pl',
     id: 'on-its-way',
     image: 'pl-on-its-way.png',
     visual: 'state-pl-on-its-way',

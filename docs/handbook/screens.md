@@ -1555,6 +1555,12 @@ A shop payment that is still waiting but has no window time to show: its window 
 
 ![21.gifts pay link shop window passed](images/pl-shop-window-passed.png)
 
+### Variant: shop-typed-fiat
+
+**Continue** opened a shop payment for an amount the payer typed in fiat (for example 12.50 USD). The shop sticker, time left, the sat amount, and under it the fiat amount exactly as the payer typed it (**$12.50**: every typed digit, padded to two decimals, never rounded and never derived from the sats or the spot), **Waiting for payment…**, the Bitcoin invoice QR on a desktop, and **Pay**. Under **Pay**, the stablecoin lines, the quote's time left, and the scan hint. No amount field. Only this typed figure is fiat: a till's payment and an amount typed in bitcoin show no fiat line.
+
+![21.gifts pay link shop typed fiat](images/pl-shop-typed-fiat.png)
+
 ### Variant: on-its-way
 
 The shop payment's transfer was accepted. The shop sticker, the sat amount without fiat (see **Shop payment**), and **On its way**. No time left, no invoice QR, no **Pay**, and no stablecoin lines.

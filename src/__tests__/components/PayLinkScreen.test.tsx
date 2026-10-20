@@ -715,7 +715,12 @@ const FIXED = 1_700_000_000_000;
 const CALLBACK = 'https://21.gifts/lnurlp/cb/ada';
 const DETAIL = `${CALLBACK}?quote=q1&method=Lightning&asset=BTC`;
 
-/** An OpenCryptoPay pay request for one shop payment. */
+/** A whole-sat amount below one bitcoin as the pay link writes it in BTC (`21` → `0.00000021`). */
+function btcText(sats: number): string {
+  return `0.${String(sats).padStart(8, '0')}`;
+}
+
+/** An OpenCryptoPay pay request for one shop payment (21 sats unless `sats` says otherwise). */
 function shopPayLink(
   options: {
     payment?: string;
@@ -723,6 +728,7 @@ function shopPayLink(
     expiresInMs?: number;
     method?: string;
     standard?: string;
+    sats?: number;
   } = {},
 ): object {
   return {
@@ -739,7 +745,7 @@ function shopPayLink(
       {
         method: 'Lightning',
         minFee: 0,
-        assets: [{ asset: 'BTC', amount: '0.00000021' }],
+        assets: [{ asset: 'BTC', amount: btcText(options.sats ?? 21) }],
         available: true,
       },
       {
@@ -889,6 +895,88 @@ describe('PayLinkScreen shop payment', () => {
     expect(postedInvoice()).toBe(false);
     expect(screen.queryByRole('list')).toBeNull();
     expect(screen.getAllByText(/left/)).toHaveLength(1);
+  });
+
+  it('loads the pay profile again when the till replaced its charge before the pay link was read', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let profiles = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        // The till already replaced the 21-sat charge with a 50-sat one and its payment p2.
+        return Response.json(shopPayLink({ payment: 'p2', sats: 50 }));
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc500n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      if (url !== '/pay/ada') {
+        return Response.json(chargeProfile);
+      }
+      profiles += 1;
+      return Response.json(
+        profiles === 1
+          ? chargeProfile
+          : {
+              ...chargeProfile,
+              minSats: 50,
+              maxSats: 50,
+              charge: { amountSats: 50, expiresAt: new Date(FIXED + 300_000).toISOString() },
+            },
+      );
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(profiles).toBe(2);
+    expect(screen.getByText('₿50')).toBeTruthy();
+    expect(screen.queryByText('₿21')).toBeNull();
+    expect(fetchedUrls().filter((url) => url === DETAIL)).toHaveLength(1);
+    expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/'))).toEqual([
+      '/lnurlp/wait/p2',
+    ]);
+    const hrefs = captureHrefs(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
+    });
+    expect(hrefs).toEqual(['lightning:lnbc500n1shop']);
+  });
+
+  it('never shows a charge beside a pay request for other sats, and reloads only once per payment', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let profiles = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice') || url.startsWith(CALLBACK) || url.startsWith('/lnurlp/')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink({ payment: 'p2', sats: 50 }));
+      }
+      if (url === '/pay/ada') {
+        profiles += 1;
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(profiles).toBe(2);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    const pay = screen.getByRole('button', {
+      name: 'Pay with a Bitcoin wallet app',
+    }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(false);
+    fireEvent.click(pay);
+    await waitFor(() => {
+      expect(fetchedUrls().filter((url) => url === '/.well-known/lnurlp/ada')).toHaveLength(3);
+    });
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(profiles).toBe(2);
+    expect(postedInvoice()).toBe(false);
   });
 
   it('hides the invoice on its way and stops polling once paid', async () => {
@@ -1574,8 +1662,11 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
-  /** A shop payment of the pay link with a USD spot rate; `starts` holds each start body. */
-  function mockPricedShop(starts: string[], profileBody: object = profile): void {
+  /**
+   * A shop payment of the pay link with a USD spot rate; `starts` holds each start body, and
+   * `linkSats` is the payment's sats on the pay link.
+   */
+  function mockPricedShop(starts: string[], profileBody: object = profile, linkSats = 21): void {
     mockShopFetch(async (input, init) => {
       const url = String(input);
       if (url.includes('/fx/spot')) {
@@ -1593,7 +1684,7 @@ describe('PayLinkScreen shop payment', () => {
         return Response.json({ payment: 'p1', expiresAt: new Date(FIXED + 300_000).toISOString() });
       }
       if (url === '/.well-known/lnurlp/ada') {
-        return Response.json(shopPayLink());
+        return Response.json(shopPayLink({ sats: linkSats }));
       }
       if (url === DETAIL) {
         return Response.json({ pr: 'lnbc210n1shop' });
@@ -1664,10 +1755,14 @@ describe('PayLinkScreen shop payment', () => {
 
   it("shows only bitcoin for a till's shop payment, even with a spot rate", async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
-    mockPricedShop([], {
-      ...profile,
-      charge: { amountSats: 238093, expiresAt: new Date(FIXED + 300_000).toISOString() },
-    });
+    mockPricedShop(
+      [],
+      {
+        ...profile,
+        charge: { amountSats: 238093, expiresAt: new Date(FIXED + 300_000).toISOString() },
+      },
+      238093,
+    );
     renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     await waitFor(() => {

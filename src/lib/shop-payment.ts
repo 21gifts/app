@@ -5,6 +5,8 @@
  * follow its status. The page never calls Orchestra and never records paid.
  */
 
+import { scaleDecimalTo8 } from '@/lib/forum-goal';
+
 /** The standard a pay link names when it carries a shop payment. */
 const OPEN_CRYPTO_PAY = 'OpenCryptoPay';
 
@@ -50,6 +52,13 @@ export interface ShopPayRequest {
   quoteExpiresAt: string;
   /** `quote.payment`: the shop payment id. */
   payment: string;
+  /**
+   * Whole sats of the payment, read from this pay request: the BTC amount of
+   * the `Lightning` entry of `transferAmounts`, or `requestedAmount` (asset
+   * `BTC`) when that entry has none. It is the amount the BOLT11 of this
+   * payment pays.
+   */
+  amountSats: number;
   /** Every method and asset of `transferAmounts` except the Lightning entry. */
   lines: ShopTransferLine[];
 }
@@ -108,6 +117,7 @@ type PayLinkField =
   | 'possibleStandards'
   | 'callback'
   | 'quote'
+  | 'requestedAmount'
   | 'transferAmounts'
   | 'tag'
   | 'minSendable'
@@ -167,6 +177,45 @@ function transferLines(value: unknown): ShopTransferLine[] {
   return lines;
 }
 
+/**
+ * Whole sats of a BTC amount as the pay link writes it (`0.00238093`, `12`),
+ * exact through `scaleDecimalTo8`; `null` for any other value, an exponent
+ * form, zero, or more than a safe integer.
+ */
+function btcAmountSats(value: unknown): number | null {
+  if (typeof value !== 'string' && typeof value !== 'number') {
+    return null;
+  }
+  const sats = scaleDecimalTo8(String(value));
+  if (sats === null || sats < 1n || sats > BigInt(Number.MAX_SAFE_INTEGER)) {
+    return null;
+  }
+  return Number(sats);
+}
+
+/**
+ * Sats of the pay request: the BTC amount of its `Lightning` entry of
+ * `transferAmounts`, or `requestedAmount` when that entry has no readable one.
+ */
+function payRequestSats(body: { [P in PayLinkField]?: unknown }): number | null {
+  const entries: unknown[] = Array.isArray(body.transferAmounts) ? body.transferAmounts : [];
+  for (const item of entries) {
+    const entry = fields<'method' | 'assets'>(item);
+    if (entry?.method !== 'Lightning' || !Array.isArray(entry.assets)) {
+      continue;
+    }
+    for (const assetItem of entry.assets) {
+      const asset = fields<'asset' | 'amount'>(assetItem);
+      const sats = asset?.asset === 'BTC' ? btcAmountSats(asset.amount) : null;
+      if (sats !== null) {
+        return sats;
+      }
+    }
+  }
+  const requested = fields<'asset' | 'amount'>(body.requestedAmount);
+  return requested?.asset === 'BTC' ? btcAmountSats(requested.amount) : null;
+}
+
 function readPayRequest(body: { [P in PayLinkField]?: unknown }): ShopPayRequest | null {
   const quote = fields<'id' | 'payment' | 'expiration'>(body.quote);
   if (
@@ -179,11 +228,16 @@ function readPayRequest(body: { [P in PayLinkField]?: unknown }): ShopPayRequest
   ) {
     return null;
   }
+  const amountSats = payRequestSats(body);
+  if (amountSats === null) {
+    return null;
+  }
   return {
     callback: body.callback,
     quoteId: quote.id,
     quoteExpiresAt: quote.expiration,
     payment: quote.payment,
+    amountSats,
     lines: transferLines(body.transferAmounts),
   };
 }
@@ -197,7 +251,8 @@ function readPayRequest(body: { [P in PayLinkField]?: unknown }): ShopPayRequest
  *   Lightning pay request (`tag` `payRequest`, a `callback`, whole
  *   `minSendable` above 0 and `maxSendable` not below it, and `metadata`), or
  *   `error` for a failed request, an error status, an unreadable body, any
- *   other body, or an OpenCryptoPay body without a usable quote.
+ *   other body, or an OpenCryptoPay body without a usable quote or without a
+ *   readable bitcoin amount.
  */
 export async function fetchShopPayLink(username: string): Promise<ShopPayLink> {
   try {

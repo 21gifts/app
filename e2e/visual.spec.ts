@@ -1760,6 +1760,39 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-shop-window-passed');
   });
 
+  test('screen /pl shop-typed-fiat', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, {});
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    const usd = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' });
+    await expect(usd).toBeEnabled();
+    await usd.click();
+    await page.getByLabel('Amount').fill('12.50');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    // 12.50 USD at 100'000.00 USD per bitcoin.
+    await expect(page.getByText("₿12'500")).toBeVisible();
+    // The payer typed fiat: that typed figure shows under the bitcoin, as typed.
+    await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-shop-typed-fiat');
+  });
+
   test('screen /pl on-its-way', async ({ page }) => {
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });

@@ -59,6 +59,7 @@ const REQUEST: ShopPayRequest = {
   quoteId: 'q1',
   quoteExpiresAt: EXPIRATION,
   payment: 'p1',
+  amountSats: 21_000,
   lines: [],
 };
 
@@ -82,6 +83,7 @@ describe('fetchShopPayLink', () => {
         quoteId: 'q1',
         quoteExpiresAt: EXPIRATION,
         payment: 'p1',
+        amountSats: 21_000,
         lines: [
           { method: 'Polygon', asset: 'USDT', amount: '0.2' },
           { method: 'Polygon', asset: 'USDC', amount: '0.21' },
@@ -119,6 +121,65 @@ describe('fetchShopPayLink', () => {
     stubFetch(async () => Response.json({ ...OPEN_AMOUNT, transferAmounts: undefined }));
     const link = await fetchShopPayLink('ada');
     expect(link.kind === 'payment' ? link.request.lines : null).toEqual([]);
+    expect(link.kind === 'payment' ? link.request.amountSats : null).toBe(21_000);
+  });
+
+  it("reads the payment's exact sats from the Lightning entry, then from requestedAmount", async () => {
+    const lightning = (assets: unknown): object => ({
+      method: 'Lightning',
+      minFee: 0,
+      assets,
+      available: true,
+    });
+    const cases: [object, number][] = [
+      // The Lightning entry wins over requestedAmount, exactly, without a float.
+      [{ transferAmounts: [lightning([{ asset: 'BTC', amount: '0.00238093' }])] }, 238_093],
+      [{ transferAmounts: [lightning([{ asset: 'BTC', amount: '0.29' }])] }, 29_000_000],
+      [{ transferAmounts: [lightning([{ asset: 'BTC', amount: '12' }])] }, 1_200_000_000],
+      [{ transferAmounts: [lightning([{ asset: 'BTC', amount: 0.00031 }])] }, 31_000],
+      [{ transferAmounts: [lightning([{ asset: 'BTC', amount: '0.00000001' }])] }, 1],
+      // Entries that carry no readable bitcoin amount leave requestedAmount (21'000 sats).
+      [
+        {
+          transferAmounts: [
+            null,
+            { method: 'Polygon', assets: [{ asset: 'BTC', amount: '1' }] },
+            { method: 'Lightning', assets: 'BTC' },
+            lightning([
+              null,
+              { asset: 'USDT', amount: '1' },
+              { asset: 'BTC', amount: null },
+              { asset: 'BTC', amount: '1e-8' },
+              { asset: 'BTC', amount: '0.000000001' },
+              { asset: 'BTC', amount: '-1' },
+              { asset: 'BTC', amount: '0' },
+              { asset: 'BTC', amount: '100000000000' },
+            ]),
+          ],
+        },
+        21_000,
+      ],
+      [{ transferAmounts: 'Lightning' }, 21_000],
+    ];
+    for (const [patch, sats] of cases) {
+      stubFetch(async () => Response.json({ ...OPEN_AMOUNT, ...patch }));
+      const link = await fetchShopPayLink('ada');
+      expect(link.kind === 'payment' ? link.request.amountSats : null).toBe(sats);
+    }
+  });
+
+  it('reports a pay request without a readable bitcoin amount as an error', async () => {
+    const unreadable: unknown[] = [
+      { transferAmounts: [], requestedAmount: undefined },
+      { transferAmounts: [], requestedAmount: { asset: 'USD', amount: 12.5 } },
+      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 1e-8 } },
+      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 0 } },
+      { transferAmounts: [], requestedAmount: null },
+    ];
+    for (const patch of unreadable) {
+      stubFetch(async () => Response.json({ ...OPEN_AMOUNT, ...(patch as object) }));
+      expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
+    }
   });
 
   it('calls only a real plain Lightning pay request plain', async () => {

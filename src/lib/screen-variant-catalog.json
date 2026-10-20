@@ -222,6 +222,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:shop-typed-fiat",
+    "label": "/pl shop-typed-fiat",
+    "visual": "state-pl-shop-typed-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pl:on-its-way",
     "label": "/pl on-its-way",
     "visual": "state-pl-on-its-way",

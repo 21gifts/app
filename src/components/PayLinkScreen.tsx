@@ -268,7 +268,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -297,6 +297,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const restartedRef = useRef(new Set<string>());
   /** Payment ids that closed without being paid; the page never shows them again. */
   const closedRef = useRef(new Set<string>());
+  /**
+   * Payment ids whose pay request named other sats than the till's charge, for which the page
+   * already loaded the pay profile again once.
+   */
+  const amountReloadedRef = useRef(new Set<string>());
   /**
    * Per username, the end of the most recent `POST /pay/:username/payment` whose outcome stayed
    * unknown (`openShopPayment`), including a call still running when the page left it. Kept for
@@ -496,6 +501,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         }
         if (link.kind === 'payment' && closedRef.current.has(link.request.payment)) {
           // That payment closed unpaid and is never shown again; a pay request never mints.
+          setFormError('failed');
+          return;
+        }
+        if (link.kind === 'payment' && link.request.amountSats !== charge.amountSats) {
+          // The till replaced its charge after the pay profile was read: never show the old sats
+          // next to this payment's invoice. Load the profile again once per payment; when it still
+          // disagrees, nothing is shown and Pay reads again.
+          if (!amountReloadedRef.current.has(link.request.payment)) {
+            amountReloadedRef.current.add(link.request.payment);
+            setReloadNonce((nonce) => nonce + 1);
+            return;
+          }
           setFormError('failed');
           return;
         }

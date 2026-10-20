@@ -50,12 +50,13 @@ const SCALE_8 = 100000000n;
 
 /**
  * Scale a decimal string to 8 fraction digits as a BigInt.
- * Integer part times 10^8 plus the fraction padded right with zeros.
+ * Integer part times 10^8 plus the fraction padded right with zeros, so a
+ * bitcoin amount (`0.00238093`) becomes its exact sats (`238093n`).
  *
  * @param raw - Digits with an optional fraction of 1–8 places.
  * @returns Scaled integer, or `null` when `raw` is not that shape.
  */
-function scaleDecimalTo8(raw: string): bigint | null {
+export function scaleDecimalTo8(raw: string): bigint | null {
   if (!GOAL_AMOUNT_RE.test(raw)) {
     return null;
   }

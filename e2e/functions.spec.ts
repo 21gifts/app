@@ -18,7 +18,7 @@ import {
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
-import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
+import { parseForumAskAmountInUnit, scaleDecimalTo8 } from '../src/lib/forum-goal';
 import {
   fiatDraftForSats,
   fiatToSats,
@@ -7748,6 +7748,23 @@ test('Function: fetchShopPayLink — an open till shows the shop payment of the 
   await expect(page.getByText('Arbitrum')).toHaveCount(1);
   await expect(page.getByText('Lightning')).toHaveCount(0);
   expect(opens).toEqual([]);
+});
+
+test("Function: scaleDecimalTo8 — the pay link's bitcoin amount is the till's exact sats", async ({
+  page,
+}) => {
+  expect(scaleDecimalTo8('0.00238093')).toBe(238_093n);
+  expect(scaleDecimalTo8('1e-8')).toBeNull();
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const profiles = recordRequests(page, '/pay/ada');
+  // The pay link's Lightning entry is 0.00238093 BTC, the till's charge 238'093 sats: they agree,
+  // so the page shows the payment without loading the pay profile again.
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  expect(profiles.filter((url) => new URL(url).pathname === '/pay/ada')).toHaveLength(1);
 });
 
 test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a mint", async ({
