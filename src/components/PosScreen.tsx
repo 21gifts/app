@@ -173,8 +173,9 @@ function settledChanged(): void {
 
 /**
  * Whether `payment` pays `charge`: its amount, or its amount after the fee,
- * made (by the wallet's own payment time) from the moment the charge was
- * created up to {@link POS_LATE_PAID_MS} after its end. While a charge is open
+ * made (by the wallet's own payment time, whole seconds, so up to
+ * {@link POS_PAID_TIME_GRAIN_MS} before creation) from the charge's creation
+ * up to {@link POS_LATE_PAID_MS} after its end. While a charge is open
  * the receiving address takes no other amount, so the time tells a payment of
  * this charge from one of the charge before, however late the wallet reports it.
  */
@@ -511,9 +512,9 @@ function usePosTillState(): PosTillState {
     setBusy(true);
     const mine = ++generation.current;
     setError(null);
-    // A new charge ends the late minute of the one before: a payment heard while it is being
-    // created is parked and counted for the new charge once it is read. A failed create gives the
-    // late minute back.
+    // A new charge ends the late minute of the one before: a payment reported while it is being
+    // created is kept and tried on the new charge once it is read (it pays it if `pays`). A failed
+    // create gives the late minute back and tries the kept payments on the charge before.
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
@@ -646,8 +647,9 @@ function usePosTillState(): PosTillState {
 /**
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
  * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
- * It never asks the api on a timer: the moment this tab's wallet receives the
- * charge amount ({@link onPaymentReceived}), the charge is paid, and
+ * It never asks the api on a timer: the moment this tab's wallet reports a
+ * payment that pays the charge ({@link onPaymentReceived}: its amount, made
+ * from its creation to a minute after its end), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and fiat.
  * The till reads the api only on open, when a charge runs out, when the tab
  * becomes visible again, after Cancel, and when the confirmation is closed. A paid charge
