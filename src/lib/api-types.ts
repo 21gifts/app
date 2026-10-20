@@ -1386,6 +1386,11 @@ export const memberProfileSchema = z.object({
   aboutMe: z.string().nullable(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
+  /**
+   * Forum message id for About me when `profileMessage` is absent. The share
+   * link sends this on a short body. Optional so a member payload still parses.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   trust: accountTrustSchema.optional().default(accountTrustNull),
   /**
    * Admission time (epoch ms) when the member is admitted to daily grants.

@@ -1519,6 +1519,12 @@ export function MemberProfileScreen({
     profile.profileMessage !== null && profile.profileMessage.hasPhoto
       ? profile.profileMessage.id
       : undefined;
+  const publicAboutMessageId =
+    profile.profileMessage !== null && profile.profileMessage.id !== ''
+      ? profile.profileMessage.id
+      : typeof profile.aboutMessageId === 'string' && profile.aboutMessageId !== ''
+        ? profile.aboutMessageId
+        : undefined;
 
   const giftsBlock = (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
@@ -1834,10 +1840,8 @@ export function MemberProfileScreen({
               mode="public"
               aboutMe={profile.aboutMe}
               name={profile.name}
-              {...(profile.aboutMe !== null &&
-              profile.profileMessage !== null &&
-              profile.profileMessage.id !== ''
-                ? { messageId: profile.profileMessage.id }
+              {...(profile.aboutMe !== null && publicAboutMessageId !== undefined
+                ? { messageId: publicAboutMessageId }
                 : {})}
               hasPhoto={
                 profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true

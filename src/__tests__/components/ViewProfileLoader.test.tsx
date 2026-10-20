@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
 import type { AccountActivity, MemberProfile, ViewProfile } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+import { fetchTranslateAvailable } from '@/lib/note-translate';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const VIEW_KEY = 'a'.repeat(64);
@@ -14,6 +15,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: true }),
 }));
+
+vi.mock('@/lib/note-translate', () => ({
+  fetchTranslateAvailable: vi.fn(),
+  translateNote: vi.fn(),
+  translateConversationMessage: vi.fn(),
+}));
+
+const GERMAN_ABOUT = 'Kann mir jemand diese Woche ein paar Satoshi leihen?';
 
 const profile: ViewProfile = {
   name: 'Ada',
@@ -86,6 +95,8 @@ beforeEach(() => {
   fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
   fetchAboutPhoto.mockReset();
   fetchAboutPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+  vi.mocked(fetchTranslateAvailable).mockReset();
+  vi.mocked(fetchTranslateAvailable).mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -149,6 +160,30 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByAltText('About me photo')).toBeTruthy();
     });
     expect(fetchAboutPhoto).toHaveBeenCalledWith(VIEW_KEY);
+  });
+
+  it('offers Translate from aboutMessageId when the share link has no profile note', async () => {
+    fetchProfile.mockResolvedValue({
+      ...profile,
+      aboutMe: GERMAN_ABOUT,
+      aboutMessageId: 'm-de',
+      profileMessage: null,
+    });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    expect(await screen.findByRole('button', { name: 'Translate' })).toBeTruthy();
+    expect(screen.getByText(GERMAN_ABOUT)).toBeTruthy();
+  });
+
+  it('keeps About me plain when aboutMessageId is empty', async () => {
+    fetchProfile.mockResolvedValue({
+      ...profile,
+      aboutMe: GERMAN_ABOUT,
+      aboutMessageId: '',
+      profileMessage: null,
+    });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    expect(await screen.findByText(GERMAN_ABOUT)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Translate' })).toBeNull();
   });
 
   it('renders the profile card on success', async () => {

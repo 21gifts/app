@@ -26,7 +26,8 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 /**
  * Maps the public view-key card onto the member profile the other routes use.
  * Trust stays empty. `createdAt` becomes an ISO string. A missing id stays
- * empty so the page still renders an older short body.
+ * empty so the page still renders an older short body. `aboutMessageId` is
+ * kept so Translate still has the note id when that body has no profile note.
  *
  * @param view - Parsed view-key profile.
  * @returns The same card shape `MemberProfileScreen` renders.
@@ -44,6 +45,7 @@ function memberProfileFromView(view: ViewProfile): MemberProfile {
     replyCount: view.replyCount ?? 0,
     aboutMe: view.aboutMe,
     aboutMeHasPhoto: view.aboutMeHasPhoto,
+    ...(view.aboutMessageId !== undefined ? { aboutMessageId: view.aboutMessageId } : {}),
     ...(view.username !== undefined ? { username: view.username } : {}),
     ...(view.shopCount !== undefined ? { shopCount: view.shopCount } : {}),
     ...(view.creditCount !== undefined ? { creditCount: view.creditCount } : {}),
