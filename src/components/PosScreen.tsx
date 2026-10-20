@@ -145,7 +145,7 @@ type WalletSettled = {
   early: Array<{ amountSats: number; feesSats: number; at: number }>;
 };
 
-/** How many payments heard before an open charge was known are kept for it. */
+/** How many payments no known open charge took are kept for the next one. */
 const POS_EARLY_PAYMENTS = 20;
 
 let walletSettled: WalletSettled | null = null;
@@ -173,12 +173,14 @@ function settledChanged(): void {
  * its amount (or the amount after its fee): while it is open the receiving
  * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
  * still counts. No reading of the api in between. A payment no known open
- * charge takes (the till is still reading the next one) is kept and tried
- * again once the next open charge is known.
+ * charge takes (the till is still reading the next one) is kept with the
+ * time it was first heard, and tried again once the next open charge is
+ * known, unless it was heard before that charge was created.
  */
 function settleOpen(
   session: string | null,
   payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
+  heardAt: number = Date.now(),
 ): void {
   const memory = settledFor(session);
   const open = memory.open;
@@ -189,7 +191,10 @@ function settleOpen(
     Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
   ) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
-    memory.early = [...memory.early, { ...payment, at: Date.now() }].slice(-POS_EARLY_PAYMENTS);
+    memory.early = [
+      ...memory.early,
+      { amountSats: payment.amountSats, feesSats: payment.feesSats, at: heardAt },
+    ].slice(-POS_EARLY_PAYMENTS);
     return;
   }
   memory.open = null;
@@ -391,7 +396,7 @@ function usePosTillState(): PosTillState {
       const early = memory.early.filter((heard) => heard.at >= Date.parse(charge.createdAt));
       memory.early = [];
       for (const heard of early) {
-        settleOpen(session, heard);
+        settleOpen(session, heard, heard.at);
       }
     } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
       // Gone before its end (cancelled elsewhere): no payment belongs to it any more. One that ran

@@ -1717,6 +1717,42 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
+    it('keeps the time a parked payment was first heard when it is tried again', async () => {
+      const heard = Date.now();
+      // Read in between: created before the payment, another amount, so the payment stays parked.
+      const between = {
+        ...OPEN,
+        id: 'c2',
+        amountSats: 30,
+        createdAt: new Date(heard - 1_000).toISOString(),
+      };
+      // Created after the payment was heard: the payment is not its.
+      const later = {
+        ...OPEN,
+        id: 'c3',
+        amountSats: 42,
+        createdAt: new Date(heard + 1_000).toISOString(),
+      };
+      let charge: typeof OPEN = OPEN;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge, history: [charge] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(42);
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(heard + 2_000);
+      charge = between;
+      showTab();
+      expect(await screen.findByText('₿30')).toBeTruthy();
+      charge = later;
+      showTab();
+      expect(await screen.findByText('₿42')).toBeTruthy();
+      clock.mockRestore();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
