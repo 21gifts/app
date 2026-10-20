@@ -87,7 +87,7 @@ export interface ShopAddWizardProps {
   onCancel?: () => void;
   /** Increments after a successful send so the wizard closes. */
   resetToken: number;
-  /** Outer text limit; shop descriptions are additionally capped at 1000. */
+  /** Text box limit; the 1000-character shop text rule is shown by the counter and error. */
   maxLength: number;
   /** `edit` opens on step 1 for an existing shop. Default `create`. */
   mode?: 'create' | 'edit';
