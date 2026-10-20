@@ -9741,6 +9741,58 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-open');
   });
 
+  test('pos open elsewhere', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    const open = {
+      id: 'pos-e2e',
+      amountSats: 5_000,
+      status: 'pending',
+      createdAt: '2026-09-20T12:00:00.000Z',
+      expiresAt: '2026-09-20T12:05:00.000Z',
+    };
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: open, history: [open] }),
+      });
+    });
+    // The charge was created in another tab (or before a reload): this tab has no typed figure.
+    await page.goto('/pos');
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText("₿5'000")).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-open-elsewhere');
+  });
+
   test('pos paid', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {
@@ -9913,6 +9965,78 @@ test.describe('onboarding screens', () => {
     await expect(dialog.getByText('$5.00')).toBeVisible();
     await expect(dialog.getByRole('link', { name: 'New payment' })).toBeVisible();
     await shotScreen(page, 'state-pos-paid-fiat');
+  });
+
+  test('pos paid fiat closed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    let paid: Record<string, unknown> | null = null;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const created = {
+          id: 'pos-e2e',
+          amountSats,
+          status: 'pending',
+          createdAt: '2026-09-20T12:01:00.000Z',
+          expiresAt: '2026-09-20T12:06:00.000Z',
+        };
+        paid = { ...created, status: 'paid', paidAt: '2026-09-20T12:01:00.000Z' };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      // After the payment the api returns the charge as paid.
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          paid === null ? { charge: null, history: [] } : { charge: paid, history: [paid] },
+        ),
+      });
+    });
+    // The operator typed $5.00 on this till; after Done, History keeps that typed figure.
+    await page.goto('/pos/amount?visual=pos-received');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await page
+      .getByRole('alertdialog', { name: 'Paid' })
+      .getByRole('button', { name: 'Done' })
+      .click();
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+    await expect(row.getByText('Paid ✓ 12:01 PM')).toBeVisible();
+    await expect(row).toContainText("₿5'000 · $5.00");
+    await shotScreen(page, 'state-pos-paid-fiat-closed');
   });
 
   test('state /pos history', async ({ page }) => {
@@ -10586,7 +10710,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    // A charge this tab did not create has no typed figure: bitcoin only, never a spot price.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -10649,7 +10774,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    // A charge this tab did not create has no typed figure: bitcoin only, never a spot price.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });

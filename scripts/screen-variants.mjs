@@ -3904,6 +3904,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'open-elsewhere',
+    image: 'pos-open-elsewhere.png',
+    visual: 'state-pos-open-elsewhere',
+    needle: "shotScreen(page, 'state-pos-open-elsewhere')",
+  },
+  {
+    route: '/pos',
     id: 'paid',
     image: 'pos-paid.png',
     visual: 'state-pos-paid',
@@ -3922,6 +3929,13 @@ export const SCREEN_VARIANTS = [
     image: 'pos-paid-fiat.png',
     visual: 'state-pos-paid-fiat',
     needle: "shotScreen(page, 'state-pos-paid-fiat')",
+  },
+  {
+    route: '/pos',
+    id: 'paid-fiat-closed',
+    image: 'pos-paid-fiat-closed.png',
+    visual: 'state-pos-paid-fiat-closed',
+    needle: "shotScreen(page, 'state-pos-paid-fiat-closed')",
   },
   {
     route: '/pos',

@@ -2405,9 +2405,9 @@
     "fil": "Moderator sa direktang URL. Pamagat Teksto ng araw-araw na bayad at Hindi mo mababago ang araw-araw na bayad. Walang kahilingan sa talaan. Karayom Hindi mo mababago ang araw-araw na bayad."
   },
   "/pos:cancel-failed": {
-    "de": "Offene Belastung von ₿21 mit 5:00 Restzeit und dem Standard-Fiat unter dem Sat-Betrag. Abbrechen schlägt fehl. Die Belastung und Abbrechen bleiben. Hinweis Die Kasse ist gerade nicht erreichbar.",
-    "es": "Cargo abierto de ₿21 con 5:00 restantes y el fiat predeterminado bajo el importe en sats. Cancelar falla. El cargo y Cancelar permanecen. Alerta La caja no está disponible.",
-    "fil": "Bukas na singil na ₿21 na may 5:00 natitira at ang default na fiat sa ilalim ng halaga ng sat. Nabigo ang Kanselahin. Nanatili ang singil at Kanselahin. Alerto Hindi available ang point of sale."
+    "de": "Offene Belastung von ₿21 mit 5:00 Restzeit, von der API gelesen: Dieser Tab hat sie nicht erstellt, daher nur Bitcoin, kein Fiat-Betrag und kein Preis aus dem aktuellen Kurs. Abbrechen schlägt fehl. Die Belastung und Abbrechen bleiben. Hinweis Die Kasse ist gerade nicht erreichbar.",
+    "es": "Cargo abierto de ₿21 con 5:00 restantes, leído de la api: esta pestaña no lo creó, así que solo bitcoin, sin importe en moneda y sin precio actual. Cancelar falla. El cargo y Cancelar permanecen. Alerta La caja no está disponible.",
+    "fil": "Bukas na singil na ₿21 na may 5:00 natitira, binasa mula sa api: hindi ito ginawa ng tab na ito, kaya bitcoin lang, walang halaga sa pera at walang kasalukuyang presyo. Nabigo ang Kanselahin. Nanatili ang singil at Kanselahin. Alerto Hindi available ang point of sale."
   },
   "/welcome:translate": {
     "de": "Angemeldetes /welcome mit einer bezahlten deutschen Notiz. Übersetzen ist in der Fußzeilen-Symbolzeile mit Reagieren / Kopieren sichtbar. Englische Notizen auf anderen Fixtures blenden es weiterhin aus.",
@@ -2435,9 +2435,9 @@
     "fil": "Muli ang Susunod. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Walang laman ang username. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/pos:refresh-failed": {
-    "de": "Die offene Belastung ist bereits abgelaufen (0:00). Der Sat-Betrag und das Standard-Fiat bleiben. Das Aktualisieren schlägt fehl. Abbrechen bleibt. Hinweis Die Kasse ist gerade nicht erreichbar.",
-    "es": "El cargo abierto ya se agotó (0:00). El importe en sats y el fiat predeterminado permanecen. Actualizarlo falla. Cancelar permanece. Alerta La caja no está disponible.",
-    "fil": "Naubos na ang bukas na singil (0:00). Nanatili ang halaga ng sat at ang default na fiat. Nabigo ang pag-refresh. Nanatili ang Kanselahin. Alerto Hindi available ang point of sale."
+    "de": "Die offene Belastung, von der API gelesen, ist bereits abgelaufen (0:00). Der Sat-Betrag bleibt, nur Bitcoin, weil dieser Tab die Belastung nicht erstellt hat. Das Aktualisieren schlägt fehl. Abbrechen bleibt. Hinweis Die Kasse ist gerade nicht erreichbar.",
+    "es": "El cargo abierto, leído de la api, ya se agotó (0:00). El importe en sats permanece, solo bitcoin, porque esta pestaña no creó el cargo. Actualizarlo falla. Cancelar permanece. Alerta La caja no está disponible.",
+    "fil": "Naubos na ang bukas na singil na binasa mula sa api (0:00). Nanatili ang halaga ng sat, bitcoin lang, dahil hindi ginawa ng tab na ito ang singil. Nabigo ang pag-refresh. Nanatili ang Kanselahin. Alerto Hindi available ang point of sale."
   },
   "/profile:banner-only": {
     "de": "Nur ein breites Bild. Stub GET /banners/me mit der breiten Szene. Kein Profilfoto, daher sitzen Profilfoto aufnehmen und Profilfoto hinzufügen unter dem Banner. Nadel state-profile-banner-only.",
@@ -3063,6 +3063,11 @@
     "de": "Angemeldete Ada, die in diesem Tab unter Betrag festlegen $5.00 eingetippt und Zahlung anlegen gedrückt hat: eine ausstehende Belastung von ₿5’000 mit 5:00 Restzeit. Countdown, der Sat-Betrag, darunter $5.00 (der eingetippte Betrag, kein Preis aus dem aktuellen Kurs) und Abbrechen bleiben oben. Das Betragsformular ist weg. Die offene Belastung steht nicht im Verlauf, der Noch keine Zahlungen. zeigt. Desktop, iPad und Smartphone zeigen alle den Open-CryptoPay-QR-Code.",
     "es": "Ada con sesión iniciada, que escribió $5.00 en Fijar un importe en esta pestaña y pulsó Crear pago: un cargo pendiente de ₿5’000 con 5:00 restantes. La cuenta atrás, el importe en sats, debajo $5.00 (el importe escrito, no un precio del precio actual) y Cancelar permanecen arriba. El formulario de importe ha desaparecido. El cargo abierto no está en Historial, que dice Todavía no hay pagos. Escritorio, iPad y teléfono muestran todos el Código QR de Open CryptoPay.",
     "fil": "Naka-sign-in si Ada na nag-type ng $5.00 sa Magtakda ng halaga sa tab na ito at pumindot ng Gumawa ng bayad: isang nakabinbing singil na ₿5’000 na may 5:00 na natitira. Ang countdown, ang halagang sat, ang $5.00 sa ilalim nito (ang na-type na halaga, hindi presyo mula sa kasalukuyang presyo), at Kanselahin ay nananatiling nakataas. Wala na ang porma ng halaga. Wala sa Kasaysayan ang bukas na singil, na nagsasabing Wala pang bayad. Kompyuter, iPad, at smartphone ay lahat nagpapakita ng QR code ng Open CryptoPay."
+  },
+  "/pos:open-elsewhere": {
+    "de": "Angemeldete Ada mit einer ausstehenden Belastung von ₿5’000 und 5:00 Restzeit, die dieser Tab nicht erstellt hat (ein anderer Tab, oder die Seite wurde neu geladen). Countdown, der Sat-Betrag und Abbrechen; kein Fiat-Betrag, weil in diesem Tab keiner eingetippt wurde, und keiner wird aus dem aktuellen Kurs berechnet. Verlauf zeigt Noch keine Zahlungen.",
+    "es": "Ada con sesión iniciada y un cargo pendiente de ₿5’000 con 5:00 restantes que esta pestaña no creó (otra pestaña, o la página se recargó). La cuenta atrás, el importe en sats y Cancelar; sin importe en moneda, porque no se escribió ninguno en esta pestaña, y ninguno se calcula con el precio actual. Historial dice Todavía no hay pagos.",
+    "fil": "Naka-sign-in si Ada na may nakabinbing singil na ₿5’000 at 5:00 na natitira na hindi ginawa ng tab na ito (ibang tab, o ni-reload ang pahina). Ang countdown, ang halagang sat at Kanselahin; walang halaga sa pera, dahil walang na-type sa tab na ito, at walang kinukuwenta mula sa kasalukuyang presyo. Sinasabi ng Kasaysayan na Wala pang bayad."
   },
   "/grants/payments/comment:default": {
     "de": "Gründerin mit gespeichertem Kommentar. Überschrift Text der täglichen Zahlungen. Der Kommentar Tägliches Geschenk ist Text, mit dem Bleistift Kommentar bearbeiten in derselben Zeile, rechts vom Text. Kein Empfänger- und kein Zahlungswechsel. Nadel Kommentar bearbeiten.",
@@ -5028,6 +5033,11 @@
     "de": "Angemeldete Ada, die in diesem Tab unter Betrag festlegen $5.00 eingetippt und Zahlung anlegen gedrückt hat; danach meldete die Wallet die Zahlung. Dieselbe grüne bildschirmfüllende Bestätigung wie bei paid, mit ₿5’000 sehr groß und darunter $5.00: der eingetippte Betrag, für diese Belastung behalten, kein Preis aus dem aktuellen Kurs.",
     "es": "Ada con sesión iniciada, que escribió $5.00 en Fijar un importe en esta pestaña y pulsó Crear pago; después la billetera informó del pago. La misma confirmación verde a pantalla completa que en paid, con ₿5’000 muy grande y debajo $5.00: el importe escrito, guardado para este cargo, no un precio tomado del precio actual.",
     "fil": "Naka-sign-in si Ada na nag-type ng $5.00 sa Magtakda ng halaga sa tab na ito at pumindot ng Gumawa ng bayad; pagkatapos ay iniulat ng wallet ang bayad. Ang parehong berdeng full-screen na kumpirmasyon gaya ng paid, na may ₿5’000 na napakalaki at sa ilalim nito $5.00: ang na-type na halaga, itinabi para sa singil na ito, hindi presyong kinuha sa kasalukuyang presyo."
+  },
+  "/pos:paid-fiat-closed": {
+    "de": "Die Belastung von paid-fiat nach Fertig. Die Bestätigung ist weg und Betrag festlegen ist zurück. Verlauf führt die Belastung als Bezahlt ✓ 12:01 PM mit ₿5’000 · $5.00, dem eingetippten Betrag.",
+    "es": "El cargo de paid-fiat después de Listo. La confirmación ya no está y Fijar un importe vuelve. Historial muestra el cargo como Pagado ✓ 12:01 PM con ₿5’000 · $5.00, el importe escrito.",
+    "fil": "Ang singil ng paid-fiat pagkatapos ng Tapos na. Wala na ang kumpirmasyon at bumalik ang Magtakda ng halaga. Inililista ng Kasaysayan ang singil bilang Bayad na ✓ 12:01 PM na may ₿5’000 · $5.00, ang na-type na halaga."
   },
   "/pos:history": {
     "de": "Angemeldete Ada ohne offene Belastung und mit drei vergangenen Belastungen, gescrollt bis Verlauf: Bezahlt ✓ 12:00 PM in Grün mit ₿2’100, dann Abgelaufen mit ₿500, dann Abgebrochen mit ₿42, jeweils mit Datum und Uhrzeit der Erstellung, die neueste zuerst. Dieser Tab hat die Belastungen nicht erstellt, daher hat keine einen eingetippten Fiat-Betrag, und keiner wird aus dem aktuellen Kurs berechnet. Betrag festlegen bleibt darüber.",
