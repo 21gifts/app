@@ -19,6 +19,7 @@ import {
   shopPlaceComplete,
   shopProblemField,
   shopUsernameProblem,
+  stripShopHashtag,
   usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -544,7 +545,7 @@ export function ShopAddWizard({
             ariaLabel={t('shops.textLabel')}
             value={draft}
             onChange={onDraftChange}
-            maxLength={Math.min(maxLength, SHOP_DESCRIPTION_MAX)}
+            maxLength={maxLength}
             ariaDescribedBy={descriptionHintId}
             ariaInvalid={descriptionProblem !== null || descriptionServerProblem}
             rows={4}
@@ -562,7 +563,10 @@ export function ShopAddWizard({
               </p>
             ) : null}
             <p className="text-sm text-app-muted">
-              {t('shops.descriptionCount', { n: draft.length, max: SHOP_DESCRIPTION_MAX })}
+              {t('shops.descriptionCount', {
+                n: stripShopHashtag(draft).length,
+                max: SHOP_DESCRIPTION_MAX,
+              })}
             </p>
           </div>
         </div>

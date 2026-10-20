@@ -1780,6 +1780,22 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
 
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts welcome shop edit user checking](images/welcome-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user missing](images/welcome-shop-edit-user-missing.png)
+
 ### Variant: shop-edit-summary
 
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
@@ -1864,6 +1880,15 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ![21.gifts shops map edit place](images/shops-map-edit-place.png)
 
+### Variant: map-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+**Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit place open](images/shops-map-edit-place-open.png)
+
 ### Variant: map-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **Map** stays selected. No second **Map** heading.
@@ -1875,6 +1900,23 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit user](images/shops-map-edit-user.png)
+
+### Variant: map-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet. **Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit user checking](images/shops-map-edit-user-checking.png)
+
+### Variant: map-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+**Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit user missing](images/shops-map-edit-user-missing.png)
 
 ### Variant: map-edit-summary
 
@@ -1964,6 +2006,15 @@ says there are no edits yet. The photo step's Close (X) is gone. Place
 
 ![21.gifts shops table edit place](images/shops-table-edit-place.png)
 
+### Variant: table-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+**Table** stays selected.
+
+![21.gifts shops table edit place open](images/shops-table-edit-place-open.png)
+
 ### Variant: table-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place
@@ -1978,6 +2029,23 @@ says there are no edits yet. The photo step's Close (X) is gone. Place
 **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
+
+### Variant: table-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
+**missing**. The live lookup is still running, so **Checking that account…** is visible and
+**Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user checking](images/shops-table-edit-user-checking.png)
+
+### Variant: table-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
+**missing**. The live lookup returned no account. **No account with that username. Check the
+spelling of the 21.gifts username.** is visible and **Next** is disabled. **History** still says
+there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user missing](images/shops-table-edit-user-missing.png)
 
 ### Variant: table-edit-summary
 
@@ -2074,6 +2142,22 @@ disabled.
 hint is directly under the field. **Next** is enabled.
 
 ![21.gifts shops add user](images/shops-add-user.png)
+
+### Variant: add-user-checking
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+The live lookup is still running, so **Checking that account…** is visible and **Next** is
+disabled.
+
+![21.gifts shops add user checking](images/shops-add-user-checking.png)
+
+### Variant: add-user-missing
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+The live lookup returned no account. **No account with that username. Check the spelling of the
+21.gifts username.** is visible and **Next** is disabled.
+
+![21.gifts shops add user missing](images/shops-add-user-missing.png)
 
 ### Variant: add-user-invalid
 
@@ -2255,6 +2339,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo 
 
 ![21.gifts shops edit place](images/shops-edit-place.png)
 
+### Variant: edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts shops edit place open](images/shops-edit-place-open.png)
+
 ### Variant: edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
@@ -2266,6 +2358,22 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user](images/shops-edit-user.png)
+
+### Variant: edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts shops edit user checking](images/shops-edit-user-checking.png)
+
+### Variant: edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user missing](images/shops-edit-user-missing.png)
 
 ### Variant: edit-summary
 
@@ -2403,6 +2511,22 @@ A moderator session. One Cafe Luna shop note. **Add an account** is open. The us
 A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosing `@ada` from the People list writes `@ada` into the username field and keeps the list on that prefix. **Save account** is visible. There is no alert.
 
 ![21.gifts shops staff account chosen](images/shops-staff-account-chosen.png)
+
+### Variant: staff-account-checking
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+username field. The live lookup is still running, so **Checking that account…** is visible and
+**Save account** is disabled.
+
+![21.gifts shops staff account checking](images/shops-staff-account-checking.png)
+
+### Variant: staff-account-missing
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+username field. The live lookup returned no account. **No account with that username. Check the
+spelling of the 21.gifts username.** is visible and **Save account** is disabled.
+
+![21.gifts shops staff account missing](images/shops-staff-account-missing.png)
 
 ### Variant: staff-account-set
 
@@ -3013,6 +3137,21 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
+
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled.
+
+![21.gifts member shop edit user checking](images/members-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled.
+
+![21.gifts member shop edit user missing](images/members-shop-edit-user-missing.png)
 
 ### Variant: shop-edit-summary
 
@@ -4883,6 +5022,22 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
+
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts public message shop edit user checking](images/messages-id-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user missing](images/messages-id-shop-edit-user-missing.png)
 
 ### Variant: shop-edit-summary
 

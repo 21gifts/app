@@ -604,14 +604,31 @@ describe('ShopAddWizard', () => {
     );
   });
 
-  it('shows the 1000-character description error for a prefilled edit', () => {
-    renderWizard(<ShopAddWizard {...props({ draft: 'x'.repeat(1001), place: COMPLETE_PLACE })} />);
+  it('counts the description without an existing shop tag at the 1000-character limit', () => {
+    const { rerender } = renderWizard(
+      <ShopAddWizard
+        {...props({ draft: `${'x'.repeat(1000)}\n\n#21GiftsShop`, place: COMPLETE_PLACE })}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('Shop text').getAttribute('maxlength')).toBe('8000');
+    expect(screen.getByText('1000 / 1000')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+
+    rerender(
+      <ChromeBackProvider>
+        <ProfileChromeLeft />
+        <ShopAddWizard
+          {...props({ draft: `${'x'.repeat(1001)}\n\n#21GiftsShop`, place: COMPLETE_PLACE })}
+        />
+      </ChromeBackProvider>,
+    );
     expect(
       screen.getByText('The shop text is too long. Shorten it to at most 1000 characters.'),
     ).toBeTruthy();
+    expect(screen.getByText('1001 / 1000')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
@@ -636,7 +653,7 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     const description = screen.getByLabelText('Shop text');
-    expect(description.getAttribute('maxlength')).toBe('1000');
+    expect(description.getAttribute('maxlength')).toBe('8000');
     expect(description.getAttribute('aria-invalid')).toBe('true');
     expect(
       screen.getByText('The shop text must not contain control characters other than line breaks.'),

@@ -3998,5 +3998,100 @@
     "de": "Die Moderation hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.",
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
+  },
+  "/shops:edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation die Ortsschaltfläche gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó el botón del lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang pindutan ng lugar. Bukas ang form sheet na Lugar at address ng shop kasama ang kasalukuyang pin, pangalan ng shop, at buong address. Ang loob nito ang aktibong scroll surface; nananatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito."
+  },
+  "/shops:map-edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation die Ortsschaltfläche gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó el botón del lugar. La hoja Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. El encabezado y el pie fijado con Usar este lugar permanecen visibles. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang pindutan ng lugar. Bukas ang Lugar at address ng shop kasama ang kasalukuyang pin, pangalan, at buong address. Nanatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
+  },
+  "/shops:table-edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation die Ortsschaltfläche gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar. Tabelle bleibt ausgewählt.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó el botón del lugar. La hoja Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. El encabezado y el pie fijado con Usar este lugar permanecen visibles. Tabla sigue seleccionada.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang pindutan ng lugar. Bukas ang Lugar at address ng shop kasama ang kasalukuyang pin, pangalan, at buong address. Nanatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito. Napili pa ang Talahanayan."
+  },
+  "/shops:add-user-checking": {
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts con missing en el campo. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
+  },
+  "/shops:add-user-missing": {
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts con missing en el campo. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
+  },
+  "/shops:staff-account-checking": {
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Guardar cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang I-save ang account."
+  },
+  "/shops:staff-account-missing": {
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Guardar cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang I-save ang account."
+  },
+  "/shops:edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing en el campo. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/shops:edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing en el campo. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/shops:map-edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. El historial sigue sin ediciones. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Wala pa ring mga pagbabago. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
+  },
+  "/shops:table-edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu missing geändert. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto; el nombre cambió de luna a missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. Tabla sigue seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong missing. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu missing geändert. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto; el nombre cambió de luna a missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. Tabla sigue seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong missing. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Napili pa ang Talahanayan."
+  },
+  "/welcome:shop-edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/welcome:shop-edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/members/[accountId]:shop-edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
+  },
+  "/members/[accountId]:shop-edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
+  },
+  "/messages/[id]:shop-edit-user-checking": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/messages/[id]:shop-edit-user-missing": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
   }
 }
