@@ -112,7 +112,7 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     expect(screen.getByLabelText('Username')).toHaveProperty('value', '@');
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByText('No account with that username.')).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe('No account with that username.');
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByText('No account with that username.')).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe('No account with that username.');
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
   });
@@ -155,9 +155,9 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(
-      await screen.findByText('The account could not be saved. Please try again.'),
-    ).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The account could not be saved. Please try again.',
+    );
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
   });
@@ -176,6 +176,7 @@ describe('ShopAccountControl', () => {
       ),
     ).toBeTruthy();
     expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('removes the account with a null username', async () => {
@@ -238,6 +239,7 @@ describe('ShopAccountControl', () => {
     );
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
   });
 

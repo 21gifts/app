@@ -7,10 +7,12 @@ afterEach(cleanup);
 
 describe('Field', () => {
   it('renders a single-line input with an id derived from the label', () => {
-    renderWithLocale(<Field label="Your name" />);
+    renderWithLocale(<Field label="Your name" value="Ada" readOnly />);
     const input = screen.getByLabelText('Your name');
     expect(input.tagName).toBe('INPUT');
     expect(input.id).toBe('field-your-name');
+    // The exact-name query fails if the typed value joins the accessible name.
+    expect(screen.getByRole('textbox', { name: 'Your name' })).toBe(input);
     expect(input.className).toContain('min-h-11');
     expect(input.className).toContain('bg-app-card');
     expect(input.className).toContain('placeholder:text-app-subtle');

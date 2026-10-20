@@ -998,6 +998,21 @@ describe('PlaceField', () => {
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
   }
 
+  it('keeps translated field capitalization in the missing-fields summary', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} shopDetails />,
+      'de',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Ort hinzufügen' }));
+    expect(await screen.findByRole('dialog', { name: 'Ort und Adresse des Shops' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Ausfüllen: Kartenmarkierung, Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
+      ),
+    ).toBeTruthy();
+  });
+
   it('collects a shop name and address before Use this place is enabled', async () => {
     const onChange = vi.fn();
     const listeners = stubMaps();
@@ -1029,7 +1044,7 @@ describe('PlaceField', () => {
     const confirm = await screen.findByRole('button', { name: 'Use this place' });
     expect(confirm.hasAttribute('disabled')).toBe(true);
     expect(screen.queryByText('Enter the shop name.')).toBeNull();
-    expect(screen.getByText(/Fill in: shop name/)).toBeTruthy();
+    expect(screen.getByText(/Fill in: Shop name/)).toBeTruthy();
     fireEvent.blur(shopName);
     const requiredName = screen.getByText('Enter the shop name.');
     expect(shopName.getAttribute('aria-invalid')).toBe('true');
@@ -1040,11 +1055,11 @@ describe('PlaceField', () => {
     expect(screen.getByText('The shop name must not contain control characters.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
     expect(
-      screen.getByText(/Fill in: street, house number, postal code, city, country/),
+      screen.getByText(/Fill in: Street, House number, Postal code, City, Country/),
     ).toBeTruthy();
     expect(confirm.hasAttribute('disabled')).toBe(true);
     fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
-    expect(screen.getByText(/Fill in: house number/)).toBeTruthy();
+    expect(screen.getByText(/Fill in: House number/)).toBeTruthy();
     fillShopAddress('Bahnhofstrasse Bakery');
     expect(
       screen.getByText('The shop name must not contain the street or the postal code.'),
@@ -1090,7 +1105,9 @@ describe('PlaceField', () => {
     const house = screen.getByLabelText('House number');
     const postal = screen.getByLabelText('Postal code');
     const city = screen.getByLabelText('City');
-    expect(screen.getByText('Starts with a digit, for example 12 or 12a.')).toBeTruthy();
+    expect(
+      screen.getByText('The house number must start with a digit, for example 12 or 12a.'),
+    ).toBeTruthy();
     expect(screen.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeTruthy();
     expect(screen.getByText('The city must contain a letter.')).toBeTruthy();
     expect(house.getAttribute('aria-invalid')).toBe('true');
@@ -1176,7 +1193,10 @@ describe('PlaceField', () => {
       'Shop description must be 20 to 1000 characters and longer than the shop name',
       'The description must be 20 to 1000 characters and longer than the shop name.',
     ],
-    ['Place address is invalid', 'The address is invalid.'],
+    [
+      'Place address is invalid',
+      'The address is invalid. Check the street, house number, postal code, city and country.',
+    ],
     ['boom', 'The place could not be saved. Please try again.'],
   ])('maps shop commit error %s', async (apiMessage, localized) => {
     const onCommit = vi.fn().mockRejectedValue(new Error(apiMessage));

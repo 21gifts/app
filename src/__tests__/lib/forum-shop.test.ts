@@ -5,6 +5,7 @@ import {
   formatPlacePinText,
   formatShopAddressLine,
   isShopNote,
+  MENTION_SUGGEST_PAGE,
   SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   SHOP_DESCRIPTION_MIN,
@@ -17,6 +18,7 @@ import {
   shopPlaceComplete,
   shopUsernameProblem,
   stripShopHashtag,
+  usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import { getCatalog } from '@/lib/messages';
@@ -256,6 +258,24 @@ describe('forum-shop', () => {
       expect(shopUsernameProblem('_')).toBe('format');
       expect(shopUsernameProblem('A User')).toBe('format');
       expect(shopUsernameProblem(`a${'x'.repeat(32)}`)).toBe('format');
+    });
+  });
+
+  describe('usernameLookupVerdict', () => {
+    it('finds an exact username case-insensitively', () => {
+      expect(usernameLookupVerdict([{ username: 'Ada' }], '@ada')).toBe('found');
+    });
+
+    it('distinguishes a short missing page from an inconclusive full page', () => {
+      expect(usernameLookupVerdict([{ username: 'alice' }], 'ada')).toBe('missing');
+      expect(
+        usernameLookupVerdict(
+          Array.from({ length: MENTION_SUGGEST_PAGE }, (_, index) => ({
+            username: `other-${String(index)}`,
+          })),
+          'ada',
+        ),
+      ).toBe('unknown');
     });
   });
 

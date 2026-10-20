@@ -5,9 +5,8 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactElement } fr
 import { createPortal } from 'react-dom';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopAddressFields, type ForumPlaceAddressDraft } from '@/components/ShopAddressFields';
-import { ShopLabeledInput } from '@/components/ShopLabeledInput';
 import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Field, IconButton } from '@/components/ui';
 import { Scrollport } from '@/components/ui/Scrollport';
 import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
 import {
@@ -440,15 +439,15 @@ export function PlaceField(props: {
     saveError !== null ||
     (shopDetails && (nameProblem !== null || invalidFields.length > 0));
   const fieldLabel: Record<ShopAddressField, string> = {
-    street: t('shops.addressStreet').toLowerCase(),
-    houseNumber: t('shops.addressHouseNumber').toLowerCase(),
-    postalCode: t('shops.addressPostalCode').toLowerCase(),
-    city: t('shops.addressCity').toLowerCase(),
-    country: t('shops.addressCountry').toLowerCase(),
+    street: t('shops.addressStreet'),
+    houseNumber: t('shops.addressHouseNumber'),
+    postalCode: t('shops.addressPostalCode'),
+    city: t('shops.addressCity'),
+    country: t('shops.addressCountry'),
   };
   const missing = [
-    ...(markerPos === null ? [t('shops.mapPin').toLowerCase()] : []),
-    ...(shopDetails && labelDraft.trim() === '' ? [t('shops.placeName').toLowerCase()] : []),
+    ...(markerPos === null ? [t('shops.mapPin')] : []),
+    ...(shopDetails && labelDraft.trim() === '' ? [t('shops.placeName')] : []),
     ...invalidFields
       .filter((field) => addressDraft[field].trim() === '')
       .map((field) => fieldLabel[field]),
@@ -531,7 +530,7 @@ export function PlaceField(props: {
                   )}
                   {shopDetails ? (
                     <>
-                      <ShopLabeledInput
+                      <Field
                         id={shopNameId}
                         label={t('shops.placeName')}
                         required

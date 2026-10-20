@@ -212,6 +212,37 @@ describe('ShopAddWizard', () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
+  it('uses unique feedback and account ids when two editors are open', () => {
+    const editor = props({
+      mode: 'edit',
+      draft: SHOP_DESCRIPTION,
+      place: COMPLETE_PLACE,
+      onCancel: () => undefined,
+    });
+    renderWizard(
+      <>
+        <ShopAddWizard {...editor} />
+        <ShopAddWizard {...editor} />
+      </>,
+    );
+    for (let step = 0; step < 2; step += 1) {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Next' })[0]!);
+      fireEvent.click(screen.getAllByRole('button', { name: 'Next' }).at(-1)!);
+    }
+    const descriptions = screen.getAllByRole('textbox', { name: 'Shop text' });
+    const feedbackIds = descriptions.map((field) => field.getAttribute('aria-describedby'));
+    expect(feedbackIds[0]).toBeTruthy();
+    expect(feedbackIds[0]).not.toBe(feedbackIds[1]);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Next' }).at(-1)!);
+    const usernames = screen.getAllByLabelText('21.gifts username');
+    expect(usernames[0]!.id).toBeTruthy();
+    expect(usernames[0]!.id).not.toBe(usernames[1]!.id);
+    expect(usernames[0]!.getAttribute('aria-describedby')).toBe(`${usernames[0]!.id}-hint`);
+    expect(usernames[1]!.getAttribute('aria-describedby')).toBe(`${usernames[1]!.id}-hint`);
+  });
+
   it('keeps Next disabled until the place and description are complete', () => {
     renderWithLocale(
       <ShopAddWizard
@@ -605,6 +636,30 @@ describe('ShopAddWizard', () => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });
     expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
+  });
+
+  it('allows Next when a full suggestion page has no exact username', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue(
+      Array.from({ length: 20 }, (_, index) => ({
+        id: `acc-${String(index)}`,
+        username: `other-${String(index)}`,
+        name: `Other ${String(index)}`,
+      })),
+    );
+    renderWizard(
+      <ShopAddWizard
+        {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: 'luna' })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+    expect(screen.queryByText('No account with that username.')).toBeNull();
   });
 
   it('keeps Next disabled when the username lookup fails', async () => {

@@ -456,7 +456,11 @@ describe('ShopNoteEditControl', () => {
       'The description must be 20 to 1000 characters and longer than the shop name.',
       3,
     ],
-    ['Place address is invalid', 'The address is invalid.', 2],
+    [
+      'Place address is invalid',
+      'The address is invalid. Check the street, house number, postal code, city and country.',
+      2,
+    ],
     [
       'Place label must be at most 80 characters',
       'The shop name must be at most 80 characters.',
@@ -841,6 +845,38 @@ describe('ShopNoteEditControl', () => {
       expect(prepareForumPhoto).toHaveBeenCalledTimes(12);
     });
     expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+  });
+
+  it('keeps overlapping photo picks within the ten-photo limit', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(prepareForumPhoto).mockImplementation(async (file) => {
+      await Promise.resolve();
+      return {
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: file.name,
+          previewUrl: `data:image/jpeg;base64,${file.name}`,
+        },
+      };
+    });
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const pick = (prefix: string): File[] =>
+      Array.from(
+        { length: 6 },
+        (_, index) => new File([prefix], `${prefix}-${String(index)}.jpg`, { type: 'image/jpeg' }),
+      );
+    fireEvent.change(input, { target: { files: pick('first') } });
+    fireEvent.change(input, { target: { files: pick('second') } });
+    await waitFor(() => {
+      expect(prepareForumPhoto).toHaveBeenCalledTimes(12);
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    });
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
   });
 
   it('opens on a photo read failure without the feed stills', async () => {

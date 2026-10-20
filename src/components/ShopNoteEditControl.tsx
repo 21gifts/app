@@ -253,6 +253,13 @@ export function ShopNoteEditControl({
   // Bytes read before the feed revokes preview URLs. A later step can fail
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
+  // Photos kept plus picked; a pick reads it after preparing, when another
+  // pick or a removal may already have changed the rendered count.
+  const photoCountRef = useRef(0);
+  useEffect(() => {
+    photoCountRef.current =
+      kept.filter((item) => item.kind === 'photo').length + photoDrafts.length;
+  }, [kept, photoDrafts]);
 
   function revokeOwnedPhotos(): void {
     for (const url of ownedPhotoUrls.current) {
@@ -385,11 +392,11 @@ export function ShopNoteEditControl({
       }
     }
     if (prepared.length > 0) {
-      const keptCount = kept.filter((item) => item.kind === 'photo').length;
-      const room = 10 - keptCount - photoDrafts.length;
+      const room = 10 - photoCountRef.current;
       if (room <= 0) nextError = 'tooMany';
       else {
         if (prepared.length > room) nextError = 'tooMany';
+        photoCountRef.current += Math.min(prepared.length, room);
         setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
       }
     }

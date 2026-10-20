@@ -2,7 +2,7 @@
 
 import { useId, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { ShopLabeledInput } from '@/components/ShopLabeledInput';
+import { Field } from '@/components/ui';
 import type { ForumPlaceAddress } from '@/lib/api-types';
 import { countryOptions } from '@/lib/countries';
 
@@ -67,7 +67,7 @@ export function ShopAddressFields(props: {
   return (
     <div data-testid="shop-address-fields" className="flex flex-col gap-3">
       <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
-        <ShopLabeledInput
+        <Field
           id={fieldId('street')}
           label={t('shops.addressStreet')}
           autoComplete="off"
@@ -79,7 +79,7 @@ export function ShopAddressFields(props: {
             patch({ street: event.target.value });
           }}
         />
-        <ShopLabeledInput
+        <Field
           id={fieldId('houseNumber')}
           label={t('shops.addressHouseNumber')}
           autoComplete="off"
@@ -93,7 +93,7 @@ export function ShopAddressFields(props: {
         />
       </div>
       <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
-        <ShopLabeledInput
+        <Field
           id={fieldId('postalCode')}
           label={t('shops.addressPostalCode')}
           autoComplete="postal-code"
@@ -105,7 +105,7 @@ export function ShopAddressFields(props: {
             patch({ postalCode: event.target.value });
           }}
         />
-        <ShopLabeledInput
+        <Field
           id={fieldId('city')}
           label={t('shops.addressCity')}
           autoComplete="address-level2"

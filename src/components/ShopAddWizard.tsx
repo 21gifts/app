@@ -6,19 +6,19 @@ import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
-import { Button, IconButton } from '@/components/ui';
-import { ShopLabeledInput } from '@/components/ShopLabeledInput';
+import { Button, Field, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import {
+  SHOP_API_MESSAGE,
+  SHOP_DESCRIPTION_MAX,
   formatShopAddressLine,
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopPlaceComplete,
   shopUsernameProblem,
-  SHOP_DESCRIPTION_MAX,
-  SHOP_API_MESSAGE,
+  usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import { searchMentionAccounts } from '@/lib/mention-search';
@@ -150,7 +150,10 @@ export function ShopAddWizard({
   const session = useAuthStore((state) => state.session);
   const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const photoFeedbackId = `${useId()}-photo-feedback`;
+  const idPrefix = useId();
+  const photoFeedbackId = `${idPrefix}-photo-feedback`;
+  const descriptionHintId = `${idPrefix}-description-feedback`;
+  const accountUsernameId = `${idPrefix}-account-username`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
@@ -160,7 +163,7 @@ export function ShopAddWizard({
   const initialUsername = useRef(username);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
-    'idle' | 'checking' | 'exists' | 'missing' | 'failed'
+    'idle' | 'checking' | 'found' | 'missing' | 'unknown' | 'failed'
   >('idle');
 
   useEffect(() => {
@@ -207,7 +210,7 @@ export function ShopAddWizard({
       return;
     }
     if (session === null || (mode === 'edit' && username === initialUsername.current)) {
-      setUsernameLookup('exists');
+      setUsernameLookup('found');
       return;
     }
     let cancelled = false;
@@ -216,11 +219,7 @@ export function ShopAddWizard({
       void searchMentionAccounts(session, normalizedUsername)
         .then((rows) => {
           if (!cancelled) {
-            setUsernameLookup(
-              rows.some((row) => row.username.toLowerCase() === normalizedUsername)
-                ? 'exists'
-                : 'missing',
-            );
+            setUsernameLookup(usernameLookupVerdict(rows, normalizedUsername));
           }
         })
         .catch(() => {
@@ -320,7 +319,6 @@ export function ShopAddWizard({
             : descriptionProblem === 'controls'
               ? t('shops.problemDescriptionControls')
               : null;
-  const descriptionHintId = 'shop-description-feedback';
   const usernameError =
     serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing'
       ? t(SHOP_API_MESSAGE[serverProblem])
@@ -552,8 +550,8 @@ export function ShopAddWizard({
         </div>
       ) : null}
       {step === 4 ? (
-        <ShopLabeledInput
-          id="shop-account-username"
+        <Field
+          id={accountUsernameId}
           label={t('shops.accountLabel')}
           value={username}
           disabled={posting}

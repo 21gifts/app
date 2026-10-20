@@ -19027,7 +19027,7 @@ test.describe('shops screens', () => {
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
-    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
@@ -19048,7 +19048,7 @@ test.describe('shops screens', () => {
     await name.fill('Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(
-      page.getByText(/Fill in: street, house number, postal code, city, country/),
+      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
     ).toBeVisible();
     await expect(confirm).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
@@ -19703,7 +19703,7 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
-    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
@@ -19740,7 +19740,7 @@ test.describe('shops screens', () => {
     await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(
-      page.getByText(/Fill in: street, house number, postal code, city, country/),
+      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
     ).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
@@ -20015,12 +20015,12 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
     await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
-    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-place-empty');
     await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery");
     await expect(
-      page.getByText(/Fill in: street, house number, postal code, city, country/),
+      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
     ).toBeVisible();
     await shotScreen(page, 'state-shops-add-place-hint');
     await fillShopAddress(page);
@@ -20092,7 +20092,9 @@ test.describe('shops screens', () => {
     await houseNumber.fill('abc');
     await address.getByLabel('Postal code', { exact: true }).fill('80');
     await address.getByLabel('City', { exact: true }).fill('1234');
-    await expect(page.getByText('Starts with a digit, for example 12 or 12a.')).toBeVisible();
+    await expect(
+      page.getByText('The house number must start with a digit, for example 12 or 12a.'),
+    ).toBeVisible();
     await expect(page.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeVisible();
     await expect(page.getByText('The city must contain a letter.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();

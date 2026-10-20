@@ -2789,7 +2789,10 @@ describe('ForumBoard', () => {
       'shopDescription',
       'The description must be 20 to 1000 characters and longer than the shop name.',
     ],
-    ['placeAddress', 'The address is invalid.'],
+    [
+      'placeAddress',
+      'The address is invalid. Check the street, house number, postal code, city and country.',
+    ],
   ] as const)('shows formError %s alert', (formError, copy) => {
     renderWithLocale(
       <ForumBoard

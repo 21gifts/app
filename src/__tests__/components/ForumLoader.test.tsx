@@ -1466,6 +1466,32 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('feed="shops" reaches the pre-fee invoice when a full username page is inconclusive', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    vi.mocked(searchMentionAccounts).mockResolvedValue(
+      Array.from({ length: 20 }, (_, index) => ({
+        id: `acc-${String(index)}`,
+        username: `other-${String(index)}`,
+        name: `Other ${String(index)}`,
+      })),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION, 'luna');
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('No account with that username.')).toBeNull();
+  });
+
   it('feed="shops" shows a request error when the submit username lookup fails', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     let usernameLookups = 0;
@@ -4999,7 +5025,10 @@ describe('ForumLoader', () => {
       'Shop description must be 20 to 1000 characters and longer than the shop name',
       'The description must be 20 to 1000 characters and longer than the shop name.',
     ],
-    ['Place address is invalid', 'The address is invalid.'],
+    [
+      'Place address is invalid',
+      'The address is invalid. Check the street, house number, postal code, city and country.',
+    ],
     ['Place label must be at most 80 characters', 'The shop name must be at most 80 characters.'],
     [
       'Username is not valid',
@@ -6410,10 +6439,15 @@ describe('ForumLoader', () => {
     }
     const emptyCard = document.createElement('li');
     emptyCard.setAttribute('data-message-id', '');
+    const readEmptyId = vi.spyOn(emptyCard, 'getAttribute');
     scroller.appendChild(emptyCard);
     scroller.dispatchEvent(new Event('scroll'));
     await waitFor(() => {
       expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    // The first measure can finish before the empty card is in the list.
+    await waitFor(() => {
+      expect(readEmptyId).toHaveBeenCalledWith('data-message-id');
     });
     expect(markVisibleForumNoteReadMock).not.toHaveBeenCalledWith('sess', '');
   });

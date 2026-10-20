@@ -875,7 +875,8 @@ const en = {
   'shops.problemStreetLength': 'The street must be 1–120 characters.',
   'shops.problemStreetControls': 'The street must not contain control characters.',
   'shops.problemHouseNumberRequired': 'Enter the house number.',
-  'shops.problemHouseNumberFormat': 'Starts with a digit, for example 12 or 12a.',
+  'shops.problemHouseNumberFormat':
+    'The house number must start with a digit, for example 12 or 12a.',
   'shops.problemHouseNumberLength': 'The house number must be at most 32 characters.',
   'shops.problemHouseNumberCharacters':
     'After the first digit, use only letters, digits, spaces, /, ., &, or hyphens.',
@@ -897,7 +898,8 @@ const en = {
     'The description must not contain control characters other than line breaks.',
   'shops.problemDescription':
     'The description must be 20 to 1000 characters and longer than the shop name.',
-  'shops.problemAddressInvalid': 'The address is invalid.',
+  'shops.problemAddressInvalid':
+    'The address is invalid. Check the street, house number, postal code, city and country.',
   'shops.problemUsernameFormat':
     'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
   'shops.problemUsernameMissing': 'No account with that username.',
@@ -2044,7 +2046,8 @@ const de = {
   'shops.problemStreetLength': 'Die Strasse muss 1–120 Zeichen lang sein.',
   'shops.problemStreetControls': 'Die Strasse darf keine Steuerzeichen enthalten.',
   'shops.problemHouseNumberRequired': 'Geben Sie die Hausnummer ein.',
-  'shops.problemHouseNumberFormat': 'Beginnt mit einer Ziffer, zum Beispiel 12 oder 12a.',
+  'shops.problemHouseNumberFormat':
+    'Die Hausnummer muss mit einer Ziffer beginnen, zum Beispiel 12 oder 12a.',
   'shops.problemHouseNumberLength': 'Die Hausnummer darf höchstens 32 Zeichen lang sein.',
   'shops.problemHouseNumberCharacters':
     'Verwenden Sie nach der ersten Ziffer nur Buchstaben, Ziffern, Leerzeichen, /, ., & oder Bindestriche.',
@@ -2067,7 +2070,8 @@ const de = {
     'Die Beschreibung darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten.',
   'shops.problemDescription':
     'Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
-  'shops.problemAddressInvalid': 'Die Adresse ist ungültig.',
+  'shops.problemAddressInvalid':
+    'Die Adresse ist ungültig. Prüfen Sie Strasse, Hausnummer, Postleitzahl, Ort und Land.',
   'shops.problemUsernameFormat':
     'Verwenden Sie 1–32 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche; beginnen Sie mit einem Buchstaben oder einer Ziffer.',
   'shops.problemUsernameMissing': 'Kein Konto mit diesem Benutzernamen.',
@@ -3220,7 +3224,7 @@ const es = {
   'shops.problemStreetLength': 'La calle debe tener entre 1 y 120 caracteres.',
   'shops.problemStreetControls': 'La calle no debe contener caracteres de control.',
   'shops.problemHouseNumberRequired': 'Introduce el número de la casa.',
-  'shops.problemHouseNumberFormat': 'Empieza con un dígito, por ejemplo 12 o 12a.',
+  'shops.problemHouseNumberFormat': 'El número debe empezar con un dígito, por ejemplo 12 o 12a.',
   'shops.problemHouseNumberLength': 'El número debe tener como máximo 32 caracteres.',
   'shops.problemHouseNumberCharacters':
     'Después del primer dígito, usa solo letras, dígitos, espacios, /, ., &, o guiones.',
@@ -3243,7 +3247,8 @@ const es = {
     'La descripción no debe contener caracteres de control salvo saltos de línea.',
   'shops.problemDescription':
     'La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda.',
-  'shops.problemAddressInvalid': 'La dirección no es válida.',
+  'shops.problemAddressInvalid':
+    'La dirección no es válida. Comprueba la calle, el número, el código postal, la ciudad y el país.',
   'shops.problemUsernameFormat':
     'Usa de 1 a 32 letras minúsculas, dígitos, puntos, guiones o guiones bajos; empieza con una letra o un dígito.',
   'shops.problemUsernameMissing': 'No hay ninguna cuenta con ese nombre de usuario.',
@@ -4391,8 +4396,9 @@ const fil = {
   'shops.problemStreetLength': 'Dapat 1–120 karakter ang kalye.',
   'shops.problemStreetControls': 'Hindi dapat may control character ang kalye.',
   'shops.problemHouseNumberRequired': 'Ilagay ang numero ng bahay.',
-  'shops.problemHouseNumberFormat': 'Nagsisimula sa digit, halimbawa 12 o 12a.',
-  'shops.problemHouseNumberLength': 'Hanggang 32 character lamang ang house number.',
+  'shops.problemHouseNumberFormat':
+    'Dapat magsimula sa digit ang numero ng bahay, halimbawa 12 o 12a.',
+  'shops.problemHouseNumberLength': 'Hanggang 32 karakter lamang ang numero ng bahay.',
   'shops.problemHouseNumberCharacters':
     'Pagkatapos ng unang digit, gumamit lamang ng titik, digit, espasyo, /, ., &, o gitling.',
   'shops.problemHouseNumberControls': 'Hindi dapat may control character ang numero ng bahay.',
@@ -4414,7 +4420,8 @@ const fil = {
     'Hindi dapat may control character ang paglalarawan maliban sa line break.',
   'shops.problemDescription':
     'Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop.',
-  'shops.problemAddressInvalid': 'Hindi wasto ang address.',
+  'shops.problemAddressInvalid':
+    'Hindi wasto ang address. Suriin ang kalye, numero ng bahay, postal code, lungsod, at bansa.',
   'shops.problemUsernameFormat':
     'Gumamit ng 1–32 lowercase na titik, digit, tuldok, gitling, o underscore; magsimula sa titik o digit.',
   'shops.problemUsernameMissing': 'Walang account na may ganitong username.',

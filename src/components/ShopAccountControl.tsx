@@ -421,7 +421,11 @@ export function ShopAccountControl({
             </ul>
           ) : null}
           {errorKey !== null ? (
-            <p id={`${listId}-error`} className="mt-3 text-sm text-app-danger">
+            <p
+              id={`${listId}-error`}
+              className="mt-3 text-sm text-app-danger"
+              role={errorKey === 'missing' || errorKey === 'failed' ? 'alert' : undefined}
+            >
               {errorKey === 'format'
                 ? t('shops.problemUsernameFormat')
                 : errorKey === 'missing'

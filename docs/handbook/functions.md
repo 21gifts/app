@@ -873,10 +873,10 @@
 
 ## Function: Field
 
-- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted. Optional hint and error copy is rendered directly under the control.
+- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted. The label is a sibling linked by `htmlFor`, so typed input does not become part of the accessible name. Optional hint and error copy is rendered directly under the control.
 - **Inputs:** `label`, optional `id` / `className` / `hint` / `error`, `multiline` (textarea when true), plus native input or textarea attributes.
-- **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. An error sets `aria-invalid` and extends `aria-describedby` with the message id. No network.
-- **Used by:** Labeled text primitive. Amount fields use `AmountEntry` instead.
+- **Returns / side effects:** A sibling `<label htmlFor>` and `<input>` or `<textarea>`. Hint and error spans receive stable ids; an error sets `aria-invalid` and extends `aria-describedby` with the message id. No network.
+- **Used by:** Shared labeled text primitive, including shop name, address, and account fields. Amount fields use `AmountEntry` instead.
 
 ## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
 
@@ -1201,11 +1201,11 @@
 
 ## Function: ShopAddWizard
 
-Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. Every disabled Next/Post has a visible field error or step reason. Photo errors stay under the picker with the `n / 10` count. Place uses a dialog/sheet, text has the live 1000-character counter and control-character rule, and a non-empty username must match the API format and an account lookup before Next enables.
+Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. Every disabled Next/Post has a visible field error or step reason. Photo errors stay under the picker with the `n / 10` count. Place uses a dialog/sheet, text has the live 1000-character counter and control-character rule, and a non-empty username must match the API format and an account lookup before Next enables. A short suggestion page without an exact match proves the account is missing; a full 20-row page is inconclusive and does not block the wizard.
 
 - **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. That text step lists people as soon as `@` is typed, the same way a post does. The summary shows the photo count (stills plus a video), the shop name, the formatted address line, the text, and `@username`, or **None** when photos or the user were skipped.
 - **Inputs:** Existing wizard props plus optional `photoError` and `serverProblem`; known server fallbacks move back to the owning step and field.
-- **Returns / side effects:** React tree. A non-empty username is checked with `searchMentionAccounts`; file selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
+- **Returns / side effects:** React tree. A non-empty username is checked with `searchMentionAccounts` and interpreted by `usernameLookupVerdict`; file selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
 - **Used by:** `ForumBoard` when `shopComposer` is set, and `ShopNoteEditControl` in edit mode.
 
 ## Function: ForumAskWizard
@@ -1425,14 +1425,14 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Moderator-only pencil on a listed shop note. Opens the same five steps as adding a shop, already filled in, plus the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note), `onUpdated` (the saved note), optional `existingPhotos`, optional `existingVideoUrl`, and optional `startOpen`.
-- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The summary button is **Save changes**. It writes only the text, place, account, or stills that changed. A video stays. Rejected stills show the concrete reason under the picker. Already-shown stills are copied onto addresses this editor owns before the steps open, so a partial save can revoke the feed addresses without blanking the open editor. A failed copy opens the steps with `forum.editShopNoteFailed` and no stills, and does not revoke the feed addresses. Stills are not replaced unless every current still loaded. A known API 400 returns to its owning wizard field; only unknown failures use `forum.editShopNoteFailed`. History rows show who, when, and the field (text, place, or account). A failed history load shows `forum.editHistoryFailed`.
+- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The summary button is **Save changes**. It writes only the text, place, account, or stills that changed. A video stays. Rejected stills show the concrete reason under the picker. Overlapping picks compute their remaining room from the latest pending-photo state and never exceed 10. Already-shown stills are copied onto addresses this editor owns before the steps open, so a partial save can revoke the feed addresses without blanking the open editor. A failed copy opens the steps with `forum.editShopNoteFailed` and no stills, and does not revoke the feed addresses. Stills are not replaced unless every current still loaded. A known API 400 returns to its owning wizard field; only unknown failures use `forum.editShopNoteFailed`. History rows show who, when, and the field (text, place, or account). A failed history load shows `forum.editHistoryFailed`.
 - **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed), `ShopTable`, and `PlacesMapScreen` for a pin with `shop: true`.
 
 ## Function: ShopAccountControl
 
 - **Purpose:** Moderator-only shop-account editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved `{ id, username, name }`, or `null` when cleared).
-- **Returns / side effects:** Small ghost account editor with the People suggestions. Invalid format is reported and linked under the field while typing and disables Save; unknown accounts and request failures stay adjacent. Success calls `setMessageShopAccount` then `onUpdated` and closes.
+- **Returns / side effects:** Small ghost account editor with the People suggestions. Invalid format is reported and linked under the field while typing and disables Save without an alert role. Unknown-account and request-failure messages stay adjacent and use `role="alert"` after Save so assistive technology announces them. Success calls `setMessageShopAccount` then `onUpdated` and closes.
 - **Used by:** `ForumBoard` when `shopAccountEdit` and `onShopAccountUpdated` are set (`ForumLoader` `feed="shops"`).
 
 ## Function: ShopsPage
@@ -1561,6 +1561,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Trims, removes one leading `@`, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
 - **Used by:** `ShopAddWizard`, `ShopAccountControl`, and the pre-payment validation in `ForumLoader`.
 
+## Function: usernameLookupVerdict
+
+- **Purpose:** Decide whether one `GET /forum/mentions` suggestion page proves that a shop username exists or is missing. The API also matches display names and username segments, orders by username, and caps results at 20, so a full page without the exact username is inconclusive.
+- **Inputs:** Suggestion rows containing `username`, plus the requested handle with or without a leading `@`; comparison is case-insensitive.
+- **Returns / side effects:** `'found'` for an exact row, `'missing'` only for a short page without one, or `'unknown'` for a full page without one. No network.
+- **Used by:** `ShopAddWizard` live validation and `ForumLoader` pre-fee validation.
+
 ## Function: formatShopAddressLine
 
 - **Purpose:** One address line for a shop pin: street, house number, postal code, city, and the localized country name.
@@ -1595,13 +1602,6 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `value`, `disabled`, `onChange`, optional per-field `errors`, and optional `onBlur(field)`.
 - **Returns / side effects:** Labeled inputs with linked `aria-invalid` / `aria-describedby` errors. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
 - **Used by:** `PlaceField` when `shopDetails` is set.
-
-## Function: ShopLabeledInput
-
-- **Purpose:** One shop text field with a sibling label and optional linked hint/error copy.
-- **Inputs:** `label`, unique `id`, optional `hint` / `error`, and native input attributes except `id` and `className`.
-- **Returns / side effects:** Labeled input; an error sets `aria-invalid` and `aria-describedby`. No state, no network.
-- **Used by:** `ShopAddressFields` for street, house number, postal code and city, and `ShopAddWizard` for the username step.
 
 ## Function: RulesDocument
 
@@ -4115,8 +4115,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
 - **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
-- **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
-- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`.
+- **Returns / side effects:** `{ id, username, name }[]`, capped by the API at 20 rows. Throws when the response is not 200 or the body is not that list.
+- **Used by:** `MentionTextarea`, `ShopAccountControl`, `ShopAddWizard`, `ForumLoader`, and `DailyPaymentAmountsScreen`.
 
 ## Function: proxyForumMentionsGet
 

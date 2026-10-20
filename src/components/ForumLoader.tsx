@@ -74,6 +74,7 @@ import {
   shopDescriptionProblem,
   shopPlaceComplete,
   shopUsernameProblem,
+  usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import { searchMentionAccounts } from '@/lib/mention-search';
@@ -1916,7 +1917,7 @@ export function ForumLoader({
       if (handle !== null) {
         try {
           const matches = await searchMentionAccounts(session, handle.toLowerCase());
-          if (!matches.some((row) => row.username.toLowerCase() === handle.toLowerCase())) {
+          if (usernameLookupVerdict(matches, handle) === 'missing') {
             setFormError('usernameMissing');
             notePostInFlightRef.current = false;
             return;

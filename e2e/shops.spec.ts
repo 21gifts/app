@@ -899,7 +899,7 @@ test('Function: shopAddressProblem — Use this place stays off without an addre
   await page.locator('.h-64').click();
   await shopNameField(page).fill("Kiki's Bakery");
   await expect(
-    page.getByText(/Fill in: street, house number, postal code, city, country/),
+    page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
 });
@@ -927,7 +927,9 @@ test('Function: shopAddressProblems — address errors appear before confirm', a
   await expect(page.getByText('The street must be 1–120 characters.')).toBeVisible();
   const house = page.getByLabel('House number', { exact: true });
   await house.fill('abc');
-  await expect(page.getByText('Starts with a digit, for example 12 or 12a.')).toBeVisible();
+  await expect(
+    page.getByText('The house number must start with a digit, for example 12 or 12a.'),
+  ).toBeVisible();
   await expect(house).toHaveAttribute('aria-invalid', 'true');
   const country = page.getByLabel('Country', { exact: true });
   await country.focus();
@@ -1020,6 +1022,40 @@ test('Function: shopUsernameProblem — a missing account blocks Next', async ({
   await page.getByLabel('21.gifts username').fill('missing');
   await expect(page.getByText('No account with that username.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+});
+
+test('Function: usernameLookupVerdict — a full suggestion page is inconclusive', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: Array.from({ length: 20 }, (_, index) => ({
+          id: `acc-${String(index)}`,
+          username: `other-${String(index)}`,
+          name: `Other ${String(index)}`,
+        })),
+      }),
+    });
+  });
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('luna');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await expect(page.getByText('No account with that username.')).toHaveCount(0);
 });
 
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {
@@ -1151,7 +1187,7 @@ test('Function: shopApiProblem — a shop 400 is shown as localized copy', async
   await expect(page.getByText('Enter the shop name.')).toBeVisible();
 });
 
-test('Function: ShopAddressFields — street, house number, postal code, city, country', async ({
+test('Function: ShopAddressFields; Function: Field — accessible name and error link', async ({
   page,
 }) => {
   await stubPlaceMap(page);
@@ -1163,24 +1199,20 @@ test('Function: ShopAddressFields — street, house number, postal code, city, c
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
   const address = shopAddressFields(page);
-  await expect(address.getByLabel('Street', { exact: true })).toBeVisible();
-  await expect(address.getByLabel('House number', { exact: true })).toBeVisible();
+  const street = address.getByLabel('Street', { exact: true });
+  const houseNumber = address.getByLabel('House number', { exact: true });
+  await expect(street).toBeVisible();
+  await expect(houseNumber).toBeVisible();
   await expect(address.getByLabel('Postal code', { exact: true })).toBeVisible();
   await expect(address.getByLabel('City', { exact: true })).toBeVisible();
   await expect(address.getByLabel('Country', { exact: true })).toBeVisible();
-});
-
-test('Function: ShopLabeledInput — label excludes typed value', async ({ page }) => {
-  await stubPlaceMap(page);
-  await seedSignedIn(page);
-  await fulfillForumMessages(page, []);
-  await page.goto('/shops');
-  await page.getByRole('button', { name: 'Add a shop' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Add a place' }).click();
-  await page.locator('.h-64').click();
-  const street = shopAddressFields(page).getByLabel('Street', { exact: true });
   await street.fill('Bahnhofstrasse');
-  await expect(street).toHaveValue('Bahnhofstrasse');
   await expect(street).toHaveAccessibleName('Street');
+  await expect(street).not.toHaveAccessibleName('Street Bahnhofstrasse');
+  await houseNumber.fill('abc');
+  const error = page.getByText('The house number must start with a digit, for example 12 or 12a.');
+  const errorId = await error.getAttribute('id');
+  expect(errorId).not.toBeNull();
+  await expect(houseNumber).toHaveAttribute('aria-describedby', errorId!);
+  await expect(houseNumber).toHaveAttribute('aria-invalid', 'true');
 });
