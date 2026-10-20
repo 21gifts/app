@@ -17995,6 +17995,10 @@ test.describe('onboarding screens', () => {
     await page
       .getByText("The author's wallet cannot receive this Bitcoin payment")
       .scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Send ₿1' }).locator('svg')).toHaveAttribute(
+      'fill',
+      'none',
+    );
     await shotScreen(page, 'state-messages-id-heart-cannot-receive');
   });
 
