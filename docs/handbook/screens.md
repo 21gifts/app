@@ -2894,6 +2894,25 @@ the address fields that remain to fill. **Use this place** is visible and disabl
 
 ![21.gifts shops staff place hint](images/shops-staff-place-hint.png)
 
+### Variant: staff-place-name-address
+
+A moderator opened **Edit place** on the Cafe Luna note. **Shop place and address** is open with
+**Bahnhofstrasse Bakery** in **Shop name** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland** as
+the address. The live error **The shop name must not contain the street or the postal code.** is
+visible, and **Use this place** is disabled.
+
+![21.gifts shops staff place name address](images/shops-staff-place-name-address.png)
+
+### Variant: staff-place-field-invalid
+
+A moderator opened **Edit place** on the Cafe Luna note. **House number** contains **abc**,
+**Postal code** contains **80**, and **City** contains **1234**. The live errors **The house number
+must start with a digit, for example 12 or 12a.**, **The postal code must have 4 digits for
+Switzerland and Liechtenstein.**, and **The city must contain a letter.** are visible together;
+**Use this place** is disabled.
+
+![21.gifts shops staff place field invalid](images/shops-staff-place-field-invalid.png)
+
 ### Variant: staff-place-set-coords
 
 A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.

@@ -21477,6 +21477,71 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-hint', false);
   });
 
+  test('shops staff-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-name-address');
+  });
+
+  test('shops staff-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-staff-place-field-invalid');
+  });
+
   test('shops staff-place-set-coords', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {

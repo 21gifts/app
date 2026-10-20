@@ -6040,6 +6040,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'staff-place-name-address',
+    image: 'shops-staff-place-name-address.png',
+    visual: 'state-shops-staff-place-name-address',
+    needle: "shotScreen(page, 'state-shops-staff-place-name-address')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-place-field-invalid',
+    image: 'shops-staff-place-field-invalid.png',
+    visual: 'state-shops-staff-place-field-invalid',
+    needle: "shotScreen(page, 'state-shops-staff-place-field-invalid')",
+  },
+  {
+    route: '/shops',
     id: 'staff-place-set-coords',
     image: 'shops-staff-place-set-coords.png',
     visual: 'state-shops-staff-place-set-coords',
