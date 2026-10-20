@@ -445,9 +445,20 @@ async function fillCompleteShopPlace(
   fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
 }
 
-async function submitShopWizard(text: string, username?: string): Promise<void> {
+async function submitShopWizard(text: string, username?: string, media?: File): Promise<void> {
   const listeners = stubShopMaps();
   fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+  if (media !== undefined) {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [media] } });
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', {
+          name: media.type.startsWith('video/') ? 'Remove video' : 'Remove photo',
+        }),
+      ).toBeTruthy();
+    });
+  }
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await fillCompleteShopPlace(listeners);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -1446,15 +1457,26 @@ describe('ForumLoader', () => {
 
   it('feed="shops" maps a direct media rejection back to the photo step', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
+    const file = new File(['photo'], 'shop.jpg', { type: 'image/jpeg' });
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'cGhvdG8=',
+        previewUrl: 'blob:shop-photo',
+      },
+    });
     postMock.mockRejectedValue(new Error('At most 10 photos'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    await submitShopWizard(SHOP_DESCRIPTION);
+    await submitShopWizard(SHOP_DESCRIPTION, undefined, file);
 
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    expect(postMock).toHaveBeenCalled();
+    expect(postVideoMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Could not post your message')).toBeNull();
   });
 
@@ -4647,21 +4669,36 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     });
-    postMock.mockRejectedValue(new Error('Poster must be a JPEG, PNG, or WebP under 1 MiB'));
+    const file = new File(['video'], 'shop.mp4', { type: 'video/mp4' });
+    const poster = new Blob(['poster'], { type: 'image/jpeg' });
+    isVideoMock.mockReturnValue(true);
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:shop-video' },
+    });
+    postVideoMock.mockRejectedValue(new Error('Poster must be a JPEG, PNG, or WebP under 1 MiB'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    await submitShopWizard(SHOP_DESCRIPTION);
+    await submitShopWizard(SHOP_DESCRIPTION, undefined, file);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalled();
+      expect(postVideoMock).toHaveBeenCalled();
     });
 
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
-      'Keep photos under 1 MB and videos under 32 MB',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
     );
+    expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Could not post your message')).toBeNull();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['video-2'], 'shop-2.mp4', { type: 'video/mp4' })] },
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
   });
 
   it('shows rate-limit copy when the paid shop POST is rate limited', async () => {

@@ -1751,7 +1751,12 @@ export function ForumLoader({
     setPreparing(true);
     // A new pick replaces the last pick's reason, so a repeated reason is announced again.
     setFormError((current) =>
-      current === 'unsupported' || current === 'tooLarge' || current === 'tooMany' ? null : current,
+      current === 'unsupported' ||
+      current === 'tooLarge' ||
+      current === 'tooMany' ||
+      current === 'formatOrSize'
+        ? null
+        : current,
     );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);

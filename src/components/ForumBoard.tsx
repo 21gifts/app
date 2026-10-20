@@ -110,6 +110,7 @@ export type ForumFormError =
   | 'unsupported'
   | 'tooLarge'
   | 'tooMany'
+  | 'formatOrSize'
   | 'ask'
   | 'shopElsewhere'
   | ShopApiProblem
@@ -1904,7 +1905,10 @@ export function ForumBoard({
             resetToken={shopResetToken}
             maxLength={composerMaxLength}
             photoError={
-              formError === 'unsupported' || formError === 'tooLarge' || formError === 'tooMany'
+              formError === 'unsupported' ||
+              formError === 'tooLarge' ||
+              formError === 'tooMany' ||
+              formError === 'formatOrSize'
                 ? formError
                 : null
             }

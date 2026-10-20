@@ -36,11 +36,60 @@ describe('PlaceField', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Add a place' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Close' }));
+    dialog.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(
+      within(dialog).getByRole('textbox', { name: 'Place name' }),
+    );
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('wraps Tab from the last dialog control to the first', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a place' });
+    const first = within(dialog).getByRole('button', { name: 'Close' });
+    const middle = within(dialog).getByRole('textbox', { name: 'Place name' });
+    const last = within(dialog).getByRole('button', { name: 'Remove place' });
+    middle.focus();
+    fireEvent.keyDown(middle, { key: 'Tab' });
+    expect(document.activeElement).toBe(middle);
+    last.focus();
+    fireEvent.keyDown(last, { key: 'Tab' });
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('wraps Shift+Tab from the first dialog control to the last', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a place' });
+    const first = within(dialog).getByRole('button', { name: 'Close' });
+    const last = within(dialog).getByRole('button', { name: 'Remove place' });
+    first.focus();
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(last);
   });
 
   it('says the map is unavailable when the key request fails', async () => {

@@ -39,9 +39,15 @@ describe('forum-shop', () => {
   describe('apiMediaProblem', () => {
     it('maps every exact API media rejection and ignores unknown text', () => {
       expect(apiMediaProblem('At most 10 photos')).toBe('tooMany');
-      expect(apiMediaProblem('Photo must be a JPEG, PNG, or WebP under 1 MiB')).toBe('tooLarge');
-      expect(apiMediaProblem('Video must be an MP4, WebM, or MOV under 32 MiB')).toBe('tooLarge');
-      expect(apiMediaProblem('Poster must be a JPEG, PNG, or WebP under 1 MiB')).toBe('tooLarge');
+      expect(apiMediaProblem('Photo must be a JPEG, PNG, or WebP under 1 MiB')).toBe(
+        'formatOrSize',
+      );
+      expect(apiMediaProblem('Video must be an MP4, WebM, or MOV under 32 MiB')).toBe(
+        'formatOrSize',
+      );
+      expect(apiMediaProblem('Poster must be a JPEG, PNG, or WebP under 1 MiB')).toBe(
+        'formatOrSize',
+      );
       expect(apiMediaProblem('Could not post your message')).toBeNull();
     });
   });

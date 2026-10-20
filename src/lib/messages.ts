@@ -452,6 +452,8 @@ const en = {
   'forum.shopAccountHint': 'Type or pick the 21.gifts username to save.',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
+  'forum.errorFormatOrSize':
+    'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
   'forum.errorTooMany': 'You can add up to 10 photos',
   'forum.askCadenceLabel': 'One-time or daily',
   'forum.askOnce': 'One-time',
@@ -933,6 +935,7 @@ const en = {
   'inbox.removePhoto': 'Remove photo',
   'inbox.errorUnsupported': 'Use a JPEG, PNG, or WebP photo',
   'inbox.errorTooLarge': 'Keep photos under 1 MB',
+  'inbox.errorFormatOrSize': 'Use a JPEG, PNG, or WebP photo under 1 MB.',
   'inbox.errorTooMany': 'You can add up to 10 photos',
   'inbox.photoAlt': 'Photo from {name}',
   'inbox.errorEmpty': 'Enter a message',
@@ -1624,6 +1627,8 @@ const de = {
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
+  'forum.errorFormatOrSize':
+    'Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB oder ein Video im MP4-, WebM- oder MOV-Format unter 32 MB.',
   'forum.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'forum.askCadenceLabel': 'Einmalig oder täglich',
   'forum.askOnce': 'Einmalig',
@@ -2114,6 +2119,7 @@ const de = {
   'inbox.removePhoto': 'Foto entfernen',
   'inbox.errorUnsupported': 'JPEG, PNG oder WebP verwenden',
   'inbox.errorTooLarge': 'Fotos unter 1 MB halten',
+  'inbox.errorFormatOrSize': 'Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.',
   'inbox.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'inbox.photoAlt': 'Foto von {name}',
   'inbox.errorEmpty': 'Bitte schreiben Sie eine Nachricht',
@@ -2812,6 +2818,8 @@ const es = {
   'forum.shopAccountHint': 'Escribe o elige el nombre de usuario de 21.gifts para guardar.',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
+  'forum.errorFormatOrSize':
+    'Usa una foto JPEG, PNG o WebP de menos de 1 MB, o un vídeo MP4, WebM o MOV de menos de 32 MB.',
   'forum.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'forum.askCadenceLabel': 'Una vez o cada día',
   'forum.askOnce': 'Una vez',
@@ -3299,6 +3307,7 @@ const es = {
   'inbox.removePhoto': 'Quitar foto',
   'inbox.errorUnsupported': 'Usa una foto JPEG, PNG o WebP',
   'inbox.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
+  'inbox.errorFormatOrSize': 'Usa una foto JPEG, PNG o WebP de menos de 1 MB.',
   'inbox.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'inbox.photoAlt': 'Foto de {name}',
   'inbox.errorEmpty': 'Escribe un mensaje',
@@ -3988,6 +3997,8 @@ const fil = {
   'forum.shopAccountHint': 'I-type o piliin ang username sa 21.gifts para ma-save.',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
+  'forum.errorFormatOrSize':
+    'Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB, o MP4, WebM, o MOV na bidyong wala pang 32 MB.',
   'forum.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'forum.askCadenceLabel': 'Isang beses o araw-araw',
   'forum.askOnce': 'Isang beses',
@@ -4481,6 +4492,7 @@ const fil = {
   'inbox.removePhoto': 'Alisin ang litrato',
   'inbox.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato',
   'inbox.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
+  'inbox.errorFormatOrSize': 'Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB.',
   'inbox.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'inbox.photoAlt': 'Litrato mula kay {name}',
   'inbox.errorEmpty': 'Maglagay ng mensahe',

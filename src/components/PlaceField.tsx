@@ -544,6 +544,27 @@ export function PlaceField(props: {
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
+            onKeyDown={(event) => {
+              if (event.key !== 'Tab') return;
+              const focusable = event.currentTarget.querySelectorAll<HTMLElement>(
+                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+              );
+              const first = focusable.item(0);
+              const last = focusable.item(focusable.length - 1);
+              if (
+                event.shiftKey &&
+                (document.activeElement === first || document.activeElement === event.currentTarget)
+              ) {
+                event.preventDefault();
+                last.focus();
+              } else if (
+                !event.shiftKey &&
+                (document.activeElement === last || document.activeElement === event.currentTarget)
+              ) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
           >
             <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
               <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">

@@ -99,7 +99,7 @@ export interface ShopAddWizardProps {
   /** When true, the file picker accepts stills only. */
   imagesOnly?: boolean;
   /** Photo-picker rule currently broken. */
-  photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | null;
+  photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null;
   /** Known API fallback to place back at its owning step and field. */
   serverProblem?: ShopApiProblem | null;
 }
@@ -401,13 +401,17 @@ export function ShopAddWizard({
                 {t(
                   photoError === 'tooMany'
                     ? 'forum.errorTooMany'
-                    : photoError === 'tooLarge'
+                    : photoError === 'formatOrSize'
                       ? imagesOnly
-                        ? 'inbox.errorTooLarge'
-                        : 'forum.errorTooLarge'
-                      : imagesOnly
-                        ? 'inbox.errorUnsupported'
-                        : 'forum.errorUnsupported',
+                        ? 'inbox.errorFormatOrSize'
+                        : 'forum.errorFormatOrSize'
+                      : photoError === 'tooLarge'
+                        ? imagesOnly
+                          ? 'inbox.errorTooLarge'
+                          : 'forum.errorTooLarge'
+                        : imagesOnly
+                          ? 'inbox.errorUnsupported'
+                          : 'forum.errorUnsupported',
                 )}
               </p>
             ) : null}

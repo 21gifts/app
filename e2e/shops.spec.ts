@@ -1199,6 +1199,8 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
   );
   await page.goto('/shops');
   await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
@@ -1211,7 +1213,11 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
   await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
 
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
-  await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+    ),
+  ).toBeVisible();
   await expect(page.getByText('Could not post your message')).toHaveCount(0);
 });
 

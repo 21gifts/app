@@ -244,7 +244,9 @@ export function ShopNoteEditControl({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
-  const [photoError, setPhotoError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
+  const [photoError, setPhotoError] = useState<
+    'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null
+  >(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);

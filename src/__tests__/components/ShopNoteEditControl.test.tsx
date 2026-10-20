@@ -551,7 +551,10 @@ describe('ShopNoteEditControl', () => {
 
   it.each([
     ['At most 10 photos', 'You can add up to 10 photos'],
-    ['Photo must be a JPEG, PNG, or WebP under 1 MiB', 'Keep photos under 1 MB'],
+    [
+      'Photo must be a JPEG, PNG, or WebP under 1 MiB',
+      'Use a JPEG, PNG, or WebP photo under 1 MB.',
+    ],
   ])('maps photo 400 %s to announced picker feedback', async (apiMessage, localized) => {
     signIn('founder');
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

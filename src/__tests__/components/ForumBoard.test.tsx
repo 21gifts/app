@@ -2857,6 +2857,33 @@ describe('ForumBoard', () => {
     expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
   });
 
+  it('shows format-or-size feedback inside the shop composer', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="formatOrSize"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(
+      screen.getByText(
+        'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+      ),
+    ).toBeTruthy();
+  });
+
   it('shows formError ask alert', () => {
     renderWithLocale(
       <ForumBoard

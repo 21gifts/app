@@ -117,7 +117,7 @@ const TEXT_RANGE = new Set([
   'Text must be 1–8000 characters or include a photo',
   'Text must be 1–8000 characters or include a photo or video',
 ]);
-const MEDIA_TOO_LARGE = new Set([
+const MEDIA_FORMAT_OR_SIZE = new Set([
   'Photo must be a JPEG, PNG, or WebP under 1 MiB',
   'Video must be an MP4, WebM, or MOV under 32 MiB',
   'Poster must be a JPEG, PNG, or WebP under 1 MiB',
@@ -129,11 +129,11 @@ const MEDIA_TOO_LARGE = new Set([
  * @param message - `Error.message` from a forum post or shop-photo update.
  * @returns The matching pick reason, or `null` when the text is not a known media rejection.
  */
-export function apiMediaProblem(message: string): 'tooMany' | 'tooLarge' | null {
+export function apiMediaProblem(message: string): 'tooMany' | 'formatOrSize' | null {
   if (message === 'At most 10 photos') {
     return 'tooMany';
   }
-  return MEDIA_TOO_LARGE.has(message) ? 'tooLarge' : null;
+  return MEDIA_FORMAT_OR_SIZE.has(message) ? 'formatOrSize' : null;
 }
 
 /**

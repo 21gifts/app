@@ -542,6 +542,10 @@ describe('ShopAddWizard', () => {
   it.each([
     ['tooMany' as const, 'You can add up to 10 photos'],
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
+    [
+      'formatOrSize' as const,
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+    ],
     ['unsupported' as const, 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'],
   ])('shows %s photo feedback and its 10-photo count at the picker', (photoError, message) => {
     renderWizard(<ShopAddWizard {...props({ photoDrafts: [photo], photoError })} />);
@@ -555,6 +559,14 @@ describe('ShopAddWizard', () => {
     const input = document.querySelector('input[type="file"]');
     expect(input?.getAttribute('aria-invalid')).toBe('true');
     expect(input?.getAttribute('aria-describedby')).toBe(picker.getAttribute('aria-describedby'));
+  });
+
+  it('shows the photo-only format-or-size feedback in an image-only editor', () => {
+    renderWizard(<ShopAddWizard {...props({ imagesOnly: true, photoError: 'formatOrSize' })} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use a JPEG, PNG, or WebP photo under 1 MB.',
+    );
   });
 
   it('returns a create wizard to photos when the submitted post reports a media error', () => {
