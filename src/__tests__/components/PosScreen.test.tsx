@@ -2551,9 +2551,16 @@ describe('PosScreen', () => {
       expect(await screen.findByText('Point of sale is unavailable.')).toBeTruthy();
     });
 
-    it('takes the charge a lost create made when the read right before it failed', async () => {
+    it('takes over no charge after a lost create when the read right before it failed', async () => {
       let reads = 0;
-      const made = { ...OPEN, id: 'c13', createdAt: new Date().toISOString() };
+      // Paid within the last minute, possibly by another tab: without the read before the create it
+      // cannot be told from this create's charge, so it is not confirmed as this create.
+      const made = {
+        ...PAID,
+        id: 'c13',
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      };
       vi.stubGlobal(
         'fetch',
         vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -2571,10 +2578,9 @@ describe('PosScreen', () => {
       renderWithLocale(<PosAmount />);
       await pressAmount('21');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
-      await waitFor(() => {
-        expect(replace).toHaveBeenCalledWith('/pos');
-      });
-      expect(screen.queryByRole('alert')).toBeNull();
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+      expect(reads).toBe(3);
     });
 
     it('never asks the api on a timer while a charge is open', async () => {

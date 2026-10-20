@@ -630,17 +630,15 @@ function usePosTillState(): PosTillState {
         ? { amount: amount.trim().replace(',', '.').replace(/\.$/, ''), code: fiat }
         : null;
     const startedAt = Date.now();
-    /* v8 ignore next -- the form is only shown once the till has an answer */
-    const shown = state === null ? [] : tillCharges(state);
     const work = (async (): Promise<void> => {
       // The charges that exist right before this create, read now (the amount page does not read
       // again on its own): a lost create never takes one of them for its own. When that read
-      // fails, the charges the till last read stand in.
-      let known: Set<string>;
+      // fails, which charges existed is unknown, so a lost create takes over none.
+      let known: Set<string> | null;
       try {
         known = new Set(tillCharges(await fetchPosState(session)).map((row) => row.id));
       } catch {
-        known = new Set(shown.map((row) => row.id));
+        known = null;
       }
       try {
         const created = await createPosCharge(session, amountSats);
@@ -669,6 +667,7 @@ function usePosTillState(): PosTillState {
             const found = next.charge;
             const made =
               found !== null &&
+              known !== null &&
               !known.has(found.id) &&
               found.amountSats === amountSats &&
               Date.parse(found.createdAt) >= startedAt - POS_CREATE_SKEW_MS &&
