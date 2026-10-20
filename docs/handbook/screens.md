@@ -2457,13 +2457,13 @@ Same preview as **ask-credit-preview**, after the **Loan** tag is pressed. Its e
 
 ### Variant: ask-credit-preview-daily
 
-Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The preview shows a **Loan** tag and the daily bitcoin plan with the visitor's fiat. **Post** is the only submit. One-time / Daily is not stored.
+Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same bitcoin ask and message. The preview shows a **Loan** tag and **To repay per day: ₿700 per day for 30 days.** The ask line may still append the viewer's fiat from the spot. The daily plan stays bitcoin. **Post** is the only submit. One-time / Daily is not stored.
 
 ![21.gifts welcome ask credit preview daily](images/welcome-ask-credit-preview-daily.png)
 
 ### Variant: ask-credit-preview-fiat
 
-Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The preview shows a **Loan** tag, the dollar amount, and the daily dollar plan (**$33.33** for 29 days on the last day). **Post** is the only submit. The counter reads **9 of 9**.
+Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The preview shows a **Loan** tag, the dollar amount, and the daily dollar plan (**To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.**). **Post** is the only submit. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview fiat](images/welcome-ask-credit-preview-fiat.png)
 
