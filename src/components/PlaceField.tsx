@@ -567,8 +567,14 @@ export function PlaceField(props: {
       .filter((field) => addressDraft[field].trim() === '')
       .map((field) => fieldLabel[field]),
   ];
+  // A shop text of the wrong length is explained under the name; the name itself is fine.
+  const nameBlockedByTextLength =
+    (shopTextProblem === 'short' || shopTextProblem === 'long') && nameError === shopTextNameError;
   const fieldsToFix = [
-    ...(shopDetails && labelDraft.trim() !== '' && nameError !== undefined
+    ...(shopDetails &&
+    labelDraft.trim() !== '' &&
+    nameError !== undefined &&
+    !nameBlockedByTextLength
       ? [t('shops.placeName')]
       : []),
     ...invalidFields

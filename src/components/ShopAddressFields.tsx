@@ -40,9 +40,9 @@ function draftFrom(value: ForumPlaceAddress | null): ForumPlaceAddressDraft {
  * default; the first option is **Choose a country**.
  *
  * @param props - Current address (`null` = every field empty), disabled flag,
- * and a change handler that always receives the five draft strings.
- * @param props.errors - Optional visitor-facing error message for each field.
- * @param props.onBlur - Optional callback receiving the field that lost focus.
+ * a change handler that always receives the five draft strings, optional
+ * visitor-facing `errors` per field, and an optional `onBlur` callback that
+ * receives the field that lost focus.
  * @returns Labeled street, house number, postal code, city, and country.
  */
 export function ShopAddressFields(props: {

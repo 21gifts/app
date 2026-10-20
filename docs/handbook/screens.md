@@ -2412,7 +2412,7 @@ A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna',
 
 ### Variant: staff-account-error
 
-A moderator session. **Add an account** is open on the Cafe Luna note. The live lookup found username **missing**, but the account was removed concurrently before Save. The save returned 404, so the fallback alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays disabled, matching the live missing-account state.
+A moderator session. **Add an account** is open on the Cafe Luna note. The live lookup found the account **@missing**, but it was removed before Save. The save returned 404, so the fallback alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays disabled, matching the live missing-account state.
 
 ![21.gifts shops staff account error](images/shops-staff-account-error.png)
 
