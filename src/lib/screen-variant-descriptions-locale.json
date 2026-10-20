@@ -4355,19 +4355,19 @@
     "fil": "Ang hakbang 3 sa 5 · Teksto ay may kumpletong lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. at disabled ang Susunod."
   },
   "/welcome:shop-edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist in Willkommen aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en Bienvenida desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist in Willkommen aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Lugar y dirección de la tienda está abierto en Bienvenida desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/members/[accountId]:shop-edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist im Mitgliederprofil aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en el perfil de miembro desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist im Mitgliederprofil aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Lugar y dirección de la tienda está abierto en el perfil de miembro desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/members/[accountId]:shop-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
@@ -4375,34 +4375,34 @@
     "fil": "Bukas sa profile ng member ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
   },
   "/messages/[id]:shop-edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist in der öffentlichen Nachricht aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en el mensaje público desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist in der öffentlichen Nachricht aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Lugar y dirección de la tienda está abierto en el mensaje público desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/messages/[id]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:map-edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist auf Karte aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en Mapa desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Mapa ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist auf Karte aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, Diesen Ort verwenden ist deaktiviert und Karte bleibt ausgewählt.",
+    "es": "Lugar y dirección de la tienda está abierto en Mapa desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa, Usar este lugar está deshabilitado y Mapa sigue seleccionado.",
+    "fil": "Bukas sa Mapa ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa, disabled ang Gamitin ang lugar na ito, at napili pa ang Mapa."
   },
   "/shops:map-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:table-edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist auf Tabelle aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en Tabla desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Talahanayan ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist auf Tabelle aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, Diesen Ort verwenden ist deaktiviert und Tabelle bleibt ausgewählt.",
+    "es": "Lugar y dirección de la tienda está abierto en Tabla desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa, Usar este lugar está deshabilitado y Tabla sigue seleccionada.",
+    "fil": "Bukas sa Talahanayan ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa, disabled ang Gamitin ang lugar na ito, at napili pa ang Talahanayan."
   },
   "/shops:table-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu _ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla después de cambiar el nombre de usuario de luna a _. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts matapos baguhin ang username mula luna patungong _. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:add-place-unavailable": {
     "de": "Shop hinzufügen ist bei Schritt 2 von 5 · Ort geöffnet, nachdem das Ortsformular ohne verfügbare Karte geöffnet und geschlossen wurde. Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. bleibt sichtbar und Weiter ist deaktiviert.",
@@ -4410,23 +4410,23 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 2 sa 5 · Lugar matapos buksan at isara ang form nang walang available na mapa. Nananatiling nakikita ang Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop. at disabled ang Susunod."
   },
   "/shops:add-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist aus Shop hinzufügen bei Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto desde Añadir una tienda en el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas ang Lugar at address ng shop mula sa Magdagdag ng shop sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist aus Shop hinzufügen bei Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Lugar y dirección de la tienda está abierto desde Añadir una tienda en el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang Lugar at address ng shop mula sa Magdagdag ng shop sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:edit-place-unavailable-open": {
-    "de": "Ort und Adresse des Shops ist im Post aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Lugar y dirección de la tienda está abierto en Publicación desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible y Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. at disabled ang Gamitin ang lugar na ito."
+    "de": "Ort und Adresse des Shops ist im Post aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Lugar y dirección de la tienda está abierto en Publicación desde el paso 2 de 5 · Lugar sin un mapa disponible. El mapa no está disponible. está visible donde estaría el mapa y Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:staff-account-invalid": {
-    "de": "Konto hinzufügen ist im Shop-Post mit _ im Feld Benutzername geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Añadir una cuenta está abierto en la publicación de la tienda con _ en el campo Nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Bukas sa shop post ang Magdagdag ng account na may _ sa field na Username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist im Shop-Post mit _ im Feld Benutzername geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto en la publicación de la tienda con _ en el campo Nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas sa shop post ang Magdagdag ng account na may _ sa field na Username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
   }
 }

@@ -3677,7 +3677,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-shop-edit-user-invalid');
   });
 
-  test('welcome shop-edit-place-unavailable', async ({ page }) => {
+  test('welcome shop-edit-place-unavailable-open', async ({ page }) => {
     await openHostedShopEditor(page, 'welcome', false, true);
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
@@ -7132,7 +7132,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-shop-edit-user-invalid');
   });
 
-  test('state /members shop-edit-place-unavailable', async ({ page }) => {
+  test('state /members shop-edit-place-unavailable-open', async ({ page }) => {
     await openHostedShopEditor(page, 'members', false, true);
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
@@ -11938,7 +11938,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-shop-edit-user-invalid');
   });
 
-  test('state /messages/[id] shop-edit-place-unavailable', async ({ page }) => {
+  test('state /messages/[id] shop-edit-place-unavailable-open', async ({ page }) => {
     await openHostedShopEditor(page, 'messages', false, true);
     await page.getByRole('button', { name: 'Next' }).click();
     await openUnavailableShopPlace(page);
@@ -19491,7 +19491,7 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-user-invalid');
   });
 
-  test('shops map-edit-place-unavailable', async ({ page }) => {
+  test('shops map-edit-place-unavailable-open', async ({ page }) => {
     await installUnavailableMap(page);
     await openShopsEditor(page, 'map');
     await page.getByRole('button', { name: 'Next' }).click();
@@ -19941,7 +19941,7 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-table-edit-user-invalid');
   });
 
-  test('shops table-edit-place-unavailable', async ({ page }) => {
+  test('shops table-edit-place-unavailable-open', async ({ page }) => {
     await installUnavailableMap(page);
     await openShopsEditor(page, 'table');
     await page.getByRole('button', { name: 'Next' }).click();
@@ -20604,7 +20604,7 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-edit-user-invalid');
   });
 
-  test('shops edit-place-unavailable', async ({ page }) => {
+  test('shops edit-place-unavailable-open', async ({ page }) => {
     await installUnavailableMap(page);
     await openShopsEditor(page, 'post');
     await page.getByRole('button', { name: 'Next' }).click();
