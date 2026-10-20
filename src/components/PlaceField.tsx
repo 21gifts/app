@@ -15,6 +15,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
 import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
+import { fetchMapsKey } from '@/lib/maps-key';
 import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 type GoogleLatLng = {
@@ -154,73 +155,54 @@ export function PlaceField(props: {
     }
     let cancelled = false;
     const load = async (): Promise<void> => {
-      try {
-        const response = await fetch('/maps/key');
-        const body: unknown = await response.json();
-        if (cancelled) {
-          return;
-        }
-        let nextKey: string | null = null;
-        if (typeof body === 'object' && body !== null && 'key' in body) {
-          const raw = body.key;
-          if (typeof raw === 'string') {
-            const trimmed = raw.trim();
-            if (trimmed !== '') {
-              nextKey = trimmed;
-            }
+      const nextKey = await fetchMapsKey();
+      if (cancelled) {
+        return;
+      }
+      if (nextKey === null) {
+        setMapsKey(null);
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      setMapsKey(nextKey);
+      const googleWindow = window as GoogleWindow;
+      // A rejected key stays rejected. Google still defines `google.maps`.
+      // Cleanup clears the ref, so this only runs for the open panel.
+      const rejectKey = (): void => {
+        setUnavailable(true);
+        setScriptReady(false);
+      };
+      const acceptKey = (): void => {
+        if (cancelled || authFailedRef.current) {
+          if (!cancelled && authFailedRef.current) {
+            setUnavailable(true);
+            setScriptReady(false);
           }
-        }
-        if (nextKey === null) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        setMapsKey(nextKey);
-        const googleWindow = window as GoogleWindow;
-        // A rejected key stays rejected. Google still defines `google.maps`.
-        // Cleanup clears the ref, so this only runs for the open panel.
-        const rejectKey = (): void => {
-          setUnavailable(true);
-          setScriptReady(false);
-        };
-        const acceptKey = (): void => {
-          if (cancelled || authFailedRef.current) {
-            if (!cancelled && authFailedRef.current) {
-              setUnavailable(true);
-              setScriptReady(false);
-            }
-            return;
-          }
-          setUnavailable(false);
-          setScriptReady(true);
-        };
-        rejectKeyRef.current = rejectKey;
-        if (googleWindow.google?.maps !== undefined) {
-          acceptKey();
-          return;
-        }
-        if (authFailedRef.current) {
-          setUnavailable(true);
-          setScriptReady(false);
           return;
         }
         setUnavailable(false);
-        // One shared script for this field and every GoogleMapCanvas on the page.
-        loadGoogleMaps(nextKey).then(acceptKey, () => {
-          if (cancelled) {
-            return;
-          }
-          setUnavailable(true);
-          setScriptReady(false);
-        });
-      } catch {
-        if (!cancelled) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-        }
+        setScriptReady(true);
+      };
+      rejectKeyRef.current = rejectKey;
+      if (googleWindow.google?.maps !== undefined) {
+        acceptKey();
+        return;
       }
+      if (authFailedRef.current) {
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      setUnavailable(false);
+      // One shared script for this field and every GoogleMapCanvas on the page.
+      loadGoogleMaps(nextKey).then(acceptKey, () => {
+        if (cancelled) {
+          return;
+        }
+        setUnavailable(true);
+        setScriptReady(false);
+      });
     };
     void load();
     return () => {
