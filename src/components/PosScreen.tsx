@@ -845,7 +845,8 @@ function usePosTillState(): PosTillState {
 
 /**
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
- * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
+ * With a charge, this page shows the countdown, bitcoin, the typed currency
+ * figure when this tab kept one for the charge, and Cancel.
  * It never asks the api on a timer: the moment this tab's wallet reports a
  * payment that pays the charge ({@link onPaymentReceived}: its amount, or
  * that amount after the fee, made from one second before its creation to a
