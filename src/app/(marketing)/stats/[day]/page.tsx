@@ -29,7 +29,7 @@ export default async function GiftDayPage({
         </Link>
       </p>
       <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-        {`Donations on ${day}`}
+        Donations on <span className="whitespace-nowrap">{day}</span>
       </h1>
       <p className="mt-3 max-w-2xl text-lg text-paper/60">Each outbound donation that UTC day.</p>
       <DayLoader key={day} day={day} />

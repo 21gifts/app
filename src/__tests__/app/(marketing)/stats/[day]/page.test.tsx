@@ -31,6 +31,14 @@ describe('GiftDayPage', () => {
     expect(allStats.className).toContain('underline-offset-2');
   });
 
+  it('keeps the date on one line inside the same heading name', async () => {
+    render(await GiftDayPage({ params: Promise.resolve({ day: '2026-06-01' }) }));
+    const heading = screen.getByRole('heading', { name: 'Donations on 2026-06-01' });
+    const date = heading.querySelector('span');
+    expect(date?.textContent).toBe('2026-06-01');
+    expect(date?.className).toContain('whitespace-nowrap');
+  });
+
   it('calls notFound for an invalid day', async () => {
     await expect(GiftDayPage({ params: Promise.resolve({ day: '2026-02-31' }) })).rejects.toThrow(
       'NEXT_NOT_FOUND',

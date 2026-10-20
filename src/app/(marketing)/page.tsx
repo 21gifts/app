@@ -62,7 +62,10 @@ export default async function Home(): Promise<ReactElement> {
       title: 'home.discoverStoryTitle' as const,
       body: 'home.discoverStoryBody' as const,
       graphic: (
-        <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-8 text-paper">
+        <div
+          aria-hidden="true"
+          className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-6 text-paper"
+        >
           <span className="text-xs font-semibold tracking-home-label text-accent uppercase">
             {messages['happyland.kicker']}
           </span>
@@ -97,10 +100,10 @@ export default async function Home(): Promise<ReactElement> {
         <div className="flex h-48 items-center justify-center bg-ink px-8">
           <div
             aria-hidden="true"
-            className="flex w-full max-w-home-path items-center justify-between gap-3"
+            className="flex w-full max-w-home-path items-center justify-between gap-1"
           >
             <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
-              <Wallet className="h-6 w-6" strokeWidth={1.5} />
+              <Wallet className="h-6 w-6" strokeWidth={1.75} />
             </span>
             <span className="h-px flex-1 bg-accent" />
             <Image
@@ -113,7 +116,7 @@ export default async function Home(): Promise<ReactElement> {
             />
             <span className="h-px flex-1 bg-accent" />
             <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
-              <UserRound className="h-6 w-6" strokeWidth={1.5} />
+              <UserRound className="h-6 w-6" strokeWidth={1.75} />
             </span>
           </div>
         </div>
@@ -130,15 +133,15 @@ export default async function Home(): Promise<ReactElement> {
         />
         <div className="mx-auto grid max-w-[1100px] items-center gap-12 lg:grid-cols-2">
           <div className="max-w-home-copy">
-            <p className="text-xs font-semibold tracking-home-hero text-accent uppercase sm:text-sm">
+            <p className="text-xs font-semibold tracking-home-hero text-balance text-accent uppercase sm:text-sm">
               {t('home.heroKicker')}
             </p>
-            <h1 className="mt-6 text-home-display leading-home-display font-semibold tracking-home-display">
+            <h1 className="mt-6 text-home-display leading-home-display font-semibold tracking-home-display text-balance">
               {t('home.headline1')}
               <br />
               <span className="text-accent">{t('home.headline2')}</span>
             </h1>
-            <p className="mt-8 max-w-home-lead text-lg leading-relaxed text-paper/75 sm:text-xl">
+            <p className="mt-8 max-w-home-lead text-lg leading-relaxed text-pretty text-paper/75 sm:text-xl">
               {t('home.lead')}
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -169,7 +172,7 @@ export default async function Home(): Promise<ReactElement> {
           <div className="relative mx-auto w-full max-w-home-preview">
             <div
               aria-hidden="true"
-              className="absolute -inset-3 rounded-4xl border border-paper/10"
+              className="absolute -inset-3 hidden rounded-4xl border border-paper/10 sm:block"
             />
             <div className="relative overflow-hidden rounded-3xl border border-paper/15 bg-paper text-ink scheme-light">
               <div className="flex items-center justify-between border-b border-ink/10 px-6 py-4 sm:px-8">
@@ -188,7 +191,7 @@ export default async function Home(): Promise<ReactElement> {
                 <div className="mt-6 rounded-xl border border-ink/10 bg-home-card p-4 sm:p-5">
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-paper">
-                      <MessageCircle aria-hidden="true" className="h-5 w-5" strokeWidth={1.6} />
+                      <MessageCircle aria-hidden="true" className="h-5 w-5" strokeWidth={1.75} />
                     </span>
                     <span className="text-sm font-semibold sm:text-base">
                       {t('home.previewStep1')}
@@ -202,7 +205,7 @@ export default async function Home(): Promise<ReactElement> {
                       <UserRound
                         aria-hidden="true"
                         className="h-5 w-5 shrink-0"
-                        strokeWidth={1.6}
+                        strokeWidth={1.75}
                       />
                       <span className="text-sm font-semibold sm:text-base">
                         {t('home.previewStep2')}
@@ -213,16 +216,15 @@ export default async function Home(): Promise<ReactElement> {
                   <div className="ml-5 flex h-8 items-center border-l border-ink/20 pl-3">
                     <ArrowDown aria-hidden="true" className="h-4 w-4 text-ink/50" />
                   </div>
-                  <div className="flex items-center gap-3 text-sm font-medium sm:text-base">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-ink">
-                      <Image
-                        src="/bitcoin-symbol.svg"
-                        alt=""
-                        width={27}
-                        height={27}
-                        className="size-home-mark"
-                      />
-                    </span>
+                  <div className="flex items-center gap-3 text-sm font-semibold sm:text-base">
+                    <Image
+                      src="/bitcoin-symbol.svg"
+                      alt=""
+                      loading="eager"
+                      width={40}
+                      height={40}
+                      className="block h-10 w-10 shrink-0"
+                    />
                     {t('home.previewStep3')}
                   </div>
                 </div>
@@ -231,7 +233,7 @@ export default async function Home(): Promise<ReactElement> {
                 <p className="text-center text-lg font-semibold">{t('home.previewWalletTitle')}</p>
                 <div className="mt-5 grid grid-cols-home-flow items-center gap-2 sm:gap-3">
                   <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-paper/15 bg-paper/5 px-1 py-3 text-center">
-                    <Wallet aria-hidden="true" className="h-6 w-6 text-paper" strokeWidth={1.5} />
+                    <Wallet aria-hidden="true" className="h-6 w-6 text-paper" strokeWidth={1.75} />
                     <span className="text-xs font-medium leading-tight text-paper/85 sm:text-sm">
                       {t('home.previewFrom')}
                     </span>
@@ -251,7 +253,7 @@ export default async function Home(): Promise<ReactElement> {
                     <UserRound
                       aria-hidden="true"
                       className="h-6 w-6 text-paper"
-                      strokeWidth={1.5}
+                      strokeWidth={1.75}
                     />
                     <span className="text-xs font-medium leading-tight text-paper/85 sm:text-sm">
                       {t('home.previewTo')}
@@ -274,7 +276,7 @@ export default async function Home(): Promise<ReactElement> {
               <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">
                 {t('home.howKicker')}
               </p>
-              <h2 className="mt-3 max-w-2xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+              <h2 className="mt-3 max-w-2xl text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
                 {t('home.howTitle')}
               </h2>
             </div>
@@ -282,7 +284,7 @@ export default async function Home(): Promise<ReactElement> {
               {t('home.howLead')}
             </p>
           </div>
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
             {(
               [
                 {
@@ -310,16 +312,16 @@ export default async function Home(): Promise<ReactElement> {
                 className="rounded-2xl border border-ink/10 bg-home-card p-6 sm:p-8"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-ink/60">{t(num)}</span>
+                  <span className="text-xs font-semibold text-ink/60">{t(num)}</span>
                   <Icon aria-hidden="true" className="h-6 w-6 stroke-home-step" />
                 </div>
-                <h3 className="mt-8 text-xl font-semibold tracking-tight">{t(title)}</h3>
+                <h3 className="mt-8 text-xl font-semibold">{t(title)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
               </article>
             ))}
           </div>
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-ink px-6 py-5 text-paper sm:px-8">
-            <p className="text-sm leading-relaxed text-paper/75">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-ink px-6 py-5 text-paper sm:px-8 md:flex-nowrap">
+            <p className="min-w-0 text-sm leading-relaxed text-paper/75">
               <span className="font-semibold text-paper">{t('home.receiveTitle')}</span>{' '}
               {t('home.receiveBody')}
             </p>
@@ -336,7 +338,7 @@ export default async function Home(): Promise<ReactElement> {
       <section className="border-t border-ink/10 bg-paper px-5 py-16 text-ink scheme-light sm:py-20">
         <div className="mx-auto max-w-[1100px]">
           <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">21.gifts</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             {t('home.discoverTitle')}
           </h2>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
@@ -375,11 +377,11 @@ export default async function Home(): Promise<ReactElement> {
             <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">
               {t('home.whyKicker')}
             </p>
-            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
               {t('home.whyTitle')}
             </h2>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {(
               [
                 { num: 'home.why1Num', title: 'home.why1Title', body: 'home.why1Body' },
@@ -390,7 +392,7 @@ export default async function Home(): Promise<ReactElement> {
             ).map(({ num, title, body }) => (
               <article key={title} className="rounded-2xl border border-ink/10 bg-paper p-6">
                 <span className="text-xs font-semibold text-ink/60">{t(num)}</span>
-                <h3 className="mt-6 text-lg font-semibold">{t(title)}</h3>
+                <h3 className="mt-6 text-lg font-semibold text-balance">{t(title)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
               </article>
             ))}
@@ -409,7 +411,7 @@ export default async function Home(): Promise<ReactElement> {
             <p className="text-xs font-bold tracking-home-kicker text-accent uppercase">
               {t('home.projectKicker')}
             </p>
-            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
               {t('home.projectTitle')}
             </h2>
           </div>
@@ -425,9 +427,7 @@ export default async function Home(): Promise<ReactElement> {
                 href={`lightning:${PROJECT_DONATE_ADDRESS}`}
                 className="text-accent underline underline-offset-2 hover:text-paper"
               >
-                <code className="font-mono text-sm break-all sm:text-base">
-                  {PROJECT_DONATE_ADDRESS}
-                </code>
+                <code className="font-mono text-sm break-all">{PROJECT_DONATE_ADDRESS}</code>
               </a>
             </div>
           </div>
@@ -440,17 +440,17 @@ export default async function Home(): Promise<ReactElement> {
             <p className="text-xs font-bold tracking-home-kicker text-accent uppercase">
               {t('home.faqKicker')}
             </p>
-            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
               {t('home.faqTitle')}
             </h2>
           </div>
-          <div className="divide-y divide-paper/15 border-t border-paper/15">
+          <div className="divide-y divide-paper/15 border-y border-paper/15">
             {faq.map(([question, answer]) => (
-              <details key={question} name="home-faq" className="group py-5">
-                <summary className="min-h-11 cursor-pointer pr-4 text-base font-medium marker:text-accent hover:text-accent">
+              <details key={question} name="home-faq" className="py-4">
+                <summary className="min-h-11 cursor-pointer py-3 pr-4 pl-4 -indent-4 text-base font-medium marker:text-accent hover:text-accent">
                   {t(question)}
                 </summary>
-                <p className="pb-2 pl-5 text-sm leading-relaxed text-paper/65">{t(answer)}</p>
+                <p className="pb-2 pl-4 text-sm leading-relaxed text-paper/65">{t(answer)}</p>
               </details>
             ))}
           </div>

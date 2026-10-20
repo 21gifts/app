@@ -62,7 +62,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
             </p>
             <h2
               id="happyland-title"
-              className="mt-5 max-w-2xl text-4xl leading-home-title font-semibold tracking-tight sm:text-6xl"
+              className="mt-5 max-w-2xl text-4xl leading-home-title font-semibold tracking-tight text-balance sm:text-6xl"
             >
               {messages['happyland.title']}
             </h2>
@@ -80,7 +80,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
               sizes="(min-width: 1024px) 500px, 100vw"
               className="block aspect-4/3 w-full object-cover"
             />
-            <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/75 sm:px-8">
+            <figcaption className="px-6 py-4 text-sm leading-relaxed text-pretty text-paper/75 sm:px-8">
               {messages['happyland.photoCaption']}
             </figcaption>
           </figure>
@@ -101,7 +101,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
                 sizes="(min-width: 768px) 33vw, 100vw"
                 className={`block aspect-4/3 w-full object-cover ${photo.position}`}
               />
-              <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/70">
+              <figcaption className="px-6 py-4 text-sm leading-relaxed text-pretty text-paper/70 sm:px-8">
                 {photo.caption}
               </figcaption>
             </figure>
@@ -116,7 +116,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
               <span className="text-xs font-semibold tracking-home-label text-accent">
                 {note.number}
               </span>
-              <h3 className="mt-5 text-xl font-semibold tracking-tight">{note.title}</h3>
+              <h3 className="mt-5 text-xl font-semibold">{note.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-paper/70 sm:text-base">{note.body}</p>
             </article>
           ))}

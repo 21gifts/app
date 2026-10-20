@@ -49,7 +49,9 @@ export default async function DonatePage(): Promise<ReactElement> {
         <h1 className="text-center text-3xl font-semibold tracking-tight text-app-fg sm:text-4xl">
           {translate(messages, 'donate.pageTitle')}
         </h1>
-        <p className="text-center text-app-muted">{translate(messages, 'donate.lead')}</p>
+        <p className="text-center text-pretty text-app-muted">
+          {translate(messages, 'donate.lead')}
+        </p>
         <ButtonLink href="/welcome" variant="accent">
           {translate(messages, 'donate.continue')}
         </ButtonLink>

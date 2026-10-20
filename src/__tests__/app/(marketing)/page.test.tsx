@@ -172,6 +172,20 @@ describe('Home', () => {
     );
   });
 
+  it('hides the Happyland discovery graphic and keeps Bitcoin marks off accent fills', async () => {
+    renderWithLocale(await Home());
+    const link = document.querySelector('a[href="#happyland"]');
+    expect(link).toBeTruthy();
+    const graphic = link?.querySelector(':scope > div');
+    expect(graphic?.tagName).toBe('DIV');
+    expect(graphic?.getAttribute('aria-hidden')).toBe('true');
+    const marks = document.querySelectorAll('img[src*="bitcoin-symbol"]');
+    expect(marks).toHaveLength(5);
+    for (const mark of marks) {
+      expect(mark.closest('.bg-accent')).toBeNull();
+    }
+  });
+
   it('gives all eight FAQ disclosures the same name', async () => {
     renderWithLocale(await Home());
     const faq = document.getElementById('faq');

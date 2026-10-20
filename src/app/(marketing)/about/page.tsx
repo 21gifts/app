@@ -38,7 +38,7 @@ export default async function AboutPage(): Promise<ReactElement> {
           <p className="text-sm font-medium tracking-widest text-accent uppercase">
             {t('about.kicker')}
           </p>
-          <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl">
             {t('about.heading')}
           </h1>
           <p className="mt-6 text-lg text-paper/60">{t('about.lead')}</p>
