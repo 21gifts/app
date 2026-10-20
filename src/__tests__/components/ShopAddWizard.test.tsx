@@ -646,6 +646,24 @@ describe('ShopAddWizard', () => {
     expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
   });
 
+  it('trims again after a leading at-sign before checking the username', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+    renderWizard(
+      <ShopAddWizard
+        {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: '@ ada' })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+    expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
+  });
+
   it('allows Next when a full suggestion page has no exact username', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
     searchPeople.mockResolvedValue(

@@ -1765,29 +1765,29 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 2 sa 5 · Lugar. Sarado ang Magdagdag ng lugar. Hinihingi ng nakikitang dahilan ang lugar at address; naka-disable ang Susunod."
   },
   "/shops:add-place-empty": {
-    "de": "Einen Ort hinzufügen ist als Dialog mit Karte geöffnet. Kein Feld wurde berührt; Pflichtfehler bleiben still. Die Fußzeile nennt die fehlenden Felder und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Añadir un lugar está abierto como diálogo con mapa. No se ha tocado ningún campo; los errores obligatorios están ocultos. El pie enumera los campos pendientes y Usar este lugar está desactivado.",
-    "fil": "Bukas bilang dialog na may mapa ang Magdagdag ng lugar. Wala pang field na nahawakan kaya tahimik ang required errors. Inililista ng footer ang kulang at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Der Dialog Ort und Adresse des Shops ist mit Karte geöffnet. Kein Feld wurde berührt; Pflichtfehler bleiben still. Die Fußzeile nennt die fehlenden Felder und Diesen Ort verwenden ist deaktiviert.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto con un mapa. No se ha tocado ningún campo; los errores obligatorios están ocultos. El pie enumera los campos pendientes y Usar este lugar está desactivado.",
+    "fil": "Bukas na may mapa ang dialog na Lugar at address ng shop. Wala pang field na nahawakan kaya tahimik ang required errors. Inililista ng footer ang kulang at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:add-place-hint": {
-    "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Shopname ist Kiki's Bakery, die Adresse ist leer. Die Fußzeile listet die auszufüllenden Felder; Diesen Ort verwenden bleibt deaktiviert.",
-    "es": "Añadir un lugar está abierto como diálogo. Nombre de la tienda es Kiki's Bakery y la dirección está vacía. El pie enumera los campos pendientes; Usar este lugar sigue desactivado.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Kiki's Bakery ang pangalan at walang laman ang address. Inililista ng footer ang pupunan; naka-disable pa ang Gamitin ang lugar na ito."
+    "de": "Der Dialog Ort und Adresse des Shops ist geöffnet. Shopname ist Kiki's Bakery, die Adresse ist leer. Die Fußzeile listet die auszufüllenden Felder; Diesen Ort verwenden bleibt deaktiviert.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto. Nombre de la tienda es Kiki's Bakery y la dirección está vacía. El pie enumera los campos pendientes; Usar este lugar sigue desactivado.",
+    "fil": "Bukas ang dialog na Lugar at address ng shop. Kiki's Bakery ang pangalan at walang laman ang address. Inililista ng footer ang pupunan; naka-disable pa ang Gamitin ang lugar na ito."
   },
   "/shops:add-place-name-address": {
-    "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Shopname ist Bahnhofstrasse Bakery und die Adresse ist vollständig. Der Feldfehler sagt, dass der Name Strasse oder Postleitzahl nicht enthalten darf; Diesen Ort verwenden ist deaktiviert.",
-    "es": "Añadir un lugar está abierto como diálogo. Nombre de la tienda es Bahnhofstrasse Bakery y la dirección está completa. El error dice que el nombre no debe contener la calle ni el código postal; Usar este lugar está desactivado.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Bahnhofstrasse Bakery ang pangalan at kumpleto ang address. Sinasabi ng field error na hindi dapat kasama ang kalye o postal code; naka-disable ang Gamitin ang lugar na ito."
+    "de": "Der Dialog Ort und Adresse des Shops ist geöffnet. Shopname ist Bahnhofstrasse Bakery und die Adresse ist vollständig. Der Feldfehler sagt, dass der Name Strasse oder Postleitzahl nicht enthalten darf; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto. Nombre de la tienda es Bahnhofstrasse Bakery y la dirección está completa. El error dice que el nombre no debe contener la calle ni el código postal; Usar este lugar está desactivado.",
+    "fil": "Bukas ang dialog na Lugar at address ng shop. Bahnhofstrasse Bakery ang pangalan at kumpleto ang address. Sinasabi ng field error na hindi dapat kasama ang kalye o postal code; naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:add-place-field-invalid": {
-    "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Hausnummer abc, Postleitzahl 80 und Ort 1234 zeigen gleichzeitig konkrete Feldfehler. Diesen Ort verwenden bleibt deaktiviert.",
-    "es": "Añadir un lugar está abierto como diálogo. Número abc, código postal 80 y ciudad 1234 muestran a la vez errores concretos. Usar este lugar sigue desactivado.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Sabay na nakikita ang tiyak na error para sa numero ng bahay abc, postal code 80, at lungsod 1234. Naka-disable pa ang Gamitin ang lugar na ito."
+    "de": "Der Dialog Ort und Adresse des Shops ist geöffnet. Hausnummer abc, Postleitzahl 80 und Ort 1234 zeigen gleichzeitig konkrete Feldfehler. Diesen Ort verwenden bleibt deaktiviert.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto. Número abc, código postal 80 y ciudad 1234 muestran a la vez errores concretos. Usar este lugar sigue desactivado.",
+    "fil": "Bukas ang dialog na Lugar at address ng shop. Sabay na nakikita ang tiyak na error para sa numero ng bahay abc, postal code 80, at lungsod 1234. Naka-disable pa ang Gamitin ang lugar na ito."
   },
   "/shops:add-place-complete": {
-    "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Shopname Kiki's Bakery und die vollständige Adresse sind ausgefüllt. Diesen Ort verwenden ist aktiviert; die Stecknadel ist noch nicht bestätigt.",
-    "es": "Añadir un lugar está abierto como diálogo. Nombre Kiki's Bakery y la dirección completa están rellenados. Usar este lugar está activado; el pin aún no está confirmado.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Napunan ang Kiki's Bakery at kumpletong address. Naka-enable ang Gamitin ang lugar na ito; hindi pa kumpirmado ang pin."
+    "de": "Der Dialog Ort und Adresse des Shops ist geöffnet. Shopname Kiki's Bakery und die vollständige Adresse sind ausgefüllt. Diesen Ort verwenden ist aktiviert; die Stecknadel ist noch nicht bestätigt.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto. Nombre Kiki's Bakery y la dirección completa están rellenados. Usar este lugar está activado; el pin aún no está confirmado.",
+    "fil": "Bukas ang dialog na Lugar at address ng shop. Napunan ang Kiki's Bakery at kumpletong address. Naka-enable ang Gamitin ang lugar na ito; hindi pa kumpirmado ang pin."
   },
   "/grants:funding-not-verified": {
     "de": "Basis-Inhaber. Förderabschnitt auf /grants. Sie sind noch nicht verifiziert. plus wie die persönliche Verifizierung funktioniert. Keine Bewerben-Schaltfläche.",
@@ -3060,9 +3060,9 @@
     "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Nanatili ang Alisin ang lugar at Gamitin ang lugar na ito."
   },
   "/shops:staff-place-edit-rejected": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf einer Shop-Notiz geöffnet (Text Fresh bread every morning.). Shopname ist Happyland, die vollständige Adresse ist ausgefüllt, und Diesen Ort verwenden wurde gedrückt. Die Server-Fallbackmeldung Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land. ist in der Dialogfusszeile sichtbar. Der Dialog bleibt mit Diesen Ort verwenden offen.",
-    "es": "Una sesión de moderación. Editar lugar está abierto en una nota de tienda (texto Fresh bread every morning.). Nombre de la tienda es Happyland, la dirección completa está rellenada y se pulsó Usar este lugar. El mensaje alternativo del servidor Introduce la dirección completa: calle, número, código postal, ciudad y país. aparece en el pie del diálogo. El diálogo sigue abierto con Usar este lugar.",
-    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa isang tala ng shop (tekstong Fresh bread every morning.). Happyland ang Pangalan ng shop, kumpleto ang address, at pinindot ang Gamitin ang lugar na ito. Makikita sa footer ng dialog ang fallback na mensahe ng server na Ilagay ang buong address: kalye, numero ng bahay, postal code, lungsod at bansa. Nananatiling bukas ang dialog na may Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf einer Shop-Notiz geöffnet (Text Fresh bread every morning.). Shopname ist Happyland, die vollständige Adresse ist ausgefüllt, und Diesen Ort verwenden wurde gedrückt. Der gespeicherte Shop-Text wurde auf dem Server geändert, deshalb ist die Server-Fallbackmeldung Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shopname sein. in der Dialogfusszeile sichtbar. Der Dialog bleibt mit Diesen Ort verwenden offen.",
+    "es": "Una sesión de moderación. Editar lugar está abierto en una nota de tienda (texto Fresh bread every morning.). Nombre de la tienda es Happyland, la dirección completa está rellenada y se pulsó Usar este lugar. El texto guardado de la tienda cambió en el servidor, por lo que el mensaje alternativo El texto de la tienda debe tener entre 20 y 1000 caracteres y ser más largo que el nombre de la tienda. aparece en el pie del diálogo. El diálogo sigue abierto con Usar este lugar.",
+    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa isang tala ng shop (tekstong Fresh bread every morning.). Happyland ang Pangalan ng shop, kumpleto ang address, at pinindot ang Gamitin ang lugar na ito. Nagbago sa server ang naka-save na teksto ng shop, kaya makikita sa footer ng dialog ang fallback na mensaheng Dapat 20 hanggang 1000 karakter ang teksto ng shop at mas mahaba kaysa sa pangalan ng shop. Nananatiling bukas ang dialog na may Gamitin ang lugar na ito."
   },
   "/wallet/phrase:error": {
     "de": "Allgemeiner Fehler. Hinweis Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut. plus Hinweis Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben. und beschriftetes Erneut versuchen. Kein Empfangs-QR.",

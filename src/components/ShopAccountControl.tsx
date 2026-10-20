@@ -183,7 +183,7 @@ export function ShopAccountControl({
   const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
-  const normalizedUsername = draft.trim().replace(/^@/, '').toLowerCase();
+  const normalizedUsername = draft.trim().replace(/^@/, '').trim().toLowerCase();
   // A newly opened picker starts with `@` so the people list is useful before
   // typing. Once the visitor edits the field, a bare `@` is a live format error.
   const formatProblem =
@@ -364,11 +364,7 @@ export function ShopAccountControl({
           : undefined;
 
   const saveUsername = async (): Promise<void> => {
-    let trimmed = draft.trim();
-    if (trimmed.startsWith('@')) {
-      trimmed = trimmed.slice(1);
-    }
-    trimmed = trimmed.toLowerCase();
+    const trimmed = normalizedUsername;
     setSaving(true);
     setErrorKey(null);
     try {

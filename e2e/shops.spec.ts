@@ -980,7 +980,9 @@ test('shop summary keeps Post disabled with an off-screen reason', async ({ page
   await expect(page.locator('form').getByRole('button', { name: 'Post' })).toBeDisabled();
 });
 
-test('shop description and username rules appear while typing before submit', async ({ page }) => {
+test('Function: shopUsernameProblem — format errors appear while typing before submit', async ({
+  page,
+}) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
@@ -1018,7 +1020,7 @@ test('shop description and username rules appear while typing before submit', as
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
-test('Function: shopUsernameProblem — a missing account blocks Next', async ({ page }) => {
+test('usernameLookupVerdict — a missing account blocks Next', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
@@ -1080,6 +1082,43 @@ test('Function: usernameLookupVerdict — a full suggestion page is inconclusive
   await expect(
     page.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
   ).toHaveCount(0);
+});
+
+test('Function: isShopApiProblem — a living-room address rejection points to Shops', async ({
+  page,
+}) => {
+  // A verified member posts without the compose fee, so the post reaches the API.
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...E2E_ACCOUNT, role: 'verified' }),
+    });
+  });
+  await fulfillForumMessages(page, []);
+  await page.route(
+    (url) => new URL(url).pathname === '/forum/messages',
+    async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shop address is required' }),
+      });
+    },
+  );
+  await page.goto('/welcome');
+  await page.getByLabel('Your message').fill('A shop note #21GiftsShop');
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await expect(
+    page.getByText('Shop notes need the shop name and full address. Post this shop from Shops.'),
+  ).toBeVisible();
 });
 
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {
@@ -1193,10 +1232,13 @@ test('Function: shopApiProblem — a shop 400 is shown as localized copy', async
         await route.continue();
         return;
       }
+      // The stored shop text changed after the list loaded, so only the API can reject this.
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop name is required' }),
+        body: JSON.stringify({
+          error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+        }),
       });
     },
   );
@@ -1206,9 +1248,10 @@ test('Function: shopApiProblem — a shop 400 is shown as localized copy', async
   await page.locator('.h-64').click();
   await fillShopAddress(page, 'Happyland');
   await page.getByRole('button', { name: 'Use this place' }).click();
-  const name = page.getByLabel('Shop name', { exact: true });
-  await expect(name).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByText('Enter the shop name.')).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+  await expect(dialog.getByRole('alert')).toHaveText(
+    'The shop text must be 20 to 1000 characters and longer than the shop name.',
+  );
 });
 
 test('Function: ShopAddressFields; Function: Field — accessible name and error link', async ({

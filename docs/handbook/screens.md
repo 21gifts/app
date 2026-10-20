@@ -1975,25 +1975,25 @@ says there are no edits yet. The photo step's Close (X) is gone. Place
 
 ### Variant: add-place-empty
 
-**Add a place** is open as a modal dialog with a map. No field has been touched, so required-field
-errors are quiet. The footer says which fields must be filled, and **Use this place** is visible and
-disabled.
+**Shop place and address** is open as a modal dialog with a map. No field has been touched, so
+required-field errors are quiet. The footer says which fields must be filled, and **Use this place**
+is visible and disabled.
 
 ![21.gifts shops add place empty](images/shops-add-place-empty.png)
 
 ### Variant: add-place-hint
 
-**Add a place** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**. The
-address fields are still empty. The footer lists the fields to fill, and **Use this place** stays
-disabled.
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+The address fields are still empty. The footer lists the fields to fill, and **Use this place**
+stays disabled.
 
 ![21.gifts shops add place hint](images/shops-add-place-hint.png)
 
 ### Variant: add-place-name-address
 
-**Add a place** is open as a modal dialog with a map. **Shop name** is **Bahnhofstrasse Bakery**.
-Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country
-**Switzerland** are filled. The field error
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Bahnhofstrasse
+Bakery**. Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and
+country **Switzerland** are filled. The field error
 **The shop name must not contain the street or the postal code.** is visible. **Use this place**
 stays disabled.
 
@@ -2001,8 +2001,8 @@ stays disabled.
 
 ### Variant: add-place-field-invalid
 
-**Add a place** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**. Street
-**Bahnhofstrasse**, house number **abc**, postal code **80**, city **1234**, and country
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+Street **Bahnhofstrasse**, house number **abc**, postal code **80**, city **1234**, and country
 **Switzerland** are filled. Concrete messages for house number, postal code, and city are visible
 together. **Use this place** stays disabled.
 
@@ -2010,8 +2010,8 @@ together. **Use this place** stays disabled.
 
 ### Variant: add-place-complete
 
-**Add a place** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**. Street
-**Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country
 **Switzerland** are filled. **Use this place** is enabled. The pin is not confirmed yet.
 
 ![21.gifts shops add place complete](images/shops-add-place-complete.png)
@@ -2299,8 +2299,9 @@ A moderator session. **Edit place** is open on the Cafe Luna note, the map is vi
 
 A moderator session. **Edit place** is open on a shop note (text **Fresh bread every morning.**).
 **Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The
-server fallback alert **Enter the full address: street, house number, postal code, city and
-country.** is visible in the dialog footer. The dialog stays open with **Use this place**.
+stored shop text changed on the server, so the fallback alert **The shop text must be 20 to 1000
+characters and longer than the shop name.** is visible in the dialog footer. The dialog stays open
+with **Use this place**.
 
 ![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)
 

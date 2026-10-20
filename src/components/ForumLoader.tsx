@@ -66,9 +66,9 @@ import {
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import {
-  SHOP_API_MESSAGE,
   SHOP_HASHTAG,
   ensureShopHashtag,
+  isShopApiProblem,
   isShopNote,
   shopApiProblem,
   shopDescriptionProblem,
@@ -112,14 +112,24 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
+/** Whether media changes should preserve the current shop-related composer error. */
 /**
- * True when a composer error is a mapped shop API 400.
+ * Composer error for an API 400: the shop problem, or `shopElsewhere` when a
+ * non-shop composer cannot fix a missing or invalid shop address.
  *
- * @param error - Current composer error.
- * @returns Whether the error is a {@link ShopApiProblem}.
+ * @param err - Rejection from posting.
+ * @param shop - Whether the composer is the shop composer.
+ * @returns The composer error, or `null` when the text is not a shop 400.
  */
-function isShopFormError(error: ForumFormError): error is ShopApiProblem {
-  return error !== null && error in SHOP_API_MESSAGE;
+function composerShopError(err: unknown, shop: boolean): ShopApiProblem | 'shopElsewhere' | null {
+  const problem = err instanceof Error ? shopApiProblem(err.message, shop) : null;
+  return !shop && (problem === 'shopAddress' || problem === 'placeAddress')
+    ? 'shopElsewhere'
+    : problem;
+}
+
+function isShopComposerError(error: ForumFormError): error is ShopApiProblem | 'shopElsewhere' {
+  return error === 'shopElsewhere' || isShopApiProblem(error);
 }
 
 const SHOP_NAME_FORM_ERROR = {
@@ -341,7 +351,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
   if (feed !== 'shops') {
     return null;
   }
-  const handle = username.trim().replace(/^@/, '').toLowerCase();
+  const handle = username.trim().replace(/^@/, '').trim().toLowerCase();
   return handle === '' ? null : handle;
 }
 
@@ -1594,8 +1604,7 @@ export function ForumLoader({
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
                 } catch (err) {
-                  const shopProblem =
-                    err instanceof Error ? shopApiProblem(err.message, feed === 'shops') : null;
+                  const shopProblem = composerShopError(err, feed === 'shops');
                   setFormError(shopProblem ?? (isRateLimitError(err) ? 'rateLimit' : 'request'));
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
@@ -1758,7 +1767,7 @@ export function ForumLoader({
           setVideoDraft(result.video);
           // A successful pick keeps a shop error; a failed pick's reason replaces it
           // in the single error slot, and the next post shows it again.
-          setFormError((current) => (isShopFormError(current) ? current : null));
+          setFormError((current) => (isShopComposerError(current) ? current : null));
           return;
         }
 
@@ -1795,7 +1804,7 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError((current) => nextError ?? (isShopFormError(current) ? current : null));
+        setFormError((current) => nextError ?? (isShopComposerError(current) ? current : null));
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');
@@ -1810,7 +1819,7 @@ export function ForumLoader({
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError((current) => (isShopFormError(current) ? current : null));
+    setFormError((current) => (isShopComposerError(current) ? current : null));
   };
 
   const applyCreatedNote = (
@@ -1909,12 +1918,15 @@ export function ForumLoader({
   ): Promise<void> => {
     /* v8 ignore next -- the composer is hidden without a session */
     if (session === null) return;
+    setPosting(true);
+    setFormError(null);
     if (feed === 'shops') {
       const nameProblem =
         pendingPlace === null ? null : shopNameProblem(pendingPlace.label, pendingPlace.address);
       if (!shopPlaceComplete(pendingPlace)) {
         setFormError(nameProblem === null ? 'shopAddress' : SHOP_NAME_FORM_ERROR[nameProblem]);
         notePostInFlightRef.current = false;
+        setPosting(false);
         return;
       }
       const descriptionProblem = shopDescriptionProblem(trimmed, pendingPlace.label);
@@ -1923,11 +1935,13 @@ export function ForumLoader({
           descriptionProblem === 'controls' ? 'shopDescriptionControls' : 'shopDescription',
         );
         notePostInFlightRef.current = false;
+        setPosting(false);
         return;
       }
       if (shopUsernameProblem(shopUsername) !== null) {
         setFormError('usernameInvalid');
         notePostInFlightRef.current = false;
+        setPosting(false);
         return;
       }
       const handle = composeShopUsername(feed, shopUsername);
@@ -1937,6 +1951,7 @@ export function ForumLoader({
           if (usernameLookupVerdict(matches, handle) === 'missing') {
             setFormError('usernameMissing');
             notePostInFlightRef.current = false;
+            setPosting(false);
             return;
           }
         } catch {
@@ -1944,8 +1959,6 @@ export function ForumLoader({
         }
       }
     }
-    setPosting(true);
-    setFormError(null);
     let awaitingPay = false;
     try {
       if (
@@ -2038,8 +2051,7 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
-      const shopProblem =
-        err instanceof Error ? shopApiProblem(err.message, feed === 'shops') : null;
+      const shopProblem = composerShopError(err, feed === 'shops');
       if (shopProblem !== null) {
         setFormError(shopProblem);
         return;
@@ -2791,7 +2803,7 @@ export function ForumLoader({
         placeDraft={placeDraft}
         onPlaceDraftChange={(next) => {
           setPlaceDraft(next);
-          setFormError((current) => (isShopFormError(current) ? null : current));
+          setFormError((current) => (isShopComposerError(current) ? null : current));
         }}
         onDraftChange={(value) => {
           setDraft(value);
@@ -2838,7 +2850,7 @@ export function ForumLoader({
           pickGeneration.current += 1;
           setPhotoDrafts([]);
           setVideoDraft(null);
-          setFormError((current) => (isShopFormError(current) ? current : null));
+          setFormError((current) => (isShopComposerError(current) ? current : null));
         }}
         photoUrls={photoUrls}
         videoUrls={videoUrls}

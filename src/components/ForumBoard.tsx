@@ -1,7 +1,6 @@
 'use client';
 
 import { revealInScrollport } from '@/lib/reveal-in-scrollport';
-
 import {
   ArrowUp,
   Check,
@@ -78,6 +77,7 @@ import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import {
   SHOP_API_MESSAGE,
   formatPlacePinText,
+  isShopApiProblem,
   isShopNote,
   stripShopHashtag,
   type ShopApiProblem,
@@ -108,12 +108,9 @@ export type ForumFormError =
   | 'tooLarge'
   | 'tooMany'
   | 'ask'
+  | 'shopElsewhere'
   | ShopApiProblem
   | null;
-
-function isShopApiProblem(error: ForumFormError): error is ShopApiProblem {
-  return error !== null && error in SHOP_API_MESSAGE;
-}
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
@@ -2091,7 +2088,20 @@ export function ForumBoard({
             {t('forum.errorAskAmount')}
           </p>
         ) : null}
-        {!hideCompose && !shopComposer && isShopApiProblem(formError) ? (
+        {!hideCompose &&
+        !shopComposer &&
+        (formError === 'shopElsewhere' ||
+          formError === 'shopAddress' ||
+          formError === 'placeAddress') ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.shopPostUseShops')}
+          </p>
+        ) : null}
+        {!hideCompose &&
+        !shopComposer &&
+        isShopApiProblem(formError) &&
+        formError !== 'shopAddress' &&
+        formError !== 'placeAddress' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(SHOP_API_MESSAGE[formError])}
           </p>

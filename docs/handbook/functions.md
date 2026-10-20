@@ -1558,7 +1558,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Mirrors the optional shop-account username rule while the visitor types, including the optional leading `@`.
 - **Inputs:** Raw username draft.
-- **Returns / side effects:** Trims, removes one leading `@`, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
+- **Returns / side effects:** Trims, removes one leading `@`, trims again, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
 - **Used by:** `ShopAddWizard`, `ShopAccountControl`, and the pre-payment validation in `ForumLoader`.
 
 ## Function: usernameLookupVerdict
@@ -1595,6 +1595,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `Error.message` from `postMessage`, `setMessagePlace`, or `setMessageShopText`, plus whether that request belongs to a shop post or place.
 - **Returns / side effects:** A field/step-specific shop problem for name, address, description, or username, or `null`. Generic forum text-range and place-label-length bodies map only for shop requests. No network.
 - **Used by:** `ForumLoader`, `PlaceField`, `ShopNoteEditControl`.
+
+## Function: isShopApiProblem
+
+- **Purpose:** Narrows an unknown composer value to one of the mapped shop API problems shared by the loader and board.
+- **Inputs:** Any unknown value.
+- **Returns / side effects:** `true` only for string keys in `SHOP_API_MESSAGE`; otherwise `false`. No network.
+- **Used by:** `ForumLoader` to preserve or clear mapped shop errors and `ForumBoard` to route them to the shop wizard or localized alert copy.
 
 ## Function: ShopAddressFields
 

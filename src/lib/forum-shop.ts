@@ -72,6 +72,16 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   usernameMissing: 'shops.problemUsernameMissing',
 };
 
+/**
+ * Whether an unknown value is a mapped shop API problem.
+ *
+ * @param error - Value to narrow.
+ * @returns Whether `error` is a {@link ShopApiProblem} key.
+ */
+export function isShopApiProblem(error: unknown): error is ShopApiProblem {
+  return typeof error === 'string' && error in SHOP_API_MESSAGE;
+}
+
 const HOUSE_NUMBER = /^[0-9][0-9A-Za-z/ .&–-]{0,31}$/;
 const POSTAL_CH_LI = /^[0-9]{4}$/;
 const POSTAL_OTHER = /^[A-Za-z0-9][A-Za-z0-9 -]{1,15}$/;
@@ -373,7 +383,7 @@ export function shopDescriptionProblem(
  * `@` counts as empty, like in the API.
  */
 export function shopUsernameProblem(raw: string): 'format' | null {
-  const username = raw.trim().replace(/^@/, '').toLowerCase();
+  const username = raw.trim().replace(/^@/, '').trim().toLowerCase();
   if (username === '') {
     return null;
   }

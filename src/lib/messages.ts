@@ -366,6 +366,8 @@ const en = {
   'forum.errorEmpty': 'Enter a message or add a photo or video',
   'forum.errorTooLong': 'Keep it to 8000 characters',
   'forum.errorRequest': 'Could not post your message',
+  'forum.shopPostUseShops':
+    'Shop notes need the shop name and full address. Post this shop from Shops.',
   'forum.errorNoteDeleted': 'This note was deleted.',
   'forum.errorRateLimit': 'Too many messages. Please wait a moment and try again.',
   'forum.listLabel': 'All messages',
@@ -1531,6 +1533,8 @@ const de = {
   'forum.errorEmpty': 'Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu',
   'forum.errorTooLong': 'Maximal 8000 Zeichen',
   'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'forum.shopPostUseShops':
+    'Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops.',
   'forum.errorNoteDeleted': 'Diese Notiz wurde gelöscht.',
   'forum.errorRateLimit':
     'Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
@@ -2722,6 +2726,8 @@ const es = {
   'forum.errorEmpty': 'Escribe un mensaje o añade una foto o un vídeo',
   'forum.errorTooLong': 'Máximo 8000 caracteres',
   'forum.errorRequest': 'No se pudo publicar el mensaje',
+  'forum.shopPostUseShops':
+    'Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas.',
   'forum.errorNoteDeleted': 'Esta nota fue eliminada.',
   'forum.errorRateLimit': 'Demasiados mensajes. Espera un momento e inténtalo de nuevo.',
   'forum.listLabel': 'Todos los mensajes',
@@ -3896,6 +3902,8 @@ const fil = {
   'forum.errorEmpty': 'Maglagay ng mensahe o magdagdag ng litrato o bidyo',
   'forum.errorTooLong': 'Hanggang 8000 na karakter',
   'forum.errorRequest': 'Hindi ma-post ang mensahe',
+  'forum.shopPostUseShops':
+    'Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Shop.',
   'forum.errorNoteDeleted': 'Nabura na ang notang ito.',
   'forum.errorRateLimit': 'Sobrang daming mensahe. Maghintay sandali at subukan ulit.',
   'forum.listLabel': 'Lahat ng mensahe',

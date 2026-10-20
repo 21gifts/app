@@ -2784,14 +2784,9 @@ describe('ForumBoard', () => {
   it.each([
     ['shopName', 'Enter the shop name.'],
     ['shopNameAddress', 'The shop name must not contain the street or the postal code.'],
-    ['shopAddress', 'Enter the full address: street, house number, postal code, city and country.'],
     [
       'shopDescription',
       'The shop text must be 20 to 1000 characters and longer than the shop name.',
-    ],
-    [
-      'placeAddress',
-      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
     ],
   ] as const)('shows formError %s alert', (formError, copy) => {
     renderWithLocale(
@@ -2811,6 +2806,30 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('alert').textContent).toBe(copy);
   });
+
+  it.each(['shopElsewhere', 'shopAddress', 'placeAddress'] as const)(
+    'points formError %s to Shops outside the shop composer',
+    (formError) => {
+      renderWithLocale(
+        <ForumBoard
+          messages={[]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={formError}
+          {...idleProps}
+          {...modeProps('active')}
+        />,
+      );
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Shop notes need the shop name and full address. Post this shop from Shops.',
+      );
+    },
+  );
 
   it('shows a shop address on a labeled pin', () => {
     renderWithLocale(

@@ -4,6 +4,7 @@ import {
   ensureShopHashtag,
   formatPlacePinText,
   formatShopAddressLine,
+  isShopApiProblem,
   isShopNote,
   MENTION_SUGGEST_PAGE,
   SHOP_API_MESSAGE,
@@ -311,6 +312,7 @@ describe('forum-shop', () => {
       expect(shopUsernameProblem('@Ada')).toBe(null);
       expect(shopUsernameProblem('@')).toBe(null);
       expect(shopUsernameProblem(' @ ')).toBe(null);
+      expect(shopUsernameProblem('@ ada')).toBe(null);
       expect(shopUsernameProblem('_')).toBe('format');
       expect(shopUsernameProblem('A User')).toBe('format');
       expect(shopUsernameProblem(`a${'x'.repeat(32)}`)).toBe('format');
@@ -430,6 +432,15 @@ describe('forum-shop', () => {
         'shopNameLong',
       );
       expect(shopApiProblem('Place label must be at most 80 characters', false)).toBe(null);
+    });
+  });
+
+  describe('isShopApiProblem', () => {
+    it('narrows mapped problem keys and rejects other values', () => {
+      expect(isShopApiProblem('shopDescription')).toBe(true);
+      expect(isShopApiProblem('shopElsewhere')).toBe(false);
+      expect(isShopApiProblem(null)).toBe(false);
+      expect(isShopApiProblem({ error: 'shopDescription' })).toBe(false);
     });
   });
 

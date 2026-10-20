@@ -200,7 +200,7 @@ export function ShopAddWizard({
     setStep(4);
   }, [serverProblem]);
 
-  const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
+  const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
   const usernameFormatProblem = shopUsernameProblem(username);
   useEffect(() => {
     if (normalizedUsername === '') {

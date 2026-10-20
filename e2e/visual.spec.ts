@@ -19705,11 +19705,12 @@ test.describe('shops screens', () => {
           await route.continue();
           return;
         }
+        // The stored shop text changed after the list loaded, so only the API can reject this.
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
           body: JSON.stringify({
-            error: 'Shop address is required',
+            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
           }),
         });
       },
@@ -19721,10 +19722,11 @@ test.describe('shops screens', () => {
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(confirm).toBeEnabled();
     await confirm.click();
-    const reason = page.getByText(
-      'Enter the full address: street, house number, postal code, city and country.',
+    const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+    const reason = dialog.getByRole('alert');
+    await expect(reason).toHaveText(
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     );
-    await expect(reason).toBeVisible();
     await expect(confirm).toBeVisible();
     await reason.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-rejected');

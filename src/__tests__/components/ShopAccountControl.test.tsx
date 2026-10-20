@@ -321,6 +321,26 @@ describe('ShopAccountControl', () => {
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
+  it('trims again after a leading at-sign before lookup and save', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada' },
+    ]);
+    vi.mocked(setMessageShopAccount).mockResolvedValue({
+      ...shopMessage,
+      shopAccount: { id: 'acc-ada', username: 'ada', name: 'Ada' },
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@ ada' } });
+    const save = await enabledSaveButton();
+    expect(searchMentionAccounts).toHaveBeenCalledWith('token', 'ada');
+    fireEvent.click(save);
+    await waitFor(() => {
+      expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', 'ada');
+    });
+  });
+
   it('allows Save when a full lookup page is inconclusive', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(searchMentionAccounts).mockResolvedValue(

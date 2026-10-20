@@ -1470,18 +1470,32 @@ describe('ForumLoader', () => {
   it('feed="shops" returns to the username field when the submit lookup no longer finds it', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     let usernameLookups = 0;
-    vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => {
+    let resolveSubmitLookup:
+      ((rows: { id: string; username: string; name: string }[]) => void) | undefined;
+    vi.mocked(searchMentionAccounts).mockImplementation((_session, query) => {
       if (query !== 'luna') {
-        return [];
+        return Promise.resolve([]);
       }
       usernameLookups += 1;
-      return usernameLookups === 1 ? [{ id: 'acc-luna', username: 'luna', name: 'Luna' }] : [];
+      if (usernameLookups === 1) {
+        return Promise.resolve([{ id: 'acc-luna', username: 'luna', name: 'Luna' }]);
+      }
+      return new Promise((resolve) => {
+        resolveSubmitLookup = resolve;
+      });
     });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
+    await waitFor(() => {
+      expect(resolveSubmitLookup).toBeTypeOf('function');
+    });
+    expect(screen.getByRole('button', { name: /^Post$/ })).toHaveProperty('disabled', true);
+    await act(async () => {
+      resolveSubmitLookup?.([]);
+    });
     expect(
       await screen.findByText(
         'No account with that username. Check the spelling of the 21.gifts username.',
@@ -1492,6 +1506,31 @@ describe('ForumLoader', () => {
     ).toBeTruthy();
     expect(usernameLookups).toBe(2);
     expect(postMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+  });
+
+  it.each([
+    [
+      'Shop address is required',
+      'Enter the full address: street, house number, postal code, city and country.',
+    ],
+    [
+      'Place address is invalid',
+      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
+    ],
+  ])('feed="shops" keeps the place guidance for %s', async (apiMessage, localized) => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error(apiMessage));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+    const dialog = await screen.findByRole('dialog', { name: 'Shop place and address' });
+    expect(within(dialog).getByRole('alert').textContent).toBe(localized);
   });
 
   it('feed="shops" reaches the pre-fee invoice when a full username page is inconclusive', async () => {
@@ -5171,7 +5210,7 @@ describe('ForumLoader', () => {
     ],
     [
       'Shop address is required',
-      'Enter the full address: street, house number, postal code, city and country.',
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
     ],
     [
       'Shop description must be 20 to 1000 characters and longer than the shop name',
@@ -5179,7 +5218,7 @@ describe('ForumLoader', () => {
     ],
     [
       'Place address is invalid',
-      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
     ],
     [
       'Username is not valid',
@@ -5225,7 +5264,8 @@ describe('ForumLoader', () => {
       });
       fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
       fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
-      const shopError = /^The address is invalid\./;
+      const shopError =
+        /^Shop notes need the shop name and full address\. Post this shop from Shops\.$/;
       expect((await screen.findByRole('alert')).textContent).toMatch(shopError);
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       const file =
