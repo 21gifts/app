@@ -68,6 +68,8 @@ export type AboutMeSectionProps = {
   onSave?: (text: string, photo?: AboutMeSavePhoto | null) => Promise<boolean | void>;
   /** Open the owner editor on mount. Default false. */
   startEditing?: boolean;
+  /** When true, omit empty portrait/banner adds that the profile header already shows. */
+  omitEmptySlotAdds?: boolean;
 };
 
 /**
@@ -94,6 +96,7 @@ export function AboutMeSection({
   onSaveBanner,
   onSave,
   startEditing = false,
+  omitEmptySlotAdds = false,
 }: AboutMeSectionProps): ReactElement | null {
   const { t } = useTranslations();
   const textareaId = useId();
@@ -619,7 +622,7 @@ export function AboutMeSection({
                   disabled={saving}
                   onChange={handleFileChange}
                 />
-                {onSavePicture !== undefined ? (
+                {onSavePicture !== undefined && !(omitEmptySlotAdds && pictureUrl === null) ? (
                   <>
                     <IconButton
                       type="button"
@@ -644,7 +647,7 @@ export function AboutMeSection({
                     />
                   </>
                 ) : null}
-                {onSaveBanner !== undefined ? (
+                {onSaveBanner !== undefined && !(omitEmptySlotAdds && bannerUrl === null) ? (
                   <>
                     <IconButton
                       type="button"

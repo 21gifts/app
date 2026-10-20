@@ -447,6 +447,7 @@ export function ProfileScreen(): ReactElement {
             await putWideBanner(session, photo);
             setImageEpoch((epoch) => epoch + 1);
           }}
+          omitEmptySlotAdds
           /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
           {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
           onSave={async (text, photo) => {
