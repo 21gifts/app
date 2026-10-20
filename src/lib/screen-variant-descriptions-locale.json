@@ -5024,6 +5024,11 @@
     "es": "El mismo cargo pagado después de Listo. La confirmación ya no está. Encabezado Caja, la dirección, el Código QR de Open CryptoPay y Fijar un importe; sin cuenta atrás y sin Cancelar. Historial muestra el cargo como Pagado ✓ 12:00 PM con ₿21 y su fiat.",
     "fil": "Ang parehong bayad na singil pagkatapos ng Tapos na. Wala na ang kumpirmasyon. Pamagat na Point of sale, ang address, ang QR code ng Open CryptoPay, at Magtakda ng halaga; walang countdown at walang Kanselahin. Inililista ng Kasaysayan ang singil bilang Bayad na ✓ 12:00 PM na may ₿21 at ang fiat nito."
   },
+  "/pos:paid-fiat": {
+    "de": "Angemeldete Ada, die in diesem Tab unter Betrag festlegen $5.00 eingetippt und Zahlung anlegen gedrückt hat; danach meldete die Wallet die Zahlung. Dieselbe grüne bildschirmfüllende Bestätigung wie bei paid, mit ₿5’000 sehr groß und darunter $5.00: der eingetippte Betrag, für diese Belastung behalten, kein Preis aus dem aktuellen Kurs.",
+    "es": "Ada con sesión iniciada, que escribió $5.00 en Fijar un importe en esta pestaña y pulsó Crear pago; después la billetera informó del pago. La misma confirmación verde a pantalla completa que en paid, con ₿5’000 muy grande y debajo $5.00: el importe escrito, guardado para este cargo, no un precio tomado del precio actual.",
+    "fil": "Naka-sign-in si Ada na nag-type ng $5.00 sa Magtakda ng halaga sa tab na ito at pumindot ng Gumawa ng bayad; pagkatapos ay iniulat ng wallet ang bayad. Ang parehong berdeng full-screen na kumpirmasyon gaya ng paid, na may ₿5’000 na napakalaki at sa ilalim nito $5.00: ang na-type na halaga, itinabi para sa singil na ito, hindi presyong kinuha sa kasalukuyang presyo."
+  },
   "/pos:history": {
     "de": "Angemeldete Ada ohne offene Belastung und mit drei vergangenen Belastungen, gescrollt bis Verlauf: Bezahlt ✓ 12:00 PM in Grün mit ₿2’100 und $2.10, dann Abgelaufen mit ₿500, dann Abgebrochen mit ₿42, jeweils mit Datum und Uhrzeit der Erstellung, die neueste zuerst. Betrag festlegen bleibt darüber.",
     "es": "Ada con sesión iniciada, sin cargo abierto y con tres cargos anteriores, desplazada hasta Historial: Pagado ✓ 12:00 PM en verde con ₿2’100 y $2.10, luego Caducado con ₿500, luego Cancelado con ₿42, cada uno con la fecha y la hora en que se creó, el más reciente primero. Fijar un importe permanece arriba.",

@@ -5044,6 +5044,12 @@ The same paid charge after **Done**. The confirmation is gone. Heading **Point o
 
 ![21.gifts point of sale paid closed](images/pos-paid-closed.png)
 
+### Variant: paid-fiat
+
+Signed-in Ada who typed $5.00 on **Set an amount** in this tab and pressed **Create payment**; the wallet then reported the payment. The same green full-screen confirmation as **paid**, with ₿5’000 very large and, under it, **$5.00**: the figure the operator typed, kept for this charge, not a price taken from the current spot.
+
+![21.gifts point of sale paid fiat](images/pos-paid-fiat.png)
+
 ### Variant: history
 
 Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and the currency figure stored on that charge, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the currency figure stored on that charge and the date and time it was created, newest first. That figure is not a price taken from the current spot. **Set an amount** stays above.

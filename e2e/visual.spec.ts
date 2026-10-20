@@ -9840,6 +9840,70 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-paid-closed');
   });
 
+  test('pos paid fiat', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            charge: {
+              id: 'pos-e2e',
+              amountSats,
+              status: 'pending',
+              createdAt: '2026-09-20T12:01:00.000Z',
+              expiresAt: '2026-09-20T12:06:00.000Z',
+            },
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    // The operator types $5.00 on this till: the confirmation shows that typed figure.
+    await page.goto('/pos/amount?visual=pos-received');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("₿5'000")).toBeVisible();
+    await expect(dialog.getByText('$5.00')).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'New payment' })).toBeVisible();
+    await shotScreen(page, 'state-pos-paid-fiat');
+  });
+
   test('state /pos history', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {

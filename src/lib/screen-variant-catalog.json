@@ -3294,6 +3294,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:paid-fiat",
+    "label": "/pos paid-fiat",
+    "visual": "state-pos-paid-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:history",
     "label": "/pos history",
     "visual": "state-pos-history",

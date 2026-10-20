@@ -3918,6 +3918,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'paid-fiat',
+    image: 'pos-paid-fiat.png',
+    visual: 'state-pos-paid-fiat',
+    needle: "shotScreen(page, 'state-pos-paid-fiat')",
+  },
+  {
+    route: '/pos',
     id: 'history',
     image: 'pos-history.png',
     visual: 'state-pos-history',
