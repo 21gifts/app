@@ -42,7 +42,11 @@ describe('Home', () => {
     expect(screen.getByText('Your wallet')).toBeTruthy();
     expect(screen.getByText('Their wallet')).toBeTruthy();
     expect(screen.getByText('React and donate')).toBeTruthy();
-    expect(document.querySelectorAll('img[src="/bitcoin-symbol.svg"]')).toHaveLength(5);
+    const bitcoinMarks = document.querySelectorAll('img[src="/bitcoin-symbol.svg"]');
+    expect(bitcoinMarks).toHaveLength(5);
+    for (const mark of bitcoinMarks) {
+      expect(mark.getAttribute('aria-hidden')).toBe('true');
+    }
     expect(screen.queryByRole('spinbutton')).toBeNull();
     expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();
   });

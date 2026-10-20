@@ -83,6 +83,7 @@ export default async function Home(): Promise<ReactElement> {
           <Image
             src="/bitcoin-symbol.svg"
             alt=""
+            aria-hidden="true"
             loading="eager"
             width={112}
             height={112}
@@ -109,6 +110,7 @@ export default async function Home(): Promise<ReactElement> {
             <Image
               src="/bitcoin-symbol.svg"
               alt=""
+              aria-hidden="true"
               loading="eager"
               width={64}
               height={64}
@@ -161,6 +163,7 @@ export default async function Home(): Promise<ReactElement> {
               <Image
                 src="/bitcoin-symbol.svg"
                 alt=""
+                aria-hidden="true"
                 loading="eager"
                 width={36}
                 height={36}
@@ -220,6 +223,7 @@ export default async function Home(): Promise<ReactElement> {
                     <Image
                       src="/bitcoin-symbol.svg"
                       alt=""
+                      aria-hidden="true"
                       loading="eager"
                       width={40}
                       height={40}
@@ -242,6 +246,7 @@ export default async function Home(): Promise<ReactElement> {
                     <Image
                       src="/bitcoin-symbol.svg"
                       alt=""
+                      aria-hidden="true"
                       loading="eager"
                       width={48}
                       height={48}

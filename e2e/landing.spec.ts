@@ -9,6 +9,11 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await expect(page.locator('main').getByText('How it works', { exact: true })).toBeVisible();
   const bitcoinMarks = page.locator('main img[src="/bitcoin-symbol.svg"]');
   await expect(bitcoinMarks).toHaveCount(5);
+  for (let index = 0; index < 5; index += 1) {
+    const bitcoinMark = bitcoinMarks.nth(index);
+    await expect(bitcoinMark).toHaveAttribute('aria-hidden', 'true');
+    await expect(bitcoinMark).toBeVisible();
+  }
   await expect
     .poll(() =>
       bitcoinMarks.evaluateAll((images) =>
