@@ -4004,6 +4004,41 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
+  it('guards a living-room shop note before the compose fee and releases posting state', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const composer = screen.getByLabelText('Your message');
+    const form = composer.closest('form')!;
+    fireEvent.change(composer, {
+      target: { value: 'Cafe Luna is open every day. #21GiftsShop' },
+    });
+    expect(screen.getByRole('button', { name: /^Post$/ })).toHaveProperty('disabled', true);
+
+    fireEvent.submit(form);
+
+    expectNoShopComposeOrPost();
+    expect(
+      screen.getByText(
+        'Shop notes need the shop name and full address. Post this shop from Shops.',
+      ),
+    ).toBeTruthy();
+    fireEvent.change(composer, { target: { value: 'Hello gifts' } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Post$/ })).toHaveProperty('disabled', false);
+    });
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+      expect(invoiceMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('restores the caption when compose-pay is cancelled', async () => {
     useAuthStore.setState({
       session: 'sess',

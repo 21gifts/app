@@ -79,7 +79,7 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
  * @returns Whether `error` is a {@link ShopApiProblem} key.
  */
 export function isShopApiProblem(error: unknown): error is ShopApiProblem {
-  return typeof error === 'string' && error in SHOP_API_MESSAGE;
+  return typeof error === 'string' && Object.hasOwn(SHOP_API_MESSAGE, error);
 }
 
 const HOUSE_NUMBER = /^[0-9][0-9A-Za-z/ .&–-]{0,31}$/;

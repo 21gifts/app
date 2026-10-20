@@ -167,6 +167,18 @@ describe('ShopPlaceControl', () => {
     expect(stopKey).toHaveBeenCalled();
   });
 
+  it('closes the portaled place dialog on Escape inside ShopPlaceControl', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    stubMaps();
+    renderWithLocale(<ShopPlaceControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('dialog', { name: 'Shop place and address' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByLabelText('Shop name'), { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Shop place and address' })).toBeNull();
+    });
+  });
+
   it('does not call onUpdated and shows the alert when save fails', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(setMessagePlace).mockRejectedValue(new Error('Could not save place'));

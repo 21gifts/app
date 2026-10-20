@@ -626,8 +626,9 @@ describe('ForumBoard', () => {
     expect(screen.queryByLabelText('Add a place')).toBeNull();
   });
 
-  it('shows the confirmed place below the composer row and above feedback', () => {
+  it('shows live shop guidance under the living-room composer and disables Post', () => {
     const onPlaceDraftChange = vi.fn();
+    const onPost = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[]}
@@ -636,25 +637,36 @@ describe('ForumBoard', () => {
         posting={false}
         draft="Cafe Luna #21GiftsShop"
         onDraftChange={() => undefined}
-        onPost={() => undefined}
+        onPost={onPost}
         onRetry={() => undefined}
-        formError="shopElsewhere"
+        formError={null}
         placeDraft={{ lat: 14.6, lng: 120.98, label: 'Cafe Luna' }}
         {...idleProps}
         onPlaceDraftChange={onPlaceDraftChange}
         {...modeProps('active')}
       />,
     );
-    const composerRow = screen.getByLabelText('Your message').closest('.flex.items-center');
+    const composer = screen.getByLabelText('Your message');
+    const composerRow = composer.closest('.flex.items-center');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
     const chipText = screen.getByText('Cafe Luna');
-    const alert = screen.getByRole('alert');
+    const post = screen.getByRole('button', { name: /^Post$/ });
     expect(composerRow).not.toBeNull();
-    expect(composerRow!.compareDocumentPosition(chipText) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    expect(composerRow!.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(chipText.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    expect(feedback.compareDocumentPosition(chipText) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+    expect(feedback.getAttribute('role')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(post).toHaveProperty('disabled', true);
+    fireEvent.click(post);
+    expect(onPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     expect(onPlaceDraftChange).toHaveBeenCalledWith(null);
   });

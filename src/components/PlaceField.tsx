@@ -339,9 +339,9 @@ export function PlaceField(props: {
       }
     };
     dialogRef.current?.focus();
-    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('keydown', closeOnEscape, true);
     return () => {
-      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('keydown', closeOnEscape, true);
       opener?.focus();
     };
   }, [open]);

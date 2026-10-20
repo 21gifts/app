@@ -358,7 +358,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
 
 async function seedAda(
   page: import('@playwright/test').Page,
-  role: 'basis' | 'moderator' = 'basis',
+  role: 'basis' | 'verified' | 'moderator' = 'basis',
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -1084,11 +1084,7 @@ test('Function: usernameLookupVerdict — a full suggestion page is inconclusive
   ).toHaveCount(0);
 });
 
-test('Function: isShopApiProblem — a living-room address rejection points to Shops', async ({
-  page,
-}) => {
-  // A verified member posts without the compose fee, so the post reaches the API.
-  await stubPlaceMap(page);
+test('a living-room shop note shows live guidance and never posts', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -1100,6 +1096,53 @@ test('Function: isShopApiProblem — a living-room address rejection points to S
     });
   });
   await fulfillForumMessages(page, []);
+  const posts: string[] = [];
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname.endsWith('/forum/messages')
+    ) {
+      posts.push(request.url());
+    }
+  });
+  await page.goto('/welcome');
+  const composer = page.getByLabel('Your message');
+  await composer.fill('Cafe Luna is open every day. #21GiftsShop');
+  const feedback = page.getByText(
+    'Shop notes need the shop name and full address. Post this shop from Shops.',
+  );
+  await expect(feedback).toBeVisible();
+  await expect(feedback).not.toHaveAttribute('role', 'alert');
+  await expect(composer).toHaveAttribute('aria-invalid', 'true');
+  await expect(composer).toHaveValue('Cafe Luna is open every day. #21GiftsShop');
+  const feedbackId = await feedback.getAttribute('id');
+  expect(feedbackId).not.toBeNull();
+  await expect(composer).toHaveAttribute('aria-describedby', feedbackId ?? '');
+  await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
+  expect(posts).toHaveLength(0);
+});
+
+test('Function: isShopApiProblem — a shop-feed account rejection returns to the user step', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedAda(page, 'verified');
+  await fulfillForumMessages(page, []);
+  // A full suggestion page without the exact name leaves the lookup undecided,
+  // so only the API can tell that the account does not exist.
+  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: Array.from({ length: 20 }, (_, index) => ({
+          id: `acc-${String(index)}`,
+          username: `other-${String(index)}`,
+          name: `Other ${String(index)}`,
+        })),
+      }),
+    });
+  });
   await page.route(
     (url) => new URL(url).pathname === '/forum/messages',
     async (route) => {
@@ -1108,22 +1151,30 @@ test('Function: isShopApiProblem — a living-room address rejection points to S
         return;
       }
       await route.fulfill({
-        status: 400,
+        status: 404,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop address is required' }),
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     },
   );
-  await page.goto('/welcome');
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
-  await page.getByLabel('Place name').fill('Cafe Luna');
+  await fillShopAddress(page);
   await page.getByRole('button', { name: 'Use this place' }).click();
-  await page.getByLabel('Your message').fill('A shop note #21GiftsShop');
-  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('luna');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+  await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
   await expect(
-    page.getByText('Shop notes need the shop name and full address. Post this shop from Shops.'),
-  ).toBeVisible();
+    page.getByRole('alert').filter({ hasText: 'No account with that username.' }),
+  ).toHaveText('No account with that username. Check the spelling of the 21.gifts username.');
 });
 
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {

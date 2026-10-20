@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -628,6 +629,8 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const shopElsewhereLive = !shopComposer && isShopNote(draft);
+  const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const router = useRouter();
   const scroller = useAppShellScroller();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -1942,6 +1945,9 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
+                {...(shopElsewhereLive
+                  ? { ariaDescribedBy: shopElsewhereFeedbackId, ariaInvalid: true }
+                  : {})}
                 wrapperClassName="relative min-w-0 flex-1"
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
@@ -1949,7 +1955,7 @@ export function ForumBoard({
                 type="submit"
                 size="lg"
                 variant="primary"
-                disabled={posting}
+                disabled={posting || shopElsewhereLive}
                 aria-label={t('forum.post')}
               >
                 {posting ? (
@@ -1959,6 +1965,11 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {shopElsewhereLive ? (
+              <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+                {t('forum.shopPostUseShops')}
+              </p>
+            ) : null}
             {placeDraft !== null && onPlaceDraftChange !== undefined ? (
               <PlacePinChip
                 place={placeDraft}
@@ -2106,7 +2117,10 @@ export function ForumBoard({
             {t('forum.errorAskAmount')}
           </p>
         ) : null}
-        {!hideCompose && !shopComposer && SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
+        {!hideCompose &&
+        !shopComposer &&
+        !shopElsewhereLive &&
+        SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.shopPostUseShops')}
           </p>

@@ -439,6 +439,7 @@ describe('forum-shop', () => {
     it('narrows mapped problem keys and rejects other values', () => {
       expect(isShopApiProblem('shopDescription')).toBe(true);
       expect(isShopApiProblem('shopElsewhere')).toBe(false);
+      expect(isShopApiProblem('toString')).toBe(false);
       expect(isShopApiProblem(null)).toBe(false);
       expect(isShopApiProblem({ error: 'shopDescription' })).toBe(false);
     });

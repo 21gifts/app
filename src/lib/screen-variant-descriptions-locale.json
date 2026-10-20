@@ -875,9 +875,9 @@
     "fil": "Nabigo ang POST pagkatapos ng paliwanag+JPEG → Hindi ma-post ang mensahe; nananatili ang paunang tingin at paliwanag."
   },
   "/welcome:error-shop-elsewhere": {
-    "de": "Ein verifiziertes Mitglied fügt im Wohnzimmer eine Stecknadel namens Cafe Luna hinzu und veröffentlicht eine Shop-Notiz. Die API weist die fehlende Shop-Adresse mit Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops. zurück. Die benannte Stecknadel bleibt in einem Chip im normalen Fluss zwischen der Verfasserzeile und diesem Hinweis; der Entwurf bleibt ebenfalls erhalten.",
-    "es": "Un miembro verificado añade en el salón un marcador llamado Cafe Luna y publica una nota de tienda. La API rechaza la dirección ausente con Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas. El marcador permanece en un chip del flujo normal entre la fila del redactor y ese aviso; el borrador también se conserva.",
-    "fil": "Nagdagdag ang isang beripikadong miyembro ng pin na Cafe Luna sa sala at nag-post ng tala ng shop. Tinanggihan ng API ang nawawalang address gamit ang Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Tindahan. Nananatili ang pin sa isang chip sa normal na daloy sa pagitan ng hilera ng pambuo at ng alertong iyon; nananatili rin ang burador."
+    "de": "Ein verifiziertes Mitglied tippt Cafe Luna is open every day. #21GiftsShop in den Wohnzimmer-Verfasser. Der Live-Hinweis Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops. erscheint direkt darunter ohne Alarmrolle; das Textfeld ist ungültig und mit dem Hinweis verknüpft, Senden ist deaktiviert und es wird keine POST-Anfrage gesendet.",
+    "es": "Un miembro verificado escribe Cafe Luna is open every day. #21GiftsShop en el redactor del salón. El aviso en vivo Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas. aparece justo debajo sin rol de alerta; el área de texto se marca como no válida y queda vinculada al aviso, Publicar está desactivado y no se envía ninguna solicitud POST.",
+    "fil": "Nag-type ang isang beripikadong miyembro ng Cafe Luna is open every day. #21GiftsShop sa pambuo ng sala. Lumilitaw kaagad sa ilalim ang live na pahiwatig na Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Tindahan. nang walang alert role; minarkahang invalid at nakakabit sa pahiwatig ang textarea, naka-disable ang I-post, at walang ipinapadalang POST request."
   },
   "/moderate/hidden:translate": {
     "de": "Mitarbeitende /moderate/hidden mit einer versteckten deutschen Notiz. Übersetzen ist unter dem Textkörper sichtbar.",
@@ -1645,14 +1645,14 @@
     "fil": "Session ng tagapamagitan. Isang tala ng tindahan sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang Baguhin ang entry sa shop pagkatapos kopyahin. Sarado ang editor."
   },
   "/welcome:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Bilder Keiner, Ort Keiner, Text Cafe Luna und 21.gifts-Nutzer Keiner.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala."
   },
   "/members/[accountId]:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Bilder Keiner, Ort Keiner, Text Cafe Luna und 21.gifts-Nutzer Keiner.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala."
   },
   "/grants/payments/amounts:duplicate": {
     "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
@@ -1765,9 +1765,9 @@
     "fil": "Ang nabe-verify na username na joey-rosima na may status na none o rejected ay nakakakita ng Mag-apply para sa 21 gifts grant sa halip ng naka-pause na pangungusap."
   },
   "/messages/[id]:shop-edit-summary": {
-    "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
+    "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
   },
   "/shops:add-place": {
     "de": "Shop hinzufügen ist offen auf Schritt 2 von 5 · Ort. Einen Ort hinzufügen ist geschlossen. Der sichtbare Grund fordert Ort und Adresse; Weiter ist deaktiviert.",
@@ -1845,9 +1845,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato at ang user. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang Teksto ng shop ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
   },
   "/shops:add-post-rejected": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und aus einem unbekannten Servergrund abgelehnt. Die Zusammenfassung bleibt geöffnet, und die allgemeine Meldung Nachricht konnte nicht gesendet werden ist sichtbar.",
-    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se pulsó Publicar y fue rechazado por un motivo desconocido del servidor. El resumen sigue abierto y el error genérico No se pudo publicar el mensaje está visible.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan dahil sa hindi kilalang dahilan ng server. Bukas pa ang buod at nakikita ang pangkalahatang error na Hindi ma-post ang mensahe."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und abgelehnt, weil der Server nicht verfügbar war. Die Zusammenfassung bleibt geöffnet, und die allgemeine Meldung Nachricht konnte nicht gesendet werden ist sichtbar.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se pulsó Publicar y fue rechazado porque el servidor no estaba disponible. El resumen sigue abierto y el error genérico No se pudo publicar el mensaje está visible.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan dahil hindi available ang server. Bukas pa ang buod at nakikita ang pangkalahatang error na Hindi ma-post ang mensahe."
   },
   "/shops:place": {
     "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
@@ -2410,9 +2410,9 @@
     "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Bilder Keiner, Ort Keiner, Text Cafe Luna und 21.gifts-Nutzer Keiner. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Kiki's Bakery mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Kiki's Bakery con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Kiki's Bakery na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants:no-applications": {
     "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications.",

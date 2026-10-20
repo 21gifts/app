@@ -1612,10 +1612,10 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: error-shop-elsewhere
 
-A verified member adds a living-room pin named **Cafe Luna** and posts a shop note. The API rejects
-the missing shop address with **Shop notes need the shop name and full address. Post this shop from
-Shops.** The named pin remains in a normal-flow chip between the composer row and that alert, and
-the draft remains so the member can move the post to Shops.
+A verified member types **Cafe Luna is open every day. #21GiftsShop** in the living-room composer.
+The live hint **Shop notes need the shop name and full address. Post this shop from Shops.** appears
+directly under the composer without an alert role, the textarea is marked invalid and described by
+the hint, and **Post** is disabled. No POST request is sent.
 
 ![21.gifts welcome shop elsewhere error](images/welcome-error-shop-elsewhere.png)
 
@@ -1776,7 +1776,9 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
 
@@ -1870,7 +1872,9 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ### Variant: map-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **Kiki's
+Bakery** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
 
@@ -2082,8 +2086,8 @@ shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. Th
 
 ### Variant: add-post-rejected
 
-**Add a shop** is open on step **5 / 5 · Summary**. **Post** was pressed and rejected with an
-unknown server reason. The summary stays open and the generic post error is visible.
+**Add a shop** is open on step **5 / 5 · Summary**. **Post** was pressed and rejected because the
+server was unavailable. The summary stays open and the generic post error is visible.
 
 ![21.gifts shops add post rejected](images/shops-add-post-rejected.png)
 
@@ -3006,7 +3010,9 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
 
@@ -4874,7 +4880,10 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**. **Save changes** is the button on the card. **History** still
+says there are no edits yet.
 
 ![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
 

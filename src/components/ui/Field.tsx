@@ -12,7 +12,7 @@ interface FieldShellProps {
   label: string;
   /** Optional id; generated from label when omitted. */
   id?: string;
-  /** Extra classes on the outer label wrapper. */
+  /** Extra classes on the outer wrapper `div`. */
   className?: string;
   /** Supporting copy shown under the control. */
   hint?: string;

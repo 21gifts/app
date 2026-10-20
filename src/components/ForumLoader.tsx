@@ -1929,6 +1929,12 @@ export function ForumLoader({
     if (session === null) return;
     setPosting(true);
     setFormError(null);
+    if (feed !== 'shops' && isShopNote(trimmed)) {
+      setFormError('shopElsewhere');
+      notePostInFlightRef.current = false;
+      setPosting(false);
+      return;
+    }
     if (feed === 'shops') {
       const nameProblem =
         pendingPlace === null ? null : shopNameProblem(pendingPlace.label, pendingPlace.address);
