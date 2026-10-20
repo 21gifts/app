@@ -3288,9 +3288,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:open-cancel-failed",
+    "label": "/pos open-cancel-failed",
+    "visual": "state-pos-open-cancel-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:open-elsewhere",
     "label": "/pos open-elsewhere",
     "visual": "state-pos-open-elsewhere",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled-elsewhere",
+    "label": "/pos cancelled-elsewhere",
+    "visual": "state-pos-cancelled-elsewhere",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

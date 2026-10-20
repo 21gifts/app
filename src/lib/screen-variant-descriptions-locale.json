@@ -2405,9 +2405,9 @@
     "fil": "Moderator sa direktang URL. Pamagat Teksto ng araw-araw na bayad at Hindi mo mababago ang araw-araw na bayad. Walang kahilingan sa talaan. Karayom Hindi mo mababago ang araw-araw na bayad."
   },
   "/pos:cancel-failed": {
-    "de": "Offene Belastung von ₿21 mit 5:00 Restzeit, von der API gelesen: Dieser Tab hat sie nicht erstellt, daher nur Bitcoin, kein Fiat-Betrag und kein Preis aus dem aktuellen Kurs. Abbrechen schlägt fehl. Die Belastung und Abbrechen bleiben. Hinweis Die Kasse ist gerade nicht erreichbar.",
-    "es": "Cargo abierto de ₿21 con 5:00 restantes, leído de la api: esta pestaña no lo creó, así que solo bitcoin, sin importe en moneda y sin precio actual. Cancelar falla. El cargo y Cancelar permanecen. Alerta La caja no está disponible.",
-    "fil": "Bukas na singil na ₿21 na may 5:00 natitira, binasa mula sa api: hindi ito ginawa ng tab na ito, kaya bitcoin lang, walang halaga sa pera at walang kasalukuyang presyo. Nabigo ang Kanselahin. Nanatili ang singil at Kanselahin. Alerto Hindi available ang point of sale."
+    "de": "Die Belastung von open-elsewhere (₿5’000 mit 5:00 Restzeit, von der API gelesen), wenn Abbrechen fehlschlägt: Dieser Tab hat sie nicht erstellt, daher nur Bitcoin, kein Fiat-Betrag und kein Preis aus dem aktuellen Kurs. Die Belastung und Abbrechen bleiben. Hinweis Die Kasse ist gerade nicht erreichbar.",
+    "es": "El cargo de open-elsewhere (₿5’000 con 5:00 restantes, leído de la api) cuando Cancelar falla: esta pestaña no lo creó, así que solo bitcoin, sin importe en moneda y sin precio actual. El cargo y Cancelar permanecen. Alerta La caja no está disponible.",
+    "fil": "Ang singil ng open-elsewhere (₿5’000 na may 5:00 natitira, binasa mula sa api) kapag nabigo ang Kanselahin: hindi ito ginawa ng tab na ito, kaya bitcoin lang, walang halaga sa pera at walang kasalukuyang presyo. Nanatili ang singil at Kanselahin. Alerto Hindi available ang point of sale."
   },
   "/welcome:translate": {
     "de": "Angemeldetes /welcome mit einer bezahlten deutschen Notiz. Übersetzen ist in der Fußzeilen-Symbolzeile mit Reagieren / Kopieren sichtbar. Englische Notizen auf anderen Fixtures blenden es weiterhin aus.",
@@ -3069,10 +3069,20 @@
     "es": "El cargo de open después de Cancelar. La cuenta atrás y Cancelar ya no están y Fijar un importe vuelve. Historial muestra el cargo como Cancelado con ₿5’000 · $5.00, el importe escrito, y la fecha y la hora en que se creó.",
     "fil": "Ang singil ng open pagkatapos ng Kanselahin. Wala na ang countdown at Kanselahin at bumalik ang Magtakda ng halaga. Inililista ng Kasaysayan ang singil bilang Kinansela na may ₿5’000 · $5.00, ang na-type na halaga, at ang petsa at oras kung kailan ginawa."
   },
+  "/pos:open-cancel-failed": {
+    "de": "Die Belastung von open, wenn Abbrechen fehlschlägt. Die Belastung bleibt mit Countdown, ₿5’000, $5.00 (dem eingetippten Betrag) und Abbrechen. Hinweis Die Kasse ist gerade nicht erreichbar. Verlauf zeigt Noch keine Zahlungen.",
+    "es": "El cargo de open cuando Cancelar falla. El cargo permanece con la cuenta atrás, ₿5’000, $5.00 (el importe escrito) y Cancelar. Alerta La caja no está disponible. Historial dice Todavía no hay pagos.",
+    "fil": "Ang singil ng open kapag nabigo ang Kanselahin. Nananatili ang singil na may countdown, ₿5’000, $5.00 (ang na-type na halaga) at Kanselahin. Alerto Hindi available ang point of sale. Sinasabi ng Kasaysayan na Wala pang bayad."
+  },
   "/pos:open-elsewhere": {
     "de": "Angemeldete Ada mit einer ausstehenden Belastung von ₿5’000 und 5:00 Restzeit, die dieser Tab nicht erstellt hat (ein anderer Tab, oder die Seite wurde neu geladen). Countdown, der Sat-Betrag und Abbrechen; kein Fiat-Betrag, weil in diesem Tab keiner eingetippt wurde, und keiner wird aus dem aktuellen Kurs berechnet. Verlauf zeigt Noch keine Zahlungen.",
     "es": "Ada con sesión iniciada y un cargo pendiente de ₿5’000 con 5:00 restantes que esta pestaña no creó (otra pestaña, o la página se recargó). La cuenta atrás, el importe en sats y Cancelar; sin importe en moneda, porque no se escribió ninguno en esta pestaña, y ninguno se calcula con el precio actual. Historial dice Todavía no hay pagos.",
     "fil": "Naka-sign-in si Ada na may nakabinbing singil na ₿5’000 at 5:00 na natitira na hindi ginawa ng tab na ito (ibang tab, o ni-reload ang pahina). Ang countdown, ang halagang sat at Kanselahin; walang halaga sa pera, dahil walang na-type sa tab na ito, at walang kinukuwenta mula sa kasalukuyang presyo. Sinasabi ng Kasaysayan na Wala pang bayad."
+  },
+  "/pos:cancelled-elsewhere": {
+    "de": "Die Belastung von open-elsewhere nach Abbrechen. Countdown und Abbrechen sind weg, Betrag festlegen ist zurück. Verlauf führt die Belastung als Abgebrochen mit ₿5’000 und ohne Fiat-Betrag, weil dieser Tab sie nicht erstellt hat.",
+    "es": "El cargo de open-elsewhere después de Cancelar. La cuenta atrás y Cancelar ya no están y Fijar un importe vuelve. Historial muestra el cargo como Cancelado con ₿5’000 y sin importe en moneda, porque esta pestaña no lo creó.",
+    "fil": "Ang singil ng open-elsewhere pagkatapos ng Kanselahin. Wala na ang countdown at Kanselahin at bumalik ang Magtakda ng halaga. Inililista ng Kasaysayan ang singil bilang Kinansela na may ₿5’000 at walang halaga sa pera, dahil hindi ito ginawa ng tab na ito."
   },
   "/grants/payments/comment:default": {
     "de": "Gründerin mit gespeichertem Kommentar. Überschrift Text der täglichen Zahlungen. Der Kommentar Tägliches Geschenk ist Text, mit dem Bleistift Kommentar bearbeiten in derselben Zeile, rechts vom Text. Kein Empfänger- und kein Zahlungswechsel. Nadel Kommentar bearbeiten.",

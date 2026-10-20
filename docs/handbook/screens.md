@@ -5038,11 +5038,23 @@ The charge of **open** after **Cancel**. The countdown and **Cancel** are gone a
 
 ![21.gifts point of sale cancelled](images/pos-cancelled.png)
 
+### Variant: open-cancel-failed
+
+The charge of **open** when **Cancel** fails. The charge stays with the countdown, ₿5’000, **$5.00** (the figure the operator typed) and **Cancel**. Alert **Point of sale is unavailable.** **History** says **No payments yet.**
+
+![21.gifts point of sale open cancel failed](images/pos-open-cancel-failed.png)
+
 ### Variant: open-elsewhere
 
 Signed-in Ada with a pending charge of ₿5’000 and 5:00 left that this tab did not create (another tab, or the page was reloaded). Countdown, the sat amount and **Cancel**; no currency figure, because none was typed in this tab, and none is priced from the current spot. **History** says **No payments yet.**
 
 ![21.gifts point of sale open elsewhere](images/pos-open-elsewhere.png)
+
+### Variant: cancelled-elsewhere
+
+The charge of **open-elsewhere** after **Cancel**. The countdown and **Cancel** are gone and **Set an amount** is back. **History** lists the charge as **Cancelled** with ₿5’000 and no currency figure, because this tab did not create it.
+
+![21.gifts point of sale cancelled elsewhere](images/pos-cancelled-elsewhere.png)
 
 ### Variant: paid
 
@@ -5088,7 +5100,7 @@ The till request failed. Alert **Point of sale is unavailable.**
 
 ### Variant: cancel-failed
 
-Open charge of ₿21 with 5:00 left, read from the api: this tab did not create it, so it shows bitcoin only, no currency figure and no spot price. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
+The charge of **open-elsewhere** (₿5’000 with 5:00 left, read from the api) when **Cancel** fails: this tab did not create it, so it shows bitcoin only, no currency figure and no spot price. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale cancel failed](images/pos-cancel-failed.png)
 

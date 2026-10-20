@@ -3911,10 +3911,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'open-cancel-failed',
+    image: 'pos-open-cancel-failed.png',
+    visual: 'state-pos-open-cancel-failed',
+    needle: "shotScreen(page, 'state-pos-open-cancel-failed')",
+  },
+  {
+    route: '/pos',
     id: 'open-elsewhere',
     image: 'pos-open-elsewhere.png',
     visual: 'state-pos-open-elsewhere',
     needle: "shotScreen(page, 'state-pos-open-elsewhere')",
+  },
+  {
+    route: '/pos',
+    id: 'cancelled-elsewhere',
+    image: 'pos-cancelled-elsewhere.png',
+    visual: 'state-pos-cancelled-elsewhere',
+    needle: "shotScreen(page, 'state-pos-cancelled-elsewhere')",
   },
   {
     route: '/pos',
