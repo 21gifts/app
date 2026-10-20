@@ -576,7 +576,51 @@ describe('PayLinkScreen', () => {
     }
   });
 
-  it('shows the viewer fiat under an open till when a spot rate exists', async () => {
+  it('shows an open till when the charge id is not a string', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          id: 12,
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('shows an open till when the charge id is a string', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          id: 'chg_1',
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('shows bitcoin under an open till whose fiat fields are null, even with a rate', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
     mockFetch(async (input) => {
@@ -593,15 +637,84 @@ describe('PayLinkScreen', () => {
       }
       return Response.json({
         ...profile,
-        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+        charge: {
+          amountSats: 238093,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: null,
+          amount: null,
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
       });
     });
-    renderWithLocale(<PayLinkScreen lightning={ADA} />);
-    expect(await screen.findByText('$200.00')).toBeTruthy();
-    const spotCalls = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
-    expect(spotCalls).toHaveLength(1);
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText("₿238'093")).toBeTruthy();
+    await waitFor(() => {
+      const spotCalls = vi
+        .mocked(fetch)
+        .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
+      expect(spotCalls).toHaveLength(1);
+    });
+    expect(screen.queryByText('$200.00')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('shows 12.00 PHP on a pending charge to a viewer whose currency is USD', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '100000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('₱12.00')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('stays on bitcoin when a profile has no charge and a rate is loaded', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
+        });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
   it('returns to the amount form when the till runs out', async () => {

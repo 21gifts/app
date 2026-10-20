@@ -23,6 +23,7 @@ import {
   type WalletSendError,
 } from '@/hooks/useWalletSend';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import type { FiatCode } from '@/lib/committed-fiat';
 import type { MessageKey } from '@/lib/messages';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
@@ -261,8 +262,17 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     const bitcoin = formatBitcoin(sats, numberFormat);
     return live === null ? bitcoin : `${bitcoin} · ${live}`;
   };
-  const largeAmount = (sats: number, amount: string): ReactElement => {
-    const live = fiatText(sats);
+  const largeAmount = (
+    sats: number,
+    amount: string,
+    figure?: { code: FiatCode; amount: string } | null,
+  ): ReactElement => {
+    let live: string | null = null;
+    if (figure === undefined) {
+      live = fiatText(sats);
+    } else if (figure !== null) {
+      live = formatFiatDisplay(figure.amount, figure.code, numberFormat);
+    }
     return (
       <div className="flex flex-col items-center gap-2">
         <p className={LARGE_AMOUNT_CLASS}>{amount}</p>
@@ -500,7 +510,11 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     const totalSats = state.amountSats + state.feeSats;
     body = (
       <div className="flex w-full flex-col items-center gap-3 py-2">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -571,7 +585,11 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'confirm') {
     body = (
       <div className="flex w-full flex-col items-center gap-4 py-6">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -585,7 +603,11 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'quote') {
     body = (
       <div className="flex w-full flex-col items-center gap-4 py-6">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -617,6 +639,7 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
           {largeAmount(
             state.amountSats,
             t('wallet.sendSent', { amount: formatBitcoin(state.amountSats, numberFormat) }),
+            state.chargeFigure,
           )}
         </div>
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">

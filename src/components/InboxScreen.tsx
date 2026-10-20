@@ -39,7 +39,6 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
-  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -346,9 +345,9 @@ const STORED_FIAT_FIELD = {
 } as const;
 
 /**
- * Plain-text ₿ amount plus the visitor's default fiat.
- * A stored string wins. Otherwise the current spot rate. Bitcoin alone only
- * when neither figure exists.
+ * Plain-text ₿ amount plus the visitor's stored fiat.
+ * A stored string for that currency is shown as-is. A missing string stays
+ * bitcoin. This is a committed gift, so it does not use the spot rate.
  */
 function giftAmountText(
   sats: number,
@@ -360,16 +359,13 @@ function giftAmountText(
     amountEur?: string | null | undefined;
     amountPhp?: string | null | undefined;
   },
-  rateDay: FiatRateDay | null,
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
   const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-  const fiatAmount =
-    typeof storedAmount === 'string' ? storedAmount : satsToFiatAmount(sats, rateDay, fiat);
-  if (fiatAmount === null) {
+  if (typeof storedAmount !== 'string') {
     return bitcoin;
   }
-  return `${bitcoin} · ${formatFiatDisplay(fiatAmount, fiat, numberFormat)}`;
+  return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
 }
 
 /**
@@ -480,7 +476,7 @@ function ConversationListItem({
         ) : row.lastSats > 0 ? (
           <span className={listPreviewClass(row.lastFromMe)}>
             {formatBitcoin(row.lastSats, numberFormat)}
-            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat)}
+            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat, {})}
           </span>
         ) : null}
       </button>
@@ -518,8 +514,8 @@ function ConversationListItem({
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
  * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
  * when the payment was made (a stored string as-is; null or a missing field
- * uses `rateDay`). Unpaid invoice previews omit the stored object and use the
- * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
+ * stays absent). Unpaid invoice previews omit the stored object and use the
+ * spot rate. A settled amount with no stored string stays bitcoin. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * pay sheet, where `WalletPay` pays from the member's in-app wallet; it shows
@@ -1065,7 +1061,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift, rateDay),
+                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}

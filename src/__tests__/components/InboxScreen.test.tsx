@@ -1451,7 +1451,7 @@ describe('InboxScreen', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('shows the default fiat on a gift-only last-sats list preview', () => {
+  it('shows bitcoin only on a gift-only last-sats list preview when a rate exists', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
@@ -1480,7 +1480,7 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('styles an unread inbound row with a semibold name and foreground lastText', () => {
@@ -1786,7 +1786,7 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
   });
 
-  it('uses the live rate on a nested gift when stored fiat is null', () => {
+  it('shows bitcoin only on a nested gift when stored fiat is null', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = {
       ...MESSAGE,
@@ -1819,13 +1819,12 @@ describe('InboxScreen', () => {
       />,
     );
     const note = screen.getByRole('note');
-    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
     expect(note.textContent).toContain(formatBitcoin(21));
-    expect(note.textContent).toContain('$0.02');
-    expect(note.textContent).not.toContain('$5.00');
+    expect(note.textContent).not.toContain('$');
   });
 
-  it('shows the live viewer fiat when no fiat was stored', () => {
+  it('shows bitcoin only when no fiat was stored', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
     renderWithLocale(
@@ -1850,8 +1849,9 @@ describe('InboxScreen', () => {
       />,
     );
     const note = screen.getByRole('note');
-    expect(note.textContent).toContain('$0.02');
-    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
+    expect(note.textContent).toContain(formatBitcoin(21));
+    expect(note.textContent).not.toContain('$');
+    expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)}`);
   });
 
   it('styles a nested gift inside an own bubble with the bubble foreground', () => {
@@ -1941,7 +1941,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Hello team')).toBeTruthy();
   });
 
-  it('shows the live viewer fiat on gift bubbles when no fiat was stored', () => {
+  it('shows bitcoin only on gift bubbles when no fiat was stored', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[DIRECT]}
@@ -1973,7 +1973,7 @@ describe('InboxScreen', () => {
     expect(items[1]?.textContent).toContain('send ₿21');
     expect(items[2]?.textContent).toContain('Hi');
     expect(items[2]?.textContent).toContain('₿21');
-    expect(screen.getAllByText('$0.02').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('scrolls the AppShell scroller to the bottom for an open thread', () => {

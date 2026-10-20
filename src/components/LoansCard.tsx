@@ -4,16 +4,14 @@ import Link from 'next/link';
 import { useId, useState, type ReactElement } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { forumGoalPercent } from '@/lib/forum-goal';
 import { summarizeLoans } from '@/lib/loan-repay';
-import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
+import { formatBitcoin } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
 export interface LoansCardProps {
@@ -37,7 +35,6 @@ function localDay(date: Date): string {
 export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
   const rateDay = useSpotRate();
   const { loans } = useMyLoans();
   const [open, setOpen] = useState(false);
@@ -57,13 +54,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
       : summary.tone === 'success'
         ? 'border-app-success/50'
         : 'border-app-border';
-  const money = (sats: number): string => {
-    const bitcoin = formatBitcoin(sats, numberFormat);
-    const amount = satsToFiatAmount(sats, rateDay, fiat);
-    return amount === null
-      ? bitcoin
-      : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
-  };
+  const money = (sats: number): string => formatBitcoin(sats, numberFormat);
   const nextLine = (): string | null => {
     if (summary.next === null) {
       return null;
@@ -139,7 +130,6 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                   }`}
                 >
                   {formatBitcoin(summary.payableSats, numberFormat)}
-                  {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
                 </p>
               </div>
               <ButtonLink href="/loans/repay" size="sm">

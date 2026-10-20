@@ -881,7 +881,7 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('shows the viewer fiat when the note stored no fiat', async () => {
+  it('shows bitcoin only when the note stored no fiat', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValue({
       asOf: '2026-10-07T00:00:00.000Z',
       source: 'test',
@@ -890,7 +890,10 @@ describe('PublicMessageLoader', () => {
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     expect(await screen.findByText('₿21')).toBeTruthy();
-    expect(await screen.findByText('$0.02')).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchFxSpot).toHaveBeenCalled();
+    });
+    expect(screen.queryByText('$0.02')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 

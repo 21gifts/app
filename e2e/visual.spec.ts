@@ -1565,7 +1565,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21')).toBeVisible();
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     } else {
@@ -1651,7 +1651,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
@@ -1690,7 +1690,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
@@ -2090,7 +2090,7 @@ test.describe('screen baselines', () => {
     await seedLoanData(page, [waitingAllLoan], { 'loan-a': waitingAllLedger });
     await page.goto('/wallet?visual=balance-ready');
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await expect(page.getByText(/waits · 3 lenders have no wallet yet/i)).toBeVisible();
     await shotScreen(page, 'state-wallet-loans-waiting-all');
   });
@@ -3069,11 +3069,13 @@ test.describe('screen baselines', () => {
 
   test('state-wallet-payment-loading', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
-    // The rate read never answers, so the screen stays in its loading state.
+    // The spot never answers. This payment is not a shop charge, so the
+    // bitcoin amount shows at once and no fiat line is derived from the spot.
     await page.route('**/fx/spot', () => undefined);
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
-    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-payment-loading');
   });
 
@@ -3429,7 +3431,7 @@ test.describe('screen baselines', () => {
     await page.clock.pauseAt(now + 1_000);
     await page.goto('/wallet?visual=wallet-received');
     const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
-    await expect(banner).toContainText('$0.50');
+    await expect(banner).toContainText('₿500');
     // The banner slides in; shoot it where it rests.
     await expect
       .poll(() =>
@@ -3445,7 +3447,7 @@ test.describe('screen baselines', () => {
 
   test('wallet received', async ({ page }) => {
     await openReceived(page);
-    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500');
     await shotScreen(page, 'state-wallet-received');
   });
 
@@ -3461,7 +3463,7 @@ test.describe('screen baselines', () => {
     const banner = await openReceived(page);
     await banner.getByRole('button', { name: 'Close' }).click();
     await expect(banner).toHaveCount(0);
-    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500');
     await shotScreen(page, 'state-wallet-received-bump');
   });
 
@@ -5058,7 +5060,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-short',
-      text: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+      text: 'Send ₿500 now to Bruno, the rest after your top-up',
     });
     await shotScreen(page, 'state-loans-repay-short');
   });
@@ -5068,7 +5070,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-short',
-      text: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+      text: 'Send ₿500 now to Bruno, the rest after your top-up',
       pressWho: true,
     });
     await expect(page.getByText('Diego')).toBeVisible();
@@ -5230,7 +5232,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-sending',
-      text: "Sending ₿1'000 · $1.00…",
+      text: "Sending ₿1'000…",
     });
     await shotScreen(page, 'state-loans-repay-sending');
   });
@@ -5240,7 +5242,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-sending',
-      text: "Sending ₿1'000 · $1.00…",
+      text: "Sending ₿1'000…",
       pressWho: true,
     });
     await expect(page.getByText('Diego')).toBeVisible();
@@ -5274,7 +5276,7 @@ test.describe('loans repay screens', () => {
       loans: [paidLoan],
       ledgers: { 'loan-a': paidLedger },
       visual: 'repay-repaid',
-      text: "Repaid ₿1'000 · $1.00",
+      text: "Repaid ₿1'000",
     });
     await shotScreen(page, 'state-loans-repay-repaid');
   });
@@ -5316,7 +5318,7 @@ test.describe('loans repay screens', () => {
       loans: [repaidLastLoan, repaidLoanB],
       ledgers: { 'loan-a': repaidLastLedger, 'loan-b': repaidLedgerB },
       visual: 'repay-repaid-multi',
-      text: "Repaid ₿2'200 · $2.20",
+      text: "Repaid ₿2'200",
     });
     await shotScreen(page, 'state-loans-repay-last-multi');
   });
@@ -10219,7 +10221,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
@@ -10270,7 +10272,8 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
-    await expect(page.getByText('$0.02')).toHaveCount(2);
+    await expect(page.getByText('₿21', { exact: true })).toHaveCount(2);
+    await expect(page.getByText('$0.02')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
       '/pos/amount',
@@ -10347,7 +10350,8 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
-    await expect(history.getByText('$2.10')).toBeVisible();
+    await expect(history.getByText("₿2'100")).toBeVisible();
+    await expect(history.getByText('$2.10')).toHaveCount(0);
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
     await expect(history.getByText('Sep 18, 2026, 5:45 PM')).toBeVisible();
@@ -10951,7 +10955,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -11014,7 +11018,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });
@@ -12127,8 +12131,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
-    await expect(page.getByText('$23.10')).toBeVisible();
+
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
   });
@@ -12212,7 +12215,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await page.getByText('The goal is defined in dollars.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-fiat');
@@ -12311,7 +12313,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await page.getByText('Need help with a train ticket').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-credit');
@@ -12573,7 +12575,7 @@ test.describe('onboarding screens', () => {
     await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
     await expect(success.getByRole('button')).toHaveCount(0);
     // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
-    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^₿10'710 of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByLabel('Amount to lend')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
@@ -14162,7 +14164,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A credit from Carol.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -16802,8 +16804,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
-    await expect(page.getByText('$23.10')).toBeVisible();
+
     await shotScreen(page, 'state-messages-id-goal-110');
   });
 
@@ -16835,7 +16836,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-fiat');
@@ -16871,10 +16871,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText("₿21'000", { exact: true })).toBeVisible();
-    await expect(page.getByText('$21.00', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-credit');
   });
@@ -17394,7 +17393,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Next repayment')).toBeVisible();
     await expect(page.getByText(/7 days at/)).toBeVisible();
     await expect(page.getByText('All other days are')).toBeVisible();
-    await expect(page.getByText('₿10 · $0.01').first()).toBeVisible();
+    await expect(page.getByText('₿10').first()).toBeVisible();
+    await expect(page.getByText('$0.01')).toHaveCount(0);
+    await expect(page.getByText('$0.08')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
     const month = page.getByRole('heading', { name: 'November 2026' });
     const footnote = page.getByText('All other days are');
@@ -17823,7 +17824,7 @@ test.describe('onboarding screens', () => {
     await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
     await expect(success.getByRole('button')).toHaveCount(0);
     // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
-    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^₿10'710 of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByLabel('Amount to lend')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
@@ -18891,7 +18892,6 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-open');
@@ -18938,7 +18938,6 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Robin wrote a reaction').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-open');
   });
@@ -18985,7 +18984,6 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 shop' }).click();
     await expect(page.getByText('Robin wrote a shop note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a shop note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-shops-open');
@@ -19033,7 +19031,6 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 credit' }).click();
     await expect(page.getByText('Robin wrote a credit note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a credit note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-credits-open');
@@ -19328,7 +19325,6 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 posts' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-truncated');
   });
@@ -19375,7 +19371,6 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 reactions' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-truncated');
   });
@@ -19423,7 +19418,6 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 shops' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a shop note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-shops-truncated');
   });
@@ -19471,7 +19465,6 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 credits' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a credit note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-credits-truncated');
   });
@@ -19624,7 +19617,6 @@ test.describe('onboarding screens', () => {
     await fulfillAuthorList(page, 'posts', 'Robin wrote a note');
     await openAuthorFeed(page, 'posts');
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByRole('button', { name: 'External', exact: true }).click();
     await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
     await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
@@ -23559,8 +23551,7 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
-    await expect(page.getByText('$23.10')).toBeVisible();
+
     await shotScreen(page, 'state-welcome-goal-110');
   });
 
@@ -23595,7 +23586,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-fiat');
@@ -23634,7 +23624,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('₱200.00')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-php');
@@ -23674,7 +23663,7 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
@@ -24070,7 +24059,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([paid]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-nothing-due');
   });
 
@@ -24081,7 +24070,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([paid]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-nothing-due-open');
@@ -24093,7 +24082,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([waitingAllLoan]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-waiting-all');
   });
 
@@ -24103,7 +24092,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([waitingAllLoan]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-waiting-all-open');
@@ -24632,7 +24621,7 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/₿700 per day for 30 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview');
   });
 
@@ -24661,7 +24650,7 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/₿700 per day for 30 days/)).toBeVisible();
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByRole('status')).toContainText('paid back');
     await shotScreen(page, 'state-welcome-ask-credit-preview-loan-open');
@@ -24821,7 +24810,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
-    await expect(page.getByText('$1.00')).toBeVisible();
     await page.getByText("₿1'000").scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-open');
   });

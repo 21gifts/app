@@ -463,7 +463,7 @@ describe('CreditLedger', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('prices the bitcoin chart total in the visitor fiat when a rate exists', async () => {
+  it('shows the bitcoin chart total when a rate exists and no fiat was stored', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo) => {
@@ -483,10 +483,9 @@ describe('CreditLedger', () => {
     );
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Nov 1/ });
-    await waitFor(() => {
-      expect(chart.textContent).toContain('·');
-      expect(chart.textContent).toContain('$0.02');
-    });
+    expect(chart.textContent).toContain('₿21');
+    expect(chart.textContent).not.toContain('·');
+    expect(chart.textContent).not.toContain('$');
   });
 
   it('keeps the feed ledger closed until the visitor asks', async () => {
@@ -780,7 +779,7 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).not.toContain('All other days are');
   });
 
-  it('prices a long bitcoin overview in the visitor fiat when a rate exists', async () => {
+  it('keeps a long bitcoin overview in bitcoin when a rate exists', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo) => {
@@ -804,7 +803,9 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect(await screen.findByText('November 2026')).toBeTruthy();
     await waitFor(() => {
-      expect(document.body.textContent).toContain('₿10 · $0.01');
+      expect(document.body.textContent).toContain('₿10');
+      expect(document.body.textContent).not.toContain('$0.01');
+      expect(document.body.textContent).not.toContain('$0.08');
     });
   });
 

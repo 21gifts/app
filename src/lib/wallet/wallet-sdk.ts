@@ -127,6 +127,8 @@ export interface WalletPaymentInfo {
   description?: string;
   /** Gift or shop, when the invoice memo names that and is not a sentence. */
   purpose?: 'gift' | 'shop';
+  /** Charge id of a shop payment, the text after `pos:`. */
+  chargeId?: string;
   /** BOLT11 invoice or Spark invoice. */
   invoice?: string;
   /** Lightning payment hash (hex). */
@@ -266,6 +268,7 @@ function paymentInfo(details: SdkPaymentDetailsLike | undefined): WalletPaymentI
     info.purpose = 'gift';
   } else if (description !== undefined && description !== '' && SHOP_MEMO.test(description)) {
     info.purpose = 'shop';
+    info.chargeId = description.slice('pos:'.length);
   } else if (description !== undefined && description !== '') {
     info.description = description;
   }
@@ -316,7 +319,7 @@ const METHODS: readonly WalletPaymentMethod[] = ['lightning', 'spark', 'deposit'
  * none; a zap request that is not valid kind-9734 JSON is left out. A gift
  * memo, zap: plus 64 hex digits, is purpose gift with no description; those
  * hex digits are the payment hash when htlcDetails has none. A shop memo,
- * pos: plus a charge id, is purpose shop with no description.
+ * pos: plus a charge id, is purpose shop with that charge id and no description.
  *
  * @param payment - Payment from the SDK's `listPayments`.
  * @returns The mapped payment.

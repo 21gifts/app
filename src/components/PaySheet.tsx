@@ -20,6 +20,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
+import { committedFiatFigure, type StoredFiat } from '@/lib/committed-fiat';
 import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
@@ -192,6 +193,12 @@ export interface PaySheetProps {
   amountSats: number;
   /** Current spot rate for the fiat line, or `null` while there is none. */
   rateDay: FiatRateDay | null;
+  /**
+   * Fiat stored with an existing amount. When set, the sheet shows that
+   * figure and does not price the sats. Omit it while the amount is still
+   * being typed: that preview keeps the spot.
+   */
+  stored?: StoredFiat;
   /** Heading of the success step, e.g. **Sent to Ana**, **Lent to Ana**, **Paid and posted**, or **Sent**. */
   successTitle: string;
   /**
@@ -230,6 +237,7 @@ export function PaySheet({
   title,
   amountSats,
   rateDay,
+  stored,
   successTitle,
   onClose,
   onSentChange,
@@ -350,16 +358,24 @@ export function PaySheet({
   }, [leaving, close]);
 
   const shown = entered && !leaving;
-  const fiatAmount = satsToFiatAmount(amountSats, rateDay, fiat);
+  const storedFigure = stored === undefined ? null : committedFiatFigure(stored, fiat);
+  const spotAmount = stored === undefined ? satsToFiatAmount(amountSats, rateDay, fiat) : null;
+  let fiatLine: string | null = null;
+  if (stored !== undefined) {
+    fiatLine =
+      storedFigure === null
+        ? null
+        : formatFiatDisplay(storedFigure.amount, storedFigure.code, numberFormat);
+  } else if (spotAmount !== null) {
+    fiatLine = formatFiatDisplay(spotAmount, fiat, numberFormat);
+  }
   const amount = (
     <div className="flex flex-col items-center gap-0.5">
       <p className="text-4xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg">
         {formatBitcoin(amountSats, numberFormat)}
       </p>
-      {fiatAmount === null ? null : (
-        <p className="text-sm tabular-nums lining-nums text-app-muted">
-          {formatFiatDisplay(fiatAmount, fiat, numberFormat)}
-        </p>
+      {fiatLine === null ? null : (
+        <p className="text-sm tabular-nums lining-nums text-app-muted">{fiatLine}</p>
       )}
     </div>
   );

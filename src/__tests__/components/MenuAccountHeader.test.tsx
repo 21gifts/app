@@ -132,7 +132,7 @@ describe('MenuAccountHeader', () => {
     });
     renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
     expect(screen.getByText("You're behind on your loan")).toBeTruthy();
-    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
     const send = screen.getByRole('link', { name: 'Send' });
     expect(send.getAttribute('href')).toBe('/loans/repay');
     fireEvent.click(send);

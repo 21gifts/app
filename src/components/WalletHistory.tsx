@@ -3,21 +3,42 @@
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, Card } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
-import { useSpotRate } from '@/hooks/useSpotRate';
+import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
 import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
- * `/wallet` payment list, newest first: direction, Bitcoin amount with the
- * default fiat, date, and the payer's note when there is one. Shown only
+ * Fiat under a history row. A shop payment shows the figure stored on its
+ * receipt once that read returns. Until then, and for every other payment,
+ * the row stays bitcoin.
+ *
+ * @param props - The payment's method details.
+ * @returns The stored figure, or `null`.
+ */
+function HistoryFiat(props: { info: WalletPayment['info'] }): ReactElement | null {
+  const { numberFormat } = useNumberFormat();
+  const shop = useShopChargeFigure(props.info.purpose === 'shop' ? props.info : null);
+  if (shop.figure === null) {
+    return null;
+  }
+  return (
+    <span className="shrink-0 tabular-nums lining-nums">
+      {formatFiatDisplay(shop.figure.amount, shop.figure.code, numberFormat)}
+    </span>
+  );
+}
+
+/**
+ * `/wallet` payment list, newest first: direction, Bitcoin amount, date, and
+ * the payer's note when there is one. A shop payment adds the currency figure
+ * stored on that charge once the receipt returns. Shown only
  * while the wallet is ready. The next page loads when the end of the list
  * is in view, checked again after every completed load. Nothing renders during the first load.
  *
@@ -26,8 +47,6 @@ import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-
 export function WalletHistory(): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
-  const rateDay = useSpotRate();
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
   const heartContext = useHeartContext(
     payments.flatMap((payment) =>
@@ -138,9 +157,7 @@ export function WalletHistory(): ReactElement | null {
                         </span>
                       )}
                     </time>
-                    <span className="shrink-0 tabular-nums lining-nums">
-                      {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
-                    </span>
+                    <HistoryFiat info={payment.info} />
                   </div>
                   {message === null ? null : (
                     <p className="truncate text-sm text-app-muted">{message}</p>

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
+import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
@@ -15,6 +16,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams('id=p1'),
 }));
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRateState: vi.fn() }));
+vi.mock('@/hooks/useShopChargeFigure', () => ({
+  useShopChargeFigure: vi.fn(() => ({ pending: false, figure: null })),
+}));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
@@ -84,6 +88,8 @@ function openDetails(): void {
 }
 
 beforeEach(() => {
+  vi.mocked(useShopChargeFigure).mockReset();
+  vi.mocked(useShopChargeFigure).mockReturnValue({ pending: false, figure: null });
   vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
   vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
@@ -136,25 +142,49 @@ describe('WalletPaymentDetails', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it('shows nothing of a loaded payment until the rate read has settled', () => {
+  it('shows a loaded payment in bitcoin while the spot rate is still loading', () => {
     vi.mocked(useSpotRateState).mockReturnValue({ rateDay: null, loading: true });
     showPayment(fixture(ZAP));
-    expect(screen.queryByText("+₿2'100")).toBeNull();
-    expect(screen.queryByText('Date')).toBeNull();
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+    expect(screen.getByText('Date')).toBeTruthy();
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
-  it('shows a received zap as a gift on the post: signed amount with fiat and the message, without a key or note id', () => {
+  it('shows the stored PHP figure under a shop payment and none when the receipt has no figure', () => {
+    const shop = {
+      ...fixture(ZAP),
+      info: { purpose: 'shop' as const, chargeId: 'chg_abc', lnAddress: 'shop@21.gifts' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'PHP', amount: '12.00' },
+    });
+    showPayment(shop);
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+    expect(screen.getByText('₱12.00')).toBeTruthy();
+    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+    cleanup();
+    vi.mocked(useShopChargeFigure).mockReturnValue({ pending: false, figure: null });
+    showPayment(shop);
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+    expect(screen.queryByText('₱12.00')).toBeNull();
+    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('shows a received zap as a gift on the post: signed bitcoin amount and the message, without a key or note id', () => {
     showPayment(fixture(ZAP));
     expect(screen.getByText('Gift on your post')).toBeTruthy();
     expect(screen.getByText("+₿2'100")).toBeTruthy();
-    expect(screen.getByText('$2.10', { selector: 'p' })).toBeTruthy();
+    expect(screen.queryByText('$2.10')).toBeNull();
     expect(screen.getByText('Completed').className).toContain('text-app-success');
     expect(screen.getByText('Great photo!')).toBeTruthy();
     expect(row('Type').textContent).toBe('Instant payment');
     expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Post', { selector: 'dt' })).toBeNull();
     expect(document.body.textContent).not.toMatch(/npub1|note1|Zap/);
-    expect(row('Amount').textContent).toBe("₿2'100 · $2.10");
+    expect(row('Amount').textContent).toBe("₿2'100");
     // A fee-less receive has no fee row, and a received payment shows no recipient node.
     expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
@@ -166,15 +196,15 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('View on mempool.space')).toBeNull();
   });
 
-  it('shows a Lightning-address send: To, the comment, and fee and total with fiat, without the node key', () => {
+  it('shows a Lightning-address send: To, the comment, and the bitcoin fee and total, without the node key', () => {
     showPayment(fixture(ADDRESS_SEND));
     expect(screen.getAllByText('bob@example.com')).toHaveLength(2);
     expect(screen.getByText("−₿10'000")).toBeTruthy();
     expect(screen.getByText('Thanks for dinner')).toBeTruthy();
     expect(row('To').textContent).toBe('bob@example.com');
     expect(within(row('To')).queryByRole('link')).toBeNull();
-    expect(row('Fee').textContent).toBe('₿3 · $0.00');
-    expect(row('Total').textContent).toBe("₿10'003 · $10.00");
+    expect(row('Fee').textContent).toBe('₿3');
+    expect(row('Total').textContent).toBe("₿10'003");
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Description', { selector: 'dt' })).toBeNull();
   });

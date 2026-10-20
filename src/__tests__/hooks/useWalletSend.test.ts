@@ -2235,7 +2235,17 @@ describe('useWalletSend fixed amount', () => {
 
 describe('useWalletSend shop charge', () => {
   const SHOP_QR = WALLET_SEND_VISUAL_FIXTURE.fixedLink;
-  const CHARGE = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
+  const CHARGE = {
+    kind: 'invoice' as const,
+    amountSats: 7_000,
+    sparkInvoice: 'spark1shop',
+    amountCurrency: null,
+    amount: null,
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  };
 
   function confirmShop(amountSats = 7_000): WalletPayResult {
     return {
@@ -2260,8 +2270,40 @@ describe('useWalletSend shop charge', () => {
       recipient: 'shop@21.gifts',
       amountSats: 7_000,
       feeSats: 0,
+      chargeFigure: null,
     });
     expect(result.current.busy).toBe(false);
+  });
+
+  it('keeps the stored PHP figure when the paid charge is sent', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue({
+      ...CHARGE,
+      amountCurrency: 'PHP',
+      amount: '12.00',
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'shop@21.gifts',
+      amountSats: 7_000,
+      feeSats: 0,
+      chargeFigure: { code: 'PHP', amount: '12.00' },
+    });
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(result.current.state).toEqual({
+      step: 'sent',
+      amountSats: 7_000,
+      recipient: 'shop@21.gifts',
+      chargeFigure: { code: 'PHP', amount: '12.00' },
+    });
   });
 
   it('asks a pasted own-host address for its charge', async () => {
@@ -2363,6 +2405,7 @@ describe('useWalletSend shop charge', () => {
       step: 'quote',
       recipient: 'shop@21.gifts',
       amountSats: CHARGE.amountSats,
+      chargeFigure: null,
     });
     await act(async () => {
       useWalletStore.setState({ status: 'ready' });
@@ -2883,10 +2926,30 @@ describe('useWalletSend failure report', () => {
     expect(reportPaymentFailure).toHaveBeenCalledWith(lnurlFailure, 'send', { session: 'sess' });
   });
 
-  const OPEN_CHARGE = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
+  const OPEN_CHARGE = {
+    kind: 'invoice' as const,
+    amountSats: 7_000,
+    sparkInvoice: 'spark1shop',
+    amountCurrency: null,
+    amount: null,
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  };
 
   it('reports a shop charge under pos, at prepare and at send', async () => {
-    const charge = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
+    const charge = {
+      kind: 'invoice' as const,
+      amountSats: 7_000,
+      sparkInvoice: 'spark1shop',
+      amountCurrency: null,
+      amount: null,
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    };
     vi.mocked(fetchShopChargeInvoice).mockResolvedValue(charge);
     vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
     const low = renderHook(() => useWalletSend());

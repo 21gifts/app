@@ -47,11 +47,10 @@ describe('ReceivedNotice', () => {
     const { container } = renderWithLocale(<ReceivedNotice />);
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
-    expect(useSpotRate).toHaveBeenCalledWith(false);
     expect(useIncomingPayment).toHaveBeenCalledWith(6000);
   });
 
-  it('shows the amount and only the fiat under it, as a link to /wallet, even when the payment names an address', () => {
+  it('shows the bitcoin amount as a link to /wallet, even when the payment names an address', () => {
     vi.mocked(useIncomingPayment).mockReturnValue({
       payment: payment({ lnAddress: 'bruno@21.gifts' }),
       dismiss,
@@ -61,7 +60,7 @@ describe('ReceivedNotice', () => {
     expect(status.className).toContain('max-w-sm');
     expect(status.className).toContain('border-app-success/40');
     expect(screen.getByText('You received ₿500')).toBeTruthy();
-    expect(screen.getByText('$0.50')).toBeTruthy();
+    expect(screen.queryByText('$0.50')).toBeNull();
     expect(screen.queryByText(/bruno/)).toBeNull();
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/wallet');

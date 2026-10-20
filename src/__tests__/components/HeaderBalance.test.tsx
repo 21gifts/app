@@ -132,13 +132,13 @@ describe('HeaderBalance', () => {
     expect(screen.getByRole('link', { name: "Balance ₿21'000" })).toBeTruthy();
   });
 
-  it('turns the success colour and shows the arrived amount with its fiat', () => {
+  it('turns the success colour and shows the arrived amount in bitcoin', () => {
     vi.mocked(useIncomingPayment).mockReturnValue({ payment: PAYMENT, dismiss: vi.fn() });
     wallet('ready', 21_500);
     renderWithLocale(<HeaderBalance />);
     const link = screen.getByRole('link', { name: "Balance ₿21'500 $21.50" });
     expect(link.className).toContain('text-app-success');
     const bump = link.querySelector('[aria-hidden="true"]');
-    expect(bump?.textContent).toBe('+₿500 · $0.50');
+    expect(bump?.textContent).toBe('+₿500');
   });
 });
