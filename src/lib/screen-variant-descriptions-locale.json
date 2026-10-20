@@ -20,9 +20,9 @@
     "fil": "Pagkatapos pindutin ang icon-only na kontrol na Kopyahin, ang check icon ay may accessible na pangalang Nakopya. Nananatiling nakikita ang npub."
   },
   "/[npub]:photos": {
-    "de": "Gelistete Twin Gallery mit zwei verschiedenen Fotos. Die Galerie zeigt das erste Foto, das zweite ragt rechts herein, oben rechts steht 1/2 und darunter zwei Punkte; der erste Punkt ist aktiv.",
-    "es": "Twin Gallery listada con dos fotos distintas. La galería muestra la primera foto, la segunda asoma a la derecha, arriba a la derecha pone 1/2 y debajo hay dos puntos; el primero está activo.",
-    "fil": "Nakalistang Twin Gallery na may dalawang magkaibang litrato. Ipinapakita ng gallery ang unang litrato, sumisilip sa kanan ang pangalawa, may 1/2 sa kanang itaas, at may dalawang tuldok sa ibaba; aktibo ang una."
+    "de": "Gelistete Twin Gallery mit zwei verschiedenen Fotos. Die Galerie zeigt das erste Foto, das zweite ragt rechts herein, oben rechts steht 1/2 und darunter zwei Punkte; der erste Punkt (Foto 1 von 2) ist aktiv.",
+    "es": "Twin Gallery listada con dos fotos distintas. La galería muestra la primera foto, la segunda asoma a la derecha, arriba a la derecha pone 1/2 y debajo hay dos puntos; el primero (Foto 1 de 2) está activo.",
+    "fil": "Nakalistang Twin Gallery na may dalawang magkaibang litrato. Ipinapakita ng gallery ang unang litrato, sumisilip sa kanan ang pangalawa, may 1/2 sa kanang itaas, at may dalawang tuldok sa ibaba; aktibo ang una (Litrato 1 sa 2)."
   },
   "/[npub]:photo-2": {
     "de": "Nach dem Drücken des zweiten Punkts (Foto 2 von 2) zeigt die Galerie das zweite Foto in voller Breite, oben rechts steht 2/2 und der zweite Punkt ist aktiv.",

@@ -1461,7 +1461,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` through `fetchMapsKey` when opened and loads Google's script through the shared `loadGoogleMaps`. Subscribes to a rejected key through `onGoogleMapsAuthFailure` for its whole lifetime: an open panel switches to the unavailable sentence, and a closed one stays unavailable when it is opened again.
-- **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
+- **Used by:** `ForumBoard` (top-level composer), `ShopAddWizard` (place step), and `ShopPlaceControl`.
 
 ## Function: fitBoxInFrame
 
@@ -1783,7 +1783,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, `ViewProfileScreen`, and `ShopScreen` also on a smartphone when the value exists. `WalletScreenView` when its `showQr` prop is set and the value exists.
+- **Used by:** `ForumPaySheet` (rendered by `ForumBoard` and `HabitComments`), `ForumReplyPayPage` (rendered by `ForumBoard`), `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, `ViewProfileScreen`, and `ShopScreen` also on a smartphone when the value exists. `WalletScreenView` when its `showQr` prop is set and the value exists.
 
 ## Function: RootLayout
 
