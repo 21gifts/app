@@ -1748,10 +1748,53 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
 
+## Screen: /[npub]
+
+- **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
+- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, postal address as text, optional one-marker Google map, link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and an Open CryptoPay QR when `payUsername` is not null. Without a Google Maps key there is no map frame; the address remains. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. API 503 or an unusable response shows `forum.error` plus **Try again**.
+- **Inputs / metadata:** Server `GET /shops/:npub` without a session. `generateMetadata` uses the same 2.5-second abort as a public note, with shop name, description, first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. The client asks same-origin `GET /maps/key`; a non-empty key draws only this shop at zoom 14. Payment encodes `openCryptoPayQrValue(payUsername, window.location.hostname)`, with `21.gifts` during SSR.
+- **Actions / calls:** Open `/messages/{messageId}`, copy the npub (`NpubCopyButton`), scan the `QrCode`, change language or use the signed-in Menu, retry via `router.refresh`, and use the one header back arrow. Calls `ShopPage`, `ShopScreen`, `PublicMessageChrome`, `ForumPhotoGallery`, `GoogleMapCanvas`, `NpubCopyButton`, `QrCode`, and `openCryptoPayQrValue`.
+
+### Variant: default
+
+Listed **Cafe Luna** with description, one photo, full address, forum-note link, NIP-05, npub copy control, and Open CryptoPay QR. No maps key, so no map frame. The address remains visible.
+
+![21.gifts public shop](images/npub.png)
+
+### Variant: map
+
+The same listed shop with a browser maps key. A deterministic map frame draws exactly one marker for the shop; it never loads the full places list.
+
+![21.gifts public shop map](images/npub-map.png)
+
+### Variant: copied
+
+After pressing the icon-only **Copy** control, its check icon has the accessible name **Copied**. The npub remains visible.
+
+![21.gifts public shop copied](images/npub-copied.png)
+
+### Variant: no-payment
+
+Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum link, and npub remain; the verified-address section and payment QR are absent.
+
+![21.gifts public shop without payment](images/npub-no-payment.png)
+
+### Variant: gone
+
+API 410. The page says **This shop is no longer listed.** and shows no shop name or other hidden shop data.
+
+![21.gifts unlisted shop](images/npub-gone.png)
+
+### Variant: error
+
+API 503. Shared alert **Could not load messages. Please try again.** and labeled **Try again** button; never a blank page.
+
+![21.gifts shop unavailable](images/npub-error.png)
+
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
 

@@ -564,6 +564,9 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
  */
 export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
+/** Nostr npub accepted by public shop identities. */
+export const SHOP_NPUB_RE = /^npub1[02-9ac-hj-np-z]{58}$/;
+
 /**
  * Runtime schema for an optional forum place pin.
  */
@@ -598,6 +601,8 @@ export const forumPlacesResponseSchema = z.object({
       createdAt: z.string().min(1),
       accountId: z.string().min(1).optional(),
       shop: z.boolean().optional(),
+      /** Listed-shop identity; omitted by an older api and normalized to null. */
+      shopNpub: z.string().regex(SHOP_NPUB_RE).nullable().optional().default(null),
     }),
   ),
 });
@@ -612,6 +617,8 @@ export type ForumPlaceRow = ForumPlacePin & {
   accountId?: string | undefined;
   /** True when the note is a shop. Omitted by an older api. */
   shop?: boolean | undefined;
+  /** Listed-shop identity, null before its key exists or for an older api. */
+  shopNpub: string | null;
 };
 
 /**
@@ -647,6 +654,8 @@ export type ForumPlaceRow = ForumPlacePin & {
  * payloads omit them.
  * `place` is optional and is not a body.
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
+ * `shopNpub` is the listed shop identity, null for every other note, and
+ * optional only so a rolling api deployment still parses.
  * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
@@ -706,6 +715,7 @@ export const forumMessageSchema = z
         name: z.string(),
       })
       .optional(),
+    shopNpub: z.string().regex(SHOP_NPUB_RE).nullable().optional(),
     /** Present on a signed-in payload when the body marks members. Omitted with no session. */
     mentions: z
       .array(
@@ -798,6 +808,43 @@ export const forumRepliesSchema = z.object({
  * One public forum message from the api.
  */
 export type ForumMessage = z.infer<typeof forumMessageSchema>;
+
+/** Runtime schema for one public shop photo. */
+export const shopPhotoSchema = z.object({
+  url: z.string().min(1),
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
+});
+
+/** Runtime schema for `GET /shops/:npub` shop data. */
+export const shopSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  messageId: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string(),
+  place: z.object({
+    lat: z.number().gte(-90).lte(90),
+    lng: z.number().gte(-180).lte(180),
+    label: z.string(),
+    address: z.object({
+      street: z.string(),
+      houseNumber: z.string(),
+      postalCode: z.string(),
+      city: z.string(),
+      country: z.string(),
+    }),
+  }),
+  photos: z.array(shopPhotoSchema).max(10),
+  payUsername: z.string().min(1).nullable(),
+  nip05: z.string().min(1).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/** Runtime schema for the successful `GET /shops/:npub` envelope. */
+export const shopResponseSchema = z.object({ shop: shopSchema });
+
+/** Public listed shop returned by `GET /shops/:npub`. */
+export type Shop = z.infer<typeof shopSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.

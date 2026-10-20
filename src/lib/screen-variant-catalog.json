@@ -3972,6 +3972,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/[npub]:default",
+    "label": "/[npub] default",
+    "visual": "screen-npub",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:map",
+    "label": "/[npub] map",
+    "visual": "state-npub-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:copied",
+    "label": "/[npub] copied",
+    "visual": "state-npub-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:no-payment",
+    "label": "/[npub] no-payment",
+    "visual": "state-npub-no-payment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:gone",
+    "label": "/[npub] gone",
+    "visual": "state-npub-gone",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:error",
+    "label": "/[npub] error",
+    "visual": "state-npub-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",

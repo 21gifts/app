@@ -8,7 +8,7 @@ import { IconButton } from '@/components/ui';
 export type ForumPhotoGalleryItem = {
   /** Original still index (`data-photo-index`). */
   index: number;
-  /** Object/blob URL. */
+  /** Browser-loadable photo URL (object/blob or public API URL). */
   url: string;
 };
 
@@ -52,7 +52,7 @@ function slideStride(scroller: HTMLElement): number {
 }
 
 /**
- * Horizontal snap row for a note with more than one still. Earlier slides are
+ * Horizontal snap row for a note or shop with more than one still. Earlier slides are
  * 88% wide so the next photo peeks; the last slide is full width. The row
  * is width-bounded and cannot widen the page. It scrolls sideways only
  * (`data-scroll-x`). It is not a second page scroll.
@@ -112,7 +112,7 @@ export function ForumPhotoGallery({
               key={`${index}:${url}`}
               className={`shrink-0 snap-start ${i === photos.length - 1 ? 'w-full min-w-full' : 'w-[88%] min-w-[88%]'}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from message photo fetches */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- message/shop photos may use object URLs or public API URLs */}
               <img
                 src={url}
                 alt={alt}

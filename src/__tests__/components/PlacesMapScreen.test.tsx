@@ -32,6 +32,7 @@ const ROW = {
   lat: 14.6,
   lng: 120.98,
   label: 'Happyland' as string | null,
+  shopNpub: null as string | null,
 };
 
 const SECOND_ROW = {
@@ -143,6 +144,23 @@ describe('PlacesMapScreen', () => {
     expect(authors[1]?.parentElement?.getAttribute('data-selected')).toBe('false');
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
       '/messages/m-pin',
+    );
+  });
+
+  it('links a shop pin to its npub and keeps a pending shop on the forum note', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    const npub = `npub1${'2'.repeat(58)}`;
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, shopNpub: npub },
+      { ...ROW, id: 'm-pending', label: 'Pending', shopNpub: null },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<PlacesMapScreen />);
+    expect(
+      (await screen.findByRole('link', { name: 'Ada · Happyland' })).getAttribute('href'),
+    ).toBe(`/${npub}`);
+    expect(screen.getByRole('link', { name: 'Ada · Pending' }).getAttribute('href')).toBe(
+      '/messages/m-pending',
     );
   });
 
@@ -403,7 +421,7 @@ describe('PlacesMapScreen', () => {
     });
   });
 
-  it('does not draw after Google rejects the key before the list arrives', async () => {
+  it('does not draw after Google rejects the key before the map script loads', async () => {
     useAuthStore.setState({ session: 'tok' });
     let resolvePlaces: (rows: ForumPlaceRow[]) => void = () => undefined;
     fetchPlacesMock.mockReturnValue(
@@ -412,18 +430,23 @@ describe('PlacesMapScreen', () => {
       }),
     );
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
-    const Marker = vi.fn();
-    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker } };
     renderWithLocale(<PlacesMapScreen />);
+    resolvePlaces([ROW]);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    const script = await waitFor(() => {
+      const node = document.querySelector('script[data-google-maps="1"]');
+      expect(node).toBeTruthy();
+      return node as HTMLScriptElement;
+    });
     await waitFor(() => {
       expect((window as { gm_authFailure?: () => void }).gm_authFailure).toBeTypeOf('function');
     });
+    const Marker = vi.fn();
+    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker } };
     (window as { gm_authFailure?: () => void }).gm_authFailure?.();
-    resolvePlaces([ROW]);
-    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-    await Promise.resolve();
+    script.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(Marker).not.toHaveBeenCalled();
-    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
   });
 
   it('clears the frame when Google rejects the key after the map is drawn', async () => {

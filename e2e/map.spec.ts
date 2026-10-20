@@ -112,6 +112,48 @@ test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
 });
 
+test('shop map pins use the shop page only when shopNpub exists', async ({ page }) => {
+  await seedSignedIn(page);
+  const npub = `npub1${'2'.repeat(58)}`;
+  await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        places: [
+          {
+            id: 'm-shop',
+            name: 'Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Cafe Luna',
+            shopNpub: npub,
+          },
+          {
+            id: 'm-pending',
+            name: 'Bea',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.61,
+            lng: 120.99,
+            label: 'Pending Shop',
+            shopNpub: null,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/shops#map');
+  await expect(page.getByRole('link', { name: 'Ada · Cafe Luna' })).toHaveAttribute(
+    'href',
+    `/${npub}`,
+  );
+  await expect(page.getByRole('link', { name: 'Bea · Pending Shop' })).toHaveAttribute(
+    'href',
+    '/messages/m-pending',
+  );
+});
+
 test('Function: PlacesMapScreen — frames every pin', async ({ page }) => {
   await seedSignedIn(page, 'e2e');
   await page.route(/\/forum\/messages\/places$/, async (route) => {

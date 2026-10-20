@@ -707,6 +707,10 @@ const en = {
   'forum.externalProfileNpub': 'Nostr key',
   'forum.externalProfileCopy': 'Copy',
   'forum.externalProfileCopied': 'Copied',
+  'shop.address': 'Address',
+  'shop.forumNote': 'View forum note',
+  'shop.noLongerListed': 'This shop is no longer listed.',
+  'shop.photoAlt': 'Photo of {name}',
 
   'rules.pageTitle': 'Living room rules',
   'rules.heading': 'Living room rules',
@@ -1815,6 +1819,10 @@ const de = {
   'forum.externalProfileNpub': 'Nostr-Schlüssel',
   'forum.externalProfileCopy': 'Kopieren',
   'forum.externalProfileCopied': 'Kopiert',
+  'shop.address': 'Adresse',
+  'shop.forumNote': 'Forumsbeitrag ansehen',
+  'shop.noLongerListed': 'Dieses Geschäft ist nicht mehr gelistet.',
+  'shop.photoAlt': 'Foto von {name}',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
   'rules.heading': 'Wohnzimmerregeln',
@@ -2935,6 +2943,10 @@ const es = {
   'forum.externalProfileNpub': 'Clave de Nostr',
   'forum.externalProfileCopy': 'Copiar',
   'forum.externalProfileCopied': 'Copiado',
+  'shop.address': 'Dirección',
+  'shop.forumNote': 'Ver publicación del foro',
+  'shop.noLongerListed': 'Esta tienda ya no está en la lista.',
+  'shop.photoAlt': 'Foto de {name}',
 
   'rules.pageTitle': 'Reglas del salón',
   'rules.heading': 'Reglas del salón',
@@ -4042,6 +4054,10 @@ const fil = {
   'forum.externalProfileNpub': 'Susi ng Nostr',
   'forum.externalProfileCopy': 'Kopyahin',
   'forum.externalProfileCopied': 'Nakopya',
+  'shop.address': 'Address',
+  'shop.forumNote': 'Tingnan ang post sa forum',
+  'shop.noLongerListed': 'Hindi na nakalista ang shop na ito.',
+  'shop.photoAlt': 'Litrato ng {name}',
 
   'rules.pageTitle': 'Mga patakaran sa living room',
   'rules.heading': 'Mga patakaran sa living room',

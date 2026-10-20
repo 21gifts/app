@@ -1544,7 +1544,7 @@ describe('fetchPlaces', () => {
       status: 200,
       body: { places: [placeRow] },
     });
-    await expect(fetchPlaces('tok')).resolves.toEqual([placeRow]);
+    await expect(fetchPlaces('tok')).resolves.toEqual([{ ...placeRow, shopNpub: null }]);
   });
 
   it('keeps a shop flag on a pin', async () => {
@@ -1553,7 +1553,9 @@ describe('fetchPlaces', () => {
       status: 200,
       body: { places: [{ ...placeRow, shop: true }] },
     });
-    await expect(fetchPlaces('tok')).resolves.toEqual([{ ...placeRow, shop: true }]);
+    await expect(fetchPlaces('tok')).resolves.toEqual([
+      { ...placeRow, shop: true, shopNpub: null },
+    ]);
   });
 
   it('rejects on status 500', async () => {

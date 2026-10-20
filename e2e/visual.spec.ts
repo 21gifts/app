@@ -17847,6 +17847,57 @@ test.describe('welcome forum variants', () => {
   });
 });
 
+test.describe('public shop screen', () => {
+  const listedNpub = `npub1${'2'.repeat(58)}`;
+  const goneNpub = `npub1${'3'.repeat(58)}`;
+  const unavailableNpub = `npub1${'4'.repeat(58)}`;
+  const noPaymentNpub = `npub1${'5'.repeat(58)}`;
+
+  test('public shop default', async ({ page }) => {
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await shotScreen(page, 'screen-npub');
+  });
+
+  test('public shop map', async ({ page }) => {
+    await installBaselineMap(page);
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByTestId('shop-map')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(1);
+    await shotScreen(page, 'state-npub-map');
+  });
+
+  test('public shop copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(`/${listedNpub}`);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-npub-copied');
+  });
+
+  test('public shop no payment', async ({ page }) => {
+    await page.goto(`/${noPaymentNpub}`);
+    await expect(page.getByRole('heading', { name: 'Quiet Shop' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
+    await shotScreen(page, 'state-npub-no-payment');
+  });
+
+  test('public shop gone', async ({ page }) => {
+    await page.goto(`/${goneNpub}`);
+    await expect(
+      page.getByRole('heading', { name: 'This shop is no longer listed.' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-npub-gone');
+  });
+
+  test('public shop error', async ({ page }) => {
+    await page.goto(`/${unavailableNpub}`);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-npub-error');
+  });
+});
+
 test.describe('shops screens', () => {
   async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {

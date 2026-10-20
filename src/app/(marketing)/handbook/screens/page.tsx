@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/locale';
@@ -41,15 +42,15 @@ export default async function HandbookScreensPage(): Promise<ReactElement> {
         navAria={translate(messages, 'aria.handbookSections')}
         headingAction={<HandbookCopyLink targetId="handbook" label={title} />}
       >
-        <a href="/handbook" className="text-accent underline underline-offset-2">
+        <Link href="/handbook" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.title')}
-        </a>
-        <a href="/handbook/functions" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/functions" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.functionsTitle')}
-        </a>
-        <a href="/handbook/endpoints" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/endpoints" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.endpointsTitle')}
-        </a>
+        </Link>
       </HandbookIntro>
       <HandbookImageViewer topics={topics} />
     </main>
