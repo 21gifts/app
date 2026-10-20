@@ -686,7 +686,7 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   if (captureFullPage) {
     await expandScrollportForFullShot(page);
   }
-  await expect.soft(page).toHaveScreenshot(`${arg}.png`, {
+  await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
     ...SHOT,
