@@ -292,7 +292,7 @@ test.describe('wallet history', () => {
     await expect(page.getByText('No payments yet.')).toBeVisible();
   });
 
-  test('wallet history-rows pin shows titled rows with signed amounts, fiat, status, and messages', async ({
+  test('wallet history-rows pin shows titled rows with signed amounts, status, and messages', async ({
     page,
   }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
@@ -301,7 +301,7 @@ test.describe('wallet history', () => {
     await expect(rows).toHaveCount(10);
     await expect(rows.nth(0)).toContainText('Gift on your post');
     await expect(rows.nth(0)).toContainText("+₿2'100");
-    await expect(rows.nth(0)).toContainText('$2.10');
+    await expect(rows.nth(0)).not.toContainText('$2.10');
     await expect(rows.nth(0)).toContainText('Great photo!');
     await expect(rows.nth(1)).toContainText('Gift');
     await expect(rows.nth(1)).not.toContainText('Gift to @alice');
@@ -368,7 +368,7 @@ test.describe('wallet history', () => {
     );
   });
 
-  test('Function: useSpotRateState — the payment screen shows its amounts only with the loaded fiat', async ({
+  test('Function: useSpotRateState — a payment that stored no fiat shows bitcoin while the spot is still loading', async ({
     page,
   }) => {
     let release: () => void = () => undefined;
@@ -383,9 +383,11 @@ test.describe('wallet history', () => {
     });
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
-    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toHaveCount(0);
     release();
     await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toHaveCount(0);
   });
 
   test('wallet payment screen copies a technical value in full and shows no key or note id', async ({
