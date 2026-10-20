@@ -502,16 +502,40 @@ describe('openShopPayment', () => {
     });
     expect(mock).not.toHaveBeenCalled();
 
-    // During the first call: no repeat.
+    // Already aborted in the ambiguous state: nothing is sent and the state stays.
+    mock = stubStarts([async () => Response.json(opened)]);
+    expect(await open(T0 - 5_000, controller.signal)).toEqual({
+      start: { kind: 'aborted' },
+      ambiguousAtMs: T0 - 5_000,
+    });
+    expect(mock).not.toHaveBeenCalled();
+
+    // During the first call: no repeat, and its outcome stays unknown from the abort on.
     controller = new AbortController();
     mock = stubStarts([hang]);
     let started = open(null, controller.signal);
     await vi.advanceTimersByTimeAsync(1_000);
     controller.abort();
-    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: null });
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 + 1_000 });
     expect(mock).toHaveBeenCalledTimes(1);
 
-    // During the repeat: the state stays.
+    // An answer that arrives after the abort is still unknown to the page.
+    vi.setSystemTime(T0);
+    controller = new AbortController();
+    const leaving = controller;
+    mock = stubStarts([
+      async () => {
+        vi.setSystemTime(T0 + 3_000);
+        leaving.abort();
+        return Response.json(opened);
+      },
+    ]);
+    expect(await open(null, controller.signal)).toEqual({
+      start: { kind: 'aborted' },
+      ambiguousAtMs: T0 + 3_000,
+    });
+
+    // During the repeat: the state moves to the abort.
     vi.setSystemTime(T0);
     controller = new AbortController();
     mock = stubStarts([async () => new Response('bad gateway', { status: 502 }), hang]);
@@ -519,7 +543,17 @@ describe('openShopPayment', () => {
     await vi.advanceTimersByTimeAsync(1_000);
     expect(mock).toHaveBeenCalledTimes(2);
     controller.abort();
-    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 });
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 + 1_000 });
+
+    // During a call in the ambiguous state: the state moves to the abort.
+    vi.setSystemTime(T0);
+    controller = new AbortController();
+    mock = stubStarts([hang]);
+    started = open(T0 - 5_000, controller.signal);
+    await vi.advanceTimersByTimeAsync(2_000);
+    controller.abort();
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 + 2_000 });
+    expect(linkReads(mock)).toBe(0);
 
     // During the 20 s wait: no pay-link read.
     vi.setSystemTime(T0);

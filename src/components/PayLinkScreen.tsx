@@ -18,8 +18,10 @@ import {
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   SHOP_STICKER_PICTOGRAM,
   SHOP_STICKER_PICTOGRAM_VIEW_BOX,
@@ -199,6 +201,12 @@ interface ShopPaymentView {
   /** Whole sats of the payment. */
   sats: number;
   /**
+   * The fiat amount exactly as the payer typed it on this page, with its
+   * currency; `null` for a till charge or an amount typed in bitcoin. The pay
+   * link stores no fiat figure, so nothing else shows beside the bitcoin.
+   */
+  typedFiat: { amount: string; code: FiatCode } | null;
+  /**
    * End of the payment's window: the charge's `expiresAt`, or the payer's
    * `expiresAt`; `null` when the opening answer had none (the quote's own
    * time left still shows).
@@ -260,7 +268,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's invoice, one line per stablecoin method and asset with the quote's time left, and its status; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -290,21 +298,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   /** Payment ids that closed without being paid; the page never shows them again. */
   const closedRef = useRef(new Set<string>());
   /**
-   * End of the most recent `POST /pay/:username/payment` of this pay link whose outcome stayed
-   * unknown; `null` when there is none or a later call returned a payment (`openShopPayment`).
+   * Per username, the end of the most recent `POST /pay/:username/payment` whose outcome stayed
+   * unknown (`openShopPayment`), including a call still running when the page left it. Kept for
+   * the lifetime of the page: switching to another pay link and back does not end it; only a
+   * call that returns a payment does.
    */
-  const shopAmbiguousAtRef = useRef<number | null>(null);
+  const shopAmbiguousAtRef = useRef(new Map<string, number>());
   /** Aborts the running **Continue** (its repeat and its wait) when the page leaves the pay link. */
   const submitAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
-
-  useEffect(() => {
-    // Another pay link is another shop: an unknown outcome of this one says nothing about it.
-    shopAmbiguousAtRef.current = null;
-  }, [lightning]);
 
   useEffect(() => {
     let active = true;
@@ -441,6 +446,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     (
       id: string,
       sats: number,
+      typedFiat: ShopPaymentView['typedFiat'],
       windowEndsAt: string | null,
       request: ShopPayRequest | null,
       generation: number,
@@ -450,6 +456,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setShop({
         id,
         sats,
+        typedFiat,
         windowEndsAt,
         request,
         quoteLive: true,
@@ -496,6 +503,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           showShopPayment(
             link.request.payment,
             charge.amountSats,
+            null,
             charge.expiresAt,
             link.request,
             generation,
@@ -707,6 +715,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       return;
     }
     const amountSats = parsed.sats;
+    // The exact digits typed in fiat are the only fiat this payment ever shows.
+    const typedFiat = unit === 'fiat' ? { amount: amount.trim(), code: fiat } : null;
+    const username = profile.username;
 
     setFormError(null);
     postingRef.current = true;
@@ -714,15 +725,20 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     const controller = new AbortController();
     submitAbortRef.current = controller;
     try {
-      const opening = await openShopPayment(profile.username, amountSats, {
-        ambiguousAtMs: shopAmbiguousAtRef.current,
+      const opening = await openShopPayment(username, amountSats, {
+        ambiguousAtMs: shopAmbiguousAtRef.current.get(username) ?? null,
         signal: controller.signal,
       });
+      // Recorded before the outcome is dropped: a call the page left may still have opened one.
+      if (opening.ambiguousAtMs === null) {
+        shopAmbiguousAtRef.current.delete(username);
+      } else {
+        shopAmbiguousAtRef.current.set(username, opening.ambiguousAtMs);
+      }
       const start = opening.start;
       if (start.kind === 'aborted' || generationRef.current !== generation) {
         return;
       }
-      shopAmbiguousAtRef.current = opening.ambiguousAtMs;
       if (start.kind === 'charge') {
         setReloadNonce((nonce) => nonce + 1);
         return;
@@ -750,6 +766,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         showShopPayment(
           start.payment,
           amountSats,
+          typedFiat,
           start.expiresAt,
           link.kind === 'payment' ? link.request : null,
           generation,
@@ -830,7 +847,15 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(shop.sats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={shop.sats} rateDay={rateDay} />
+                {shop.typedFiat !== null ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {formatDefinedGoalAmount(
+                      shop.typedFiat.amount,
+                      shop.typedFiat.code,
+                      numberFormat,
+                    )}
+                  </p>
+                ) : null}
                 <p role="status" className="text-center text-xs text-app-subtle">
                   {t(shopStatusKey(shop.paymentStatus))}
                 </p>

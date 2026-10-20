@@ -7818,6 +7818,50 @@ test('Function: openShopPayment — payment_open loads the page again and shows 
   expect(minted).toEqual([]);
 });
 
+test('Function: PayLinkScreen — a shop payment shows the fiat typed on the page as typed, never the spot', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const bodies: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/pay/ada/payment')) {
+      bodies.push(request.postData() ?? '');
+    }
+  });
+  await fulfillSpot(page, { USD: '100000.00' });
+  await stubShopPayment(page, {});
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  const usd = page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' });
+  await expect(usd).toBeEnabled();
+  await usd.click();
+  await page.getByLabel('Amount').fill('12.5');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  // 12.50 USD at 100'000.00 USD per bitcoin.
+  expect(bodies).toEqual([JSON.stringify({ amountSats: 12_500 })]);
+  await expect(page.getByText("₿12'500")).toBeVisible();
+  await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(1);
+});
+
+test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spot rate", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  await fulfillSpot(page, { USD: '100000.00' });
+  const spot = page.waitForResponse((res) => new URL(res.url()).pathname === '/fx/spot');
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await spot;
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(0);
+});
+
 test('Function: openShopPayment — a refused repeat waits 20 s, reads the plain pay link, and mints', async ({
   page,
 }) => {

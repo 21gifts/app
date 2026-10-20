@@ -67,12 +67,17 @@ export type ShopPaymentStart =
 
 /** What `openShopPayment` returns: the outcome, and the state the next call starts from. */
 export interface ShopPaymentOpening {
-  /** The outcome; `aborted` when `signal` aborted before there was one. */
+  /**
+   * The outcome; `aborted` when `signal` aborted before there was one. A call
+   * still running when `signal` aborted may have opened a payment, so its
+   * `ambiguousAtMs` is the time of that abort.
+   */
   start: ShopPaymentStart | { kind: 'aborted' };
   /**
-   * End (epoch ms) of the most recent call whose outcome stayed unknown, or
-   * `null` once a call returned a payment or when none was unknown. Pass it to
-   * the next call for the same pay link.
+   * End (epoch ms) of the most recent call whose outcome stayed unknown (an
+   * abort while a call was running counts as unknown), or `null` once a call
+   * returned a payment or when none was unknown. Pass it to the next call for
+   * the same pay link.
    */
   ambiguousAtMs: number | null;
 }
@@ -251,15 +256,17 @@ async function errorCode(response: Response): Promise<unknown> {
 /**
  * One answer of `POST /pay/:username/payment`: a payment, a pending till charge,
  * `refused` (503 `stablecoin_unavailable` or another 4xx: no payment was
- * opened), `unknown` when its outcome cannot be known, or `aborted` when the
- * page left.
+ * opened), `unknown` when its outcome cannot be known, `aborted` when the
+ * page had left before the call was sent, or `left` with the time the page left
+ * while the call was running (a payment may have been opened).
  */
 type ShopPaymentAttempt =
   | { kind: 'opened'; payment: string; expiresAt: string | null }
   | { kind: 'charge' }
   | 'refused'
   | 'unknown'
-  | 'aborted';
+  | 'aborted'
+  | { kind: 'left'; atMs: number };
 
 /** One `POST /pay/:username/payment`, until its time limit or until `signal` aborts. */
 async function attemptShopPayment(
@@ -275,13 +282,16 @@ async function attemptShopPayment(
   const timer = setTimeout(() => {
     controller.abort();
   }, SHOP_PAYMENT_START_TIMEOUT_MS);
+  let leftAtMs = 0;
   const leave = (): void => {
+    leftAtMs = Date.now();
     controller.abort();
   };
   signal.addEventListener('abort', leave);
   try {
     const attempt = await readShopPaymentStart(username, amountSats, controller.signal);
-    return signal.aborted ? 'aborted' : attempt;
+    // Whatever the call answered, the page no longer acts on it: its outcome stays unknown.
+    return signal.aborted ? { kind: 'left', atMs: leftAtMs } : attempt;
   } finally {
     clearTimeout(timer);
     signal.removeEventListener('abort', leave);
@@ -293,7 +303,7 @@ async function readShopPaymentStart(
   username: string,
   amountSats: number,
   signal: AbortSignal,
-): Promise<Exclude<ShopPaymentAttempt, 'aborted'>> {
+): Promise<Exclude<ShopPaymentAttempt, 'aborted' | { kind: 'left' }>> {
   let response: Response;
   try {
     response = await fetch(`/pay/${encodeURIComponent(username)}/payment`, {
@@ -363,7 +373,8 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
  * the plain Lightning request (no open amount) is `invoice`, while a pay
  * request or a failed read is `failed`; another unknown outcome moves
  * `ambiguousAtMs` to its end and is `failed`. An abort repeats nothing and
- * reads no pay link.
+ * reads no pay link; an abort while a call is running leaves its outcome
+ * unknown, so `ambiguousAtMs` moves to the time of that abort.
  *
  * @param username - The shop's username.
  * @param amountSats - Whole sats the payer entered.
@@ -386,6 +397,9 @@ export async function openShopPayment(
     if (attempt === 'aborted') {
       return { start: { kind: 'aborted' }, ambiguousAtMs };
     }
+    if (typeof attempt === 'object' && attempt.kind === 'left') {
+      return { start: { kind: 'aborted' }, ambiguousAtMs: attempt.atMs };
+    }
     if (attempt === 'refused') {
       return { start: { kind: 'invoice' }, ambiguousAtMs };
     }
@@ -397,6 +411,9 @@ export async function openShopPayment(
   }
   if (attempt === 'aborted') {
     return { start: { kind: 'aborted' }, ambiguousAtMs };
+  }
+  if (typeof attempt === 'object' && attempt.kind === 'left') {
+    return { start: { kind: 'aborted' }, ambiguousAtMs: attempt.atMs };
   }
   if (attempt === 'unknown') {
     return { start: { kind: 'failed' }, ambiguousAtMs: Date.now() };

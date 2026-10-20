@@ -5,6 +5,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { PayLinkScreen } from '@/components/PayLinkScreen';
 import { encodeLnurl } from '@/lib/lnurl';
+import { formatBitcoin } from '@/lib/stats-money';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -1573,6 +1574,113 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
+  /** A shop payment of the pay link with a USD spot rate; `starts` holds each start body. */
+  function mockPricedShop(starts: string[], profileBody: object = profile): void {
+    mockShopFetch(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/pay/ada/payment') {
+        starts.push(String(init?.body));
+        return Response.json({ payment: 'p1', expiresAt: new Date(FIXED + 300_000).toISOString() });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(profileBody);
+    });
+  }
+
+  it('shows a fiat amount exactly as the payer typed it beside the bitcoin', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    const starts: string[] = [];
+    mockPricedShop(starts, { ...profile, maxSats: 100_000_000 });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1234,125' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(starts).toHaveLength(1);
+    const sats = (JSON.parse(starts[0] as string) as { amountSats: number }).amountSats;
+    // The typed digits, every one of them, not the sats converted back through the spot.
+    expect(screen.getByText("$1'234.125")).toBeTruthy();
+    expect(screen.getByText(formatBitcoin(sats, 'ch'))).toBeTruthy();
+    expect(screen.queryByText("$1'234.13")).toBeNull();
+    expect(screen.queryByText("$1'234.12")).toBeNull();
+  });
+
+  it('pads a typed fiat amount to two decimals without rounding it', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    const starts: string[] = [];
+    mockPricedShop(starts, { ...profile, maxSats: 100_000_000 });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: ' 5 ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.getByText('$5.00')).toBeTruthy();
+  });
+
+  it('shows only bitcoin for an amount typed in bitcoin, even with a spot rate', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    const starts: string[] = [];
+    mockPricedShop(starts, { ...profile, maxSats: 300_000 });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '238093' } });
+    // The live counter under the field may use the spot while bitcoin is still typed.
+    expect(screen.getByText(/\$200\.00/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(starts).toEqual([JSON.stringify({ amountSats: 238093 })]);
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it("shows only bitcoin for a till's shop payment, even with a spot rate", async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    mockPricedShop([], {
+      ...profile,
+      charge: { amountSats: 238093, expiresAt: new Date(FIXED + 300_000).toISOString() },
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchedUrls().some((url) => url.includes('/fx/spot'))).toBe(true);
+    });
+    // Give the spot answer time to land: it would have priced the bitcoin if anything did.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
   it('asks again when another payer replaced the amount', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     mockShopFetch(async (input) => {
@@ -2590,19 +2698,29 @@ describe('PayLinkScreen ambiguous start', () => {
     expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 21 })]);
   }, 15_000);
 
-  it('does not carry the state to another pay link', async () => {
+  it('keeps the state per pay link when the page switches to another and back', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
     const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    let adaStarts = 0;
     mockShopFetch(async (input) => {
       const url = String(input);
       if (url === '/pay/ada/payment') {
-        return new Response('bad gateway', { status: 502 });
+        adaStarts += 1;
+        return adaStarts <= 2
+          ? new Response('bad gateway', { status: 502 })
+          : stablecoinUnavailable();
       }
       if (url === '/pay/bob/payment') {
         return stablecoinUnavailable();
       }
       if (url === '/pay/bob/invoice') {
         return Response.json({ pr: 'lnbc210n1bob', amountSats: 21 });
+      }
+      if (url === '/pay/ada/invoice') {
+        return Response.json({ pr: 'lnbc210n1ada', amountSats: 21 });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(plainPayLink());
       }
       if (url.endsWith('/pay/bob')) {
         return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
@@ -2617,11 +2735,84 @@ describe('PayLinkScreen ambiguous start', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'This payment could not be started. Try again.',
     );
+    const lostAt = Date.now();
+    // Another pay link has its own state: Bob's refusal mints at once.
     view.rerender(<PayLinkScreen lightning={bob} />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     expect(fetchedUrls().some((url) => url.startsWith('/.well-known/lnurlp/'))).toBe(false);
-  });
+    // Back on Ada's pay link, her lost start still holds: the refusal waits, then reads.
+    view.rerender(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await waitFor(() => {
+      expect(adaStarts).toBe(3);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(Math.max(0, lostAt + 18_000 - Date.now()));
+    });
+    expect(linkReads()).toBe(0);
+    expect(mintBodies()).toEqual([]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(linkReads()).toBe(1);
+    expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 21 })]);
+  }, 15_000);
+
+  it('counts a start the page left while it ran as unknown when it returns', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    let adaStarts = 0;
+    mockShopFetch(async (input, init) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        adaStarts += 1;
+        return adaStarts === 1 ? hangingStart(init) : stablecoinUnavailable();
+      }
+      if (url === '/pay/ada/invoice') {
+        return Response.json({ pr: 'lnbc210n1ada', amountSats: 21 });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(plainPayLink());
+      }
+      if (url.endsWith('/pay/bob')) {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      if (url.startsWith('/.well-known/lnurlp/') || url.endsWith('/invoice')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await waitFor(() => {
+      expect(adaStarts).toBe(1);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    // Leaving while the start runs: it may still have opened a payment.
+    const leftAt = Date.now();
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    view.rerender(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await waitFor(() => {
+      expect(adaStarts).toBe(2);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(Math.max(0, leftAt + 18_000 - Date.now()));
+    });
+    expect(linkReads()).toBe(0);
+    expect(mintBodies()).toEqual([]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(linkReads()).toBe(1);
+    expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 21 })]);
+  }, 15_000);
 });
