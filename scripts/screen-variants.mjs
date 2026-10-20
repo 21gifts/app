@@ -2482,6 +2482,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'shop-edit-place-unavailable-open',
+    image: 'members-shop-edit-place-unavailable-open.png',
+    visual: 'state-members-shop-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-members-shop-edit-place-unavailable-open')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-place-name-address',
     image: 'members-shop-edit-place-name-address.png',
     visual: 'state-members-shop-edit-place-name-address',
@@ -2535,6 +2542,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-shop-edit-user-missing.png',
     visual: 'state-members-shop-edit-user-missing',
     needle: "shotScreen(page, 'state-members-shop-edit-user-missing')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'shop-edit-user-invalid',
+    image: 'members-shop-edit-user-invalid.png',
+    visual: 'state-members-shop-edit-user-invalid',
+    needle: "shotScreen(page, 'state-members-shop-edit-user-invalid')",
   },
   {
     route: '/members/[accountId]',
@@ -4521,6 +4535,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'shop-edit-place-unavailable-open',
+    image: 'messages-id-shop-edit-place-unavailable-open.png',
+    visual: 'state-messages-id-shop-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-place-unavailable-open')",
+  },
+  {
+    route: '/messages/[id]',
     id: 'shop-edit-place-name-address',
     image: 'messages-id-shop-edit-place-name-address.png',
     visual: 'state-messages-id-shop-edit-place-name-address',
@@ -4574,6 +4595,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-shop-edit-user-missing.png',
     visual: 'state-messages-id-shop-edit-user-missing',
     needle: "shotScreen(page, 'state-messages-id-shop-edit-user-missing')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit-user-invalid',
+    image: 'messages-id-shop-edit-user-invalid.png',
+    visual: 'state-messages-id-shop-edit-user-invalid',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-user-invalid')",
   },
   {
     route: '/messages/[id]',
@@ -4913,6 +4941,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'shop-edit-place-unavailable-open',
+    image: 'welcome-shop-edit-place-unavailable-open.png',
+    visual: 'state-welcome-shop-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-place-unavailable-open')",
+  },
+  {
+    route: '/welcome',
     id: 'shop-edit-place-name-address',
     image: 'welcome-shop-edit-place-name-address.png',
     visual: 'state-welcome-shop-edit-place-name-address',
@@ -4966,6 +5001,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-shop-edit-user-missing.png',
     visual: 'state-welcome-shop-edit-user-missing',
     needle: "shotScreen(page, 'state-welcome-shop-edit-user-missing')",
+  },
+  {
+    route: '/welcome',
+    id: 'shop-edit-user-invalid',
+    image: 'welcome-shop-edit-user-invalid.png',
+    visual: 'state-welcome-shop-edit-user-invalid',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-user-invalid')",
   },
   {
     route: '/welcome',
@@ -5088,6 +5130,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-edit-place-unavailable-open',
+    image: 'shops-map-edit-place-unavailable-open.png',
+    visual: 'state-shops-map-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-shops-map-edit-place-unavailable-open')",
+  },
+  {
+    route: '/shops',
     id: 'map-edit-place-name-address',
     image: 'shops-map-edit-place-name-address.png',
     visual: 'state-shops-map-edit-place-name-address',
@@ -5141,6 +5190,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-map-edit-user-missing.png',
     visual: 'state-shops-map-edit-user-missing',
     needle: "shotScreen(page, 'state-shops-map-edit-user-missing')",
+  },
+  {
+    route: '/shops',
+    id: 'map-edit-user-invalid',
+    image: 'shops-map-edit-user-invalid.png',
+    visual: 'state-shops-map-edit-user-invalid',
+    needle: "shotScreen(page, 'state-shops-map-edit-user-invalid')",
   },
   {
     route: '/shops',
@@ -5270,6 +5326,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'table-edit-place-unavailable-open',
+    image: 'shops-table-edit-place-unavailable-open.png',
+    visual: 'state-shops-table-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-shops-table-edit-place-unavailable-open')",
+  },
+  {
+    route: '/shops',
     id: 'table-edit-place-name-address',
     image: 'shops-table-edit-place-name-address.png',
     visual: 'state-shops-table-edit-place-name-address',
@@ -5326,6 +5389,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'table-edit-user-invalid',
+    image: 'shops-table-edit-user-invalid.png',
+    visual: 'state-shops-table-edit-user-invalid',
+    needle: "shotScreen(page, 'state-shops-table-edit-user-invalid')",
+  },
+  {
+    route: '/shops',
     id: 'table-edit-summary',
     image: 'shops-table-edit-summary.png',
     visual: 'state-shops-table-edit-summary',
@@ -5372,6 +5442,20 @@ export const SCREEN_VARIANTS = [
     image: 'shops-add-place.png',
     visual: 'state-shops-add-place',
     needle: "shotScreen(page, 'state-shops-add-place')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place-unavailable',
+    image: 'shops-add-place-unavailable.png',
+    visual: 'state-shops-add-place-unavailable',
+    needle: "shotScreen(page, 'state-shops-add-place-unavailable')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place-unavailable-open',
+    image: 'shops-add-place-unavailable-open.png',
+    visual: 'state-shops-add-place-unavailable-open',
+    needle: "shotScreen(page, 'state-shops-add-place-unavailable-open')",
   },
   {
     route: '/shops',
@@ -5676,6 +5760,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-place-unavailable-open',
+    image: 'shops-edit-place-unavailable-open.png',
+    visual: 'state-shops-edit-place-unavailable-open',
+    needle: "shotScreen(page, 'state-shops-edit-place-unavailable-open')",
+  },
+  {
+    route: '/shops',
     id: 'edit-place-name-address',
     image: 'shops-edit-place-name-address.png',
     visual: 'state-shops-edit-place-name-address',
@@ -5732,6 +5823,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-user-invalid',
+    image: 'shops-edit-user-invalid.png',
+    visual: 'state-shops-edit-user-invalid',
+    needle: "shotScreen(page, 'state-shops-edit-user-invalid')",
+  },
+  {
+    route: '/shops',
     id: 'edit-summary',
     image: 'shops-edit-summary.png',
     visual: 'state-shops-edit-summary',
@@ -5785,6 +5883,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-account-missing.png',
     visual: 'state-shops-staff-account-missing',
     needle: "shotScreen(page, 'state-shops-staff-account-missing')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-invalid',
+    image: 'shops-staff-account-invalid.png',
+    visual: 'state-shops-staff-account-invalid',
+    needle: "shotScreen(page, 'state-shops-staff-account-invalid')",
   },
   {
     route: '/shops',

@@ -96,6 +96,17 @@ async function installBaselineMap(page: Page, options?: { click?: boolean }): Pr
   });
 }
 
+/** Make every place dialog report that no Maps key is available. */
+async function installUnavailableMap(page: Page): Promise<void> {
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: null }),
+    });
+  });
+}
+
 /**
  * Key is set and the Maps script has not finished. Release after the shot
  * so the request does not stay open.
@@ -770,6 +781,7 @@ async function openHostedShopEditor(
   page: Page,
   host: 'welcome' | 'members' | 'messages',
   rejectPhotos = false,
+  mapUnavailable = false,
 ): Promise<void> {
   const memberId = '22222222-2222-4222-8222-222222222222';
   const id =
@@ -806,7 +818,11 @@ async function openHostedShopEditor(
     place,
   };
 
-  await installBaselineMap(page, { click: true });
+  if (mapUnavailable) {
+    await installUnavailableMap(page);
+  } else {
+    await installBaselineMap(page, { click: true });
+  }
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -930,6 +946,39 @@ async function advanceShopEditorToUsername(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Next' }).click();
   }
   await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+}
+
+/** Open the shop-place dialog and wait for its unavailable-map state. */
+async function openUnavailableShopPlace(page: Page): Promise<void> {
+  const placeStep = page.getByText('2 / 5 · Place');
+  await expect(placeStep).toBeVisible();
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  const unavailable = page.getByText('The map is not available.');
+  await expect(unavailable).toBeVisible();
+  await unavailable.scrollIntoViewIfNeeded();
+}
+
+/** Close the unavailable place dialog and wait for the persistent wizard reason. */
+async function closeUnavailableShopPlace(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Close' }).click();
+  const reason = page.getByText('The map is unavailable, so a shop place cannot be added.');
+  await expect(reason).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await reason.scrollIntoViewIfNeeded();
+}
+
+/** Enter and assert the shared invalid 21.gifts username state in a shop wizard. */
+async function enterInvalidShopUsername(page: Page): Promise<void> {
+  await page.getByLabel('21.gifts username').fill('_');
+  const invalid = page.getByText(
+    'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+  );
+  await expect(invalid).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await invalid.scrollIntoViewIfNeeded();
 }
 
 /** Make the image preparation path produce its ordinary too-large result. */
@@ -3619,6 +3668,20 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-user-missing');
+  });
+
+  test('welcome shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-invalid');
+  });
+
+  test('welcome shop-edit-place-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-welcome-shop-edit-place-unavailable-open');
   });
 
   test('welcome shop-edit-photos-unsupported', async ({ page }) => {
@@ -7060,6 +7123,20 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-user-missing');
+  });
+
+  test('state /members shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-members-shop-edit-user-invalid');
+  });
+
+  test('state /members shop-edit-place-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'members', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-members-shop-edit-place-unavailable-open');
   });
 
   test('state /members shop-edit-photos-unsupported', async ({ page }) => {
@@ -11852,6 +11929,20 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-user-missing');
+  });
+
+  test('state /messages/[id] shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-invalid');
+  });
+
+  test('state /messages/[id] shop-edit-place-unavailable', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-place-unavailable-open');
   });
 
   test('state /messages/[id] shop-edit-photos-unsupported', async ({ page }) => {
@@ -19393,6 +19484,21 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-user-missing');
   });
 
+  test('shops map-edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-map-edit-user-invalid');
+  });
+
+  test('shops map-edit-place-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'map');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-map-edit-place-unavailable-open');
+  });
+
   test('shops map-edit-photos-unsupported', async ({ page }) => {
     await openShopsEditor(page, 'map');
     await pickShopPhotoError(page, 'unsupported');
@@ -19826,6 +19932,21 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-user-missing');
+  });
+
+  test('shops table-edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-table-edit-user-invalid');
+  });
+
+  test('shops table-edit-place-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-table-edit-place-unavailable-open');
   });
 
   test('shops table-edit-photos-unsupported', async ({ page }) => {
@@ -20474,6 +20595,21 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-user-missing');
+  });
+
+  test('shops edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-edit-user-invalid');
+  });
+
+  test('shops edit-place-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'post');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-edit-place-unavailable-open');
   });
 
   test('shops edit-photos-unsupported', async ({ page }) => {
@@ -21367,6 +21503,19 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-account-missing');
   });
 
+  test('shops staff-account-invalid', async ({ page }) => {
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('_');
+    const invalid = note.getByText(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    await expect(invalid).toBeVisible();
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-invalid');
+  });
+
   test('shops staff-account-set', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -21605,6 +21754,19 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-user-missing');
+  });
+
+  test('shops add-place-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-add-place-unavailable-open');
+    await closeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-add-place-unavailable');
   });
 
   test('shops add-place-name-address', async ({ page }) => {

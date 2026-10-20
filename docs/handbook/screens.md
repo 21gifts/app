@@ -1797,6 +1797,14 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts welcome shop edit place open](images/welcome-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts welcome shop edit place unavailable open](images/welcome-shop-edit-place-unavailable-open.png)
+
 ### Variant: shop-edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -1856,6 +1864,14 @@ returned no account. **No account with that username. Check the spelling of the 
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts welcome shop edit user missing](images/welcome-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user invalid](images/welcome-shop-edit-user-invalid.png)
 
 ### Variant: shop-edit-summary
 
@@ -1979,6 +1995,14 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops map edit place open](images/shops-map-edit-place-open.png)
 
+### Variant: map-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, **Use this place** is disabled,
+and **Map** stays selected.
+
+![21.gifts shops map edit place unavailable open](images/shops-map-edit-place-unavailable-open.png)
+
 ### Variant: map-edit-place-name-address
 
 The place form is open on **Map** with **Bahnhofstrasse Bakery** as **Shop name** and
@@ -2041,6 +2065,14 @@ username.** is visible and **Next** is disabled. **History** still says there ar
 **Map** stays selected, with no second **Map** heading.
 
 ![21.gifts shops map edit user missing](images/shops-map-edit-user-missing.png)
+
+### Variant: map-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open on **Map** with **\_** in the username field. **Use 1–32
+characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible
+and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops map edit user invalid](images/shops-map-edit-user-invalid.png)
 
 ### Variant: map-edit-summary
 
@@ -2168,6 +2200,14 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops table edit place open](images/shops-table-edit-place-open.png)
 
+### Variant: table-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, **Use this place** is disabled,
+and **Table** stays selected.
+
+![21.gifts shops table edit place unavailable open](images/shops-table-edit-place-unavailable-open.png)
+
 ### Variant: table-edit-place-name-address
 
 The place form is open on **Table** with **Bahnhofstrasse Bakery** as **Shop name** and
@@ -2234,6 +2274,14 @@ there are no edits yet. **Table** stays selected.
 
 ![21.gifts shops table edit user missing](images/shops-table-edit-user-missing.png)
 
+### Variant: table-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open on **Table** after the username was changed from **luna**
+to **\_**. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or
+digit.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops table edit user invalid](images/shops-table-edit-user-invalid.png)
+
 ### Variant: table-edit-summary
 
 **Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place
@@ -2282,6 +2330,22 @@ A complete shop with a photo was submitted, but the post API rejected the media 
 **Add the shop's place and address.** explains why **Next** is disabled. The shop list is empty.
 
 ![21.gifts shops add place](images/shops-add-place.png)
+
+### Variant: add-place-unavailable
+
+**Add a shop** is open on step **2 / 5 · Place** after the place form was opened and closed
+without an available map. **The map is unavailable, so a shop place cannot be added.** remains
+visible and **Next** is disabled.
+
+![21.gifts shops add place unavailable](images/shops-add-place-unavailable.png)
+
+### Variant: add-place-unavailable-open
+
+From **Add a shop** step **2 / 5 · Place**, the **Shop place and address** form is open without an
+available map. **The map is not available.** is visible where the map would be, and
+**Use this place** is disabled.
+
+![21.gifts shops add place unavailable open](images/shops-add-place-unavailable-open.png)
 
 ### Variant: add-place-empty
 
@@ -2592,6 +2656,14 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops edit place open](images/shops-edit-place-open.png)
 
+### Variant: edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts shops edit place unavailable open](images/shops-edit-place-unavailable-open.png)
+
 ### Variant: edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -2651,6 +2723,14 @@ returned no account. **No account with that username. Check the spelling of the 
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user missing](images/shops-edit-user-missing.png)
+
+### Variant: edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user invalid](images/shops-edit-user-invalid.png)
 
 ### Variant: edit-summary
 
@@ -2804,6 +2884,14 @@ username field. The live lookup returned no account. **No account with that user
 spelling of the 21.gifts username.** is visible and **Save account** is disabled.
 
 ![21.gifts shops staff account missing](images/shops-staff-account-missing.png)
+
+### Variant: staff-account-invalid
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **\_** in the
+username field. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a
+letter or digit.** is visible and **Save account** is disabled.
+
+![21.gifts shops staff account invalid](images/shops-staff-account-invalid.png)
 
 ### Variant: staff-account-set
 
@@ -3432,6 +3520,14 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts member shop edit place open](images/members-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts member shop edit place unavailable open](images/members-shop-edit-place-unavailable-open.png)
+
 ### Variant: shop-edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -3490,6 +3586,14 @@ returned no account. **No account with that username. Check the spelling of the 
 username.** is visible and **Next** is disabled.
 
 ![21.gifts member shop edit user missing](images/members-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled.
+
+![21.gifts member shop edit user invalid](images/members-shop-edit-user-invalid.png)
 
 ### Variant: shop-edit-summary
 
@@ -5378,6 +5482,14 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts public message shop edit place open](images/messages-id-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts public message shop edit place unavailable open](images/messages-id-shop-edit-place-unavailable-open.png)
+
 ### Variant: shop-edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -5437,6 +5549,14 @@ returned no account. **No account with that username. Check the spelling of the 
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user missing](images/messages-id-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user invalid](images/messages-id-shop-edit-user-invalid.png)
 
 ### Variant: shop-edit-summary
 
