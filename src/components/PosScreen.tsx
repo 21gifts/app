@@ -166,7 +166,7 @@ type WalletSettled = {
 /** How many payments no known open charge took are kept for the next one. */
 const POS_EARLY_PAYMENTS = 20;
 
-/** The wallet states when a payment was made in whole seconds; this much before creation counts. */
+/** The wallet states when a payment was made in whole seconds: payment and creation are compared in these. */
 const POS_PAID_TIME_GRAIN_MS = 1_000;
 
 let walletSettled: WalletSettled | null = null;
@@ -198,8 +198,8 @@ function settledChanged(): void {
 
 /**
  * Whether `payment` pays `charge`: its amount, or its amount after the fee,
- * made (by the wallet's own payment time, whole seconds, so up to
- * {@link POS_PAID_TIME_GRAIN_MS} before creation) from the charge's creation
+ * made (by the wallet's own payment time, compared in whole seconds,
+ * {@link POS_PAID_TIME_GRAIN_MS}) from the second of the charge's creation
  * up to {@link POS_LATE_PAID_MS} after its end. While a charge is open
  * the receiving address takes no other amount, so the time tells a payment of
  * this charge from one of the charge before, however late the wallet reports it.
@@ -211,7 +211,8 @@ function pays(
   return (
     (payment.amountSats === charge.amountSats ||
       payment.amountSats + payment.feesSats === charge.amountSats) &&
-    payment.timestamp + POS_PAID_TIME_GRAIN_MS >= Date.parse(charge.createdAt) &&
+    Math.floor(payment.timestamp / POS_PAID_TIME_GRAIN_MS) >=
+      Math.floor(Date.parse(charge.createdAt) / POS_PAID_TIME_GRAIN_MS) &&
     payment.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
   );
 }
@@ -387,8 +388,27 @@ function usePosTillState(): PosTillState {
     state: null,
     session: null,
   });
-  const state = till.state;
+  // Another session's till is never shown, not even while this session's read is on its way.
+  const state = till.session === session ? till.state : null;
   const [error, setError] = useState<string | null>(null);
+  // Whether the error shown is a failed till read, which the next read that comes in clears.
+  const readFailed = useRef(false);
+  // A load skipped while a create or cancel was on its way, run once that ends.
+  const skippedLoad = useRef(false);
+
+  /** Runs the load a session or language change asked for while a create or cancel was on its way. */
+  function runSkippedLoad(): void {
+    if (skippedLoad.current) {
+      skippedLoad.current = false;
+      setReload((n) => n + 1);
+    }
+  }
+
+  /** Shows `message` (or clears the error), which no later till read takes away. */
+  function showError(message: string | null): void {
+    readFailed.current = false;
+    setError(message);
+  }
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
@@ -421,7 +441,11 @@ function usePosTillState(): PosTillState {
   useEffect(() => {
     // A locale or session change must not start a load that shares the
     // generation of an in-flight create or cancel.
-    if (session === null || busyRef.current) {
+    if (session === null) {
+      return;
+    }
+    if (busyRef.current) {
+      skippedLoad.current = true;
       return;
     }
     let alive = true;
@@ -436,8 +460,8 @@ function usePosTillState(): PosTillState {
       if (!alive) {
         return;
       }
+      const seq = startRead(reads);
       try {
-        const seq = startRead(reads);
         const next = await fetchPosState(session);
         if (!alive) {
           return;
@@ -445,13 +469,20 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
             setTill({ state: next, session });
+            // The till answered: an earlier failed read no longer holds.
+            if (readFailed.current) {
+              readFailed.current = false;
+              setError(null);
+            }
           });
         });
       } catch {
-        if (!alive || quiet) {
+        // A newer read already answered, so this failure says nothing about the till now.
+        if (!alive || quiet || seq < reads.current.applied) {
           return;
         }
         whenCurrent(generation, mine, () => {
+          readFailed.current = true;
           setError(t('pos.error'));
         });
       }
@@ -578,11 +609,20 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
             setTill({ state: next, session });
+            if (readFailed.current) {
+              readFailed.current = false;
+              setError(null);
+            }
           });
         });
       })
       .catch(() => {
+        // A newer read already answered, so this failure says nothing about the till now.
+        if (seq < reads.current.applied) {
+          return;
+        }
         whenCurrent(generation, mine, () => {
+          readFailed.current = true;
           setError(t('pos.error'));
         });
       });
@@ -590,33 +630,34 @@ function usePosTillState(): PosTillState {
 
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
+    /* v8 ignore next 3 -- the form shows only on this session's answered till, and is disabled while busy */
     if (session === null || busyRef.current) {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
     if (parsed.kind === 'no-rate') {
-      setError(t('pos.noRate', { code: fiat }));
+      showError(t('pos.noRate', { code: fiat }));
       return;
     }
     if (shownUnit === 'fiat') {
       if (parsed.kind === 'invalid') {
-        setError(t('amount.cannotConvert'));
+        showError(t('amount.cannotConvert'));
         return;
       }
       if (parsed.kind === 'empty' || parsed.sats < 1) {
-        setError(t('wallet.sendAmountMin', { min: formatBitcoin(1) }));
+        showError(t('wallet.sendAmountMin', { min: formatBitcoin(1) }));
         return;
       }
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
-      setError(t('pos.badAmount'));
+      showError(t('pos.badAmount'));
       return;
     }
     const amountSats = parsed.sats;
     busyRef.current = true;
     setBusy(true);
     const mine = ++generation.current;
-    setError(null);
+    showError(null);
     // A new charge ends the late minute of the one before: a payment reported while it is being
     // created is kept and tried on the new charge once it is read (it pays it if `pays`). A failed
     // create gives the late minute back and tries the kept payments on the charge before.
@@ -702,17 +743,17 @@ function usePosTillState(): PosTillState {
         rearm(creating, before);
         whenCurrent(generation, mine, () => {
           if (err instanceof WalletRequiredError) {
-            setError(t('pos.needWallet'));
+            showError(t('pos.needWallet'));
           } else if (err instanceof CannotReceiveError) {
-            setError(t('pos.cannotReceive'));
+            showError(t('pos.cannotReceive'));
           } else if (message === 'Amount is outside the wallet range') {
-            setError(t('pos.outside'));
+            showError(t('pos.outside'));
           } else if (message === 'A payment is already open') {
-            setError(t('pos.already'));
+            showError(t('pos.already'));
           } else if (message === 'Set a username first') {
-            setError(t('pos.needUsername'));
+            showError(t('pos.needUsername'));
           } else {
-            setError(t('pos.error'));
+            showError(t('pos.error'));
           }
         });
       }
@@ -723,17 +764,19 @@ function usePosTillState(): PosTillState {
     } finally {
       busyRef.current = false;
       setBusy(false);
+      runSkippedLoad();
     }
   }
 
   async function onCancel(): Promise<void> {
+    /* v8 ignore next 3 -- Cancel shows only on this session's answered till, and is disabled while busy */
     if (session === null || busyRef.current) {
       return;
     }
     busyRef.current = true;
     setBusy(true);
     const mine = ++generation.current;
-    setError(null);
+    showError(null);
     // The memory of the session that cancels, even if another session signs in meanwhile.
     const cancelling = settledFor(session);
     // While the cancel is on its way the charge takes no payment: one reported meanwhile is kept,
@@ -765,7 +808,7 @@ function usePosTillState(): PosTillState {
         if (stillOpen) {
           rearm(cancelling, cancelled);
           whenCurrent(generation, mine, () => {
-            setError(t('pos.error'));
+            showError(t('pos.error'));
           });
         }
         return;
@@ -789,6 +832,7 @@ function usePosTillState(): PosTillState {
                 : prev,
             );
           });
+          readFailed.current = true;
           setError(t('pos.error'));
         });
       }
@@ -799,6 +843,7 @@ function usePosTillState(): PosTillState {
     } finally {
       busyRef.current = false;
       setBusy(false);
+      runSkippedLoad();
     }
   }
 
@@ -829,13 +874,13 @@ function usePosTillState(): PosTillState {
     onCreate,
     onCancel,
     retryLoad: () => {
-      setError(null);
+      showError(null);
       setReload((n) => n + 1);
     },
     closePaid: (id) => {
       settledFor(session).closed.add(id);
       settledChanged();
-      setError(null);
+      showError(null);
       // Quiet only when the till already shows an answer: before the first one, a failure must show.
       quietReload.current = state !== null;
       setReload((n) => n + 1);
@@ -849,7 +894,7 @@ function usePosTillState(): PosTillState {
  * figure when this tab kept one for the charge, and Cancel.
  * It never asks the api on a timer: the moment this tab's wallet reports a
  * payment that pays the charge ({@link onPaymentReceived}: its amount, or
- * that amount after the fee, made from one second before its creation to a
+ * that amount after the fee, made from the second of its creation to a
  * minute after its end), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
  * charge's fixed currency figure when this tab has one.
