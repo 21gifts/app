@@ -769,6 +769,7 @@ async function holdMentionPeople(page: Page): Promise<() => void> {
 async function openHostedShopEditor(
   page: Page,
   host: 'welcome' | 'members' | 'messages',
+  rejectPhotos = false,
 ): Promise<void> {
   const memberId = '22222222-2222-4222-8222-222222222222';
   const id =
@@ -835,6 +836,15 @@ async function openHostedShopEditor(
       body: JSON.stringify({ edits: [] }),
     });
   });
+  if (rejectPhotos) {
+    await page.route(`**/forum/messages/${id}/photos`, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+      });
+    });
+  }
 
   if (host === 'welcome') {
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -920,6 +930,120 @@ async function advanceShopEditorToUsername(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Next' }).click();
   }
   await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+}
+
+/** Make the image preparation path produce its ordinary too-large result. */
+async function stubTooLargeShopPhoto(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+      return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+    };
+  });
+}
+
+/** Pick files that produce one of the client-side shop photo errors. */
+async function pickShopPhotoError(
+  page: Page,
+  error: 'unsupported' | 'tooLarge' | 'tooMany',
+): Promise<void> {
+  // The living-room composer has its own file input; the shop wizard's is tied to its photo feedback.
+  const input = page.locator('input[type="file"][aria-describedby$="-photo-feedback"]');
+  if (error === 'unsupported') {
+    await input.setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'),
+    });
+    return;
+  }
+  await input.setInputFiles(
+    error === 'tooMany'
+      ? Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg')
+      : 'e2e/fixtures/tiny.jpg',
+  );
+}
+
+/** Submit a newly picked edit photo and wait for the API rejection to return to Photos. */
+async function submitRejectedShopPhotoEdit(page: Page): Promise<void> {
+  await page
+    .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
+    .setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({ timeout: 10_000 });
+  for (let step = 1; step < 5; step += 1) {
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+}
+
+/** Advance an open edit wizard to Text. */
+async function advanceShopEditorToText(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+}
+
+/** Enter the same forbidden control character as the create-flow visual. */
+async function enterShopDescriptionControlError(page: Page): Promise<void> {
+  const box = page.getByLabel('Shop text');
+  await box.evaluate((node) => {
+    const field = node as HTMLTextAreaElement;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    setValue?.call(field, 'Fresh bread\u0001 every morning.');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(
+    page.getByText('The shop text must not contain control characters other than line breaks.'),
+  ).toBeVisible();
+}
+
+/** Open the edit wizard's existing place in its form sheet. */
+async function openShopEditorPlaceDialog(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  const placeStep = page.getByText('2 / 5 · Place');
+  await expect(placeStep).toBeVisible();
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+}
+
+/** Enter the same invalid address values as the create-flow visual. */
+async function enterShopPlaceFieldErrors(page: Page): Promise<void> {
+  const address = page.getByTestId('shop-address-fields');
+  await address.getByLabel('House number', { exact: true }).fill('abc');
+  await address.getByLabel('Postal code', { exact: true }).fill('80');
+  await address.getByLabel('City', { exact: true }).fill('1234');
+  await expect(
+    page.getByText('The house number must start with a digit, for example 12 or 12a.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+  ).toBeVisible();
+  // Show the row errors in full above the pinned footer.
+  await page.getByText('The city must contain a letter.').scrollIntoViewIfNeeded();
+}
+
+/** Set the long create-flow shop name, confirm it, and open Text. */
+async function openShopTextNotLongerError(page: Page): Promise<void> {
+  await advanceShopEditorToText(page);
+  await page
+    .getByLabel('Shop text')
+    .fill('Fresh bread every morning and afternoon in Zurich every day.');
+  await page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' }).click();
+  const placeStep = page.getByText('2 / 5 · Place');
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery and Coffee House Zurich");
+  // Some edit fixtures store a place without a country.
+  await page.getByLabel('Country', { exact: true }).selectOption('CH');
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await expect(page.getByText('The shop text must be longer than the shop name.')).toBeVisible();
 }
 
 /** Signed-in Ada viewing Carol (username `carol`), for the Shop sticker states. */
@@ -3495,6 +3619,79 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-user-missing');
+  });
+
+  test('welcome shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-unsupported');
+  });
+
+  test('welcome shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-too-large');
+  });
+
+  test('welcome shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-too-many');
+  });
+
+  test('welcome shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-format-or-size');
+  });
+
+  test('welcome shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-text-error');
+  });
+
+  test('welcome shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-text-not-longer');
+  });
+
+  test('welcome shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place-name-address');
+  });
+
+  test('welcome shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-welcome-shop-edit-place-field-invalid');
   });
 
   test('state /welcome laws', async ({ page }) => {
@@ -6863,6 +7060,79 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-user-missing');
+  });
+
+  test('state /members shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-unsupported');
+  });
+
+  test('state /members shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-too-large');
+  });
+
+  test('state /members shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-too-many');
+  });
+
+  test('state /members shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'members', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-format-or-size');
+  });
+
+  test('state /members shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-text-error');
+  });
+
+  test('state /members shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-text-not-longer');
+  });
+
+  test('state /members shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place-name-address');
+  });
+
+  test('state /members shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-members-shop-edit-place-field-invalid');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -11582,6 +11852,79 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-user-missing');
+  });
+
+  test('state /messages/[id] shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
+  });
+
+  test('state /messages/[id] shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-too-large');
+  });
+
+  test('state /messages/[id] shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
+  });
+
+  test('state /messages/[id] shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-format-or-size');
+  });
+
+  test('state /messages/[id] shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-text-error');
+  });
+
+  test('state /messages/[id] shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-text-not-longer');
+  });
+
+  test('state /messages/[id] shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place-name-address');
+  });
+
+  test('state /messages/[id] shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-place-field-invalid');
   });
 
   test('state /messages sunday', async ({ page }) => {
@@ -18488,6 +18831,7 @@ test.describe('shops screens', () => {
     page: Page,
     view: 'post' | 'map' | 'table',
     mapEnabled = false,
+    rejectPhotos = false,
   ): Promise<void> {
     await seedAda(page, 'moderator');
     if (view === 'map') {
@@ -18596,6 +18940,17 @@ test.describe('shops screens', () => {
       });
     }
 
+    if (rejectPhotos) {
+      const id = view === 'post' ? 'm-staff' : 'm-shop';
+      await page.route(`**/forum/messages/${id}/photos`, async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+        });
+      });
+    }
+
     await page.goto('/shops');
     if (view === 'map') {
       await page.getByRole('button', { name: 'Map' }).click();
@@ -18621,6 +18976,16 @@ test.describe('shops screens', () => {
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+  }
+
+  async function openCreateShopPhotosStep(page: Page, moderator = false): Promise<void> {
+    await stubPlaceMap(page);
+    await seedAda(page, moderator ? 'moderator' : 'basis');
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
   }
 
   async function openStaffAccountControl(page: Page): Promise<Locator> {
@@ -19028,6 +19393,80 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-user-missing');
   });
 
+  test('shops map-edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-unsupported');
+  });
+
+  test('shops map-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-too-large');
+  });
+
+  test('shops map-edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-too-many');
+  });
+
+  test('shops map-edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'map', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-format-or-size');
+  });
+
+  test('shops map-edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-text-error');
+  });
+
+  test('shops map-edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-text-not-longer');
+  });
+
+  test('shops map-edit-place-name-address', async ({ page }) => {
+    await openShopsEditor(page, 'map', true);
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-place-name-address');
+  });
+
+  test('shops map-edit-place-field-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'map', true);
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-map-edit-place-field-invalid');
+  });
+
   test('shops map-edit-load-failed', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -19385,6 +19824,80 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-user-missing');
+  });
+
+  test('shops table-edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-unsupported');
+  });
+
+  test('shops table-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-too-large');
+  });
+
+  test('shops table-edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-too-many');
+  });
+
+  test('shops table-edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'table', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-format-or-size');
+  });
+
+  test('shops table-edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-text-error');
+  });
+
+  test('shops table-edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'table');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-text-not-longer');
+  });
+
+  test('shops table-edit-place-name-address', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-place-name-address');
+  });
+
+  test('shops table-edit-place-field-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-table-edit-place-field-invalid');
   });
 
   const shopTableRow = {
@@ -19957,6 +20470,80 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-user-missing');
+  });
+
+  test('shops edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-unsupported');
+  });
+
+  test('shops edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-too-large');
+  });
+
+  test('shops edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-too-many');
+  });
+
+  test('shops edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'post', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-format-or-size');
+  });
+
+  test('shops edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-text-error');
+  });
+
+  test('shops edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'post');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-text-not-longer');
+  });
+
+  test('shops edit-place-name-address', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-place-name-address');
+  });
+
+  test('shops edit-place-field-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-edit-place-field-invalid');
   });
 
   test('shops edit-save-error', async ({ page }) => {
@@ -20922,6 +21509,73 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-add-summary');
   });
 
+  test('shops add-photos-unsupported', async ({ page }) => {
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-unsupported');
+  });
+
+  test('shops add-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB and videos under 32 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-too-large');
+  });
+
+  test('shops add-photos-too-many', async ({ page }) => {
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-too-many');
+  });
+
+  test('shops add-photos-format-or-size', async ({ page }) => {
+    await openCreateShopPhotosStep(page, true);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+        });
+      },
+    );
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const error = page.getByText(
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+    );
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-format-or-size');
+  });
+
   test('shops add-user-checking', async ({ page }) => {
     const release = await holdMentionPeople(page);
     await openCreateShopUsernameStep(page);
@@ -20993,6 +21647,7 @@ test.describe('shops screens', () => {
     ).toBeVisible();
     await expect(page.getByText('The city must contain a letter.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await page.getByText('The city must contain a letter.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-place-field-invalid');
   });
 

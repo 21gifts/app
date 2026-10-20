@@ -4093,5 +4093,265 @@
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
     "es": "El paso 4 de 5 · usuario de 21.gifts está abierto con missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
     "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang laman. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Wala pa ring mga pagbabago ayon sa kasaysayan."
+  },
+  "/members/[accountId]:shop-edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/members/[accountId]:shop-edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl eines zu grossen Fotos geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/members/[accountId]:shop-edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl von 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/members/[accountId]:shop-edit-photos-format-or-size": {
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/members/[accountId]:shop-edit-place-name-address": {
+    "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shopname und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con Bahnhofstrasse Bakery como Nombre de la tienda y Bahnhofstrasse 12, 8001 Zürich, Suiza como dirección. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible y Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code. at disabled ang Gamitin ang lugar na ito."
+  },
+  "/members/[accountId]:shop-edit-place-field-invalid": {
+    "de": "Das Ortsformular ist mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con número abc, código postal 80 y ciudad 1234. Los errores de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga error para sa mga field na iyon at disabled ang Gamitin ang lugar na ito."
+  },
+  "/members/[accountId]:shop-edit-text-error": {
+    "de": "Schritt 3 von 5 · Text enthält Fresh bread every morning. mit einem unzulässigen Steuerzeichen. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto contiene Fresh bread every morning. con un carácter de control rechazado. El error El texto de la tienda no debe contener caracteres de control salvo saltos de línea. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may Fresh bread every morning. na may bawal na control character. Nakikita ang live error na Hindi dapat maglaman ng control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
+  },
+  "/members/[accountId]:shop-edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text hat einen vollständigen Ort namens Kiki's Bakery and Coffee House Zurich und den Text Fresh bread every morning. Der Live-Fehler Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto tiene un lugar completo llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may kumpletong lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
+  },
+  "/messages/[id]:shop-edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/messages/[id]:shop-edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl eines zu grossen Fotos geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/messages/[id]:shop-edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl von 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/messages/[id]:shop-edit-photos-format-or-size": {
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/messages/[id]:shop-edit-place-name-address": {
+    "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shopname und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con Bahnhofstrasse Bakery como Nombre de la tienda y Bahnhofstrasse 12, 8001 Zürich, Suiza como dirección. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible y Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code. at disabled ang Gamitin ang lugar na ito."
+  },
+  "/messages/[id]:shop-edit-place-field-invalid": {
+    "de": "Das Ortsformular ist mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con número abc, código postal 80 y ciudad 1234. Los errores de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga error para sa mga field na iyon at disabled ang Gamitin ang lugar na ito."
+  },
+  "/messages/[id]:shop-edit-text-error": {
+    "de": "Schritt 3 von 5 · Text enthält Fresh bread every morning. mit einem unzulässigen Steuerzeichen. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto contiene Fresh bread every morning. con un carácter de control rechazado. El error El texto de la tienda no debe contener caracteres de control salvo saltos de línea. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may Fresh bread every morning. na may bawal na control character. Nakikita ang live error na Hindi dapat maglaman ng control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
+  },
+  "/messages/[id]:shop-edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text hat einen vollständigen Ort namens Kiki's Bakery and Coffee House Zurich und den Text Fresh bread every morning. Der Live-Fehler Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto tiene un lugar completo llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may kumpletong lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
+  },
+  "/welcome:shop-edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/welcome:shop-edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl eines zu grossen Fotos geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/welcome:shop-edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl von 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/welcome:shop-edit-photos-format-or-size": {
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/welcome:shop-edit-place-name-address": {
+    "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shopname und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con Bahnhofstrasse Bakery como Nombre de la tienda y Bahnhofstrasse 12, 8001 Zürich, Suiza como dirección. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible y Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code. at disabled ang Gamitin ang lugar na ito."
+  },
+  "/welcome:shop-edit-place-field-invalid": {
+    "de": "Das Ortsformular ist mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con número abc, código postal 80 y ciudad 1234. Los errores de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga error para sa mga field na iyon at disabled ang Gamitin ang lugar na ito."
+  },
+  "/welcome:shop-edit-text-error": {
+    "de": "Schritt 3 von 5 · Text enthält Fresh bread every morning. mit einem unzulässigen Steuerzeichen. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto contiene Fresh bread every morning. con un carácter de control rechazado. El error El texto de la tienda no debe contener caracteres de control salvo saltos de línea. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may Fresh bread every morning. na may bawal na control character. Nakikita ang live error na Hindi dapat maglaman ng control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
+  },
+  "/welcome:shop-edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text hat einen vollständigen Ort namens Kiki's Bakery and Coffee House Zurich und den Text Fresh bread every morning. Der Live-Fehler Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto tiene un lugar completo llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may kumpletong lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
+  },
+  "/shops:map-edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Karte nach einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Mapa tras un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay vista previa nueva.",
+    "fil": "Bukas sa Mapa ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/shops:map-edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Karte nach einem zu grossen Foto geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Mapa tras una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay vista previa nueva.",
+    "fil": "Bukas sa Mapa ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/shops:map-edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Karte nach 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Mapa tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas sa Mapa ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/shops:map-edit-photos-format-or-size": {
+    "de": "Die Foto-API lehnte Format oder Grösse beim Speichern ab. Der Editor kehrte auf Karte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "La API rechazó el formato o tamaño al guardar. El editor volvió en Mapa al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Tinanggihan ng photo API ang format o laki sa pag-save. Bumalik ang editor sa Mapa sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/shops:map-edit-place-name-address": {
+    "de": "Das Ortsformular ist auf Karte mit Bahnhofstrasse Bakery und der Adresse Bahnhofstrasse 12, 8001 Zürich, Schweiz geöffnet. Der Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario está abierto en Mapa con Bahnhofstrasse Bakery y la dirección Bahnhofstrasse 12, 8001 Zürich, Suiza. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Mapa ang form na may Bahnhofstrasse Bakery at address na Bahnhofstrasse 12, 8001 Zürich, Switzerland. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code.; disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:map-edit-place-field-invalid": {
+    "de": "Das Ortsformular ist auf Karte mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die drei Live-Fehler sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario está abierto en Mapa con número abc, código postal 80 y ciudad 1234. Los tres errores están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Mapa ang form na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang tatlong error at disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:map-edit-text-error": {
+    "de": "Schritt 3 von 5 · Text ist auf Karte mit Fresh bread every morning. und einem unzulässigen Steuerzeichen geöffnet. Der entsprechende Live-Fehler ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Mapa con Fresh bread every morning. y un carácter de control rechazado. El error correspondiente está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas sa Mapa ang hakbang 3 sa 5 · Teksto na may Fresh bread every morning. at bawal na control character. Nakikita ang kaukulang error at disabled ang Susunod."
+  },
+  "/shops:map-edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text ist auf Karte mit dem Ort Kiki's Bakery and Coffee House Zurich und Fresh bread every morning. geöffnet. Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Mapa con Kiki's Bakery and Coffee House Zurich y Fresh bread every morning. El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente deshabilitado.",
+    "fil": "Bukas sa Mapa ang hakbang 3 sa 5 · Teksto na may Kiki's Bakery and Coffee House Zurich at Fresh bread every morning. Nakikita ang Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
+  },
+  "/shops:table-edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Tabelle nach einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Tabla tras un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay vista previa nueva.",
+    "fil": "Bukas sa Talahanayan ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/shops:table-edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Tabelle nach einem zu grossen Foto geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Tabla tras una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay vista previa nueva.",
+    "fil": "Bukas sa Talahanayan ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/shops:table-edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist auf Tabelle nach 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto en Tabla tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas sa Talahanayan ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/shops:table-edit-photos-format-or-size": {
+    "de": "Die Foto-API lehnte Format oder Grösse beim Speichern ab. Der Editor kehrte auf Tabelle zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "La API rechazó el formato o tamaño al guardar. El editor volvió en Tabla al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Tinanggihan ng photo API ang format o laki sa pag-save. Bumalik ang editor sa Talahanayan sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/shops:table-edit-place-name-address": {
+    "de": "Das Ortsformular ist auf Tabelle mit Bahnhofstrasse Bakery und der Adresse Bahnhofstrasse 12, 8001 Zürich, Schweiz geöffnet. Der Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario está abierto en Tabla con Bahnhofstrasse Bakery y la dirección Bahnhofstrasse 12, 8001 Zürich, Suiza. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang form na may Bahnhofstrasse Bakery at address na Bahnhofstrasse 12, 8001 Zürich, Switzerland. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code.; disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:table-edit-place-field-invalid": {
+    "de": "Das Ortsformular ist auf Tabelle mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die drei Live-Fehler sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario está abierto en Tabla con número abc, código postal 80 y ciudad 1234. Los tres errores están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang form na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang tatlong error at disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:table-edit-text-error": {
+    "de": "Schritt 3 von 5 · Text ist auf Tabelle mit Fresh bread every morning. und einem unzulässigen Steuerzeichen geöffnet. Der entsprechende Live-Fehler ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Tabla con Fresh bread every morning. y un carácter de control rechazado. El error correspondiente está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang hakbang 3 sa 5 · Teksto na may Fresh bread every morning. at bawal na control character. Nakikita ang kaukulang error at disabled ang Susunod."
+  },
+  "/shops:table-edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text ist auf Tabelle mit dem Ort Kiki's Bakery and Coffee House Zurich und Fresh bread every morning. geöffnet. Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Tabla con Kiki's Bakery and Coffee House Zurich y Fresh bread every morning. El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang hakbang 3 sa 5 · Teksto na may Kiki's Bakery and Coffee House Zurich at Fresh bread every morning. Nakikita ang Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
+  },
+  "/shops:add-photos-unsupported": {
+    "de": "Shop hinzufügen ist bei Schritt 1 von 5 · Bilder nach einer nicht unterstützten Datei geöffnet. Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format ist sichtbar; es gibt keine Vorschau.",
+    "es": "Añadir una tienda está abierto en el paso 1 de 5 · Fotos tras un archivo no compatible. Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV está visible y no hay vista previa.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo at walang preview."
+  },
+  "/shops:add-photos-too-large": {
+    "de": "Shop hinzufügen ist bei Schritt 1 von 5 · Bilder nach einem zu grossen Foto geöffnet. Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein ist sichtbar; es gibt keine Vorschau.",
+    "es": "Añadir una tienda está abierto en el paso 1 de 5 · Fotos tras una foto demasiado grande. Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB está visible y no hay vista previa.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo at walang preview."
+  },
+  "/shops:add-photos-too-many": {
+    "de": "Shop hinzufügen ist bei Schritt 1 von 5 · Bilder nach der Auswahl von 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "Añadir una tienda está abierto en el paso 1 de 5 · Fotos tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/shops:add-photos-format-or-size": {
+    "de": "Ein vollständiger Shop mit Foto wurde gesendet, aber die API lehnte Format oder Grösse ab. Shop hinzufügen kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt die kombinierte Format-und-Grösse-Meldung für Fotos und Videos.",
+    "es": "Se envió una tienda completa con foto, pero la API rechazó el formato o tamaño. Añadir una tienda volvió al paso 1 de 5 · Fotos y muestra el mensaje combinado de formato y tamaño para fotos y vídeos.",
+    "fil": "Naisumite ang kumpletong shop na may litrato, pero tinanggihan ng API ang format o laki. Bumalik ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan at ipinapakita ang pinagsamang mensahe sa format at laki para sa litrato at bidyo."
+  },
+  "/shops:edit-photos-unsupported": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir un archivo no compatible. Usa una foto JPEG, PNG o WebP está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng hindi suportadong file. Nakikita ang Gumamit ng JPEG, PNG, o WebP na litrato at walang bagong preview."
+  },
+  "/shops:edit-photos-too-large": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl eines zu grossen Fotos geöffnet. Fotos unter 1 MB halten ist sichtbar; es gibt keine neue Vorschau.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir una foto demasiado grande. Mantén las fotos por debajo de 1 MB está visible y no hay una vista previa nueva.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng sobrang laking litrato. Nakikita ang Panatilihing wala pang 1 MB ang mga litrato at walang bagong preview."
+  },
+  "/shops:edit-photos-too-many": {
+    "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl von 11 Fotos geöffnet. Zehn Vorschauen bleiben und Sie können bis zu 10 Fotos hinzufügen ist sichtbar.",
+    "es": "El paso 1 de 5 · Fotos está abierto tras elegir 11 fotos. Quedan diez vistas previas y Puedes añadir hasta 10 fotos está visible.",
+    "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
+  "/shops:edit-photos-format-or-size": {
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB."
+  },
+  "/shops:edit-place-name-address": {
+    "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shopname und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shopname darf weder die Strasse noch die Postleitzahl enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con Bahnhofstrasse Bakery como Nombre de la tienda y Bahnhofstrasse 12, 8001 Zürich, Suiza como dirección. El error El nombre de la tienda no debe contener la calle ni el código postal. está visible y Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o postal code. at disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:edit-place-field-invalid": {
+    "de": "Das Ortsformular ist mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto con número abc, código postal 80 y ciudad 1234. Los errores de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga error para sa mga field na iyon at disabled ang Gamitin ang lugar na ito."
+  },
+  "/shops:edit-text-error": {
+    "de": "Schritt 3 von 5 · Text enthält Fresh bread every morning. mit einem unzulässigen Steuerzeichen. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto contiene Fresh bread every morning. con un carácter de control rechazado. El error El texto de la tienda no debe contener caracteres de control salvo saltos de línea. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may Fresh bread every morning. na may bawal na control character. Nakikita ang live error na Hindi dapat maglaman ng control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
+  },
+  "/shops:edit-text-not-longer": {
+    "de": "Schritt 3 von 5 · Text hat einen vollständigen Ort namens Kiki's Bakery and Coffee House Zurich und den Text Fresh bread every morning. Der Live-Fehler Der Shop-Text muss länger als der Shopname sein. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto tiene un lugar completo llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error El texto de la tienda debe ser más largo que su nombre. está visible y Siguiente está deshabilitado.",
+    "fil": "Ang hakbang 3 sa 5 · Teksto ay may kumpletong lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa pangalan nito. at disabled ang Susunod."
   }
 }

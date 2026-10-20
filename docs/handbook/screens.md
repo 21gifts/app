@@ -1754,6 +1754,35 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ![21.gifts welcome shop edit open](images/welcome-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts welcome shop edit photos unsupported](images/welcome-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts welcome shop edit photos too large](images/welcome-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts welcome shop edit photos too many](images/welcome-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts welcome shop edit photos format or size](images/welcome-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
@@ -1768,11 +1797,43 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts welcome shop edit place open](images/welcome-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts welcome shop edit place name address](images/welcome-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts welcome shop edit place field invalid](images/welcome-shop-edit-place-field-invalid.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
 
 ![21.gifts welcome shop edit text](images/welcome-shop-edit-text.png)
+
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts welcome shop edit text error](images/welcome-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts welcome shop edit text not longer](images/welcome-shop-edit-text-not-longer.png)
 
 ### Variant: shop-edit-user
 
@@ -1874,6 +1935,35 @@ A moderator clicked **Edit shop note** beside **Ada · Happyland**. Step **1 / 5
 
 ![21.gifts shops map edit open](images/shops-map-edit-open.png)
 
+### Variant: map-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open on **Map** after an unsupported file was selected. The picker
+shows **Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops map edit photos unsupported](images/shops-map-edit-photos-unsupported.png)
+
+### Variant: map-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open on **Map** after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops map edit photos too large](images/shops-map-edit-photos-too-large.png)
+
+### Variant: map-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open on **Map** after 11 photos were selected. Ten previews remain and
+the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops map edit photos too many](images/shops-map-edit-photos-too-many.png)
+
+### Variant: map-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** on **Map** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts shops map edit photos format or size](images/shops-map-edit-photos-format-or-size.png)
+
 ### Variant: map-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map. **History** still says there are no edits yet. The photo step's Close (X) is gone. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
@@ -1889,11 +1979,45 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops map edit place open](images/shops-map-edit-place-open.png)
 
+### Variant: map-edit-place-name-address
+
+The place form is open on **Map** with **Bahnhofstrasse Bakery** as **Shop name** and
+**Bahnhofstrasse 12, 8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops map edit place name address](images/shops-map-edit-place-name-address.png)
+
+### Variant: map-edit-place-field-invalid
+
+The place form is open on **Map** with house number **abc**, postal code **80**, and city **1234**.
+The live house-number, postal-code, and city errors are visible together, and
+**Use this place** is disabled.
+
+![21.gifts shops map edit place field invalid](images/shops-map-edit-place-field-invalid.png)
+
 ### Variant: map-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit text](images/shops-map-edit-text.png)
+
+### Variant: map-edit-text-error
+
+Step **3 / 5 · Text** is open on **Map** and contains **Fresh bread every morning.** with a
+rejected control character. The live error
+**The shop text must not contain control characters other than line breaks.** is visible and
+**Next** is disabled.
+
+![21.gifts shops map edit text error](images/shops-map-edit-text-error.png)
+
+### Variant: map-edit-text-not-longer
+
+Step **3 / 5 · Text** is open on **Map** with a place named
+**Kiki's Bakery and Coffee House Zurich** and text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops map edit text not longer](images/shops-map-edit-text-not-longer.png)
 
 ### Variant: map-edit-user
 
@@ -1998,6 +2122,35 @@ table. **History** says there are no edits yet. The photo step dismisses with an
 
 ![21.gifts shops table edit open](images/shops-table-edit-open.png)
 
+### Variant: table-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open on **Table** after an unsupported file was selected. The picker
+shows **Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops table edit photos unsupported](images/shops-table-edit-photos-unsupported.png)
+
+### Variant: table-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open on **Table** after an oversized photo was selected. The picker
+shows **Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops table edit photos too large](images/shops-table-edit-photos-too-large.png)
+
+### Variant: table-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open on **Table** after 11 photos were selected. Ten previews remain and
+the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops table edit photos too many](images/shops-table-edit-photos-too-many.png)
+
+### Variant: table-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** on **Table** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts shops table edit photos format or size](images/shops-table-edit-photos-format-or-size.png)
+
 ### Variant: table-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still
@@ -2015,12 +2168,46 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops table edit place open](images/shops-table-edit-place-open.png)
 
+### Variant: table-edit-place-name-address
+
+The place form is open on **Table** with **Bahnhofstrasse Bakery** as **Shop name** and
+**Bahnhofstrasse 12, 8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops table edit place name address](images/shops-table-edit-place-name-address.png)
+
+### Variant: table-edit-place-field-invalid
+
+The place form is open on **Table** with house number **abc**, postal code **80**, and city
+**1234**. The live house-number, postal-code, and city errors are visible together, and
+**Use this place** is disabled.
+
+![21.gifts shops table edit place field invalid](images/shops-table-edit-place-field-invalid.png)
+
 ### Variant: table-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place
 **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit text](images/shops-table-edit-text.png)
+
+### Variant: table-edit-text-error
+
+Step **3 / 5 · Text** is open on **Table** and contains **Fresh bread every morning.** with a
+rejected control character. The live error
+**The shop text must not contain control characters other than line breaks.** is visible and
+**Next** is disabled.
+
+![21.gifts shops table edit text error](images/shops-table-edit-text-error.png)
+
+### Variant: table-edit-text-not-longer
+
+Step **3 / 5 · Text** is open on **Table** with a place named
+**Kiki's Bakery and Coffee House Zurich** and text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops table edit text not longer](images/shops-table-edit-text-not-longer.png)
 
 ### Variant: table-edit-user
 
@@ -2059,6 +2246,35 @@ there are no edits yet. **Table** stays selected.
 **Add a shop** is open on step **1 / 5 · Photos**. **Next** is the only button. The shop list is empty.
 
 ![21.gifts shops add photos](images/shops-add-photos.png)
+
+### Variant: add-photos-unsupported
+
+**Add a shop** is open on step **1 / 5 · Photos** after an unsupported file was selected. The
+picker shows **Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video** and no preview.
+
+![21.gifts shops add photos unsupported](images/shops-add-photos-unsupported.png)
+
+### Variant: add-photos-too-large
+
+**Add a shop** is open on step **1 / 5 · Photos** after an oversized photo was selected. The
+picker shows **Keep photos under 1 MB and videos under 32 MB** and no preview.
+
+![21.gifts shops add photos too large](images/shops-add-photos-too-large.png)
+
+### Variant: add-photos-too-many
+
+**Add a shop** is open on step **1 / 5 · Photos** after 11 photos were selected. Ten previews
+remain and the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops add photos too many](images/shops-add-photos-too-many.png)
+
+### Variant: add-photos-format-or-size
+
+A complete shop with a photo was submitted, but the post API rejected the media format or size.
+**Add a shop** returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.**
+
+![21.gifts shops add photos format or size](images/shops-add-photos-format-or-size.png)
 
 ### Variant: add-place
 
@@ -2333,6 +2549,35 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ![21.gifts shops edit open](images/shops-edit-open.png)
 
+### Variant: edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops edit photos unsupported](images/shops-edit-photos-unsupported.png)
+
+### Variant: edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops edit photos too large](images/shops-edit-photos-too-large.png)
+
+### Variant: edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts shops edit photos too many](images/shops-edit-photos-too-many.png)
+
+### Variant: edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts shops edit photos format or size](images/shops-edit-photos-format-or-size.png)
+
 ### Variant: edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
@@ -2347,11 +2592,43 @@ the active scroll surface; the header Close and pinned footer **Use this place**
 
 ![21.gifts shops edit place open](images/shops-edit-place-open.png)
 
+### Variant: edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops edit place name address](images/shops-edit-place-name-address.png)
+
+### Variant: edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts shops edit place field invalid](images/shops-edit-place-field-invalid.png)
+
 ### Variant: edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
 
 ![21.gifts shops edit text](images/shops-edit-text.png)
+
+### Variant: edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts shops edit text error](images/shops-edit-text-error.png)
+
+### Variant: edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops edit text not longer](images/shops-edit-text-not-longer.png)
 
 ### Variant: edit-user
 
@@ -3112,6 +3389,35 @@ The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open.
 
 ![21.gifts member shop edit open](images/members-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts member shop edit photos unsupported](images/members-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts member shop edit photos too large](images/members-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts member shop edit photos too many](images/members-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts member shop edit photos format or size](images/members-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
@@ -3126,11 +3432,43 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts member shop edit place open](images/members-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts member shop edit place name address](images/members-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts member shop edit place field invalid](images/members-shop-edit-place-field-invalid.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open.
 
 ![21.gifts member shop edit text](images/members-shop-edit-text.png)
+
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts member shop edit text error](images/members-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts member shop edit text not longer](images/members-shop-edit-text-not-longer.png)
 
 ### Variant: shop-edit-user
 
@@ -4997,6 +5335,35 @@ The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open.
 
 ![21.gifts public message shop edit open](images/messages-id-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts public message shop edit photos unsupported](images/messages-id-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts public message shop edit photos too large](images/messages-id-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts public message shop edit photos too many](images/messages-id-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.**
+
+![21.gifts public message shop edit photos format or size](images/messages-id-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
@@ -5011,11 +5378,43 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ![21.gifts public message shop edit place open](images/messages-id-shop-edit-place-open.png)
 
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts public message shop edit place name address](images/messages-id-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts public message shop edit place field invalid](images/messages-id-shop-edit-place-field-invalid.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit text](images/messages-id-shop-edit-text.png)
+
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts public message shop edit text error](images/messages-id-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts public message shop edit text not longer](images/messages-id-shop-edit-text-not-longer.png)
 
 ### Variant: shop-edit-user
 
