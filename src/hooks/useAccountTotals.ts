@@ -14,8 +14,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * gifts to the newly set up wallet appear without a full reload. No session →
  * zeros, empty series, `loading: false`, `failed: false`. On each fetch start
  * (including a session or verification change) totals and series reset to
- * zeros/empty and `failed` is false; `AccountActivityChart` /
- * `LoanBalanceChart` then show empty copy (no SVG) while the request is in
+ * zeros/empty and `failed` is false; `AccountActivityChart` shows empty copy
+ * (no SVG) and `LoanBalanceChart` renders nothing while the request is in
  * flight. Drops stale responses when the session or verification changes
  * mid-flight. A thrown fetch sets `failed` true with zeros and empty series
  * so both charts show their error copy. Missing loan fields on older payloads

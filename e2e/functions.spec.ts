@@ -12211,11 +12211,14 @@ test('Function: AccountActivityChart — profile shows Given legend and ₿ char
   await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 
-test('Function: LoanBalanceChart — profile shows Debt and credit empty copy', async ({ page }) => {
+test('Function: LoanBalanceChart — profile hides the chart when there are no loans', async ({
+  page,
+}) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
-  await expect(page.getByText('No loans yet.')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByText('No loans yet.')).toHaveCount(0);
   await expect(page.getByLabel('Debt and credit in ₿')).toHaveCount(0);
 });
 

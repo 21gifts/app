@@ -251,14 +251,16 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('shows loan empty copy when activity omits loan fields', async () => {
+  it('renders no loan chart when activity omits loan fields', async () => {
     fetchProfile.mockResolvedValue(profile);
     fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
-    expect(screen.getByText('No loans yet.')).toBeTruthy();
+    expect(screen.queryByText('No loans yet.')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Debt and credit in ₿' })).toBeNull();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
   it('renders debt and credit legend when loan series are present', async () => {

@@ -17,9 +17,8 @@ export interface LoanBalanceChartProps {
   credit?: NonNullable<AccountActivity['creditOverTime']>;
   /**
    * When true and the series is empty or all-zero sats, show
-   * `profile.loanChartError` instead of `profile.loanChartEmpty`. Ignored when
-   * any cumulative sats are non-zero. Defaults to false (in-flight and
-   * successful empty still use `profile.loanChartEmpty`).
+   * `profile.loanChartError`. Ignored when any cumulative sats are non-zero.
+   * Defaults to false. In-flight and successful empty render nothing.
    */
   failed?: boolean;
 }
@@ -41,16 +40,16 @@ const PAD_B = 20;
  * Circles mark every value change (rise or fall), not only increases.
  *
  * @param props - Owed series, credit series, and optional `failed`.
- * @returns Empty `profile.loanChartEmpty` status, failed-empty
- *   `profile.loanChartError` alert, or legend, selected-fiat chrome, and
- *   reserved-height SVG. Signed-in and unsigned empty states match (no title
- *   heading).
+ * @returns `null` when empty or all-zero and not failed. Failed-empty is a
+ *   `profile.loanChartError` alert. Otherwise legend, selected-fiat chrome,
+ *   and reserved-height SVG. Signed-in and unsigned empty states match
+ *   (nothing, no title heading).
  */
 export function LoanBalanceChart({
   owed = [],
   credit = [],
   failed = false,
-}: LoanBalanceChartProps): ReactElement {
+}: LoanBalanceChartProps): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -61,17 +60,14 @@ export function LoanBalanceChart({
     points.every((point) => point.cumulativeOwedSats === 0 && point.cumulativeCreditSats === 0);
 
   if (emptySats) {
+    if (!failed) {
+      return null;
+    }
     return (
       <div className="flex w-full flex-col gap-2">
-        {failed ? (
-          <p className="text-center text-sm text-app-danger" role="alert">
-            {t('profile.loanChartError')}
-          </p>
-        ) : (
-          <p className="text-center text-sm text-app-muted" role="status">
-            {t('profile.loanChartEmpty')}
-          </p>
-        )}
+        <p className="text-center text-sm text-app-danger" role="alert">
+          {t('profile.loanChartError')}
+        </p>
       </div>
     );
   }

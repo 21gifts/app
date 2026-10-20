@@ -45,19 +45,33 @@ function clickChartScale(name: string): void {
 }
 
 describe('LoanBalanceChart', () => {
-  it('renders empty copy and no FiatPicker when unsigned', () => {
+  it('renders nothing and no FiatPicker when unsigned', () => {
     renderWithLocale(<LoanBalanceChart />);
-    expect(screen.getByRole('status').textContent).toBe('No loans yet.');
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('No loans yet.')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Debt and credit in ₿' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
   });
 
-  it('still shows empty copy and no FiatPicker when a session is set', () => {
+  it('renders nothing and no FiatPicker when a session is set', () => {
     useAuthStore.setState({ session: 'tok', account: null });
     renderWithLocale(<LoanBalanceChart />);
+    expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('No loans yet.');
+    expect(screen.queryByText('No loans yet.')).toBeNull();
+  });
+
+  it('renders nothing when every cumulative is zero', () => {
+    renderWithLocale(
+      <LoanBalanceChart
+        owed={[loanDay('2026-06-01', 0, '0.00', 0)]}
+        credit={[loanDay('2026-06-01', 0, '0.00', 0)]}
+      />,
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Debt and credit in ₿' })).toBeNull();
   });
 
   it('renders chart error copy when failed and the series is empty', () => {

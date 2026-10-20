@@ -261,12 +261,14 @@ describe('MemberProfileLoader', () => {
     await Promise.resolve();
   });
 
-  it('shows loan empty copy when activity omits loan fields', async () => {
+  it('renders no loan chart when activity omits loan fields', async () => {
     vi.mocked(fetchMember).mockResolvedValue(profile);
     vi.mocked(fetchMemberActivity).mockResolvedValue(EMPTY_ACTIVITY);
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();
-    expect(screen.getByText('No loans yet.')).toBeTruthy();
+    expect(screen.queryByText('No loans yet.')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Debt and credit in ₿' })).toBeNull();
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
   it('renders debt and credit legend when loan series are present', async () => {
