@@ -41,8 +41,9 @@ type VersionBlock = {
  * unknown passkey, or any other failure of that prompt stays on this start
  * view with **Something went wrong. Please try again.** (`login.error`)
  * above **Log in**; a refused account (the wrong-account 403) shows
- * `login.wrongAccount` there instead and keeps the held session. **Open a new account** stays: it is registration, and a
- * new account replaces the held session as well.
+ * `login.wrongAccount` there instead and keeps the held session. Only this
+ * held start view adds **Open a new account** under **New to 21.gifts?**: it
+ * is registration, and a new account replaces the held session as well.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
@@ -190,13 +191,7 @@ export function LoginCard({
       />
     );
   } else {
-    body = (
-      <StartView
-        onLogin={passkey.login}
-        onRegister={() => passkey.register()}
-        versionBlock={versionBlock}
-      />
-    );
+    body = <StartView onLogin={passkey.login} versionBlock={versionBlock} />;
   }
 
   return <Card surface={false}>{body}</Card>;
@@ -224,8 +219,8 @@ function VersionNote({ block }: { block: VersionBlock | null }): ReactElement | 
 interface StartViewProps {
   /** Called to start authenticate-first login. */
   onLogin: () => void;
-  /** Open the name form; does not start create. */
-  onRegister: () => void;
+  /** Open the name form; does not start create. Held start view only, else null. */
+  onRegister?: (() => void) | null;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
   /** Held-back member to greet (**Welcome back, {name}**), or null. */
@@ -237,16 +232,17 @@ interface StartViewProps {
 }
 
 /**
- * The initial logged-out state: **Log in**, then **Open a new account** under a short line.
- * For a held-back session, a greeting above the heading, an alert, and
- * **Confirm to open your wallet** above **Log in**.
+ * The initial logged-out state: a single **Log in** button.
+ * For a held-back session, a greeting above the heading, an alert,
+ * **Confirm to open your wallet** above **Log in**, and **Open a new account**
+ * under a short line.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
 function StartView({
   onLogin,
-  onRegister,
+  onRegister = null,
   versionBlock,
   greeting = null,
   held = false,
@@ -276,10 +272,14 @@ function StartView({
       >
         {t('login.submit')}
       </Button>
-      <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
-      <Button type="button" variant="secondary" onClick={onRegister}>
-        {t('login.create')}
-      </Button>
+      {onRegister === null ? null : (
+        <>
+          <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
+          <Button type="button" variant="secondary" onClick={onRegister}>
+            {t('login.create')}
+          </Button>
+        </>
+      )}
     </>
   );
 }
