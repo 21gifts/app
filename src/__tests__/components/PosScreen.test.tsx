@@ -1234,11 +1234,12 @@ describe('PosScreen', () => {
         'tok',
       );
       expect(within(dialog).getByText('₿21')).toBeTruthy();
-      expect(await within(dialog).findByText('$0.02')).toBeTruthy();
       expect(within(dialog).getByText('The amount has arrived in your wallet.')).toBeTruthy();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
-      expect(within(history).getByText('$0.02')).toBeTruthy();
+      expect(await within(history).findByText('$0.02')).toBeTruthy();
+      // This till did not create the charge, so it has no fixed figure; none is priced from the spot.
+      expect(within(dialog).queryByText(/\$/)).toBeNull();
       expect(within(dialog).getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
@@ -2232,6 +2233,83 @@ describe('PosScreen', () => {
       await act(async () => undefined);
       expect(screen.queryByRole('alert')).toBeNull();
       expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    });
+
+    /** Creates a charge of `draft` on the amount page; the api answers with `created`. */
+    async function createOnAmountPage(
+      draft: string,
+      created: Record<string, unknown>,
+    ): Promise<void> {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+          init?.method === 'POST'
+            ? jsonResponse({ charge: created }, 201)
+            : jsonResponse({ charge: null, history: [] }),
+        ),
+      );
+      const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+      await pressAmount(draft);
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      amountPage.unmount();
+    }
+
+    it('shows on the confirmation the currency figure typed for the charge, not a spot price', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
+      useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+      // The api pinned another sat amount than the spot gives for CHF 68: the figure stays 68.00.
+      const created = { ...OPEN, id: 'c7', createdAt: new Date().toISOString() };
+      await createOnAmountPage('68', created);
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementation(async () => jsonResponse({ charge: created, history: [created] })),
+      );
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('CHF 68.00')).toBeTruthy();
+      vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
+    });
+
+    it('fixes the figure of bitcoin typed at the rate of the moment the charge is made', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT).mockResolvedValueOnce(SPOT);
+      const created = { ...OPEN, id: 'c8', amountSats: 2_100, createdAt: new Date().toISOString() };
+      await createOnAmountPage('2100', created);
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementation(async () => jsonResponse({ charge: created, history: [created] })),
+      );
+      // No spot any more when it is paid: the fixed figure still shows.
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(2_100);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('CHF 1.68')).toBeTruthy();
+    });
+
+    it('shows bitcoin only when no figure could be fixed for the charge', async () => {
+      const created = { ...OPEN, id: 'c9', amountSats: 2_100, createdAt: new Date().toISOString() };
+      await createOnAmountPage('2100', created);
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementation(async () => jsonResponse({ charge: created, history: [created] })),
+      );
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(2_100);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText("₿2'100")).toBeTruthy();
+      expect(within(dialog).queryByText(/CHF/)).toBeNull();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {

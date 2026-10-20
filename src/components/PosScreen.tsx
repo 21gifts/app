@@ -37,6 +37,7 @@ import {
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -143,7 +144,16 @@ type WalletSettled = {
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
   early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
+  /** The currency figure fixed for each charge this tab created, by charge id. */
+  figures: Map<string, PosFigure>;
 };
+
+/**
+ * The currency figure of a charge, fixed when it was created: the digits the
+ * operator typed, or, when bitcoin was typed, the figure at that moment. Never
+ * priced again later (docs/fiat-amounts.md).
+ */
+type PosFigure = { amount: string; code: FiatCode };
 
 /** How many payments no known open charge took are kept for the next one. */
 const POS_EARLY_PAYMENTS = 20;
@@ -159,7 +169,14 @@ const walletSettledListeners = new Set<() => void>();
 /** The settled memory of `session`; another session starts it over. */
 function settledFor(session: string | null): WalletSettled {
   if (walletSettled === null || walletSettled.session !== session) {
-    walletSettled = { session, open: null, paid: new Map(), closed: new Set(), early: [] };
+    walletSettled = {
+      session,
+      open: null,
+      paid: new Map(),
+      closed: new Set(),
+      early: [],
+      figures: new Map(),
+    };
   }
   return walletSettled;
 }
@@ -228,6 +245,13 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
   }
 }
 
+/** Remember `figure` as the currency figure of charge `id`, when there is one. */
+function rememberFigure(memory: WalletSettled, id: string, figure: PosFigure | null): void {
+  if (figure !== null) {
+    memory.figures.set(id, figure);
+  }
+}
+
 /** Make `charge` the open charge in `memory` again, when there was one. */
 function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   if (charge !== null) {
@@ -280,8 +304,9 @@ type PosTillState = {
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
   remaining: number;
-  chargeFiat: { code: FiatCode; amount: string } | null;
-  paidFiat: { code: FiatCode; amount: string } | null;
+  chargeFiat: string | null;
+  /** The currency figure fixed for `paid` when this tab created it, otherwise `null`. */
+  paidFigure: PosFigure | null;
   amount: string;
   setAmount: (value: string) => void;
   shownUnit: AmountUnit;
@@ -408,8 +433,8 @@ function usePosTillState(): PosTillState {
       ? []
       : state.history.map((row) => (row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row)));
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : committedFiatFigure(charge, fiat);
-  const paidFiat = paid === null ? null : committedFiatFigure(paid, fiat);
+  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
+  const paidFigure = paid === null ? null : (memory.figures.get(paid.id) ?? null);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
     account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
@@ -539,18 +564,17 @@ function usePosTillState(): PosTillState {
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
+    // The currency figure of the new charge, fixed now: the digits typed, or the figure of the
+    // bitcoin typed at this moment's rate.
+    const typed =
+      shownUnit === 'fiat'
+        ? amount.trim().replace(',', '.').replace(/\.$/, '')
+        : satsToFiatAmount(amountSats, rateDay, fiat);
+    const figure = typed === null ? null : { amount: typed, code: fiat };
     const work = (async (): Promise<void> => {
       try {
-        const created = await createPosCharge(
-          session,
-          amountSats,
-          shownUnit === 'fiat'
-            ? {
-                amountCurrency: fiat,
-                amount: typedFiatDraft(amount),
-              }
-            : undefined,
-        );
+        const created = await createPosCharge(session, amountSats);
+        rememberFigure(creating, created.id, figure);
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
@@ -571,17 +595,20 @@ function usePosTillState(): PosTillState {
             const next = await fetchPosState(session);
             const made =
               next.charge !== null &&
-              (before === null || Date.parse(next.charge.createdAt) > Date.parse(before.createdAt));
+              (before === null || Date.parse(next.charge.createdAt) > Date.parse(before.createdAt))
+                ? next.charge
+                : null;
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
                 setTill({ state: next, session });
               });
-              if (made) {
+              if (made !== null) {
                 setAmount('');
               }
             });
-            if (made) {
+            if (made !== null) {
               // The charge was made: the till shows it and counts the payments kept meanwhile.
+              rememberFigure(creating, made.id, figure);
               return;
             }
           } catch {
@@ -676,7 +703,7 @@ function usePosTillState(): PosTillState {
     history,
     remaining,
     chargeFiat,
-    paidFiat,
+    paidFigure,
     amount,
     setAmount,
     shownUnit,
@@ -821,7 +848,9 @@ export function PosTill(): ReactElement {
         <PosPaidOverlay
           amount={formatBitcoin(shownPaid.amountSats, numberFormat)}
           fiat={
-            till.paidFiat === null ? null : formatFiatDisplay(till.paidFiat, fiat, numberFormat)
+            till.paidFigure === null
+              ? null
+              : formatFiatDisplay(till.paidFigure.amount, till.paidFigure.code, numberFormat)
           }
           onClose={() => {
             till.closePaid(shownPaid.id);

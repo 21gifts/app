@@ -9775,7 +9775,8 @@ test.describe('onboarding screens', () => {
     const dialog = page.getByRole('alertdialog', { name: 'Paid' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('₿21')).toBeVisible();
-    await expect(dialog.getByText('$0.02')).toBeVisible();
+    // A charge this till did not create has no fixed figure, and none is priced from the spot.
+    await expect(dialog.getByText('$0.02')).toHaveCount(0);
     await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
