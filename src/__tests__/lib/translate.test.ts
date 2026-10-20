@@ -42,6 +42,33 @@ describe('translate', () => {
     expect(translate(en, 'profile.postCount', { count: 0 })).toBe('0 posts');
   });
 
+  it('pluralizes the remaining shop-description characters in every locale', () => {
+    expect(translate(getCatalog('en'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Describe the shop in at least 1 more character.',
+    );
+    expect(translate(getCatalog('en'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Describe the shop in at least 4 more characters.',
+    );
+    expect(translate(getCatalog('de'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Beschreiben Sie den Shop in mindestens 1 weiterem Zeichen.',
+    );
+    expect(translate(getCatalog('de'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Beschreiben Sie den Shop in mindestens 4 weiteren Zeichen.',
+    );
+    expect(translate(getCatalog('es'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Describe la tienda en al menos 1 carácter más.',
+    );
+    expect(translate(getCatalog('es'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Describe la tienda en al menos 4 caracteres más.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Ilarawan ang shop sa hindi bababa sa 1 pang karakter.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Ilarawan ang shop sa hindi bababa sa 4 pang karakter.',
+    );
+  });
+
   it('expands every plural message in every catalog', () => {
     for (const locale of ['en', 'de', 'es', 'fil'] as const) {
       const catalog = getCatalog(locale);

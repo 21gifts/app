@@ -196,10 +196,11 @@ export function ShopAddWizard({
   }, [serverProblem]);
 
   useEffect(() => {
-    if (mode === 'edit' && photoError !== null) {
-      setStep(1);
+    // A photo reason from the server returns an open wizard to the photos step.
+    if (photoError !== null) {
+      setStep((current) => (current === 'closed' ? current : 1));
     }
-  }, [mode, photoError]);
+  }, [photoError]);
 
   const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
   const usernameFormatProblem = shopUsernameProblem(username);
@@ -306,7 +307,7 @@ export function ShopAddWizard({
     descriptionServerProblem && serverProblem !== null
       ? t(SHOP_API_MESSAGE[serverProblem])
       : descriptionProblem === 'short'
-        ? t('shops.problemDescriptionShort', { n: shopDescriptionRemaining(draft) })
+        ? t('shops.problemDescriptionShort', { count: shopDescriptionRemaining(draft) })
         : descriptionProblem === 'long'
           ? t('shops.problemDescriptionLong')
           : descriptionProblem === 'notLonger'

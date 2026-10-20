@@ -18,6 +18,7 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import {
+  apiMediaProblem,
   formatPlacePinText,
   isShopNote,
   shopApiProblem,
@@ -474,13 +475,7 @@ export function ShopNoteEditControl({
       onUpdated(latest);
       setOpen(false);
     } catch (error) {
-      const photoProblem =
-        error instanceof Error && error.message === 'At most 10 photos'
-          ? 'tooMany'
-          : error instanceof Error &&
-              error.message === 'Photo must be a JPEG, PNG, or WebP under 1 MiB'
-            ? 'tooLarge'
-            : null;
+      const photoProblem = error instanceof Error ? apiMediaProblem(error.message) : null;
       const problem = error instanceof Error ? shopApiProblem(error.message, true) : null;
       if (photoProblem !== null) {
         setSaveError(false);

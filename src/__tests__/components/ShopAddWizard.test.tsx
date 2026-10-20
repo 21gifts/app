@@ -557,6 +557,40 @@ describe('ShopAddWizard', () => {
     expect(input?.getAttribute('aria-describedby')).toBe(picker.getAttribute('aria-describedby'));
   });
 
+  it('returns a create wizard to photos when the submitted post reports a media error', () => {
+    function MediaErrorHost(): ReactElement {
+      const [photoError, setPhotoError] = useState<'tooLarge' | null>(null);
+      return (
+        <>
+          <button type="button" onClick={() => setPhotoError('tooLarge')}>
+            Reject submitted media
+          </button>
+          <ShopAddWizard
+            {...props({
+              draft: SHOP_DESCRIPTION,
+              place: COMPLETE_PLACE,
+              photoError,
+            })}
+          />
+        </>
+      );
+    }
+
+    renderWizard(<MediaErrorHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reject submitted media' }));
+
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Keep photos under 1 MB and videos under 32 MB',
+    );
+  });
+
   it('shows the 1000-character description error for a prefilled edit', () => {
     renderWizard(<ShopAddWizard {...props({ draft: 'x'.repeat(1001), place: COMPLETE_PLACE })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));

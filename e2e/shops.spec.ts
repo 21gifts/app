@@ -1177,6 +1177,44 @@ test('Function: isShopApiProblem — a shop-feed account rejection returns to th
   ).toHaveText('No account with that username. Check the spelling of the 21.gifts username.');
 });
 
+test('Function: apiMediaProblem — an API video rejection returns to the photo step', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedAda(page, 'verified');
+  await fulfillForumMessages(page, []);
+  await page.route(
+    (url) => new URL(url).pathname === '/forum/messages',
+    async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Video must be an MP4, WebM, or MOV under 32 MiB' }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
+  await expect(page.getByText('Could not post your message')).toHaveCount(0);
+});
+
 test('Function: shopProblemField — editing the username clears its server rejection', async ({
   page,
 }) => {

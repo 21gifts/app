@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ForumPlaceAddress } from '@/lib/api-types';
 import {
+  apiMediaProblem,
   ensureShopHashtag,
   formatPlacePinText,
   formatShopAddressLine,
@@ -35,6 +36,16 @@ const ADDRESS: ForumPlaceAddress = {
 };
 
 describe('forum-shop', () => {
+  describe('apiMediaProblem', () => {
+    it('maps every exact API media rejection and ignores unknown text', () => {
+      expect(apiMediaProblem('At most 10 photos')).toBe('tooMany');
+      expect(apiMediaProblem('Photo must be a JPEG, PNG, or WebP under 1 MiB')).toBe('tooLarge');
+      expect(apiMediaProblem('Video must be an MP4, WebM, or MOV under 32 MiB')).toBe('tooLarge');
+      expect(apiMediaProblem('Poster must be a JPEG, PNG, or WebP under 1 MiB')).toBe('tooLarge');
+      expect(apiMediaProblem('Could not post your message')).toBeNull();
+    });
+  });
+
   describe('isShopNote', () => {
     it('is true for #21GiftsShop in any case and with surrounding text', () => {
       expect(isShopNote('#21GiftsShop')).toBe(true);

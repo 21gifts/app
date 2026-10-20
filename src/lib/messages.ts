@@ -898,7 +898,8 @@ const en = {
   'shops.problemCityControls': 'The city must not contain control characters.',
   'shops.problemCountryRequired': 'Choose a country.',
   'shops.problemCountryInvalid': 'Choose a country from the list.',
-  'shops.problemDescriptionShort': 'Describe the shop in at least {n} more characters.',
+  'shops.problemDescriptionShort':
+    'Describe the shop in at least {count, plural, one {# more character} other {# more characters}}.',
   'shops.problemDescriptionLong':
     'The shop text is too long. Shorten it to at most 1000 characters.',
   'shops.problemDescriptionNotLonger': 'The shop text must be longer than the shop name.',
@@ -2078,7 +2079,8 @@ const de = {
   'shops.problemCityControls': 'Der Ort darf keine Steuerzeichen enthalten.',
   'shops.problemCountryRequired': 'Wählen Sie ein Land.',
   'shops.problemCountryInvalid': 'Wählen Sie ein Land aus der Liste.',
-  'shops.problemDescriptionShort': 'Beschreiben Sie den Shop in mindestens {n} weiteren Zeichen.',
+  'shops.problemDescriptionShort':
+    'Beschreiben Sie den Shop in mindestens {count, plural, one {# weiterem Zeichen} other {# weiteren Zeichen}}.',
   'shops.problemDescriptionLong':
     'Der Shop-Text ist zu lang. Kürzen Sie ihn auf höchstens 1000 Zeichen.',
   'shops.problemDescriptionNotLonger': 'Der Shop-Text muss länger sein als der Shopname.',
@@ -3261,7 +3263,8 @@ const es = {
   'shops.problemCityControls': 'La ciudad no debe contener caracteres de control.',
   'shops.problemCountryRequired': 'Elige un país.',
   'shops.problemCountryInvalid': 'Elige un país de la lista.',
-  'shops.problemDescriptionShort': 'Describe la tienda en al menos {n} caracteres más.',
+  'shops.problemDescriptionShort':
+    'Describe la tienda en al menos {count, plural, one {# carácter más} other {# caracteres más}}.',
   'shops.problemDescriptionLong':
     'El texto de la tienda es demasiado largo. Acórtalo a un máximo de 1000 caracteres.',
   'shops.problemDescriptionNotLonger':
@@ -4442,7 +4445,8 @@ const fil = {
   'shops.problemCityControls': 'Hindi dapat may control character ang lungsod.',
   'shops.problemCountryRequired': 'Pumili ng bansa.',
   'shops.problemCountryInvalid': 'Pumili ng bansa mula sa listahan.',
-  'shops.problemDescriptionShort': 'Ilarawan ang shop sa hindi bababa sa {n} pang karakter.',
+  'shops.problemDescriptionShort':
+    'Ilarawan ang shop sa hindi bababa sa {count, plural, one {# pang karakter} other {# pang karakter}}.',
   'shops.problemDescriptionLong':
     'Masyadong mahaba ang teksto ng shop. Paikliin ito sa hindi hihigit sa 1000 karakter.',
   'shops.problemDescriptionNotLonger':

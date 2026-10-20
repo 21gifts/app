@@ -1444,6 +1444,20 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Could not post your message')).toBeNull();
   });
 
+  it('feed="shops" maps a direct media rejection back to the photo step', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error('At most 10 photos'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
   it('feed="shops" sends an optional shop username', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
@@ -4610,6 +4624,43 @@ describe('ForumLoader', () => {
         'The shop text must be 20 to 1000 characters and longer than the shop name.',
       );
     });
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
+  it('shows the mapped media reason after the compose fee when the shop post fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockRejectedValue(new Error('Poster must be a JPEG, PNG, or WebP under 1 MiB'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Keep photos under 1 MB and videos under 32 MB',
+    );
     expect(screen.queryByText('Could not post your message')).toBeNull();
   });
 

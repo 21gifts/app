@@ -67,6 +67,7 @@ import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import {
   SHOP_HASHTAG,
+  apiMediaProblem,
   ensureShopHashtag,
   isShopApiProblem,
   isShopNote,
@@ -1605,8 +1606,14 @@ export function ForumLoader({
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
                 } catch (err) {
+                  const mediaProblem =
+                    err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
                   const shopProblem = composerShopError(err, feed === 'shops');
-                  setFormError(shopProblem ?? (isRateLimitError(err) ? 'rateLimit' : 'request'));
+                  setFormError(
+                    mediaProblem ??
+                      shopProblem ??
+                      (isRateLimitError(err) ? 'rateLimit' : 'request'),
+                  );
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
                   if (keptCaption !== null && keptCaption !== '') {
@@ -2058,6 +2065,12 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
+      const mediaProblem =
+        err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
+      if (mediaProblem !== null) {
+        setFormError(mediaProblem);
+        return;
+      }
       const shopProblem = composerShopError(err, feed === 'shops');
       if (shopProblem !== null) {
         setFormError(shopProblem);
