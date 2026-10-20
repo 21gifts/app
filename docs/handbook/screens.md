@@ -1479,6 +1479,13 @@ feedback, with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
 
+### Variant: composer-place-reopen
+
+After **Stall** was confirmed and the dialog closed, **Add a place** was pressed again. The
+**Add a place** dialog is open with that pin and the icon-only **Remove place** button in its footer.
+
+![21.gifts welcome composer place reopen](images/welcome-composer-place-reopen.png)
+
 ### Variant: composer-place-pending
 
 **Add a place** is open as a dialog, the key has arrived, and the map script has not loaded. The
@@ -2198,9 +2205,9 @@ confirmed yet.
 
 ### Variant: composer-place-set
 
-A pin named **Stall** with a complete address was confirmed, then **Add a place** closed. That name
-is not shown. **Remove place** appears only after the pin is opened again. **Next** stays enabled.
-The shop list is still empty.
+A pin named **Stall** with a complete address was confirmed, then the **Shop place and address**
+dialog closed. That name is not shown. **Remove place** appears only after the pin is opened again.
+**Next** stays enabled. The shop list is still empty.
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 

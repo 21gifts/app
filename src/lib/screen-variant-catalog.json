@@ -1074,6 +1074,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:composer-place-reopen",
+    "label": "/welcome composer-place-reopen",
+    "visual": "state-welcome-composer-place-reopen",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-place-pending",
     "label": "/welcome composer-place-pending",
     "visual": "state-welcome-composer-place-pending",

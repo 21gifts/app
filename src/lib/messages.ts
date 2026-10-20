@@ -3903,7 +3903,7 @@ const fil = {
   'forum.errorTooLong': 'Hanggang 8000 na karakter',
   'forum.errorRequest': 'Hindi ma-post ang mensahe',
   'forum.shopPostUseShops':
-    'Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Shop.',
+    'Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Tindahan.',
   'forum.errorNoteDeleted': 'Nabura na ang notang ito.',
   'forum.errorRateLimit': 'Sobrang daming mensahe. Maghintay sandali at subukan ulit.',
   'forum.listLabel': 'Lahat ng mensahe',

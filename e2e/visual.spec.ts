@@ -17080,6 +17080,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
+  test('welcome composer-place-reopen', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a place' });
+    await expect(dialog.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Remove place' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place-reopen');
+  });
+
   test('welcome composer-place-pending', async ({ page }) => {
     const release = await holdMapScript(page);
     await seedAda(page);

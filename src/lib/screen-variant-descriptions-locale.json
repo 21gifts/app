@@ -877,7 +877,7 @@
   "/welcome:error-shop-elsewhere": {
     "de": "Ein verifiziertes Mitglied fügt im Wohnzimmer eine Stecknadel namens Cafe Luna hinzu und veröffentlicht eine Shop-Notiz. Die API weist die fehlende Shop-Adresse mit Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops. zurück. Die benannte Stecknadel bleibt in einem Chip im normalen Fluss zwischen der Verfasserzeile und diesem Hinweis; der Entwurf bleibt ebenfalls erhalten.",
     "es": "Un miembro verificado añade en el salón un marcador llamado Cafe Luna y publica una nota de tienda. La API rechaza la dirección ausente con Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas. El marcador permanece en un chip del flujo normal entre la fila del redactor y ese aviso; el borrador también se conserva.",
-    "fil": "Nagdagdag ang isang beripikadong miyembro ng pin na Cafe Luna sa sala at nag-post ng tala ng shop. Tinanggihan ng API ang nawawalang address gamit ang Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Shop. Nananatili ang pin sa isang chip sa normal na daloy sa pagitan ng hilera ng pambuo at ng alertong iyon; nananatili rin ang burador."
+    "fil": "Nagdagdag ang isang beripikadong miyembro ng pin na Cafe Luna sa sala at nag-post ng tala ng shop. Tinanggihan ng API ang nawawalang address gamit ang Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Tindahan. Nananatili ang pin sa isang chip sa normal na daloy sa pagitan ng hilera ng pambuo at ng alertong iyon; nananatili rin ang burador."
   },
   "/moderate/hidden:translate": {
     "de": "Mitarbeitende /moderate/hidden mit einer versteckten deutschen Notiz. Übersetzen ist unter dem Textkörper sichtbar.",
@@ -1141,8 +1141,13 @@
   },
   "/welcome:composer-place-set": {
     "de": "Eine bestätigte Stecknadel Stall sitzt in einem Chip im normalen Fluss direkt unter der Verfasserzeile, vor möglichen Rückmeldungen, mit Ort entfernen. Der Dialog ist geschlossen.",
-    "es": "Un pin confirmado Stall aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, con Quitar lugar. El diálogo está cerrado.",
+    "es": "Un pin confirmado Stall aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, con Quitar el lugar. El diálogo está cerrado.",
     "fil": "Ang kumpirmadong pin na Stall ay nasa chip sa normal na daloy, direkta sa ilalim ng hilera ng pambuo at bago ang anumang feedback, kasama ang Alisin ang lugar. Sarado ang dialog."
+  },
+  "/welcome:composer-place-reopen": {
+    "de": "Nach dem Bestätigen der Stecknadel Stall und dem Schliessen des Dialogs wurde Ort hinzufügen erneut gedrückt. Der Dialog zeigt die Stecknadel und die nur als Symbol dargestellte Schaltfläche Ort entfernen in seiner Fusszeile.",
+    "es": "Después de confirmar el pin Stall y cerrar el diálogo, se volvió a pulsar Añadir un lugar. El diálogo muestra el pin y el botón Quitar el lugar solo con icono en el pie.",
+    "fil": "Pagkatapos kumpirmahin ang pin na Stall at magsara ang dialog, pinindot ulit ang Magdagdag ng lugar. Ipinapakita ng dialog ang pin at ang icon lang na pindutang Alisin ang lugar sa paanan nito."
   },
   "/shops:table-more": {
     "de": "Tabelle ist ausgewählt. Eine Zeile Cafe Luna wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
@@ -1486,7 +1491,7 @@
   },
   "/welcome:composer-place-set-coords": {
     "de": "Eine bestätigte Stecknadel ohne Namen sitzt in einem Chip im normalen Fluss direkt unter der Verfasserzeile, vor möglichen Rückmeldungen, als 14.50000, 120.90000 mit Ort entfernen. Der Dialog ist geschlossen.",
-    "es": "Un pin confirmado sin nombre aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, como 14.50000, 120.90000 con Quitar lugar. El diálogo está cerrado.",
+    "es": "Un pin confirmado sin nombre aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, como 14.50000, 120.90000 con Quitar el lugar. El diálogo está cerrado.",
     "fil": "Ang kumpirmadong pin na walang pangalan ay nasa chip sa normal na daloy, direkta sa ilalim ng hilera ng pambuo at bago ang anumang feedback, bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang dialog."
   },
   "/members/[accountId]:translate-hidden": {
@@ -2690,9 +2695,9 @@
     "fil": "Binubuksan ng Magdagdag ng shop at Susunod ang hakbang 2 sa 5 · Lugar. Bukas bilang dialog ang Lugar at address ng shop, hindi available ang mapa, at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:composer-place-set": {
-    "de": "Eine Stecknadel namens Stall mit vollständiger Adresse wurde bestätigt, dann schloss sich Ort hinzufügen. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt aktiviert. Die Ladenliste ist weiterhin leer.",
-    "es": "Se confirmó un marcador llamado Stall con dirección completa, luego se cerró Añadir un lugar. Ese nombre no se muestra. Quitar lugar aparece solo después de abrir el marcador de nuevo. Siguiente sigue activado. La lista de tiendas sigue vacía.",
-    "fil": "Nakumpirma ang tulos na Stall na may buong address, tapos nagsara ang Magdagdag ng lugar. Hindi ipinapakita ang pangalang iyon. Ang Alisin ang lugar ay lumilitaw lang pagkabukas ulit ng tulos. Naka-enable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
+    "de": "Eine Stecknadel namens Stall mit vollständiger Adresse wurde bestätigt, dann schloss sich der Dialog Ort und Adresse des Shops. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt aktiviert. Die Ladenliste ist weiterhin leer.",
+    "es": "Se confirmó un marcador llamado Stall con dirección completa, luego se cerró el diálogo Lugar y dirección de la tienda. Ese nombre no se muestra. Quitar el lugar aparece solo después de abrir el marcador de nuevo. Siguiente sigue activado. La lista de tiendas sigue vacía.",
+    "fil": "Nakumpirma ang tulos na Stall na may buong address, tapos nagsara ang dialog na Lugar at address ng shop. Hindi ipinapakita ang pangalang iyon. Ang Alisin ang lugar ay lumilitaw lang pagkabukas ulit ng tulos. Naka-enable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
   },
   "/grants/applications/[accountId]:default": {
     "de": "Personal (Gründer) hat den Antrag für Rose geladen. Frage Stimmen ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein? Ja / Nein. Keine Antragszeit unter dem Namen. Der Beitrag behält seine eigene Zeit.",

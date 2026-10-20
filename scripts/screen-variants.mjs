@@ -1326,6 +1326,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-reopen',
+    image: 'welcome-composer-place-reopen.png',
+    visual: 'state-welcome-composer-place-reopen',
+    needle: "shotScreen(page, 'state-welcome-composer-place-reopen')",
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-pending',
     image: 'welcome-composer-place-pending.png',
     visual: 'state-welcome-composer-place-pending',

@@ -1068,7 +1068,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** â€
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-place-open, shop-edit-text, shop-edit-user, shop-edit-summary, shop-edit-save-rejected.
+Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-reopen, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-place-open, shop-edit-text, shop-edit-user, shop-edit-summary, shop-edit-save-rejected.
 
 ### `/wallet`
 
