@@ -17849,6 +17849,16 @@ test.describe('welcome forum variants', () => {
 
 test.describe('public shop screen', () => {
   const listedNpub = `npub1${'2'.repeat(58)}`;
+  /** Waits until the shop photo has decoded, so the shot never shows a broken image. */
+  const photoLoaded = async (page: Page): Promise<void> => {
+    const photo = page.getByRole('img', { name: 'Photo from Cafe Luna' }).first();
+    await expect(photo).toBeVisible();
+    await expect
+      .poll(() =>
+        photo.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+      )
+      .toBe(true);
+  };
   const goneNpub = `npub1${'3'.repeat(58)}`;
   const unavailableNpub = `npub1${'4'.repeat(58)}`;
   const noPaymentNpub = `npub1${'5'.repeat(58)}`;
@@ -17857,6 +17867,7 @@ test.describe('public shop screen', () => {
     await page.goto(`/${listedNpub}`);
     await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await photoLoaded(page);
     await shotScreen(page, 'screen-npub');
   });
 
@@ -17865,6 +17876,7 @@ test.describe('public shop screen', () => {
     await page.goto(`/${listedNpub}`);
     await expect(page.getByTestId('shop-map')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(1);
+    await photoLoaded(page);
     await shotScreen(page, 'state-npub-map');
   });
 
@@ -17873,6 +17885,7 @@ test.describe('public shop screen', () => {
     await page.goto(`/${listedNpub}`);
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await photoLoaded(page);
     await shotScreen(page, 'state-npub-copied');
   });
 

@@ -4,6 +4,7 @@
  * protocol so Next.js same-origin proxies succeed. Not a Lightning node:
  * callbacks accept any signature. Pay-on-note uses POST /messages/:id/invoice.
  */
+import fs from 'node:fs';
 import http from 'node:http';
 import { createHash, randomBytes } from 'node:crypto';
 
@@ -2088,10 +2089,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'GET' && pathName === '/messages/11111111-1111-4111-8111-111111111111/photo.jpg') {
-    const bytes = Buffer.from(
-      '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
-      'base64',
-    );
+    const bytes = fs.readFileSync(new URL('./fixtures/technical-note.jpg', import.meta.url));
     res.writeHead(200, {
       'content-type': 'image/jpeg',
       'cache-control': 'public, max-age=60',
