@@ -2636,7 +2636,7 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       showTab();
       const dialog = await confirmation();
