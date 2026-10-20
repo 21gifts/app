@@ -20097,7 +20097,9 @@ test.describe('shops screens', () => {
     await expect(
       page.getByText('The house number must start with a digit, for example 12 or 12a.'),
     ).toBeVisible();
-    await expect(page.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeVisible();
+    await expect(
+      page.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+    ).toBeVisible();
     await expect(page.getByText('The city must contain a letter.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-place-field-invalid');

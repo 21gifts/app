@@ -1747,7 +1747,8 @@ export function ForumLoader({
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           setPhotoDrafts([]);
           setVideoDraft(result.video);
-          // A shop error clears only when its own field changes.
+          // A successful pick keeps a shop error; a failed pick's reason replaces it
+          // in the single error slot, and the next post shows it again.
           setFormError((current) => (isShopFormError(current) ? current : null));
           return;
         }

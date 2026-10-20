@@ -62,7 +62,8 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 Reject a pull request when an API-enforced input rule appears only after submit
 or Next, when a known API reason is replaced with generic copy, or when a step
 or submit button is disabled without a visible reason. Check that field-level
-messages are live, adjacent, and linked through `aria-invalid` and
+messages are live, adjacent (under the field, or under its row with the field
+named when two fields share a row), and linked through `aria-invalid` and
 `aria-describedby`.
 
 ## Shown amounts

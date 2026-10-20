@@ -193,7 +193,7 @@ describe('catalogs', () => {
     );
     expect(translate(getCatalog('fil'), 'shops.problemName')).toBe('Ilagay ang pangalan ng shop.');
     expect(translate(getCatalog('en'), 'shops.problemPostalCodeChLi')).toBe(
-      'Use 4 digits for Switzerland and Liechtenstein.',
+      'The postal code must have 4 digits for Switzerland and Liechtenstein.',
     );
   });
 

@@ -1108,7 +1108,9 @@ describe('PlaceField', () => {
     expect(
       screen.getByText('The house number must start with a digit, for example 12 or 12a.'),
     ).toBeTruthy();
-    expect(screen.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeTruthy();
+    expect(
+      screen.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+    ).toBeTruthy();
     expect(screen.getByText('The city must contain a letter.')).toBeTruthy();
     expect(house.getAttribute('aria-invalid')).toBe('true');
     expect(postal.getAttribute('aria-invalid')).toBe('true');

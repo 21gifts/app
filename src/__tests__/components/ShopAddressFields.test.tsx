@@ -79,6 +79,27 @@ describe('ShopAddressFields', () => {
     expect(screen.getByLabelText('Country', { exact: true }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('lists the postal code and city messages under their row', () => {
+    renderWithLocale(
+      <ShopAddressFields
+        value={ADDRESS}
+        disabled={false}
+        errors={{ postalCode: 'The postal code is wrong.', city: 'The city is wrong.' }}
+        onChange={() => undefined}
+      />,
+    );
+    const postalCode = screen.getByLabelText('Postal code');
+    const city = screen.getByLabelText('City');
+    const cityError = document.getElementById(city.getAttribute('aria-describedby')!)!;
+    expect(postalCode.getAttribute('aria-invalid')).toBe('true');
+    expect(city.parentElement?.contains(cityError)).toBe(false);
+    expect(Array.from(cityError.parentElement!.children).map((node) => node.textContent)).toEqual([
+      'The postal code is wrong.',
+      'The city is wrong.',
+    ]);
+    expect(screen.getByLabelText('Street').getAttribute('aria-invalid')).toBeNull();
+  });
+
   it('shows linked field errors and reports blur', () => {
     const onBlur = vi.fn();
     renderWithLocale(

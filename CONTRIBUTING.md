@@ -471,7 +471,9 @@ sideways.
 Every rule the API enforces on a user-entered field is checked in the app while
 the user enters data (on change, at the latest on blur). The message sits
 directly under that field, which has `aria-invalid="true"` and
-`aria-describedby` pointing to the message.
+`aria-describedby` pointing to the message. When two fields share a row (for
+example street and house number), their messages sit directly under that row
+in field order, and each message names its field.
 
 The step or submit button is disabled while a rule is broken, and the reason is
 visible: the field message, or a summary line beside the button when that field

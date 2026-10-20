@@ -1598,7 +1598,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopAddressFields
 
-- **Purpose:** Five native fields for a shop pin address in the professional street/house and postal/city row order, plus a country `<select>`. Each field can show its own adjacent error.
+- **Purpose:** Five native fields for a shop pin address in the professional street/house and postal/city row order, plus a country `<select>`. Street and house number, and postal code and city, show their messages under their row in field order; country shows its own under the select.
 - **Inputs:** `value`, `disabled`, `onChange`, optional per-field `errors`, and optional `onBlur(field)`.
 - **Returns / side effects:** Labeled inputs with linked `aria-invalid` / `aria-describedby` errors. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
 - **Used by:** `PlaceField` when `shopDetails` is set.

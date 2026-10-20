@@ -937,7 +937,9 @@ test('Function: shopAddressProblems — address errors appear before confirm', a
   await expect(page.getByText('Choose a country.')).toBeVisible();
   await country.selectOption('CH');
   await page.getByLabel('Postal code', { exact: true }).fill('80');
-  await expect(page.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeVisible();
+  await expect(
+    page.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+  ).toBeVisible();
   await page.getByLabel('City', { exact: true }).fill('1234');
   await expect(page.getByText('The city must contain a letter.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();

@@ -878,11 +878,13 @@ const en = {
     'The house number must start with a digit, for example 12 or 12a.',
   'shops.problemHouseNumberLength': 'The house number must be at most 32 characters.',
   'shops.problemHouseNumberCharacters':
-    'After the first digit, use only letters, digits, spaces, /, ., &, or hyphens.',
+    'After the first digit, the house number may only contain letters, digits, spaces, /, ., &, or hyphens.',
   'shops.problemHouseNumberControls': 'The house number must not contain control characters.',
   'shops.problemPostalCodeRequired': 'Enter the postal code.',
-  'shops.problemPostalCodeChLi': 'Use 4 digits for Switzerland and Liechtenstein.',
-  'shops.problemPostalCodeOther': 'Use 2–16 letters, digits, spaces, or hyphens.',
+  'shops.problemPostalCodeChLi':
+    'The postal code must have 4 digits for Switzerland and Liechtenstein.',
+  'shops.problemPostalCodeOther':
+    'The postal code must have 2–16 letters, digits, spaces, or hyphens.',
   'shops.problemPostalCodeControls': 'The postal code must not contain control characters.',
   'shops.problemCityRequired': 'Enter the city (1–80 characters).',
   'shops.problemCityLength': 'The city must be 1–80 characters.',
@@ -2049,12 +2051,13 @@ const de = {
     'Die Hausnummer muss mit einer Ziffer beginnen, zum Beispiel 12 oder 12a.',
   'shops.problemHouseNumberLength': 'Die Hausnummer darf höchstens 32 Zeichen lang sein.',
   'shops.problemHouseNumberCharacters':
-    'Verwenden Sie nach der ersten Ziffer nur Buchstaben, Ziffern, Leerzeichen, /, ., & oder Bindestriche.',
+    'Nach der ersten Ziffer darf die Hausnummer nur Buchstaben, Ziffern, Leerzeichen, /, ., & oder Bindestriche enthalten.',
   'shops.problemHouseNumberControls': 'Die Hausnummer darf keine Steuerzeichen enthalten.',
   'shops.problemPostalCodeRequired': 'Geben Sie die Postleitzahl ein.',
-  'shops.problemPostalCodeChLi': 'Verwenden Sie 4 Ziffern für die Schweiz und Liechtenstein.',
+  'shops.problemPostalCodeChLi':
+    'Die Postleitzahl muss für die Schweiz und Liechtenstein 4 Ziffern haben.',
   'shops.problemPostalCodeOther':
-    'Verwenden Sie 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche.',
+    'Die Postleitzahl muss 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche haben.',
   'shops.problemPostalCodeControls': 'Die Postleitzahl darf keine Steuerzeichen enthalten.',
   'shops.problemCityRequired': 'Geben Sie den Ort ein (1–80 Zeichen).',
   'shops.problemCityLength': 'Der Ort muss 1–80 Zeichen lang sein.',
@@ -3226,11 +3229,13 @@ const es = {
   'shops.problemHouseNumberFormat': 'El número debe empezar con un dígito, por ejemplo 12 o 12a.',
   'shops.problemHouseNumberLength': 'El número debe tener como máximo 32 caracteres.',
   'shops.problemHouseNumberCharacters':
-    'Después del primer dígito, usa solo letras, dígitos, espacios, /, ., &, o guiones.',
+    'Después del primer dígito, el número de la casa solo puede contener letras, dígitos, espacios, /, ., & o guiones.',
   'shops.problemHouseNumberControls': 'El número no debe contener caracteres de control.',
   'shops.problemPostalCodeRequired': 'Introduce el código postal.',
-  'shops.problemPostalCodeChLi': 'Usa 4 dígitos para Suiza y Liechtenstein.',
-  'shops.problemPostalCodeOther': 'Usa de 2 a 16 letras, dígitos, espacios o guiones.',
+  'shops.problemPostalCodeChLi':
+    'El código postal debe tener 4 dígitos para Suiza y Liechtenstein.',
+  'shops.problemPostalCodeOther':
+    'El código postal debe tener de 2 a 16 letras, dígitos, espacios o guiones.',
   'shops.problemPostalCodeControls': 'El código postal no debe contener caracteres de control.',
   'shops.problemCityRequired': 'Introduce la ciudad (1–80 caracteres).',
   'shops.problemCityLength': 'La ciudad debe tener entre 1 y 80 caracteres.',
@@ -4399,11 +4404,12 @@ const fil = {
     'Dapat magsimula sa digit ang numero ng bahay, halimbawa 12 o 12a.',
   'shops.problemHouseNumberLength': 'Hanggang 32 karakter lamang ang numero ng bahay.',
   'shops.problemHouseNumberCharacters':
-    'Pagkatapos ng unang digit, gumamit lamang ng titik, digit, espasyo, /, ., &, o gitling.',
+    'Pagkatapos ng unang digit, titik, digit, espasyo, /, ., &, o gitling lamang ang puwede sa numero ng bahay.',
   'shops.problemHouseNumberControls': 'Hindi dapat may control character ang numero ng bahay.',
   'shops.problemPostalCodeRequired': 'Ilagay ang postal code.',
-  'shops.problemPostalCodeChLi': 'Gumamit ng 4 na digit para sa Switzerland at Liechtenstein.',
-  'shops.problemPostalCodeOther': 'Gumamit ng 2–16 titik, digit, espasyo, o gitling.',
+  'shops.problemPostalCodeChLi':
+    'Dapat 4 na digit ang postal code para sa Switzerland at Liechtenstein.',
+  'shops.problemPostalCodeOther': 'Dapat 2–16 titik, digit, espasyo, o gitling ang postal code.',
   'shops.problemPostalCodeControls': 'Hindi dapat may control character ang postal code.',
   'shops.problemCityRequired': 'Ilagay ang lungsod (1–80 karakter).',
   'shops.problemCityLength': 'Dapat 1–80 karakter ang lungsod.',
