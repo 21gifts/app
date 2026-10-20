@@ -79,7 +79,8 @@ export type AboutMeSectionProps = {
  *
  * @param props - About me value, owner vs public mode, optional display name,
  * optional message id, photo loaders, profile URL and save, optional
- * `startEditing` to open the owner editor on mount.
+ * `startEditing` to open the owner editor on mount, optional
+ * `omitEmptySlotAdds` to hide empty portrait and wide-image adds.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
 export function AboutMeSection({

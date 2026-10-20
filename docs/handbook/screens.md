@@ -3215,31 +3215,31 @@ Owner editor opened from variant **images**. The same three stubs are loaded (sq
 
 ### Variant: about-editing
 
-Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor still shows three icon-only attaches: **Add a photo** (`profile.about.attach`), **Add a profile photo** (`profile.about.portrait`), and **Add a wide image** (`profile.about.banner`). No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor shows one icon-only attach: **Add a photo** (`profile.about.attach`). The header already shows the labeled buttons **Add a wide image** and **Add a profile photo**, so the editor does not repeat them while those slots are empty. No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 
 ### Variant: about-banner-crop
 
-About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** stays, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+About me editor with the wide-image cropper in the profile header. From the empty CTA, **Write your About me**, then a square portrait on the header input `profile-banner`. The labeled **Add a wide image** is replaced by the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). **Add a profile photo** stays. The editor shows only **Add a photo**. Needle `state-profile-about-banner-crop`.
 
 ![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
 
 ### Variant: about-banner-crop-saving
 
-Same editor cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** is disabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
+Same header cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** stays enabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
 
 ![21.gifts profile About me banner crop saving](images/profile-about-banner-crop-saving.png)
 
 ### Variant: about-banner-crop-save-error
 
-Same editor cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
+Same header cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
 
 ![21.gifts profile About me banner crop save error](images/profile-about-banner-crop-save-error.png)
 
 ### Variant: about-banner-crop-too-large
 
-Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
+Same header cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
 
 ![21.gifts profile About me banner crop too large](images/profile-about-banner-crop-too-large.png)
 
