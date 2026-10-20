@@ -5094,7 +5094,7 @@ describe('ForumLoader', () => {
   });
 
   it.each(['photo', 'video'] as const)(
-    'keeps a mapped shop error after a %s pick succeeds',
+    'keeps a mapped shop error when a %s is picked and removed',
     async (kind) => {
       fetchMock.mockResolvedValue(forumPage([]));
       postMock.mockRejectedValue(new Error('Place address is invalid'));
@@ -5130,6 +5130,17 @@ describe('ForumLoader', () => {
             ? screen.queryByAltText('Selected photo')
             : document.querySelector('video'),
         ).toBeTruthy();
+      });
+      expect(screen.getByRole('alert').textContent).toMatch(shopError);
+      fireEvent.click(
+        screen.getByRole('button', { name: kind === 'photo' ? 'Remove photo' : 'Remove video' }),
+      );
+      await waitFor(() => {
+        expect(
+          kind === 'photo'
+            ? screen.queryByAltText('Selected photo')
+            : document.querySelector('video'),
+        ).toBeNull();
       });
       expect(screen.getByRole('alert').textContent).toMatch(shopError);
     },

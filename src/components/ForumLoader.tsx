@@ -1800,7 +1800,7 @@ export function ForumLoader({
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError(null);
+    setFormError((current) => (isShopFormError(current) ? current : null));
   };
 
   const applyCreatedNote = (
@@ -2827,7 +2827,7 @@ export function ForumLoader({
           pickGeneration.current += 1;
           setPhotoDrafts([]);
           setVideoDraft(null);
-          setFormError(null);
+          setFormError((current) => (isShopFormError(current) ? current : null));
         }}
         photoUrls={photoUrls}
         videoUrls={videoUrls}

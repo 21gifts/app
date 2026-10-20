@@ -111,6 +111,15 @@ describe('ShopAddressFields', () => {
     expect(document.getElementById(country.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Choose a country.',
     );
+    // Row messages sit under the whole street row, in field order, not inside the narrow column.
+    const houseError = document.getElementById(house.getAttribute('aria-describedby')!)!;
+    expect(house.parentElement?.contains(houseError)).toBe(false);
+    expect(Array.from(houseError.parentElement!.children).map((node) => node.textContent)).toEqual([
+      'Enter the street.',
+      'Starts with a digit.',
+    ]);
+    expect(postalCode.getAttribute('aria-invalid')).toBeNull();
+    expect(city.getAttribute('aria-describedby')).toBeNull();
     fireEvent.blur(street);
     fireEvent.blur(house);
     fireEvent.blur(postalCode);
