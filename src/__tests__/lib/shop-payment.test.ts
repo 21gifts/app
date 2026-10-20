@@ -3,6 +3,7 @@ import {
   fetchShopInvoice,
   fetchShopPayLink,
   openShopPayment,
+  SHOP_PAYMENT_RECHECK_DELAY_MS,
   SHOP_PAYMENT_START_TIMEOUT_MS,
   type ShopPayRequest,
   waitShopPayment,
@@ -42,6 +43,15 @@ const OPEN_AMOUNT = {
       available: true,
     },
   ],
+};
+
+/** The plain Lightning pay request (LUD-06), with no shop payment. */
+const PLAIN = {
+  tag: 'payRequest',
+  callback: 'https://21.gifts/lnurlp/ada/invoice',
+  minSendable: 1_000,
+  maxSendable: 100_000_000_000,
+  metadata: '[["text/plain","Ada"]]',
 };
 
 const REQUEST: ShopPayRequest = {
@@ -111,13 +121,34 @@ describe('fetchShopPayLink', () => {
     expect(link.kind === 'payment' ? link.request.lines : null).toEqual([]);
   });
 
-  it('calls the plain Lightning pay request plain', async () => {
-    stubFetch(async () =>
-      Response.json({ tag: 'payRequest', callback: 'https://21.gifts/lnurlp/ada/invoice' }),
-    );
+  it('calls only a real plain Lightning pay request plain', async () => {
+    stubFetch(async () => Response.json(PLAIN));
     expect(await fetchShopPayLink('ada')).toEqual({ kind: 'plain' });
-    stubFetch(async () => Response.json({ possibleStandards: 'OpenCryptoPay' }));
+    stubFetch(async () => Response.json({ ...PLAIN, minSendable: 21_000, maxSendable: 21_000 }));
     expect(await fetchShopPayLink('ada')).toEqual({ kind: 'plain' });
+    stubFetch(async () => Response.json({ ...PLAIN, possibleStandards: 'OpenCryptoPay' }));
+    expect(await fetchShopPayLink('ada')).toEqual({ kind: 'plain' });
+  });
+
+  it('reports any other readable body as an error, so it never counts as no open amount', async () => {
+    const others: unknown[] = [
+      {},
+      { status: 'ERROR', reason: 'Not found' },
+      { possibleStandards: 'OpenCryptoPay' },
+      { ...PLAIN, tag: 'withdrawRequest' },
+      { ...PLAIN, callback: 7 },
+      { ...PLAIN, metadata: undefined },
+      { ...PLAIN, minSendable: '1000' },
+      { ...PLAIN, maxSendable: null },
+      { ...PLAIN, minSendable: 1.5 },
+      { ...PLAIN, maxSendable: Number.MAX_SAFE_INTEGER + 1 },
+      { ...PLAIN, minSendable: 0 },
+      { ...PLAIN, minSendable: 2_000, maxSendable: 1_000 },
+    ];
+    for (const body of others) {
+      stubFetch(async () => Response.json(body));
+      expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
+    }
   });
 
   it('reports an error status, a non-object body, a failed request, and a broken quote', async () => {
@@ -178,32 +209,85 @@ describe('fetchShopInvoice', () => {
 
 describe('openShopPayment', () => {
   const opened = { payment: 'p1', expiresAt: '2026-10-17T12:05:00.000Z' };
+  const T0 = Date.parse('2026-10-17T12:00:00.000Z');
+  const call = {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ amountSats: 21 }),
+    signal: expect.any(AbortSignal),
+  };
+  const unavailable = (): Response =>
+    Response.json(
+      { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
+      { status: 503 },
+    );
+
+  /** A start that never answers until its signal aborts, as a lost request does. */
+  function hang(_input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    return new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener('abort', () => {
+        reject(new DOMException('aborted', 'AbortError'));
+      });
+    });
+  }
+
+  /** Answers the start route with `starts` in turn and the pay link with `link`. */
+  function stubStarts(
+    starts: ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>)[],
+    link: () => Promise<Response> = async () => Response.json(PLAIN),
+  ) {
+    let index = 0;
+    return stubFetch(async (input, init) => {
+      if (String(input).startsWith('/.well-known/lnurlp/')) {
+        return link();
+      }
+      const next = starts[Math.min(index, starts.length - 1)] ?? hang;
+      index += 1;
+      return next(input, init);
+    });
+  }
+
+  function linkReads(mock: { mock: { calls: unknown[][] } }): number {
+    return mock.mock.calls.filter(([input]) => String(input).startsWith('/.well-known/lnurlp/'))
+      .length;
+  }
+
+  function open(
+    ambiguousAtMs: number | null = null,
+    signal: AbortSignal = new AbortController().signal,
+  ) {
+    return openShopPayment('ada', 21, { ambiguousAtMs, signal });
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('opens a payment with the entered sats', async () => {
     const mock = stubFetch(async () => Response.json(opened));
-    expect(await openShopPayment('a da', 21)).toEqual({ kind: 'opened', ...opened });
-    expect(mock).toHaveBeenCalledTimes(1);
-    expect(mock).toHaveBeenCalledWith('/pay/a%20da/payment', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amountSats: 21 }),
-      signal: expect.any(AbortSignal),
+    expect(
+      await openShopPayment('a da', 21, {
+        ambiguousAtMs: null,
+        signal: new AbortController().signal,
+      }),
+    ).toEqual({
+      start: { kind: 'opened', ...opened },
+      ambiguousAtMs: null,
     });
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(mock).toHaveBeenCalledWith('/pay/a%20da/payment', call);
   });
 
   it('shows the till charge on 409 payment_open', async () => {
     stubFetch(async () =>
       Response.json({ error: 'A payment is already open', code: 'payment_open' }, { status: 409 }),
     );
-    expect(await openShopPayment('ada', 21)).toEqual({ kind: 'charge' });
+    expect(await open()).toEqual({ start: { kind: 'charge' }, ambiguousAtMs: null });
   });
 
-  it('falls back to the invoice on stablecoin_unavailable and on any other 4xx', async () => {
+  it('falls back to the invoice on a first stablecoin_unavailable or any other 4xx', async () => {
     const answers = [
-      Response.json(
-        { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
-        { status: 503 },
-      ),
+      unavailable(),
       Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }),
       Response.json({ error: 'Not found' }, { status: 404 }),
       Response.json({ error: 'Conflict', code: 'other' }, { status: 409 }),
@@ -211,12 +295,14 @@ describe('openShopPayment', () => {
     ];
     for (const answer of answers) {
       const mock = stubFetch(async () => answer);
-      expect(await openShopPayment('ada', 21)).toEqual({ kind: 'invoice' });
+      expect(await open()).toEqual({ start: { kind: 'invoice' }, ambiguousAtMs: null });
       expect(mock).toHaveBeenCalledTimes(1);
+      expect(linkReads(mock)).toBe(0);
     }
   });
 
-  it('repeats an unknown outcome once and then reports failed', async () => {
+  it('repeats an unknown outcome once and then reports failed from the end of the repeat', async () => {
+    vi.useFakeTimers({ now: T0 });
     const unknowns: (() => Promise<Response>)[] = [
       async () => new Response('bad gateway', { status: 502 }),
       async () => new Response('not json', { status: 503 }),
@@ -233,57 +319,40 @@ describe('openShopPayment', () => {
     ];
     for (const answer of unknowns) {
       const mock = stubFetch(answer);
-      expect(await openShopPayment('ada', 21)).toEqual({ kind: 'failed' });
-      expect(mock).toHaveBeenCalledTimes(2);
-      const call = {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ amountSats: 21 }),
-        signal: expect.any(AbortSignal),
-      };
+      expect(await open()).toEqual({ start: { kind: 'failed' }, ambiguousAtMs: T0 });
       expect(mock.mock.calls).toEqual([
         ['/pay/ada/payment', call],
         ['/pay/ada/payment', call],
       ]);
-      expect(mock.mock.calls.some(([input]) => String(input).includes('/invoice'))).toBe(false);
     }
   });
 
   it('takes a success with a payment id as that payment, also without a readable window end', async () => {
     for (const expiresAt of [undefined, 'never', 7]) {
       const mock = stubFetch(async () => Response.json({ payment: 'p1', expiresAt }));
-      expect(await openShopPayment('ada', 21)).toEqual({
-        kind: 'opened',
-        payment: 'p1',
-        expiresAt: null,
+      expect(await open()).toEqual({
+        start: { kind: 'opened', payment: 'p1', expiresAt: null },
+        ambiguousAtMs: null,
       });
       expect(mock).toHaveBeenCalledTimes(1);
     }
   });
 
-  it('gives up on a hanging start after the time limit, repeats once, and reports failed', async () => {
-    vi.useFakeTimers();
-    try {
-      const mock = stubFetch(
-        (_input, init) =>
-          new Promise((_resolve, reject) => {
-            init?.signal?.addEventListener('abort', () => {
-              reject(new DOMException('aborted', 'AbortError'));
-            });
-          }),
-      );
-      const started = openShopPayment('ada', 21);
-      await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS - 1);
-      expect(mock).toHaveBeenCalledTimes(1);
-      await vi.advanceTimersByTimeAsync(1);
-      expect(mock).toHaveBeenCalledTimes(2);
-      await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS);
-      expect(await started).toEqual({ kind: 'failed' });
-      expect(SHOP_PAYMENT_START_TIMEOUT_MS).toBe(15_000);
-      expect(vi.getTimerCount()).toBe(0);
-    } finally {
-      vi.useRealTimers();
-    }
+  it('gives up on a hanging start after the time limit, repeats once, and keeps the end of the repeat', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const mock = stubFetch(hang);
+    const started = open();
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS - 1);
+    expect(mock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS);
+    expect(await started).toEqual({
+      start: { kind: 'failed' },
+      ambiguousAtMs: T0 + 2 * SHOP_PAYMENT_START_TIMEOUT_MS,
+    });
+    expect(SHOP_PAYMENT_START_TIMEOUT_MS).toBe(15_000);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('starts without AbortSignal.timeout, as on older Safari, and clears its timer', async () => {
@@ -292,69 +361,195 @@ describe('openShopPayment', () => {
     vi.useFakeTimers();
     try {
       expect('timeout' in AbortSignal).toBe(false);
-      const mock = stubFetch(async () =>
-        Response.json({ payment: 'p1', expiresAt: '2026-10-17T12:05:00.000Z' }),
-      );
-      expect(await openShopPayment('ada', 21)).toEqual({
-        kind: 'opened',
-        payment: 'p1',
-        expiresAt: '2026-10-17T12:05:00.000Z',
-      });
+      const mock = stubFetch(async () => Response.json(opened));
+      expect((await open()).start).toEqual({ kind: 'opened', ...opened });
       expect(mock).toHaveBeenCalledWith(
         '/pay/ada/payment',
         expect.objectContaining({ method: 'POST' }),
       );
       expect(vi.getTimerCount()).toBe(0);
     } finally {
-      vi.useRealTimers();
       if (original !== undefined) {
         Object.defineProperty(AbortSignal, 'timeout', original);
       }
     }
   });
 
-  it('takes the answer of the repeat', async () => {
-    let calls = 0;
-    stubFetch(async () => {
-      calls += 1;
-      return calls === 1 ? new Response('timeout', { status: 504 }) : Response.json(opened);
-    });
-    expect(await openShopPayment('ada', 21)).toEqual({ kind: 'opened', ...opened });
-    expect(calls).toBe(2);
+  it('takes a payment of the repeat and ends the ambiguous state', async () => {
+    const mock = stubStarts([
+      async () => new Response('timeout', { status: 504 }),
+      async () => Response.json(opened),
+    ]);
+    expect(await open()).toEqual({ start: { kind: 'opened', ...opened }, ambiguousAtMs: null });
+    expect(mock).toHaveBeenCalledTimes(2);
   });
 
-  it('takes the 4xx or stablecoin_unavailable answer of the repeat like a first answer', async () => {
-    const repeats: [() => Response, string][] = [
-      [
-        () =>
-          Response.json(
-            { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
-            { status: 503 },
-          ),
-        'invoice',
-      ],
-      [() => Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }), 'invoice'],
-      [
-        () =>
-          Response.json(
-            { error: 'A payment is already open', code: 'payment_open' },
-            { status: 409 },
-          ),
-        'charge',
-      ],
+  it('reloads the till charge on a 409 of the repeat and keeps the ambiguous state', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const mock = stubStarts([
+      async () => {
+        throw new Error('offline');
+      },
+      async () =>
+        Response.json(
+          { error: 'A payment is already open', code: 'payment_open' },
+          { status: 409 },
+        ),
+    ]);
+    expect(await open()).toEqual({ start: { kind: 'charge' }, ambiguousAtMs: T0 });
+    expect(linkReads(mock)).toBe(0);
+  });
+
+  it('waits until 20 s after the end of the lost call before a refused repeat reads the pay link', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const mock = stubStarts([hang, async () => unavailable()]);
+    const started = open();
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS);
+    expect(mock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_RECHECK_DELAY_MS - 1);
+    expect(linkReads(mock)).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await started).toEqual({
+      start: { kind: 'invoice' },
+      ambiguousAtMs: T0 + SHOP_PAYMENT_START_TIMEOUT_MS,
+    });
+    expect(linkReads(mock)).toBe(1);
+    expect(SHOP_PAYMENT_RECHECK_DELAY_MS).toBe(20_000);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('reports failed when the pay link read after a refusal shows an open amount or fails', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const links: (() => Promise<Response>)[] = [
+      async () => Response.json(OPEN_AMOUNT),
+      async () => new Response('busy', { status: 503 }),
+      async () => Response.json({}),
     ];
-    for (const [repeat, kind] of repeats) {
-      let calls = 0;
-      stubFetch(async () => {
-        calls += 1;
-        if (calls === 1) {
-          throw new Error('offline');
-        }
-        return repeat();
-      });
-      expect(await openShopPayment('ada', 21)).toEqual({ kind });
-      expect(calls).toBe(2);
+    for (const link of links) {
+      const mock = stubStarts(
+        [async () => new Response('bad gateway', { status: 502 }), async () => unavailable()],
+        link,
+      );
+      const started = open();
+      await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_RECHECK_DELAY_MS);
+      expect(await started).toEqual({ start: { kind: 'failed' }, ambiguousAtMs: T0 });
+      expect(linkReads(mock)).toBe(1);
+      expect(mock.mock.calls.some(([input]) => String(input).includes('/invoice'))).toBe(false);
+      vi.setSystemTime(T0);
     }
+  });
+
+  it('counts the wait of a later refused call from the stored end, for any amount', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const refused = async (): Promise<Response> =>
+      Response.json({ error: 'Enter a whole number of sats' }, { status: 400 });
+    let mock = stubStarts([refused]);
+    const elapsed = open(T0 - SHOP_PAYMENT_RECHECK_DELAY_MS);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await elapsed).toEqual({
+      start: { kind: 'invoice' },
+      ambiguousAtMs: T0 - SHOP_PAYMENT_RECHECK_DELAY_MS,
+    });
+    expect(mock).toHaveBeenCalledTimes(2);
+    expect(linkReads(mock)).toBe(1);
+
+    mock = stubStarts([refused]);
+    const started = openShopPayment('ada', 4_000, {
+      ambiguousAtMs: T0 - 5_000,
+      signal: new AbortController().signal,
+    });
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_RECHECK_DELAY_MS - 5_001);
+    expect(linkReads(mock)).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await started).start).toEqual({ kind: 'invoice' });
+    expect(mock.mock.calls[0]).toEqual([
+      '/pay/ada/payment',
+      { ...call, body: JSON.stringify({ amountSats: 4_000 }) },
+    ]);
+  });
+
+  it('handles a later call in the ambiguous state without a repeat', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const earlier = T0 - 60_000;
+    let mock = stubStarts([
+      async () =>
+        Response.json(
+          { error: 'A payment is already open', code: 'payment_open' },
+          { status: 409 },
+        ),
+    ]);
+    expect(await open(earlier)).toEqual({ start: { kind: 'charge' }, ambiguousAtMs: earlier });
+    mock = stubStarts([async () => Response.json(opened)]);
+    expect(await open(earlier)).toEqual({
+      start: { kind: 'opened', ...opened },
+      ambiguousAtMs: null,
+    });
+    mock = stubStarts([async () => new Response('bad gateway', { status: 502 })]);
+    expect(await open(earlier)).toEqual({ start: { kind: 'failed' }, ambiguousAtMs: T0 });
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(linkReads(mock)).toBe(0);
+  });
+
+  it('stops without a repeat or a pay-link read once the signal aborts', async () => {
+    vi.useFakeTimers({ now: T0 });
+    // Already aborted: nothing is sent.
+    let controller = new AbortController();
+    controller.abort();
+    let mock = stubStarts([async () => Response.json(opened)]);
+    expect(await open(null, controller.signal)).toEqual({
+      start: { kind: 'aborted' },
+      ambiguousAtMs: null,
+    });
+    expect(mock).not.toHaveBeenCalled();
+
+    // During the first call: no repeat.
+    controller = new AbortController();
+    mock = stubStarts([hang]);
+    let started = open(null, controller.signal);
+    await vi.advanceTimersByTimeAsync(1_000);
+    controller.abort();
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: null });
+    expect(mock).toHaveBeenCalledTimes(1);
+
+    // During the repeat: the state stays.
+    vi.setSystemTime(T0);
+    controller = new AbortController();
+    mock = stubStarts([async () => new Response('bad gateway', { status: 502 }), hang]);
+    started = open(null, controller.signal);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(mock).toHaveBeenCalledTimes(2);
+    controller.abort();
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 });
+
+    // During the 20 s wait: no pay-link read.
+    vi.setSystemTime(T0);
+    controller = new AbortController();
+    mock = stubStarts([
+      async () => new Response('bad gateway', { status: 502 }),
+      async () => unavailable(),
+    ]);
+    started = open(null, controller.signal);
+    await vi.advanceTimersByTimeAsync(10_000);
+    controller.abort();
+    expect(await started).toEqual({ start: { kind: 'aborted' }, ambiguousAtMs: T0 });
+    await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_RECHECK_DELAY_MS);
+    expect(linkReads(mock)).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+
+    // During the pay-link read: its answer is dropped.
+    controller = new AbortController();
+    const reading = controller;
+    mock = stubStarts([async () => unavailable()], async () => {
+      reading.abort();
+      return Response.json(PLAIN);
+    });
+    started = open(T0 - SHOP_PAYMENT_RECHECK_DELAY_MS, controller.signal);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(await started).toEqual({
+      start: { kind: 'aborted' },
+      ambiguousAtMs: T0 - SHOP_PAYMENT_RECHECK_DELAY_MS,
+    });
+    expect(linkReads(mock)).toBe(1);
   });
 });
 

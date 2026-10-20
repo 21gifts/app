@@ -42,11 +42,22 @@ export interface ShopWaitAnswer {
   paymentStatus: string;
 }
 
-/** One scripted answer of `POST /pay/ada/payment`: `opened` or an HTTP status. */
-export type ShopPostAnswer = 'opened' | 400 | 409 | 502 | 503;
+/**
+ * One scripted answer of `POST /pay/ada/payment`: `opened`, an HTTP status, or
+ * `hang`, which never answers, so the page's 15 s limit aborts the request.
+ */
+export type ShopPostAnswer = 'opened' | 'hang' | 400 | 409 | 502 | 503;
+
+/** One scripted answer of the pay link: an open amount, the plain request, or 503. */
+export type ShopPayLinkAnswer = 'payment' | 'plain' | 'error';
+
+/** Never settles, as a request the server holds or never answers. */
+function never(): Promise<void> {
+  return new Promise(() => undefined);
+}
 
 /** The JSON body of a scripted `POST /pay/ada/payment` error status. */
-function postErrorBody(status: Exclude<ShopPostAnswer, 'opened'>): object {
+function postErrorBody(status: Exclude<ShopPostAnswer, 'opened' | 'hang'>): object {
   if (status === 409) {
     return { error: 'A payment is already open', code: 'payment_open' };
   }
@@ -82,9 +93,16 @@ async function pageNow(page: Page): Promise<number> {
  *   other quote, and 400 otherwise.
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
  *   to its `paymentStatus` moves to the next entry (the last one repeats).
+ * - `payLinks` scripts the pay-link reads in turn (the last one repeated):
+ *   `payment` is the OpenCryptoPay request above, `plain` the plain Lightning
+ *   request, and `error` a 503; without it the reads follow the rules above.
  * - `payLinkFails` answers every pay-link read with 503, and `detailFails`
- *   every Lightning detail. `openedWithoutWindow` opens the payment without
- *   `expiresAt`, so the page has no window time to show.
+ *   every Lightning detail; `detailHangs` never answers the Lightning detail.
+ *   `openedWithoutWindow` opens the payment without `expiresAt`, so the page
+ *   has no window time to show.
+ * - `GET /lnurlp/wait/p1` with a `since` equal to the last entry's
+ *   `paymentStatus` is held and never answered, as the api holds it while the
+ *   status is unchanged.
  * - Otherwise a mint answers 500, because a shop payment, or a repeat whose
  *   outcome stayed unknown, is never minted.
  */
@@ -99,7 +117,9 @@ export async function stubShopPayment(
     lightningOnly?: boolean;
     waits?: ShopWaitAnswer[];
     payLinkFails?: boolean;
+    payLinks?: ShopPayLinkAnswer[];
     detailFails?: boolean;
+    detailHangs?: boolean;
     openedWithoutWindow?: boolean;
   },
 ): Promise<void> {
@@ -116,6 +136,10 @@ export async function stubShopPayment(
       if (url.endsWith('/payment')) {
         const answer = posts[Math.min(post, posts.length - 1)] ?? 'opened';
         post += 1;
+        if (answer === 'hang') {
+          await never();
+          return;
+        }
         if (answer === 'opened') {
           await route.fulfill({
             status: 200,
@@ -169,12 +193,18 @@ export async function stubShopPayment(
     },
   );
   const issued: { id: string; expiration: number }[] = [];
+  let payLinkRead = 0;
   await page.route('**/.well-known/lnurlp/ada', async (route) => {
-    if (options.payLinkFails === true) {
+    const scripted =
+      options.payLinks === undefined
+        ? undefined
+        : options.payLinks[Math.min(payLinkRead, options.payLinks.length - 1)];
+    payLinkRead += 1;
+    if (options.payLinkFails === true || scripted === 'error') {
       await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
       return;
     }
-    if (plain) {
+    if (scripted === 'plain' || (scripted === undefined && plain)) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -226,6 +256,10 @@ export async function stubShopPayment(
   await page.route(
     (url) => new URL(url).pathname === '/lnurlp/cb/ada',
     async (route) => {
+      if (options.detailHangs === true) {
+        await never();
+        return;
+      }
       const query = new URL(route.request().url()).searchParams;
       const id = query.get('quote');
       const lightning = query.get('method') === 'Lightning' && query.get('asset') === 'BTC';
@@ -255,7 +289,12 @@ export async function stubShopPayment(
   let wait = 0;
   await page.route('**/lnurlp/wait/p1**', async (route) => {
     const since = new URL(route.request().url()).searchParams.get('since');
-    if (since !== null && since === waits[wait]?.paymentStatus && wait < waits.length - 1) {
+    if (since !== null && since === waits[wait]?.paymentStatus) {
+      if (wait === waits.length - 1) {
+        // The status is unchanged: the api holds the read, and the page asks only once.
+        await never();
+        return;
+      }
       wait += 1;
     }
     await route.fulfill({

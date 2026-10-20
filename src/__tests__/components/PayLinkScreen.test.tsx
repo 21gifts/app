@@ -54,7 +54,8 @@ type FetchHandler = (input: RequestInfo | URL, init?: RequestInit) => Promise<Re
 
 /**
  * Stubs `fetch` for the Lightning-only path: `POST /pay/:username/payment`
- * answers 503 `stablecoin_unavailable`, so an entered amount mints as before.
+ * answers 503 `stablecoin_unavailable`, so an entered amount mints as before,
+ * and the pay link is the plain Lightning request, so an open till mints too.
  */
 function mockFetch(handler: FetchHandler) {
   vi.stubGlobal(
@@ -65,6 +66,9 @@ function mockFetch(handler: FetchHandler) {
           { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
           { status: 503 },
         );
+      }
+      if (String(input).startsWith('/.well-known/lnurlp/')) {
+        return Response.json(plainPayLink());
       }
       return handler(input, init);
     }),
@@ -747,6 +751,17 @@ function shopPayLink(
   };
 }
 
+/** The plain Lightning pay request (LUD-06): the pay link without an open amount. */
+function plainPayLink(): object {
+  return {
+    tag: 'payRequest',
+    callback: 'https://21.gifts/lnurlp/ada/invoice',
+    minSendable: 1_000,
+    maxSendable: 100_000_000_000,
+    metadata: '[["text/plain","Ada Lovelace"]]',
+  };
+}
+
 const chargeProfile = {
   ...profile,
   minSats: 21,
@@ -878,6 +893,7 @@ describe('PayLinkScreen shop payment', () => {
   it('hides the invoice on its way and stops polling once paid', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let waits = 0;
+    let releasePaid: (response: Response) => void = () => undefined;
     mockShopFetch(async (input) => {
       const url = String(input);
       if (url === '/.well-known/lnurlp/ada') {
@@ -888,9 +904,13 @@ describe('PayLinkScreen shop payment', () => {
       }
       if (url.startsWith('/lnurlp/wait/')) {
         waits += 1;
-        return waits === 1
-          ? Response.json({ status: 'Pending', paymentStatus: 'accepted' })
-          : Response.json({ status: 'Completed', paymentStatus: 'paid' });
+        if (waits === 1) {
+          return Response.json({ status: 'Pending', paymentStatus: 'accepted' });
+        }
+        // The api holds the read with `since=accepted` until the payment is paid.
+        return new Promise((resolve) => {
+          releasePaid = resolve;
+        });
       }
       return Response.json(chargeProfile);
     });
@@ -900,7 +920,13 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeNull();
     expect(screen.queryByText('0.2 USDT')).toBeNull();
     expect(screen.queryByText('5:00 left')).toBeNull();
-    expect(await screen.findByText('Paid ✓', undefined, { timeout: 4000 })).toBeTruthy();
+    await waitFor(() => {
+      expect(waits).toBe(2);
+    });
+    await act(async () => {
+      releasePaid(Response.json({ status: 'Completed', paymentStatus: 'paid' }));
+    });
+    expect(await screen.findByText('Paid ✓')).toBeTruthy();
     expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/'))).toEqual([
       '/lnurlp/wait/p1',
       '/lnurlp/wait/p1?since=accepted',
@@ -923,7 +949,7 @@ describe('PayLinkScreen shop payment', () => {
       if (url === '/.well-known/lnurlp/ada') {
         links += 1;
         // Once the payment closed, the pending charge is today's plain Lightning request.
-        return Response.json(links === 1 ? shopPayLink() : { tag: 'payRequest' });
+        return Response.json(links === 1 ? shopPayLink() : plainPayLink());
       }
       if (url === DETAIL) {
         return Response.json({ pr: 'lnbc210n1shop' });
@@ -1066,6 +1092,10 @@ describe('PayLinkScreen shop payment', () => {
       },
       { timeout: 4000 },
     );
+    // The read with `since` is asked at once; let the page's clock see the till run out.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1_200);
+    });
     expect(screen.getByText('Ended')).toBeTruthy();
     await act(async () => {
       releaseClosed(Response.json({ status: 'Expired', paymentStatus: 'ended' }));
@@ -1082,6 +1112,7 @@ describe('PayLinkScreen shop payment', () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let opens = 0;
     let waits = 0;
+    let releaseClosed: (response: Response) => void = () => undefined;
     mockShopFetch(async (input) => {
       const url = String(input);
       if (url.endsWith('/invoice')) {
@@ -1102,9 +1133,12 @@ describe('PayLinkScreen shop payment', () => {
       }
       if (url.startsWith('/lnurlp/wait/')) {
         waits += 1;
-        return waits === 1
-          ? Response.json({ status: 'Pending', paymentStatus: 'ended' })
-          : Response.json({ status: 'Cancelled', paymentStatus: 'ended' });
+        if (waits === 1) {
+          return Response.json({ status: 'Pending', paymentStatus: 'ended' });
+        }
+        return new Promise((resolve) => {
+          releaseClosed = resolve;
+        });
       }
       return Response.json(profile);
     });
@@ -1112,6 +1146,12 @@ describe('PayLinkScreen shop payment', () => {
     await enterAmount();
     expect(await screen.findByText('Ended')).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
+    await waitFor(() => {
+      expect(waits).toBe(2);
+    });
+    await act(async () => {
+      releaseClosed(Response.json({ status: 'Cancelled', paymentStatus: 'ended' }));
+    });
     const continueButton = (await screen.findByRole(
       'button',
       { name: 'Continue' },
@@ -1215,9 +1255,7 @@ describe('PayLinkScreen shop payment', () => {
       }
       if (url === '/.well-known/lnurlp/ada') {
         links += 1;
-        return links === 1
-          ? new Response('busy', { status: 503 })
-          : Response.json({ tag: 'payRequest' });
+        return links === 1 ? new Response('busy', { status: 503 }) : Response.json(plainPayLink());
       }
       if (url.startsWith('/lnurlp/wait/')) {
         return url.includes('since=')
@@ -1575,7 +1613,7 @@ describe('PayLinkScreen shop payment', () => {
       }
       if (url === '/.well-known/lnurlp/ada') {
         links += 1;
-        return Response.json({ tag: 'payRequest' });
+        return Response.json(plainPayLink());
       }
       if (url.endsWith('/invoice') || url.startsWith(CALLBACK) || url.startsWith('/lnurlp/')) {
         throw new Error(`unexpected ${url}`);
@@ -1616,7 +1654,7 @@ describe('PayLinkScreen shop payment', () => {
           links += 1;
           return links === 1
             ? new Response('busy', { status: 503 })
-            : Response.json({ tag: 'payRequest' });
+            : Response.json(plainPayLink());
         }
         if (url === '/lnurlp/wait/p1') {
           return Response.json({ status: 'Pending', paymentStatus: 'open' });
@@ -1843,7 +1881,7 @@ describe('PayLinkScreen shop payment', () => {
         );
       }
       if (url === '/.well-known/lnurlp/ada') {
-        return Response.json({ tag: 'payRequest' });
+        return Response.json(plainPayLink());
       }
       if (url.endsWith('/invoice')) {
         return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
@@ -1874,7 +1912,7 @@ describe('PayLinkScreen shop payment', () => {
         );
       }
       if (url === '/.well-known/lnurlp/ada') {
-        return Response.json({ tag: 'payRequest' });
+        return Response.json(plainPayLink());
       }
       if (url.endsWith('/invoice')) {
         return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
@@ -1930,9 +1968,11 @@ describe('PayLinkScreen shop payment', () => {
   it('drops a start that answers after the link changes', async () => {
     const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
     const releases: ((response: Response) => void)[] = [];
-    mockShopFetch(async (input) => {
+    const signals: (AbortSignal | null | undefined)[] = [];
+    mockShopFetch(async (input, init) => {
       const url = String(input);
       if (url === '/pay/ada/payment' || url === '/.well-known/lnurlp/ada') {
+        signals.push(init?.signal);
         return new Promise((resolve) => {
           releases.push(resolve);
         });
@@ -1950,8 +1990,11 @@ describe('PayLinkScreen shop payment', () => {
     await waitFor(() => {
       expect(releases).toHaveLength(1);
     });
+    expect(signals[0]?.aborted).toBe(false);
     view.rerender(<PayLinkScreen lightning={bob} />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    // Leaving the pay link aborts the start, so the api sees the page disconnect.
+    expect(signals[0]?.aborted).toBe(true);
     releases[0]?.(
       Response.json({ payment: 'p1', expiresAt: new Date(Date.now() + 300_000).toISOString() }),
     );
@@ -2078,11 +2121,12 @@ describe('PayLinkScreen shop payment', () => {
     expect(mints).toBe(0);
   });
 
-  it('stops polling when the page leaves the payment', async () => {
+  it('asks the wait route again at once after a waiting answer and stops when the page leaves', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let waits = 0;
+    let held: AbortSignal | null | undefined;
     let releaseWait: (response: Response) => void = () => undefined;
-    mockShopFetch(async (input) => {
+    mockShopFetch(async (input, init) => {
       const url = String(input);
       if (url === '/.well-known/lnurlp/ada') {
         return Response.json(shopPayLink());
@@ -2095,35 +2139,74 @@ describe('PayLinkScreen shop payment', () => {
         if (waits === 1) {
           return Response.json({ status: 'Pending', paymentStatus: 'open' });
         }
+        held = init?.signal;
         return new Promise((resolve) => {
           releaseWait = resolve;
         });
       }
       return Response.json(chargeProfile);
     });
-    const first = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
-    first.unmount();
-    await new Promise((resolve) => {
-      setTimeout(resolve, 2_300);
-    });
-    expect(waits).toBe(1);
-
-    waits = 0;
-    const second = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    // No pause after a valid answer: the api holds the next read while the status is unchanged.
     await waitFor(
       () => {
         expect(waits).toBe(2);
       },
-      { timeout: 4000 },
+      { timeout: 500 },
     );
-    second.unmount();
+    expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/'))).toEqual([
+      '/lnurlp/wait/p1',
+      '/lnurlp/wait/p1?since=open',
+    ]);
+    view.unmount();
+    expect(held?.aborted).toBe(true);
     releaseWait(Response.json({ status: 'Pending', paymentStatus: 'accepted' }));
     await new Promise((resolve) => {
       setTimeout(resolve, 2_300);
     });
     expect(waits).toBe(2);
-  }, 15_000);
+  }, 10_000);
+
+  it('pauses 2 s only after a failed wait read and ends the pause when the page leaves', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return new Response('slow down', { status: 429 });
+      }
+      return Response.json(chargeProfile);
+    });
+    const first = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1_000);
+    });
+    expect(waits).toBe(1);
+    await waitFor(
+      () => {
+        expect(waits).toBe(2);
+      },
+      { timeout: 2_000 },
+    );
+    expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/'))).toEqual([
+      '/lnurlp/wait/p1',
+      '/lnurlp/wait/p1',
+    ]);
+    first.unmount();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 2_300);
+    });
+    expect(waits).toBe(2);
+  }, 10_000);
 
   it('shows only the quote time left when the opening answer has no window end', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
@@ -2239,4 +2322,306 @@ describe('PayLinkScreen shop payment', () => {
     expect(await screen.findByText('Arbitrum', undefined, { timeout: 4000 })).toBeTruthy();
     expect(links).toBe(4);
   }, 10_000);
+  it('keeps Pay disabled without an invoice QR until the Lightning detail answers', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let releaseDetail: (response: Response) => void = () => undefined;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return new Promise((resolve) => {
+          releaseDetail = resolve;
+        });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('0.2 USDT')).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchedUrls()).toContain(DETAIL);
+    });
+    const pay = screen.getByRole('button', {
+      name: 'Pay with a Bitcoin wallet app',
+    }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(true);
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    await act(async () => {
+      releaseDetail(Response.json({ pr: 'lnbc210n1shop' }));
+    });
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(pay.disabled).toBe(false);
+  });
+
+  it('shows the till error and mints nothing when the pay link is no real pay request', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json({ status: 'ERROR', reason: 'Busy' });
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(postedInvoice()).toBe(false);
+  });
+});
+
+/** A start that never answers until its signal aborts, as a lost request does. */
+function hangingStart(init?: RequestInit): Promise<Response> {
+  return new Promise((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () => {
+      reject(new DOMException('aborted', 'AbortError'));
+    });
+  });
+}
+
+function stablecoinUnavailable(): Response {
+  return Response.json(
+    { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
+    { status: 503 },
+  );
+}
+
+function mintBodies(): string[] {
+  return vi
+    .mocked(fetch)
+    .mock.calls.filter((call) => String(call[0]) === '/pay/ada/invoice')
+    .map((call) => String((call[1] as RequestInit | undefined)?.body));
+}
+
+function linkReads(): number {
+  return fetchedUrls().filter((url) => url === '/.well-known/lnurlp/ada').length;
+}
+
+describe('PayLinkScreen ambiguous start', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('waits 20 s after a lost start before a refused repeat reads the pay link, then mints', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    let starts = 0;
+    mockShopFetch(async (input, init) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        starts += 1;
+        return starts === 1 ? hangingStart(init) : stablecoinUnavailable();
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(plainPayLink());
+      }
+      if (url === '/pay/ada/invoice') {
+        return Response.json({ pr: 'lnbc210n1mint', amountSats: 21 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15_000);
+    });
+    await waitFor(() => {
+      expect(starts).toBe(2);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(18_000);
+    });
+    expect(linkReads()).toBe(0);
+    expect(mintBodies()).toEqual([]);
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500);
+    });
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(linkReads()).toBe(1);
+    expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 21 })]);
+  }, 15_000);
+
+  it('keeps the state for every Continue and any amount until a call returns a payment', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    let starts = 0;
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        starts += 1;
+        return starts === 1
+          ? new Response('bad gateway', { status: 502 })
+          : stablecoinUnavailable();
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        // Another payer's open amount, until it is gone on the third read.
+        return Response.json(links < 3 ? shopPayLink({ payment: 'p9' }) : plainPayLink());
+      }
+      if (url === '/pay/ada/invoice') {
+        return Response.json({ pr: 'lnbc420n1mint', amountSats: 42 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await waitFor(() => {
+      expect(starts).toBe(2);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20_000);
+    });
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This payment could not be started. Try again.',
+    );
+    expect(links).toBe(1);
+    expect(mintBodies()).toEqual([]);
+    // Try again: 20 s have passed already, so the pay link is read at once.
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(links).toBe(2);
+    });
+    expect(starts).toBe(3);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This payment could not be started. Try again.',
+    );
+    expect(mintBodies()).toEqual([]);
+    // A new amount still follows the state.
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '42' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(starts).toBe(4);
+    expect(links).toBe(3);
+    expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 42 })]);
+  }, 15_000);
+
+  it('aborts the repeat when the page unmounts and mints nothing', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    const signals: (AbortSignal | null | undefined)[] = [];
+    mockShopFetch(async (input, init) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        signals.push(init?.signal);
+        return signals.length === 1
+          ? new Response('bad gateway', { status: 502 })
+          : hangingStart(init);
+      }
+      if (url === '/.well-known/lnurlp/ada' || url.endsWith('/invoice')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    await waitFor(() => {
+      expect(signals).toHaveLength(2);
+    });
+    expect(signals[1]?.aborted).toBe(false);
+    view.unmount();
+    expect(signals[1]?.aborted).toBe(true);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(40_000);
+    });
+    expect(signals).toHaveLength(2);
+    expect(linkReads()).toBe(0);
+    expect(mintBodies()).toEqual([]);
+  }, 15_000);
+
+  it('ends the state with a payment, so the next refusal mints at once', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    let starts = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        starts += 1;
+        if (starts <= 2) {
+          return new Response('bad gateway', { status: 502 });
+        }
+        return starts === 3
+          ? Response.json({ payment: 'p1', expiresAt: new Date(FIXED + 300_000).toISOString() })
+          : stablecoinUnavailable();
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return Response.json({ status: 'Cancelled', paymentStatus: 'ended' });
+      }
+      if (url === '/pay/ada/invoice') {
+        return Response.json({ pr: 'lnbc210n1mint', amountSats: 21 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This payment could not be started. Try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    // The opened payment closed unpaid: back to the amount form, the state is gone.
+    await waitFor(() => {
+      expect(starts).toBe(3);
+    });
+    const again = (await screen.findByRole('button', { name: 'Continue' })) as HTMLButtonElement;
+    await waitFor(() => {
+      expect(again.disabled).toBe(false);
+    });
+    expect(linkReads()).toBe(1);
+    fireEvent.click(again);
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(starts).toBe(4);
+    expect(linkReads()).toBe(1);
+    expect(mintBodies()).toEqual([JSON.stringify({ amountSats: 21 })]);
+  }, 15_000);
+
+  it('does not carry the state to another pay link', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: FIXED });
+    const bob = encodeLnurl('https://21.gifts/.well-known/lnurlp/bob');
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return new Response('bad gateway', { status: 502 });
+      }
+      if (url === '/pay/bob/payment') {
+        return stablecoinUnavailable();
+      }
+      if (url === '/pay/bob/invoice') {
+        return Response.json({ pr: 'lnbc210n1bob', amountSats: 21 });
+      }
+      if (url.endsWith('/pay/bob')) {
+        return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
+      }
+      if (url.startsWith('/.well-known/lnurlp/') || url.endsWith('/invoice')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    const view = renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This payment could not be started. Try again.',
+    );
+    view.rerender(<PayLinkScreen lightning={bob} />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(fetchedUrls().some((url) => url.startsWith('/.well-known/lnurlp/'))).toBe(false);
+  });
 });

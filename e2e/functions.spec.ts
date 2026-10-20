@@ -7818,9 +7818,11 @@ test('Function: openShopPayment — payment_open loads the page again and shows 
   expect(minted).toEqual([]);
 });
 
-test('Function: openShopPayment — a stablecoin_unavailable repeat mints the Lightning invoice', async ({
+test('Function: openShopPayment — a refused repeat waits 20 s, reads the plain pay link, and mints', async ({
   page,
 }) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
   const opens = recordRequests(page, '/pay/ada/payment');
   const minted = recordRequests(page, '/pay/ada/invoice');
   const pay = recordRequests(page, '/.well-known/lnurlp/ada');
@@ -7828,12 +7830,47 @@ test('Function: openShopPayment — a stablecoin_unavailable repeat mints the Li
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => opens.length).toBe(2);
+  await page.clock.fastForward(19_000);
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  expect(pay).toEqual([]);
+  expect(minted).toEqual([]);
+  await page.clock.fastForward(1_000);
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
   await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
   await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
   expect(opens).toHaveLength(2);
   expect(minted).toHaveLength(1);
+  expect(pay).toHaveLength(1);
+});
+
+test('Function: openShopPayment — a lost start and a refusal show the start error while the pay link shows an open amount', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/pay/ada/invoice');
+  const pay = recordRequests(page, '/.well-known/lnurlp/ada');
+  await stubShopPayment(page, { posts: ['hang', 503], payLinks: ['payment'] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => opens.length).toBe(1);
+  // SHOP_PAYMENT_START_TIMEOUT_MS gives up on the lost answer; the repeat is refused.
+  await page.clock.fastForward(15_000);
+  await expect.poll(() => opens.length).toBe(2);
+  // SHOP_PAYMENT_RECHECK_DELAY_MS counts from the end of the lost call.
+  await page.clock.fastForward(19_000);
   expect(pay).toEqual([]);
+  await page.clock.fastForward(1_000);
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  expect(pay).toHaveLength(1);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => pay.length).toBe(2);
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  expect(opens).toHaveLength(3);
+  expect(minted).toEqual([]);
 });
 
 test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {

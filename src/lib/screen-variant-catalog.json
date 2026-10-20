@@ -204,6 +204,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:shop-invoice-loading",
+    "label": "/pl shop-invoice-loading",
+    "visual": "state-pl-shop-invoice-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pl:shop-awaiting",
     "label": "/pl shop-awaiting",
     "visual": "state-pl-shop-awaiting",

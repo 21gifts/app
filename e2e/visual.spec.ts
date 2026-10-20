@@ -1683,6 +1683,26 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-shop-invoice-failed');
   });
 
+  test('screen /pl shop-invoice-loading', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, detailHangs: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
+    ).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-invoice-loading');
+  });
+
   test('screen /pl shop-awaiting', async ({ page }) => {
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });

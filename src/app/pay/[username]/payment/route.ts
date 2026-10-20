@@ -16,6 +16,8 @@ function encodedPayUsername(username: string): string | null {
 
 /**
  * App Router POST that opens a shop payment for an amount the payer entered.
+ * The incoming request's abort signal reaches the api, so a page that gives up
+ * on the call (its time limit, or leaving) disconnects the api request too.
  *
  * @param request - Incoming JSON request with `amountSats`.
  * @param context - Dynamic `username` param.
@@ -30,5 +32,5 @@ export async function POST(
   if (encoded === null) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
-  return proxyApiRequest(request, `/pay/${encoded}/payment`);
+  return proxyApiRequest(request, `/pay/${encoded}/payment`, { forwardAbort: true });
 }

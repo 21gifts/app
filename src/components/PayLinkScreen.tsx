@@ -289,10 +289,22 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const restartedRef = useRef(new Set<string>());
   /** Payment ids that closed without being paid; the page never shows them again. */
   const closedRef = useRef(new Set<string>());
+  /**
+   * End of the most recent `POST /pay/:username/payment` of this pay link whose outcome stayed
+   * unknown; `null` when there is none or a later call returned a payment (`openShopPayment`).
+   */
+  const shopAmbiguousAtRef = useRef<number | null>(null);
+  /** Aborts the running **Continue** (its repeat and its wait) when the page leaves the pay link. */
+  const submitAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
+
+  useEffect(() => {
+    // Another pay link is another shop: an unknown outcome of this one says nothing about it.
+    shopAmbiguousAtRef.current = null;
+  }, [lightning]);
 
   useEffect(() => {
     let active = true;
@@ -343,6 +355,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       });
     return () => {
       active = false;
+      // Leaving the pay link (another link, a reload, or unmount) stops a running Continue.
+      submitAbortRef.current?.abort();
+      submitAbortRef.current = null;
     };
   }, [lightning, reloadNonce]);
 
@@ -629,7 +644,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             // Paid stays on screen; a closed payment leaves it (see the effect below).
             return;
           }
+          // The api holds a read with `since` while the status is unchanged: ask again at once.
+          continue;
         }
+        // Only a failed or unreadable read, or an unknown payment after the one restart, pauses.
         await new Promise<void>((resolve) => {
           wake = resolve;
           pause = setTimeout(resolve, PAY_POLL_MS);
@@ -693,11 +711,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setFormError(null);
     postingRef.current = true;
     setPosting(true);
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
     try {
-      const start = await openShopPayment(profile.username, amountSats);
-      if (generationRef.current !== generation) {
+      const opening = await openShopPayment(profile.username, amountSats, {
+        ambiguousAtMs: shopAmbiguousAtRef.current,
+        signal: controller.signal,
+      });
+      const start = opening.start;
+      if (start.kind === 'aborted' || generationRef.current !== generation) {
         return;
       }
+      shopAmbiguousAtRef.current = opening.ambiguousAtMs;
       if (start.kind === 'charge') {
         setReloadNonce((nonce) => nonce + 1);
         return;
@@ -756,6 +781,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setFormError('failed');
       }
     } finally {
+      if (submitAbortRef.current === controller) {
+        submitAbortRef.current = null;
+      }
       if (generationRef.current === generation) {
         postingRef.current = false;
         setPosting(false);

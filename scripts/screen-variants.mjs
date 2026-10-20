@@ -311,6 +311,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'shop-invoice-loading',
+    image: 'pl-shop-invoice-loading.png',
+    visual: 'state-pl-shop-invoice-loading',
+    needle: 'Waiting for payment…',
+  },
+  {
+    route: '/pl',
     id: 'shop-awaiting',
     image: 'pl-shop-awaiting.png',
     visual: 'state-pl-shop-awaiting',

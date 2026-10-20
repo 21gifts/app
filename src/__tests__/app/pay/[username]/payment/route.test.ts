@@ -8,12 +8,12 @@ vi.mock('@/lib/api-proxy', () => ({
 const proxyMock = vi.mocked(proxyApiRequest);
 
 describe('POST /pay/:username/payment', () => {
-  it('proxies the payment body to the api', async () => {
+  it('proxies the payment body to the api and forwards the client abort', async () => {
     const { POST } = await import('@/app/pay/[username]/payment/route');
     const request = new Request('https://21.gifts/pay/ada/payment', { method: 'POST' });
     const res = await POST(request, { params: Promise.resolve({ username: 'a da' }) });
     expect(res.status).toBe(200);
-    expect(proxyMock).toHaveBeenCalledWith(request, '/pay/a%20da/payment');
+    expect(proxyMock).toHaveBeenCalledWith(request, '/pay/a%20da/payment', { forwardAbort: true });
   });
 
   it('does not proxy a parent-segment username', async () => {
