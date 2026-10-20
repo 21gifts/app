@@ -8,7 +8,7 @@ import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { LocationForm } from '@/components/LocationForm';
-import { MemberProfileScreen } from '@/components/MemberProfileScreen';
+import { MemberIdentityPills, MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
 import { WideImageCropper } from '@/components/WideImageCropper';
@@ -349,17 +349,14 @@ function ProfileImages({
   );
 }
 
-function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
-  const copy = { ...profile };
-  delete copy.staffTag;
-  return copy;
-}
-
 /**
- * Signed-in profile card with identity only: photo and wide image, compact
- * activity chart, About me (with the copy-profile-link), name, location, and
- * the same public gifts facts as the member card (`MemberProfileScreen`
- * `factsOnly`). Preferences and account actions live on `/settings`.
+ * Signed-in profile card with the public identity a visitor sees on
+ * `/members/:id`, plus the edit controls for that public profile.
+ * Photo and wide image, compact activity chart, About me (with the
+ * copy-profile-link), centered name with the role, staff tag, and
+ * funding mark beside it, centered location, and the same public gifts
+ * facts (`MemberProfileScreen` `factsOnly` with `omitPills`). Preferences
+ * and account actions live on `/settings`.
  *
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
  * without a chart FiatPicker (including while activity is in flight); a failed
@@ -507,15 +504,16 @@ export function ProfileScreen(): ReactElement {
           }}
         />
       ) : null}
-      <NameForm variant="profile" />
-      <LocationForm />
+      <MemberIdentityPills profile={member}>
+        {(marks, hints) => (
+          <>
+            <NameForm variant="profile" besideName={marks} belowName={hints} />
+            <LocationForm />
+          </>
+        )}
+      </MemberIdentityPills>
       {memberStatus === 'ready' && member !== null ? (
-        <MemberProfileScreen
-          factsOnly
-          profile={profileWithoutStaffTag(member)}
-          received={[]}
-          donated={[]}
-        />
+        <MemberProfileScreen factsOnly omitPills profile={member} received={[]} donated={[]} />
       ) : memberStatus === 'error' ? (
         <div className="flex flex-col items-center gap-4">
           <p role="alert" className="text-center text-sm text-app-danger">

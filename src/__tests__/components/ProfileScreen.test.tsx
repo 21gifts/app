@@ -640,9 +640,10 @@ describe('ProfileScreen', () => {
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Shop sticker' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '14 posts' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'Verified' })).toHaveLength(1);
   });
 
-  it('hides Software Developer on the embedded facts card even when fetchMember returns the staff tag', async () => {
+  it('shows Software Developer beside the name when fetchMember returns the staff tag', async () => {
     vi.mocked(fetchMember).mockResolvedValue({
       ...OWN_MEMBER,
       role: 'basis',
@@ -650,7 +651,8 @@ describe('ProfileScreen', () => {
     });
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
-    expect(screen.queryByText('Software Developer')).toBeNull();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
   it('shows forum.error and keeps the name editor when fetchMember rejects, and retry fetches again', async () => {

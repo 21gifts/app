@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Loader2, Pencil, X } from 'lucide-react';
-import { useId, useState, type FormEvent, type ReactElement } from 'react';
+import { useId, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
 import { AppShellFooter } from '@/components/AppShell';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -27,13 +27,20 @@ type NameError = { type: 'empty' } | { type: 'request' };
  * prompt and input stay up until a non-empty trimmed name is saved.
  *
  * @param props - `onboarding` shows the field at the top and **Continue** plus
- *   **Skip** at the bottom; `profile` uses icon actions to the right of the
- *   field (no Skip). Defaults from whether a name is already saved.
+ *   **Skip** at the bottom; `profile` centers the saved name and puts the
+ *   pencil beside it (no Skip). Optional `besideName` and `belowName` are
+ *   the public marks and hint sentences a visitor sees on that row.
+ *   Defaults from whether a name is already saved.
  *   Optional `onSaved` runs after a successful name save.
  * @returns The name section, or `null` when there is nothing to show.
  */
 export function NameForm(
-  props: { variant?: 'onboarding' | 'profile'; onSaved?: () => void } = {},
+  props: {
+    variant?: 'onboarding' | 'profile';
+    onSaved?: () => void;
+    besideName?: ReactNode;
+    belowName?: ReactNode;
+  } = {},
 ): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
@@ -235,26 +242,30 @@ export function NameForm(
           </form>
         </SundayWritingGate>
       ) : (
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm text-app-fg">{name}</p>
-          <SundayWritingGate>
-            <IconButton
-              type="button"
-              variant="secondary"
-              size="md"
-              disabled={busy}
-              aria-label={t('name.edit')}
-              onClick={() => {
-                /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
-                setDraft(name ?? '');
-                setEditing(true);
-                setError(null);
-              }}
-            >
-              <Pencil aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </SundayWritingGate>
-        </div>
+        <>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <p className="min-w-0 truncate text-center text-sm text-app-fg">{name}</p>
+            {props.besideName}
+            <SundayWritingGate>
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                disabled={busy}
+                aria-label={t('name.edit')}
+                onClick={() => {
+                  /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
+                  setDraft(name ?? '');
+                  setEditing(true);
+                  setError(null);
+                }}
+              >
+                <Pencil aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </SundayWritingGate>
+          </div>
+          {props.belowName}
+        </>
       )}
 
       {error !== null ? (

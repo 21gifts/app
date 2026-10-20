@@ -2,7 +2,7 @@
 
 import { HandHeart, Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
@@ -126,6 +126,205 @@ function isMemberTaggedRole(role: string): role is MemberTaggedRole {
   return role in ROLE_TAG_KEYS;
 }
 
+/**
+ * Loads the public round photo and wide image for a visitor card.
+ *
+ * A missing slot stays null, so the card draws nothing for it. Not the
+ * About me note photo. Disabled on the owner facts card, which loads
+ * `/pictures/me` and `/banners/me` itself.
+ *
+ * @param accountId - Member id. The same-origin routes are `/pictures/:id` and `/banners/:id`.
+ * @param enabled - When false, no request is made.
+ * @returns Object URLs, or null while missing.
+ */
+function useVisitorProfileImages(
+  accountId: string,
+  enabled: boolean,
+): { pictureUrl: string | null; bannerUrl: string | null } {
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let cancelled = false;
+    const created: string[] = [];
+    const load = async (slot: 'pictures' | 'banners'): Promise<string | null> => {
+      try {
+        const response = await fetch(`/${slot}/${accountId}`);
+        if (!response.ok) {
+          return null;
+        }
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          return null;
+        }
+        const url = URL.createObjectURL(blob);
+        created.push(url);
+        return url;
+      } catch {
+        return null;
+      }
+    };
+    void (async () => {
+      const [picture, banner] = await Promise.all([load('pictures'), load('banners')]);
+      if (cancelled) {
+        for (const url of created) {
+          URL.revokeObjectURL(url);
+        }
+        return;
+      }
+      if (picture !== null) {
+        setPictureUrl(picture);
+      }
+      if (banner !== null) {
+        setBannerUrl(banner);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      for (const url of created) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [accountId, enabled]);
+
+  return { pictureUrl, bannerUrl };
+}
+
+/**
+ * Resting public header: the wide image and the round photo visitors see.
+ * Neither is the About me note photo. A missing slot is absent, not an add button.
+ *
+ * @param props - Object URLs. Both null renders nothing.
+ * @returns The header, or null.
+ */
+function PublicProfileHeader({
+  pictureUrl,
+  bannerUrl,
+}: {
+  pictureUrl: string | null;
+  bannerUrl: string | null;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (bannerUrl !== null) {
+    const overlapped = pictureUrl !== null;
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public wide image */}
+          <img
+            src={bannerUrl}
+            alt={t('profile.about.bannerAlt')}
+            className="aspect-[5/2] w-full rounded-2xl object-cover"
+          />
+          {pictureUrl !== null ? (
+            // eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo
+            <img
+              src={pictureUrl}
+              alt={t('profile.about.portraitAlt')}
+              className="absolute bottom-0 left-1/2 h-16 w-16 -translate-x-1/2 translate-y-1/2 rounded-full object-cover ring-4 ring-app-card"
+            />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+  if (pictureUrl !== null) {
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo */}
+        <img
+          src={pictureUrl}
+          alt={t('profile.about.portraitAlt')}
+          className="mx-auto h-16 w-16 rounded-full object-cover"
+        />
+      </div>
+    );
+  }
+  return null;
+}
+
+/**
+ * Role pill, Software Developer label, and funding-program icon that sit
+ * beside a member's name, plus the sentences those controls reveal.
+ *
+ * The same marks are what a visitor sees and what the account owner sees
+ * on `/profile`. `children` places the marks and the hint paragraphs.
+ *
+ * @param props - Member profile and a render prop `(marks, hints)`.
+ * @returns Whatever `children` returns.
+ */
+export function MemberIdentityPills({
+  profile,
+  children,
+}: {
+  profile: MemberProfile | null;
+  children: (marks: ReactNode, hints: ReactNode) => ReactElement;
+}): ReactElement {
+  const { t, locale } = useTranslations();
+  const [roleHintOpen, setRoleHintOpen] = useState(false);
+  const [fundingHintOpen, setFundingHintOpen] = useState(false);
+  if (profile === null) {
+    return children(null, null);
+  }
+  const tagged = isMemberTaggedRole(profile.role) ? profile.role : null;
+  const roleKeys =
+    tagged !== null && !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag)
+      ? ROLE_TAG_KEYS[tagged]
+      : null;
+  const fundingReviewedAt = profile.fundingReviewedAt;
+  const showMarks =
+    roleKeys !== null ||
+    typeof fundingReviewedAt === 'number' ||
+    profile.staffTag === 'software_developer';
+  const marks = showMarks ? (
+    <>
+      {roleKeys !== null ? (
+        <button
+          type="button"
+          aria-expanded={roleHintOpen}
+          onClick={() => {
+            setRoleHintOpen((open) => !open);
+          }}
+          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+        >
+          {t(roleKeys.label)}
+        </button>
+      ) : null}
+      {profile.staffTag === 'software_developer' ? (
+        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+          {t('forum.staff.softwareDeveloper')}
+        </span>
+      ) : null}
+      {typeof fundingReviewedAt === 'number' ? (
+        <FundingProgramMark
+          admittedAt={fundingReviewedAt}
+          reviewerName={profile.fundingReviewedByName ?? null}
+          expanded={fundingHintOpen}
+          onToggle={() => setFundingHintOpen((open) => !open)}
+        />
+      ) : null}
+    </>
+  ) : null;
+  const hints = (
+    <>
+      {roleHintOpen && roleKeys !== null ? (
+        <p role="status" className="text-center text-xs text-app-muted">
+          {t(roleKeys.hint)}
+        </p>
+      ) : null}
+      {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
+        <p role="status" className="text-center text-xs text-app-muted">
+          {fundingParticipationLabel(t, locale, fundingReviewedAt, profile.fundingReviewedByName)}
+        </p>
+      ) : null}
+    </>
+  );
+  return children(marks, hints);
+}
+
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
   error: false,
@@ -226,6 +425,9 @@ function FundingProgramMark({
  * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
  *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
+ *   `omitPills` (default false) hides those pills because the owner page
+ *   places the same marks beside the name. Visitor images load only when
+ *   `factsOnly` is false. A missing public photo or wide image draws nothing.
  *   `activityFailed` (default false) is passed to both charts as `failed`.
  * @returns The presentational member profile.
  */
@@ -236,6 +438,7 @@ export function MemberProfileScreen({
   owed = [],
   credit = [],
   factsOnly = false,
+  omitPills = false,
   activityFailed = false,
 }: {
   profile: MemberProfile;
@@ -244,13 +447,15 @@ export function MemberProfileScreen({
   owed?: NonNullable<AccountActivity['owedOverTime']>;
   credit?: NonNullable<AccountActivity['creditOverTime']>;
   factsOnly?: boolean;
+  omitPills?: boolean;
   activityFailed?: boolean;
 }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const { fiat } = useFiatPreference();
+  const visitorImages = useVisitorProfileImages(profile.id, !factsOnly);
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
   const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
@@ -1036,15 +1241,6 @@ export function MemberProfileScreen({
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
-  const [roleHintOpen, setRoleHintOpen] = useState(false);
-  const [fundingHintOpen, setFundingHintOpen] = useState(false);
-  const tagged = isMemberTaggedRole(listedProfile.role) ? listedProfile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(listedProfile.role, listedProfile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
-  const fundingReviewedAt = listedProfile.fundingReviewedAt;
-  const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   const memberPath = `/members/${profile.id}`;
@@ -1622,52 +1818,20 @@ export function MemberProfileScreen({
     return (
       <>
         {requirementOverlay}
-        {roleKeys !== null ||
-        showFundingReviewed ||
-        listedProfile.staffTag === 'software_developer' ? (
-          <div className="flex w-full flex-wrap items-center justify-center gap-2">
-            {roleKeys !== null ? (
-              <button
-                type="button"
-                aria-expanded={roleHintOpen}
-                onClick={() => {
-                  setRoleHintOpen((open) => !open);
-                }}
-                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-              >
-                {t(roleKeys.label)}
-              </button>
-            ) : null}
-            {listedProfile.staffTag === 'software_developer' ? (
-              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {t('forum.staff.softwareDeveloper')}
-              </span>
-            ) : null}
-            {typeof fundingReviewedAt === 'number' ? (
-              <FundingProgramMark
-                admittedAt={fundingReviewedAt}
-                reviewerName={listedProfile.fundingReviewedByName ?? null}
-                expanded={fundingHintOpen}
-                onToggle={() => setFundingHintOpen((open) => !open)}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        {roleHintOpen && roleKeys !== null ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {t(roleKeys.hint)}
-          </p>
-        ) : null}
-        {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {fundingParticipationLabel(
-              t,
-              locale,
-              fundingReviewedAt,
-              listedProfile.fundingReviewedByName,
+        {omitPills ? null : (
+          <MemberIdentityPills profile={listedProfile}>
+            {(marks, hints) => (
+              <>
+                {marks !== null ? (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-2">
+                    {marks}
+                  </div>
+                ) : null}
+                {hints}
+              </>
             )}
-          </p>
-        ) : null}
+          </MemberIdentityPills>
+        )}
         {giftsBlock}
         {countButtons}
         {activityFeed}
@@ -1680,6 +1844,10 @@ export function MemberProfileScreen({
       {requirementOverlay}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <Card surface={false}>
+          <PublicProfileHeader
+            pictureUrl={visitorImages.pictureUrl}
+            bannerUrl={visitorImages.bannerUrl}
+          />
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
@@ -1724,56 +1892,22 @@ export function MemberProfileScreen({
               {t('profile.message')}
             </Button>
           ) : null}
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('name.heading')}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <p className="min-w-0 truncate text-sm text-app-fg">
-                {listedProfile.name ?? t('view.unnamed')}
-              </p>
-              {roleKeys !== null ? (
-                <button
-                  type="button"
-                  aria-expanded={roleHintOpen}
-                  onClick={() => {
-                    setRoleHintOpen((open) => !open);
-                  }}
-                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                >
-                  {t(roleKeys.label)}
-                </button>
-              ) : null}
-              {listedProfile.staffTag === 'software_developer' ? (
-                <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                  {t('forum.staff.softwareDeveloper')}
-                </span>
-              ) : null}
-              {typeof fundingReviewedAt === 'number' ? (
-                <FundingProgramMark
-                  admittedAt={fundingReviewedAt}
-                  reviewerName={listedProfile.fundingReviewedByName ?? null}
-                  expanded={fundingHintOpen}
-                  onToggle={() => setFundingHintOpen((open) => !open)}
-                />
-              ) : null}
-            </div>
-            {roleHintOpen && roleKeys !== null ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {t(roleKeys.hint)}
-              </p>
-            ) : null}
-            {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {fundingParticipationLabel(
-                  t,
-                  locale,
-                  fundingReviewedAt,
-                  listedProfile.fundingReviewedByName,
-                )}
-              </p>
-            ) : null}
-          </div>
+          <MemberIdentityPills profile={listedProfile}>
+            {(marks, hints) => (
+              <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                  {t('name.heading')}
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <p className="min-w-0 truncate text-sm text-app-fg">
+                    {listedProfile.name ?? t('view.unnamed')}
+                  </p>
+                  {marks}
+                </div>
+                {hints}
+              </div>
+            )}
+          </MemberIdentityPills>
           <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('location.heading')}

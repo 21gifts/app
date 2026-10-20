@@ -3270,6 +3270,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:software-developer",
+    "label": "/profile software-developer",
+    "visual": "state-profile-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:default",
     "label": "/pos default",
     "visual": "screen-pos",
@@ -3477,6 +3483,24 @@
     "id": "/members/[accountId]:software-developer",
     "label": "/members/[accountId] software-developer",
     "visual": "state-members-accountId-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:images",
+    "label": "/members/[accountId] images",
+    "visual": "state-members-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:photo-only",
+    "label": "/members/[accountId] photo-only",
+    "visual": "state-members-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-only",
+    "label": "/members/[accountId] banner-only",
+    "visual": "state-members-banner-only",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

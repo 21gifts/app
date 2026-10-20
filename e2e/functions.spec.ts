@@ -2497,6 +2497,20 @@ test('Function: proxyWideBannerPut — PUT /banners/me without bearer is 401', a
   expect(res.status()).toBe(401);
 });
 
+test('Function: proxyPublicProfileSlotGet — GET /pictures/[accountId] without a file is 404', async ({
+  request,
+}) => {
+  const res = await request.get('/pictures/[accountId]');
+  expect(res.status()).toBe(404);
+});
+
+test('Function: proxyPublicProfileSlotGet — GET /banners/[accountId] without a file is 404', async ({
+  request,
+}) => {
+  const res = await request.get('/banners/[accountId]');
+  expect(res.status()).toBe(404);
+});
+
 test('Function: proxyMeAboutPhotoGet — GET /me/about/photo without bearer is 401', async ({
   request,
 }) => {
@@ -2843,6 +2857,17 @@ test('Function: MemberProfileScreen — role pill is visible on the canned membe
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await expect(page.getByRole('button', { name: 'Verified' }).first()).toBeVisible();
+});
+
+test('Function: MemberIdentityPills — the role pill sits beside the member name', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/22222222-2222-4222-8222-222222222222');
+  const pill = page.getByRole('button', { name: 'Verified' }).first();
+  await expect(pill).toBeVisible();
+  await expect(pill.locator('xpath=..')).toContainText('Carol');
 });
 
 test('Function: RequirementsOverlay — contact post without a name opens the overlay', async ({

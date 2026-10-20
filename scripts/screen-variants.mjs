@@ -3889,6 +3889,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-profile-funding-program-press',
   },
   {
+    route: '/profile',
+    id: 'software-developer',
+    image: 'profile-software-developer.png',
+    visual: 'state-profile-software-developer',
+    needle: 'state-profile-software-developer',
+  },
+  {
     route: '/pos',
     id: 'default',
     image: 'pos.png',
@@ -4132,6 +4139,27 @@ export const SCREEN_VARIANTS = [
     image: 'members-software-developer.png',
     visual: 'state-members-accountId-software-developer',
     needle: 'Software Developer',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'images',
+    image: 'members-images.png',
+    visual: 'state-members-images',
+    needle: 'state-members-images',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'photo-only',
+    image: 'members-photo-only.png',
+    visual: 'state-members-photo-only',
+    needle: 'state-members-photo-only',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'banner-only',
+    image: 'members-banner-only.png',
+    visual: 'state-members-banner-only',
+    needle: 'state-members-banner-only',
   },
   {
     route: '/members/[accountId]',

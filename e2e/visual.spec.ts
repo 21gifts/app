@@ -839,7 +839,7 @@ function isMobileProject(testInfo: { project: { name: string } }): boolean {
 }
 
 /** Member card for the signed-in e2e account, so `/profile` can show the public facts. */
-async function stubOwnMember(page: Page): Promise<void> {
+async function stubOwnMember(page: Page, extra: Record<string, unknown> = {}): Promise<void> {
   await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -856,7 +856,84 @@ async function stubOwnMember(page: Page): Promise<void> {
         profileMessage: null,
         postCount: 14,
         replyCount: 0,
+        ...extra,
       }),
+    });
+  });
+}
+
+/** Signed-in Ada looking at Carol, the canned visitor on `/members/:id`. */
+async function seedCarolVisitor(page: Page, memberId: string): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: null,
+        rulesAgreedAt: 1_700_000_001,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Carol',
+        location: null,
+        role: 'verified',
+        username: 'carol',
+        lightningAddress: 'member@21.gifts',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: 'Hello from Carol.',
+        profileMessage: {
+          id: '33333333-3333-4333-8333-333333333333',
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Hello from my profile note.',
+          createdAt: '2026-08-01T10:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        },
+        postCount: 1,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+}
+
+/** Public profile photo or wide image for a visitor card. */
+async function fulfillMemberSlot(
+  page: Page,
+  slot: 'pictures' | 'banners',
+  memberId: string,
+  fileName: string,
+): Promise<void> {
+  await page.route(`**/${slot}/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures', fileName)),
     });
   });
 }
@@ -9187,6 +9264,44 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-profile');
   });
 
+  test('state /profile software-developer', async ({ page }) => {
+    // state-profile-software-developer
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await stubOwnMember(page, { staffTag: 'software_developer' });
+    await openProfile(page);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Software Developer')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-software-developer');
+  });
+
   test('state /profile sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
@@ -10853,6 +10968,58 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
     await shotScreen(page, 'state-members-accountId-software-developer');
+  });
+
+  test('state /members images', async ({ page }) => {
+    // state-members-images
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await seedCarolVisitor(page, memberId);
+    await fulfillMemberSlot(page, 'pictures', memberId, 'profile-portrait.jpg');
+    await fulfillMemberSlot(page, 'banners', memberId, 'profile-banner.jpg');
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByAltText('Wide profile image')).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(0);
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
+    );
+    await shotScreen(page, 'state-members-images');
+  });
+
+  test('state /members photo-only', async ({ page }) => {
+    // state-members-photo-only
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await seedCarolVisitor(page, memberId);
+    await fulfillMemberSlot(page, 'pictures', memberId, 'profile-portrait.jpg');
+    await page.route(`**/banners/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: '{"error":"Not found"}',
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByAltText('Profile photo')).toBeVisible();
+    await expect(page.getByAltText('Wide profile image')).toHaveCount(0);
+    await shotScreen(page, 'state-members-photo-only');
+  });
+
+  test('state /members banner-only', async ({ page }) => {
+    // state-members-banner-only
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await seedCarolVisitor(page, memberId);
+    await fulfillMemberSlot(page, 'banners', memberId, 'profile-banner.jpg');
+    await page.route(`**/pictures/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: '{"error":"Not found"}',
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByAltText('Wide profile image')).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toHaveCount(0);
+    await shotScreen(page, 'state-members-banner-only');
   });
 
   test('state /members posts-open', async ({ page }) => {

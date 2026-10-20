@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemberProfileScreen } from '@/components/MemberProfileScreen';
+import { MemberIdentityPills, MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import {
@@ -417,6 +417,10 @@ beforeEach(() => {
   });
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(null, { status: 404 })),
+  );
 });
 
 afterEach(async () => {
@@ -613,6 +617,179 @@ describe('MemberProfileScreen', () => {
     expect(
       screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
     ).toBeNull();
+  });
+
+  it('omitPills hides the role pill on the facts card', () => {
+    renderWithLocale(
+      <MemberProfileScreen factsOnly omitPills profile={profile} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+  });
+
+  it('MemberIdentityPills renders no marks while the profile is still loading', () => {
+    renderWithLocale(
+      <MemberIdentityPills profile={null}>
+        {(marks, hints) => (
+          <div>
+            <span>Ada</span>
+            {marks}
+            {hints}
+          </div>
+        )}
+      </MemberIdentityPills>,
+    );
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('shows the public photo and wide image and revokes them on unmount', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response(new Uint8Array([1, 2]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          });
+        }
+        if (url.endsWith(`/banners/${profile.id}`)) {
+          return new Response(new Uint8Array([3, 4]), {
+            status: 200,
+            headers: { 'content-type': 'image/png' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    expect(await screen.findByRole('img', { name: 'Profile photo' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Wide profile image' })).toBeTruthy();
+    view.unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
+  });
+
+  it('shows only the public photo when the wide image is missing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(await screen.findByRole('img', { name: 'Profile photo' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+  });
+
+  it('shows only the public wide image when the photo is missing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/banners/${profile.id}`)) {
+          return new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/webp' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(await screen.findByRole('img', { name: 'Wide profile image' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+  });
+
+  it('draws nothing for a non-image body, an empty image, or a failed public image load', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response('nope', { status: 200, headers: { 'content-type': 'text/plain' } });
+        }
+        return new Response(new Uint8Array(), {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg' },
+        });
+      }),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+    view.unmount();
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+  });
+
+  it('does not fetch public images on the owner facts card and drops a late image after unmount', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(
+      <MemberProfileScreen factsOnly profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const pending: Array<(response: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          }),
+      ),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(pending.length).toBe(2);
+    view.unmount();
+    await act(async () => {
+      for (const resolve of pending) {
+        resolve(
+          new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          }),
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
   });
 
   it('shows name, address, chart empty state, and role pill', () => {
