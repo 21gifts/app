@@ -358,7 +358,11 @@ export function ForumGoalBar({
   );
 }
 
-/** Daily plan. A bitcoin plan shows the current spot beside it. A fiat plan keeps the stored amount. */
+/**
+ * Daily plan. A bitcoin plan shows the current spot beside it. A fiat plan
+ * keeps the stored amount and the bitcoin split of the goal sats, with no
+ * third viewer currency.
+ */
 function CreditPlanLines({
   goalCurrency,
   goalAmount,
@@ -382,7 +386,9 @@ function CreditPlanLines({
   if (split === null) {
     return null;
   }
-  const format = (value: bigint): string => {
+  const satSplit =
+    bitcoin || !isFiatGoalCurrency(goalCurrency) ? null : splitCreditPlan(BigInt(goalSats), days);
+  const format = (value: bigint, part: 'perDay' | 'last'): string => {
     if (bitcoin || !isFiatGoalCurrency(goalCurrency)) {
       const btc = formatBitcoin(Number(value), numberFormat);
       const priced = satsToFiatAmount(Number(value), rateDay, fiat);
@@ -390,15 +396,23 @@ function CreditPlanLines({
     }
     const whole = value / 100n;
     const frac = (value % 100n).toString().padStart(2, '0');
-    return formatDefinedGoalAmount(`${whole.toString()}.${frac}`, goalCurrency, numberFormat);
+    const defined = formatDefinedGoalAmount(
+      `${whole.toString()}.${frac}`,
+      goalCurrency,
+      numberFormat,
+    );
+    const satValue = satSplit === null ? null : satSplit[part];
+    return satValue === null
+      ? defined
+      : `${defined} · ${formatBitcoin(Number(satValue), numberFormat)}`;
   };
   const plan =
     split.remainder === 0n
-      ? t('forum.creditPlanEven', { amount: format(split.perDay), days: split.days })
+      ? t('forum.creditPlanEven', { amount: format(split.perDay, 'perDay'), days: split.days })
       : t('forum.creditPlanLast', {
-          amount: format(split.perDay),
+          amount: format(split.perDay, 'perDay'),
           earlier: split.days - 1,
-          last: format(split.last),
+          last: format(split.last, 'last'),
         });
   return (
     <div className="text-xs text-app-muted">

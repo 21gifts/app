@@ -1150,7 +1150,7 @@ describe('ExternalAuthorProfile', () => {
       expect(fetchFxSpot).toHaveBeenCalled();
     });
     expect(screen.getByText('₿0')).toBeTruthy();
-    expect(screen.queryByText('$0.00')).toBeNull();
+    expect(screen.getByText('$0.00')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(push).toHaveBeenCalledWith('/messages/note-1');
   });

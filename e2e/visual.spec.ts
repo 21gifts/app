@@ -22906,6 +22906,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-plan-fiat');
   });
 
@@ -22971,7 +22972,7 @@ test.describe('welcome forum variants', () => {
     }
     await page.getByRole('button', { name: 'I want to take this credit.' }).click();
     await expect(page.getByText(/I can repay the amount owed on this plan/)).toBeVisible();
-    await expect(page.getByText(/\$\d/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-can-fiat');
   });
@@ -22993,6 +22994,8 @@ test.describe('welcome forum variants', () => {
       await page.getByRole('button', { name: 'Continue' }).click();
     }
     await expect(page.getByText('5 of 9')).toBeVisible();
+    await expect(page.getByText(/Amount owed: \$1'000\.00 · ₿1'000'000/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await expect(page.getByText(/fixed in US dollars/)).toBeVisible();
     await expect(page.getByText(/price falls/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
@@ -23149,7 +23152,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('9 of 9')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
-    await expect(page.getByText(/\$33\.33 per day for 29 days/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview-fiat');
   });
 

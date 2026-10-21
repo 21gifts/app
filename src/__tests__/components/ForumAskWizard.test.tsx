@@ -564,7 +564,7 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/Amount owed: \$1'000\.00 · ₿1'000'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in US dollars/)).toBeTruthy();
     expect(screen.getByText(/price falls/)).toBeTruthy();
     expect(screen.queryByText(/rising bitcoin price/)).toBeNull();

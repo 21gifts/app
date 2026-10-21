@@ -135,21 +135,32 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       : null;
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
-  /** Bitcoin plus one fiat figure. The charge amount uses a stored shop figure. A fee of ₿0 stays the fee-free label. */
-  const amount = (sats: number): ReactElement => (
-    <>
-      {formatBitcoin(sats, numberFormat)}
-      {shopFigure !== null && sats === payment.amountSats ? (
+  const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
+  /**
+   * Bitcoin plus one fiat figure. A shop charge amount stays bitcoin until its
+   * receipt returns, then shows the stored figure or the spot. A fee of ₿0
+   * stays the fee-free label.
+   */
+  const amount = (sats: number): ReactElement => {
+    if (payment.info.purpose === 'shop' && shop.pending && sats === payment.amountSats) {
+      return <>{formatBitcoin(sats, numberFormat)}</>;
+    }
+    if (shopFigure !== null && sats === payment.amountSats) {
+      return (
         <>
+          {formatBitcoin(sats, numberFormat)}
           <span aria-hidden="true"> · </span>
           <span>{formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat)}</span>
         </>
-      ) : (
-        preferredFiatSuffix(sats, rateDay, fiat, numberFormat)
-      )}
-    </>
-  );
-  const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
+      );
+    }
+    return (
+      <>
+        {formatBitcoin(sats, numberFormat)}
+        {preferredFiatSuffix(sats, rateDay, fiat, numberFormat)}
+      </>
+    );
+  };
   const spotAmount =
     payment.info.purpose === 'shop'
       ? shop.pending || shopFigure !== null

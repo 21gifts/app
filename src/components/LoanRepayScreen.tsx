@@ -676,18 +676,18 @@ export function LoanRepayScreen(): ReactElement {
               loan.goalCurrency === 'BTC'
                 ? splitCreditPlan(BigInt(loan.totalSats), loan.termDays)
                 : splitCreditPlan(creditSmallestUnits(loan.goalAmount, false) ?? 0n, loan.termDays);
+            const satSplit =
+              loan.goalCurrency === 'BTC'
+                ? null
+                : splitCreditPlan(BigInt(loan.totalSats), loan.termDays);
             const planTotal =
               loan.goalCurrency === 'BTC'
                 ? wholeLoanText(loan)
-                : formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat);
+                : `${formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat)} · ${formatBitcoin(loan.totalSats, numberFormat)}`;
             const planPerDay =
               loan.goalCurrency === 'BTC'
                 ? money(Number(split?.perDay ?? 0n))
-                : formatDefinedGoalAmount(
-                    centsString(split?.perDay ?? 0n),
-                    loan.goalCurrency,
-                    numberFormat,
-                  );
+                : `${formatDefinedGoalAmount(centsString(split?.perDay ?? 0n), loan.goalCurrency, numberFormat)} · ${formatBitcoin(Number(satSplit?.perDay ?? 0n), numberFormat)}`;
             const repaidText = t('loans.repaidOf', {
               repaid: money(loan.repaidSats),
               total: wholeLoanText(loan),
