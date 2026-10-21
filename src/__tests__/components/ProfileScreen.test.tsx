@@ -433,7 +433,7 @@ describe('ProfileScreen', () => {
     vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByRole('button', { name: '14 posts' })).toBeTruthy();
-    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
 
     const current = useAuthStore.getState().account;
     if (current === null) {
@@ -468,12 +468,14 @@ describe('ProfileScreen', () => {
       });
     });
 
-    expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
-    expect(screen.queryByText('alice@21.gifts')).toBeNull();
-    expect(screen.queryByText('Moderator functions')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
+      expect(screen.queryByText('alice@21.gifts')).toBeNull();
+      expect(screen.queryByText('Moderator functions')).toBeNull();
+      expect(screen.getByText('bea@21.gifts')).toBeTruthy();
+      expect(screen.getByRole('button', { name: '0 posts' })).toBeTruthy();
+    });
     expect(screen.getByText('Bea')).toBeTruthy();
-    expect(screen.getByText('bea@21.gifts')).toBeTruthy();
-    expect(screen.getByRole('button', { name: '0 posts' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Edit$/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
     await waitFor(() => {
