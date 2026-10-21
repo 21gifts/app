@@ -611,7 +611,11 @@ function usePosTillState(): PosTillState {
     /* v8 ignore next -- a till this session read always has an answer */
     if (state !== null) {
       reassignPaid(memory, state);
-      if (memory.late !== null && lateRead.current !== null && reads.current.applied >= lateRead.current) {
+      if (
+        memory.late !== null &&
+        lateRead.current !== null &&
+        reads.current.applied >= lateRead.current
+      ) {
         lateRead.current = null;
         resolveLate(memory, state);
       }
@@ -641,7 +645,12 @@ function usePosTillState(): PosTillState {
   useEffect(() => {
     // A held late-minute payment asks the api once (not on a timer) which charge it paid.
     // Read the memory now: the arming effect of this same commit may just have settled it.
-    if (lateHeld && session !== null && lateRead.current === null && settledFor(session).late !== null) {
+    if (
+      lateHeld &&
+      session !== null &&
+      lateRead.current === null &&
+      settledFor(session).late !== null
+    ) {
       lateRead.current = reads.current.started + 1;
       quietReload.current = state !== null;
       setReload((n) => n + 1);
