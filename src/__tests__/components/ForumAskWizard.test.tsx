@@ -608,4 +608,19 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.getByRole('button', { name: 'Loan' })).toBeTruthy();
   });
+
+  it('keeps a typed fiat credit in fiat while the rate is not loaded', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        askDraftUnit="fiat"
+        askObligation="credit"
+      />,
+    );
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+  });
 });

@@ -401,10 +401,9 @@ function CreditPlanLines({
       goalCurrency,
       numberFormat,
     );
-    const satValue = satSplit === null ? null : satSplit[part];
-    return satValue === null
-      ? defined
-      : `${defined} · ${formatBitcoin(Number(satValue), numberFormat)}`;
+    // The bar renders only for a positive goal, and `split` already validated
+    // the term, so the bitcoin split of those sats exists.
+    return `${defined} · ${formatBitcoin(Number(satSplit![part]), numberFormat)}`;
   };
   const plan =
     split.remainder === 0n
