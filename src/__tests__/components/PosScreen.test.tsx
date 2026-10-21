@@ -1138,7 +1138,8 @@ describe('PosScreen', () => {
       amountSats: 21,
       status: 'pending',
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      // Far enough out that a slow run never reaches its end before the last test.
+      expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
       paidAt: null,
     };
     const PAID = { ...OPEN, status: 'paid', paidAt: new Date().toISOString() };
@@ -3400,6 +3401,148 @@ describe('PosScreen', () => {
       await act(async () => undefined);
       expect(screen.queryByRole('alertdialog')).toBeNull();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
+    it('pays an older charge a Spark payment names at once while a newer charge is open', async () => {
+      const older = {
+        ...OPEN,
+        id: 'c0',
+        createdAt: new Date(Date.now() - 300_000).toISOString(),
+        expiresAt: new Date(Date.now() - 180_000).toISOString(),
+        status: 'expired',
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return jsonResponse({ charge: OPEN, history: [OPEN, older] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      const before = reads;
+      receive(21, 0, Date.now(), older.id);
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText(/^Paid ✓ /)).toBeTruthy();
+      // The newer open charge stays open, and its confirmation is not shown for the older one.
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      // A second payment naming the paid charge pays nothing more.
+      receive(21, 0, Date.now(), older.id);
+      await act(async () => undefined);
+      expect(within(history).getAllByText(/^Paid ✓ /)).toHaveLength(1);
+      expect(reads).toBe(before);
+    });
+
+    it('confirms a run-out charge a Spark payment names when no charge is open', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 300_000).toISOString(),
+        expiresAt: new Date(Date.now() - 180_000).toISOString(),
+      };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => jsonResponse({ charge: null, history: [ended] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      receive(21, 0, Date.now(), ended.id);
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('does not let a Spark payment pay a charge the api shows cancelled', async () => {
+      const cancelled = { ...OPEN, status: 'cancelled' };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => jsonResponse({ charge: null, history: [cancelled] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      receive(21, 0, Date.now(), cancelled.id);
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText('Cancelled')).toBeTruthy();
+    });
+
+    it('does not count a Spark payment for the charge on screen while its cancel goes through', async () => {
+      let reads = 0;
+      let answerCancel: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return new Promise<Response>((resolve) => {
+              answerCancel = resolve;
+            });
+          }
+          reads += 1;
+          return jsonResponse(
+            answerCancel === undefined
+              ? { charge: OPEN, history: [OPEN] }
+              : { charge: null, history: [{ ...OPEN, status: 'cancelled' }] },
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(answerCancel).toBeDefined();
+      });
+      receive(21, 0, Date.now(), OPEN.id);
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        answerCancel?.(jsonResponse({ charge: null }));
+      });
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(reads).toBeGreaterThan(0);
+    });
+
+    it('settles a late-minute payment by the read a failing cancel overtook', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            throw new Error('offline');
+          }
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          if (reads > 3) {
+            // The read after the failed cancel fails too.
+            throw new Error('offline');
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(reads).toBe(4);
+      });
+      await act(async () => {
+        answerLateRead?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('keeps a late-minute payment paid on the newer charge another tab cancelled meanwhile', async () => {

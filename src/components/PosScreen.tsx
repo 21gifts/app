@@ -239,6 +239,10 @@ function settleOpen(memory: WalletSettled, payment: TillPayment): void {
   if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
     memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
+    if (payment.chargeId !== undefined) {
+      // It may name a charge the till already read (`settleNamed`).
+      settledChanged();
+    }
     return;
   }
   if (payment.chargeId === undefined && payment.timestamp > Date.parse(open.expiresAt)) {
@@ -340,6 +344,35 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
   if (moved) {
     settledChanged();
   }
+}
+
+/**
+ * A kept payment that names a charge `state` lists, other than the charge on
+ * screen, pays that charge at once, however long ago it ran out (the payment
+ * names it, like {@link pays}); a paid or cancelled charge takes none. The charge on screen
+ * takes payments only as the open charge, so none pays it while Cancel is on
+ * its way.
+ */
+function settleNamed(memory: WalletSettled, state: PosState): void {
+  const kept: TillPayment[] = [];
+  for (const payment of memory.early) {
+    const named =
+      payment.chargeId === undefined || payment.chargeId === state.charge?.id
+        ? undefined
+        : state.history.find(
+            (row) =>
+              row.id === payment.chargeId &&
+              row.status !== 'paid' &&
+              row.status !== 'cancelled' &&
+              !memory.paid.has(row.id),
+          );
+    if (named === undefined) {
+      kept.push(payment);
+      continue;
+    }
+    markPaid(memory, named, payment);
+  }
+  memory.early = kept;
 }
 
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
@@ -531,7 +564,7 @@ function usePosTillState(): PosTillState {
   const [reload, setReload] = useState(0);
   // The read after a closed confirmation fails quietly: the till already shows what it needs.
   const quietReload = useRef(false);
-  const [, setSettledVersion] = useState(0);
+  const [settledVersion, setSettledVersion] = useState(0);
   const memory = settledFor(session);
   const lateHeld = memory.late.length > 0;
   // The read asked for by a held late-minute payment: it settles once a read from then on answers.
@@ -581,8 +614,10 @@ function usePosTillState(): PosTillState {
         if (!alive) {
           return;
         }
+        let applied = false;
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
+            applied = true;
             setTill({ state: next, session });
             // The till answered: an earlier failed read no longer holds.
             if (readFailed.current) {
@@ -591,6 +626,14 @@ function usePosTillState(): PosTillState {
             }
           });
         });
+        // A create or cancel overtook this read: its answer still says which charge a held
+        // late-minute payment paid.
+        if (!applied && lateRead.current !== null && seq >= lateRead.current) {
+          lateRead.current = null;
+          const memory = settledFor(session);
+          reassignPaid(memory, next);
+          resolveLate(memory, next);
+        }
       } catch {
         // Without the read, a held late-minute payment goes to the open charge it paid.
         if (alive && lateRead.current !== null && seq >= lateRead.current) {
@@ -689,6 +732,13 @@ function usePosTillState(): PosTillState {
       memory.open = null;
     }
   }, [charge, session, state, tillSession]);
+
+  useEffect(() => {
+    // A payment that names a charge this read lists pays it now, not at the next read.
+    if (tillSession === session && state !== null) {
+      settleNamed(settledFor(session), state);
+    }
+  }, [session, settledVersion, state, tillSession]);
 
   useEffect(() => {
     if (session !== null) {
