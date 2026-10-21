@@ -215,9 +215,10 @@ jobs:
 
       - name: Collect changed baselines
         if: always()
+        shell: bash
         run: |
           mkdir -p new-snaps
-          git status --porcelain -- e2e/visual.spec.ts-snapshots | while IFS= read -r line; do
+          git -c safe.directory='*' status --porcelain -- e2e/visual.spec.ts-snapshots | while IFS= read -r line; do
             file=${line:3}
             mkdir -p "new-snaps/$(dirname "$file")"
             cp "$file" "new-snaps/$file"
