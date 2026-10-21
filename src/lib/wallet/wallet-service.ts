@@ -827,7 +827,9 @@ export async function refreshWallet(options?: {
 /**
  * Disconnects the wallet, resets the store to its resting status, and invalidates
  * in-flight work, including the automatic retries after a failed open: their
- * timer and listeners are removed. Never rejects.
+ * timer and listeners are removed. It also forgets the payments told to the
+ * {@link onPaymentReceived} listeners, so the next sign-in starts over. Never
+ * rejects.
  *
  * @returns Resolves after the handle is dropped.
  */
