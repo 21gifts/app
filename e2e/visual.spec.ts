@@ -9311,6 +9311,55 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-software-developer');
   });
 
+  test('state /profile name-editing', async ({ page }) => {
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await shotScreen(page, 'state-profile-name-editing');
+  });
+
+  test('state /profile location-editing', async ({ page }) => {
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit location' }).click();
+    await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
+    await expect(page.getByText('Not set')).toHaveCount(0);
+    await shotScreen(page, 'state-profile-location-editing');
+  });
+
+  test('state /profile role-open', async ({ page }) => {
+    await page.unroute(/\/forum\/members\/acc_e2e$/);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+          fundingReviewedAt: null,
+        }),
+      });
+    });
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      page.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-profile-role-open');
+  });
+
   test('state /profile sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
@@ -21650,6 +21699,63 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
     await expect(page.getByText('Not set')).toHaveCount(0);
     await shotScreen(page, 'state-members-location-editing');
+  });
+
+  test('members role-open', async ({ page }) => {
+    const memberId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/(?<![A-Za-z])\/me(?:\?.*)?$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(new RegExp(`/forum/members/${memberId}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          username: 'carol',
+          location: null,
+          role: 'verified',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(new RegExp(`/forum/members/${memberId}/activity(?:\\?|$)`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      page.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-members-role-open');
   });
 
   test('view name-editing', async ({ page }) => {

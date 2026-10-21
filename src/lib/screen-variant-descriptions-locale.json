@@ -2634,6 +2634,21 @@
     "es": "Editor del propietario con role=\"alert\" error al guardar tras simular PUT /me/about a 500, abrir el editor desde vacío y pulsar Guardar. Texto No se pudo guardar. Inténtalo de nuevo.",
     "fil": "Pampatnugot ng may-ari na may role=\"alert\" na kamalian sa pag-imbak matapos i-stub ang PUT /me/about sa 500, buksan ang pampatnugot mula sa walang laman, at pindutin ang I-save. Teksto Hindi ma-save. Subukan ulit."
   },
+  "/profile:name-editing": {
+    "de": "Angemeldeter Inhaber auf /profile. Link kopieren schreibt /view/:viewKey. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
+    "es": "Titular con sesión en /profile. Copiar enlace escribe /view/:viewKey. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
+    "fil": "Naka-sign in na may-ari sa /profile. Isinusulat ng kopyahin ang link ang /view/:viewKey. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+  },
+  "/profile:location-editing": {
+    "de": "Angemeldeter Inhaber auf /profile. Link kopieren schreibt /view/:viewKey. Ort bearbeiten öffnet das Ortsfeld. Die Zeile Nicht angegeben ist weg.",
+    "es": "Titular con sesión en /profile. Copiar enlace escribe /view/:viewKey. Editar ubicación abre el campo del lugar. La línea No indicada desaparece.",
+    "fil": "Naka-sign in na may-ari sa /profile. Isinusulat ng kopyahin ang link ang /view/:viewKey. Binubuksan ng I-edit ang lugar ang field ng lugar. Wala na ang linyang Hindi nakasaad."
+  },
+  "/profile:role-open": {
+    "de": "Angemeldeter Inhaber auf /profile mit der Rolle Verifiziert. Die Rollen-Pille ist gedrückt und ihr Satz ist sichtbar. Link kopieren schreibt /view/:viewKey.",
+    "es": "Titular con sesión en /profile con el rol Verificado. La píldora de rol está pulsada y su frase es visible. Copiar enlace escribe /view/:viewKey.",
+    "fil": "Naka-sign in na may-ari sa /profile na may role na Verified. Napindot ang role pill at nakikita ang pangungusap nito. Isinusulat ng kopyahin ang link ang /view/:viewKey."
+  },
   "/grants/payments/comment:error": {
     "de": "Gründer, wenn das Laden der Liste fehlschlägt. Text Die täglichen Zahlungen konnten nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen. Needle Die täglichen Zahlungen konnten nicht geladen werden. Bitte erneut versuchen.",
     "es": "Fundador cuando falla la carga de la lista. Texto No se pudieron cargar los pagos diarios. Inténtalo de nuevo. y botón Intentar de nuevo. Needle No se pudieron cargar los pagos diarios. Inténtalo de nuevo.",
@@ -6103,6 +6118,11 @@
     "de": "Angemeldeter Inhaber auf /members/:id, die Konto-Id stimmt überein. Link kopieren schreibt weiterhin den kurzen /l/-Link. Ort bearbeiten öffnet das Ortsfeld. Die Zeile Nicht angegeben ist weg.",
     "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. Editar ubicación abre el campo del lugar. La línea No indicada desaparece.",
     "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Binubuksan ng I-edit ang lugar ang field ng lugar. Wala na ang linyang Hindi nakasaad."
+  },
+  "/members/[accountId]:role-open": {
+    "de": "Öffentliche Karte auf /members/:id. Die Rolle Verifiziert ist gedrückt und ihr Satz ist sichtbar. Link kopieren schreibt den kurzen /l/-Link.",
+    "es": "Tarjeta pública en /members/:id. La píldora Verificado está pulsada y su frase es visible. Copiar enlace escribe el enlace corto /l/.",
+    "fil": "Pampublikong kard sa /members/:id. Napindot ang pill na Verified at nakikita ang pangungusap nito. Isinusulat ng kopyahin ang link ang maikling /l/ na link."
   },
   "/view/[viewKey]:banner-not-wide": {
     "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Ein quadratisches Foto für das leere breite Bild öffnet den Zuschneider in der Kopfzeile (Zieh das Foto, um das breite Bild zu wählen, Diesen Ausschnitt verwenden). Breites Bild hinzufügen ist weg. Profilfoto hinzufügen bleibt.",

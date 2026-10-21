@@ -461,6 +461,24 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/banners/acc_1.webp');
   });
 
+  it('proxyPublicProfileSlotGet returns an upstream 502 without the other extensions', async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Upstream api unreachable' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    const down = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(down.status).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/acc_1.jpg');
+  });
+
   it('proxyWideBannerGet and proxyWideBannerPut hit /banners/me', async () => {
     const fetchMock = stubApi();
     await proxyWideBannerGet(new Request('http://localhost/banners/me'));

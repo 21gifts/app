@@ -251,7 +251,8 @@ const PUBLIC_PROFILE_EXTS = ['jpg', 'png', 'webp'] as const;
  *
  * The api file is `/{slot}/{accountId}.{ext}` and the extension must match
  * the stored MIME. This tries JPEG, then PNG, then WebP, and returns the
- * first image. A missing slot is 404. No bearer.
+ * first image. A missing slot is 404. An upstream status of 500 or more,
+ * including 502 when the api is unreachable, is returned as-is. No bearer.
  *
  * @param request - Incoming App Router request.
  * @param slot - `pictures` for the round photo, `banners` for the wide image.
@@ -273,6 +274,9 @@ export async function proxyPublicProfileSlotGet(
     );
     const type = upstream.headers.get('content-type') ?? '';
     if (upstream.status === 200 && type.startsWith('image/')) {
+      return upstream;
+    }
+    if (upstream.status >= 500) {
       return upstream;
     }
     await upstream.body?.cancel();

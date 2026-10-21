@@ -4792,6 +4792,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-members-location-editing')",
   },
   {
+    route: '/members/[accountId]',
+    id: 'role-open',
+    image: 'members-role-open.png',
+    visual: 'state-members-role-open',
+    needle: "shotScreen(page, 'state-members-role-open')",
+  },
+  {
     route: '/members/[accountId]/verify',
     id: 'default',
     image: 'members-verify.png',
@@ -5063,6 +5070,27 @@ export const SCREEN_VARIANTS = [
     image: 'profile-about-save-error.png',
     visual: 'state-profile-about-save-error',
     needle: 'Could not save. Please try again.',
+  },
+  {
+    route: '/profile',
+    id: 'name-editing',
+    image: 'profile-name-editing.png',
+    visual: 'state-profile-name-editing',
+    needle: "shotScreen(page, 'state-profile-name-editing')",
+  },
+  {
+    route: '/profile',
+    id: 'location-editing',
+    image: 'profile-location-editing.png',
+    visual: 'state-profile-location-editing',
+    needle: "shotScreen(page, 'state-profile-location-editing')",
+  },
+  {
+    route: '/profile',
+    id: 'role-open',
+    image: 'profile-role-open.png',
+    visual: 'state-profile-role-open',
+    needle: "shotScreen(page, 'state-profile-role-open')",
   },
   {
     route: '/grants',

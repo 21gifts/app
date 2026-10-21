@@ -744,6 +744,58 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
   });
 
+  it('keeps the staff label and funding mark from the account when fetchMember fails', async () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        role: 'verified',
+        funding: {
+          status: 'pending',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    const pending = renderWithLocale(<ProfileScreen />);
+    expect(
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeNull();
+    pending.unmount();
+
+    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        role: 'verified',
+        staffTag: 'software_developer',
+        funding: {
+          status: 'admitted',
+          trialUtcDate: null,
+          admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+          reviewedByName: 'Cyrill',
+        },
+      },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeTruthy();
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeTruthy();
+  });
+
   it('shows the public gifts address from the account before fetchMember returns', () => {
     const current = useAuthStore.getState().account;
     if (current === null) {

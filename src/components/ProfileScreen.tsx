@@ -13,13 +13,23 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Member card drawn from the signed-in account until `fetchMember` returns.
- * Counts stay at zero on that first paint. The fetched card replaces it.
+ * Counts stay at zero on that first paint. The staff label and the funding
+ * admission stay on this card when the fetch has not arrived or has failed.
+ * The fetched card replaces it.
  *
  * @param account - Signed-in account.
  * @returns A {@link MemberProfile} for the same id.
  */
 function ownerPreview(account: Account): MemberProfile {
   const username = account.username;
+  const funding = account.funding ?? null;
+  const fundingMarks =
+    funding !== null && typeof funding.admittedAt === 'number'
+      ? {
+          fundingReviewedAt: funding.admittedAt,
+          fundingReviewedByName: funding.reviewedByName,
+        }
+      : {};
   return {
     id: account.id,
     name: account.name,
@@ -33,6 +43,8 @@ function ownerPreview(account: Account): MemberProfile {
     aboutMe: account.aboutMe,
     aboutMeHasPhoto: account.aboutMeHasPhoto === true,
     ...(typeof username === 'string' ? { username } : {}),
+    ...(account.staffTag === 'software_developer' ? { staffTag: account.staffTag } : {}),
+    ...fundingMarks,
     trust: {
       verifiedBy: null,
       proposedBy: null,

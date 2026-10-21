@@ -5072,6 +5072,12 @@ Signed-in owner on /members/:id, where the account id matches. Copy link still w
 
 ![21.gifts member profile](images/members-location-editing.png)
 
+### Variant: role-open
+
+Public card on /members/:id. The Verified role pill is pressed and its sentence is visible. Copy link writes the short /l/ link.
+
+![21.gifts member profile](images/members-role-open.png)
+
 ## Screen: /members/[accountId]/verify
 
 - **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
@@ -5563,6 +5569,24 @@ Same header cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Ke
 Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500, opening the editor from empty, and clicking Save. Copy **Could not save. Please try again.**
 
 ![21.gifts profile About me save error](images/profile-about-save-error.png)
+
+### Variant: name-editing
+
+Signed-in owner on /profile. Copy link writes /view/:viewKey. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts profile name editing](images/profile-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /profile. Copy link writes /view/:viewKey. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts profile location editing](images/profile-location-editing.png)
+
+### Variant: role-open
+
+Signed-in owner on /profile with the Verified role. The role pill is pressed and its sentence is visible. Copy link writes /view/:viewKey.
+
+![21.gifts profile role open](images/profile-role-open.png)
 
 ## Screen: /grants
 
