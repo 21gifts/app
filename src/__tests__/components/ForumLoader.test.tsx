@@ -1467,7 +1467,7 @@ describe('ForumLoader', () => {
       },
     });
     postMock.mockRejectedValue(new Error('At most 10 photos'));
-    renderWithLocale(<ForumLoader feed="shops" />);
+    renderForumWithChrome(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
@@ -1478,6 +1478,20 @@ describe('ForumLoader', () => {
     expect(postMock).toHaveBeenCalled();
     expect(postVideoMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Could not post your message')).toBeNull();
+
+    // The rejected photo is still attached, so editing text or username keeps the reason.
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: `${SHOP_DESCRIPTION} Fresh coffee too.` },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
   });
 
   it('feed="shops" sends an optional shop username', async () => {

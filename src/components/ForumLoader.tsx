@@ -135,6 +135,11 @@ function isShopComposerError(error: ForumFormError): error is ShopApiProblem | '
   return error === 'shopElsewhere' || isShopApiProblem(error);
 }
 
+/** Photo reasons that stay until the photos change, because the rejected files are still attached. */
+function isAttachedPhotoError(error: ForumFormError): boolean {
+  return error === 'tooMany' || error === 'formatOrSize';
+}
+
 const SHOP_NAME_FORM_ERROR = {
   name: 'shopName',
   nameAddress: 'shopNameAddress',
@@ -2671,9 +2676,10 @@ export function ForumLoader({
               shopUsername,
               onShopUsernameChange: (value: string) => {
                 setShopUsername(value);
-                // The username step is reachable only once the place and text are valid,
-                // so any error left here belongs to the username or the last request.
-                setFormError(null);
+                // The username step is reachable only once the place and text are valid, so an
+                // error left here belongs to the username or the last request, unless it is about
+                // photos that are still attached.
+                setFormError((current) => (isAttachedPhotoError(current) ? current : null));
               },
               shopResetToken,
             }
@@ -2842,7 +2848,10 @@ export function ForumLoader({
         onDraftChange={(value) => {
           setDraft(value);
           setFormError((current) =>
-            current !== null && isShopApiProblem(current) && shopProblemField(current) !== 'text'
+            (current !== null &&
+              isShopApiProblem(current) &&
+              shopProblemField(current) !== 'text') ||
+            isAttachedPhotoError(current)
               ? current
               : null,
           );
