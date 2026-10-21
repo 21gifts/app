@@ -3078,7 +3078,7 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
-  it('tells onPaymentReceived a payment held by a connection that is replaced before its known payments are read', async () => {
+  it('tells onPaymentReceived at once a payment reported before the known payments are read, once across a replaced connection', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
     connection.listPayments.mockImplementationOnce(
@@ -3095,7 +3095,8 @@ describe('onIncomingPayment', () => {
         payment: payment('first-sync'),
       });
     }
-    expect(received).toEqual([]);
+    // Before the known payments are read.
+    expect(received).toEqual(['first-sync']);
     connection.listPayments.mockResolvedValueOnce([payment('first-sync')]);
     await connectWallet(loadSdk);
     await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalledTimes(2));

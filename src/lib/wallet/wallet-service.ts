@@ -390,13 +390,6 @@ async function dropConnection(): Promise<void> {
   if (knownPaymentIds !== null && knownPaymentsRead && connectionMnemonic !== null) {
     droppedKnown = { mnemonic: connectionMnemonic, ids: knownPaymentIds };
   }
-  if (connectionMnemonic !== null) {
-    // Reported before its known payments were read, and no later connection reports them: a till
-    // waiting for one still hears it.
-    for (const payment of heldPayments) {
-      tellReceived(connectionMnemonic, payment);
-    }
-  }
   connection = null;
   connectionMnemonic = null;
   knownPaymentsRead = false;
@@ -501,7 +494,7 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
  * read counts as none known and drops the payments held meanwhile for the
  * {@link onIncomingPayment} listeners: the SDK announces only payments that
  * change, so nothing old is announced then. The {@link onPaymentReceived}
- * listeners still hear each of them once, as nothing else reports them.
+ * listeners heard each of them when it was reported.
  * After a reconnect of the same phrase, a listed payment the dropped
  * connection did not know (it completed in between) is told to the
  * {@link onPaymentReceived} listeners, once.
@@ -550,18 +543,12 @@ async function rememberKnownPayments(
     }
     for (const payment of held) {
       if (known.has(payment.id)) {
-        // Reported live while the list was read, so new to this tab although the list holds it:
-        // the onPaymentReceived listeners (a till waiting for it) still hear it.
-        tellReceived(mnemonic, payment);
+        // The list holds it: not announced as new. The onPaymentReceived listeners heard it when it
+        // was reported.
         continue;
       }
       void announcePayment(known, mnemonic, payment);
     }
-    return;
-  }
-  // Without the list, a payment reported meanwhile may be new: a till waiting for it hears it.
-  for (const payment of held) {
-    tellReceived(mnemonic, payment);
   }
 }
 
@@ -627,6 +614,9 @@ function onWalletEvent(event: WalletSdkEvent, mnemonic: string): void {
   }
   if (knownPaymentIds === null) {
     heldPayments.push(payment);
+    // A till waiting for it hears it now, not only once the known payments are read; it takes no
+    // payment made before its charge, so one the wallet already held does no harm.
+    tellReceived(mnemonic, payment);
     return;
   }
   void announcePayment(knownPaymentIds, mnemonic, payment);
@@ -650,8 +640,8 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
 /**
  * Subscribes to the same received payments as {@link onIncomingPayment}, but
  * tells the listener the moment the SDK reports the payment complete, before
- * the balance is read again, and also a payment the SDK reported while the
- * known payments were read even when that list already holds it, and one
+ * the balance is read again, also while the known payments of the connection
+ * are still read (even when that list holds it or cannot be read), and one
  * that completed while the wallet reconnected (the dropped connection had
  * read its known payments and the new one lists it). For a screen
  * that must react to the money arriving without waiting for that read.

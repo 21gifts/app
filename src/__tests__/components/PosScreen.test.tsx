@@ -3609,6 +3609,31 @@ describe('PosScreen', () => {
       expect(reads).toBeGreaterThan(0);
     });
 
+    it('counts a payment made before the end when a lost cancel is read back as run out', async () => {
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            throw new Error('offline');
+          }
+          reads += 1;
+          return jsonResponse(
+            reads === 1
+              ? { charge: OPEN, history: [OPEN] }
+              : // The read after the lost cancel: the charge ran out meanwhile, not cancelled.
+                { charge: null, history: [{ ...OPEN, status: 'expired' }] },
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      // Paid while the cancel is on its way.
+      receive(21);
+      expect(await confirmation()).toBeTruthy();
+      expect(reads).toBeGreaterThan(1);
+    });
+
     it('settles a late-minute payment by the read a failing cancel overtook', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let reads = 0;

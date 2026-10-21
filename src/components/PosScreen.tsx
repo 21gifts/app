@@ -1086,15 +1086,14 @@ function usePosTillState(): PosTillState {
         await cancelPosCharge(session);
       } catch {
         // The answer may be lost although the api cancelled: read once, and make the charge
-        // payable again only while it is still open (or when that read fails too).
+        // payable again only while that read shows it not cancelled (still open, or run out, when a
+        // payment made before its end still counts), or when that read fails too.
         let stillOpen = true;
         try {
           const seq = startRead(reads);
           const next = await fetchPosState(session);
-          stillOpen =
-            next.charge !== null &&
-            next.charge.status === 'pending' &&
-            next.charge.id === cancelled?.id;
+          const row = tillCharges(next).find((candidate) => candidate.id === cancelled?.id);
+          stillOpen = row !== undefined && (row.status === 'pending' || row.status === 'expired');
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
               setTill({ state: next, session });
