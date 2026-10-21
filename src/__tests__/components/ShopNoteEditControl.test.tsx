@@ -656,7 +656,7 @@ describe('ShopNoteEditControl', () => {
     );
   });
 
-  it('keeps a text save error through a place edit, then clears it when the text changes', async () => {
+  it('clears a text save error when the shop name changes', async () => {
     signIn('founder');
     stubShopMaps();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -685,6 +685,44 @@ describe('ShopNoteEditControl', () => {
       expect(screen.getByRole('dialog', { name: 'Shop place and address' })).toBeTruthy();
     });
     fillShopAddressFields("Kiki's Cafe");
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(
+      screen.queryAllByText(
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
+      ),
+    ).toHaveLength(0);
+  });
+
+  it('keeps a text save error when a place edit keeps the shop name', async () => {
+    signIn('founder');
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(
+      new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('3 / 5 · Text')).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
+      ).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Shop place and address' })).toBeTruthy();
+    });
+    fillShopAddressFields();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(

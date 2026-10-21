@@ -557,10 +557,17 @@ export function ShopNoteEditControl({
               onClearPhoto={clearPendingPhotos}
               place={place}
               onPlaceChange={(next) => {
+                // The shop text must be longer than the name, so a new name may fix a text rejection.
+                /* v8 ignore next -- the shop wizard offers no Remove place, so next is never null */
+                const nameChanged = (next?.label ?? '') !== (place?.label ?? '');
                 setPlace(next);
                 setSaveError(false);
                 setSaveProblem((current) =>
-                  current !== null && shopProblemField(current) === 'place' ? null : current,
+                  current !== null &&
+                  (shopProblemField(current) === 'place' ||
+                    (current === 'shopDescription' && nameChanged))
+                    ? null
+                    : current,
                 );
               }}
               username={username}

@@ -2853,9 +2853,14 @@ export function ForumLoader({
         draft={draft}
         placeDraft={placeDraft}
         onPlaceDraftChange={(next) => {
+          // The shop text must be longer than the name, so a new name may fix a text rejection.
+          const nameChanged = (next?.label ?? '') !== (placeDraft?.label ?? '');
           setPlaceDraft(next);
           setFormError((current) =>
-            current !== null && isShopApiProblem(current) && shopProblemField(current) === 'place'
+            current !== null &&
+            isShopApiProblem(current) &&
+            (shopProblemField(current) === 'place' ||
+              (current === 'shopDescription' && nameChanged))
               ? null
               : current,
           );
