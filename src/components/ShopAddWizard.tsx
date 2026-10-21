@@ -360,8 +360,9 @@ export function ShopAddWizard({
           ? t('shops.problemUsernameMissing')
           : undefined;
   const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
+  // While a send is in flight (for example the fee sheet), the parent may clear the draft.
   const summaryProblem =
-    step !== 5
+    step !== 5 || posting
       ? null
       : !placeComplete
         ? mapsUnavailable

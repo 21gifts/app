@@ -331,6 +331,35 @@ describe('ShopAddWizard', () => {
     });
   });
 
+  it('shows no summary problem while a send clears the draft', () => {
+    function PayingHost(): ReactElement {
+      const [paying, setPaying] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setPaying(true)}>
+            Open fee sheet
+          </button>
+          <ShopAddWizard
+            {...props({
+              draft: paying ? '' : SHOP_DESCRIPTION,
+              place: COMPLETE_PLACE,
+              posting: paying,
+            })}
+          />
+        </>
+      );
+    }
+
+    renderWizard(<PayingHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open fee sheet' }));
+    expect(screen.queryByText(/more characters/)).toBeNull();
+  });
+
   it('does not move focus to a field after a normal step change', () => {
     function SameStepProblem(): ReactElement {
       const [serverProblem, setServerProblem] = useState<ShopApiProblem | null>(null);
