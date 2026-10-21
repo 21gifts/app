@@ -12131,7 +12131,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await page.getByText('Goal note at one hundred ten percent').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-110');
   });
@@ -12215,6 +12216,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await page.getByText('The goal is defined in dollars.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-fiat');
@@ -16804,7 +16806,8 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-110');
   });
 
@@ -16836,6 +16839,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-fiat');
@@ -16874,6 +16878,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText("₿21'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$21.00', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-credit');
   });
@@ -18896,6 +18901,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-open');
@@ -18942,6 +18948,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Robin wrote a reaction').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-open');
   });
@@ -18988,6 +18995,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 shop' }).click();
     await expect(page.getByText('Robin wrote a shop note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a shop note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-shops-open');
@@ -19035,6 +19043,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 credit' }).click();
     await expect(page.getByText('Robin wrote a credit note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a credit note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-credits-open');
@@ -19329,6 +19338,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 posts' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-truncated');
   });
@@ -19375,6 +19385,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 reactions' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-truncated');
   });
@@ -19422,6 +19433,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 shops' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a shop note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-shops-truncated');
   });
@@ -19469,6 +19481,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 credits' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a credit note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-credits-truncated');
   });
@@ -19621,6 +19634,7 @@ test.describe('onboarding screens', () => {
     await fulfillAuthorList(page, 'posts', 'Robin wrote a note');
     await openAuthorFeed(page, 'posts');
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByRole('button', { name: 'External', exact: true }).click();
     await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
     await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
@@ -23555,7 +23569,8 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
-
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText('$23.10')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-110');
   });
 
@@ -23590,6 +23605,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-fiat');
@@ -23628,6 +23644,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('₱200.00')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByText('0%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-goal-php');
@@ -24817,6 +24834,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
+    await expect(page.getByText('$1.00')).toBeVisible();
     await page.getByText("₿1'000").scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-ask-open');
   });
