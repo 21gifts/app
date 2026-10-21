@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useWallet, type WalletViewStatus } from '@/hooks/useWallet';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
@@ -637,6 +638,7 @@ export function useWalletSend(): UseWalletSendResult {
   const ready = status === 'ready' && canUnlockWallet(account) && !needsWalletSetup(account);
   const wallet = useWallet();
   const setup = useWalletSetup();
+  const { fiat } = useFiatPreference();
   const walletStatus = useRef<WalletViewStatus>(wallet.status);
   /**
    * Counts every time the wallet store leaves `ready`, also between two
@@ -1216,13 +1218,25 @@ export function useWalletSend(): UseWalletSendResult {
             readWithWallet(null, 'pos');
           },
           flow: 'pos',
-          chargeFigure: committedFiatFigure(charge),
+          chargeFigure: committedFiatFigure(charge, fiat),
         });
       })
       .catch(() => {
         failRun(run, 'unreadable');
       });
-  }, [pin, inert, busy, state.step, text, session, prepare, askAmount, failRun, holdForWallet]);
+  }, [
+    pin,
+    inert,
+    busy,
+    state.step,
+    text,
+    session,
+    prepare,
+    askAmount,
+    failRun,
+    holdForWallet,
+    fiat,
+  ]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {

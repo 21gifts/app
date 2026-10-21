@@ -40,6 +40,31 @@ function middle(value: string): string {
   return value.length <= 20 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`;
 }
 
+function fractionDigits(value: string): number {
+  return value.length - value.indexOf('.') - 1;
+}
+
+/** Whole units of a dotted `value` at `scale` fraction digits. */
+function scaledDecimal(value: string, scale: number): bigint {
+  const dot = value.indexOf('.');
+  const digits = `${value.slice(0, dot)}${value.slice(dot + 1).padEnd(scale, '0')}`.replace(
+    /^0+(?=\d)/,
+    '',
+  );
+  return BigInt(digits);
+}
+
+/**
+ * Sum of two dot-decimal strings. The stored charge figure stays exact and
+ * the fee's spot is added beside it. This never prices the sat sum.
+ */
+function addDecimalStrings(left: string, right: string): string {
+  const scale = Math.max(fractionDigits(left), fractionDigits(right), 1);
+  const sum = scaledDecimal(left, scale) + scaledDecimal(right, scale);
+  const text = sum.toString().padStart(scale + 1, '0');
+  return `${text.slice(0, -scale)}.${text.slice(-scale)}`;
+}
+
 /** One label/value line of a summary list. */
 function Row(props: { label: string; children: ReactNode }): ReactElement {
   return (
@@ -137,20 +162,57 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
   const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
   /**
-   * Bitcoin plus one fiat figure. A shop charge amount stays bitcoin until its
-   * receipt returns, then shows the stored figure or the spot. A fee of ₿0
-   * stays the fee-free label.
+   * Bitcoin plus one fiat figure. A shop charge amount, and its total, stay
+   * bitcoin until the receipt returns. The charge amount then shows the stored
+   * figure. The total keeps that figure and adds the spot of the fee sats
+   * only. A fee of ₿0 stays the fee-free label.
    */
   const amount = (sats: number): ReactElement => {
-    if (payment.info.purpose === 'shop' && shop.pending && sats === payment.amountSats) {
+    const shopPayment = payment.info.purpose === 'shop';
+    const chargeSats = payment.amountSats;
+    const sumSats = payment.amountSats + payment.feesSats;
+    const isCharge = sats === chargeSats;
+    const isSum = payment.feesSats > 0 && sats === sumSats;
+    if (shopPayment && shop.pending && (isCharge || isSum)) {
       return <>{formatBitcoin(sats, numberFormat)}</>;
     }
-    if (shopFigure !== null && sats === payment.amountSats) {
+    if (shopFigure !== null && isCharge) {
       return (
         <>
           {formatBitcoin(sats, numberFormat)}
           <span aria-hidden="true"> · </span>
           <span>{formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat)}</span>
+        </>
+      );
+    }
+    if (shopFigure !== null && isSum) {
+      const feeSpot = satsToFiatAmount(payment.feesSats, rateDay, fiat);
+      const chargeFiat = formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat);
+      if (shopFigure.code === fiat && feeSpot !== null) {
+        return (
+          <>
+            {formatBitcoin(sumSats, numberFormat)}
+            <span aria-hidden="true"> · </span>
+            <span>
+              {formatFiatDisplay(addDecimalStrings(shopFigure.amount, feeSpot), fiat, numberFormat)}
+            </span>
+          </>
+        );
+      }
+      const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
+      return (
+        <>
+          <span>{chargeFiat}</span>
+          <span aria-hidden="true"> · </span>
+          <span>{formatBitcoin(chargeSats, numberFormat)}</span>
+          <span aria-hidden="true"> + </span>
+          <span>{formatBitcoin(payment.feesSats, numberFormat)}</span>
+          {feeFiat === null ? null : (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{feeFiat}</span>
+            </>
+          )}
         </>
       );
     }

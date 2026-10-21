@@ -163,7 +163,7 @@ function ChargeFiat(props: {
 }): ReactElement | null {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const figure = props.stored === null ? null : committedFiatFigure(props.stored);
+  const figure = props.stored === null ? null : committedFiatFigure(props.stored, fiat);
   const amount =
     figure !== null ? figure.amount : satsToFiatAmount(props.amountSats, props.rateDay, fiat);
   const code = figure !== null ? figure.code : fiat;

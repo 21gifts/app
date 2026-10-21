@@ -405,14 +405,15 @@ function CreditPlanLines({
     // the term, so the bitcoin split of those sats exists.
     return `${defined} · ${formatBitcoin(Number(satSplit![part]), numberFormat)}`;
   };
-  const plan =
-    split.remainder === 0n
-      ? t('forum.creditPlanEven', { amount: format(split.perDay, 'perDay'), days: split.days })
-      : t('forum.creditPlanLast', {
-          amount: format(split.perDay, 'perDay'),
-          earlier: split.days - 1,
-          last: format(split.last, 'last'),
-        });
+  // A fiat amount can divide evenly while the bitcoin split of the same goal does not.
+  const uneven = split.remainder !== 0n || (satSplit !== null && satSplit.remainder !== 0n);
+  const plan = uneven
+    ? t('forum.creditPlanLast', {
+        amount: format(split.perDay, 'perDay'),
+        earlier: split.days - 1,
+        last: format(split.last, 'last'),
+      })
+    : t('forum.creditPlanEven', { amount: format(split.perDay, 'perDay'), days: split.days });
   return (
     <div className="text-xs text-app-muted">
       <p>{t('forum.creditDaily', { plan })}</p>

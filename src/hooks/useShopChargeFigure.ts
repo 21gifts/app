@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
 import { fetchShopChargeReceipt } from '@/lib/pos';
 
@@ -36,8 +37,9 @@ function lightningLocalPart(address: string | undefined): string | null {
 
 /**
  * Receipt figure of a shop payment. Bitcoin (`figure` null) until the receipt
- * returns, and after a 404 or a network error. Does not read the spot rate.
- * A payment that is not a shop charge does not fetch.
+ * returns, and after a 404 or a network error. A typed pair wins. Otherwise
+ * the stored snapshot for the visitor's currency is the figure. Does not read
+ * the spot rate. A payment that is not a shop charge does not fetch.
  *
  * @param info - Payment method details, or `null` when there is no payment.
  * @returns Whether the receipt is still out, and the stored figure once it is known.
@@ -50,6 +52,7 @@ export function useShopChargeFigure(
       ? info.chargeId
       : null;
   const username = chargeId === null || info === null ? null : lightningLocalPart(info.lnAddress);
+  const { fiat } = useFiatPreference();
   const [pending, setPending] = useState(chargeId !== null);
   const [figure, setFigure] = useState<ShopChargeFigureState['figure']>(null);
 
@@ -66,13 +69,13 @@ export function useShopChargeFigure(
       if (!alive) {
         return;
       }
-      setFigure(receipt === null ? null : committedFiatFigure(receipt));
+      setFigure(receipt === null ? null : committedFiatFigure(receipt, fiat));
       setPending(false);
     });
     return () => {
       alive = false;
     };
-  }, [chargeId, username]);
+  }, [chargeId, username, fiat]);
 
   return { pending, figure };
 }

@@ -80,7 +80,7 @@ export function PosHistory({ history, openChargeId }: PosHistoryProps): ReactEle
             } else {
               label = status === 'expired' ? t('pos.expired') : t('pos.cancelled');
             }
-            const figure = committedFiatFigure(row);
+            const figure = committedFiatFigure(row, fiat);
             return (
               <li
                 key={row.id}

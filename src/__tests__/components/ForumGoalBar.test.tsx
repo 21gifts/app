@@ -281,6 +281,22 @@ describe('ForumGoalBar', () => {
       />,
     );
     expect(screen.getByText(/\$12\.00 · ₿12'000 per day for 1 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={10_001}
+        goalRepayable
+        goalTermDays={4}
+        goalCurrency="USD"
+        goalAmount="10.00"
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        /\$2\.50 · ₿2'500 per day for 3 days, then \$2\.50 · ₿2'501 on the last day/,
+      ),
+    ).toBeTruthy();
     expect(screen.queryByText(/\$12 per day/)).toBeNull();
     rerender(
       <ForumGoalBar

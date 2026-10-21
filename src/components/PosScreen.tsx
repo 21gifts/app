@@ -243,8 +243,8 @@ function usePosTillState(): PosTillState {
   const charge = shown !== null && shown.status === 'pending' ? shown : null;
   const paid = shown !== null && shown.status === 'paid' ? shown : null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : committedFiatFigure(charge);
-  const paidFiat = paid === null ? null : committedFiatFigure(paid);
+  const chargeFiat = charge === null ? null : committedFiatFigure(charge, fiat);
+  const paidFiat = paid === null ? null : committedFiatFigure(paid, fiat);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
     account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;

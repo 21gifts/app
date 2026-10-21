@@ -192,6 +192,76 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('₱12.00')).toBeNull();
   });
 
+  it('keeps a shop total on the stored figure plus the fee spot', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'USD', amount: '12.00' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · $12.00");
+    expect(row('Fee').textContent).toBe("₿1'000 · $1.00");
+    expect(row('Total').textContent).toBe("₿11'000 · $13.00");
+    expect(screen.queryByText('$11.00')).toBeNull();
+    expect(screen.getByText("−₿10'000")).toBeTruthy();
+    expect(screen.queryByText('$10.00')).toBeNull();
+  });
+
+  it('shows a shop total in another currency beside its own bitcoin plus the fee', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'PHP', amount: '12.00' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · ₱12.00");
+    expect(row('Fee').textContent).toBe("₿1'000 · $1.00");
+    expect(row('Total').textContent).toBe("₱12.00 · ₿10'000 + ₿1'000 · $1.00");
+    expect(screen.queryByText('$11.00')).toBeNull();
+    expect(screen.queryByText('$13.00')).toBeNull();
+  });
+
+  it('keeps a shop total in bitcoin while the receipt is still loading', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({ pending: true, figure: null });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000");
+    expect(row('Fee').textContent).toBe("₿1'000 · $1.00");
+    expect(row('Total').textContent).toBe("₿11'000");
+    expect(screen.getByText("−₿10'000")).toBeTruthy();
+    expect(screen.queryByText('$10.00')).toBeNull();
+    expect(screen.queryByText('$12.00')).toBeNull();
+  });
+
+  it('keeps a shop total on the stored figure when the fee spot is not loaded', () => {
+    vi.mocked(useSpotRateState).mockReturnValue({ rateDay: null, loading: false });
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'USD', amount: '12.00' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · $12.00");
+    expect(row('Fee').textContent).toBe("₿1'000");
+    expect(row('Total').textContent).toBe("$12.00 · ₿10'000 + ₿1'000");
+  });
+
   it('shows a received zap as a gift on the post: signed bitcoin amount and the message, without a key or note id', () => {
     showPayment(fixture(ZAP));
     expect(screen.getByText('Gift on your post')).toBeTruthy();

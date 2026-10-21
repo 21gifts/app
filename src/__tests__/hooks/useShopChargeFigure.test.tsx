@@ -1,6 +1,19 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook as renderHookBase, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
+import type { FiatCode } from '@/lib/committed-fiat';
+
+let viewerFiat: FiatCode = 'USD';
+
+function wrapper({ children }: { children: ReactNode }): ReactNode {
+  return <FiatPreferenceProvider initial={viewerFiat}>{children}</FiatPreferenceProvider>;
+}
+
+function renderHook<T>(callback: () => T): ReturnType<typeof renderHookBase<T>> {
+  return renderHookBase(callback, { wrapper });
+}
 
 const RECEIPT = {
   id: 'chg_abc',
@@ -22,6 +35,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 afterEach(() => {
+  viewerFiat = 'USD';
   vi.unstubAllGlobals();
 });
 
@@ -133,6 +147,56 @@ describe('useShopChargeFigure', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'missing' }, 404)));
     const { result } = renderHook(() =>
       useShopChargeFigure({ purpose: 'shop', chargeId: 'gone', lnAddress: 'shop@21.gifts' }),
+    );
+    await waitFor(() => {
+      expect(result.current.pending).toBe(false);
+    });
+    expect(result.current.figure).toBeNull();
+  });
+
+  it('uses the visitor snapshot when the receipt has no typed pair', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        json({
+          ...RECEIPT,
+          amountCurrency: null,
+          amount: null,
+          amountUsd: '5.00',
+        }),
+      ),
+    );
+    const { result } = renderHook(() =>
+      useShopChargeFigure({
+        purpose: 'shop',
+        chargeId: 'chg_abc',
+        lnAddress: 'shop@21.gifts',
+      }),
+    );
+    await waitFor(() => {
+      expect(result.current.figure).toEqual({ code: 'USD', amount: '5.00' });
+    });
+  });
+
+  it('does not use a snapshot stored for another currency', async () => {
+    viewerFiat = 'CHF';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        json({
+          ...RECEIPT,
+          amountCurrency: null,
+          amount: null,
+          amountUsd: '5.00',
+        }),
+      ),
+    );
+    const { result } = renderHook(() =>
+      useShopChargeFigure({
+        purpose: 'shop',
+        chargeId: 'chg_abc',
+        lnAddress: 'shop@21.gifts',
+      }),
     );
     await waitFor(() => {
       expect(result.current.pending).toBe(false);
