@@ -8,9 +8,9 @@
  * judged here (`check-screenshots.mjs` covers which ones must exist).
  *
  * The base is `SCREENSHOT_BASE` when set; in a GitHub pull request run it is
- * the tip of `GITHUB_BASE_REF`, fetched here, as the checkout is the merge of
- * the PR into that tip; locally it is the merge base of `HEAD` with
- * `origin/staging`. Without a base the check is skipped, except in a pull
+ * the base commit the checked-out merge was built on (its first parent,
+ * fetched here), so a later push to the base branch changes nothing; locally
+ * it is the merge base of `HEAD` with `origin/staging`. Without a base the check is skipped, except in a pull
  * request run, where a missing base fails.
  */
 import { execFileSync } from 'node:child_process';
@@ -50,14 +50,17 @@ function baseRevision(root) {
   const prBase = process.env.GITHUB_BASE_REF;
   if (prBase !== undefined && prBase !== '') {
     try {
-      git(root, [
-        'fetch',
-        '--no-tags',
-        '--depth=1',
-        'origin',
-        `+refs/heads/${prBase}:refs/remotes/origin/${prBase}`,
-      ]);
-      return { rev: `origin/${prBase}`, required: true };
+      // The checkout is the merge of the PR into the base: its first parent is that base commit.
+      // A shallow checkout still lists the parents, it only lacks their objects.
+      const parents = git(root, ['cat-file', '-p', 'HEAD'])
+        .split('\n')
+        .filter((line) => line.startsWith('parent '))
+        .map((line) => line.slice('parent '.length));
+      if (parents.length !== 2) {
+        return { rev: null, required: true };
+      }
+      git(root, ['fetch', '--no-tags', '--depth=1', 'origin', parents[0]]);
+      return { rev: parents[0], required: true };
     } catch {
       return { rev: null, required: true };
     }

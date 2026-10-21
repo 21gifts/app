@@ -861,8 +861,8 @@ uses (`maxDiffPixelRatio: 0`, as in `shotScreen`). When the base version
 still passes, the pixels moved only by rendering noise, and the check fails
 and names the file to restore (`git checkout <base> -- <file>`). A baseline
 for a new screen or variant is not compared. In a pull request run the base
-is the tip of the PR's base branch; locally it is the merge base with
-`origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
+is the base commit the CI merge was built on; locally it is the merge base
+with `origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
 `npm run e2e:update-snapshots`, which rewrites only shots that no longer
 match, never with `--update-snapshots=all` and never by copying every CI
 `-actual.png`.
