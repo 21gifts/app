@@ -245,7 +245,7 @@ app/
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Place pin on the forum composer; shop place-and-address dialog
 │   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
-│   │   ├── PlacePinChip.tsx      # Confirmed composer place with remove control
+│   │   ├── PlacePinChip.tsx     # Confirmed composer place with remove control
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
