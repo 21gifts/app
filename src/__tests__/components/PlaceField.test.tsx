@@ -150,6 +150,25 @@ describe('PlaceField', () => {
     });
   });
 
+  it('reports availability only after a loaded map has been checked', async () => {
+    const listeners = stubMaps();
+    const onAvailabilityChange = vi.fn();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onAvailabilityChange={onAvailabilityChange}
+      />,
+    );
+    expect(onAvailabilityChange).not.toHaveBeenCalledWith(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    expect(onAvailabilityChange).toHaveBeenLastCalledWith(false);
+  });
+
   it('says the map is unavailable when the key is blank or not a string', async () => {
     const fetchMock = vi
       .fn()

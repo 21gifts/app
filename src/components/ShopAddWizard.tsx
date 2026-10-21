@@ -153,11 +153,15 @@ export function ShopAddWizard({
   const session = useAuthStore((state) => state.session);
   const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const idPrefix = useId();
   const photoFeedbackId = `${idPrefix}-photo-feedback`;
+  const photoAddButtonId = `${idPrefix}-photo-add`;
   const descriptionHintId = `${idPrefix}-description-feedback`;
   const accountUsernameId = `${idPrefix}-account-username`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
+  const currentStepRef = useRef(step);
+  currentStepRef.current = step;
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
   // Skip the mount run. useState already opened on the right step, and
@@ -165,6 +169,7 @@ export function ShopAddWizard({
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
   const initialUsername = useRef(username);
   const lastAutoOpenedPlaceProblem = useRef<ShopApiProblem | null>(null);
+  const rejectionFocusStep = useRef<1 | 3 | 4 | null>(null);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
     'idle' | 'checking' | 'found' | 'missing' | 'unknown' | 'failed'
@@ -187,14 +192,13 @@ export function ShopAddWizard({
     if (serverProblem === null) return;
     const field = shopProblemField(serverProblem);
     if (field === 'place') {
+      rejectionFocusStep.current = null;
       setStep(2);
       return;
     }
-    if (field === 'text') {
-      setStep(3);
-      return;
-    }
-    setStep(4);
+    const target = field === 'text' ? 3 : 4;
+    rejectionFocusStep.current = currentStepRef.current === target ? null : target;
+    setStep(target);
   }, [serverProblem]);
 
   const serverProblemField = serverProblem === null ? null : shopProblemField(serverProblem);
@@ -216,10 +220,25 @@ export function ShopAddWizard({
 
   useEffect(() => {
     // A photo reason from the server returns an open wizard to the photos step.
-    if (photoError !== null) {
-      setStep((current) => (current === 'closed' ? current : 1));
+    if (photoError !== null && currentStepRef.current !== 'closed') {
+      rejectionFocusStep.current = currentStepRef.current === 1 ? null : 1;
+      setStep(1);
     }
   }, [photoError]);
+
+  useEffect(() => {
+    const target = rejectionFocusStep.current;
+    if (target === null || target !== step) return;
+    rejectionFocusStep.current = null;
+    // Restore focus after a rejected submit replaced its button with the owning step.
+    const control =
+      step === 1
+        ? document.getElementById(photoAddButtonId)
+        : step === 3
+          ? descriptionRef.current
+          : document.getElementById(accountUsernameId);
+    control!.focus();
+  }, [accountUsernameId, photoAddButtonId, step]);
 
   const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
   const usernameFormatProblem = shopUsernameProblem(username);
@@ -395,6 +414,7 @@ export function ShopAddWizard({
             }}
           />
           <IconButton
+            id={photoAddButtonId}
             type="button"
             size="lg"
             variant="secondary"
@@ -542,6 +562,7 @@ export function ShopAddWizard({
       {step === 3 ? (
         <div className="flex flex-col gap-2">
           <MentionTextarea
+            textareaRef={descriptionRef}
             ariaLabel={t('shops.textLabel')}
             value={draft}
             onChange={onDraftChange}

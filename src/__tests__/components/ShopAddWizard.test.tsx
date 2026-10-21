@@ -47,8 +47,37 @@ afterEach(() => {
   cleanup();
   searchPeople.mockReset();
   vi.unstubAllGlobals();
+  delete (window as { google?: unknown }).google;
+  delete (window as { gm_authFailure?: unknown }).gm_authFailure;
   useAuthStore.setState({ session: null, account: null });
 });
+
+function jsonResponse(body: unknown): Response {
+  return { json: () => Promise.resolve(body) } as Response;
+}
+
+function stubMaps(): Map<string, (event?: unknown) => void> {
+  const listeners = new Map<string, (event?: unknown) => void>();
+  const map = {
+    setCenter: vi.fn(),
+    addListener: (event: string, handler: (event?: unknown) => void) => {
+      listeners.set(event, handler);
+    },
+  };
+  (window as { google?: unknown }).google = {
+    maps: {
+      Map: vi.fn(() => map),
+      Marker: vi.fn(() => ({
+        setPosition: () => undefined,
+        getPosition: () => ({ lat: () => 47.3769, lng: () => 8.5417 }),
+        addListener: () => undefined,
+      })),
+      event: { trigger: vi.fn() },
+    },
+  };
+  vi.stubGlobal('navigator', { geolocation: undefined });
+  return listeners;
+}
 
 const photo: ForumPhotoPayload = {
   contentType: 'image/jpeg',
@@ -213,6 +242,136 @@ describe('ShopAddWizard', () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
+  it('focuses the shop text after an edit save is rejected for its text', async () => {
+    function RejectedEdit(): ReactElement {
+      const [serverProblem, setServerProblem] = useState<ShopApiProblem | null>(null);
+      return (
+        <ShopAddWizard
+          {...props({
+            mode: 'edit',
+            submitLabel: 'Save changes',
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            serverProblem,
+            onSubmit: () => setServerProblem('shopDescription'),
+          })}
+        />
+      );
+    }
+
+    renderWizard(<RejectedEdit />);
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    const submit = screen.getByRole('button', { name: 'Save changes' });
+    submit.focus();
+    fireEvent.click(submit);
+    const text = await screen.findByRole('textbox', { name: 'Shop text' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(text);
+    });
+  });
+
+  it('focuses the username after a post is rejected for its account', async () => {
+    function RejectedPost(): ReactElement {
+      const [serverProblem, setServerProblem] = useState<ShopApiProblem | null>(null);
+      return (
+        <ShopAddWizard
+          {...props({
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            username: 'luna',
+            serverProblem,
+            onSubmit: () => setServerProblem('usernameMissing'),
+          })}
+        />
+      );
+    }
+
+    renderWizard(<RejectedPost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    const submit = screen.getByRole('button', { name: 'Post' });
+    submit.focus();
+    fireEvent.click(submit);
+    const username = await screen.findByLabelText('21.gifts username');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(username);
+    });
+  });
+
+  it('focuses the photo button after the API rejects submitted media', async () => {
+    function RejectedMedia(): ReactElement {
+      const [photoError, setPhotoError] = useState<'tooLarge' | null>(null);
+      return (
+        <ShopAddWizard
+          {...props({
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            photoError,
+            onSubmit: () => setPhotoError('tooLarge'),
+          })}
+        />
+      );
+    }
+
+    renderWizard(<RejectedMedia />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    const submit = screen.getByRole('button', { name: 'Post' });
+    submit.focus();
+    fireEvent.click(submit);
+    const addPhoto = await screen.findByRole('button', { name: 'Add a photo or video' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(addPhoto);
+    });
+  });
+
+  it('does not move focus to a field after a normal step change', () => {
+    function SameStepProblem(): ReactElement {
+      const [serverProblem, setServerProblem] = useState<ShopApiProblem | null>(null);
+      return (
+        <>
+          <button type="button" onClick={() => setServerProblem('shopDescription')}>
+            Report text problem
+          </button>
+          <ShopAddWizard
+            {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, serverProblem })}
+          />
+        </>
+      );
+    }
+
+    renderWizard(<SameStepProblem />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    const photoNext = screen.getByRole('button', { name: 'Next' });
+    photoNext.focus();
+    fireEvent.click(photoNext);
+    const placeNext = screen.getByRole('button', { name: 'Next' });
+    placeNext.focus();
+    fireEvent.click(placeNext);
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Shop text' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    back.focus();
+    fireEvent.click(back);
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
+    expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Add a place' }));
+    const next = screen.getByRole('button', { name: 'Next' });
+    next.focus();
+    fireEvent.click(next);
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Shop text' }));
+    const report = screen.getByRole('button', { name: 'Report text problem' });
+    report.focus();
+    fireEvent.click(report);
+    expect(document.activeElement).toBe(report);
+  });
+
   it('uses unique feedback and account ids when two editors are open', () => {
     const editor = props({
       mode: 'edit',
@@ -331,6 +490,34 @@ describe('ShopAddWizard', () => {
       screen.getByText('The map is unavailable, so a shop place cannot be added.'),
     ).toBeTruthy();
     expect(screen.queryByText("Add the shop's place and address.")).toBeNull();
+  });
+
+  it('replaces the unavailable reason after a later map load', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ key: null }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWizard(<ShopAddWizard {...props()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(
+      await screen.findByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    fetchMock.mockResolvedValue(jsonResponse({ key: 'browser-key' }));
+    const listeners = stubMaps();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(
+      screen.queryByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeNull();
+    expect(screen.getByText("Add the shop's place and address.")).toBeTruthy();
   });
 
   it('shows the map-unavailable reason when the place disappears on the summary', async () => {
