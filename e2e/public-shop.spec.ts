@@ -85,6 +85,27 @@ test('Function: ogDescriptionText — shop HTML carries the public-note descript
   expect(ogDescriptionText('x'.repeat(301), 'Cafe Luna')).toBe(`${'x'.repeat(299)}…`);
 });
 
+test('Function: generateMetadata — shop HTML carries the shop title, canonical URL and photo', async ({
+  page,
+}) => {
+  await page.goto(`/${LISTED_NPUB}`);
+  await expect(page).toHaveTitle('Cafe Luna');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Cafe Luna');
+  await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', 'Cafe Luna');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    `https://21.gifts/${LISTED_NPUB}`,
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    `https://21.gifts/${LISTED_NPUB}`,
+  );
+  // A shop the page cannot show keeps the root metadata.
+  await page.goto(`/${GONE_NPUB}`);
+  await expect(page).toHaveTitle('21.gifts — peer-to-peer Bitcoin gifts');
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+});
+
 test('Function: fetchMapsKey — a blank key keeps the shop map hidden', async ({ page }) => {
   let asked = 0;
   await page.route('**/maps/key', async (route) => {
