@@ -2489,6 +2489,21 @@
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
     "fil": "Nagbukas ang tagapamagitan ng Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
   },
+  "/shops:edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/shops:edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/shops:edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/shops:edit-save-rejected": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.",
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
@@ -2588,6 +2603,11 @@
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenrahmen ist sichtbar; Diesen Ort verwenden ist angeheftet und deaktiviert.",
     "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. El mapa está visible; Usar este lugar está fijado y desactivado.",
     "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Nakikita ang mapa; naka-pin at naka-disable ang Gamitin ang lugar na ito."
+  },
+  "/shops:staff-place-map-loading": {
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo der Kartenrahmen wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tippen Sie auf die Karte, um die Markierung zu setzen. ist sichtbar. Diesen Ort verwenden ist deaktiviert.",
+    "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el marco. El mapa no está disponible. no se muestra. Toca el mapa para colocar el marcador. está visible. Usar este lugar está deshabilitado.",
+    "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng frame ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Nakikita ang I-tap ang mapa para ilagay ang pin. Naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:expanded-received-only": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort You got it right. hat nichts gesendet. Unter dem Satz steht nur ₿100 · $0.09 erhalten. Diese 100 ist nicht die Notizsumme. Die Notizfußzeile bleibt ₿0.",
@@ -4034,6 +4054,31 @@
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
   },
+  "/welcome:shop-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/welcome:shop-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/welcome:shop-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/welcome:shop-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/welcome:shop-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/members/[accountId]:shop-edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
     "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
@@ -4044,6 +4089,31 @@
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
   },
+  "/members/[accountId]:shop-edit-saving": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-history-loading": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/members/[accountId]:shop-edit-save-error": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/members/[accountId]:shop-edit-history-error": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/members/[accountId]:shop-edit-place-map-loading": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/messages/[id]:shop-edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
     "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
@@ -4053,6 +4123,31 @@
     "de": "Die Moderation hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.",
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
+  },
+  "/messages/[id]:shop-edit-saving": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binago ng moderator sa pampublikong shop note na Cafe Luna ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-history-loading": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Shop-Eintrag bearbeiten geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en la nota pública Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa pampublikong shop note na Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/messages/[id]:shop-edit-save-error": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binago ng moderator sa pampublikong shop note na Cafe Luna ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/messages/[id]:shop-edit-history-error": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Shop-Eintrag bearbeiten geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en la nota pública Cafe Luna. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa pampublikong shop note na Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/messages/[id]:shop-edit-place-map-loading": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar en la nota pública Cafe Luna. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Lugar at address ng shop mula sa 2 sa 5 · Lugar sa pampublikong shop note na Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
   },
   "/shops:edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation die Ortsschaltfläche gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; die Kopfzeile mit Schließen und die angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
@@ -4449,6 +4544,31 @@
     "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Mapa sigue seleccionado.",
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Mapa."
   },
+  "/shops:map-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda junto a Ada · Happyland. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda junto a Ada · Happyland. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
   "/shops:map-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
@@ -4463,6 +4583,31 @@
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna zu luna-new geändert und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. Tabelle bleibt ausgewählt.",
     "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el Texto de la tienda, cambió luna a luna-new en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Tabla sigue seleccionada.",
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang Teksto ng shop, pinalitan ang luna ng luna-new sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/shops:table-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu _ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",

@@ -12943,6 +12943,13 @@ test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 
   expect((await request.get('/forum/mentions')).status()).toBe(401);
 });
 
+test('Function: proxyForumAccountByUsernameGet — GET /forum/accounts/by-username/ada without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/accounts/by-username/[username]')).status()).toBe(401);
+  expect((await request.get('/forum/accounts/by-username/ada')).status()).toBe(401);
+});
+
 test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {
   await reachWelcome(page, request);
   const box = page.getByRole('textbox', { name: 'Your message' });

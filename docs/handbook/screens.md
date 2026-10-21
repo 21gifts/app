@@ -1890,6 +1890,36 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
+### Variant: shop-edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts welcome shop edit saving](images/welcome-shop-edit-saving.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts welcome shop edit history loading](images/welcome-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts welcome shop edit save error](images/welcome-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts welcome shop edit history error](images/welcome-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts welcome shop edit place map loading](images/welcome-shop-edit-place-map-loading.png)
+
 ## Screen: /[npub]
 
 - **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
@@ -2153,6 +2183,36 @@ stays selected.
 
 ![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
 
+### Variant: map-edit-saving
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit saving](images/shops-map-edit-saving.png)
+
+### Variant: map-edit-history-loading
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history loading](images/shops-map-edit-history-loading.png)
+
+### Variant: map-edit-save-error
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit save error](images/shops-map-edit-save-error.png)
+
+### Variant: map-edit-history-error
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history error](images/shops-map-edit-history-error.png)
+
+### Variant: map-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Map** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit place map loading](images/shops-map-edit-place-map-loading.png)
+
 ### Variant: map-edit-load-failed
 
 A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did not load. The alert **Could not load this shop note** is visible. The editor is not open. **Map** stays selected. No second **Map** heading.
@@ -2369,6 +2429,36 @@ inconclusive, then the API rejected the account update. The editor returns to st
 21.gifts username.** **Table** stays selected.
 
 ![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
+
+### Variant: table-edit-saving
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit saving](images/shops-table-edit-saving.png)
+
+### Variant: table-edit-history-loading
+
+A moderator opened **Edit shop note** on **Table**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history loading](images/shops-table-edit-history-loading.png)
+
+### Variant: table-edit-save-error
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit save error](images/shops-table-edit-save-error.png)
+
+### Variant: table-edit-history-error
+
+A moderator opened **Edit shop note** on **Table**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history error](images/shops-table-edit-history-error.png)
+
+### Variant: table-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Table** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit place map loading](images/shops-table-edit-place-map-loading.png)
 
 ### Variant: add-photos
 
@@ -2825,6 +2915,24 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ![21.gifts shops edit save error](images/shops-edit-save-error.png)
 
+### Variant: edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts shops edit saving](images/shops-edit-saving.png)
+
+### Variant: edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts shops edit history loading](images/shops-edit-history-loading.png)
+
+### Variant: edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts shops edit place map loading](images/shops-edit-place-map-loading.png)
+
 ### Variant: edit-save-rejected
 
 A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
@@ -2897,6 +3005,12 @@ map frame is visible and **Use this place** is pinned and disabled because the m
 clicked yet.
 
 ![21.gifts shops staff place map](images/shops-staff-place-map.png)
+
+### Variant: staff-place-map-loading
+
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog. The map key has not returned. **Loading the map.** is where the map frame would be. **The map is not available.** is not shown. **Tap the map to set the pin.** is visible. **Use this place** is disabled.
+
+![21.gifts shops staff place map loading](images/shops-staff-place-map-loading.png)
 
 ### Variant: staff-place-confirm
 
@@ -3710,6 +3824,36 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts member shop edit saving](images/members-shop-edit-saving.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts member shop edit history loading](images/members-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts member shop edit save error](images/members-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts member shop edit history error](images/members-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts member shop edit place map loading](images/members-shop-edit-place-map-loading.png)
 
 ## Screen: /members/[accountId]/verify
 
@@ -5674,6 +5818,36 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts public message shop edit saving](images/messages-id-shop-edit-saving.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts public message shop edit history loading](images/messages-id-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts public message shop edit save error](images/messages-id-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts public message shop edit history error](images/messages-id-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts public message shop edit place map loading](images/messages-id-shop-edit-place-map-loading.png)
 
 ### Variant: sunday
 
