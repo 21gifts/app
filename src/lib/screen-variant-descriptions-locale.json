@@ -3074,6 +3074,11 @@
     "es": "El cargo de open cuando Cancelar falla. El cargo permanece con la cuenta atrás, ₿5’000, $5.00 (el importe escrito) y Cancelar. Alerta La caja no está disponible. Historial dice Todavía no hay pagos.",
     "fil": "Ang singil ng open kapag nabigo ang Kanselahin. Nananatili ang singil na may countdown, ₿5’000, $5.00 (ang na-type na halaga) at Kanselahin. Alerto Hindi available ang point of sale. Sinasabi ng Kasaysayan na Wala pang bayad."
   },
+  "/pos:cancelled-read-failed": {
+    "de": "Die Belastung von open, nachdem Abbrechen durchgegangen ist, wenn das Lesen danach fehlschlägt. Die Kasse entfernt die Belastung selbst: Countdown und Abbrechen sind weg, Betrag festlegen ist zurück, und Verlauf führt die Belastung als Abgebrochen mit ₿5’000 · $5.00. Hinweis Die Kasse ist gerade nicht erreichbar.",
+    "es": "El cargo de open después de que Cancelar se completó, cuando la lectura posterior falla. La caja quita el cargo por sí misma: la cuenta atrás y Cancelar ya no están, Fijar un importe vuelve, e Historial muestra el cargo como Cancelado con ₿5’000 · $5.00. Alerta La caja no está disponible.",
+    "fil": "Ang singil ng open pagkatapos matuloy ang Kanselahin, kapag nabigo ang pagbasa pagkatapos nito. Inaalis ng kaha ang singil mismo: wala na ang countdown at Kanselahin, bumalik ang Magtakda ng halaga, at inililista ng Kasaysayan ang singil bilang Kinansela na may ₿5’000 · $5.00. Alerto Hindi available ang point of sale."
+  },
   "/pos:open-bitcoin": {
     "de": "Angemeldete Ada mit einer ausstehenden Belastung von ₿5’000 und 5:00 Restzeit, die in Bitcoin eingetippt wurde, daher ist mit ihr kein Fiat-Betrag gespeichert. Countdown, der Sat-Betrag und Abbrechen; kein Fiat-Betrag, und keiner wird aus dem aktuellen Kurs berechnet. Verlauf zeigt Noch keine Zahlungen.",
     "es": "Ada con sesión iniciada y un cargo pendiente de ₿5’000 con 5:00 restantes que se escribió en bitcoin, así que no tiene importe en moneda guardado. La cuenta atrás, el importe en sats y Cancelar; sin importe en moneda, y ninguno se calcula con el precio actual. Historial dice Todavía no hay pagos.",

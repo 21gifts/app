@@ -2780,7 +2780,13 @@ describe('PosScreen', () => {
     });
 
     it('does not take for a lost create a charge another device made before the click', async () => {
-      const theirs = { ...OPEN, id: 'c12', createdAt: new Date().toISOString() };
+      // Paid within the last minute, so the api still returns it as the till's charge.
+      const theirs = {
+        ...PAID,
+        id: 'c12',
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      };
       let page = true;
       vi.stubGlobal(
         'fetch',
@@ -2798,6 +2804,29 @@ describe('PosScreen', () => {
       await pressAmount('21');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       expect(await screen.findByText('Point of sale is unavailable.')).toBeTruthy();
+    });
+
+    it('shows a charge another tab opened instead of creating a second one', async () => {
+      const theirs = { ...OPEN, id: 'c-theirs', createdAt: new Date().toISOString() };
+      let page = true;
+      const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return jsonResponse({ error: 'A payment is already open' }, 409);
+        }
+        // The amount page read before the other tab made its charge; the read before the create shows it.
+        const charge = page ? null : theirs;
+        page = false;
+        return jsonResponse({ charge, history: charge === null ? [] : [charge] });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+      expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('takes over no charge after a lost create when the read right before it failed', async () => {
@@ -2847,6 +2876,96 @@ describe('PosScreen', () => {
         await vi.advanceTimersByTimeAsync(30_000);
       });
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('gives a payment in the late minute to a newer charge another tab made of the same amount', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const paidAt = Date.now();
+      // Another tab made this charge before the payment: the receiving address went to it.
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        createdAt: new Date(Math.floor(paidAt / 1_000) * 1_000).toISOString(),
+        expiresAt: new Date(paidAt + 300_000).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (reads === 2) {
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          return jsonResponse({
+            charge: newer,
+            history: [newer, { ...ended, status: 'expired' }],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, paidAt);
+      expect(await confirmation()).toBeTruthy();
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      // The payment is the newer charge's: it is paid, and the charge before stays expired.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+
+    it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {
+      const first = { ...OPEN, createdAt: new Date().toISOString() };
+      const later = {
+        ...OPEN,
+        id: 'c-later',
+        createdAt: new Date(Date.now() + 5_000).toISOString(),
+        expiresAt: new Date(Date.now() + 300_000).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: first, history: [first] });
+          }
+          if (reads === 2) {
+            return jsonResponse({ charge: later, history: [later, first] });
+          }
+          return jsonResponse({
+            charge: null,
+            history: [{ ...later, status: 'cancelled' }, first],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(await confirmation()).toBeTruthy();
+      // Another tab opens a newer charge: the confirmation gives way to it.
+      showTab();
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
+      // That charge is cancelled elsewhere: the old confirmation does not come back.
+      showTab();
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('Done closes the confirmation, reads the till once, and offers a new amount', async () => {

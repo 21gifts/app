@@ -126,6 +126,8 @@ type WalletSettled = {
   session: string | null;
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
+  /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
+  paidBy: Map<string, Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
   early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
@@ -149,6 +151,7 @@ function settledFor(session: string | null): WalletSettled {
       session,
       open: null,
       paid: new Map(),
+      paidBy: new Map(),
       closed: new Set(),
       early: [],
     };
@@ -207,7 +210,45 @@ function settleOpen(
   }
   memory.open = null;
   memory.paid.set(open.id, { ...open, status: 'paid', paidAt: new Date().toISOString() });
+  memory.paidBy.set(open.id, payment);
   settledChanged();
+}
+
+/**
+ * A payment the wallet gave to a charge in its late minute belongs to a newer
+ * charge the till did not know yet (another tab made it, and the receiving
+ * address went to it) when `state` shows one that {@link pays} it too: move
+ * the payment there, or drop it from the older charge when the api already
+ * shows the newer one finished.
+ */
+function reassignPaid(memory: WalletSettled, state: PosState): void {
+  let moved = false;
+  for (const [id, payment] of [...memory.paidBy]) {
+    const older = memory.paid.get(id);
+    /* v8 ignore next 3 -- paid and paidBy are set together */
+    if (older === undefined) {
+      continue;
+    }
+    const newer = tillCharges(state).find(
+      (row) =>
+        row.id !== id &&
+        Date.parse(row.createdAt) > Date.parse(older.createdAt) &&
+        pays(row, payment),
+    );
+    if (newer === undefined) {
+      continue;
+    }
+    memory.paid.delete(id);
+    memory.paidBy.delete(id);
+    if (newer.status === 'pending' && !memory.paid.has(newer.id)) {
+      memory.paid.set(newer.id, { ...newer, status: 'paid', paidAt: new Date().toISOString() });
+      memory.paidBy.set(newer.id, payment);
+    }
+    moved = true;
+  }
+  if (moved) {
+    settledChanged();
+  }
 }
 
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
@@ -465,6 +506,8 @@ function usePosTillState(): PosTillState {
     latest !== null && !closed.has(latest.id) && newerCharge(charge, latest) === latest
       ? latest
       : null;
+  const hiddenPaidId =
+    latest !== null && paid === null && !closed.has(latest.id) ? latest.id : null;
   const history =
     state === null
       ? []
@@ -497,6 +540,10 @@ function usePosTillState(): PosTillState {
       return;
     }
     const memory = settledFor(session);
+    /* v8 ignore next -- a till this session read always has an answer */
+    if (state !== null) {
+      reassignPaid(memory, state);
+    }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it.
       armOpen(memory, charge);
@@ -518,6 +565,13 @@ function usePosTillState(): PosTillState {
       listenToWallet();
     }
   }, [session]);
+
+  useEffect(() => {
+    // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
+    if (hiddenPaidId !== null) {
+      settledFor(session).closed.add(hiddenPaidId);
+    }
+  }, [hiddenPaidId, session]);
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
@@ -639,8 +693,21 @@ function usePosTillState(): PosTillState {
       // again on its own): a lost create never takes one of them for its own. When that read
       // fails, which charges existed is unknown, so a lost create takes over none.
       let known: Set<string> | null;
+      const seqBefore = startRead(reads);
       try {
-        known = new Set(tillCharges(await fetchPosState(session)).map((row) => row.id));
+        const fresh = await fetchPosState(session);
+        if (fresh.charge !== null && fresh.charge.status === 'pending') {
+          // Another tab opened a charge meanwhile: the api would refuse this create, and that
+          // charge is the till's open charge, so the till shows it (and arms it) and creates none.
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seqBefore, () => {
+              setTill({ state: fresh, session });
+            });
+            setAmount('');
+          });
+          return;
+        }
+        known = new Set(tillCharges(fresh).map((row) => row.id));
       } catch {
         known = null;
       }

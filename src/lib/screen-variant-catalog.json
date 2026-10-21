@@ -3294,6 +3294,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:cancelled-read-failed",
+    "label": "/pos cancelled-read-failed",
+    "visual": "state-pos-cancelled-read-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:open-bitcoin",
     "label": "/pos open-bitcoin",
     "visual": "state-pos-open-bitcoin",

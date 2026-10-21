@@ -5044,6 +5044,12 @@ The charge of **open** when **Cancel** fails. The charge stays with the countdow
 
 ![21.gifts point of sale open cancel failed](images/pos-open-cancel-failed.png)
 
+### Variant: cancelled-read-failed
+
+The charge of **open** after **Cancel** went through, when the read after it fails. The till drops the charge itself: the countdown and **Cancel** are gone, **Set an amount** is back, and **History** lists the charge as **Cancelled** with ₿5’000 · **$5.00**. Alert **Point of sale is unavailable.**
+
+![21.gifts point of sale cancelled read failed](images/pos-cancelled-read-failed.png)
+
 ### Variant: open-bitcoin
 
 Signed-in Ada with a pending charge of ₿5’000 and 5:00 left that was typed in bitcoin, so the api stored no currency figure with it. Countdown, the sat amount and **Cancel**; no currency figure, and none is priced from the current spot. **History** says **No payments yet.**

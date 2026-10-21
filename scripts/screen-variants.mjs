@@ -3918,6 +3918,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'cancelled-read-failed',
+    image: 'pos-cancelled-read-failed.png',
+    visual: 'state-pos-cancelled-read-failed',
+    needle: "shotScreen(page, 'state-pos-cancelled-read-failed')",
+  },
+  {
+    route: '/pos',
     id: 'open-bitcoin',
     image: 'pos-open-bitcoin.png',
     visual: 'state-pos-open-bitcoin',
