@@ -933,7 +933,8 @@ function usePosTillState(): PosTillState {
     const cancelling = settledFor(session);
     // While the cancel is on its way the charge takes no payment: one reported meanwhile is kept,
     // and pays the charge only if the cancel fails.
-    const cancelled = cancelling.open;
+    // The charge on screen: the arming effect may not have armed it yet when Cancel was pressed.
+    const cancelled = charge;
     cancelling.open = null;
     const work = (async (): Promise<void> => {
       try {
