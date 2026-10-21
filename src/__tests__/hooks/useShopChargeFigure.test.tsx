@@ -1,5 +1,5 @@
 import { act, renderHook as renderHookBase, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
@@ -7,11 +7,11 @@ import type { FiatCode } from '@/lib/committed-fiat';
 
 let viewerFiat: FiatCode = 'USD';
 
-function wrapper({ children }: { children: ReactNode }): ReactNode {
+function wrapper({ children }: { children: ReactNode }): ReactElement {
   return <FiatPreferenceProvider initial={viewerFiat}>{children}</FiatPreferenceProvider>;
 }
 
-function renderHook<T>(callback: () => T): ReturnType<typeof renderHookBase<T>> {
+function renderHook<T>(callback: () => T) {
   return renderHookBase(callback, { wrapper });
 }
 
