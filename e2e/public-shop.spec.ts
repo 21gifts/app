@@ -100,6 +100,10 @@ test('Function: generateMetadata — shop HTML carries the shop title, canonical
     'content',
     `https://21.gifts/${LISTED_NPUB}`,
   );
+  // The first shop photo is the share image.
+  const photo = /\/messages\/11111111-1111-4111-8111-111111111111\/photo\.jpg$/;
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', photo);
+  await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', photo);
   // A shop the page cannot show keeps the root metadata.
   await page.goto(`/${GONE_NPUB}`);
   await expect(page).toHaveTitle('21.gifts — peer-to-peer Bitcoin gifts');
