@@ -2760,10 +2760,12 @@ describe('onIncomingPayment', () => {
           };
         }),
     );
+    // The listed payment first, as it subscribed after the list was read.
+    expect(now).toEqual(['old']);
     emit({ type: 'paymentSucceeded', payment: payment('old') });
     emit({ type: 'paymentSucceeded', payment: payment('new') });
     emit({ type: 'paymentSucceeded', payment: payment('new') });
-    expect(now).toEqual(['new']);
+    expect(now).toEqual(['old', 'new']);
     expect(later).toEqual([]);
     answer();
     await vi.waitFor(() => expect(later).toEqual(['new']));
@@ -2771,7 +2773,7 @@ describe('onIncomingPayment', () => {
     unsubscribeLater();
     emit({ type: 'paymentSucceeded', payment: payment('after') });
     await settle();
-    expect(now).toEqual(['new']);
+    expect(now).toEqual(['old', 'new']);
   });
 
   it('lets only a Playwright build announce a received payment for e2e', () => {
@@ -2946,7 +2948,7 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
-  it('tells onPaymentReceived, once and oldest first, the payments that completed while the wallet reconnected', async () => {
+  it('tells onPaymentReceived each listed payment once, oldest first, also those that completed while the wallet reconnected', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();
     connection.listPayments.mockResolvedValueOnce([payment('old')]);
@@ -2969,13 +2971,13 @@ describe('onIncomingPayment', () => {
       payment('old'),
     ]);
     await connectWallet(loadSdk);
-    await vi.waitFor(() => expect(received).toEqual(['missed', 'newer']));
+    await vi.waitFor(() => expect(received).toEqual(['old', 'missed', 'newer']));
     expect(incoming).toEqual([]);
     unsubscribe();
     unsubscribeIncoming();
   });
 
-  it('tells onPaymentReceived nothing old after a sign-out or for another phrase, and compares across a failed read', async () => {
+  it('starts onPaymentReceived over after a sign-out and hears only the wallet signed in now', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();
     const received: string[] = [];
@@ -2991,25 +2993,32 @@ describe('onIncomingPayment', () => {
       await Promise.resolve();
     };
     await opened(async () => [payment('a')]);
-    // Signed out in between: a fresh start.
+    // A failed list tells nothing; the next one tells only what is new to this phrase.
+    await opened(async () => {
+      throw new Error('list failed');
+    });
+    await opened(async () => [payment('b'), payment('a')]);
+    expect(received).toEqual(['a', 'b']);
+    // A listener that subscribes now hears them first.
+    const late: string[] = [];
+    const unsubscribeLate = onPaymentReceived((p) => {
+      late.push(p.id);
+    });
+    expect(late).toEqual(['a', 'b']);
+    unsubscribeLate();
+    // Another wallet signed in: a new listener hears none of the first one's payments.
+    rememberSessionPhrase(`${MNEMONIC} other`);
+    const other: string[] = [];
+    const unsubscribeOther = onPaymentReceived((p) => {
+      other.push(p.id);
+    });
+    expect(other).toEqual([]);
+    unsubscribeOther();
+    // Signed out and in again: it starts over.
     await disconnectWallet();
     rememberSessionPhrase(MNEMONIC);
-    await opened(async () => [payment('b'), payment('a')]);
-    expect(received).toEqual([]);
-    // This connection's read fails: the next one still compares with the last list that was read.
-    await opened(async () => {
-      throw new Error('list failed');
-    });
-    // Its own failed list gives the connection after it nothing new to compare with either.
-    await opened(async () => {
-      throw new Error('list failed');
-    });
-    await opened(async () => [payment('c'), payment('b'), payment('a')]);
-    await vi.waitFor(() => expect(received).toEqual(['c']));
-    // Another wallet: its payments are not the dropped one's.
-    rememberSessionPhrase(`${MNEMONIC} other`);
-    await opened(async () => [payment('d'), payment('c')]);
-    expect(received).toEqual(['c']);
+    await opened(async () => [payment('a')]);
+    expect(received).toEqual(['a', 'b', 'a']);
     unsubscribe();
   });
 
@@ -3074,7 +3083,8 @@ describe('onIncomingPayment', () => {
     await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalledTimes(3));
     await Promise.resolve();
     await Promise.resolve();
-    expect(received).toEqual(['paid']);
+    // 'old' from the first list, as the listener subscribed after it; 'paid' once.
+    expect(received).toEqual(['old', 'paid']);
     unsubscribe();
   });
 
