@@ -54,7 +54,7 @@
 
 - **Purpose:** Drop the module-level till write so a later test does not wait on a request the previous test left hanging.
 - **Inputs:** None.
-- **Returns / side effects:** Sets the in-flight write to null, empties the set of paid charges already recorded as seen in the tab, and drops what the wallet settled (open charge, wallet-paid charges, closed confirmations). Production clears that write when the request settles.
+- **Returns / side effects:** Sets the in-flight write to null, empties the set of paid charges already recorded as seen in the tab, and drops what the wallet settled (open charge, wallet-paid charges, closed confirmations); it also calls the saved unsubscribe of the wallet listener and forgets it, so the next test subscribes afresh. Production clears that write when the request settles.
 - **Used by:** `PosScreen` tests.
 
 ## Function: fetchPosState
@@ -4368,7 +4368,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: onPaymentReceived
 
-- **Purpose:** Subscribes to every received, completed payment of the signed-in wallet, each payment id once per phrase: the moment the SDK reports it, right after its id is added to the known ids and before the balance is read again (`refreshWallet`), also while the known payments of the connection are still read (even when that list holds it or cannot be read); and each payment a connection lists when it opens, oldest first, so one that completed while no connection was open (before the first, or while the wallet reconnected after a failure) is heard too. A listener that subscribes later first hears the payments told so far for the wallet signed in now. Unlike `onIncomingPayment`, which announces only payments that complete while the wallet is open and only after the balance read, old payments are included: the listener judges which one it waits for (the till takes none made before its charge). A sign-out starts it over. For a screen that must react to the money arriving without waiting for the balance read. A payment announced when the connection ended meanwhile was still told here.
+- **Purpose:** Subscribes to every received, completed payment of the signed-in wallet, each payment id once per phrase: the moment the SDK reports it — once the known payments of the connection were read, right after its id is added to the known ids and before the balance is read again (`refreshWallet`); while that list is still being read, at once without adding it to the known ids (even when that list then holds it or cannot be read), the told payments keeping it to once; and each payment a connection lists when it opens, oldest first, so one that completed while no connection was open (before the first, or while the wallet reconnected after a failure) is heard too. A listener that subscribes later first hears the payments told so far for the wallet signed in now. Unlike `onIncomingPayment`, which announces only payments that complete while the wallet is open and only after the balance read, old payments are included: the listener judges which one it waits for (the till takes none made before its charge). A sign-out starts it over. For a screen that must react to the money arriving without waiting for the balance read. A payment announced when the connection ended meanwhile was still told here.
 - **Inputs:** `listener(payment: WalletPayment)`.
 - **Returns / side effects:** Unsubscribe function. No network of its own.
 - **Used by:** the point-of-sale screens (`PosTill`, `PosAmount`), which subscribe once per tab when a signed-in till page first opens and stay subscribed.
@@ -4389,7 +4389,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: disconnectWallet
 
-- **Purpose:** Closes the connection and resets the store (`locked`, or `disabled` without a key). Runs when the tab phrase is cleared, which includes logout. Ends the automatic retries after a failed open: their timer and their `online` and `visibilitychange` listeners are removed, a retry still running is superseded and its late connection closed, and the next failed open is reported again. Disconnecting leaves the SDK's wallet data, including balance and payment history, in this browser's IndexedDB. It is not encrypted at rest and is removed only with the site's browser data.
+- **Purpose:** Closes the connection and resets the store (`locked`, or `disabled` without a key). Runs when the tab phrase is cleared, which includes logout. Ends the automatic retries after a failed open: their timer and their `online` and `visibilitychange` listeners are removed, a retry still running is superseded and its late connection closed, and the next failed open is reported again. It also forgets the payments told to the `onPaymentReceived` listeners (which a later listener would hear first), so the next sign-in starts over. Disconnecting leaves the SDK's wallet data, including balance and payment history, in this browser's IndexedDB. It is not encrypted at rest and is removed only with the site's browser data.
 - **Inputs:** None.
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** `listenForWalletPhrase` when the phrase is cleared.

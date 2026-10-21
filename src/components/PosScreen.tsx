@@ -480,8 +480,9 @@ const POS_CREATE_REFUSALS = new Set([
 
 /**
  * Drop a till write, the paid charges recorded as seen, and what the wallet
- * settled, left behind by a test. Production clears the write when the
- * request settles.
+ * settled, left behind by a test, and stop listening to the wallet so the
+ * next test listens afresh. Production clears the write when the request
+ * settles.
  */
 export function resetPosTillWriteForTests(): void {
   tillWrite = null;
