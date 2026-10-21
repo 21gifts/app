@@ -312,6 +312,27 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
+  it('keeps the map-unavailable reason after Back and Next', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: null }) } as Response),
+    );
+    renderWizard(<ShopAddWizard {...props()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(
+      await screen.findByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(
+      screen.getByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
+    expect(screen.queryByText("Add the shop's place and address.")).toBeNull();
+  });
+
   it('shows the map-unavailable reason when the place disappears on the summary', async () => {
     vi.stubGlobal(
       'fetch',

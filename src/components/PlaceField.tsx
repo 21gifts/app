@@ -235,7 +235,16 @@ export function PlaceField(props: {
     setReportedProblem(problem);
   }, [props.autoOpenProblem, props.problem, resetDraft, shopDetails]);
 
+  // A fresh mount starts as available before anything was checked; report only
+  // checked results so a parent does not forget an unavailable map.
+  const availabilityReported = useRef(false);
+  const onAvailabilityChangeRef = useRef(props.onAvailabilityChange);
+  onAvailabilityChangeRef.current = props.onAvailabilityChange;
   useEffect(() => {
+    if (!unavailable && !availabilityReported.current) {
+      return;
+    }
+    availabilityReported.current = true;
     props.onAvailabilityChange?.(unavailable);
   }, [props.onAvailabilityChange, unavailable]);
 
@@ -272,6 +281,7 @@ export function PlaceField(props: {
           if (!cancelled && !authFailedRef.current) {
             setUnavailable(false);
             setScriptReady(true);
+            onAvailabilityChangeRef.current?.(false);
           }
         };
         googleWindow.gm_authFailure = rejectKey;

@@ -489,9 +489,11 @@ show that reason there; never replace a known reason with generic **Could not
 save** copy. Client rules live in shared API-mirroring helpers such as
 `src/lib/forum-shop.ts`, with unit tests that pin the same limits.
 
-Not yet migrated, and moved to this rule in follow-up pull requests: the
-username in `UsernameForm` and `LoginCard`, which is still checked only after
-submit, and the other profile and account forms.
+So far the shop forms (and shop notes typed in the living-room composer)
+follow this rule. Not yet migrated, and moved to it in follow-up pull requests:
+the profile and account forms (including the username in `UsernameForm` and
+`LoginCard`), the living-room place name, replies, the pay sheet, contact,
+inbox, POS, pay link, daily payments, and habits.
 
 Forms must not hide fields with errors inside a small inner scroll area. A form
 that needs more room uses a dialog or sheet and still follows **One scroll
