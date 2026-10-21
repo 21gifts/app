@@ -180,6 +180,8 @@ type WalletSettled = {
    * new charge or to this one.
    */
   creatingAfter: PosCharge | null;
+  /** Ids of every charge a read of this session listed. */
+  seen: Set<string>;
 };
 
 /**
@@ -210,6 +212,7 @@ function settledFor(session: string | null): WalletSettled {
       early: [],
       recheck: false,
       creatingAfter: null,
+      seen: new Set(),
     };
   }
   return walletSettled;
@@ -519,9 +522,13 @@ function listenToWallet(): void {
               chargeId,
             };
       settleOpen(memory, till);
-      if (chargeId === undefined && memory.early.includes(till)) {
-        // It pays no charge this till knows: one read shows whether another tab or device opened
-        // the charge it pays. Only for a payment the wallet just reported, not a kept one tried again.
+      if (
+        memory.early.includes(till) &&
+        (chargeId === undefined || !memory.seen.has(chargeId))
+      ) {
+        // It pays no charge this till knows, or names one no read listed: one read shows whether
+        // another tab or device opened the charge it pays. Only for a payment the wallet just
+        // reported, not a kept one tried again.
         memory.recheck = true;
         settledChanged();
       }
@@ -785,6 +792,9 @@ function usePosTillState(): PosTillState {
     const memory = settledFor(session);
     /* v8 ignore next -- a till this session read always has an answer */
     if (state !== null) {
+      for (const row of tillCharges(state)) {
+        memory.seen.add(row.id);
+      }
       reassignPaid(memory, state);
       if (
         memory.late.length > 0 &&
@@ -1258,8 +1268,9 @@ function usePosTillState(): PosTillState {
  * Cancel, once after a create or cancel whose answer was lost, once after a
  * create the api refuses because a payment is already open, once when a
  * payment pays the open charge only in its late minute, once after a
- * payment that names no charge pays the open charge or no charge it knows
- * (whether another device's charge takes it), and when the
+ * payment that names no charge pays the open charge or no charge it knows,
+ * or names a charge no read listed (whether another device's charge takes
+ * it), and when the
  * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw

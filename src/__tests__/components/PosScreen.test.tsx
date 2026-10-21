@@ -3776,6 +3776,31 @@ describe('PosScreen', () => {
       expect(reads).toBe(2);
     });
 
+    it('reads once after a Spark payment that names a charge no read listed, and confirms it', async () => {
+      const theirs = { ...OPEN, id: 'c-theirs', amountSats: 42 };
+      let opened = false;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          // Another tab opened this charge after this till read.
+          return jsonResponse(
+            opened ? { charge: theirs, history: [theirs] } : { charge: null, history: [] },
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => undefined);
+      const before = reads;
+      opened = true;
+      receive(42, 0, Date.now(), theirs.id);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
+      expect(reads).toBe(before + 1);
+    });
+
     it('confirms a run-out charge a Spark payment names when no charge is open', async () => {
       const ended = {
         ...OPEN,
