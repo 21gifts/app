@@ -678,9 +678,10 @@ function usePosTillState(): PosTillState {
       ? []
       : state.history.map((row) => (row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row)));
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  // Only the figure stored with the charge, never one priced from a rate (docs/fiat-amounts.md).
-  const chargeFigure = charge === null ? null : committedFiatFigure(charge);
-  const paidFigure = paid === null ? null : committedFiatFigure(paid);
+  // Only a figure stored with the charge (typed, else its stored snapshot in the viewer's
+  // currency), never one priced from a rate (docs/fiat-amounts.md).
+  const chargeFigure = charge === null ? null : committedFiatFigure(charge, fiat);
+  const paidFigure = paid === null ? null : committedFiatFigure(paid, fiat);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
     account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;

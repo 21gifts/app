@@ -114,6 +114,21 @@ describe('PosHistory', () => {
     expect(screen.getAllByText('Paid ✓')).toHaveLength(2);
   });
 
+  it('shows the visitor snapshot when the charge has no typed pair', () => {
+    renderWithLocale(
+      <PosHistory
+        history={[row({ id: 's', amountSats: 21_000, amountUsd: '5.00' })]}
+        openChargeId={null}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    const item = screen.getByRole('listitem');
+    expect(within(item).getByText("₿21'000")).toBeTruthy();
+    expect(within(item).getByText('$5.00')).toBeTruthy();
+  });
+
   it('shows bitcoin and no fiat when the charge stored none', () => {
     renderWithLocale(<PosHistory history={[row({ id: 'a' })]} openChargeId={null} />);
     const item = screen.getByRole('listitem');
