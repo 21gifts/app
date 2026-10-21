@@ -1845,6 +1845,32 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('keeps a new payment heard before the charge is read over old payments listed after it', async () => {
+      let answer: (response: Response) => void = () => undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(
+          () =>
+            new Promise<Response>((resolve) => {
+              answer = resolve;
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      receive(21);
+      // A connection lists 20 older payments afterwards.
+      for (let i = 0; i < 20; i += 1) {
+        receive(5, 0, Date.now() - 3_600_000 - i * 1_000);
+      }
+      await act(async () => {
+        answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
     it('reads once, and not again, after a payment that pays no charge it knows', async () => {
       const fetchMock = vi
         .fn()

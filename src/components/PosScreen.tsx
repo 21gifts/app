@@ -166,7 +166,7 @@ type WalletSettled = {
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
   paidBy: Map<string, TillPayment>;
   closed: Set<string>;
-  /** Payments no known open charge took (a till still reading the next one), newest last. */
+  /** Payments no known open charge took (a till still reading the next one), by payment time. */
   early: Array<TillPayment>;
   /**
    * A payment that names no charge paid the open charge on its amount and time
@@ -182,7 +182,11 @@ type WalletSettled = {
   creatingAfter: PosCharge | null;
 };
 
-/** How many payments no known open charge took are kept for the next one. */
+/**
+ * How many payments no known open charge took are kept for the next one: the
+ * newest by the wallet's payment time, so old payments a connection lists
+ * never push out a new one.
+ */
 const POS_EARLY_PAYMENTS = 20;
 
 /** The wallet states when a payment was made in whole seconds: payment and creation are compared in these. */
@@ -264,7 +268,7 @@ function settleOpen(memory: WalletSettled, payment: TillPayment): void {
   }
   if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
-    memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
+    keepEarly(memory, payment);
     if (payment.chargeId !== undefined) {
       // It may name a charge the till already read (`settleNamed`).
       settledChanged();
@@ -336,7 +340,7 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
       markPaid(memory, charge, payment);
       continue;
     }
-    memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
+    keepEarly(memory, payment);
   }
   settledChanged();
 }
@@ -411,6 +415,13 @@ function settleNamed(memory: WalletSettled, state: PosState): void {
     markPaid(memory, named, payment);
   }
   memory.early = kept;
+}
+
+/** Keeps `payment` for the next open charge, among the newest by payment time. */
+function keepEarly(memory: WalletSettled, payment: TillPayment): void {
+  memory.early = [...memory.early, payment]
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-POS_EARLY_PAYMENTS);
 }
 
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
@@ -749,6 +760,8 @@ function usePosTillState(): PosTillState {
     if (charge === null) {
       return;
     }
+    // The clock stood still while no charge was open: the countdown starts from now.
+    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);
