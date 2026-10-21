@@ -3601,12 +3601,12 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(reads).toBe(2);
       });
-      // Two payments after the newer charge was made: the first goes to it, the second to the one before.
-      receive(21, 0, createdNewer + 1_000);
+      // One payment in the late minute before the newer charge was made, one after: each its own.
+      receive(21, 0, createdNewer - 1_000);
       await waitFor(() => {
         expect(answerLateRead).toBeDefined();
       });
-      receive(21, 0, createdNewer + 2_000);
+      receive(21, 0, createdNewer + 1_000);
       await act(async () => {
         answerLateRead?.(jsonResponse({ charge: newer, history: [newer, ended] }));
         await Promise.resolve();
