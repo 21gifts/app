@@ -564,6 +564,10 @@ function usePosTillState(): PosTillState {
     const seq = startRead(reads);
     fetchPosState(session)
       .then((next) => {
+        // Another session signed in meanwhile: this answer is not its till.
+        if (useAuthStore.getState().session !== session) {
+          return;
+        }
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
             setTill({ state: next, session });
@@ -575,8 +579,9 @@ function usePosTillState(): PosTillState {
         });
       })
       .catch(() => {
-        // A newer read already answered, so this failure says nothing about the till now.
-        if (seq < reads.current.applied) {
+        // A newer read already answered, or another session signed in: this failure says nothing
+        // about the till now.
+        if (seq < reads.current.applied || useAuthStore.getState().session !== session) {
           return;
         }
         whenCurrent(generation, mine, () => {
@@ -666,7 +671,11 @@ function usePosTillState(): PosTillState {
             // (the api's clock may lag) and after the one before. Any other charge the read finds is
             // set as the till's answer, and the error shows.
             const found = next.charge;
-            newer = found !== null && (before === null || found.id !== before.id);
+            newer =
+              found !== null &&
+              (before === null ||
+                (found.id !== before.id &&
+                  Date.parse(found.createdAt) > Date.parse(before.createdAt)));
             const made =
               found !== null &&
               known !== null &&

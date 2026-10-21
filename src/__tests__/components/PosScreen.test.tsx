@@ -2253,6 +2253,103 @@ describe('PosScreen', () => {
       expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
     });
 
+    it('gives the charge before its payment when the read after a lost create shows an older charge', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      // Paid within the last minute but created before the charge before: not a newer charge.
+      const older = {
+        ...PAID,
+        id: 'c-old',
+        createdAt: new Date(Date.now() - 300_000).toISOString(),
+        paidAt: new Date(Date.now() - 30_000).toISOString(),
+      };
+      let reads = 0;
+      let failPost: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended, older] });
+          }
+          if (reads <= 3) {
+            return jsonResponse({ charge: null, history: [ended, older] });
+          }
+          if (reads === 4) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: older, history: [ended, older] });
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      // The payment of the charge before, in its late minute, reported while the create is on its way.
+      receive(21);
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'Bad gateway' }, 502));
+        await Promise.resolve();
+      });
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      // The charge before took its own payment: both charges are paid, none expired.
+      const history = screen.getByRole('region', { name: 'History' });
+      await waitFor(() => {
+        expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(2);
+      });
+      expect(within(history).queryByText('Expired')).toBeNull();
+    });
+
+    it('keeps the error of a new session when the expiry read of the session before answers late', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let answerExpiry: ((value: Response) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (reads === 2) {
+            return new Promise<Response>((resolve) => {
+              answerExpiry = resolve;
+            });
+          }
+          throw new TypeError('Failed to fetch');
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(answerExpiry).toBeDefined();
+      });
+      act(() => {
+        useAuthStore.setState({ session: 'other', account: ACCOUNT });
+      });
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      await act(async () => {
+        answerExpiry?.(jsonResponse({ charge: null, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+
     it('falls back to the charge before when the read after a lost create answer fails', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let reads = 0;
