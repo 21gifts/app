@@ -170,7 +170,8 @@ type WalletSettled = {
   early: Array<TillPayment>;
   /**
    * A payment that names no charge paid the open charge on its amount and time
-   * alone: one read checks whether another device's newer charge took it.
+   * alone, or paid no charge this till knows: one read checks whether another
+   * device's newer charge takes it.
    */
   recheck: boolean;
   /**
@@ -486,8 +487,8 @@ function listenToWallet(): void {
     const session = useAuthStore.getState().session;
     if (session !== null) {
       const { chargeId } = payment.info;
-      settleOpen(
-        settledFor(session),
+      const memory = settledFor(session);
+      const till: TillPayment =
         chargeId === undefined
           ? {
               amountSats: payment.amountSats,
@@ -499,8 +500,14 @@ function listenToWallet(): void {
               feesSats: payment.feesSats,
               timestamp: payment.timestamp,
               chargeId,
-            },
-      );
+            };
+      settleOpen(memory, till);
+      if (chargeId === undefined && memory.early.includes(till)) {
+        // It pays no charge this till knows: one read shows whether another tab or device opened
+        // the charge it pays. Only for a payment the wallet just reported, not a kept one tried again.
+        memory.recheck = true;
+        settledChanged();
+      }
     }
   });
 }
@@ -1232,8 +1239,8 @@ function usePosTillState(): PosTillState {
  * Cancel, once after a create or cancel whose answer was lost, once after a
  * create the api refuses because a payment is already open, once when a
  * payment pays the open charge only in its late minute, once after a
- * payment that names no charge pays the open charge (whether another
- * device's newer charge of that amount took it), and when the
+ * payment that names no charge pays the open charge or no charge it knows
+ * (whether another device's charge takes it), and when the
  * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw

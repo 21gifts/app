@@ -1845,6 +1845,24 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('reads once, and not again, after a payment that pays no charge it knows', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(99);
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+      // The read armed the open charge again and tried the kept payment: no further read.
+      await act(async () => undefined);
+      await act(async () => undefined);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
     it('counts a payment for the next charge heard while the last one is still known', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let next: typeof OPEN | null = null;
@@ -1861,9 +1879,8 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       // A new charge of ₿42 was created elsewhere and paid before this till read it.
       next = { ...OPEN, id: 'c2', amountSats: 42, createdAt: new Date().toISOString() };
+      // It pays no charge this till knows: one read, triggered by the payment, finds that charge.
       receive(42);
-      expect(screen.queryByRole('alertdialog')).toBeNull();
-      showTab();
       const dialog = await confirmation();
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
