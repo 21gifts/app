@@ -1776,7 +1776,11 @@ export function ForumLoader({
           if (!result.ok) {
             revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
             setVideoDraft(null);
-            setFormError(result.error);
+            // Rejected photos that are still attached keep their reason and the block.
+            const photosStay = photoDraftsRef.current.length > 0;
+            setFormError((current) =>
+              current === 'formatOrSize' && photosStay ? current : result.error,
+            );
             return;
           }
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
@@ -1822,12 +1826,10 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(
-          (current) =>
-            nextError ??
-            (isShopComposerError(current) || (current === 'formatOrSize' && !replacedVideo)
-              ? current
-              : null),
+        setFormError((current) =>
+          current === 'formatOrSize' && !replacedVideo
+            ? current
+            : (nextError ?? (isShopComposerError(current) ? current : null)),
         );
       } catch {
         if (generation === pickGeneration.current) {

@@ -1779,7 +1779,7 @@ shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts welcome shop edit photos format or size](images/welcome-shop-edit-photos-format-or-size.png)
 
@@ -1976,7 +1976,7 @@ the picker shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** on **Map** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts shops map edit photos format or size](images/shops-map-edit-photos-format-or-size.png)
 
@@ -2189,7 +2189,7 @@ the picker shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** on **Table** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts shops table edit photos format or size](images/shops-table-edit-photos-format-or-size.png)
 
@@ -2340,7 +2340,7 @@ remain and the picker shows **You can add up to 10 photos**.
 
 A complete shop with a photo was submitted, but the post API rejected the media format or size.
 **Add a shop** returned to step **1 / 5 · Photos** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts shops add photos format or size](images/shops-add-photos-format-or-size.png)
 
@@ -2658,7 +2658,7 @@ shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts shops edit photos format or size](images/shops-edit-photos-format-or-size.png)
 
@@ -3540,7 +3540,7 @@ shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts member shop edit photos format or size](images/members-shop-edit-photos-format-or-size.png)
 
@@ -5502,7 +5502,7 @@ shows **You can add up to 10 photos**.
 
 The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
 size. The editor returned to step **1 / 5 · Photos** and shows
-**Use a JPEG, PNG, or WebP photo under 1 MB.** **Remove or replace the rejected file to continue.** follows, and **Next** stays disabled.
+**Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.** **Next** stays disabled.
 
 ![21.gifts public message shop edit photos format or size](images/messages-id-shop-edit-photos-format-or-size.png)
 

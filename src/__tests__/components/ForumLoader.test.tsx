@@ -1519,6 +1519,25 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('alert').textContent).toContain(hint);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+
+    // A failed photo pick or a failed video pick does not lift the block either.
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    });
+    expect(screen.getByRole('alert').textContent).toContain(hint);
+    const video = new File(['v'], 'clip.mp4', { type: 'video/mp4' });
+    isVideoMock.mockImplementation((candidate: File) => candidate.type.startsWith('video/'));
+    prepareVideoMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    fireEvent.change(input, { target: { files: [video] } });
+    await waitFor(() => {
+      expect(prepareVideoMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain(hint);
+    });
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
   it('feed="shops" clears a rejected video once a photo replaces it', async () => {

@@ -626,6 +626,15 @@ describe('ShopNoteEditControl', () => {
       'Remove or replace the rejected file to continue.',
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    pick();
+    await waitFor(() => {
+      expect(vi.mocked(prepareForumPhoto)).toHaveBeenCalledTimes(3);
+    });
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Remove or replace the rejected file to continue.',
+    );
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
   it('shows the generic save copy when save rejects a non-Error value', async () => {

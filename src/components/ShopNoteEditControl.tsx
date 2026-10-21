@@ -407,7 +407,7 @@ export function ShopNoteEditControl({
         setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
       }
     }
-    setPhotoError((current) => nextError ?? (current === 'formatOrSize' ? current : null));
+    setPhotoError((current) => (current === 'formatOrSize' ? current : nextError));
   }
 
   async function save(): Promise<void> {
