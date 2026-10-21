@@ -4,11 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
-    inputs:
-      place_pending_snapshots:
-        description: Record the composer place-pending Linux baselines and upload them
-        type: boolean
-        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -182,50 +177,3 @@ jobs:
         run: |
           echo "Visual shards: $SHARDS_RESULT"
           test "$SHARDS_RESULT" = "success"
-
-  # Only when a dispatch asks for the composer place-pending baselines.
-  # Pull requests do not run this job. The ten-minute cap stays.
-  place-pending-snapshots:
-    name: Place-pending baselines (${{ matrix.project }})
-    if: github.event_name == 'workflow_dispatch' && inputs.place_pending_snapshots
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
-    container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
-      options: --ipc=host
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Record place-pending baselines (${{ matrix.project }})
-        run: npx playwright test e2e/visual.spec.ts --project=${{ matrix.project }} --update-snapshots --grep "$PLACE_PENDING_GREP"
-        env:
-          HOSTNAME: 0.0.0.0
-          PLACE_PENDING_GREP: composer-place-pending
-
-      - name: Collect changed baselines
-        if: always()
-        shell: bash
-        run: |
-          mkdir -p new-snaps
-          git -c safe.directory='*' status --porcelain -- e2e/visual.spec.ts-snapshots | while IFS= read -r line; do
-            file=${line:3}
-            mkdir -p "new-snaps/$(dirname "$file")"
-            cp "$file" "new-snaps/$file"
-          done
-          find new-snaps -type f | wc -l
-
-      - name: Upload changed baselines
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: place-pending-snapshots-${{ matrix.project }}
-          path: new-snaps/
-          if-no-files-found: warn
