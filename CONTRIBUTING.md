@@ -45,7 +45,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen or variant lacks a Playwright PNG, an unexpected PNG is present, or a variant has no shot in `e2e/visual.spec.ts`            |
+| `npm run screenshot:check`     | Fail on a missing or unexpected PNG, a variant with no shot in `e2e/visual.spec.ts`, or a baseline change the visual test does not need       |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
@@ -423,7 +423,8 @@ app/
 │   ├── build-shop-sticker-artwork.mjs # Regenerate src/lib/shop-sticker-artwork.ts (fonts → outlines)
 │   ├── sync-handbook-images.mjs # Copy visual baselines → public/handbook-images/ (prebuild/predev)
 │   ├── check-e2e.mjs            # CI gate: missing screen goto, variant needle, endpoint request, or Function: title → exit 1
-│   └── check-screenshots.mjs    # CI gate: missing or unexpected PNG, or variant with no visual.spec.ts shot → exit 1
+│   ├── check-snapshot-changes.mjs # Changed baselines the visual test would still pass in their base version
+│   └── check-screenshots.mjs    # CI gate: missing or unexpected PNG, variant with no visual.spec.ts shot, or needless baseline change → exit 1
 ├── e2e/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
@@ -851,6 +852,20 @@ A PR's snapshot diff must contain only screens whose intended appearance
 changed. Do not commit a baseline whose pixels moved only as an incidental
 side-effect of a shared-component tweak that was not meant to restyle that
 screen.
+
+A changed baseline is committed only when the visual test fails with its
+base version. `npm run screenshot:check` enforces this
+(`scripts/check-snapshot-changes.mjs`): every baseline the PR changes is
+compared with its version on the base by the comparator `toHaveScreenshot`
+uses (`maxDiffPixelRatio: 0`, as in `shotScreen`). When the base version
+still passes, the pixels moved only by rendering noise, and the check fails
+and names the file to restore (`git checkout <base> -- <file>`). A baseline
+for a new screen or variant is not compared. In a pull request run the base
+is the base commit the CI merge was built on; locally it is the merge base
+with `origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
+`npm run e2e:update-snapshots`, which rewrites only shots that no longer
+match, never with `--update-snapshots=all` and never by copying every CI
+`-actual.png`.
 
 Baselines are **Linux Chromium** (same as CI). They are skipped on macOS so
 `npm run e2e` still runs the behavioral specs. FullPage shots unstick

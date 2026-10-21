@@ -107,6 +107,8 @@ follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
 
 Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`. The root info page `/` shows no back control at all, while the other marketing pages keep the arrow. `/welcome` itself never shows the arrow, whatever the view stack holds, and the Menu's **Home** clears the in-app view stack before it opens `/welcome` client-side. See CONTRIBUTING.md “One back”.
 
+Reject the PR when it changes a committed baseline whose base version the visual test still passes (`npm run screenshot:check` names each). Only a screen whose intended appearance changed gets a new baseline. See CONTRIBUTING.md “Screenshot baselines”.
+
 Reject the PR when a screenshot pin (`?visual=…`, `e2e-now`, or other fixture switch) is read without the Playwright-build check (`getE2eNow()`, or the `e2e-now` meta tag in a pre-React script), or when a new pin has no unit test that a production build ignores it. See CONTRIBUTING.md “Screenshot baselines”.
 
 Reject the PR when a passkey without PRF output ends in a generic error instead of `wallet.prfUnsupported`, or when it adds a second wording for that case. See `docs/ui.md` “No PRF, no wallet on this device”.
