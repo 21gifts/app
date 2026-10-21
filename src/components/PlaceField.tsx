@@ -58,6 +58,17 @@ type GoogleWindow = Window & {
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
+const SHOP_NAME_PROBLEMS: readonly ShopApiProblem[] = [
+  'shopName',
+  'shopNameAddress',
+  'shopNameLong',
+  'shopNameControls',
+];
+const SHOP_PLACE_PROBLEMS: readonly ShopApiProblem[] = [
+  ...SHOP_NAME_PROBLEMS,
+  'shopAddress',
+  'placeAddress',
+];
 const DIALOG_FOCUSABLE_SELECTOR =
   'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
@@ -208,14 +219,7 @@ export function PlaceField(props: {
       !shopDetails ||
       problem === undefined ||
       problem === null ||
-      ![
-        'shopName',
-        'shopNameAddress',
-        'shopNameLong',
-        'shopNameControls',
-        'shopAddress',
-        'placeAddress',
-      ].includes(problem)
+      !SHOP_PLACE_PROBLEMS.includes(problem)
     ) {
       setReportedProblem(null);
       return;
@@ -226,11 +230,7 @@ export function PlaceField(props: {
     }
     resetDraft();
     setOpen(true);
-    const nameProblem =
-      problem === 'shopName' ||
-      problem === 'shopNameAddress' ||
-      problem === 'shopNameLong' ||
-      problem === 'shopNameControls';
+    const nameProblem = SHOP_NAME_PROBLEMS.includes(problem);
     if (nameProblem) {
       setNameTouched(true);
     }
@@ -544,8 +544,7 @@ export function PlaceField(props: {
       ? t(saveError)
       : undefined;
   const reportedNameError =
-    reportedProblem !== null &&
-    ['shopName', 'shopNameAddress', 'shopNameLong', 'shopNameControls'].includes(reportedProblem)
+    reportedProblem !== null && SHOP_NAME_PROBLEMS.includes(reportedProblem)
       ? t(SHOP_API_MESSAGE[reportedProblem])
       : undefined;
   const nameSaveError = nameCommitError ?? reportedNameError;
@@ -847,6 +846,12 @@ export function PlaceField(props: {
           onClick={() => {
             if (!open) {
               resetDraft();
+              // A server reason stays until its field changes, also when the visitor reopens.
+              const problem = props.problem ?? null;
+              if (shopDetails && problem !== null && SHOP_PLACE_PROBLEMS.includes(problem)) {
+                setNameTouched(SHOP_NAME_PROBLEMS.includes(problem));
+                setReportedProblem(problem);
+              }
             }
             setOpen((current) => !current);
           }}

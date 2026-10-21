@@ -1341,6 +1341,64 @@ describe('PlaceField', () => {
     },
   );
 
+  it.each([
+    ['placeAddress', 'The address is invalid.'],
+    ['shopNameAddress', 'The shop name must not contain the street or the postal code.'],
+  ] as const)(
+    'keeps a server reason when the visitor reopens the dialog: %s',
+    async (problem, reason) => {
+      stubMaps();
+      renderWithLocale(
+        <PlaceField
+          place={{
+            lat: 47.3769,
+            lng: 8.5417,
+            label: 'Bahnhofstrasse Bakery',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          }}
+          disabled={false}
+          onChange={() => undefined}
+          shopDetails
+          problem={problem}
+        />,
+      );
+      const dialog = await screen.findByRole('dialog');
+      fireEvent.keyDown(dialog, { key: 'Escape' });
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).toBeNull();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      await screen.findByRole('dialog');
+      expect(screen.getAllByText(new RegExp(reason.replace('.', '\\.'))).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
+        'disabled',
+        true,
+      );
+    },
+  );
+
+  it('opens without a reason when the reported problem is not about the place', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        problem="shopDescription"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByRole('dialog');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('returns focus to the place button after a dialog opened by a server problem', async () => {
     stubMaps();
     renderWithLocale(
