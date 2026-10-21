@@ -286,7 +286,8 @@ const IDLE_BOARD = {
  * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
  * is a number, copy-profile-link, optional Message, post/reply counts, optional
  * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
- * when the viewer is a moderator and the subject is someone else. About me is
+ * when the viewer is a moderator, the subject is someone else, and the card is
+ * not the public share payload (`loadPublicList` unset). About me is
  * not a forum post. When the member cannot receive yet (`lightningAddress`
  * null), the gifts block shows a "Can't receive yet" label instead of the
  * address, QR, and shop sticker.
@@ -303,10 +304,10 @@ const IDLE_BOARD = {
  *   (default false) is passed to both charts as `failed`. `loadPublicList`
  *   loads the four feeds without a session (the share link). `loadAboutPhoto`
  *   loads the About me photo on that link when the card has no profile-note id.
- *   `shareViewKey`, when set, is the route key of `/view/:viewKey`. The copy
- *   button then writes that capability URL, including when the signed-in
- *   account is the owner, and does not fall back to the owner view key or the
- *   short member link.
+ *   `shareViewKey`, when set, is the route key the copy button writes, including
+ *   when the signed-in account is the owner. `/profile` passes the owner view
+ *   key. `/view/:viewKey` passes the open key. Without it, the button writes
+ *   the short `/l/` link, including for the owner on `/members/:id`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -1141,13 +1142,10 @@ export function MemberProfileScreen({
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   const memberPath = `/members/${profile.id}`;
-  const ownerViewKey = owner?.account.viewKey;
   let profileUrl =
     shareViewKey !== undefined
       ? `${origin}/view/${shareViewKey}`
-      : ownerViewKey !== undefined
-        ? `${origin}/view/${ownerViewKey}`
-        : shortResourceUrl(origin, profile.id, memberPath);
+      : shortResourceUrl(origin, profile.id, memberPath);
   /* v8 ignore next 3 -- SSR first paint: origin is empty until the client effect */
   if (origin === '') {
     profileUrl = '';
@@ -1930,6 +1928,7 @@ export function MemberProfileScreen({
           {giftsBlock}
           {countButtons}
           {account !== null &&
+          loadPublicList === undefined &&
           roleAtLeast(account.role, 'moderator') &&
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />

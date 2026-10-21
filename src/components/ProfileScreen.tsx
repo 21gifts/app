@@ -45,7 +45,8 @@ function ownerPreview(account: Account): MemberProfile {
 /**
  * Signed-in profile. One `MemberProfileScreen`, the same card a visitor sees
  * on `/members/:id` and on the share link. Owner edits appear because the
- * account id matches. Charts use `fetchMemberActivity`, the same series a
+ * account id matches. The copy button receives this account's view key, so
+ * it writes `/view/<viewKey>`. Charts use `fetchMemberActivity`, the same series a
  * visitor loads. Preferences live on `/settings`.
  *
  * The card paints from the account immediately, so the chart is never swapped
@@ -142,7 +143,7 @@ export function ProfileScreen(): ReactElement {
   }, [session, accountId, memberAttempt]);
 
   // preview is null only when account is null. One branch covers the title-only shell.
-  if (preview === null) {
+  if (account === null) {
     return (
       <Card surface={false}>
         <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -152,7 +153,7 @@ export function ProfileScreen(): ReactElement {
     );
   }
 
-  const shown = member ?? preview;
+  const shown = member ?? (preview as MemberProfile);
 
   return (
     <>
@@ -163,6 +164,7 @@ export function ProfileScreen(): ReactElement {
         owed={owed}
         credit={credit}
         activityFailed={activityFailed}
+        shareViewKey={account.viewKey}
       />
       {memberStatus === 'error' ? (
         <div className="flex flex-col items-center gap-4">

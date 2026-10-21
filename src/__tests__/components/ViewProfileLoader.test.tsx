@@ -452,6 +452,89 @@ describe('ViewProfileLoader', () => {
     expect(fetchSignedInActivity).not.toHaveBeenCalled();
   });
 
+  it('hides staff trust actions when a moderator cannot refetch the member', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_mod',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1', role: 'basis' });
+    fetchSignedInMember.mockRejectedValue(new Error('down'));
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: 'Verify' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Propose' })).toBeNull();
+    expect(screen.queryByText('Moderator functions')).toBeNull();
+  });
+
+  it('shows Verify after a moderator refetch replaces the public card', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_mod',
+        linkingKey: null,
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1', role: 'basis' });
+    fetchSignedInMember.mockResolvedValue({
+      id: 'acc_1',
+      name: 'Ada',
+      username: 'alice',
+      location: null,
+      role: 'basis',
+      lightningAddress: 'alice@21.gifts',
+      createdAt: '1970-01-01T00:00:00.001Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+      trust: {
+        verifiedBy: null,
+        proposedBy: null,
+        confirmedBy: null,
+        appointedBy: null,
+      },
+    });
+    fetchSignedInActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Moderator functions')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByText('Moderator functions'));
+    expect(screen.getByRole('link', { name: 'Verify' })).toBeTruthy();
+  });
+
   it('uses the member series when the signed-in refetch succeeds', async () => {
     useAuthStore.setState({
       session: 'tok',

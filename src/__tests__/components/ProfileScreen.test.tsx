@@ -411,6 +411,24 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
   });
 
+  it('copies the owner view URL without showing it', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      writable: true,
+      value: { writeText },
+    });
+    renderWithLocale(<ProfileScreen />);
+    const copy = await screen.findByRole('button', { name: 'Copy link to this profile' });
+    fireEvent.click(copy);
+    const shareUrl = `${window.location.origin}/view/${VIEW_KEY}`;
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(shareUrl);
+    });
+    expect(screen.queryByText(shareUrl)).toBeNull();
+    expect(screen.queryByText(`${window.location.origin}/l/`)).toBeNull();
+  });
+
   it('passes the About me message id into the readable bio', () => {
     const account = useAuthStore.getState().account;
     useAuthStore.setState({

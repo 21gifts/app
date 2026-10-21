@@ -1559,6 +1559,24 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText(`/members/${profile.id}`)).toBeNull();
   });
 
+  it('copies the short member link for the owner when no share key is passed', async () => {
+    const ownerKey = 'c'.repeat(64);
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id, viewKey: ownerKey },
+    });
+    const writeText = stubClipboard(() => Promise.resolve());
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/22222222`);
+    });
+    expect(writeText).not.toHaveBeenCalledWith(`${window.location.origin}/view/${ownerKey}`);
+  });
+
   it('copies the share-link URL when shareViewKey is set, including for the owner', async () => {
     const shareKey = 'b'.repeat(64);
     const ownerKey = 'c'.repeat(64);

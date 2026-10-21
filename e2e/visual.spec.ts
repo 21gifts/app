@@ -20955,6 +20955,639 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-profile-about-save-error');
   });
+  async function openOwnerCard(page: Page, href: string): Promise<void> {
+    await page.goto(href);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('button', { name: 'Write your About me' })
+        .or(page.getByRole('button', { name: 'Edit About me' })),
+    ).toBeVisible();
+  }
+
+  async function openOwnerMembers(page: Page): Promise<void> {
+    await openOwnerCard(page, '/members/acc_e2e');
+  }
+
+  async function openOwnerView(page: Page): Promise<void> {
+    const viewKey = 'a'.repeat(64);
+    await page.route(new RegExp('/view-key/' + viewKey + '$'), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await openOwnerCard(page, '/view/' + viewKey);
+  }
+  test('members banner-not-wide', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await shotScreen(page, 'state-members-banner-not-wide');
+  });
+
+  test('members banner-crop-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const portrait = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(portrait).toBeDisabled();
+    await expect(portrait.locator('.animate-spin')).toHaveCount(0);
+    await shotScreen(page, 'state-members-banner-crop-saving');
+    release?.();
+  });
+
+  test('members banner-crop-save-error', async ({ page }) => {
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-members-banner-crop-save-error');
+  });
+
+  test('members banner-crop-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-members-banner-crop-too-large');
+  });
+
+  test('members picture-unsupported', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.locator('input[name="profile-photo"]').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('hello'),
+    });
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await shotScreen(page, 'state-members-picture-unsupported');
+  });
+
+  test('members picture-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-members-picture-too-large');
+  });
+
+  test('members picture-save-error', async ({ page }) => {
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-picture-save-error');
+  });
+
+  test('members picture-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    const button = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(button).toBeVisible();
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(button).toBeDisabled();
+    await expect(button.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-members-picture-saving');
+    release?.();
+  });
+
+  test('members images-editing', async ({ page }) => {
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.route(/\/banners\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
+      });
+    });
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.getByRole('button', { name: 'Edit About me' }).click();
+    const about = page.getByRole('textbox', { name: 'About me' });
+    const removePortrait = page.getByRole('button', { name: 'Remove profile photo' });
+    const removeBanner = page.getByRole('button', { name: 'Remove wide image' });
+    await expect(about).toBeVisible();
+    await expect(removePortrait).toBeVisible();
+    await expect(removeBanner).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    const addPhoto = page.getByRole('button', { name: 'Add a photo' });
+    await expect(addPhoto).toBeVisible();
+    await addPhoto.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(addPhoto).toBeInViewport();
+    await shotScreen(page, 'state-members-images-editing');
+  });
+
+  test('members about-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a photo' })).toHaveCount(1);
+    await shotScreen(page, 'state-members-about-editing');
+  });
+
+  test('members about-banner-crop', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await chooseEditorWideImage(page);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-members-about-banner-crop');
+  });
+
+  test('members about-banner-crop-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await chooseEditorWideImage(page);
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const save = page.getByRole('button', { name: 'Save About me' });
+    await expect(save).toBeEnabled();
+    await expect(save.locator('.animate-spin')).toHaveCount(0);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-members-about-banner-crop-saving');
+    release?.();
+  });
+
+  test('members about-banner-crop-save-error', async ({ page }) => {
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-members-about-banner-crop-save-error');
+  });
+
+  test('members about-banner-crop-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-members-about-banner-crop-too-large');
+  });
+
+  test('members about-save-error', async ({ page }) => {
+    await page.route('**/me/about', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('button', { name: 'Save About me' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-about-save-error');
+  });
+
+  test('view banner-not-wide', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await shotScreen(page, 'state-view-banner-not-wide');
+  });
+
+  test('view banner-crop-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const portrait = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(portrait).toBeDisabled();
+    await expect(portrait.locator('.animate-spin')).toHaveCount(0);
+    await shotScreen(page, 'state-view-banner-crop-saving');
+    release?.();
+  });
+
+  test('view banner-crop-save-error', async ({ page }) => {
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-view-banner-crop-save-error');
+  });
+
+  test('view banner-crop-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-view-banner-crop-too-large');
+  });
+
+  test('view picture-unsupported', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.locator('input[name="profile-photo"]').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('hello'),
+    });
+    await expect(page.getByText('Use a JPEG, PNG, or WebP photo')).toBeVisible();
+    await shotScreen(page, 'state-view-picture-unsupported');
+  });
+
+  test('view picture-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await shotScreen(page, 'state-view-picture-too-large');
+  });
+
+  test('view picture-save-error', async ({ page }) => {
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-view-picture-save-error');
+  });
+
+  test('view picture-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/pictures\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    const button = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(button).toBeVisible();
+    await page
+      .locator('input[name="profile-photo"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg'));
+    await expect(button).toBeDisabled();
+    await expect(button.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-view-picture-saving');
+    release?.();
+  });
+
+  test('view images-editing', async ({ page }) => {
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.route(/\/banners\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
+      });
+    });
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.getByRole('button', { name: 'Edit About me' }).click();
+    const about = page.getByRole('textbox', { name: 'About me' });
+    const removePortrait = page.getByRole('button', { name: 'Remove profile photo' });
+    const removeBanner = page.getByRole('button', { name: 'Remove wide image' });
+    await expect(about).toBeVisible();
+    await expect(removePortrait).toBeVisible();
+    await expect(removeBanner).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    const addPhoto = page.getByRole('button', { name: 'Add a photo' });
+    await expect(addPhoto).toBeVisible();
+    await addPhoto.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(addPhoto).toBeInViewport();
+    await shotScreen(page, 'state-view-images-editing');
+  });
+
+  test('view about-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a photo' })).toHaveCount(1);
+    await shotScreen(page, 'state-view-about-editing');
+  });
+
+  test('view about-banner-crop', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await chooseEditorWideImage(page);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-view-about-banner-crop');
+  });
+
+  test('view about-banner-crop-saving', async ({ page }) => {
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await chooseEditorWideImage(page);
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const save = page.getByRole('button', { name: 'Save About me' });
+    await expect(save).toBeEnabled();
+    await expect(save.locator('.animate-spin')).toHaveCount(0);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-view-about-banner-crop-saving');
+    release?.();
+  });
+
+  test('view about-banner-crop-save-error', async ({ page }) => {
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-view-about-banner-crop-save-error');
+  });
+
+  test('view about-banner-crop-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-view-about-banner-crop-too-large');
+  });
+
+  test('view about-save-error', async ({ page }) => {
+    await page.route('**/me/about', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('button', { name: 'Save About me' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-view-about-save-error');
+  });
 });
 
 test.describe('profile funding states', () => {
