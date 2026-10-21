@@ -1631,6 +1631,41 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Trims, removes one leading `@`, trims again, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
 - **Used by:** `ShopAddWizard`, `ShopAccountControl`, and the pre-payment validation in `ForumLoader`.
 
+## Function: usernameProblem
+
+- **Purpose:** Username problem for the login name and the account username, mirroring the api after trim and lowercase. A leading `@` is not removed.
+- **Inputs:** Raw username draft.
+- **Returns / side effects:** `'empty'` when blank after trim, `'format'` when longer than 32 characters, only `_`, or outside `^[a-z0-9][a-z0-9._-]{0,31}$`, otherwise `null`. No network.
+- **Used by:** `LoginCard` name view, `UsernameForm`, `usePasskeyLogin`.
+
+## Function: displayNameProblem
+
+- **Purpose:** Display-name problem in api order: trim, then empty, then length, then controls.
+- **Inputs:** Raw display name. Inner spaces stay.
+- **Returns / side effects:** `'empty'` when blank after trim, `'long'` over 80 characters, `'controls'` for a character below 32 or DEL, otherwise `null`. No network.
+- **Used by:** `NameForm`.
+
+## Function: locationProblem
+
+- **Purpose:** Location problem. Blank after trim is a valid clear, unlike the display name.
+- **Inputs:** Raw location. Inner spaces stay.
+- **Returns / side effects:** `'long'` over 80 characters, `'controls'` for a character below 32 or DEL, otherwise `null`. No network.
+- **Used by:** `LocationForm`.
+
+## Function: lightningAddressProblem
+
+- **Purpose:** Wallet of Satoshi address problem. Length is checked before the shape.
+- **Inputs:** Raw address.
+- **Returns / side effects:** `'empty'` when blank after trim, `'long'` over 255 characters, `'format'` outside `name@domain.tld`, otherwise `null`. No network.
+- **Used by:** `LightningAddressForm`.
+
+## Function: aboutMeTextProblem
+
+- **Purpose:** About me text problem, in the same order as forum text: trim, then length, then controls. Line breaks stay valid.
+- **Inputs:** Raw About me note. Inner spaces and line breaks stay.
+- **Returns / side effects:** `null` when blank after trim, `'long'` over 8000 characters, `'controls'` for a control other than LF or CR, or for DEL, otherwise `null`. No network.
+- **Used by:** `AboutMeSection`.
+
 ## Function: formatShopAddressLine
 
 - **Purpose:** One address line for a shop pin: street, house number, postal code, city, and the localized country name.
@@ -2823,7 +2858,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** PUT `/me/about` with bearer + `{ text, photo? }` and return the updated account. `photo` omitted keeps a stored image; `null` clears it; `{ contentType, data }` replaces it (same JPEG payload as a forum post).
 - **Inputs:** `sessionToken`, `text`, optional `photo` (`{ contentType, data } | null`).
-- **Returns / side effects:** Updated `Account` including `aboutMe` and `aboutMeHasPhoto`. Throws `MissingRequirementsError` on 409 `missing_requirements`; `'Could not save. Please try again.'` on other non-2xx. A 2xx body that fails `accountSchema` throws the schema error.
+- **Returns / side effects:** Updated `Account` including `aboutMe` and `aboutMeHasPhoto`. Throws `MissingRequirementsError` on 409 `missing_requirements`. A 400 body with an error string is thrown after `toUserFacingError` (the About me length sentence passes through). A 400 without an error string, a 409 that is not `missing_requirements`, or any other non-2xx throws `'Could not save. Please try again.'`. A 2xx body that fails `accountSchema` throws the schema error.
 - **Used by:** `ProfileScreen`.
 
 ## Function: fetchAboutMePhoto
@@ -2872,7 +2907,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/me/username` with the unique LUD-16 local-part.
 - **Inputs:** `sessionToken`, `username`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
-- **Returns / side effects:** Updated `Account`. Throws `'username-taken'` on 409, `'username-invalid'` on 400, `'username-request'` on other failures.
+- **Returns / side effects:** Updated `Account`. Throws `Username is already in use` when a 409 body is that sentence, otherwise `'username-taken'` on 409. Throws the format sentence when a 400 body is that sentence, `'username-invalid'` when a 400 body has no error string, and the raw api string for any other 400. Throws `'username-request'` on other failures.
 - **Used by:** `UsernameForm`.
 
 ## Function: giftsLightningAddress
@@ -2977,7 +3012,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
-- **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged; any other 400 is rewritten to a visitor-facing save error. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
+- **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged. The exact format, unresolved, and already-in-use sentences are also thrown unchanged. Any other 400 is rewritten to a visitor-facing save error, or a fallback when the body has no error string. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: translate

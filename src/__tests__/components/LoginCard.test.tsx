@@ -568,6 +568,66 @@ describe('LoginCard', () => {
     mockPasskey('name', null, 'taken');
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('alert').textContent).toBe('That username is already in use.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('shows invalid copy when nameError is invalid and leaves continue enabled', () => {
+    mockPasskey('name', null, 'invalid');
+    renderWithLocale(<LoginCard />);
+    const field = screen.getByLabelText('Name');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('shows the username rule while typing and disables continue', () => {
+    mockPasskey('name');
+    renderWithLocale(<LoginCard />);
+    const field = screen.getByLabelText('Name');
+    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    expect(field.getAttribute('aria-invalid')).not.toBe('true');
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.change(field, { target: { value: '_' } });
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(alert.id);
+    expect(button.disabled).toBe(true);
+    expect(submitNameSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the username rule on blur of an empty name', () => {
+    mockPasskey('name');
+    renderWithLocale(<LoginCard />);
+    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    fireEvent.blur(screen.getByLabelText('Name'));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    expect(button.disabled).toBe(true);
+    expect(submitNameSpy).not.toHaveBeenCalled();
+  });
+
+  it('prefers the typed rule over a taken error', () => {
+    mockPasskey('name', null, 'taken');
+    renderWithLocale(<LoginCard />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: '_' } });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('submits a non-empty name draft', () => {

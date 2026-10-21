@@ -147,7 +147,7 @@ describe('LocationForm', () => {
   });
 
   it('shows the request error when saving fails', async () => {
-    vi.mocked(setLocation).mockRejectedValue(new Error('Location must be at most 80 characters'));
+    vi.mocked(setLocation).mockRejectedValue(new Error('nope'));
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
@@ -159,6 +159,9 @@ describe('LocationForm', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not save your location');
     expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('cancels an edit and returns to the display view', () => {
@@ -302,5 +305,55 @@ describe('LocationForm', () => {
 
     expect(await screen.findByText('Bern')).toBeTruthy();
     expect(setLocation).toHaveBeenCalledWith('sess', 'Bern');
+  });
+
+  it('shows length and control rules under the field and disables save', () => {
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    const field = screen.getByPlaceholderText('City, country, or anywhere');
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.blur(field);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(save.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'a'.repeat(81) } });
+    const longAlert = screen.getByRole('alert');
+    expect(longAlert.textContent).toBe('Location must be at most 80 characters.');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(longAlert.id);
+    expect(save.disabled).toBe(true);
+    fireEvent.click(save);
+    expect(setLocation).not.toHaveBeenCalled();
+
+    fireEvent.change(field, { target: { value: 'Zug\u0001' } });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Location cannot include control characters.',
+    );
+    expect(save.disabled).toBe(true);
+  });
+
+  it('maps the api length sentence onto the field', async () => {
+    vi.mocked(setLocation).mockRejectedValue(new Error('Location must be at most 80 characters'));
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+      target: { value: 'Zug' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Location must be at most 80 characters.');
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows a clear failure under the display row', async () => {
+    useAuthStore.setState({ session: 'sess', account: locatedAccount });
+    vi.mocked(setLocation).mockRejectedValue('boom');
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear location' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not save your location');
+    expect(screen.getByText('Zug')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
   });
 });

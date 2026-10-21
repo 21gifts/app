@@ -14,19 +14,54 @@ import {
 } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasLightningAddress } from '@/lib/onboarding';
+import {
+  LIGHTNING_ADDRESS_FORMAT_MESSAGE,
+  LIGHTNING_ADDRESS_FORMAT_REWRITTEN,
+  LIGHTNING_ADDRESS_TAKEN_MESSAGE,
+  LIGHTNING_ADDRESS_TAKEN_REWRITTEN,
+  LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE,
+  LIGHTNING_ADDRESS_UNRESOLVED_REWRITTEN,
+  lightningAddressProblem,
+} from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Validation or request failure shown on the Lightning Address form. */
+/** Failure stored after a save or unlink. Empty, long, and format also come from the draft. */
 type LightningAddressError =
-  { type: 'empty' } | { type: 'request' } | { type: 'notFound' } | { type: 'notZap' };
+  | { type: 'format' }
+  | { type: 'taken' }
+  | { type: 'request' }
+  | { type: 'notFound' }
+  | { type: 'notZap' };
 
-/** Catalog key for a Lightning Address form alert. */
+/** Every address message the field can show. */
+type LightningFieldProblem =
+  'empty' | 'long' | 'format' | 'taken' | 'notFound' | 'notZap' | 'request';
+
+/**
+ * Catalog key for a Lightning Address form alert.
+ *
+ * @param kind - The problem currently shown.
+ * @returns The message key.
+ */
 function lightningAddressErrorKey(
-  error: LightningAddressError,
-): 'la.errorEmpty' | 'la.errorNotFound' | 'la.errorRequest' | 'la.errorNotZap' {
-  switch (error.type) {
+  kind: LightningFieldProblem,
+):
+  | 'la.errorEmpty'
+  | 'la.errorLength'
+  | 'la.errorFormat'
+  | 'la.errorTaken'
+  | 'la.errorNotFound'
+  | 'la.errorRequest'
+  | 'la.errorNotZap' {
+  switch (kind) {
     case 'empty':
       return 'la.errorEmpty';
+    case 'long':
+      return 'la.errorLength';
+    case 'format':
+      return 'la.errorFormat';
+    case 'taken':
+      return 'la.errorTaken';
     case 'notFound':
       return 'la.errorNotFound';
     case 'notZap':
@@ -37,16 +72,62 @@ function lightningAddressErrorKey(
 }
 
 /**
+ * Maps a save or unlink failure onto the address field.
+ *
+ * Exact api sentences and the copies produced before this form see them both count.
+ * `Invalid Lightning Address` is not a format error.
+ *
+ * @param caught - Rejection from `setLightningAddress` or `unlinkLightningAddress`.
+ * @param trimmed - Address that was submitted, used to lock a non-zap address.
+ * @returns The alert to show and the address that stays blocked, if any.
+ */
+function classifyLightningFailure(
+  caught: unknown,
+  trimmed: string,
+): { error: LightningAddressError; blocked: string | null } {
+  if (caught instanceof Error && caught.message === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
+    return { error: { type: 'notZap' }, blocked: trimmed };
+  }
+  if (!(caught instanceof Error)) {
+    return { error: { type: 'request' }, blocked: null };
+  }
+  const message = caught.message;
+  if (
+    message === LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE ||
+    message === LIGHTNING_ADDRESS_UNRESOLVED_REWRITTEN
+  ) {
+    return { error: { type: 'notFound' }, blocked: null };
+  }
+  if (
+    message === LIGHTNING_ADDRESS_FORMAT_MESSAGE ||
+    message === LIGHTNING_ADDRESS_FORMAT_REWRITTEN
+  ) {
+    return { error: { type: 'format' }, blocked: null };
+  }
+  if (
+    message === LIGHTNING_ADDRESS_TAKEN_MESSAGE ||
+    message === LIGHTNING_ADDRESS_TAKEN_REWRITTEN
+  ) {
+    return { error: { type: 'taken' }, blocked: null };
+  }
+  return { error: { type: 'request' }, blocked: null };
+}
+
+/**
  * Lets a signed-in giver link, edit, or unlink the Lightning Address that
  * receives their gifts.
  *
+ * An untouched field stays quiet. After a change, blur, or submit, an empty,
+ * too-long, or badly shaped address is shown under the field and Link or Save
+ * is disabled. Skip stays available. Unlink is its own action. After `notZap`,
+ * Continue/Save stay disabled while the trimmed draft equals the blocked
+ * address; changing the draft clears the alert and re-enables; restoring the
+ * blocked address re-locks.
+ *
  * @param props - `onboarding` shows the field at the top and **Continue** plus
  *   **Skip** at the bottom; `profile` uses icon actions to the right of the
- *   field (no Skip). Defaults from whether an address is already linked. After
- *   `notZap`, Continue/Save stay disabled while the trimmed draft equals the
- *   blocked address; changing the draft clears the alert and re-enables;
- *   restoring the blocked address re-locks. Optional `onSaved` runs after a
- *   successful address save (not Skip or unlink).
+ *   field (no Skip). Defaults from whether an address is already linked.
+ *   Optional `onSaved` runs after a successful address save (not Skip or unlink).
  * @returns The Lightning Address section, or `null` when there is nothing to show.
  */
 export function LightningAddressForm(
@@ -59,9 +140,11 @@ export function LightningAddressForm(
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [touched, setTouched] = useState(false);
   const [error, setError] = useState<LightningAddressError | null>(null);
   const [blockedAddress, setBlockedAddress] = useState<string | null>(null);
   const formId = useId();
+  const errorId = `${formId}-error`;
 
   if (account === null || session === null) {
     return null;
@@ -70,10 +153,21 @@ export function LightningAddressForm(
   const address = account.lightningAddress;
   const linked = hasLightningAddress(account);
   const variant = props.variant ?? (linked ? 'profile' : 'onboarding');
-  const continueDisabled = busy || (blockedAddress !== null && draft.trim() === blockedAddress);
+  const problem = lightningAddressProblem(draft);
+  let visibleType: LightningFieldProblem | null = null;
+  if (touched && problem !== null) {
+    visibleType = problem;
+  } else if (error !== null) {
+    visibleType = error.type;
+  }
+  const ruleBroken = visibleType === 'empty' || visibleType === 'long' || visibleType === 'format';
+  const continueDisabled =
+    busy || ruleBroken || (blockedAddress !== null && draft.trim() === blockedAddress);
+  const showEditor = variant === 'onboarding' || !linked || editing;
 
   const onDraftChange = (next: string): void => {
     setDraft(next);
+    setTouched(true);
     if (blockedAddress !== null && next.trim() === blockedAddress) {
       setError({ type: 'notZap' });
     } else {
@@ -101,17 +195,10 @@ export function LightningAddressForm(
       }
       onFresh(result);
       setBlockedAddress(null);
-    } catch (err) {
-      if (err instanceof Error && err.message === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
-        setError({ type: 'notZap' });
-        setBlockedAddress(draft.trim());
-      } else if (err instanceof Error && /could not be found/i.test(err.message)) {
-        setError({ type: 'notFound' });
-        setBlockedAddress(null);
-      } else {
-        setError({ type: 'request' });
-        setBlockedAddress(null);
-      }
+    } catch (err: unknown) {
+      const failure = classifyLightningFailure(err, draft.trim());
+      setError(failure.error);
+      setBlockedAddress(failure.blocked);
     } finally {
       setBusy(false);
     }
@@ -139,6 +226,7 @@ export function LightningAddressForm(
         missing: updated.missing,
       });
       setEditing(false);
+      setTouched(false);
       if (updated.lightningAddress === null) {
         setDraft('');
       }
@@ -167,11 +255,11 @@ export function LightningAddressForm(
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const trimmed = draft.trim();
-    if (trimmed === '') {
-      setError({ type: 'empty' });
+    setTouched(true);
+    if (lightningAddressProblem(draft) !== null) {
       return;
     }
+    const trimmed = draft.trim();
     if (blockedAddress !== null && trimmed === blockedAddress) {
       setError({ type: 'notZap' });
       return;
@@ -192,6 +280,18 @@ export function LightningAddressForm(
   const inputClass =
     'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50';
 
+  const fieldAria =
+    showEditor && visibleType !== null
+      ? { 'aria-invalid': true as const, 'aria-describedby': errorId }
+      : {};
+
+  const addressAlert =
+    showEditor && visibleType !== null ? (
+      <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
+        {t(lightningAddressErrorKey(visibleType))}
+      </p>
+    ) : null;
+
   if (variant === 'onboarding') {
     return (
       <form
@@ -211,14 +311,14 @@ export function LightningAddressForm(
           onChange={(event) => {
             onDraftChange(event.target.value);
           }}
+          onBlur={() => {
+            setTouched(true);
+          }}
           disabled={busy}
+          {...fieldAria}
           className={inputClass}
         />
-        {error !== null ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t(lightningAddressErrorKey(error))}
-          </p>
-        ) : null}
+        {addressAlert}
         <AppShellFooter>
           <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-3">
             <Button
@@ -271,7 +371,11 @@ export function LightningAddressForm(
                 onChange={(event) => {
                   onDraftChange(event.target.value);
                 }}
+                onBlur={() => {
+                  setTouched(true);
+                }}
                 disabled={busy}
+                {...fieldAria}
                 className={`min-w-0 flex-1 ${inputClass}`}
               />
               <IconButton
@@ -290,6 +394,7 @@ export function LightningAddressForm(
                     setEditing(false);
                     setError(null);
                     setBlockedAddress(null);
+                    setTouched(false);
                   }}
                   disabled={busy}
                   aria-label={t('la.cancel')}
@@ -298,6 +403,7 @@ export function LightningAddressForm(
                 </IconButton>
               ) : null}
             </div>
+            {addressAlert}
           </form>
         </SundayWritingGate>
       ) : (
@@ -313,6 +419,7 @@ export function LightningAddressForm(
                 setEditing(true);
                 setError(null);
                 setBlockedAddress(null);
+                setTouched(false);
               }}
               disabled={busy}
               aria-label={t('la.edit')}
@@ -334,9 +441,9 @@ export function LightningAddressForm(
         </div>
       )}
 
-      {error !== null ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t(lightningAddressErrorKey(error))}
+      {linked && !editing && error !== null ? (
+        <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
+          {t(lightningAddressErrorKey(error.type))}
         </p>
       ) : null}
     </div>

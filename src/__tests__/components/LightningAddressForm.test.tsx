@@ -201,14 +201,18 @@ describe('LightningAddressForm', () => {
     renderWithLocale(<LightningAddressForm />);
 
     fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
-      target: { value: 'bad@example' },
+      target: { value: 'me@walletofsatoshi.com' },
     });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not update your Wallet of Satoshi address');
+    expect(setLightningAddress).toHaveBeenCalledWith('sess', 'me@walletofsatoshi.com', 'setup');
     // The form stays put so the visitor can correct the value.
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('shows the not-found message when the address could not be found', async () => {
@@ -557,5 +561,103 @@ describe('LightningAddressForm', () => {
     });
 
     expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('shows empty, length, and format rules under the field', () => {
+    renderWithLocale(<LightningAddressForm />);
+    const field = screen.getByPlaceholderText(PLACEHOLDER);
+    const continueButton = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
+    const skip = screen.getByRole('button', { name: /skip/i }) as HTMLButtonElement;
+    expect(continueButton.disabled).toBe(false);
+    expect(skip.disabled).toBe(false);
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    fireEvent.blur(field);
+    const emptyAlert = screen.getByRole('alert');
+    expect(emptyAlert.textContent).toBe('Enter your Wallet of Satoshi address');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(emptyAlert.id);
+    expect(continueButton.disabled).toBe(true);
+    expect(skip.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'a'.repeat(256) } });
+    expect(screen.getByRole('alert').textContent).toBe('Use at most 255 characters.');
+    expect(continueButton.disabled).toBe(true);
+    expect(skip.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'bad@example' } });
+    const formatAlert = screen.getByRole('alert');
+    expect(formatAlert.textContent).toBe(
+      'Use an address like name@domain.tld, at most 255 characters.',
+    );
+    expect(field.getAttribute('aria-describedby')).toBe(formatAlert.id);
+    expect(continueButton.disabled).toBe(true);
+    fireEvent.click(continueButton);
+    expect(setLightningAddress).not.toHaveBeenCalled();
+  });
+
+  it('maps api address sentences onto the field', async () => {
+    renderWithLocale(<LightningAddressForm />);
+    const field = screen.getByPlaceholderText(PLACEHOLDER);
+    const submit = (): void => {
+      fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    };
+    fireEvent.change(field, { target: { value: 'me@walletofsatoshi.com' } });
+
+    vi.mocked(setLightningAddress).mockRejectedValueOnce(
+      new Error('Lightning Address could not be resolved'),
+    );
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'That Wallet of Satoshi address could not be found',
+    );
+
+    vi.mocked(setLightningAddress).mockRejectedValueOnce(
+      new Error('Not a valid Lightning Address (expected name@domain)'),
+    );
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Use an address like name@domain.tld, at most 255 characters.',
+    );
+
+    fireEvent.change(field, { target: { value: 'ada@walletofsatoshi.com' } });
+    vi.mocked(setLightningAddress).mockRejectedValueOnce(
+      new Error('Enter an address like you@walletofsatoshi.com'),
+    );
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Use an address like name@domain.tld, at most 255 characters.',
+    );
+
+    fireEvent.change(field, { target: { value: 'bob@walletofsatoshi.com' } });
+    vi.mocked(setLightningAddress).mockRejectedValueOnce(
+      new Error('Lightning Address is already in use'),
+    );
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'That Wallet of Satoshi address is already in use.',
+    );
+
+    vi.mocked(setLightningAddress).mockRejectedValueOnce(
+      new Error('Wallet of Satoshi address is already in use'),
+    );
+    submit();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'That Wallet of Satoshi address is already in use.',
+    );
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('blurs a saved address on the profile editor without a rule', () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    renderWithLocale(<LightningAddressForm />);
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.blur(screen.getByPlaceholderText(PLACEHOLDER));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 });

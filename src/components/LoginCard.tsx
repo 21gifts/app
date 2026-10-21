@@ -10,6 +10,7 @@ import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { androidPasskeyBlock } from '@/lib/android-passkey';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosPasskeyBlock } from '@/lib/ios-passkey';
+import { usernameProblem } from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Installed OS version below the sign-in minimum, plus which sentence to show. */
@@ -37,7 +38,6 @@ export function LoginCard(): ReactElement {
   const [inApp, setInApp] = useState(false);
   const [versionBlock, setVersionBlock] = useState<VersionBlock | null>(null);
   const [nameDraft, setNameDraft] = useState('');
-  const [nameInvalid, setNameInvalid] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
@@ -93,17 +93,9 @@ export function LoginCard(): ReactElement {
     body = (
       <NameView
         draft={nameDraft}
-        error={nameInvalid ? 'invalid' : passkey.nameError}
-        onDraftChange={(value) => {
-          setNameDraft(value);
-          setNameInvalid(false);
-        }}
+        error={passkey.nameError}
+        onDraftChange={setNameDraft}
         onSubmit={() => {
-          if (nameDraft.trim() === '') {
-            setNameInvalid(true);
-            return;
-          }
-          setNameInvalid(false);
           passkey.submitName(nameDraft);
         }}
       />
@@ -257,11 +249,11 @@ function UnknownView({ onRegister, onRetry, versionBlock }: UnknownViewProps): R
 interface NameViewProps {
   /** Current typed name. */
   draft: string;
-  /** Shown under the field when set. */
+  /** Server username problem from the passkey hook, or null. */
   error: 'invalid' | 'taken' | null;
   /** Called when the field changes. */
   onDraftChange: (value: string) => void;
-  /** Called to submit a non-empty draft. */
+  /** Called when the draft is a valid username. */
   onSubmit: () => void;
 }
 
@@ -273,9 +265,23 @@ interface NameViewProps {
  */
 function NameView({ draft, error, onDraftChange, onSubmit }: NameViewProps): ReactElement {
   const { t } = useTranslations();
+  const [touched, setTouched] = useState(false);
+  const problem = usernameProblem(draft);
+  const clientBroken = touched && problem !== null;
+  const message = clientBroken
+    ? t('login.nameInvalid')
+    : error === 'taken'
+      ? t('login.nameTaken')
+      : error === 'invalid'
+        ? t('login.nameInvalid')
+        : undefined;
 
   const handleSubmit = (event: FormEvent): void => {
     event.preventDefault();
+    setTouched(true);
+    if (usernameProblem(draft) !== null) {
+      return;
+    }
     onSubmit();
   };
 
@@ -291,19 +297,19 @@ function NameView({ draft, error, onDraftChange, onSubmit }: NameViewProps): Rea
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          maxLength={32}
           value={draft}
-          aria-invalid={error !== null}
+          {...(message === undefined ? {} : { error: message, errorAnnounce: true })}
           onChange={(event) => {
             onDraftChange(event.target.value);
+            setTouched(true);
+          }}
+          onBlur={() => {
+            setTouched(true);
           }}
         />
-        {error !== null ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t(error === 'taken' ? 'login.nameTaken' : 'login.nameInvalid')}
-          </p>
-        ) : null}
-        <Button type="submit">{t('login.nameSubmit')}</Button>
+        <Button type="submit" disabled={clientBroken}>
+          {t('login.nameSubmit')}
+        </Button>
       </form>
     </>
   );

@@ -577,6 +577,22 @@ describe('putAboutMe', () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(putAboutMe('sess', 'Hello')).rejects.toThrow();
   });
+
+  it('throws the about-me length sentence on 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'About me must be at most 8000 characters' },
+    });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow(
+      'About me must be at most 8000 characters',
+    );
+  });
+
+  it('falls back when a 400 body has no error string', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(putAboutMe('sess', 'Hello')).rejects.toThrow('Could not save. Please try again.');
+  });
 });
 
 describe('setName', () => {
@@ -644,14 +660,37 @@ describe('setUsername', () => {
     });
   });
 
-  it('throws username-taken on 409', async () => {
+  it('throws the taken sentence on 409 when the body is that sentence', async () => {
     stubFetch({ ok: false, status: 409, body: { error: 'Username is already in use' } });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('Username is already in use');
+  });
+
+  it('throws username-taken on 409 without that sentence', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'conflict' } });
     await expect(setUsername('sess', 'ada')).rejects.toThrow('username-taken');
   });
 
   it('throws username-invalid on 400', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(setUsername('sess', 'Ada Lovelace')).rejects.toThrow('username-invalid');
+  });
+
+  it('throws the format sentence on 400 when the body is that sentence', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: {
+        error: 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+      },
+    });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow(
+      'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+    );
+  });
+
+  it('throws other 400 text unchanged', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'nope' } });
+    await expect(setUsername('sess', 'ada')).rejects.toThrow('nope');
   });
 
   it('throws username-request on other failures', async () => {
@@ -738,14 +777,36 @@ describe('setLightningAddress', () => {
     );
   });
 
-  it('throws the not-found message when the address could not be resolved', async () => {
+  it('throws the unresolved sentence unchanged', async () => {
     stubFetch({
       ok: false,
       status: 400,
       body: { error: 'Lightning Address could not be resolved' },
     });
     await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
-      'That Wallet of Satoshi address could not be found',
+      'Lightning Address could not be resolved',
+    );
+  });
+
+  it('throws the format sentence unchanged', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Not a valid Lightning Address (expected name@domain)' },
+    });
+    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
+      'Not a valid Lightning Address (expected name@domain)',
+    );
+  });
+
+  it('throws the taken sentence unchanged', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'Lightning Address is already in use' },
+    });
+    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
+      'Lightning Address is already in use',
     );
   });
 

@@ -22,13 +22,12 @@ import {
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
+import {
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_TAKEN_MESSAGE,
+  usernameProblem,
+} from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Exact api 409 when the chosen username is taken during register. */
-const USERNAME_TAKEN = 'Username is already in use';
-
-/** Exact api 400 when register-begin rejects the username charset or length. */
-const USERNAME_INVALID = 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot';
 
 /**
  * Trim, lowercase, then the api username charset and length.
@@ -37,11 +36,10 @@ const USERNAME_INVALID = 'Username must be 1–32 characters of a-z, 0-9, hyphen
  * @returns The normalized username, or `null` when it is empty or invalid.
  */
 function normalizeUsername(raw: string): string | null {
-  const normalized = raw.trim().toLowerCase();
-  if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(normalized)) {
+  if (usernameProblem(raw) !== null) {
     return null;
   }
-  return normalized;
+  return raw.trim().toLowerCase();
 }
 
 /**
@@ -795,13 +793,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         );
         return;
       }
-      if (error instanceof Error && error.message === USERNAME_TAKEN) {
+      if (error instanceof Error && error.message === USERNAME_TAKEN_MESSAGE) {
         setNameError('taken');
         setLastError(null);
         setStatus('name');
         return;
       }
-      if (error instanceof Error && error.message === USERNAME_INVALID) {
+      if (error instanceof Error && error.message === USERNAME_FORMAT_MESSAGE) {
         setNameError('invalid');
         setLastError(null);
         setStatus('name');
