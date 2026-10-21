@@ -811,7 +811,8 @@ export function PlaceField(props: {
                   >
                     {t('forum.placeDone')}
                   </Button>
-                  {props.place !== null ? (
+                  {/* A shop wizard needs a complete place, so only a saving owner offers Remove. */}
+                  {props.place !== null && (!shopDetails || props.onCommit !== undefined) ? (
                     <IconButton
                       type="button"
                       size="sm"

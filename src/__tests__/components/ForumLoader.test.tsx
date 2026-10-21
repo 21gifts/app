@@ -1813,9 +1813,6 @@ describe('ForumLoader', () => {
 
   it('feed="shops" guards an incomplete place before the compose fee', async () => {
     const listeners = await openBasisShopWizardAtPlace();
-    await fillCompleteShopPlace(listeners);
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     });

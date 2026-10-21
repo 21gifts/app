@@ -1399,6 +1399,41 @@ describe('PlaceField', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('offers Remove place in a shop dialog only when it saves the place itself', async () => {
+    stubMaps();
+    const place = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const wizard = renderWithLocale(
+      <PlaceField place={place} disabled={false} onChange={() => undefined} shopDetails />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByRole('dialog');
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    wizard.unmount();
+    renderWithLocale(
+      <PlaceField
+        place={place}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={() => Promise.resolve()}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByRole('dialog');
+    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
+  });
+
   it('returns focus to the place button after a dialog opened by a server problem', async () => {
     stubMaps();
     renderWithLocale(

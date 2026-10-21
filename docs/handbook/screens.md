@@ -1805,14 +1805,6 @@ disabled.
 
 ![21.gifts welcome shop edit place unavailable open](images/welcome-shop-edit-place-unavailable-open.png)
 
-### Variant: shop-edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form without an available map and
-pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
-be added.** is visible in the wizard and **Next** is disabled.
-
-![21.gifts welcome shop edit place removed unavailable](images/welcome-shop-edit-place-removed-unavailable.png)
-
 ### Variant: shop-edit-place-name-address
 
 The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
@@ -2010,14 +2002,6 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 and **Map** stays selected.
 
 ![21.gifts shops map edit place unavailable open](images/shops-map-edit-place-unavailable-open.png)
-
-### Variant: map-edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form without an available map and
-pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
-be added.** is visible, **Next** is disabled, and **Map** stays selected.
-
-![21.gifts shops map edit place removed unavailable](images/shops-map-edit-place-removed-unavailable.png)
 
 ### Variant: map-edit-place-name-address
 
@@ -2233,14 +2217,6 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 and **Table** stays selected.
 
 ![21.gifts shops table edit place unavailable open](images/shops-table-edit-place-unavailable-open.png)
-
-### Variant: table-edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form without an available map and
-pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
-be added.** is visible, **Next** is disabled, and **Table** stays selected.
-
-![21.gifts shops table edit place removed unavailable](images/shops-table-edit-place-removed-unavailable.png)
 
 ### Variant: table-edit-place-name-address
 
@@ -2707,14 +2683,6 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts shops edit place unavailable open](images/shops-edit-place-unavailable-open.png)
-
-### Variant: edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form without an available map and
-pressed **Remove place**. The dialog is closed. **The map is unavailable, so a shop place cannot
-be added.** is visible in the wizard and **Next** is disabled.
-
-![21.gifts shops edit place removed unavailable](images/shops-edit-place-removed-unavailable.png)
 
 ### Variant: edit-place-name-address
 
@@ -3598,14 +3566,6 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts member shop edit place unavailable open](images/members-shop-edit-place-unavailable-open.png)
-
-### Variant: shop-edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form from the member profile without an
-available map and pressed **Remove place**. The dialog is closed. **The map is unavailable, so a
-shop place cannot be added.** is visible in the wizard and **Next** is disabled.
-
-![21.gifts member shop edit place removed unavailable](images/members-shop-edit-place-removed-unavailable.png)
 
 ### Variant: shop-edit-place-name-address
 
@@ -5568,14 +5528,6 @@ The **Shop place and address** form is open from step **2 / 5 · Place** without
 disabled.
 
 ![21.gifts public message shop edit place unavailable open](images/messages-id-shop-edit-place-unavailable-open.png)
-
-### Variant: shop-edit-place-removed-unavailable
-
-On step **2 / 5 · Place**, the moderator opened the place form from the public message without an
-available map and pressed **Remove place**. The dialog is closed. **The map is unavailable, so a
-shop place cannot be added.** is visible in the wizard and **Next** is disabled.
-
-![21.gifts public message shop edit place removed unavailable](images/messages-id-shop-edit-place-removed-unavailable.png)
 
 ### Variant: shop-edit-place-name-address
 
