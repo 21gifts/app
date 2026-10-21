@@ -22,6 +22,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
+  attachTypedFigure,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -2101,12 +2102,17 @@ export function ForumLoader({
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          minted = {
-            messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice,
-          };
+          minted = attachTypedFigure(
+            {
+              messageId,
+              pr: invoice.pr,
+              amountSats: invoice.amountSats,
+              sparkInvoice: invoice.sparkInvoice,
+            },
+            payShownUnit,
+            payDraft,
+            fiat,
+          );
           setPayInvoice(minted);
           setPayBusy(false);
           if (listed.parentId) {
@@ -2369,12 +2375,19 @@ export function ForumLoader({
       }
       setPayMessageId(parentId);
       setPayError(null);
-      setPayInvoice({
-        messageId: parentId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: parentId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('card');
       setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
@@ -2451,13 +2464,20 @@ export function ForumLoader({
       }
       setPayMessageId(target.messageId);
       setPayError(null);
-      setPayInvoice({
-        messageId: target.messageId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-        postsOnPay: true,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: target.messageId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+            postsOnPay: true,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');

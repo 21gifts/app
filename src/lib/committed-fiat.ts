@@ -15,6 +15,31 @@ export interface StoredFiat {
   amountPhp: string | null;
 }
 
+/**
+ * A typed figure as the stored pair. The other currencies stay empty so the
+ * viewer spot is not added beside it.
+ */
+export function storedTypedFiat(
+  figure:
+    | {
+        code: FiatCode;
+        amount: string;
+      }
+    | undefined,
+): StoredFiat | undefined {
+  if (figure === undefined) {
+    return undefined;
+  }
+  return {
+    amountCurrency: figure.code,
+    amount: figure.amount,
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  };
+}
+
 /** True when `value` is one of the four stored fiat codes. */
 function isFiatCode(value: FiatCode | null): value is FiatCode {
   return value === 'USD' || value === 'CHF' || value === 'EUR' || value === 'PHP';

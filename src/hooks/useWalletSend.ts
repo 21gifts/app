@@ -150,7 +150,7 @@ export type WalletSendState =
       step: 'quote';
       recipient: string;
       amountSats: number;
-      /** Set for a till charge. Absent while an amount is still being typed. */
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
       chargeFigure?: ChargeFigure;
     }
   | {
@@ -160,14 +160,14 @@ export type WalletSendState =
       feeSats: number;
       /** Speed choice when the payment goes to a base-chain address. */
       onchain?: WalletSendOnchain;
-      /** Set for a till charge. Absent while an amount is still being typed. */
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
       chargeFigure?: ChargeFigure;
     }
   | {
       step: 'sent';
       amountSats: number;
       recipient: string;
-      /** Set for a till charge. Absent while an amount is still being typed. */
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
       chargeFigure?: ChargeFigure;
     };
 
@@ -207,8 +207,10 @@ export interface UseWalletSendResult {
    * Prepares the payment for the entered amount.
    *
    * @param sats - Whole sats from the amount field, or `null` when it cannot be read.
+   * @param figure - Fiat the member typed. A bitcoin field omits it, and the
+   *   confirm step then shows the spot.
    */
-  submitAmount: (sats: number | null) => void;
+  submitAmount: (sats: number | null, figure?: ChargeFigure) => void;
   /**
    * Chooses the speed of a payment to a base-chain address on the confirm
    * step. A speed whose fee the balance does not cover is ignored.
@@ -927,7 +929,14 @@ export function useWalletSend(): UseWalletSendResult {
    * Failures are reported under `flow` (default `send`).
    */
   const payAmount = useCallback(
-    (target: WalletSendAmountTarget, sats: number, note: string, flow: PayFlow = 'send'): void => {
+    (
+      target: WalletSendAmountTarget,
+      sats: number,
+      note: string,
+      flow: PayFlow = 'send',
+      figure?: ChargeFigure,
+    ): void => {
+      const carried = figure === undefined ? {} : { chargeFigure: figure };
       if (target.type === 'relay') {
         const trimmed = note.trim().slice(0, target.commentMaxLength);
         const run = generation.current;
@@ -944,6 +953,7 @@ export function useWalletSend(): UseWalletSendResult {
             prepare({ type: 'input', input: invoice.pr }, target.recipient, sats, {
               expectedSats: sats,
               flow,
+              ...carried,
             });
           },
           (error: unknown) => {
@@ -994,7 +1004,7 @@ export function useWalletSend(): UseWalletSendResult {
             },
             target.recipient,
             sats,
-            { flow },
+            { flow, ...carried },
           );
         };
         if (target.member === undefined) {
@@ -1015,6 +1025,7 @@ export function useWalletSend(): UseWalletSendResult {
             expectedSats: sats,
             fallback: lightning,
             flow,
+            ...carried,
           });
         });
         return;
@@ -1024,12 +1035,13 @@ export function useWalletSend(): UseWalletSendResult {
           { type: 'input', input: target.address, amountSats: sats },
           target.recipient,
           sats,
-          { onchainTarget: target, flow },
+          { onchainTarget: target, flow, ...carried },
         );
         return;
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient, sats, {
         flow,
+        ...carried,
       });
     },
     [session, prepare],
@@ -1239,7 +1251,7 @@ export function useWalletSend(): UseWalletSendResult {
   ]);
 
   const submitAmount = useCallback(
-    (sats: number | null): void => {
+    (sats: number | null, figure?: ChargeFigure): void => {
       if (inert) {
         setPinBusy(pin === 'send-amount-busy');
         return;
@@ -1253,7 +1265,7 @@ export function useWalletSend(): UseWalletSendResult {
         setState({ step: 'amount', target, amountError: true });
         return;
       }
-      payAmount(target, sats, comment);
+      payAmount(target, sats, comment, 'send', figure);
     },
     [pin, inert, busy, state, comment, payAmount],
   );

@@ -282,20 +282,19 @@ export async function fetchMemberSparkInvoice(
   }
 }
 
-/** Receipt of one shop charge, as `GET /pay/.../charges/:id` returns it. */
+/**
+ * Receipt of one shop charge, as `GET /pay/.../charges/:id` returns it.
+ * An omitted `paidAt` or an omitted fiat field is null, same as the till
+ * charge. A present typed figure is kept and is not replaced by the spot.
+ */
 const shopReceiptSchema = z.object({
   id: z.string(),
   amountSats: z.number().int(),
   status: z.string(),
   createdAt: z.string(),
   expiresAt: z.string(),
-  paidAt: z.string().nullable(),
-  amountCurrency: fiatCodeSchema.nullable(),
-  amount: z.string().nullable(),
-  amountUsd: z.string().nullable(),
-  amountChf: z.string().nullable(),
-  amountEur: z.string().nullable(),
-  amountPhp: z.string().nullable(),
+  paidAt: z.string().nullable().default(null),
+  ...storedFiatFields(),
 });
 
 /** A shop charge receipt the payment screen can show. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { committedFiatFigure, type StoredFiat } from '@/lib/committed-fiat';
+import { committedFiatFigure, storedTypedFiat, type StoredFiat } from '@/lib/committed-fiat';
 
 const EMPTY: StoredFiat = {
   amountCurrency: null,
@@ -9,6 +9,20 @@ const EMPTY: StoredFiat = {
   amountEur: null,
   amountPhp: null,
 };
+
+describe('storedTypedFiat', () => {
+  it('is absent for bitcoin and a typed pair with empty snapshots for fiat', () => {
+    expect(storedTypedFiat(undefined)).toBeUndefined();
+    expect(storedTypedFiat({ code: 'USD', amount: '12' })).toEqual({
+      amountCurrency: 'USD',
+      amount: '12',
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    });
+  });
+});
 
 describe('committedFiatFigure', () => {
   it('returns the typed pair and ignores the viewer and the other strings', () => {

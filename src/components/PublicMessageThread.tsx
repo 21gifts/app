@@ -27,7 +27,12 @@ import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-req
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import {
+  attachTypedFigure,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { PAY_POLL_MS } from '@/lib/payment-link';
 
@@ -650,13 +655,20 @@ export function PublicMessageThread(props: {
       }
       setPayMessageId(target.messageId);
       setPayError(null);
-      setPayInvoice({
-        messageId: target.messageId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-        postsOnPay: true,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: target.messageId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+            postsOnPay: true,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');
@@ -732,12 +744,19 @@ export function PublicMessageThread(props: {
       }
       setPayMessageId(parentId);
       setPayError(null);
-      setPayInvoice({
-        messageId: parentId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: parentId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('card');
       setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
@@ -849,12 +868,17 @@ export function PublicMessageThread(props: {
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          minted = {
-            messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice,
-          };
+          minted = attachTypedFigure(
+            {
+              messageId,
+              pr: invoice.pr,
+              amountSats: invoice.amountSats,
+              sparkInvoice: invoice.sparkInvoice,
+            },
+            payShownUnit,
+            payDraft,
+            fiat,
+          );
           setPayInvoice(minted);
           setPayBusy(false);
           if (listed.parentId) {

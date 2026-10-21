@@ -13,7 +13,7 @@ import { CannotReceiveError } from '@/lib/api';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
-import { paySatsFromDraft } from '@/lib/stats-money';
+import { attachTypedFigure, paySatsFromDraft } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 type MemberHabit = MemberHabitList['habits'][number];
@@ -370,11 +370,18 @@ export function MemberHabits(): ReactElement {
         if (generation !== payGeneration.current) {
           return;
         }
-        setPayInvoice({
-          messageId: commentId,
-          pr: lightningInvoicePr(body, sats),
-          amountSats: sats,
-        });
+        setPayInvoice(
+          attachTypedFigure(
+            {
+              messageId: commentId,
+              pr: lightningInvoicePr(body, sats),
+              amountSats: sats,
+            },
+            payShownUnit,
+            payDraft,
+            fiat,
+          ),
+        );
       })
       .catch((caught: unknown) => {
         if (useAuthStore.getState().session !== actor) {

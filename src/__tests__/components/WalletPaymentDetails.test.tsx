@@ -262,6 +262,67 @@ describe('WalletPaymentDetails', () => {
     expect(row('Total').textContent).toBe("$12.00 · ₿10'000 + ₿1'000");
   });
 
+  it('adds a whole stored shop figure to the fee spot', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'USD', amount: '12' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · $12.00");
+    expect(row('Fee').textContent).toBe("₿1'000 · $1.00");
+    expect(row('Total').textContent).toBe("₿11'000 · $13.00");
+  });
+
+  it('keeps the fee spot when the fee equals the shop charge', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 10_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'USD', amount: '12.00' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · $12.00");
+    expect(row('Fee').textContent).toBe("₿10'000 · $10.00");
+    expect(row('Total').textContent).toBe("₿20'000 · $22.00");
+  });
+
+  it('keeps the fee spot while a matching shop receipt is still loading', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 10_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({ pending: true, figure: null });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000");
+    expect(row('Fee').textContent).toBe("₿10'000 · $10.00");
+    expect(row('Total').textContent).toBe("₿20'000");
+  });
+
+  it('shows the stored figure and the fee apart when the stored figure is not a decimal', () => {
+    const shop = {
+      ...fixture(ADDRESS_SEND),
+      feesSats: 1_000,
+      info: { purpose: 'shop' as const, chargeId: 'chg_fee' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'USD', amount: '' },
+    });
+    showPayment(shop);
+    expect(row('Amount').textContent).toBe("₿10'000 · $0.00");
+    expect(row('Fee').textContent).toBe("₿1'000 · $1.00");
+    expect(row('Total').textContent).toBe("$0.00 · ₿10'000 + ₿1'000 · $1.00");
+  });
+
   it('shows a received zap as a gift on the post: signed bitcoin amount and the message, without a key or note id', () => {
     showPayment(fixture(ZAP));
     expect(screen.getByText('Gift on your post')).toBeTruthy();

@@ -8730,6 +8730,47 @@ describe('reply form size', () => {
     globalThis.ResizeObserver = previous;
   });
 
+  it('shows the typed fiat on a card reaction sheet, not the spot of the sats', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyDraft="Hi Bob"
+        replyAmountDraft="21"
+        replyPayPreview="Hi Bob"
+        payMessageId="m1"
+        payHost="card"
+        payInvoice={{
+          messageId: 'm1',
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          figure: { code: 'USD', amount: '12' },
+        }}
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('$12.00')).toBeTruthy();
+    expect(within(sheet).queryByText('$0.02')).toBeNull();
+  });
+
   it('does not take the in-between scrolls of a followed move as the reader position', () => {
     const board = (withSheet: boolean) => (
       <AppShell mode="fill">

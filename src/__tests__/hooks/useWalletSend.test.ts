@@ -867,6 +867,21 @@ describe('useWalletSend base-chain address', () => {
     return result;
   }
 
+  it('keeps a typed fiat figure on the on-chain confirm step', async () => {
+    target(ONCHAIN);
+    vi.mocked(payFromWallet).mockResolvedValue(onchainConfirm(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, ADDRESS);
+    await act(async () => {
+      result.current.submitAmount(50_000, { code: 'USD', amount: '12' });
+    });
+    expect(result.current.state).toMatchObject({
+      step: 'confirm',
+      amountSats: 50_000,
+      chargeFigure: { code: 'USD', amount: '12' },
+    });
+  });
+
   it('asks for an amount, then confirms with the medium speed and its fee', async () => {
     const result = await toOnchainConfirm(async () => ({ kind: 'paid' }));
     expect(payFromWallet).toHaveBeenCalledWith({

@@ -342,6 +342,27 @@ describe('fetchShopChargeReceipt', () => {
     expect(fetchMock).toHaveBeenLastCalledWith('/pay/charges/chg_abc');
   });
 
+  it('keeps a stored figure when the receipt omits null fields', async () => {
+    const body = {
+      id: 'chg_abc',
+      amountSats: 2_100,
+      status: 'paid',
+      createdAt: '2026-09-22T00:00:00.000Z',
+      expiresAt: '2026-09-22T00:05:00.000Z',
+      amountCurrency: 'USD',
+      amount: '12',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(body)));
+    await expect(fetchShopChargeReceipt('chg_abc', 'shop')).resolves.toEqual({
+      ...body,
+      paidAt: null,
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    });
+  });
+
   it('returns null for a missing, failed, or unreadable receipt', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'missing' }, 404)));
     await expect(fetchShopChargeReceipt('gone', 'shop')).resolves.toBeNull();

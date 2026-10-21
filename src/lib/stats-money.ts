@@ -426,6 +426,79 @@ export function parseAmountDraft(
 }
 
 /**
+ * The fiat the member typed, kept exactly, or `null` when the field is bitcoin
+ * or the text is not a fiat amount. A trailing separator is dropped. The spot
+ * of the sats is not this figure.
+ */
+export function typedFiatFigure(
+  unit: 'btc' | 'fiat',
+  draft: string,
+  code: FiatCode,
+): { code: FiatCode; amount: string } | null {
+  if (unit !== 'fiat') {
+    return null;
+  }
+  const trimmed = draft.trim();
+  if (!FIAT_DRAFT.test(trimmed)) {
+    return null;
+  }
+  const normalized = trimmed.replace(',', '.');
+  const amount = normalized.endsWith('.') ? normalized.slice(0, -1) : normalized;
+  return { code, amount };
+}
+
+/**
+ * Copies `value` and, when `draft` is a typed fiat amount, adds that figure.
+ * A bitcoin field is returned unchanged.
+ */
+export function attachTypedFigure<T extends object>(
+  value: T,
+  unit: 'btc' | 'fiat',
+  draft: string,
+  code: FiatCode,
+): T & { figure?: { code: FiatCode; amount: string } } {
+  const figure = typedFiatFigure(unit, draft, code);
+  return figure === null ? value : { ...value, figure };
+}
+
+/** Fraction digits of a dot-decimal. A missing dot is zero. */
+function fractionDigits(value: string): number {
+  const dot = value.indexOf('.');
+  return dot < 0 ? 0 : value.length - dot - 1;
+}
+
+/** Whole units of a non-negative dot-decimal at `scale`, or `null` when it is not one. */
+function scaledDecimal(value: string, scale: number): bigint | null {
+  if (!/^\d+(\.\d+)?$/.test(value)) {
+    return null;
+  }
+  const dot = value.indexOf('.');
+  const whole = dot < 0 ? value : value.slice(0, dot);
+  const frac = dot < 0 ? '' : value.slice(dot + 1);
+  const digits = `${whole}${frac.padEnd(scale, '0')}`.replace(/^0+(?=\d)/, '');
+  return BigInt(digits);
+}
+
+/**
+ * Sum of two dot-decimal strings, or `null` when either is not a figure.
+ * A whole stored figure such as `12` plus `1.00` is `13.00`. This never
+ * prices a sat sum.
+ */
+export function addDecimalStrings(left: string, right: string): string | null {
+  const scale = Math.max(fractionDigits(left), fractionDigits(right), 1);
+  let sum = 0n;
+  for (const part of [left, right]) {
+    const scaled = scaledDecimal(part, scale);
+    if (scaled === null) {
+      return null;
+    }
+    sum += scaled;
+  }
+  const text = sum.toString().padStart(scale + 1, '0');
+  return `${text.slice(0, -scale)}.${text.slice(-scale)}`;
+}
+
+/**
  * Reply and inbox amount: blank stays blank, and 0 is billed as 1 sat.
  *
  * @param draft - Raw field value.

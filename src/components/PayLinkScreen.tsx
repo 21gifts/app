@@ -12,13 +12,19 @@ import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
-import { committedFiatFigure, type FiatCode, type StoredFiat } from '@/lib/committed-fiat';
+import {
+  committedFiatFigure,
+  storedTypedFiat,
+  type FiatCode,
+  type StoredFiat,
+} from '@/lib/committed-fiat';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
@@ -336,6 +342,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
+  const [mintedFigure, setMintedFigure] = useState<{ code: FiatCode; amount: string } | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -375,6 +382,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setMintedSats(null);
     setMintedExpiresAt(null);
     setShop(null);
+    setMintedFigure(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -466,6 +474,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setMintedFigure(null);
     setFormError(null);
     postingRef.current = false;
     setPosting(false);
@@ -913,6 +922,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setMintedSats(result.amountSats);
       setNow(Date.now());
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
+      setMintedFigure(typedFiatFigure(unit, amount, fiat));
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -1055,7 +1065,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <ChargeFiat
                   amountSats={activeSats}
                   rateDay={rateDay}
-                  stored={chargeLive && charge !== null ? charge : null}
+                  stored={
+                    chargeLive && charge !== null
+                      ? charge
+                      : (storedTypedFiat(mintedFigure ?? undefined) ?? null)
+                  }
                 />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">

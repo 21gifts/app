@@ -27,10 +27,12 @@ import type { FiatCode } from '@/lib/committed-fiat';
 import type { MessageKey } from '@/lib/messages';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
+  addDecimalStrings,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  typedFiatFigure,
 } from '@/lib/stats-money';
 import type { AmountUnit } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -257,6 +259,46 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     const live = satsToFiatAmount(sats, rateDay, fiat);
     return live === null ? null : formatFiatDisplay(live, fiat, numberFormat);
   };
+  /**
+   * Fiat of a total that already has a typed or stored figure. The figure
+   * stays exact and the fee's spot is added beside it. A different currency
+   * stays in parts. No spot of the sat sum.
+   */
+  const totalFigure = (
+    figure: { code: FiatCode; amount: string },
+    feeSats: number,
+    chargeSats: number,
+  ): ReactElement | null => {
+    const feeSpot = satsToFiatAmount(feeSats, rateDay, fiat);
+    if (figure.code === fiat && feeSpot !== null) {
+      const combined = addDecimalStrings(figure.amount, feeSpot);
+      if (combined !== null) {
+        return (
+          <>
+            <span aria-hidden="true"> · </span>
+            <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
+          </>
+        );
+      }
+    }
+    const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
+    return (
+      <>
+        <span aria-hidden="true"> · </span>
+        <span>{formatFiatDisplay(figure.amount, figure.code, numberFormat)}</span>
+        <span aria-hidden="true"> · </span>
+        <span>{formatBitcoin(chargeSats, numberFormat)}</span>
+        <span aria-hidden="true"> + </span>
+        <span>{formatBitcoin(feeSats, numberFormat)}</span>
+        {feeFiat === null ? null : (
+          <>
+            <span aria-hidden="true"> · </span>
+            <span>{feeFiat}</span>
+          </>
+        )}
+      </>
+    );
+  };
   const boundText = (sats: number): string => {
     const live = fiatText(sats);
     const bitcoin = formatBitcoin(sats, numberFormat);
@@ -445,7 +487,13 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
       event.preventDefault();
       const parsed = parseAmountDraft(amountUnit, amountDraft, rateDay, fiat);
-      send.submitAmount(parsed.kind === 'sats' ? parsed.sats : null);
+      const sats = parsed.kind === 'sats' ? parsed.sats : null;
+      const figure = typedFiatFigure(amountUnit, amountDraft, fiat);
+      if (figure === null) {
+        send.submitAmount(sats);
+      } else {
+        send.submitAmount(sats, figure);
+      }
     };
     const anyAmount = target.type === 'request' || target.type === 'onchain';
     const commentMax = anyAmount ? 0 : target.commentMaxLength;
@@ -527,8 +575,12 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
             {fiatOf(state.feeSats)}
           </p>
           <p>
-            {t('wallet.sendTotal', { amount: formatBitcoin(totalSats, numberFormat) })}
-            {fiatOf(totalSats)}
+            {t('wallet.sendTotal', {
+              amount: formatBitcoin(totalSats, numberFormat),
+            })}
+            {state.chargeFigure === undefined || state.chargeFigure === null
+              ? fiatOf(totalSats)
+              : totalFigure(state.chargeFigure, state.feeSats, state.amountSats)}
           </p>
         </div>
         <div
