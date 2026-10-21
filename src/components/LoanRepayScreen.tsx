@@ -684,10 +684,12 @@ export function LoanRepayScreen(): ReactElement {
               loan.goalCurrency === 'BTC'
                 ? wholeLoanText(loan)
                 : `${formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat)} · ${formatBitcoin(loan.totalSats, numberFormat)}`;
-            const planPerDay =
+            const planSlice = (part: 'perDay' | 'last'): string =>
               loan.goalCurrency === 'BTC'
-                ? money(Number(split?.perDay ?? 0n))
-                : `${formatDefinedGoalAmount(centsString(split?.perDay ?? 0n), loan.goalCurrency, numberFormat)} · ${formatBitcoin(Number(satSplit?.perDay ?? 0n), numberFormat)}`;
+                ? money(Number(split?.[part] ?? 0n))
+                : `${formatDefinedGoalAmount(centsString(split?.[part] ?? 0n), loan.goalCurrency, numberFormat)} · ${formatBitcoin(Number(satSplit?.[part] ?? 0n), numberFormat)}`;
+            const planPerDay = planSlice('perDay');
+            const uneven = (split?.remainder ?? 0n) !== 0n || (satSplit?.remainder ?? 0n) !== 0n;
             const repaidText = t('loans.repaidOf', {
               repaid: money(loan.repaidSats),
               total: wholeLoanText(loan),
@@ -701,11 +703,17 @@ export function LoanRepayScreen(): ReactElement {
               >
                 <p className="line-clamp-2 font-medium text-app-fg">{loan.text}</p>
                 <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
-                  {t('loans.plan', {
-                    total: planTotal,
-                    days: loan.termDays,
-                    perDay: planPerDay,
-                  })}
+                  {uneven
+                    ? `${planTotal} · ${t('forum.creditPlanLast', {
+                        amount: planPerDay,
+                        earlier: loan.termDays - 1,
+                        last: planSlice('last'),
+                      })}`
+                    : t('loans.plan', {
+                        total: planTotal,
+                        days: loan.termDays,
+                        perDay: planPerDay,
+                      })}
                 </p>
                 {loan.fundedAt === null ? (
                   <p className="mt-2 text-sm text-app-muted">{t('welcome.loanCollecting')}</p>

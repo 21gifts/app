@@ -623,6 +623,41 @@ describe('PayLinkScreen', () => {
     expect(screen.getByText('$200.00')).toBeTruthy();
   });
 
+  it('shows a stored visitor snapshot under an open till that has no typed pair', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          amountSats: 238093,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: null,
+          amount: null,
+          amountUsd: '5.00',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('$5.00')).toBeTruthy();
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByText('$200.00')).toBeNull();
+  });
+
   it('shows 12.00 PHP on a pending charge to a viewer whose currency is USD', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);

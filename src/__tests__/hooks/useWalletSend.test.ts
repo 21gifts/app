@@ -42,6 +42,13 @@ vi.mock('@/lib/pos', () => ({
   fetchMemberSparkInvoice: vi.fn(),
 }));
 
+vi.mock('@/components/FiatPreferenceProvider', () => ({
+  useFiatPreference: (): { fiat: 'USD'; setFiat: () => void } => ({
+    fiat: 'USD',
+    setFiat: () => undefined,
+  }),
+}));
+
 vi.mock('@/lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api')>()),
   postLnurlPayRequest: vi.fn(),
@@ -2273,6 +2280,20 @@ describe('useWalletSend shop charge', () => {
       chargeFigure: null,
     });
     expect(result.current.busy).toBe(false);
+  });
+
+  it('keeps the visitor snapshot when the charge has no typed pair', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue({
+      ...CHARGE,
+      amountUsd: '7.00',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(result.current.state).toMatchObject({
+      step: 'confirm',
+      chargeFigure: { code: 'USD', amount: '7.00' },
+    });
   });
 
   it('keeps the stored PHP figure when the paid charge is sent', async () => {

@@ -289,10 +289,43 @@ describe('LoanRepayScreen', () => {
     );
     show({ sundayRest: false, loans: [usdLoan] });
     expect(screen.getByText("$30.00 · ₿30'000 · 30 days · $1.00 · ₿1'000 per day")).toBeTruthy();
-    expect(screen.getByText("$1.00 · ₿1'000")).toBeTruthy();
-    expect(screen.queryByText('$1.00')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
-    await waitFor(() => expect(screen.getAllByText("$1.00 · ₿1'000")).toHaveLength(2));
+  });
+
+  it('names the last day when the fiat or the bitcoin does not divide evenly', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'USD',
+          goalAmount: '10.00',
+          termDays: 4,
+          totalSats: 10_001,
+          goalSats: 10_001,
+        }),
+        loan({
+          messageId: 'loan-btc',
+          goalCurrency: 'BTC',
+          goalAmount: '10001',
+          termDays: 4,
+          totalSats: 10_001,
+          goalSats: 10_001,
+          goalAmountUsd: null,
+          goalAmountChf: null,
+          goalAmountEur: null,
+          goalAmountPhp: null,
+        }),
+      ],
+    });
+    expect(
+      screen.getByText(
+        "$10.00 · ₿10'001 · $2.50 · ₿2'500 per day for 3 days, then $2.50 · ₿2'501 on the last day",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "₿10'001 · $10.00 · ₿2'500 · $2.50 per day for 3 days, then ₿2'501 · $2.50 on the last day",
+      ),
+    ).toBeTruthy();
   });
 
   it('falls back to zero defined units for an unusable payable-amount value', () => {
