@@ -1880,18 +1880,65 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(releasePost).toBeDefined();
       });
-      // The payer pays the new pin before the create answer is in.
+      // The payer pays the new pin before the create answer is in; the api has the new charge.
+      serverCharge = fresh;
       receive(21);
       await act(async () => {
         releasePost?.(jsonResponse({ charge: fresh }, 201));
       });
       amountPage.unmount();
-      serverCharge = fresh;
       renderWithLocale(<PosScreen />);
       const dialog = await confirmation();
       expect(within(dialog).getByText('₿21')).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     });
+
+    for (const named of [false, true]) {
+      it(`gives the charge before a payment ${named ? 'that names it' : 'made before the new charge'} while a create is on its way`, async () => {
+        const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+        const fresh = { ...OPEN, id: 'c2', createdAt: new Date(Date.now() + 5_000).toISOString() };
+        let releasePost: ((value: Response) => void) | undefined;
+        let created = false;
+        vi.stubGlobal(
+          'fetch',
+          vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+            if (init?.method === 'POST') {
+              return new Promise<Response>((resolve) => {
+                releasePost = resolve;
+              });
+            }
+            return Promise.resolve(
+              jsonResponse(
+                created
+                  ? { charge: fresh, history: [fresh, ended] }
+                  : { charge: ended, history: [ended] },
+              ),
+            );
+          }),
+        );
+        const till = renderWithLocale(<PosScreen />);
+        expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+        till.unmount();
+        const amountPage = renderWithLocale(<PosAmount />);
+        await pressAmount('21');
+        fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+        await waitFor(() => {
+          expect(releasePost).toBeDefined();
+        });
+        // In the late minute of the charge before, before the new charge was made.
+        receive(21, 0, Date.now(), named ? ended.id : undefined);
+        created = true;
+        await act(async () => {
+          releasePost?.(jsonResponse({ charge: fresh }, 201));
+        });
+        amountPage.unmount();
+        renderWithLocale(<PosScreen />);
+        // The new charge stays open; the charge before is paid in History.
+        expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+        const history = screen.getByRole('region', { name: 'History' });
+        expect(await within(history).findByText(/^Paid ✓ /)).toBeTruthy();
+      });
+    }
 
     it('gives the late minute back when creating a new charge fails', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
