@@ -4005,7 +4005,7 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
-    it('keeps a late-minute payment paid on the newer charge another tab cancelled meanwhile', async () => {
+    it('gives a late-minute payment to the charge before, not to a newer charge another tab cancelled', async () => {
       const ended = {
         ...OPEN,
         createdAt: new Date(Date.now() - 120_000).toISOString(),
@@ -4038,11 +4038,62 @@ describe('PosScreen', () => {
         expect(reads).toBe(2);
       });
       receive(21, 0, paidAt);
-      // The money arrived for the newer charge: it is paid on this till, not the charge before.
+      // A cancelled charge takes no payment: the charge before, in its late minute, takes it.
       fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       const history = screen.getByRole('region', { name: 'History' });
-      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(await within(history).findByText('Cancelled')).toBeTruthy();
       expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      expect(within(history).queryByText('Expired')).toBeNull();
+    });
+
+    it('does not move a late-minute payment to a newer charge a later read shows cancelled', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const paidAt = Date.now();
+      const newerCancelled = {
+        ...OPEN,
+        id: 'c-cancelled-later',
+        status: 'cancelled',
+        createdAt: new Date(Math.floor(paidAt / 1_000) * 1_000).toISOString(),
+        expiresAt: new Date(paidAt + 300_000).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            // The read for the held payment fails: the charge before takes it.
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({
+            charge: null,
+            history: [newerCancelled, { ...ended, status: 'expired' }],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, paidAt);
+      expect(await confirmation()).toBeTruthy();
+      // A later read shows a newer charge of that amount, cancelled: the payment stays.
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBeGreaterThan(3);
+      });
+      await act(async () => undefined);
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText('Cancelled')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      expect(within(history).queryByText('Expired')).toBeNull();
     });
 
     it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {

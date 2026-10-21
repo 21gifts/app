@@ -321,12 +321,14 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
   const taken = new Set<string>();
   for (const { payment, charge } of held) {
     // Newer charges the payment could pay: made after it was, so the receiving address was theirs.
+    // A cancelled charge takes no payment, as no cancel time tells a payment before it from one after.
     const newerOnes =
       state === null
         ? []
         : tillCharges(state).filter(
             (row) =>
               row.id !== charge.id &&
+              row.status !== 'cancelled' &&
               Date.parse(row.createdAt) > Date.parse(charge.createdAt) &&
               pays(row, payment),
           );
@@ -339,7 +341,7 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
     }
     if (newer !== undefined) {
       taken.add(newer.id);
-      // The wallet saw the money arrive: paid here even when another tab cancelled it meanwhile.
+      // Nothing to confirm here when the api already shows that newer charge paid.
       if (newer.status !== 'paid') {
         markPaid(memory, newer, payment);
       }
@@ -373,6 +375,7 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
     const newer = tillCharges(state).find(
       (row) =>
         row.id !== id &&
+        row.status !== 'cancelled' &&
         !memory.paid.has(row.id) &&
         Date.parse(row.createdAt) > Date.parse(older.createdAt) &&
         pays(row, payment),
