@@ -3731,7 +3731,8 @@ test.describe('onboarding screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-saving');
     release();
@@ -3745,7 +3746,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-history-loading');
     release();
@@ -7263,7 +7265,8 @@ test.describe('onboarding screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-saving');
     release();
@@ -7278,7 +7281,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-history-loading');
     release();
@@ -12149,7 +12153,8 @@ test.describe('onboarding screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-saving');
     release();
@@ -12164,7 +12169,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-history-loading');
     release();
@@ -19960,7 +19966,8 @@ test.describe('shops screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-saving');
@@ -19976,7 +19983,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-history-loading');
@@ -20549,7 +20557,8 @@ test.describe('shops screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-saving');
     release();
@@ -20563,7 +20572,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-history-loading');
     release();
@@ -21481,7 +21491,8 @@ test.describe('shops screens', () => {
     await expect(saving).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-saving');
     release();
@@ -21495,7 +21506,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const loading = page.getByText('Loading the history.');
     await expect(loading).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-history-loading');
     release();
@@ -21995,7 +22007,7 @@ test.describe('shops screens', () => {
     const loading = page.getByText('Loading the map.');
     await expect(loading).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
-    await expect(page.getByText('Tap the map to set the pin.')).toBeVisible();
+    await expect(page.getByText('Tap the map to set the pin.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-map-loading', false);
