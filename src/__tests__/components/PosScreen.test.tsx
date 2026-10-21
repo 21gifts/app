@@ -1532,6 +1532,8 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      // The effects of that read have run.
+      await act(async () => undefined);
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
@@ -1549,6 +1551,8 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      // The effects of that read have run.
+      await act(async () => undefined);
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
@@ -1744,6 +1748,8 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       showTab();
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      // The effects of that read have run (the charge is no longer the open one).
+      await act(async () => undefined);
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
