@@ -9700,10 +9700,21 @@ test.describe('onboarding screens', () => {
     let created: Record<string, unknown> | null = null;
     await page.route(/\/pos\/charge$/, async (route) => {
       if (route.request().method() === 'POST') {
-        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
         created = {
           id: 'pos-e2e',
           amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
           status: 'pending',
           createdAt: '2026-09-20T12:00:00.000Z',
           expiresAt: '2026-09-20T12:05:00.000Z',
@@ -9774,10 +9785,21 @@ test.describe('onboarding screens', () => {
     await page.route(/\/pos\/charge$/, async (route) => {
       const method = route.request().method();
       if (method === 'POST') {
-        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
         created = {
           id: 'pos-e2e',
           amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
           status: 'pending',
           createdAt: '2026-09-20T12:00:00.000Z',
           expiresAt: '2026-09-20T12:05:00.000Z',
@@ -9851,10 +9873,21 @@ test.describe('onboarding screens', () => {
     await page.route(/\/pos\/charge$/, async (route) => {
       const method = route.request().method();
       if (method === 'POST') {
-        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
         created = {
           id: 'pos-e2e',
           amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
           status: 'pending',
           createdAt: '2026-09-20T12:00:00.000Z',
           expiresAt: '2026-09-20T12:05:00.000Z',
@@ -9892,7 +9925,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-open-cancel-failed');
   });
 
-  test('pos open elsewhere', async ({ page }) => {
+  test('pos open bitcoin', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
@@ -9934,17 +9967,17 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: open, history: [open] }),
       });
     });
-    // The charge was created in another tab (or before a reload): this tab has no typed figure.
+    // The charge was typed in bitcoin: no currency figure is stored with it.
     await page.goto('/pos');
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText("₿5'000")).toBeVisible();
     await expect(page.getByText(/\$/)).toHaveCount(0);
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await shotScreen(page, 'state-pos-open-elsewhere');
+    await shotScreen(page, 'state-pos-open-bitcoin');
   });
 
-  test('pos cancelled elsewhere', async ({ page }) => {
+  test('pos cancelled bitcoin', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
@@ -9995,7 +10028,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(body),
       });
     });
-    // Cancel on a charge another tab created: History lists it as Cancelled, bitcoin only.
+    // Cancel on a charge stored without a figure: History lists it as Cancelled, bitcoin only.
     await page.goto('/pos');
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
@@ -10003,7 +10036,7 @@ test.describe('onboarding screens', () => {
     await expect(row.getByText('Cancelled')).toBeVisible();
     await expect(row).toContainText("\u20bf5'000");
     await expect(page.getByText(/\$/)).toHaveCount(0);
-    await shotScreen(page, 'state-pos-cancelled-elsewhere');
+    await shotScreen(page, 'state-pos-cancelled-bitcoin');
   });
 
   test('pos paid', async ({ page }) => {
@@ -10051,7 +10084,7 @@ test.describe('onboarding screens', () => {
     const dialog = page.getByRole('alertdialog', { name: 'Paid' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('₿21')).toBeVisible();
-    // A charge this till did not create has no fixed figure, and none is priced from the spot.
+    // No figure is stored with this charge, and none is priced from the spot.
     await expect(dialog.getByText('$0.02')).toHaveCount(0);
     await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
@@ -10146,7 +10179,15 @@ test.describe('onboarding screens', () => {
     });
     await page.route(/\/pos\/charge$/, async (route) => {
       if (route.request().method() === 'POST') {
-        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
         await route.fulfill({
           status: 201,
           contentType: 'application/json',
@@ -10154,6 +10195,9 @@ test.describe('onboarding screens', () => {
             charge: {
               id: 'pos-e2e',
               amountSats,
+              // The api stores the typed figure with the charge and returns it.
+              amountCurrency,
+              amount,
               status: 'pending',
               createdAt: '2026-09-20T12:01:00.000Z',
               expiresAt: '2026-09-20T12:06:00.000Z',
@@ -10211,10 +10255,21 @@ test.describe('onboarding screens', () => {
     let paid: Record<string, unknown> | null = null;
     await page.route(/\/pos\/charge$/, async (route) => {
       if (route.request().method() === 'POST') {
-        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
         const created = {
           id: 'pos-e2e',
           amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
           status: 'pending',
           createdAt: '2026-09-20T12:01:00.000Z',
           expiresAt: '2026-09-20T12:06:00.000Z',
@@ -10318,7 +10373,7 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
-    // Charges this tab did not create have no typed figure: bitcoin only, never a spot price.
+    // No figure is stored with these charges: bitcoin only, never a spot price.
     await expect(history.getByText(/\$/)).toHaveCount(0);
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
@@ -10924,7 +10979,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await expect(page.getByText("\u20bf5'000")).toBeVisible();
-    // A charge this tab did not create has no typed figure: bitcoin only, never a spot price.
+    // No figure is stored with this charge: bitcoin only, never a spot price.
     await expect(page.getByText(/\$/)).toHaveCount(0);
     await shotScreen(page, 'state-pos-cancel-failed');
   });
@@ -10988,7 +11043,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    // A charge this tab did not create has no typed figure: bitcoin only, never a spot price.
+    // No figure is stored with this charge: bitcoin only, never a spot price.
     await expect(page.getByText(/\$/)).toHaveCount(0);
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');

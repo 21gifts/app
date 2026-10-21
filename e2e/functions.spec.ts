@@ -10169,7 +10169,15 @@ async function seedChfTill(page: Page): Promise<{ created: number[] }> {
   const created: number[] = [];
   await page.route(/\/pos\/charge$/, async (route) => {
     if (route.request().method() === 'POST') {
-      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      const {
+        amountSats,
+        amountCurrency = null,
+        amount = null,
+      } = route.request().postDataJSON() as {
+        amountSats: number;
+        amountCurrency?: string;
+        amount?: string;
+      };
       created.push(amountSats);
       await route.fulfill({
         status: 201,
@@ -10178,6 +10186,9 @@ async function seedChfTill(page: Page): Promise<{ created: number[] }> {
           charge: {
             id: 'pos-chf',
             amountSats,
+            // The api stores the typed figure with the charge and returns it.
+            amountCurrency,
+            amount,
             status: 'pending',
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 60_000).toISOString(),
@@ -10682,7 +10693,7 @@ test('Function: PosHistory — the till list gains the charge once it is paid', 
   await expect(history.getByRole('listitem').first()).toContainText('₿21');
 });
 
-test('Function: fiatSuffix — the till lists a charge it created with the figure typed for it', async ({
+test('Function: PosHistory — the till lists a cancelled charge with the figure stored for it', async ({
   page,
 }) => {
   await fulfillSpot(page, SPOT_RATES);
@@ -10693,10 +10704,21 @@ test('Function: fiatSuffix — the till lists a charge it created with the figur
   await page.route(/\/pos\/charge$/, async (route) => {
     const method = route.request().method();
     if (method === 'POST') {
-      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      const {
+        amountSats,
+        amountCurrency = null,
+        amount = null,
+      } = route.request().postDataJSON() as {
+        amountSats: number;
+        amountCurrency?: string;
+        amount?: string;
+      };
       charge = {
         id: 'pos-chf',
         amountSats,
+        // The api stores the typed figure with the charge and returns it.
+        amountCurrency,
+        amount,
         status: 'pending',
         createdAt: new Date().toISOString(),
         expiresAt: new Date(Date.now() + 60_000).toISOString(),

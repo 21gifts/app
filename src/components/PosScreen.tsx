@@ -18,11 +18,11 @@ import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
+import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
 import {
   cancelPosCharge,
   createPosCharge,
   fetchPosState,
-  type PosFigure,
   type PosCharge,
   type PosState,
 } from '@/lib/pos';
@@ -32,43 +32,13 @@ import { visualPin } from '@/lib/visual-pin';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { announceReceivedForE2e, onPaymentReceived } from '@/lib/wallet/wallet-service';
 import type { AmountUnit } from '@/lib/api-types';
-import { useAuthStore } from '@/stores/auth-store';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   type FiatRateDay,
 } from '@/lib/stats-money';
-
-/**
- * Fiat under a till amount. A stored figure is shown as-is. With none, the
- * current spot stands beside the bitcoin and is not written onto the charge.
- */
-function posFiatText(
-  stored: { code: FiatCode; amount: string } | null,
-  sats: number | null,
-  rateDay: FiatRateDay | null,
-  fiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): string | null {
-  if (stored !== null) {
-    return formatFiatDisplay(stored.amount, stored.code, numberFormat);
-  }
-  if (sats === null) {
-    return null;
-  }
-  const spot = satsToFiatAmount(sats, rateDay, fiat);
-  return spot === null ? null : formatFiatDisplay(spot, fiat, numberFormat);
-}
-
-/** Draft the till stores: trim, one comma to a dot, fraction digits kept, no trailing dot. */
-function typedFiatDraft(draft: string): string {
-  const dotted = draft.trim().replace(',', '.');
-  if (dotted.endsWith('.')) {
-    return dotted.slice(0, -1);
-  }
-  return dotted;
-}
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Remaining time as m:ss. */
 function formatLeft(ms: number): string {
@@ -159,8 +129,6 @@ type WalletSettled = {
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
   early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
-  /** The currency figure of each charge this tab created in a currency, by charge id. */
-  figures: Map<string, PosFigure>;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
@@ -183,7 +151,6 @@ function settledFor(session: string | null): WalletSettled {
       paid: new Map(),
       closed: new Set(),
       early: [],
-      figures: new Map(),
     };
   }
   return walletSettled;
@@ -266,13 +233,6 @@ function finishedIn(state: PosState, id: string): boolean {
   );
 }
 
-/** Remember `figure` as the currency figure of charge `id`, when there is one. */
-function rememberFigure(memory: WalletSettled, id: string, figure: PosFigure | null): void {
-  if (figure !== null) {
-    memory.figures.set(id, figure);
-  }
-}
-
 /** Make `charge` the open charge in `memory` again, when there was one. */
 function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   if (charge !== null) {
@@ -350,12 +310,10 @@ type PosTillState = {
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
   remaining: number;
-  /** The currency figure of the open charge when this tab created it in a currency, otherwise `null`. */
-  chargeFigure: PosFigure | null;
-  /** The currency figure of each charge this tab created in a currency, by charge id. */
-  figures: ReadonlyMap<string, PosFigure>;
-  /** The currency figure of `paid` when this tab created it in a currency, otherwise `null`. */
-  paidFigure: PosFigure | null;
+  /** The currency figure stored with the open charge, otherwise `null` (bitcoin only). */
+  chargeFigure: { code: FiatCode; amount: string } | null;
+  /** The currency figure stored with `paid`, otherwise `null` (bitcoin only). */
+  paidFigure: { code: FiatCode; amount: string } | null;
   amount: string;
   setAmount: (value: string) => void;
   shownUnit: AmountUnit;
@@ -512,9 +470,9 @@ function usePosTillState(): PosTillState {
       ? []
       : state.history.map((row) => (row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row)));
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  // Only the figure typed for the charge, never one priced from a rate (docs/fiat-amounts.md).
-  const chargeFigure = charge === null ? null : (memory.figures.get(charge.id) ?? null);
-  const paidFigure = paid === null ? null : (memory.figures.get(paid.id) ?? null);
+  // Only the figure stored with the charge, never one priced from a rate (docs/fiat-amounts.md).
+  const chargeFigure = charge === null ? null : committedFiatFigure(charge);
+  const paidFigure = paid === null ? null : committedFiatFigure(paid);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
     account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
@@ -664,12 +622,12 @@ function usePosTillState(): PosTillState {
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
-    // The currency figure of the new charge: the digits typed in a currency. Bitcoin typed has
-    // none, and none is made by converting the sats (docs/fiat-amounts.md).
-    const figure =
+    // The currency figure stored with the new charge: the digits typed in a currency. Bitcoin
+    // typed sends none, and none is made by converting the sats (docs/fiat-amounts.md).
+    const typed =
       shownUnit === 'fiat'
-        ? { amount: amount.trim().replace(',', '.').replace(/\.$/, ''), code: fiat }
-        : null;
+        ? { amountCurrency: fiat, amount: amount.trim().replace(',', '.').replace(/\.$/, '') }
+        : undefined;
     const startedAt = Date.now();
     const work = (async (): Promise<void> => {
       // The charges that exist right before this create, read now (the amount page does not read
@@ -682,8 +640,7 @@ function usePosTillState(): PosTillState {
         known = null;
       }
       try {
-        const created = await createPosCharge(session, amountSats);
-        rememberFigure(creating, created.id, figure);
+        const created = await createPosCharge(session, amountSats, typed);
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
@@ -728,10 +685,8 @@ function usePosTillState(): PosTillState {
               }
             });
             if (made !== null) {
-              // The charge was made: the till shows it and counts the payments kept meanwhile. Without
-              // the create's answer another tab's charge of the same amount cannot be told apart, so it
-              // gets no typed figure and shows bitcoin only: a missing figure is allowed, a wrong one
-              // is not (docs/fiat-amounts.md).
+              // The charge was made: the till shows it, with the figure stored on it, and counts the
+              // payments kept meanwhile.
               if (made.status === 'paid') {
                 // Already paid while the answer was lost: confirm it like a payment the wallet saw.
                 creating.paid.set(made.id, made);
@@ -868,7 +823,6 @@ function usePosTillState(): PosTillState {
     history,
     remaining,
     chargeFigure,
-    figures: memory.figures,
     paidFigure,
     amount,
     setAmount,
@@ -898,14 +852,14 @@ function usePosTillState(): PosTillState {
 
 /**
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
- * With a charge, this page shows the countdown, bitcoin, the typed currency
- * figure when this tab kept one for the charge, and Cancel.
+ * With a charge, this page shows the countdown, bitcoin, the currency figure
+ * stored with the charge when it was typed in a currency, and Cancel.
  * It never asks the api on a timer: the moment this tab's wallet reports a
  * payment that pays the charge ({@link onPaymentReceived}: its amount, or
  * that amount after the fee, made from the second of its creation to a
  * minute after its end), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
- * charge's fixed currency figure when this tab has one.
+ * currency figure stored with the charge when there is one.
  * The till reads the api only on open, right before each create, on **Try again**
  * after a failed load,
  * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
@@ -1039,11 +993,7 @@ export function PosTill(): ReactElement {
         </p>
       ) : null}
       {till.state !== null ? (
-        <PosHistory
-          history={till.history}
-          openChargeId={till.charge?.id ?? null}
-          figures={till.figures}
-        />
+        <PosHistory history={till.history} openChargeId={till.charge?.id ?? null} />
       ) : null}
     </Card>
   );

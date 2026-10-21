@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { throwIfWalletAnswer } from '@/lib/api';
 import type { FiatCode, StoredFiat } from '@/lib/committed-fiat';
 import { logInteraction } from '@/lib/interaction-log';
-import type { FiatCode } from '@/lib/stats-money';
 
 const fiatCodeSchema = z.enum(['USD', 'CHF', 'EUR', 'PHP']);
 
@@ -54,13 +53,6 @@ export type PosCharge = z.infer<typeof posChargeSchema>;
 
 /** Open charge plus recent rows. */
 export type PosState = z.infer<typeof posStateSchema>;
-
-/**
- * The currency figure of a charge: the digits the operator typed in that
- * currency when the charge was created. A charge typed in bitcoin has none.
- * Never priced from a rate (docs/fiat-amounts.md).
- */
-export type PosFigure = { amount: string; code: FiatCode };
 
 /**
  * Load the signed-in till.

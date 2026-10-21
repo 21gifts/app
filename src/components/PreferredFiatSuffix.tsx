@@ -16,15 +16,7 @@ type StoredFiatAmounts = {
   amountPhp?: string | null | undefined;
 };
 
-/**
- * ` · ` plus the formatted fiat `amount`, for beside a ₿ amount.
- *
- * @param amount - Decimal fiat string, shown as-is.
- * @param fiat - Its currency.
- * @param numberFormat - Grouping style.
- * @returns The suffix markup.
- */
-export function fiatSuffix(
+function fiatSuffixMarkup(
   amount: string,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
@@ -67,9 +59,19 @@ export function preferredFiatSuffix(
   stored?: StoredFiatAmounts,
 ): ReactElement | null {
   if (stored !== undefined) {
-    const amount = stored[STORED_FIAT_FIELD[fiat]];
-    if (typeof amount === 'string') {
-      return fiatSuffix(amount, fiat, numberFormat);
+    const figure = committedFiatFigure(
+      {
+        amountCurrency: null,
+        amount: null,
+        amountUsd: storedDecimal(stored.amountUsd),
+        amountChf: storedDecimal(stored.amountChf),
+        amountEur: storedDecimal(stored.amountEur),
+        amountPhp: storedDecimal(stored.amountPhp),
+      },
+      fiat,
+    );
+    if (figure === null) {
+      return null;
     }
   }
   if (rateDay === null) {
@@ -79,5 +81,5 @@ export function preferredFiatSuffix(
   if (live === null) {
     return null;
   }
-  return fiatSuffix(live, fiat, numberFormat);
+  return fiatSuffixMarkup(live, fiat, numberFormat);
 }

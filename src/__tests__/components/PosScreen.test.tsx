@@ -164,7 +164,7 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
-  it('never prices an open charge this tab did not create from the spot rate', async () => {
+  it('never prices an open charge without a stored figure from the spot rate', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
@@ -176,12 +176,6 @@ describe('PosScreen', () => {
             status: 'pending',
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 60_000).toISOString(),
-            amountCurrency: null,
-            amount: null,
-            amountUsd: null,
-            amountChf: null,
-            amountEur: null,
-            amountPhp: null,
           },
           history: [],
         }),
@@ -433,61 +427,6 @@ describe('PosScreen', () => {
     const post = fetchMock.mock.calls.find((call) => call[1]?.method === 'POST');
     const body = JSON.parse(String(post?.[1]?.body)) as { amountSats: number };
     expect(body.amountSats).toBe(85_000);
-  });
-
-  it('sends the typed fiat pair and keeps 12.00', async () => {
-    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
-    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      if (init?.method === 'POST') {
-        return jsonResponse({ error: 'stop here' }, 400);
-      }
-      return jsonResponse({ charge: null, history: [] });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosAmount />, 'en', 'ch', 'USD');
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('ariaPressed', 'true');
-    });
-    await pressAmount('12.00');
-    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as {
-      amountSats: number;
-      amountCurrency: string;
-      amount: string;
-    };
-    expect(body).toEqual({ amountSats: 12_000, amountCurrency: 'USD', amount: '12.00' });
-  });
-
-  it('sends the typed fiat pair without a trailing dot', async () => {
-    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
-    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
-      if (init?.method === 'POST') {
-        return jsonResponse({ error: 'stop here' }, 400);
-      }
-      return jsonResponse({ charge: null, history: [] });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-    renderWithLocale(<PosAmount />, 'en', 'ch', 'USD');
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('ariaPressed', 'true');
-    });
-    await pressAmount('12.');
-    expect(screen.getByLabelText('Amount').textContent).toBe('12.');
-    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as {
-      amountSats: number;
-      amountCurrency: string;
-      amount: string;
-    };
-    expect(body).toEqual({ amountSats: 12_000, amountCurrency: 'USD', amount: '12' });
   });
 
   it('asks for at least ₿1 when a fiat amount is empty or zero', async () => {
@@ -1237,32 +1176,6 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
       expect(screen.queryByText(/left$/)).toBeNull();
-    });
-
-    it('shows 12.00 PHP under the bitcoin amount of a paid charge', async () => {
-      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
-      const paid = {
-        ...PAID,
-        amountCurrency: 'PHP',
-        amount: '12.00',
-        amountUsd: '1.00',
-        amountChf: null,
-        amountEur: null,
-        amountPhp: null,
-      };
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: paid, history: [] })),
-      );
-      renderWithLocale(<PosScreen />, 'en', 'ch', 'USD');
-      expect(await screen.findByText('₱12.00')).toBeTruthy();
-      expect(screen.getByText('₿21')).toBeTruthy();
-      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
-      await waitFor(() => {
-        expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
-      });
-      expect(screen.queryByText('$0.02')).toBeNull();
-      expect(screen.queryByText('$1.00')).toBeNull();
     });
 
     it('records a paid charge only for the session that read the till', async () => {
@@ -2503,18 +2416,24 @@ describe('PosScreen', () => {
       expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
     });
 
-    /** Creates a charge of `draft` on the amount page; the api answers with `created`. */
+    /**
+     * Creates a charge of `draft` on the amount page; the api answers with `created`.
+     * Resolves the body the till posted.
+     */
     async function createOnAmountPage(
       draft: string,
       created: Record<string, unknown>,
-    ): Promise<void> {
+    ): Promise<unknown> {
+      let posted: unknown = null;
       vi.stubGlobal(
         'fetch',
-        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
-          init?.method === 'POST'
-            ? jsonResponse({ charge: created }, 201)
-            : jsonResponse({ charge: null, history: [] }),
-        ),
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            posted = JSON.parse(String(init.body));
+            return jsonResponse({ charge: created }, 201);
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }),
       );
       const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
       await pressAmount(draft);
@@ -2523,14 +2442,23 @@ describe('PosScreen', () => {
         expect(replace).toHaveBeenCalledWith('/pos');
       });
       amountPage.unmount();
+      return posted;
     }
 
-    it('shows on the confirmation the currency figure typed for the charge, not a spot price', async () => {
+    it('sends the typed figure with the create and shows the stored one, not a spot price', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
-      // The api pinned another sat amount than the spot gives for CHF 68: the figure stays 68.00.
-      const created = { ...OPEN, id: 'c7', createdAt: new Date().toISOString() };
-      await createOnAmountPage('68', created);
+      // The api stores the typed figure with the charge and returns it; it pinned another sat
+      // amount than the spot gives for CHF 68, and the figure stays 68.00.
+      const created = {
+        ...OPEN,
+        id: 'c7',
+        createdAt: new Date().toISOString(),
+        amountCurrency: 'CHF',
+        amount: '68',
+      };
+      const posted = await createOnAmountPage('68', created);
+      expect(posted).toEqual({ amountSats: 85_000, amountCurrency: 'CHF', amount: '68' });
       vi.stubGlobal(
         'fetch',
         vi
@@ -2553,7 +2481,8 @@ describe('PosScreen', () => {
     it('shows bitcoin only for a charge typed in bitcoin, even with a spot rate', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT).mockResolvedValueOnce(SPOT);
       const created = { ...OPEN, id: 'c8', amountSats: 2_100, createdAt: new Date().toISOString() };
-      await createOnAmountPage('2100', created);
+      // Bitcoin typed sends no figure.
+      expect(await createOnAmountPage('2100', created)).toEqual({ amountSats: 2_100 });
       vi.stubGlobal(
         'fetch',
         vi
@@ -2573,18 +2502,20 @@ describe('PosScreen', () => {
       expect(screen.queryByText(/CHF/)).toBeNull();
     });
 
-    it('takes over the charge a lost create made, in bitcoin only and without an error', async () => {
+    it('takes over the charge a lost create made, with the figure stored on it and no error', async () => {
       const alerted = await loseCreateAnswer({
         ...OPEN,
         id: 'c5',
         amountSats: 85_000,
         createdAt: new Date().toISOString(),
+        amountCurrency: 'CHF',
+        amount: '68',
       });
       expect(alerted).toBe(false);
       const dialog = await confirmation();
       expect(within(dialog).getByText("₿85'000")).toBeTruthy();
-      // Without the create's answer it cannot be told from another tab's charge: no typed figure.
-      expect(within(dialog).queryByText(/CHF/)).toBeNull();
+      // The figure comes from the charge the api stored, not from this tab.
+      expect(within(dialog).getByText('CHF 68.00')).toBeTruthy();
     });
 
     /**
@@ -2632,6 +2563,8 @@ describe('PosScreen', () => {
         status: 'paid',
         createdAt: new Date().toISOString(),
         paidAt: new Date().toISOString(),
+        amountCurrency: 'CHF',
+        amount: '68',
       };
       let lost = false;
       vi.stubGlobal(
@@ -2657,7 +2590,7 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
       const dialog = await confirmation();
       expect(within(dialog).getByText("₿85'000")).toBeTruthy();
-      expect(within(dialog).queryByText(/CHF/)).toBeNull();
+      expect(within(dialog).getByText('CHF 68.00')).toBeTruthy();
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
