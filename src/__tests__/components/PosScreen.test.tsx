@@ -2512,20 +2512,28 @@ describe('PosScreen', () => {
       });
     });
 
-    it('does not read the till again when the api refuses a create', async () => {
-      const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
-        init?.method === 'POST'
-          ? jsonResponse({ error: 'A payment is already open' }, 409)
-          : jsonResponse({ charge: null, history: [] }),
-      );
-      vi.stubGlobal('fetch', fetchMock);
-      renderWithLocale(<PosAmount />);
-      await pressAmount('5');
-      const before = fetchMock.mock.calls.length;
-      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
-      expect(await screen.findByText('A payment is already open.')).toBeTruthy();
-      // The read right before the create and the create; no read after the refusal.
-      expect(fetchMock.mock.calls.length).toBe(before + 2);
+    it('reads the till again after a refused create only when a payment is already open', async () => {
+      for (const [apiError, shown, after] of [
+        ['A payment is already open', 'A payment is already open.', 1],
+        ['Set a username first', 'Set a username first.', 0],
+      ] as const) {
+        cleanup();
+        useAuthStore.setState({ session: 'tok', account: ACCOUNT });
+        const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+          init?.method === 'POST'
+            ? jsonResponse({ error: apiError }, 409)
+            : jsonResponse({ charge: null, history: [] }),
+        );
+        vi.stubGlobal('fetch', fetchMock);
+        renderWithLocale(<PosAmount />);
+        await pressAmount('5');
+        const before = fetchMock.mock.calls.length;
+        fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+        expect(await screen.findByText(shown)).toBeTruthy();
+        await act(async () => undefined);
+        // The read right before the create, the create, and one read after an already-open refusal.
+        expect(fetchMock.mock.calls.length).toBe(before + 2 + after);
+      }
     });
 
     it('does not count a payment reported while a cancel that goes through is on its way', async () => {
