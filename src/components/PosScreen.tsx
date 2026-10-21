@@ -760,8 +760,12 @@ function usePosTillState(): PosTillState {
       }
     }
     if (charge !== null) {
-      // A payment the wallet reported while this charge was still being read counts for it.
-      armOpen(memory, charge);
+      // A payment the wallet reported while this charge was still being read counts for it. Not
+      // while a create or cancel is on its way: the charge takes no payment then, and a failed
+      // cancel arms it again itself.
+      if (!busyRef.current) {
+        armOpen(memory, charge);
+      }
     } else if (
       memory.open !== null &&
       (Date.now() < Date.parse(memory.open.expiresAt) ||
@@ -773,7 +777,7 @@ function usePosTillState(): PosTillState {
       // payment just after its end still counts.
       memory.open = null;
     }
-  }, [charge, session, state, tillSession]);
+  }, [busy, charge, session, state, tillSession]);
 
   useEffect(() => {
     // A payment that names a charge this read lists pays it now, not at the next read.
