@@ -38,7 +38,12 @@ vi.mock('next/navigation', () => ({
 // The till hears this tab's wallet through onPaymentReceived; the tests play the wallet.
 const received = vi.hoisted(() => ({
   listeners: new Set<
-    (payment: { amountSats: number; feesSats: number; timestamp: number }) => void
+    (payment: {
+      amountSats: number;
+      feesSats: number;
+      timestamp: number;
+      info: { chargeId?: string };
+    }) => void
   >(),
 }));
 vi.mock('@/lib/wallet/wallet-service', async () => {
@@ -48,7 +53,12 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
   return {
     ...actual,
     onPaymentReceived: (
-      listener: (payment: { amountSats: number; feesSats: number; timestamp: number }) => void,
+      listener: (payment: {
+        amountSats: number;
+        feesSats: number;
+        timestamp: number;
+        info: { chargeId?: string };
+      }) => void,
     ) => {
       received.listeners.add(listener);
       return () => {
@@ -61,6 +71,7 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
       amountSats: number;
       feesSats: number;
       timestamp: number;
+      info: { chargeId?: string };
     }) => {
       for (const listener of [...received.listeners]) {
         listener(payment);
@@ -69,11 +80,24 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
   };
 });
 
-/** This tab's wallet reports a completed payment of `amountSats` (after `feesSats`) made at `timestamp`. */
-function receive(amountSats: number, feesSats = 0, timestamp = Date.now()): void {
+/**
+ * This tab's wallet reports a completed payment of `amountSats` (after `feesSats`) made at
+ * `timestamp`; `chargeId` when it paid the api's Spark invoice of that charge (memo `pos:<id>`).
+ */
+function receive(
+  amountSats: number,
+  feesSats = 0,
+  timestamp = Date.now(),
+  chargeId?: string,
+): void {
   act(() => {
     for (const listener of [...received.listeners]) {
-      listener({ amountSats, feesSats, timestamp });
+      listener({
+        amountSats,
+        feesSats,
+        timestamp,
+        info: chargeId === undefined ? {} : { chargeId },
+      });
     }
   });
 }
@@ -3286,6 +3310,8 @@ describe('PosScreen', () => {
           return jsonResponse({ charge: newer, history: [newer, ended] });
         }),
       );
+      const vibrate = vi.fn(() => true);
+      vi.stubGlobal('navigator', { ...navigator, vibrate });
       renderWithLocale(<PosScreen />);
       await waitFor(() => {
         expect(reads).toBe(2);
@@ -3305,6 +3331,8 @@ describe('PosScreen', () => {
       fireEvent.click(within(first).getByRole('button', { name: 'Done' }));
       const second = await confirmation();
       expect(within(second).getByText('$5.00')).toBeTruthy();
+      // A fresh confirmation for that charge: the phone vibrates again.
+      expect(vibrate).toHaveBeenCalledTimes(2);
       fireEvent.click(within(second).getByRole('button', { name: 'Done' }));
       await waitFor(() => {
         expect(screen.queryByRole('alertdialog')).toBeNull();
@@ -3346,6 +3374,78 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
       });
+    });
+
+    it('pays the charge a Spark payment names at once, even in its late minute, without a read', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, Date.now(), ended.id);
+      expect(await confirmation()).toBeTruthy();
+      expect(reads).toBe(2);
+    });
+
+    it('does not let a Spark payment that names another charge pay the open one', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21, 0, Date.now(), 'c-other');
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
+    it('keeps a late-minute payment paid on the newer charge another tab cancelled meanwhile', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const paidAt = Date.now();
+      const newerCancelled = {
+        ...OPEN,
+        id: 'c-cancelled-elsewhere',
+        status: 'cancelled',
+        createdAt: new Date(Math.floor(paidAt / 1_000) * 1_000).toISOString(),
+        expiresAt: new Date(paidAt + 300_000).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          return jsonResponse({
+            charge: null,
+            history: [newerCancelled, { ...ended, status: 'expired' }],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, paidAt);
+      // The money arrived for the newer charge: it is paid on this till, not the charge before.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
     });
 
     it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {

@@ -117,6 +117,15 @@ let tillWrite: Promise<void> | null = null;
 const paidSeen = new Set<string>();
 
 /**
+ * A wallet payment as the till weighs it: its amount, fee and payment time,
+ * and, for a payment of the api's Spark invoice of a charge (memo
+ * `pos:<id>`, read by the wallet as `info.chargeId`), the id of that charge.
+ */
+type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> & {
+  chargeId?: string;
+};
+
+/**
  * What this tab's wallet settled for one session, shared by `/pos` and
  * `/pos/amount` so a page change keeps it: the last open charge (a payment
  * just after its end still counts), the charges the wallet saw paid before
@@ -131,14 +140,14 @@ type WalletSettled = {
    * charge, held until a read says whether a newer charge (another tab's) took it.
    */
   late: Array<{
-    payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>;
+    payment: TillPayment;
     charge: PosCharge;
   }>;
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
-  paidBy: Map<string, Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
+  paidBy: Map<string, TillPayment>;
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
-  early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
+  early: Array<TillPayment>;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
@@ -183,10 +192,11 @@ function settledChanged(): void {
  * the receiving address takes no other amount, so the time tells a payment of
  * this charge from one of the charge before, however late the wallet reports it.
  */
-function pays(
-  charge: PosCharge,
-  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
-): boolean {
+function pays(charge: PosCharge, payment: TillPayment): boolean {
+  // A payment that names its charge pays that charge and no other.
+  if (payment.chargeId !== undefined) {
+    return payment.chargeId === charge.id;
+  }
   return (
     (payment.amountSats === charge.amountSats ||
       payment.amountSats + payment.feesSats === charge.amountSats) &&
@@ -204,20 +214,14 @@ function pays(
  * the memory it is given, so a session that ended meanwhile never touches the
  * memory of the next one.
  */
-function settleOpen(
-  memory: WalletSettled,
-  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
-): void {
+function settleOpen(memory: WalletSettled, payment: TillPayment): void {
   const open = memory.open;
   if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
-    memory.early = [
-      ...memory.early,
-      { amountSats: payment.amountSats, feesSats: payment.feesSats, timestamp: payment.timestamp },
-    ].slice(-POS_EARLY_PAYMENTS);
+    memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
     return;
   }
-  if (payment.timestamp > Date.parse(open.expiresAt)) {
+  if (payment.chargeId === undefined && payment.timestamp > Date.parse(open.expiresAt)) {
     // Made in the late minute: another tab may have made a newer charge of this amount that took
     // the receiving address, which only the api knows. Held until the till has read it.
     memory.late = [...memory.late, { payment, charge: open }];
@@ -228,11 +232,7 @@ function settleOpen(
 }
 
 /** Charge `charge` is paid by `payment` on this till. */
-function markPaid(
-  memory: WalletSettled,
-  charge: PosCharge,
-  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
-): void {
+function markPaid(memory: WalletSettled, charge: PosCharge, payment: TillPayment): void {
   if (memory.open?.id === charge.id) {
     memory.open = null;
   }
@@ -268,7 +268,8 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
           );
     if (newer !== undefined) {
       taken.add(newer.id);
-      if (newer.status === 'pending') {
+      // The wallet saw the money arrive: paid here even when another tab cancelled it meanwhile.
+      if (newer.status !== 'paid') {
         markPaid(memory, newer, payment);
       }
       continue;
@@ -277,10 +278,7 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
       markPaid(memory, charge, payment);
       continue;
     }
-    memory.early = [
-      ...memory.early,
-      { amountSats: payment.amountSats, feesSats: payment.feesSats, timestamp: payment.timestamp },
-    ].slice(-POS_EARLY_PAYMENTS);
+    memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
   }
   settledChanged();
 }
@@ -313,7 +311,7 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
     }
     memory.paid.delete(id);
     memory.paidBy.delete(id);
-    if (newer.status === 'pending') {
+    if (newer.status !== 'paid') {
       memory.paid.set(newer.id, { ...newer, status: 'paid', paidAt: new Date().toISOString() });
       memory.paidBy.set(newer.id, payment);
     }
@@ -397,7 +395,22 @@ function listenToWallet(): void {
   walletListening = onPaymentReceived((payment) => {
     const session = useAuthStore.getState().session;
     if (session !== null) {
-      settleOpen(settledFor(session), payment);
+      const { chargeId } = payment.info;
+      settleOpen(
+        settledFor(session),
+        chargeId === undefined
+          ? {
+              amountSats: payment.amountSats,
+              feesSats: payment.feesSats,
+              timestamp: payment.timestamp,
+            }
+          : {
+              amountSats: payment.amountSats,
+              feesSats: payment.feesSats,
+              timestamp: payment.timestamp,
+              chargeId,
+            },
+      );
     }
   });
 }
@@ -1168,6 +1181,7 @@ export function PosTill(): ReactElement {
       ) : null}
       {shownPaid !== null ? (
         <PosPaidOverlay
+          key={shownPaid.id}
           amount={formatBitcoin(shownPaid.amountSats, numberFormat)}
           fiat={
             till.paidFigure === null
