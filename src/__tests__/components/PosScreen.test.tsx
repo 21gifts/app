@@ -1899,6 +1899,7 @@ describe('PosScreen', () => {
         const fresh = { ...OPEN, id: 'c2', createdAt: new Date(Date.now() + 5_000).toISOString() };
         let releasePost: ((value: Response) => void) | undefined;
         let created = false;
+        let reads = 0;
         vi.stubGlobal(
           'fetch',
           vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
@@ -1907,17 +1908,19 @@ describe('PosScreen', () => {
                 releasePost = resolve;
               });
             }
+            reads += 1;
+            // The till first reads the charge before as it runs out; then the api has none open.
             return Promise.resolve(
               jsonResponse(
                 created
                   ? { charge: fresh, history: [fresh, ended] }
-                  : { charge: ended, history: [ended] },
+                  : { charge: reads === 1 ? ended : null, history: [ended] },
               ),
             );
           }),
         );
         const till = renderWithLocale(<PosScreen />);
-        expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+        expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
         till.unmount();
         const amountPage = renderWithLocale(<PosAmount />);
         await pressAmount('21');
