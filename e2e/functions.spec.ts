@@ -19,12 +19,16 @@ import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
 import { parseForumAskAmountInUnit, scaleDecimalTo8 } from '../src/lib/forum-goal';
+import { storedTypedFiat } from '../src/lib/committed-fiat';
 import {
+  addDecimalStrings,
+  attachTypedFigure,
   fiatDraftForSats,
   fiatToSats,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
+  typedFiatFigure,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
@@ -15224,6 +15228,124 @@ test('Function: AmountEntry — the ask field shows the unit switch', async ({ p
   await page.goto(`/pl?lightning=${PAY_LINK}`);
   await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toBeVisible();
   await expect(page.getByLabel('Amount')).toBeVisible();
+});
+
+/** One USD sat is $0.02, so a typed 0.01 does not equal the spot of its 1 sat. */
+const DIVERGE_STATS = {
+  ...AMOUNT_RATE_STATS,
+  totalUsd: '2000000.00',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '2000000.00',
+      cumulativeUsd: '2000000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+};
+
+/** Gift confirmation after typing 0.01 USD. The sheet keeps $0.01 beside ₿1. */
+async function openTypedFiatConfirmation(page: Page): Promise<Locator> {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await stubGiftStats(page, DIVERGE_STATS);
+  await page.route('**/me/amount-unit', async (route) => {
+    const body = route.request().postDataJSON() as { unit?: string };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc',
+      }),
+    });
+  });
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    const posted = route.request().postDataJSON() as { amountSats?: number };
+    const amountSats = typeof posted.amountSats === 'number' ? posted.amountSats : 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: PAY_INVOICE, amountSats }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reply = page.locator('[data-reply-id="r-pay"]');
+  await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const usd = reply
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' });
+  await expect(usd).toBeEnabled();
+  await usd.click();
+  await reply.getByLabel('Amount').fill('0.01');
+  await reply.getByRole('button', { name: 'Continue' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  await expect(sheet.getByText('₿1', { exact: true })).toBeVisible();
+  await expect(sheet.getByText('$0.01')).toBeVisible();
+  await expect(sheet.getByText('$0.02')).toHaveCount(0);
+  return sheet;
+}
+
+test('Function: typedFiatFigure — a typed 0.01 stays 0.01 beside its bitcoin', async ({ page }) => {
+  expect(typedFiatFigure('fiat', '0.01', 'USD')).toEqual({ code: 'USD', amount: '0.01' });
+  expect(typedFiatFigure('btc', '0.01', 'USD')).toBeNull();
+  expect(typedFiatFigure('fiat', '12.', 'USD')).toEqual({ code: 'USD', amount: '12' });
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: attachTypedFigure — the confirmation carries the typed figure', async ({
+  page,
+}) => {
+  expect(attachTypedFigure({ amountSats: 1 }, 'fiat', '0.01', 'USD')).toEqual({
+    amountSats: 1,
+    figure: { code: 'USD', amount: '0.01' },
+  });
+  expect(attachTypedFigure({ amountSats: 1 }, 'btc', '0.01', 'USD')).toEqual({ amountSats: 1 });
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: storedTypedFiat — the typed pair is the only stored figure', async ({ page }) => {
+  expect(storedTypedFiat({ code: 'USD', amount: '0.01' })).toEqual({
+    amountCurrency: 'USD',
+    amount: '0.01',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  });
+  expect(storedTypedFiat(undefined)).toBeUndefined();
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: addDecimalStrings — a whole figure plus a fee spot keeps both scales', async () => {
+  expect(addDecimalStrings('12', '1.00')).toBe('13.00');
+  expect(addDecimalStrings('1.50', '1.25')).toBe('2.75');
+  expect(addDecimalStrings('1.00', 'nope')).toBeNull();
 });
 
 async function openCreditAmount(page: Page): Promise<void> {
