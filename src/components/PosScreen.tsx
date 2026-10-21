@@ -569,6 +569,10 @@ function usePosTillState(): PosTillState {
   const lateHeld = memory.late.length > 0;
   // The read asked for by a held late-minute payment: it settles once a read from then on answers.
   const lateRead = useRef<number | null>(null);
+  useEffect(() => {
+    // A read of the session before never answers for this session's late-minute payments.
+    lateRead.current = null;
+  }, [session]);
   const walletPaid = memory.paid;
   const closed = memory.closed;
 

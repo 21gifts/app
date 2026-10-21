@@ -3545,6 +3545,51 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('asks again for a late-minute payment of the next session while the read for the session before is open', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const theirs = { ...ended, id: 'c9', amountSats: 42 };
+      let reads = 0;
+      let theirReads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          const auth = new Headers(init?.headers).get('authorization') ?? '';
+          if (auth.endsWith('other')) {
+            theirReads += 1;
+            return Promise.resolve(jsonResponse({ charge: theirs, history: [theirs] }));
+          }
+          reads += 1;
+          if (reads === 3) {
+            // The read for the held payment of this session never answers.
+            return new Promise<Response>(() => undefined);
+          }
+          return Promise.resolve(jsonResponse({ charge: ended, history: [ended] }));
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      await waitFor(() => {
+        expect(theirReads).toBeGreaterThan(0);
+      });
+      expect(await screen.findByText('₿42')).toBeTruthy();
+      const before = theirReads;
+      receive(42);
+      await waitFor(() => {
+        expect(theirReads).toBe(before + 1);
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
+    });
+
     it('keeps a late-minute payment paid on the newer charge another tab cancelled meanwhile', async () => {
       const ended = {
         ...OPEN,

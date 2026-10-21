@@ -150,6 +150,20 @@ const receivedListeners = new Set<(payment: WalletPayment) => void>();
  */
 let heldPayments: WalletPayment[] = [];
 
+/** Whether the known payments of the current connection were read (not a failed read that knows none). */
+let knownPaymentsRead = false;
+
+/**
+ * The known payment ids of a connection that dropped after a failure, with
+ * its phrase, until the next connection of that phrase has read its own: a
+ * payment that list holds and this one did not completed while the wallet
+ * was reconnecting.
+ */
+let droppedKnown: { mnemonic: string; ids: Set<string> } | null = null;
+
+/** Phrase of the current connection. */
+let connectionMnemonic: string | null = null;
+
 /**
  * Host the app is served from. The wallet's address lives on this host, and
  * the app forwards the wallet's address calls to the api.
@@ -346,7 +360,12 @@ function markReady(balanceSats: number, identityPubkey: string): void {
  */
 async function dropConnection(): Promise<void> {
   const current = connection;
+  if (knownPaymentIds !== null && knownPaymentsRead && connectionMnemonic !== null) {
+    droppedKnown = { mnemonic: connectionMnemonic, ids: knownPaymentIds };
+  }
   connection = null;
+  connectionMnemonic = null;
+  knownPaymentsRead = false;
   knownPaymentIds = null;
   heldPayments = [];
   // A read of the dropped connection may never answer; announcements of the next one do not wait for it.
@@ -447,20 +466,26 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
  * was read is announced once it is in, unless the list holds it. A failed
  * read counts as none known and drops the payments held meanwhile: the SDK
  * announces only payments that change, so nothing old is announced then.
+ * After a reconnect of the same phrase, a listed payment the dropped
+ * connection did not know (it completed in between) is told to the
+ * {@link onPaymentReceived} listeners, once.
  *
  * @param run - Run number that owns the connection.
  * @param conn - The fresh connection.
+ * @param mnemonic - Phrase the connection was opened with.
  * @returns Resolves once the known ids are set, or when the run is stale.
  */
-async function rememberKnownPayments(run: number, conn: WalletConnection): Promise<void> {
-  let known = new Set<string>();
+async function rememberKnownPayments(
+  run: number,
+  conn: WalletConnection,
+  mnemonic: string,
+): Promise<void> {
+  let listed: WalletPayment[] = [];
   let read = false;
   try {
     const payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
-    known = new Set(
-      payments
-        .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
-        .map((payment) => payment.id),
+    listed = payments.filter(
+      (payment) => payment.direction === 'received' && payment.status === 'completed',
     );
     read = true;
   } catch {
@@ -469,11 +494,27 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
   if (run !== runCounter || connection !== conn) {
     return;
   }
+  const known = new Set(listed.map((payment) => payment.id));
   knownPaymentIds = known;
+  knownPaymentsRead = read;
+  const dropped = droppedKnown;
+  droppedKnown = null;
   const held = heldPayments;
   heldPayments = [];
   if (read) {
     const told = new Set<string>();
+    if (dropped !== null && dropped.mnemonic === mnemonic) {
+      // Completed while the wallet reconnected after a failure: no event reported it, but a till
+      // waiting for it still hears it, once, oldest first.
+      for (const payment of [...listed].reverse()) {
+        if (!dropped.ids.has(payment.id)) {
+          told.add(payment.id);
+          for (const listener of receivedListeners) {
+            listener(payment);
+          }
+        }
+      }
+    }
     for (const payment of held) {
       if (known.has(payment.id)) {
         // Reported live while the list was read, so new to this tab although the list holds it:
@@ -486,6 +527,8 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
         }
         continue;
       }
+      // A second report of it in this list goes to the branch above and is not told again.
+      told.add(payment.id);
       void announcePayment(known, payment);
     }
   }
@@ -573,7 +616,9 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
  * Subscribes to the same received payments as {@link onIncomingPayment}, but
  * tells the listener the moment the SDK reports the payment complete, before
  * the balance is read again, and also a payment the SDK reported while the
- * known payments were read even when that list already holds it. For a screen
+ * known payments were read even when that list already holds it, and one
+ * that completed while the wallet reconnected (the dropped connection had
+ * read its known payments and the new one lists it). For a screen
  * that must react to the money arriving without waiting for that read.
  *
  * @param listener - Called with each newly received payment.
@@ -666,6 +711,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         return;
       }
       connection = next;
+      connectionMnemonic = mnemonic;
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
           onWalletEvent(event);
@@ -675,7 +721,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         return;
       }
       await traceWallet('wallet.sync.first', () => readBalance(run, next, { ensureSynced: true }));
-      void rememberKnownPayments(run, next);
+      void rememberKnownPayments(run, next, mnemonic);
     } catch {
       if (run === runCounter) {
         reportWalletOpenFailure('error');
@@ -784,6 +830,8 @@ export async function disconnectWallet(): Promise<void> {
   openFailureReported = false;
   useWalletStore.getState().reset();
   await dropConnection();
+  // Signed out: the next connection is a fresh start, not a reconnect.
+  droppedKnown = null;
 }
 
 /**
