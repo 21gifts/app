@@ -41,7 +41,6 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -621,6 +620,8 @@ export function InboxScreen({
   // After a payment the sheet still shows its success step: the amount row stays disabled behind it.
   // Keyed by the invoice, so a held sheet's late report never reaches the next invoice.
   const payHold = usePaySheetHold(invoice === null ? null : invoice.pr);
+  const typedFigure = invoice?.figure;
+  const typedStored = storedTypedFiat(typedFigure);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -1299,7 +1300,7 @@ export function InboxScreen({
               }
               amountSats={invoice.amountSats}
               rateDay={rateDay}
-              stored={storedTypedFiat(invoice.figure)}
+              {...(typedStored === undefined ? {} : { stored: typedStored })}
               successTitle={
                 open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
               }
@@ -1314,7 +1315,7 @@ export function InboxScreen({
                 pr={invoice.pr}
                 amountSats={invoice.amountSats}
                 rateDay={rateDay}
-                chargeFigure={invoice.figure}
+                {...(typedFigure === undefined ? {} : { chargeFigure: typedFigure })}
                 flow="inbox"
                 confirmLabel={(amount) => t('paySheet.sendAmount', { amount })}
               />

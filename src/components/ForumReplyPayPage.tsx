@@ -50,6 +50,7 @@ export function ForumReplyPayPage({
   recipient?: string | undefined;
 }): ReactElement {
   const { t } = useTranslations();
+  const typedStored = storedTypedFiat(figure);
   const lending = loan !== undefined && !loan.full;
   return (
     <PaySheet
@@ -60,7 +61,7 @@ export function ForumReplyPayPage({
       }
       amountSats={amountSats}
       rateDay={rateDay}
-      stored={storedTypedFiat(figure)}
+      {...(typedStored === undefined ? {} : { stored: typedStored })}
       successTitle={
         recipient === undefined
           ? t('paySheet.sent')
@@ -74,7 +75,7 @@ export function ForumReplyPayPage({
         pr={pr}
         amountSats={amountSats}
         rateDay={rateDay}
-        chargeFigure={figure}
+        {...(figure === undefined ? {} : { chargeFigure: figure })}
         flow="reaction"
         confirmLabel={(amount) =>
           t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', { amount })
