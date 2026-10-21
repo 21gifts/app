@@ -173,6 +173,12 @@ type WalletSettled = {
    * alone: one read checks whether another device's newer charge took it.
    */
   recheck: boolean;
+  /**
+   * The charge before a create that is on its way: a payment that pays it is
+   * held like a late-minute one, so the read after the create gives it to the
+   * new charge or to this one.
+   */
+  creatingAfter: PosCharge | null;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
@@ -198,6 +204,7 @@ function settledFor(session: string | null): WalletSettled {
       closed: new Set(),
       early: [],
       recheck: false,
+      creatingAfter: null,
     };
   }
   return walletSettled;
@@ -242,6 +249,18 @@ function pays(charge: PosCharge, payment: TillPayment): boolean {
  */
 function settleOpen(memory: WalletSettled, payment: TillPayment): void {
   const open = memory.open;
+  const before = memory.creatingAfter;
+  if (open === null && before !== null && pays(before, payment)) {
+    if (payment.chargeId !== undefined) {
+      // It names the charge before: that charge, at once.
+      markPaid(memory, before, payment);
+      return;
+    }
+    // The charge before's, or the new one's, which only a read after the create tells.
+    memory.late = [...memory.late, { payment, charge: before }];
+    settledChanged();
+    return;
+  }
   if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
     memory.early = [...memory.early, payment].slice(-POS_EARLY_PAYMENTS);
@@ -904,12 +923,14 @@ function usePosTillState(): PosTillState {
     setBusy(true);
     const mine = ++generation.current;
     showError(null);
-    // A new charge ends the late minute of the one before: a payment reported while it is being
-    // created is kept and tried on the new charge once it is read (it pays it if `pays`). A failed
-    // create gives the late minute back and tries the kept payments on the charge before.
+    // While the create is on its way the charge before takes no payment at once: one that pays it
+    // is held until a read after the create shows whether the new charge took it; any other is kept
+    // and tried on the new charge once it is read (it pays it if `pays`). A failed create gives the
+    // late minute back and tries the kept payments on the charge before.
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
+    creating.creatingAfter = before;
     // The currency figure stored with the new charge: the digits typed in a currency. Bitcoin
     // typed sends none, and none is made by converting the sats (docs/fiat-amounts.md).
     const typed =
@@ -1037,6 +1058,7 @@ function usePosTillState(): PosTillState {
     try {
       await work;
     } finally {
+      creating.creatingAfter = null;
       busyRef.current = false;
       setBusy(false);
       runSkippedLoad();
