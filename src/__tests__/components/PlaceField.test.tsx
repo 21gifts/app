@@ -1307,6 +1307,40 @@ describe('PlaceField', () => {
     ).toBeNull();
   });
 
+  it.each([
+    ['shopNameAddress', 'Shop name'],
+    ['placeAddress', 'Street'],
+  ] as const)(
+    'focuses the field a server problem names when it opens the dialog: %s',
+    async (problem, label) => {
+      stubMaps();
+      renderWithLocale(
+        <PlaceField
+          place={{
+            lat: 47.3769,
+            lng: 8.5417,
+            label: 'Bahnhofstrasse Bakery',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          }}
+          disabled={false}
+          onChange={() => undefined}
+          shopDetails
+          problem={problem}
+        />,
+      );
+      const field = await screen.findByLabelText(label, { selector: 'input' });
+      await waitFor(() => {
+        expect(document.activeElement).toBe(field);
+      });
+    },
+  );
+
   it('returns focus to the place button after a dialog opened by a server problem', async () => {
     stubMaps();
     renderWithLocale(

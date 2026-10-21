@@ -180,6 +180,8 @@ export function PlaceField(props: {
   const authFailedRef = useRef(false);
   const savingRef = useRef(false);
   const failedSaveActionRef = useRef<'commit' | 'remove' | null>(null);
+  // A server problem that opened the dialog owes focus to the field it names.
+  const problemFocusRef = useRef<'name' | 'address' | null>(null);
   savingRef.current = saving;
   const fieldsDisabled = props.disabled || saving;
 
@@ -224,14 +226,15 @@ export function PlaceField(props: {
     }
     resetDraft();
     setOpen(true);
-    if (
+    const nameProblem =
       problem === 'shopName' ||
       problem === 'shopNameAddress' ||
       problem === 'shopNameLong' ||
-      problem === 'shopNameControls'
-    ) {
+      problem === 'shopNameControls';
+    if (nameProblem) {
       setNameTouched(true);
     }
+    problemFocusRef.current = nameProblem ? 'name' : 'address';
     setReportedProblem(problem);
   }, [props.autoOpenProblem, props.problem, resetDraft, shopDetails]);
 
@@ -245,8 +248,8 @@ export function PlaceField(props: {
       return;
     }
     availabilityReported.current = true;
-    props.onAvailabilityChange?.(unavailable);
-  }, [props.onAvailabilityChange, unavailable]);
+    onAvailabilityChangeRef.current?.(unavailable);
+  }, [unavailable]);
 
   useEffect(() => {
     if (!open) {
@@ -387,7 +390,18 @@ export function PlaceField(props: {
         first.focus();
       }
     };
-    dialogRef.current?.focus();
+    const owedFocus = problemFocusRef.current;
+    problemFocusRef.current = null;
+    // The API accepted no field the client checked, so an address problem starts at Street.
+    const owedTarget =
+      owedFocus === 'name'
+        ? dialogRef.current?.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
+        : owedFocus === 'address'
+          ? dialogRef.current?.querySelector<HTMLElement>(
+              '[data-testid="shop-address-fields"] input',
+            )
+          : null;
+    (owedTarget ?? dialogRef.current)?.focus();
     document.addEventListener('keydown', handleDialogKeyDown, true);
     return () => {
       document.removeEventListener('keydown', handleDialogKeyDown, true);
@@ -398,7 +412,7 @@ export function PlaceField(props: {
         triggerWrap?.querySelector('button')?.focus();
       }
     };
-  }, [open]);
+  }, [open, shopNameId]);
 
   useEffect(() => {
     const failedAction = failedSaveActionRef.current;
