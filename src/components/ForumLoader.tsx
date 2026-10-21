@@ -1757,14 +1757,10 @@ export function ForumLoader({
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
-    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again. A
+    // server rejection stays until the rejected media is removed or replaced.
     setFormError((current) =>
-      current === 'unsupported' ||
-      current === 'tooLarge' ||
-      current === 'tooMany' ||
-      current === 'formatOrSize'
-        ? null
-        : current,
+      current === 'unsupported' || current === 'tooLarge' || current === 'tooMany' ? null : current,
     );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);
@@ -1792,6 +1788,7 @@ export function ForumLoader({
           return;
         }
 
+        const replacedVideo = videoDraftRef.current !== null;
         revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
         setVideoDraft(null);
         const nextPhotos = photoDraftsRef.current.slice(0, 10);
@@ -1825,7 +1822,13 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError((current) => nextError ?? (isShopComposerError(current) ? current : null));
+        setFormError(
+          (current) =>
+            nextError ??
+            (isShopComposerError(current) || (current === 'formatOrSize' && !replacedVideo)
+              ? current
+              : null),
+        );
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');

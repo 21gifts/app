@@ -677,7 +677,7 @@ export function PlaceField(props: {
             aria-labelledby={titleId}
             tabIndex={-1}
           >
-            <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
+            <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(var(--app-height)-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
               <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">
                 <h2 id={titleId} className="text-base font-medium text-app-fg">
                   {shopDetails ? t('shops.placeDialogTitle') : t('forum.addPlace')}

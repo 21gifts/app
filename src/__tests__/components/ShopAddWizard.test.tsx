@@ -356,6 +356,9 @@ describe('ShopAddWizard', () => {
       <ShopAddWizard {...props({ mode: 'edit', photoError: 'formatOrSize' })} />,
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Remove or replace the rejected file to continue.',
+    );
     view.unmount();
     renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany' })} />);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
@@ -812,7 +815,7 @@ describe('ShopAddWizard', () => {
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
     [
       'formatOrSize' as const,
-      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
     ],
     ['unsupported' as const, 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'],
   ])('shows %s photo feedback and its 10-photo count at the picker', (photoError, message) => {
@@ -820,7 +823,6 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     const picker = screen.getByRole('button', { name: 'Add a photo or video' });
     expect(screen.getByText('1 / 10')).toBeTruthy();
-    expect(screen.getByText(message)).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(message);
     expect(picker.getAttribute('aria-describedby')).toBeTruthy();
     expect(picker.getAttribute('aria-invalid')).toBeNull();
@@ -833,7 +835,7 @@ describe('ShopAddWizard', () => {
     renderWizard(<ShopAddWizard {...props({ imagesOnly: true, photoError: 'formatOrSize' })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use a JPEG, PNG, or WebP photo under 1 MB.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.',
     );
   });
 

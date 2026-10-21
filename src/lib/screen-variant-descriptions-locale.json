@@ -1105,9 +1105,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa 3 sa 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
   },
   "/shops:add-text": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery ist bereits gesetzt. Der Shop-Text ist leer. Der Hinweis 20 weitere Zeichen. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery. El texto de la tienda está vacío. El aviso 20 caracteres más. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery. Walang laman ang teksto ng shop. Nakikita ang palatandaan 20 pang karakter. Ang Susunod ang tanging pindutan sa kard at naka-disable."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery ist bereits gesetzt. Der Shop-Text ist leer. Die konkrete Mindestlängen-Meldung und der Live-Zähler 0 / 1000 sind sichtbar. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery. El texto de la tienda está vacío. El mensaje concreto de longitud mínima y el contador en vivo 0 / 1000 están visibles. Siguiente está desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery. Walang laman ang teksto ng shop. Nakikita ang tiyak na mensahe ng pinakamaikling haba at ang live na bilang na 0 / 1000. Naka-disable ang Susunod."
   },
   "/shops:add-description-error": {
     "de": "Shop hinzufügen ist bei Schritt 3 von 5 · Text geöffnet. Der Shop-Text enthält ein unzulässiges Steuerzeichen. Der konkrete Fehler ist vor dem Absenden unter dem Textfeld sichtbar. Weiter ist deaktiviert.",
@@ -2165,9 +2165,9 @@
     "fil": "Utang, hakbang 1 sa 9, na naka-pindot ang Araw-araw at naka-pindot ang Utang. 21000 ay naka-type sa bitcoin. Naka-enable ang Magpatuloy. Hindi pa naka-imbak ang Isang beses / Araw-araw."
   },
   "/shops:composer-place-unlabeled": {
-    "de": "Der Dialog Ort und Adresse des Shops ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt und Shop-Name ist noch leer. Der Hinweis Geben Sie den Shop-Namen ein. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert. Die Ladenliste ist noch leer.",
-    "es": "El diálogo Lugar y dirección de la tienda está abierto con un mapa. Un clic ha colocado un marcador y Nombre de la tienda sigue vacío. El aviso Introduce el nombre de la tienda. es visible. Usar este lugar está visible y desactivado. La lista de tiendas sigue vacía.",
-    "fil": "Bukas ang Lugar at address ng shop na may mapa. May klik na naglagay ng pananda at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito. Walang laman pa ang listahan ng mga tindahan."
+    "de": "Der Dialog Ort und Adresse des Shops ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt und Shop-Name ist noch leer. Die Fusszeile nennt die Felder, die noch auszufüllen sind. Diesen Ort verwenden ist sichtbar und deaktiviert. Die Ladenliste ist noch leer.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto con un mapa. Un clic ha colocado un marcador y Nombre de la tienda sigue vacío. El pie del diálogo enumera los campos que faltan por rellenar. Usar este lugar está visible y desactivado. La lista de tiendas sigue vacía.",
+    "fil": "Bukas ang Lugar at address ng shop na may mapa. May klik na naglagay ng pananda at walang laman pa ang Pangalan ng shop. Nakalista sa footer ang mga field na kailangan pang punan. Nakikita at naka-disable ang Gamitin ang lugar na ito. Walang laman pa ang listahan ng mga tindahan."
   },
   "/pos/amount:create-outside": {
     "de": "Zahlung mit 21 anlegen. Die Kasse antwortet, dass der Betrag außerhalb der Wallet liegt. Hinweis Der Betrag liegt außerhalb der Wallet. Die Tastatur bleibt. Kein QR.",
@@ -2335,9 +2335,9 @@
     "fil": "Nakapasok na may pangalan at adres at rulesAgreedAt ay null pa. Unang kabanata (pambungad na talata plus ang kahon ng Ang pagsubok na may accent na hangganan) at Magpatuloy nakikita."
   },
   "/shops:staff-place-unlabeled": {
-    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shop-Name ist noch leer. Der Hinweis Geben Sie den Shop-Namen ein. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
-    "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda sigue vacío. El aviso Introduce el nombre de la tienda. es visible. Usar este lugar está visible y desactivado.",
-    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shop-Name ist noch leer. Die Fusszeile nennt die Felder, die noch auszufüllen sind. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda sigue vacío. El pie del diálogo enumera los campos que faltan por rellenar. Usar este lugar está visible y desactivado.",
+    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang Pangalan ng shop. Nakalista sa footer ang mga field na kailangan pang punan. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-hint": {
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shop-Name ist Happyland, aber die Adresse ist noch leer. Die Fußzeile Füllen Sie aus: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
@@ -4120,9 +4120,9 @@
     "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/members/[accountId]:shop-edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/members/[accountId]:shop-edit-place-name-address": {
     "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
@@ -4160,9 +4160,9 @@
     "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/messages/[id]:shop-edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/messages/[id]:shop-edit-place-name-address": {
     "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
@@ -4200,9 +4200,9 @@
     "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/welcome:shop-edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/welcome:shop-edit-place-name-address": {
     "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
@@ -4240,9 +4240,9 @@
     "fil": "Bukas sa Mapa ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/shops:map-edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte auf Karte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió en Mapa al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa Mapa sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte auf Karte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió en Mapa al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa Mapa sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/shops:map-edit-place-name-address": {
     "de": "Das Ortsformular ist auf Karte mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
@@ -4280,9 +4280,9 @@
     "fil": "Bukas sa Talahanayan ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/shops:table-edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte auf Tabelle zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió en Tabla al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa Talahanayan sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte auf Tabelle zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió en Tabla al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa Talahanayan sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/shops:table-edit-place-name-address": {
     "de": "Das Ortsformular ist auf Tabelle mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",
@@ -4320,9 +4320,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/shops:add-photos-format-or-size": {
-    "de": "Ein vollständiger Shop mit Foto wurde gesendet, aber die Post-API lehnte das Medienformat oder die Mediengrösse ab. Shop hinzufügen kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB oder ein Video im MP4-, WebM- oder MOV-Format unter 32 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "Se envió una tienda completa con foto, pero la API de publicaciones rechazó el formato o el tamaño del archivo multimedia. Añadir una tienda volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB, o un vídeo MP4, WebM o MOV de menos de 32 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Naisumite ang kumpletong shop na may litrato, pero tinanggihan ng post API ang format o laki ng media. Bumalik ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB, o MP4, WebM, o MOV na bidyong wala pang 32 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Ein vollständiger Shop mit Foto wurde gesendet, aber die Post-API lehnte das Medienformat oder die Mediengrösse ab. Shop hinzufügen kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB oder ein Video im MP4-, WebM- oder MOV-Format unter 32 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "Se envió una tienda completa con foto, pero la API de publicaciones rechazó el formato o el tamaño del archivo multimedia. Añadir una tienda volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB, o un vídeo MP4, WebM o MOV de menos de 32 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Naisumite ang kumpletong shop na may litrato, pero tinanggihan ng post API ang format o laki ng media. Bumalik ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB, o MP4, WebM, o MOV na bidyong wala pang 32 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/shops:edit-photos-unsupported": {
     "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
@@ -4340,9 +4340,9 @@
     "fil": "Bukas ang hakbang 1 sa 5 · Mga larawan matapos pumili ng 11 litrato. Nananatili ang sampung preview at nakikita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/shops:edit-photos-format-or-size": {
-    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Weiter bleibt deaktiviert, bis die Fotos geändert werden.",
-    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Siguiente sigue deshabilitado hasta que cambien las fotos.",
-    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Naka-disable ang Susunod hanggang mabago ang mga larawan."
+    "de": "Die Moderation fügte ein Foto hinzu und drückte Änderungen speichern, aber die Foto-API lehnte Format oder Grösse ab. Der Editor kehrte zu Schritt 1 von 5 · Bilder zurück und zeigt: Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB. Danach folgt Entfernen oder ersetzen Sie die abgelehnte Datei, um fortzufahren., und Weiter bleibt deaktiviert.",
+    "es": "El moderador añadió una foto y pulsó Guardar cambios, pero la API de fotos rechazó su formato o tamaño. El editor volvió al paso 1 de 5 · Fotos y muestra: Usa una foto JPEG, PNG o WebP de menos de 1 MB. Le sigue Quita o reemplaza el archivo rechazado para continuar., y Siguiente sigue deshabilitado.",
+    "fil": "Nagdagdag ang moderator ng litrato at pinindot ang I-save ang mga pagbabago, pero tinanggihan ng photo API ang format o laki nito. Bumalik ang editor sa hakbang 1 sa 5 · Mga larawan at ipinapakita: Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB. Kasunod nito ang Alisin o palitan ang tinanggihang file para magpatuloy., at naka-disable ang Susunod."
   },
   "/shops:edit-place-name-address": {
     "de": "Das Ortsformular ist mit Bahnhofstrasse Bakery als Shop-Name und Bahnhofstrasse 12, 8001 Zürich, Schweiz als Adresse geöffnet. Der Live-Fehler Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar und Diesen Ort verwenden ist deaktiviert.",

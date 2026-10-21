@@ -381,8 +381,9 @@ export function ShopNoteEditControl({
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
-    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
-    setPhotoError(null);
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again. A
+    // server rejection stays: the rejected photo is still attached.
+    setPhotoError((current) => (current === 'formatOrSize' ? current : null));
     const prepared: ForumPhotoPayload[] = [];
     let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
@@ -406,7 +407,7 @@ export function ShopNoteEditControl({
         setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
       }
     }
-    setPhotoError(nextError);
+    setPhotoError((current) => nextError ?? (current === 'formatOrSize' ? current : null));
   }
 
   async function save(): Promise<void> {

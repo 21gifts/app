@@ -455,6 +455,7 @@ export function ShopAddWizard({
                           ? 'inbox.errorUnsupported'
                           : 'forum.errorUnsupported',
                 )}
+                {photoRejected ? ` ${t('shops.photoRejectedHint')}` : null}
               </p>
             ) : null}
           </div>

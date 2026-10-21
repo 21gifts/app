@@ -553,7 +553,7 @@ describe('ShopNoteEditControl', () => {
     ['At most 10 photos', 'You can add up to 10 photos'],
     [
       'Photo must be a JPEG, PNG, or WebP under 1 MiB',
-      'Use a JPEG, PNG, or WebP photo under 1 MB.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.',
     ],
   ])('maps photo 400 %s to announced picker feedback', async (apiMessage, localized) => {
     signIn('founder');
@@ -587,6 +587,45 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getByRole('alert').textContent).toBe(localized);
     expect(screen.queryByText('Could not save this shop note')).toBeNull();
     expect(setMessageShopPhotos).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a rejected photo blocking after a further photo pick', async () => {
+    signIn('founder');
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+    });
+    vi.mocked(setMessageShopPhotos).mockRejectedValueOnce(
+      new Error('Photo must be a JPEG, PNG, or WebP under 1 MiB'),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const pick = (): void => {
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, {
+        target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+      });
+    };
+    pick();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove photo' })).toBeTruthy();
+    });
+    for (let step = 1; step < 5; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    pick();
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(2);
+    });
+    expect(screen.getByRole('alert').textContent).toContain(
+      'Remove or replace the rejected file to continue.',
+    );
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
   it('shows the generic save copy when save rejects a non-Error value', async () => {
