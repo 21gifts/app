@@ -3455,6 +3455,37 @@ describe('PosScreen', () => {
       expect(within(history).getByText(`Paid ✓ ${time}`)).toBeTruthy();
     });
 
+    it('reads once after a payment from another wallet and moves it to the newer charge another device made', async () => {
+      const newer = { ...OPEN, id: 'c2', createdAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          // Another device cancelled this charge and made one of the same amount.
+          return jsonResponse(
+            reads === 1
+              ? { charge: OPEN, history: [OPEN] }
+              : { charge: newer, history: [newer, { ...OPEN, status: 'cancelled' }] },
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      // Confirmed at once, then checked by one read.
+      expect(await confirmation()).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Cancelled')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓ /)).toHaveLength(1);
+      expect(await confirmation()).toBeTruthy();
+      await act(async () => undefined);
+      expect(reads).toBe(2);
+    });
+
     it('confirms a run-out charge a Spark payment names when no charge is open', async () => {
       const ended = {
         ...OPEN,

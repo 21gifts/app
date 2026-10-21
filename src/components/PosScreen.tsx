@@ -168,6 +168,11 @@ type WalletSettled = {
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
   early: Array<TillPayment>;
+  /**
+   * A payment that names no charge paid the open charge on its amount and time
+   * alone: one read checks whether another device's newer charge took it.
+   */
+  recheck: boolean;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
@@ -192,6 +197,7 @@ function settledFor(session: string | null): WalletSettled {
       paidBy: new Map(),
       closed: new Set(),
       early: [],
+      recheck: false,
     };
   }
   return walletSettled;
@@ -251,6 +257,9 @@ function settleOpen(memory: WalletSettled, payment: TillPayment): void {
     memory.late = [...memory.late, { payment, charge: open }];
     settledChanged();
     return;
+  }
+  if (payment.chargeId === undefined) {
+    memory.recheck = true;
   }
   markPaid(memory, open, payment);
 }
@@ -776,6 +785,17 @@ function usePosTillState(): PosTillState {
   }, [lateHeld, session, state]);
 
   useEffect(() => {
+    // Paid at once on its amount and time alone: one read (not on a timer) shows whether another
+    // device cancelled that charge and made a newer one of that amount, which then takes it.
+    const settled = settledFor(session);
+    if (session !== null && settled.recheck) {
+      settled.recheck = false;
+      quietReload.current = state !== null;
+      setReload((n) => n + 1);
+    }
+  }, [session, settledVersion, state]);
+
+  useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
     if (hiddenPaidId !== null) {
       settledFor(session).closed.add(hiddenPaidId);
@@ -902,6 +922,8 @@ function usePosTillState(): PosTillState {
       // again on its own): a lost create never takes one of them for its own. When that read
       // fails, which charges existed is unknown, so a lost create takes over none.
       let known: Set<string> | null;
+      // The history of that read: the new charge goes on top of it, not of an older answer.
+      let freshHistory: PosCharge[] | null = null;
       const seqBefore = startRead(reads);
       try {
         const fresh = await fetchPosState(session);
@@ -921,6 +943,7 @@ function usePosTillState(): PosTillState {
           return;
         }
         known = new Set(tillCharges(fresh).map((row) => row.id));
+        freshHistory = fresh.history;
       } catch {
         known = null;
       }
@@ -928,7 +951,7 @@ function usePosTillState(): PosTillState {
         const created = await createPosCharge(session, amountSats, typed);
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
-          const history = state?.history ?? [];
+          const history = freshHistory ?? state?.history ?? [];
           setTill({ state: { charge: created, history: [created, ...history] }, session });
           setAmount('');
         });
