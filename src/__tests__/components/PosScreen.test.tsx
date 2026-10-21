@@ -42,6 +42,7 @@ const received = vi.hoisted(() => ({
       amountSats: number;
       feesSats: number;
       timestamp: number;
+      method: string;
       info: { chargeId?: string };
     }) => void
   >(),
@@ -71,6 +72,7 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
       amountSats: number;
       feesSats: number;
       timestamp: number;
+      method: string;
       info: { chargeId?: string };
     }) => {
       for (const listener of [...received.listeners]) {
@@ -83,12 +85,14 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
 /**
  * This tab's wallet reports a completed payment of `amountSats` (after `feesSats`) made at
  * `timestamp`; `chargeId` when it paid the api's Spark invoice of that charge (memo `pos:<id>`).
+ * `method` is how it arrived: Lightning, or Spark for a named one, unless given.
  */
 function receive(
   amountSats: number,
   feesSats = 0,
   timestamp = Date.now(),
   chargeId?: string,
+  method = chargeId === undefined ? 'lightning' : 'spark',
 ): void {
   act(() => {
     for (const listener of [...received.listeners]) {
@@ -96,6 +100,7 @@ function receive(
         amountSats,
         feesSats,
         timestamp,
+        method,
         info: chargeId === undefined ? {} : { chargeId },
       });
     }
@@ -1868,6 +1873,25 @@ describe('PosScreen', () => {
       await act(async () => {
         answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
       });
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('takes no unnamed Spark transfer or on-chain deposit of the charge amount as its payment', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21, 0, Date.now(), undefined, 'spark');
+      receive(21, 0, Date.now(), undefined, 'deposit');
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // Not even a read: it is not a till payment.
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // The same amount over Lightning pays it.
+      receive(21);
       expect(await confirmation()).toBeTruthy();
     });
 

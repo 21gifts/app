@@ -507,6 +507,12 @@ function listenToWallet(): void {
     const session = useAuthStore.getState().session;
     if (session !== null) {
       const { chargeId } = payment.info;
+      // Without a charge it names, only a Lightning payment can be a till payment: the till's
+      // address takes the charge amount over Lightning. A Spark transfer without that name, or an
+      // on-chain deposit, of the same amount is someone else's money and pays no charge.
+      if (chargeId === undefined && payment.method !== 'lightning') {
+        return;
+      }
       const memory = settledFor(session);
       const till: TillPayment =
         chargeId === undefined
@@ -880,7 +886,7 @@ function usePosTillState(): PosTillState {
         feesSats: 0,
         timestamp: Date.now(),
         status: 'completed',
-        method: 'spark',
+        method: 'lightning',
         senderComment: null,
         info: {},
       });
