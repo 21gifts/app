@@ -86,7 +86,7 @@ export function needlessBaselineChanges(root) {
     if (base.required) {
       return ['Cannot read the base branch to compare changed baselines with'];
     }
-    console.log('Baseline changes not compared: no origin/staging to compare with.');
+    console.warn('Baseline changes not compared: no origin/staging to compare with.');
     return [];
   }
   const require = createRequire(path.join(root, 'package.json'));
