@@ -637,7 +637,15 @@ describe('LightningAddressForm', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'That Wallet of Satoshi address is already in use.',
     );
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(field, { target: { value: 'cara@walletofsatoshi.com' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
     vi.mocked(setLightningAddress).mockRejectedValueOnce(
       new Error('Wallet of Satoshi address is already in use'),
     );
@@ -645,6 +653,11 @@ describe('LightningAddressForm', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'That Wallet of Satoshi address is already in use.',
     );
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.change(field, { target: { value: 'bob@walletofsatoshi.com' } });
+    expect(screen.queryByRole('alert')).toBeNull();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
       false,
     );

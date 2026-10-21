@@ -122,7 +122,9 @@ function classifyLightningFailure(
  * is disabled. Skip stays available. Unlink is its own action. After `notZap`,
  * Continue/Save stay disabled while the trimmed draft equals the blocked
  * address; changing the draft clears the alert and re-enables; restoring the
- * blocked address re-locks.
+ * blocked address re-locks. A taken address shows that sentence and disables
+ * Continue/Save until the draft changes. Changing the draft clears it.
+ * Restoring the same address does not lock again.
  *
  * @param props - `onboarding` shows the field at the top and **Continue** plus
  *   **Skip** at the bottom; `profile` uses icon actions to the right of the
@@ -160,7 +162,11 @@ export function LightningAddressForm(
   } else if (error !== null) {
     visibleType = error.type;
   }
-  const ruleBroken = visibleType === 'empty' || visibleType === 'long' || visibleType === 'format';
+  const ruleBroken =
+    visibleType === 'empty' ||
+    visibleType === 'long' ||
+    visibleType === 'format' ||
+    visibleType === 'taken';
   const continueDisabled =
     busy || ruleBroken || (blockedAddress !== null && draft.trim() === blockedAddress);
   const showEditor = variant === 'onboarding' || !linked || editing;
