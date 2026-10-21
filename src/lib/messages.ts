@@ -713,6 +713,7 @@ const en = {
   'forum.externalProfileCopy': 'Copy',
   'forum.externalProfileCopied': 'Copied',
   'shop.address': 'Address',
+  'shop.error': 'Could not load this shop. Please try again.',
   'shop.forumNote': 'View forum note',
   'shop.noLongerListed': 'This shop is no longer listed.',
 
@@ -1896,6 +1897,7 @@ const de = {
   'forum.externalProfileCopy': 'Kopieren',
   'forum.externalProfileCopied': 'Kopiert',
   'shop.address': 'Adresse',
+  'shop.error': 'Dieses Geschäft konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'shop.forumNote': 'Forumsbeitrag ansehen',
   'shop.noLongerListed': 'Dieses Geschäft ist nicht mehr gelistet.',
 
@@ -3092,6 +3094,7 @@ const es = {
   'forum.externalProfileCopy': 'Copiar',
   'forum.externalProfileCopied': 'Copiado',
   'shop.address': 'Dirección',
+  'shop.error': 'No se pudo cargar esta tienda. Inténtalo de nuevo.',
   'shop.forumNote': 'Ver publicación del foro',
   'shop.noLongerListed': 'Esta tienda ya no está en la lista.',
 
@@ -4275,6 +4278,7 @@ const fil = {
   'forum.externalProfileCopy': 'Kopyahin',
   'forum.externalProfileCopied': 'Nakopya',
   'shop.address': 'Address',
+  'shop.error': 'Hindi ma-load ang shop na ito. Subukan ulit.',
   'shop.forumNote': 'Tingnan ang post sa forum',
   'shop.noLongerListed': 'Hindi na nakalista ang shop na ito.',
 

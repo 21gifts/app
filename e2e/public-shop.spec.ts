@@ -214,7 +214,7 @@ test('Function: resolveShopPhotoUrl — a relative shop photo becomes an api URL
   );
 });
 
-test('Function: onGoogleMapsAuthFailure — a rejected key clears the shop map frame', async ({
+test('Function: onGoogleMapsAuthFailure — a rejected key removes the shop map frame', async ({
   page,
 }) => {
   await page.route('**/maps/key', async (route) => {
@@ -244,8 +244,32 @@ test('Function: onGoogleMapsAuthFailure — a rejected key clears the shop map f
   await page.evaluate(() => {
     (window as Window & { gm_authFailure?: () => void }).gm_authFailure?.();
   });
-  await expect.poll(() => frame.evaluate((node) => node.childNodes.length)).toBe(0);
+  await expect(frame).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+  await expect(page.getByText('Moon Street 21')).toBeVisible();
+});
+
+test('Function: GoogleMapCanvas — a failed map script removes the shop map frame', async ({
+  page,
+}) => {
+  let scripts = 0;
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'e2e' }),
+    });
+  });
+  await page.route('https://maps.googleapis.com/maps/api/js*', async (route) => {
+    scripts += 1;
+    await route.abort();
+  });
+  await page.goto(`/${LISTED_NPUB}`);
+  await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+  await expect.poll(() => scripts).toBe(1);
+  await expect(page.getByTestId('shop-map')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Address' })).toBeVisible();
+  await expect(page.getByText('Moon Street 21')).toBeVisible();
 });
 
 test('hex shop identity redirects permanently to the canonical npub', async ({ request }) => {
@@ -269,10 +293,10 @@ test('unlisted shop says it existed without revealing a name', async ({ page }) 
   await expect(page.getByText('Cafe Luna')).toHaveCount(0);
 });
 
-test('unavailable shop shows the shared error and retry control', async ({ page }) => {
+test('unavailable shop shows the shop error and retry control', async ({ page }) => {
   await page.goto(`/${UNAVAILABLE_NPUB}`);
   await expect(
-    page.getByRole('alert').filter({ hasText: 'Could not load messages. Please try again.' }),
+    page.getByRole('alert').filter({ hasText: 'Could not load this shop. Please try again.' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });

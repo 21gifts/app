@@ -40,9 +40,9 @@
     "fil": "API 410. Sinasabi ng page na Hindi na nakalista ang shop na ito. at hindi ipinapakita ang pangalan o iba pang nakatagong data ng shop."
   },
   "/[npub]:error": {
-    "de": "API 503. Gemeinsamer Hinweis Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und beschriftete Schaltfläche Erneut versuchen; nie eine leere Seite.",
-    "es": "API 503. Alerta compartida No se pudieron cargar los mensajes. Inténtalo de nuevo. y botón con etiqueta Intentar de nuevo; nunca una página en blanco.",
-    "fil": "API 503. Nakabahaging alert na Hindi ma-load ang mga mensahe. Subukan ulit. at may label na pindutang Subukan ulit; hindi kailanman blangkong page."
+    "de": "API 503. Hinweis Dieses Geschäft konnte nicht geladen werden. Bitte versuchen Sie es erneut. und beschriftete Schaltfläche Erneut versuchen; nie eine leere Seite.",
+    "es": "API 503. Alerta No se pudo cargar esta tienda. Inténtalo de nuevo. y botón con etiqueta Intentar de nuevo; nunca una página en blanco.",
+    "fil": "API 503. Alert na Hindi ma-load ang shop na ito. Subukan ulit. at may label na pindutang Subukan ulit; hindi kailanman blangkong page."
   },
   "/:default": {
     "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",

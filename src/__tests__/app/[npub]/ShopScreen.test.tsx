@@ -27,7 +27,13 @@ vi.mock('@/components/QrCode', () => ({
 }));
 
 vi.mock('@/components/GoogleMapCanvas', () => ({
-  GoogleMapCanvas: ({ testId }: { testId: string }) => <div data-testid={testId} />,
+  GoogleMapCanvas: ({ testId, onUnavailable }: { testId: string; onUnavailable?: () => void }) => (
+    <div data-testid={testId}>
+      <button type="button" onClick={onUnavailable}>
+        map fails
+      </button>
+    </div>
+  ),
 }));
 
 const NPUB = `npub1${'2'.repeat(58)}`;
@@ -98,6 +104,16 @@ describe('ShopScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: ' browser-key ' })));
     renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
     expect(await screen.findByTestId('shop-map')).toBeTruthy();
+  });
+
+  it('drops the map frame and keeps the address when the map cannot draw', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
+    expect(await screen.findByTestId('shop-map')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'map fails' }));
+    expect(screen.queryByTestId('shop-map')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Address' })).toBeTruthy();
+    expect(screen.getByText('Moon Street 21')).toBeTruthy();
   });
 
   it('treats every missing or blank maps key shape as no map', async () => {
@@ -199,11 +215,11 @@ describe('ShopScreen', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('shows the shared error and refreshes on retry', () => {
+  it('shows the shop error and refreshes on retry', () => {
     vi.stubGlobal('fetch', vi.fn());
     renderWithLocale(<ShopScreen state="unavailable" />);
     expect(screen.getByRole('alert').textContent).toBe(
-      'Could not load messages. Please try again.',
+      'Could not load this shop. Please try again.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(refresh).toHaveBeenCalledOnce();

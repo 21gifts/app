@@ -47,13 +47,18 @@ export interface GoogleMapCanvasProps {
   fitAll: boolean;
   /** Stable test id for the map frame. */
   testId: string;
+  /**
+   * Called when the map cannot be drawn: the script fails, `google.maps` is
+   * missing after load, or Google rejects the key. Not called for a null key.
+   */
+  onUnavailable?: () => void;
 }
 
 /**
  * Shared Google Maps canvas for the places list and one public shop marker.
  *
- * @param props - Key, marker points, anchor, fit mode, and test id.
- * @returns A bounded map frame; without a key it stays empty.
+ * @param props - Key, marker points, anchor, fit mode, test id, and failure callback.
+ * @returns A bounded map frame; without a key, or after a failure, it stays empty.
  */
 export function GoogleMapCanvas({
   mapsKey,
@@ -61,9 +66,16 @@ export function GoogleMapCanvas({
   anchor,
   fitAll,
   testId,
+  onUnavailable,
 }: GoogleMapCanvasProps): ReactElement {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const authFailedRef = useRef(false);
+  // The latest callback, so an inline caller function does not redraw the map.
+  const onUnavailableRef = useRef(onUnavailable);
+
+  useEffect(() => {
+    onUnavailableRef.current = onUnavailable;
+  }, [onUnavailable]);
 
   useEffect(
     () =>
@@ -71,6 +83,7 @@ export function GoogleMapCanvas({
       onGoogleMapsAuthFailure(() => {
         authFailedRef.current = true;
         frameRef.current?.replaceChildren();
+        onUnavailableRef.current?.();
       }),
     [],
   );
@@ -97,6 +110,7 @@ export function GoogleMapCanvas({
         }
         const maps = (window as GoogleWindow).google?.maps;
         if (maps === undefined) {
+          onUnavailableRef.current?.();
           return;
         }
         const map = new maps.Map(frame, {
@@ -129,7 +143,10 @@ export function GoogleMapCanvas({
           }
         });
       } catch {
-        /* The caller's text content stays usable when the script fails. */
+        // The caller's text content stays usable when the script fails.
+        if (!cancelled) {
+          onUnavailableRef.current?.();
+        }
       }
     };
     void draw();

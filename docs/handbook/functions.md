@@ -1055,7 +1055,7 @@
 
 - **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`; the address line and the QR use the browser host and appear only after mount.
 - **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready. Renders only absolute http(s) photos (`resolveShopPhotoUrl` without an api base), numbered in order.
-- **Returns / side effects:** Ready card, anonymous unlisted heading, or `forum.error` plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point.
+- **Returns / side effects:** Ready card, anonymous unlisted heading, or `shop.error` (**Could not load this shop. Please try again.**) plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point. When the canvas calls `onUnavailable` (script failure, missing `google.maps`, or a rejected key), the map frame is removed and the address stays, the same page as without a key.
 - **Used by:** `ShopPage`.
 
 ## Function: resolveShopPhotoUrl
@@ -1075,8 +1075,8 @@
 ## Function: GoogleMapCanvas
 
 - **Purpose:** Shared Google Maps JavaScript canvas used by the all-places screen and the one-shop public page. It draws the supplied markers, centers one point at zoom 14, or fits several points and caps fitted zoom at 14.
-- **Inputs:** Browser maps key or null, marker points, anchor, `fitAll`, and a test id. A null key leaves its frame empty; `ShopScreen` omits that frame entirely.
-- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, subscribes to a rejected key through `onGoogleMapsAuthFailure` (unsubscribes on unmount), clears Google's authentication-failure dialog from the frame and draws nothing more after it, and leaves surrounding text usable on script failure.
+- **Inputs:** Browser maps key or null, marker points, anchor, `fitAll`, a test id, and an optional `onUnavailable` callback. A null key leaves its frame empty and does not call `onUnavailable`; `ShopScreen` omits that frame entirely.
+- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, subscribes to a rejected key through `onGoogleMapsAuthFailure` (unsubscribes on unmount), clears Google's authentication-failure dialog from the frame and draws nothing more after it, and leaves surrounding text usable on script failure. A script failure, a missing `google.maps` after the load, or a rejected key calls the latest `onUnavailable`; a failure that settles after unmount does not. `ShopScreen` passes it and removes the map; `PlacesMapScreen` does not, so its frame stays empty above the list, as without a key.
 - **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
 ## Function: PublicMessagePage

@@ -20,6 +20,7 @@ export type ShopScreenProps = { state: 'ready'; shop: Shop } | { state: 'gone' |
 
 /**
  * Public shop identity card, including photos, address, map, payment QR, and npub.
+ * The map is left out without a key and after the map reports it cannot draw.
  *
  * @param props - Ready shop data, the unlisted state, or the retryable error state.
  * @returns The matching public shop page body.
@@ -29,6 +30,8 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
   const router = useRouter();
   const shop = props.state === 'ready' ? props.shop : null;
   const [mapsKey, setMapsKey] = useState<string | null>(null);
+  // A failed script or rejected key shows the same page as no key: no map frame.
+  const [mapFailed, setMapFailed] = useState(false);
   const [showQr, setShowQr] = useState(false);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
@@ -80,7 +83,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
     ) : (
       <div className="flex flex-col items-center gap-4">
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('forum.error')}
+          {t('shop.error')}
         </p>
         <Button type="button" onClick={() => router.refresh()}>
           {t('view.retry')}
@@ -117,13 +120,14 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
             </span>
           ))}
         </address>
-        {mapsKey !== null ? (
+        {mapsKey !== null && !mapFailed ? (
           <GoogleMapCanvas
             mapsKey={mapsKey}
             points={points}
             anchor={points[0]}
             fitAll={false}
             testId="shop-map"
+            onUnavailable={() => setMapFailed(true)}
           />
         ) : null}
       </section>

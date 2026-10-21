@@ -19000,6 +19000,9 @@ test.describe('public shop screen', () => {
 
   test('public shop error', async ({ page }) => {
     await page.goto(`/${unavailableNpub}`);
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not load this shop. Please try again.' }),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-npub-error');
   });

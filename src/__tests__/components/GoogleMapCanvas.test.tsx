@@ -118,6 +118,88 @@ describe('GoogleMapCanvas', () => {
     expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
   });
 
+  it('reports a failed map script once and not after an unmount', async () => {
+    const props = {
+      mapsKey: 'browser-key',
+      points: [{ lat: 47.37, lng: 8.54 }],
+      anchor: { lat: 47.37, lng: 8.54 },
+      fitAll: false,
+      testId: 'shop-map',
+    };
+    const onUnavailable = vi.fn();
+    const first = render(<GoogleMapCanvas {...props} onUnavailable={onUnavailable} />);
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onUnavailable).toHaveBeenCalledOnce();
+    first.unmount();
+
+    const gone = vi.fn();
+    const second = render(<GoogleMapCanvas {...props} onUnavailable={gone} />);
+    second.unmount();
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(gone).not.toHaveBeenCalled();
+  });
+
+  it('reports a missing google.maps after the load resolved', async () => {
+    let reads = 0;
+    Object.defineProperty(window, 'google', {
+      configurable: true,
+      get() {
+        reads += 1;
+        return reads === 1 ? { maps: { Map: vi.fn(), Marker: vi.fn() } } : undefined;
+      },
+    });
+    const onUnavailable = vi.fn();
+    render(
+      <GoogleMapCanvas
+        mapsKey="browser-key"
+        points={[{ lat: 47.37, lng: 8.54 }]}
+        anchor={{ lat: 47.37, lng: 8.54 }}
+        fitAll={false}
+        testId="shop-map"
+        onUnavailable={onUnavailable}
+      />,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onUnavailable).toHaveBeenCalledOnce();
+  });
+
+  it('reports a key Google rejected to the latest callback', () => {
+    const first = vi.fn();
+    const latest = vi.fn();
+    const props = {
+      mapsKey: 'browser-key',
+      points: [{ lat: 47.37, lng: 8.54 }],
+      anchor: { lat: 47.37, lng: 8.54 },
+      fitAll: false,
+      testId: 'shop-map',
+    };
+    const view = render(<GoogleMapCanvas {...props} onUnavailable={first} />);
+    view.rerender(<GoogleMapCanvas {...props} onUnavailable={latest} />);
+    (window as { gm_authFailure?: () => void }).gm_authFailure?.();
+    expect(latest).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+    expect(screen.getByTestId('shop-map').childElementCount).toBe(0);
+  });
+
+  it('does not report a null key as a failure', async () => {
+    const onUnavailable = vi.fn();
+    render(
+      <GoogleMapCanvas
+        mapsKey={null}
+        points={[{ lat: 47.37, lng: 8.54 }]}
+        anchor={{ lat: 47.37, lng: 8.54 }}
+        fitAll={false}
+        testId="shop-map"
+        onUnavailable={onUnavailable}
+      />,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
+    expect(onUnavailable).not.toHaveBeenCalled();
+  });
+
   it('does not load the map after Google rejected the key', async () => {
     const view = render(
       <GoogleMapCanvas
