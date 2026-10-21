@@ -462,9 +462,6 @@ export function ForumLoader({
       ...(videoDraftRef.current === null ? [] : [videoDraftRef.current]),
     ]);
   };
-  const shopPhotoRejected = rejectedMedia.some(
-    (item) => item === videoDraft || photoDrafts.some((photo) => photo === item),
-  );
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
@@ -2699,7 +2696,7 @@ export function ForumLoader({
                 setFormError((current) => (isAttachedPhotoError(current) ? current : null));
               },
               shopResetToken,
-              shopPhotoRejected,
+              shopRejectedMedia: rejectedMedia,
             }
           : {})}
         {...(feed === 'shops'

@@ -248,8 +248,8 @@ export interface ForumBoardProps {
   onShopUsernameChange?: (username: string) => void;
   /** Bumps after a shop is sent so the wizard closes. */
   shopResetToken?: number;
-  /** True while media the API rejected for format or size are still attached. */
-  shopPhotoRejected?: boolean;
+  /** Media the API rejected for format or size, passed to the shop wizard. */
+  shopRejectedMedia?: readonly object[];
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
   /**
@@ -566,7 +566,7 @@ export function ForumBoard({
   shopUsername = '',
   onShopUsernameChange,
   shopResetToken = 0,
-  shopPhotoRejected = false,
+  shopRejectedMedia = [],
   payMessageId,
   payHost = null,
   payDraft,
@@ -1916,7 +1916,7 @@ export function ForumBoard({
                 : null
             }
             serverProblem={isShopApiProblem(formError) ? formError : null}
-            photoRejected={shopPhotoRejected}
+            rejectedMedia={shopRejectedMedia}
           />
         </SundayWritingGate>
       ) : null}

@@ -102,8 +102,8 @@ export interface ShopAddWizardProps {
   imagesOnly?: boolean;
   /** Photo-picker rule currently broken. */
   photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null;
-  /** True while media the API rejected for format or size are still attached. */
-  photoRejected?: boolean;
+  /** Media the API rejected for format or size; marked and blocking while still attached. */
+  rejectedMedia?: readonly object[];
   /** Known API fallback to place back at its owning step and field. */
   serverProblem?: ShopApiProblem | null;
 }
@@ -167,7 +167,7 @@ export function ShopAddWizard({
   onRemoveKept,
   imagesOnly = false,
   photoError = null,
-  photoRejected = false,
+  rejectedMedia = [],
   serverProblem = null,
 }: ShopAddWizardProps): ReactElement {
   const { t, locale } = useTranslations();
@@ -346,6 +346,9 @@ export function ShopAddWizard({
   const placeServerMessage =
     placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
   // Rejected files would fail the same request again; a photo reason returns the wizard to step 1.
+  const isRejected = (item: object): boolean => rejectedMedia.includes(item);
+  const photoRejected =
+    (videoDraft !== null && isRejected(videoDraft)) || photoDrafts.some(isRejected);
   const nextDisabled =
     posting ||
     (step === 1 && photoRejected) ||
@@ -458,14 +461,16 @@ export function ShopAddWizard({
               })}
             </p>
             {photoError !== null || photoRejected ? (
-              <p role="alert" className="text-sm text-app-danger">
+              <p role="alert" className="flex flex-col text-sm text-app-danger">
                 {[
                   ...(photoError === null ? [] : [t(photoErrorKey(photoError, imagesOnly))]),
                   ...(photoRejected && photoError !== 'formatOrSize'
                     ? [t(photoErrorKey('formatOrSize', imagesOnly))]
                     : []),
                   ...(photoRejected ? [t('shops.photoRejectedHint')] : []),
-                ].join(' ')}
+                ].map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
               </p>
             ) : null}
           </div>
@@ -509,7 +514,10 @@ export function ShopAddWizard({
             <div className="flex items-start gap-3">
               <video
                 src={videoDraft.previewUrl}
-                className="h-20 w-20 rounded-lg object-cover"
+                className={`h-20 w-20 rounded-lg object-cover${
+                  isRejected(videoDraft) ? ' border-2 border-app-danger' : ''
+                }`}
+                {...(isRejected(videoDraft) ? { 'aria-describedby': photoFeedbackId } : {})}
                 muted
                 playsInline
                 preload="metadata"
@@ -534,7 +542,10 @@ export function ShopAddWizard({
                   <img
                     src={photo.previewUrl}
                     alt={t('forum.previewAlt')}
-                    className="h-20 w-20 rounded-lg object-cover"
+                    className={`h-20 w-20 rounded-lg object-cover${
+                      isRejected(photo) ? ' border-2 border-app-danger' : ''
+                    }`}
+                    {...(isRejected(photo) ? { 'aria-describedby': photoFeedbackId } : {})}
                   />
                   <IconButton
                     type="button"

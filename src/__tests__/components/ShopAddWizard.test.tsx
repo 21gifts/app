@@ -354,26 +354,43 @@ describe('ShopAddWizard', () => {
   it('keeps Next off on the photos step while a rejected photo is still attached', () => {
     const view = renderWizard(
       <ShopAddWizard
-        {...props({ mode: 'edit', photoError: 'formatOrSize', photoRejected: true })}
+        {...props({
+          mode: 'edit',
+          photoError: 'formatOrSize',
+          photoDrafts: [photo],
+          rejectedMedia: [photo],
+        })}
       />,
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('alert').textContent).toContain(
-      'Remove or replace the rejected file to continue.',
+      'Remove or replace the marked files to continue.',
     );
     view.unmount();
     // A later pick's own reason shows next to the kept rejection, which still blocks.
     const later = renderWizard(
-      <ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany', photoRejected: true })} />,
+      <ShopAddWizard
+        {...props({
+          mode: 'edit',
+          photoError: 'tooMany',
+          photoDrafts: [photo],
+          rejectedMedia: [photo],
+        })}
+      />,
     );
     expect(screen.getByRole('alert').textContent).toBe(
-      'You can add up to 10 photos Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+      'You can add up to 10 photosUse a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.Remove or replace the marked files to continue.',
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     later.unmount();
-    const quiet = renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoRejected: true })} />);
+    const quiet = renderWizard(
+      <ShopAddWizard
+        {...props({ mode: 'edit', photoDrafts: [photo], rejectedMedia: [photo, { other: true }] })}
+      />,
+    );
+    expect(screen.getByAltText('Selected photo').getAttribute('aria-describedby')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.Remove or replace the marked files to continue.',
     );
     quiet.unmount();
     renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany' })} />);

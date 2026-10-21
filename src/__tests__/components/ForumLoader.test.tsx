@@ -1509,7 +1509,7 @@ describe('ForumLoader', () => {
     await submitShopWizard(SHOP_DESCRIPTION, undefined, file);
 
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
-    const hint = 'Remove or replace the rejected file to continue.';
+    const hint = 'Remove or replace the marked files to continue.';
     expect(screen.getByRole('alert').textContent).toContain(hint);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -1519,6 +1519,9 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('alert').textContent).toContain(hint);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    const [rejected, added] = screen.getAllByAltText('Selected photo');
+    expect(rejected?.getAttribute('aria-describedby')).toBeTruthy();
+    expect(added?.getAttribute('aria-describedby')).toBeNull();
 
     // A failed photo pick or a failed video pick does not lift the block either.
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
@@ -4778,7 +4781,7 @@ describe('ForumLoader', () => {
 
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.Remove or replace the marked files to continue.',
     );
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Could not post your message')).toBeNull();

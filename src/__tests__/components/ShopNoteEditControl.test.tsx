@@ -553,7 +553,7 @@ describe('ShopNoteEditControl', () => {
     ['At most 10 photos', 'You can add up to 10 photos'],
     [
       'Photo must be a JPEG, PNG, or WebP under 1 MiB',
-      'Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB.Remove or replace the marked files to continue.',
     ],
   ])('maps photo 400 %s to announced picker feedback', async (apiMessage, localized) => {
     signIn('founder');
@@ -623,7 +623,7 @@ describe('ShopNoteEditControl', () => {
       expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(2);
     });
     expect(screen.getByRole('alert').textContent).toContain(
-      'Remove or replace the rejected file to continue.',
+      'Remove or replace the marked files to continue.',
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     vi.mocked(prepareForumPhoto).mockResolvedValueOnce({ ok: false, error: 'unsupported' });
@@ -632,7 +632,7 @@ describe('ShopNoteEditControl', () => {
       expect(vi.mocked(prepareForumPhoto)).toHaveBeenCalledTimes(3);
     });
     expect(screen.getByRole('alert').textContent).toContain(
-      'Remove or replace the rejected file to continue.',
+      'Remove or replace the marked files to continue.',
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });

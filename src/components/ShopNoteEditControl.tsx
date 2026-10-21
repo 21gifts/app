@@ -243,6 +243,8 @@ export function ShopNoteEditControl({
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   // New photos the API rejected for format or size; they block the editor while still attached.
   const [rejectedPhotos, setRejectedPhotos] = useState<readonly ForumPhotoPayload[]>([]);
+  // A pick still preparing keeps the steps put, like the Add a shop composer.
+  const [preparing, setPreparing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
@@ -385,6 +387,7 @@ export function ShopNoteEditControl({
   async function onPickFiles(files: File[]): Promise<void> {
     // A new pick replaces the last pick's reason, so a repeated reason is announced again.
     setPhotoError(null);
+    setPreparing(true);
     const prepared: ForumPhotoPayload[] = [];
     let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
@@ -409,6 +412,7 @@ export function ShopNoteEditControl({
       }
     }
     setPhotoError(nextError);
+    setPreparing(false);
   }
 
   async function save(): Promise<void> {
@@ -530,7 +534,7 @@ export function ShopNoteEditControl({
           <SundayWritingGate>
             <ShopAddWizard
               mode="edit"
-              posting={saving}
+              posting={saving || preparing}
               draft={draft}
               onDraftChange={(value) => {
                 setDraft(value);
@@ -585,7 +589,7 @@ export function ShopNoteEditControl({
               }}
               imagesOnly
               photoError={photoError}
-              photoRejected={rejectedPhotos.some((photo) => photoDrafts.includes(photo))}
+              rejectedMedia={rejectedPhotos}
               serverProblem={saveProblem}
             />
           </SundayWritingGate>
