@@ -1374,7 +1374,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. Each row is the author name and the pin text from `formatPlacePinText` (name and address line, or coordinates). A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
 - **Used by:** `ShopsScreen`.
@@ -1587,7 +1587,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Visible text for a forum pin. With an address, name · address line, or the address line alone. Without an address, the name or five-decimal coordinates.
 - **Inputs:** Stored `ForumPlacePin` and UI `locale`.
 - **Returns / side effects:** Link or table cell text. No network.
-- **Used by:** `ForumBoard`, `ShopTable`, `PublicMessageLoader`, `ShopNoteEditControl`, `PlacePinChip`.
+- **Used by:** `ForumBoard`, `ShopTable`, `PublicMessageLoader`, `ShopNoteEditControl`, `PlacePinChip`, `PlacesMapScreen`.
 
 ## Function: shopPlaceComplete
 
