@@ -670,6 +670,51 @@ describe('PosScreen', () => {
     }
   });
 
+  it('reads once after an already-open refusal and shows the charge another tab opened', async () => {
+    const theirs = {
+      id: 'c-theirs',
+      amountSats: 42,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 300_000).toISOString(),
+    };
+    for (const readFails of [false, true]) {
+      cleanup();
+      replace.mockClear();
+      useAuthStore.setState({ session: 'tok', account: ACCOUNT });
+      let refused = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            refused = true;
+            return jsonResponse({ error: 'A payment is already open' }, 409);
+          }
+          if (!refused) {
+            return jsonResponse({ charge: null, history: [] });
+          }
+          if (readFails) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: theirs, history: [theirs] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      if (readFails) {
+        expect((await screen.findByRole('alert')).textContent?.toLowerCase()).toContain(
+          'already open',
+        );
+      } else {
+        // The other tab's charge is the till's open charge now: the amount page leaves for it.
+        await waitFor(() => {
+          expect(replace).toHaveBeenCalledWith('/pos');
+        });
+      }
+    }
+  });
+
   it('keeps the open charge and shows an error when cancel fails', async () => {
     const charge = {
       id: 'c1',
@@ -3330,6 +3375,76 @@ describe('PosScreen', () => {
       });
       expect(within(history).queryByText('Expired')).toBeNull();
       expect(reads).toBe(4);
+    });
+
+    it('does not bring back an older confirmation once a newer open charge hid both', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const firstPaid = Math.floor(now / 1_000) * 1_000 - 2_000;
+      const secondPaid = firstPaid + 1_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-between',
+        createdAt: new Date(secondPaid).toISOString(),
+        expiresAt: new Date(secondPaid + 300_000).toISOString(),
+      };
+      // Another device's charge after both, cancelled later.
+      const third = { ...OPEN, id: 'c-third', createdAt: new Date(now).toISOString() };
+      let reads = 0;
+      let phase: 'paid' | 'third' | 'gone' = 'paid';
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          if (phase === 'third') {
+            return jsonResponse({ charge: third, history: [third, newer, ended] });
+          }
+          if (phase === 'gone') {
+            return jsonResponse({
+              charge: null,
+              history: [{ ...third, status: 'cancelled' }, newer, ended],
+            });
+          }
+          return jsonResponse({ charge: newer, history: [newer, ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, firstPaid);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      receive(21, 0, secondPaid);
+      await act(async () => {
+        answerLateRead?.(jsonResponse({ charge: newer, history: [newer, ended] }));
+        await Promise.resolve();
+      });
+      // Two confirmations wait, the newer shown first.
+      expect(await confirmation()).toBeTruthy();
+      phase = 'third';
+      showTab();
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      phase = 'gone';
+      showTab();
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('confirms the newest of two charges paid at once first, then the other', async () => {

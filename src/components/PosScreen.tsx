@@ -713,7 +713,17 @@ function usePosTillState(): PosTillState {
   );
   // A newer open charge hides an older paid one: its confirmation is over.
   const paid = latest !== null && newerCharge(charge, latest) === latest ? latest : null;
-  const hiddenPaidId = latest !== null && paid === null ? latest.id : null;
+  // Every confirmation a newer open charge hides, not only the newest: none comes back after it.
+  const hiddenPaidIds =
+    charge === null
+      ? ''
+      : [serverPaid, ...walletPaid.values()]
+          .filter(
+            (row): row is PosCharge =>
+              row !== null && !closed.has(row.id) && newerCharge(charge, row) === charge,
+          )
+          .map((row) => row.id)
+          .join(' ');
   const history =
     state === null
       ? []
@@ -820,10 +830,12 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
-    if (hiddenPaidId !== null) {
-      settledFor(session).closed.add(hiddenPaidId);
+    for (const id of hiddenPaidIds.split(' ')) {
+      if (id !== '') {
+        settledFor(session).closed.add(id);
+      }
     }
-  }, [hiddenPaidId, session]);
+  }, [hiddenPaidIds, session]);
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
@@ -1033,6 +1045,21 @@ function usePosTillState(): PosTillState {
             }
           } catch {
             // Unknown: fall back to the charge before.
+          }
+        }
+        if (message === 'A payment is already open') {
+          // Another tab opened a charge after the read right before this create: read once, so the
+          // till shows that charge and arms it for the wallet.
+          try {
+            const seq = startRead(reads);
+            const next = await fetchPosState(session);
+            whenCurrent(generation, mine, () => {
+              applyRead(reads, seq, () => {
+                setTill({ state: next, session });
+              });
+            });
+          } catch {
+            // The error below shows either way.
           }
         }
         // Back to the charge before, with any payment reported while the create was on its way; a
