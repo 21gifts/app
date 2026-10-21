@@ -405,7 +405,7 @@
 
 - **Purpose:** Returns `{ key }` for the browser map, or `{ key: null }` when `GOOGLE_MAPS_API_KEY` is unset or blank. An empty value does not fail container boot. The key is not logged.
 - **Errors:** None. Always 200.
-- **Used by:** `PlaceField`, `PlacesMapScreen`.
+- **Used by:** `fetchMapsKey` (`PlacesMapScreen`, `ShopScreen`, `PlaceField`).
 - **Auth:** None.
 
 ## Endpoint: GET /forum/messages/hidden

@@ -1039,10 +1039,45 @@
 
 ## Function: PublicMessageChrome
 
-- **Purpose:** Client chrome wrapper for public `/messages/[id]`, `/messages/[id]/author`, and `/messages/[id]/repayment-list`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (page body: `PublicMessageLoader` from `PublicMessagePage`, `ExternalAuthorProfile` from `ExternalAuthorPage`, or `CreditLedger` from `RepaymentListPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Purpose:** Client chrome wrapper for public `/messages/[id]`, `/messages/[id]/author`, `/messages/[id]/repayment-list`, and `/{npub}`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
+- **Inputs:** `children` (public note/author/ledger content or `ShopScreen`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`. No network beyond session hydration.
-- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`, `RepaymentListPage`.
+- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`, `RepaymentListPage`, `ShopPage`.
+
+## Function: ShopPage
+
+- **Purpose:** Next.js page for `/{npub}`. Rejects every segment except a valid npub or 64 lowercase hex; api 404 uses `notFound` and 410 renders the anonymous unlisted state. Only an exact answer renders the shop: status 200 (not any 2xx) for an npub whose `shop.npub` equals the segment, or a 301 to a valid npub for a hex key. Any other status, a 200 for a hex key, a 200 for a different npub, and unusable data render the retryable state.
+- **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling, no session, and `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms, from `src/lib/api-timeout.ts`) — the same limit as metadata; a timeout or abort renders the retryable `unavailable` state. The loader is wrapped in React `cache`, so `generateMetadata` and the page share one api call and one answer per request.
+- **Returns / side effects:** `ShopScreen` inside `PublicMessageChrome`, or a 308 `permanentRedirect` from a known hex key to `/{npub}` after the api's 301. Also exports shop `generateMetadata`. Every photo URL goes through `resolveShopPhotoUrl` against `getApiUrl()`: a relative path becomes an api URL, and a photo that is not http(s) is dropped before the page and `og:image` use the list.
+- **Used by:** Route `/[npub]`.
+
+## Function: ShopScreen
+
+- **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`; the address line and the QR use the browser host and appear only after mount.
+- **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready. Renders only absolute http(s) photos (`resolveShopPhotoUrl` without an api base), numbered in order.
+- **Returns / side effects:** Ready card, anonymous unlisted heading, or `shop.error` (**Could not load this shop. Please try again.**) plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point. When the canvas calls `onUnavailable` (script failure, missing `google.maps`, or a rejected key), the map frame is removed and the address stays, the same page as without a key.
+- **Used by:** `ShopPage`.
+
+## Function: resolveShopPhotoUrl
+
+- **Purpose:** Make one public shop photo URL safe to render and to publish as `og:image`.
+- **Inputs:** The photo `url` from `GET /shops/:npub` and an optional api base. With the base (trailing slashes trimmed), a root-relative `/path` is appended after the full base, path included (`https://x/v1` + `/a` → `https://x/v1/a`), so an api behind a path prefix still serves its photos; any other relative path resolves against the base plus `/`, and a protocol-relative `//host/…` stays a host, not a path. Without it, only an absolute URL is accepted.
+- **Returns / side effects:** The absolute `http:` or `https:` URL, or null for every other scheme (`javascript:`, `data:`, …) and for an unparsable value. No side effects.
+- **Used by:** `ShopPage` (with `getApiUrl()`), `ShopScreen` (without a base).
+
+## Function: NpubCopyButton
+
+- **Purpose:** Shared icon-only npub copy control extracted from `ExternalAuthorProfile`; Copy becomes a check named Copied for 1200 ms.
+- **Inputs:** `npub` string and the existing `forum.externalProfileCopy` / `forum.externalProfileCopied` catalog keys.
+- **Returns / side effects:** `IconButton`; writes through `navigator.clipboard`, with the hidden-textarea fallback, and clears pending work on unmount.
+- **Used by:** `ExternalAuthorProfile`, `ShopScreen`.
+
+## Function: GoogleMapCanvas
+
+- **Purpose:** Shared Google Maps JavaScript canvas used by the all-places screen and the one-shop public page. It draws the supplied markers, centers one point at zoom 14, or fits several points and caps fitted zoom at 14.
+- **Inputs:** Browser maps key or null, marker points, anchor, `fitAll`, a test id, and an optional `onUnavailable` callback. A null key leaves its frame empty and does not call `onUnavailable`; `ShopScreen` omits that frame entirely.
+- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, subscribes to a rejected key through `onGoogleMapsAuthFailure` (unsubscribes on unmount), clears Google's authentication-failure dialog from the frame and draws nothing more after it, and leaves surrounding text usable on script failure. A script failure, a missing `google.maps` after the load, or a rejected key calls the latest `onUnavailable`; a failure that settles after unmount does not. `ShopScreen` passes it and removes the map; `PlacesMapScreen` does not, so its frame stays empty above the list, as without a key.
+- **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
 ## Function: PublicMessagePage
 
@@ -1053,17 +1088,24 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]`. Loads the public note via `loadPublicMessageForOg` and maps it through `publicMessageOgMetadata` so crawlers see the author, text, and photo without running JS. Missing or failed fetches inherit the root layout preview.
-- **Inputs:** `{ params: Promise<{ id: string }> }` from the dynamic route.
-- **Returns / side effects:** `Promise<Metadata>` — per-note Open Graph / Twitter tags when the note is found, or `{}` so the site-wide layout preview is inherited. Does not render the visible page.
-- **Used by:** Route `/messages/[id]` (`PublicMessagePage`).
+- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`. Both use `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms) and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
+- **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
+- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
+- **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
 
 ## Function: loadPublicMessageForOg
 
 - **Purpose:** Server fetch of api `GET /messages/:id` for Open Graph. Invalid UUIDs skip the network. Timeouts, non-OK responses, JSON/schema failures, and thrown errors (`getApiUrl`, network, abort) all return `null` and never throw.
 - **Inputs:** `id` string from the route (forum message UUID).
-- **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(2500)`.
+- **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms; the constant lives in `src/lib/api-timeout.ts` and also bounds `ShopPage` and the `/l/[code]` lookup).
 - **Used by:** `generateMetadata` on `/messages/[id]`.
+
+## Function: ogDescriptionText
+
+- **Purpose:** Shared link-preview description for a public note and a public shop: trimmed text, or `` `${name} on 21.gifts` `` when the text is blank — never the marketing layout copy. Text longer than 300 UTF-16 code units is cut to 299 plus `…`. The same module exports `DEFAULT_OG_ALT`, the alt text of the default `/og.png` image.
+- **Inputs:** `text` (note text or shop description) and `name` (author or shop name).
+- **Returns / side effects:** Description string of at most 300 code units. No I/O.
+- **Used by:** `publicMessageOgMetadata`, shop `generateMetadata` on `/[npub]`.
 
 ## Function: publicMessageOgMetadata
 
@@ -1194,10 +1236,10 @@
 
 ## Function: ForumPhotoGallery
 
-- **Purpose:** Horizontal snap row for a note with `photoCount > 1`. Earlier slides are 88% wide so the next still peeks; the last slide is full width. The row is `data-scroll-x` (sideways only, vertical axis clipped) and is not a second page scroll. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) scroll that row. Empty `photos` returns `null`. Single still has the chip and no dots. The capture time is stored, not shown.
+- **Purpose:** Horizontal snap row for forum-note or public-shop stills. Earlier slides are 88% wide so the next still peeks; the last slide is full width. The row is `data-scroll-x` (sideways only, vertical axis clipped) and is not a second page scroll. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) scroll that row. Empty `photos` returns `null`. Single still has the chip and no dots. The capture time is stored, not shown.
 - **Inputs:** `photos` (`{ index, url }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`).
-- **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
-- **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
+- **Returns / side effects:** React element. Local scroll index only. No network. Browser-loadable `<img>` URLs from the parent (object/blob URLs for forum notes, public API URLs for shops).
+- **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`, `ShopScreen`.
 
 ## Function: ShopAddWizard
 
@@ -1374,16 +1416,37 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. Each row is the author name and the pin text from `formatPlacePinText` (name and address line, or coordinates). A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key `GoogleMapCanvas` draws the same pins as markers. Each row is the author name and the pin text from `formatPlacePinText` (name and address line, or coordinates). A pin label opens `/{shopNpub}` when the row carries a listed-shop identity; null or omitted stays `/messages/:id`. After a pin edit saves, the row takes `lat`, `lng`, `label`, `address`, and `shopNpub` from the updated note, so listing switches the link to `/{shopNpub}` and unlisting back to `/messages/:id`; a response without `shopNpub` keeps the old value. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and the browser key via `fetchMapsKey`.
 - **Used by:** `ShopsScreen`.
+
+## Function: fetchMapsKey
+
+- **Purpose:** One shared loader for the browser Google Maps key from same-origin `GET /maps/key`, used by the places map, the public shop page, and the place field instead of separate copies of the same fetch and parse.
+- **Inputs:** None. Reads the JSON body's `key`.
+- **Returns / side effects:** `Promise<string | null>`: the trimmed key, or `null` for a missing, non-string, or blank key and for any network or JSON failure. Never rejects.
+- **Used by:** `PlacesMapScreen`, `ShopScreen`, `PlaceField`.
+
+## Function: loadGoogleMaps
+
+- **Purpose:** One page-wide loader for the Google Maps JavaScript API, shared by `GoogleMapCanvas` and `PlaceField` so they never add a second script. Calls made while the script is still loading get the same in-flight promise.
+- **Inputs:** Browser key from `GET /maps/key`. The one script (`script[data-gmaps="weekly"]`) loads `https://maps.googleapis.com/maps/api/js?key=…&v=weekly` with no extra libraries. A `script[data-gmaps="weekly"]` this loader did not add is replaced by a fresh one with the given key, since its load or error event may already have fired; one marked `data-gmaps-state="error"` rejects at once.
+- **Returns / side effects:** `Promise<void>` that resolves at once when `google.maps` exists, otherwise when the script loads and installs `google.maps`. On a script error it rejects and removes the script, so the next call adds a fresh script and retries. On a load without `google.maps` it rejects, marks that script `data-gmaps-state="error"`, and every later call rejects until the script is removed from the document.
+- **Used by:** `GoogleMapCanvas`, `PlaceField`.
+
+## Function: onGoogleMapsAuthFailure
+
+- **Purpose:** One owner for Google's global rejected-key hook `window.gm_authFailure`. `GoogleMapCanvas` and `PlaceField` on the same page both subscribe, so neither overwrites or deletes the other's handler.
+- **Inputs:** A listener called when Google rejects the browser key. The module installs its one hook on the first subscribe or `loadGoogleMaps` call, and puts it back if another script replaced it.
+- **Returns / side effects:** An unsubscribe function. A report is remembered for the `google.maps` namespace that was on the page when Google made it: a later subscriber on the same page is called at once. A report before `google.maps` exists reaches current subscribers only.
+- **Used by:** `GoogleMapCanvas`, `PlaceField`.
 
 ## Function: fetchPlaces
 
 - **Purpose:** Load every live top-level forum pin for the signed-in session.
 - **Inputs:** `sessionToken` bearer.
-- **Returns / side effects:** `ForumPlaceRow[]` from `GET /forum/messages/places`. A row may include `shop: true` when the note is a shop. Throws the visitor-facing load error on a non-2xx status, a network failure, or a body that fails the schema.
+- **Returns / side effects:** `ForumPlaceRow[]` from `GET /forum/messages/places`. A row may include `shop: true` and `shopNpub` (npub for a listed shop, null before its key exists). Throws the visitor-facing load error on a non-2xx status, a network failure, or a body that fails the schema.
 - **Used by:** `PlacesMapScreen`.
 
 ## Function: proxyMessagesPlacesGet
@@ -1397,7 +1460,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface, the confirm row stays visible, and Tab / Shift+Tab wrap between the dialog's first and last enabled controls. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer explains why confirm is disabled; when the map is unavailable, the message where the map would be is that reason and the footer does not repeat it. With stored shop text, the trimmed shop name that will be committed is also checked live against the API's 20–1000-character and strictly-shorter-than-text rule. A current live name error wins over an older reported server name error.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, **Use this place** and **Remove place** call `onChange` and close; with `onCommit`, those buttons wait, a rejection keeps the dialog open with its reason, and a success closes without calling `onChange`. Optional `shopDetails` (shop name and the five address fields; a shop dialog without `onCommit` offers no **Remove place**), `shopText` (checks the shop name against that text while typing), `problem` (a known API fallback shown at its field), `autoOpenProblem` (default true: such a problem opens the dialog once), and `onAvailabilityChange` (reports a checked map availability to the wizard). The old `showPreview` prop is removed; a confirmed composer place shows as `PlacePinChip`.
-- **Returns / side effects:** Attach button and accessible modal dialog. A stored place can be removed from the dialog where the place is saved directly (`onCommit`, as in `ShopPlaceControl`, or the composer without `shopDetails`); the shop wizard needs a complete place and offers no Remove. Fetches `/maps/key`; a known server problem reopens the dialog at its field.
+- **Returns / side effects:** Attach button and accessible modal dialog. A stored place can be removed from the dialog where the place is saved directly (`onCommit`, as in `ShopPlaceControl`, or the composer without `shopDetails`); the shop wizard needs a complete place and offers no Remove. Fetches `/maps/key` through `fetchMapsKey` when opened and loads Google's script through the shared `loadGoogleMaps`. Subscribes to a rejected key through `onGoogleMapsAuthFailure` for its whole lifetime: an open dialog switches to the unavailable sentence, and a closed one stays unavailable when it is opened again. A known server problem reopens the dialog at its field.
 - **Used by:** `ForumBoard` (top-level composer, no `shopDetails`), `ShopAddWizard` (`shopDetails`), and `ShopPlaceControl` (`shopDetails`).
 
 ## Function: PlacePinChip
@@ -1855,7 +1918,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumPaySheet` (rendered by `ForumBoard` and `HabitComments`), `ForumReplyPayPage` (rendered by `ForumBoard`), `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, `ViewProfileScreen`, and `ShopScreen` also on a smartphone when the value exists. `WalletScreenView` when its `showQr` prop is set and the value exists.
 
 ## Function: RootLayout
 
@@ -2405,7 +2468,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ExternalAuthorProfile
 
-- **Purpose:** Profile card for a forum author with no 21.gifts account. Same fields and hide rules as the member card: heading `profile.title`, name with the External span, optional checked Nostr address, payment address only when it differs ignoring case, and the npub with a centered secondary IconButton copy control. It is not a dialog. Rendered by `ExternalAuthorPage` inside `PublicMessageChrome`. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. When both `postCount` and `replyCount` are numbers, the same count buttons as a member open a read-only feed under the card (no pay, no composer, no react). If either count is absent, no buttons.
+- **Purpose:** Profile card for a forum author with no 21.gifts account. Same fields and hide rules as the member card: heading `profile.title`, name with the External span, optional checked Nostr address, payment address only when it differs ignoring case, and the npub with the shared centered `NpubCopyButton`. It is not a dialog. Rendered by `ExternalAuthorPage` inside `PublicMessageChrome`. No image, payment, or outbound link. When both `postCount` and `replyCount` are numbers, the same count buttons as a member open a read-only feed under the card (no pay, no composer, no react). If either count is absent, no buttons.
 - **Inputs:** `messageId`, `fallbackName`. Empty `fallbackName` shows `view.unnamed` until a profile loads, and when the fetch returns null.
 - **Returns / side effects:** The card. No `onClose`. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. No overlay, portal, hint paragraph, or close control. Count buttons and the read-only feed render when both counts are numbers; a post click opens `/messages/{id}`; a reply click opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`.
 - **Used by:** `ExternalAuthorPage`.
@@ -2628,7 +2691,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads `NEXT_PUBLIC_API_URL` via the typed config accessor.
 - **Inputs:** None.
 - **Returns / side effects:** Origin string. Throws if unset/empty (entrypoint must substitute).
-- **Used by:** `proxyApiRequest` (server-side upstream origin).
+- **Used by:** `proxyApiRequest` (server-side upstream origin), `ShopPage` (api base for `GET /shops/:npub` and for the shop photo URLs), `loadPublicMessageForOg` (api base for `GET /messages/:id`), and the `GET /l/[code]` route handler (api base for `GET /links/:code`).
 
 ## Function: getAppVersion
 
@@ -2824,7 +2887,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `local@domain` or `null`. No I/O.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `openCryptoPayQrValue`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosTill` and `PosAmount` (via `usePosTillState`), `WalletScreenView`, `openCryptoPayQrValue`.
 
 ## Function: encodeLnurl
 
@@ -2838,7 +2901,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopStickerOverlay` (sticker QR payload).
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosTill` and `PosAmount` (via `usePosTillState`), `WalletScreenView`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
 

@@ -1,4 +1,49 @@
 {
+  "/[npub]:default": {
+    "de": "Gelistetes Cafe Luna mit Beschreibung, einem Foto, vollständiger Adresse, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und dem Zahlungsblock (luna@21.gifts und Open-CryptoPay-QR mit Logo). Kein Kartenschlüssel, daher kein Kartenrahmen. Die Adresse bleibt sichtbar.",
+    "es": "Cafe Luna listado con descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago (luna@21.gifts y QR de Open CryptoPay con logotipo). No hay clave de mapas, así que no aparece el marco del mapa. La dirección permanece visible.",
+    "fil": "Nakalistang Cafe Luna na may paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block (luna@21.gifts at Open CryptoPay QR na may logo). Walang maps key kaya walang frame ng mapa. Nananatiling nakikita ang address."
+  },
+  "/[npub]:signed-in": {
+    "de": "Dasselbe gelistete Cafe Luna mit dem Menü-Steuerelement statt der Sprachauswahl. Beschreibung, ein Foto, vollständige Adresse, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und der Zahlungsblock (luna@21.gifts und Open-CryptoPay-QR mit Logo). Kein Kartenschlüssel, daher kein Kartenrahmen.",
+    "es": "El mismo Cafe Luna listado con el control Menú en lugar del selector de idioma. Descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago (luna@21.gifts y QR de Open CryptoPay con logotipo). No hay clave de mapas, así que no aparece el marco del mapa.",
+    "fil": "Parehong nakalistang Cafe Luna na may kontrol na Menyu sa halip na pampili ng wika. Paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block (luna@21.gifts at Open CryptoPay QR na may logo). Walang maps key kaya walang frame ng mapa."
+  },
+  "/[npub]:map": {
+    "de": "Dasselbe gelistete Geschäft mit einem Browser-Kartenschlüssel. Ein deterministischer Kartenrahmen zeichnet genau eine Markierung für das Geschäft; die vollständige Ortsliste wird nie geladen.",
+    "es": "La misma tienda listada con una clave de mapas del navegador. Un marco de mapa determinista dibuja exactamente un marcador para la tienda; nunca carga la lista completa de lugares.",
+    "fil": "Ang parehong nakalistang shop na may browser maps key. Gumuguhit ang deterministikong frame ng mapa ng eksaktong isang marker para sa shop; hindi nito nilo-load ang buong listahan ng mga lugar."
+  },
+  "/[npub]:copied": {
+    "de": "Nach dem Drücken der reinen Symbolsteuerung Kopieren hat das Häkchen den zugänglichen Namen Kopiert. Der npub bleibt sichtbar.",
+    "es": "Después de pulsar el control de solo icono Copiar, el icono de verificación tiene el nombre accesible Copiado. El npub sigue visible.",
+    "fil": "Pagkatapos pindutin ang icon-only na kontrol na Kopyahin, ang check icon ay may accessible na pangalang Nakopya. Nananatiling nakikita ang npub."
+  },
+  "/[npub]:photos": {
+    "de": "Gelistete Twin Gallery mit zwei verschiedenen Fotos. Die Galerie zeigt das erste Foto, das zweite ragt rechts herein, oben rechts steht 1/2 und darunter zwei Punkte; der erste Punkt (Foto 1 von 2) ist aktiv.",
+    "es": "Twin Gallery listada con dos fotos distintas. La galería muestra la primera foto, la segunda asoma a la derecha, arriba a la derecha pone 1/2 y debajo hay dos puntos; el primero (Foto 1 de 2) está activo.",
+    "fil": "Nakalistang Twin Gallery na may dalawang magkaibang litrato. Ipinapakita ng gallery ang unang litrato, sumisilip sa kanan ang pangalawa, may 1/2 sa kanang itaas, at may dalawang tuldok sa ibaba; aktibo ang una (Litrato 1 sa 2)."
+  },
+  "/[npub]:photo-2": {
+    "de": "Nach dem Drücken des zweiten Punkts (Foto 2 von 2) zeigt die Galerie das zweite Foto in voller Breite, oben rechts steht 2/2 und der zweite Punkt ist aktiv.",
+    "es": "Después de pulsar el segundo punto (Foto 2 de 2), la galería muestra la segunda foto a todo el ancho, arriba a la derecha pone 2/2 y el segundo punto está activo.",
+    "fil": "Pagkatapos pindutin ang pangalawang tuldok (Litrato 2 sa 2), ipinapakita ng gallery ang pangalawang litrato sa buong lapad, may 2/2 sa kanang itaas, at aktibo ang pangalawang tuldok."
+  },
+  "/[npub]:no-payment": {
+    "de": "Gelistetes Quiet Shop mit payUsername: null und nip05: null. Adresse, Forumslink und npub bleiben; der Abschnitt mit der verifizierten Adresse und der ganze Zahlungsblock (Überschrift, Adresse, QR) fehlen.",
+    "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y todo el bloque de pago (título, dirección, QR).",
+    "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at ang buong payment block (heading, address, QR)."
+  },
+  "/[npub]:gone": {
+    "de": "API 410. Die Seite sagt Dieses Geschäft ist nicht mehr gelistet. und zeigt weder den Geschäftsnamen noch andere verborgene Geschäftsdaten.",
+    "es": "API 410. La página dice Esta tienda ya no está en la lista. y no muestra el nombre ni otros datos ocultos de la tienda.",
+    "fil": "API 410. Sinasabi ng page na Hindi na nakalista ang shop na ito. at hindi ipinapakita ang pangalan o iba pang nakatagong data ng shop."
+  },
+  "/[npub]:error": {
+    "de": "API 503. Hinweis Dieses Geschäft konnte nicht geladen werden. Bitte versuchen Sie es erneut. und beschriftete Schaltfläche Erneut versuchen; nie eine leere Seite.",
+    "es": "API 503. Alerta No se pudo cargar esta tienda. Inténtalo de nuevo. y botón con etiqueta Intentar de nuevo; nunca una página en blanco.",
+    "fil": "API 503. Alert na Hindi ma-load ang shop na ito. Subukan ulit. at may label na pindutang Subukan ulit; hindi kailanman blangkong page."
+  },
   "/:default": {
     "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
     "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre nosotros, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",

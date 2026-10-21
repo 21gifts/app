@@ -4,6 +4,7 @@
  * protocol so Next.js same-origin proxies succeed. Not a Lightning node:
  * callbacks accept any signature. Pay-on-note uses POST /messages/:id/invoice.
  */
+import fs from 'node:fs';
 import http from 'node:http';
 import { createHash, randomBytes } from 'node:crypto';
 
@@ -80,13 +81,14 @@ function publicConversation(row) {
   };
 }
 
-function json(res, status, body) {
+function json(res, status, body, extraHeaders = {}) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
     'content-type': 'application/json',
     'access-control-allow-origin': '*',
     'access-control-allow-headers': 'authorization, content-type, user-agent',
     'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    ...extraHeaders,
   });
   res.end(payload);
 }
@@ -709,7 +711,9 @@ const server = http.createServer(async (req, res) => {
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);
     }
-    const messages = filtered.slice(0, limit);
+    const messages = filtered
+      .slice(0, limit)
+      .map((message) => ({ ...message, shopNpub: message.shopNpub ?? null }));
     json(res, 200, {
       messages,
       ...(filtered.length > limit ? { nextCursor: 'next' } : {}),
@@ -775,7 +779,7 @@ const server = http.createServer(async (req, res) => {
       forumPhotos.set(created.id, Buffer.from(parsed.photo.data, 'base64'));
     }
     forumMessages.unshift(created);
-    json(res, 200, created);
+    json(res, 200, { ...created, shopNpub: null });
     return;
   }
 
@@ -1333,7 +1337,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);
     if (id === COMPOSE_TARGET.id) {
-      json(res, 200, COMPOSE_TARGET);
+      json(res, 200, { ...COMPOSE_TARGET, shopNpub: null });
       return;
     }
     const row = forumMessages.find((message) => message.id === id);
@@ -1341,7 +1345,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 404, { error: 'Not found' });
       return;
     }
-    json(res, 200, row);
+    json(res, 200, { ...row, shopNpub: row.shopNpub ?? null });
     return;
   }
 
@@ -2094,6 +2098,174 @@ const server = http.createServer(async (req, res) => {
       shopCount: 0,
     }));
     json(res, 200, { days });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/messages/11111111-1111-4111-8111-111111111111/photo.jpg') {
+    const bytes = fs.readFileSync(new URL('./fixtures/technical-note.jpg', import.meta.url));
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'cache-control': 'public, max-age=60',
+      'access-control-allow-origin': '*',
+    });
+    res.end(bytes);
+    return;
+  }
+
+  const galleryPhotoMatch = pathName.match(/^\/e2e\/shop-photos\/(one|two)\.jpg$/);
+  if (method === 'GET' && galleryPhotoMatch !== null) {
+    // Two different fixture stills, so the gallery shot shows which photo is selected.
+    const file = galleryPhotoMatch[1] === 'one' ? 'technical-note.jpg' : 'profile-about.jpg';
+    const bytes = fs.readFileSync(new URL(`./fixtures/${file}`, import.meta.url));
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'cache-control': 'public, max-age=60',
+      'access-control-allow-origin': '*',
+    });
+    res.end(bytes);
+    return;
+  }
+
+  const shopMatch = pathName.match(/^\/shops\/([^/]+)$/);
+  if (method === 'GET' && shopMatch !== null) {
+    const value = decodeURIComponent(shopMatch[1]);
+    const listedNpub = `npub1${'2'.repeat(58)}`;
+    const goneNpub = `npub1${'3'.repeat(58)}`;
+    const unavailableNpub = `npub1${'4'.repeat(58)}`;
+    const noPaymentNpub = `npub1${'5'.repeat(58)}`;
+    const galleryNpub = `npub1${'7'.repeat(58)}`;
+    const knownHex = 'a'.repeat(64);
+    if (value === knownHex) {
+      res.writeHead(301, {
+        location: `/shops/${listedNpub}`,
+        'cache-control': 'public, max-age=60',
+        'access-control-allow-origin': '*',
+      });
+      res.end();
+      return;
+    }
+    if (value === listedNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: listedNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Cafe Luna',
+            description: 'Coffee, gifts, and moonlight.',
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: 'Zurich Old Town',
+              address: {
+                street: 'Moon Street',
+                houseNumber: '21',
+                postalCode: '8001',
+                city: 'Zurich',
+                country: 'CH',
+              },
+            },
+            photos: [
+              {
+                url: `http://${HOST}:${PORT}/messages/11111111-1111-4111-8111-111111111111/photo.jpg`,
+                width: 1,
+                height: 1,
+              },
+            ],
+            payUsername: 'luna',
+            nip05: 'luna@21.gifts',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === galleryNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: galleryNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Twin Gallery',
+            description: 'Two photos, one shop.',
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: 'Zurich Old Town',
+              address: {
+                street: 'Moon Street',
+                houseNumber: '21',
+                postalCode: '8001',
+                city: 'Zurich',
+                country: 'CH',
+              },
+            },
+            // A relative path resolves against the api base (the same URL as
+            // before); a non-http(s) photo is dropped, so the gallery still has two.
+            photos: [
+              { url: '/e2e/shop-photos/one.jpg', width: 1168, height: 784 },
+              { url: 'javascript:alert(1)', width: 1, height: 1 },
+              { url: `http://${HOST}:${PORT}/e2e/shop-photos/two.jpg`, width: 1400, height: 933 },
+            ],
+            payUsername: 'luna',
+            nip05: 'luna@21.gifts',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === noPaymentNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: noPaymentNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Quiet Shop',
+            description: 'Identity without a linked payment account.',
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: 'Zurich Old Town',
+              address: {
+                street: 'Moon Street',
+                houseNumber: '21',
+                postalCode: '8001',
+                city: 'Zurich',
+                country: 'CH',
+              },
+            },
+            photos: [],
+            payUsername: null,
+            nip05: null,
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === goneNpub) {
+      json(
+        res,
+        410,
+        { error: 'Shop is no longer listed', npub: goneNpub },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === unavailableNpub) {
+      json(res, 503, { error: 'Shops are unavailable' }, { 'cache-control': 'no-store' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' }, { 'cache-control': 'public, max-age=60' });
     return;
   }
 

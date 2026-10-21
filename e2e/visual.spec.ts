@@ -18862,6 +18862,152 @@ test.describe('welcome forum variants', () => {
   });
 });
 
+test.describe('public shop screen', () => {
+  const listedNpub = `npub1${'2'.repeat(58)}`;
+  /** Waits until the shop photo has decoded, so the shot never shows a broken image. */
+  const photoLoaded = async (page: Page): Promise<void> => {
+    const photo = page.getByRole('img', { name: 'Photo from Cafe Luna' }).first();
+    await expect(photo).toBeVisible();
+    await expect
+      .poll(() =>
+        photo.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+      )
+      .toBe(true);
+  };
+  const goneNpub = `npub1${'3'.repeat(58)}`;
+  const unavailableNpub = `npub1${'4'.repeat(58)}`;
+  const noPaymentNpub = `npub1${'5'.repeat(58)}`;
+  const galleryNpub = `npub1${'7'.repeat(58)}`;
+  /** Waits until both gallery stills have decoded, so no shot shows a broken image. */
+  const galleryLoaded = async (page: Page): Promise<void> => {
+    const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
+    await expect(stills).toHaveCount(2);
+    for (const still of await stills.all()) {
+      await expect
+        .poll(() =>
+          still.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+        )
+        .toBe(true);
+    }
+  };
+
+  test('public shop default', async ({ page }) => {
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await photoLoaded(page);
+    await shotScreen(page, 'screen-npub');
+  });
+
+  test('public shop signed-in', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await photoLoaded(page);
+    await shotScreen(page, 'state-npub-signed-in');
+  });
+
+  test('public shop map', async ({ page }) => {
+    await installBaselineMap(page);
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByTestId('shop-map')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(1);
+    await photoLoaded(page);
+    // The map sits below the address; bring it into the one-window shot.
+    await page.getByTestId('shop-map').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-npub-map');
+  });
+
+  test('public shop copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(`/${listedNpub}`);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await photoLoaded(page);
+    await shotScreen(page, 'state-npub-copied');
+  });
+
+  test('public shop photos', async ({ page }) => {
+    await page.goto(`/${galleryNpub}`);
+    await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Photo 1 of 2' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toBeVisible();
+    await galleryLoaded(page);
+    await shotScreen(page, 'state-npub-photos');
+  });
+
+  test('public shop photo 2', async ({ page }) => {
+    await page.goto(`/${galleryNpub}`);
+    await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
+    await galleryLoaded(page);
+    await page.getByRole('button', { name: 'Photo 2 of 2' }).click();
+    await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(page.getByText('2/2')).toBeVisible();
+    // The row scrolls smoothly; wait until it rests on the last still.
+    await expect
+      .poll(() =>
+        page
+          .locator('[data-scroll-x]')
+          .first()
+          .evaluate((node) => Math.abs(node.scrollWidth - node.clientWidth - node.scrollLeft) < 1),
+      )
+      .toBe(true);
+    await shotScreen(page, 'state-npub-photo-2');
+  });
+
+  test('public shop no payment', async ({ page }) => {
+    await page.goto(`/${noPaymentNpub}`);
+    await expect(page.getByRole('heading', { name: 'Quiet Shop' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
+    await shotScreen(page, 'state-npub-no-payment');
+  });
+
+  test('public shop gone', async ({ page }) => {
+    await page.goto(`/${goneNpub}`);
+    await expect(
+      page.getByRole('heading', { name: 'This shop is no longer listed.' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-npub-gone');
+  });
+
+  test('public shop error', async ({ page }) => {
+    await page.goto(`/${unavailableNpub}`);
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not load this shop. Please try again.' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-npub-error');
+  });
+});
+
 test.describe('shops screens', () => {
   async function seedAda(page: Page, role: 'basis' | 'moderator' = 'basis'): Promise<void> {
     await page.addInitScript(() => {

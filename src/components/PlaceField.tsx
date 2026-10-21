@@ -19,6 +19,8 @@ import {
   type ShopAddressFieldProblem,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
+import { fetchMapsKey } from '@/lib/maps-key';
 import type { MessageKey } from '@/lib/messages';
 
 const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
@@ -54,7 +56,6 @@ type GoogleMapsNamespace = {
 };
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
-  gm_authFailure?: () => void;
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
@@ -189,6 +190,8 @@ export function PlaceField(props: {
   const triggerWrapRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
+  /** Reaction of the open panel to a rejected key; null while closed. */
+  const rejectKeyRef = useRef<(() => void) | null>(null);
   const savingRef = useRef(false);
   const failedSaveActionRef = useRef<'commit' | 'remove' | null>(null);
   // A server problem that opened the dialog owes focus to the field it names.
@@ -212,6 +215,16 @@ export function PlaceField(props: {
       setOpen(false);
     }
   }, [props.disabled]);
+
+  // A rejected key stays rejected, also after the panel closes.
+  useEffect(
+    () =>
+      onGoogleMapsAuthFailure(() => {
+        authFailedRef.current = true;
+        rejectKeyRef.current?.();
+      }),
+    [],
+  );
 
   useEffect(() => {
     const problem = props.problem;
@@ -257,97 +270,54 @@ export function PlaceField(props: {
     }
     let cancelled = false;
     const load = async (): Promise<void> => {
-      try {
-        const response = await fetch('/maps/key');
-        const body: unknown = await response.json();
+      const nextKey = await fetchMapsKey();
+      if (cancelled) {
+        return;
+      }
+      if (nextKey === null) {
+        setMapsKey(null);
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      setMapsKey(nextKey);
+      const googleWindow = window as GoogleWindow;
+      // A rejected key stays rejected. Google still defines `google.maps`.
+      // Cleanup clears the ref, so this only runs for the open panel.
+      const rejectKey = (): void => {
+        setUnavailable(true);
+        setScriptReady(false);
+      };
+      const acceptKey = (): void => {
+        if (!cancelled && !authFailedRef.current) {
+          setUnavailable(false);
+          setScriptReady(true);
+          onAvailabilityChangeRef.current?.(false);
+        }
+      };
+      rejectKeyRef.current = rejectKey;
+      if (authFailedRef.current) {
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      if (googleWindow.google?.maps !== undefined) {
+        acceptKey();
+        return;
+      }
+      // One shared script for this field and every GoogleMapCanvas on the page.
+      loadGoogleMaps(nextKey).then(acceptKey, () => {
         if (cancelled) {
           return;
         }
-        const raw = typeof body === 'object' && body !== null && 'key' in body ? body.key : null;
-        const nextKey = typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : null;
-        if (nextKey === null) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        setMapsKey(nextKey);
-        const googleWindow = window as GoogleWindow;
-        const rejectKey = (): void => {
-          authFailedRef.current = true;
-          if (!cancelled) {
-            setUnavailable(true);
-            setScriptReady(false);
-          }
-        };
-        const acceptKey = (): void => {
-          if (!cancelled && !authFailedRef.current) {
-            setUnavailable(false);
-            setScriptReady(true);
-            onAvailabilityChangeRef.current?.(false);
-          }
-        };
-        googleWindow.gm_authFailure = rejectKey;
-        if (authFailedRef.current) {
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        if (googleWindow.google?.maps !== undefined) {
-          acceptKey();
-          return;
-        }
-        const existing = document.querySelector('script[data-gmaps="weekly"]');
-        const onLoad = (): void => {
-          if (cancelled) {
-            return;
-          }
-          if (googleWindow.google?.maps === undefined || authFailedRef.current) {
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          acceptKey();
-        };
-        const onError = (): void => {
-          if (!cancelled) {
-            setUnavailable(true);
-            setScriptReady(false);
-          }
-        };
-        if (existing instanceof HTMLScriptElement) {
-          if (existing.dataset['gmapsState'] === 'error' || authFailedRef.current) {
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          existing.addEventListener('load', onLoad, { once: true });
-          existing.addEventListener('error', onError, { once: true });
-          return;
-        }
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(nextKey)}&v=weekly`;
-        script.dataset['gmaps'] = 'weekly';
-        script.addEventListener('load', onLoad, { once: true });
-        script.addEventListener('error', () => {
-          script.dataset['gmapsState'] = 'error';
-          onError();
-        });
-        document.head.appendChild(script);
-      } catch {
-        if (!cancelled) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-        }
-      }
+        setUnavailable(true);
+        setScriptReady(false);
+      });
     };
     void load();
     return () => {
       cancelled = true;
-      (window as GoogleWindow).gm_authFailure = () => {
-        authFailedRef.current = true;
-      };
+      rejectKeyRef.current = null;
     };
   }, [open]);
 

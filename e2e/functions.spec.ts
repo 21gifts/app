@@ -12981,11 +12981,15 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   await expect(people).toBeVisible();
   await box.press('Escape');
   await expect(people).toHaveCount(0);
-  await box.press('Home');
+  // Playwright maps Home/End on macOS to scrollToBeginning/EndOfDocument, which
+  // leaves the caret in place; the macOS line keys are Meta+ArrowLeft/Right.
+  const mac = process.platform === 'darwin';
+  await box.press(mac ? 'Meta+ArrowLeft' : 'Home');
   await box.press('x');
-  await box.press('End');
-  await expect(people).toHaveCount(0);
+  await box.press(mac ? 'Meta+ArrowRight' : 'End');
   await expect(box).toHaveValue('xhi @');
+  expect(await box.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBe(5);
+  await expect(people).toHaveCount(0);
 });
 
 test('Function: pageFrameProblems — login at phone width stays inside the window', async ({
