@@ -57,19 +57,6 @@ function stubBox(
     }) as DOMRect;
 }
 
-const FIT_FRAME = {
-  frameLeft: 24,
-  frameRight: 351,
-  frameTop: 0,
-  frameBottom: 800,
-  anchorLeft: 56,
-  anchorTop: 60,
-  anchorBottom: 100,
-  gap: 8,
-  inset: 16,
-  viewportHeight: 800,
-};
-
 afterEach(() => {
   while (restorers.length > 0) {
     const restore = restorers.pop();
