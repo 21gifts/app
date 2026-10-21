@@ -3293,9 +3293,13 @@ describe('PosScreen', () => {
       });
       const before = reads;
       // Another payment of that amount in the same late minute: the paid charge does not take it.
+      // It pays no charge the till knows, so one read looks for another device's charge; none.
       receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(before + 1);
+      });
       await act(async () => undefined);
-      expect(reads).toBe(before);
+      expect(reads).toBe(before + 1);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
