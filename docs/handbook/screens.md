@@ -2253,31 +2253,31 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000** and the note amount **₿10'500 · $10.50**. Progress bar at **50%** (orange half-fill). A **Donation** tag sits beside the name. Pressing it explains that a donation is not paid back. The bar does not repeat that sentence. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (the viewer's USD from the current spot). Progress bar at **50%** (orange half-fill). A **Donation** tag sits beside the name. Pressing it explains that a donation is not paid back. The bar does not repeat that sentence. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
 ### Variant: goal-100
 
-On **All**: top-level Ada note with `sats: 21000` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000** and the note amount is **₿21'000**. Full orange track, label **100%**, no green overflow.
+On **All**: top-level Ada note with `sats: 21000` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount is that same pair. Full orange track, label **100%**, no green overflow.
 
 ![21.gifts welcome goal 100](images/welcome-goal-100.png)
 
 ### Variant: goal-110
 
-On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000**. The note amount is **₿23'100**. This fixture stores no snapshot, so neither line adds a fiat figure. Full orange track plus green overflow (10% of track width past the right edge), label **110%**.
+On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** (the viewer's USD from the current spot; this fixture stores no snapshot). The note amount is **₿23'100 · $23.10**. Full orange track plus green overflow (10% of track width past the right edge), label **110%**.
 
 ![21.gifts welcome goal 110](images/welcome-goal-110.png)
 
 ### Variant: goal-fiat
 
-On **All**: a top-level English note defined as **$1.50**, with frozen **₿1'000** and no second dollar amount, because the viewer's currency is the definition currency. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0**.
+On **All**: a top-level English note defined as **$1.50**, with frozen **₿1'000** and no second dollar amount, because the viewer's currency is the definition currency. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts welcome goal fiat](images/welcome-goal-fiat.png)
 
 ### Variant: goal-php
 
-On **All**: a top-level English note defined as **₱200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0**.
+On **All**: a top-level English note defined as **₱200.00**, with frozen **₿1'000**. The viewer's default fiat is USD, not pesos, so the bar also shows the dollar amount stored for that viewer, **$1.50**. Label **0%**. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts welcome goal php](images/welcome-goal-php.png)
 
@@ -2703,7 +2703,7 @@ Ask step 4 of 4, **Daily** pressed, after the post fails.
 
 ### Variant: ask-open
 
-**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000**. This fixture stores no snapshot, so the posted ask shows the current spot beside bitcoin when a rate is loaded. Photo and caption sit with `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
+**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (the viewer's USD from the current spot; this fixture stores no snapshot). Photo and caption sit with `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
 
 ![21.gifts welcome ask open](images/welcome-ask-open.png)
 
@@ -2799,7 +2799,7 @@ On **All**, expand Ada's note. Cyrill's reply **You got it right.** shows two li
 
 ### Variant: expanded-donated
 
-Expand Ada's note. Cyrill's reply has no text. It shows **send ₿21'000** and no received line. The note footer is **₿21'000**, the same gift, not a second payment. Nothing on this reply is added into ₿21'100.
+Expand Ada's note. Cyrill's reply has no text. It shows **send ₿21'000 · $18.14** and no received line. The note footer is **₿21'000 · $18.14**, the same gift, not a second payment. Nothing on this reply is added into ₿21'100.
 
 ![21.gifts welcome expanded donated](images/welcome-expanded-donated.png)
 
@@ -2811,7 +2811,7 @@ Expand Ada's note. Cyrill's reply is the sentence **You got it right.** It sent 
 
 ### Variant: expanded-received-only
 
-Expand Ada's note. Cyrill's reply **You got it right.** sent nothing. Under the sentence is only **received ₿100**. That 100 is not the note total. The note footer stays **₿0**.
+Expand Ada's note. Cyrill's reply **You got it right.** sent nothing. Under the sentence is only **received ₿100 · $0.09**. That 100 is not the note total. The note footer stays **₿0**.
 
 ![21.gifts welcome expanded received only](images/welcome-expanded-received-only.png)
 
@@ -4540,13 +4540,13 @@ Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto
 
 ### Variant: posts-open-goal-110
 
-Identity card; posts pressed; profile note hidden; the listed post has `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000** and the note amount is **₿23'100**. Full orange plus in-flow green overflow and label **110%**, same as `/welcome` `goal-110`.
+Identity card; posts pressed; profile note hidden; the listed post has `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (the viewer's USD from the current spot). Full orange plus in-flow green overflow and label **110%**, same as `/welcome` `goal-110`.
 
 ![21.gifts member posts open with 110 percent goal](images/members-posts-open-goal-110.png)
 
 ### Variant: posts-open-goal-fiat
 
-Identity card; posts pressed; the listed English post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0**.
+Identity card; posts pressed; the listed English post is defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**.
 
 ![21.gifts member posts open with fiat goal](images/members-posts-open-goal-fiat.png)
 
@@ -6953,13 +6953,13 @@ Unsigned permalink of the same note with no place label. The MapPin link reads *
 
 ### Variant: goal-110
 
-Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000** and the note amount is **₿23'100**. Full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
+Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (the viewer's USD from the current spot). Full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
 
 ![21.gifts public message goal 110](images/messages-id-goal-110.png)
 
 ### Variant: goal-fiat
 
-Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0**. No composer Ask.
+Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'000** and label **0%**. No second dollar amount. The note matches the UI language, so the card does not offer Translate. The received amount is **₿0 · $0.00**. No composer Ask.
 
 ![21.gifts public message fiat goal](images/messages-id-goal-fiat.png)
 
@@ -7217,7 +7217,7 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ### Variant: reply-received
 
-Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello from Ada** shows **₿21'000**. The reply shows **sent ₿21'000** and **received ₿100** on two lines under a left rule. Nothing on the page is **₿21'100**.
+Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello from Ada** shows **₿21'000 · $18.14**. The reply shows **sent ₿21'000 · $18.14** and **received ₿100 · $0.09** on two lines under a left rule. Nothing on the page is **₿21'100**.
 
 ![21.gifts public message reply received](images/messages-id-reply-received.png)
 
