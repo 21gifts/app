@@ -1266,7 +1266,7 @@ describe('PosScreen', () => {
       expect(screen.queryByText(/\$/)).toBeNull();
     });
 
-    it('turns Paid the moment the wallet receives the open amount, without asking the api', async () => {
+    it('turns Paid the moment the wallet receives the open amount, before asking the api, then reads once', async () => {
       const fetchMock = vi
         .fn()
         .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
@@ -1275,9 +1275,15 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       expect(screen.getByText('No payments yet.')).toBeTruthy();
       receive(21);
-      const dialog = await confirmation();
+      // On screen in the same update as the wallet's report, before any read.
+      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
       expect(within(dialog).getByText('₿21')).toBeTruthy();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // Then one read checks it, and no more.
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+      await act(async () => undefined);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
@@ -2524,8 +2530,8 @@ describe('PosScreen', () => {
       receive(21);
       fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       await waitFor(() => {
-        // The read after the failed cancel, then the read after Done.
-        expect(reads).toBe(3);
+        // The read after the failed cancel, the one that checks the payment, then the read after Done.
+        expect(reads).toBe(4);
       });
       await act(async () => undefined);
       expect(screen.queryByRole('alert')).toBeNull();
@@ -3725,13 +3731,18 @@ describe('PosScreen', () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        // The api has not seen the payment yet: the charge stays paid on this till.
+        // The api has not seen the payment yet, at the read that checks it and the one after Done:
+        // the charge stays paid on this till.
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
         .mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
       fireEvent.click(
         within(await confirmation()).getByRole('button', {
           name: 'Done',
@@ -3739,7 +3750,7 @@ describe('PosScreen', () => {
       );
       expect(screen.queryByRole('alertdialog')).toBeNull();
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock).toHaveBeenCalledTimes(3);
       });
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
@@ -3748,7 +3759,7 @@ describe('PosScreen', () => {
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
       showTab();
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock).toHaveBeenCalledTimes(4);
       });
       // The api's own paid answer for the closed charge does not open it again.
       await act(async () => undefined);
@@ -3795,7 +3806,8 @@ describe('PosScreen', () => {
       receive(21);
       showTab();
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+        // The read that checks the payment and the one when the tab shows.
+        expect(fetchMock).toHaveBeenCalledTimes(3);
       });
       await act(async () => undefined);
       const dialog = await confirmation();
