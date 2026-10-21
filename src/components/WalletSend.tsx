@@ -260,44 +260,52 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     return live === null ? null : formatFiatDisplay(live, fiat, numberFormat);
   };
   /**
-   * Fiat of a total that already has a typed or stored figure. The figure
-   * stays exact and the fee's spot is added beside it. A different currency
-   * stays in parts. No spot of the sat sum.
+   * Fiat of a total that already has a typed or stored figure. The same
+   * currency is one suffix after the bitcoin sum. A different currency, or a
+   * missing fee spot, is the stored figure, then the charge in bitcoin, then
+   * the fee in bitcoin with only its own spot. The bitcoin sum does not stand
+   * in front of that stored figure. No spot of the sat sum.
    */
   const totalFigure = (
     figure: { code: FiatCode; amount: string },
     feeSats: number,
     chargeSats: number,
-  ): ReactElement | null => {
+  ): { kind: 'suffix' | 'parts'; node: ReactElement } => {
     const feeSpot = satsToFiatAmount(feeSats, rateDay, fiat);
     if (figure.code === fiat && feeSpot !== null) {
       const combined = addDecimalStrings(figure.amount, feeSpot);
       if (combined !== null) {
-        return (
-          <>
-            <span aria-hidden="true"> · </span>
-            <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
-          </>
-        );
+        return {
+          kind: 'suffix',
+          node: (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
+            </>
+          ),
+        };
       }
     }
     const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
-    return (
-      <>
-        <span aria-hidden="true"> · </span>
-        <span>{formatFiatDisplay(figure.amount, figure.code, numberFormat)}</span>
-        <span aria-hidden="true"> · </span>
-        <span>{formatBitcoin(chargeSats, numberFormat)}</span>
-        <span aria-hidden="true"> + </span>
-        <span>{formatBitcoin(feeSats, numberFormat)}</span>
-        {feeFiat === null ? null : (
-          <>
-            <span aria-hidden="true"> · </span>
-            <span>{feeFiat}</span>
-          </>
-        )}
-      </>
-    );
+    const stored = formatFiatDisplay(figure.amount, figure.code, numberFormat);
+    return {
+      kind: 'parts',
+      node: (
+        <>
+          {`${t('wallet.sendTotal', { amount: '' }).trimEnd()} ${stored}`}
+          <span aria-hidden="true"> · </span>
+          <span>{formatBitcoin(chargeSats, numberFormat)}</span>
+          <span aria-hidden="true"> + </span>
+          <span>{formatBitcoin(feeSats, numberFormat)}</span>
+          {feeFiat === null ? null : (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{feeFiat}</span>
+            </>
+          )}
+        </>
+      ),
+    };
   };
   const boundText = (sats: number): string => {
     const live = fiatText(sats);
@@ -554,6 +562,10 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'confirm' && state.onchain !== undefined) {
     const onchain = state.onchain;
     const totalSats = state.amountSats + state.feeSats;
+    const figured =
+      state.chargeFigure === undefined || state.chargeFigure === null
+        ? null
+        : totalFigure(state.chargeFigure, state.feeSats, state.amountSats);
     body = (
       <div className="flex w-full flex-col items-center gap-3 py-2">
         {largeAmount(
@@ -575,12 +587,16 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
             {fiatOf(state.feeSats)}
           </p>
           <p>
-            {t('wallet.sendTotal', {
-              amount: formatBitcoin(totalSats, numberFormat),
-            })}
-            {state.chargeFigure === undefined || state.chargeFigure === null
-              ? fiatOf(totalSats)
-              : totalFigure(state.chargeFigure, state.feeSats, state.amountSats)}
+            {figured !== null && figured.kind === 'parts' ? (
+              figured.node
+            ) : (
+              <>
+                {t('wallet.sendTotal', {
+                  amount: formatBitcoin(totalSats, numberFormat),
+                })}
+                {figured === null ? fiatOf(totalSats) : figured.node}
+              </>
+            )}
           </p>
         </div>
         <div
