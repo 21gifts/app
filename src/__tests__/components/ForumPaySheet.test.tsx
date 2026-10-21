@@ -88,6 +88,32 @@ describe('ForumPaySheet', () => {
     expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe(flow);
   });
 
+  it('shows the typed fiat on the confirmation, not the spot of the sats', () => {
+    renderWithLocale(
+      <ForumPaySheet
+        messageId="c-1"
+        payDraft="21"
+        payBusy={false}
+        payError={null}
+        payInvoice={{
+          messageId: 'c-1',
+          pr: 'lnbc1',
+          amountSats: 21,
+          figure: { code: 'USD', amount: '12' },
+        }}
+        onPayDraftChange={vi.fn()}
+        onPayUnitChange={vi.fn()}
+        onPaySubmit={vi.fn()}
+        onPayCancel={vi.fn()}
+        rateDay={DAY}
+        onInteract={vi.fn()}
+        recipient="Ana"
+      />,
+    );
+    expect(screen.getAllByText('$12.00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$0.02')).toBeTruthy();
+  });
+
   it('shows the amount form and submits the draft', () => {
     const { onPaySubmit, onPayCancel } = sheet(null, false);
     expect(screen.getByLabelText('Amount')).toBeTruthy();

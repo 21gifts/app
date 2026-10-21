@@ -26,7 +26,12 @@ import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
+import {
+  addDecimalStrings,
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+} from '@/lib/stats-money';
 import { paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
@@ -38,31 +43,6 @@ import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
  */
 function middle(value: string): string {
   return value.length <= 20 ? value : `${value.slice(0, 10)}…${value.slice(-6)}`;
-}
-
-function fractionDigits(value: string): number {
-  return value.length - value.indexOf('.') - 1;
-}
-
-/** Whole units of a dotted `value` at `scale` fraction digits. */
-function scaledDecimal(value: string, scale: number): bigint {
-  const dot = value.indexOf('.');
-  const digits = `${value.slice(0, dot)}${value.slice(dot + 1).padEnd(scale, '0')}`.replace(
-    /^0+(?=\d)/,
-    '',
-  );
-  return BigInt(digits);
-}
-
-/**
- * Sum of two dot-decimal strings. The stored charge figure stays exact and
- * the fee's spot is added beside it. This never prices the sat sum.
- */
-function addDecimalStrings(left: string, right: string): string {
-  const scale = Math.max(fractionDigits(left), fractionDigits(right), 1);
-  const sum = scaledDecimal(left, scale) + scaledDecimal(right, scale);
-  const text = sum.toString().padStart(scale + 1, '0');
-  return `${text.slice(0, -scale)}.${text.slice(-scale)}`;
 }
 
 /** One label/value line of a summary list. */
@@ -165,18 +145,15 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
    * Bitcoin plus one fiat figure. A shop charge amount, and its total, stay
    * bitcoin until the receipt returns. The charge amount then shows the stored
    * figure. The total keeps that figure and adds the spot of the fee sats
-   * only. A fee of ₿0 stays the fee-free label.
+   * only. The fee row is its own spot, even when its sats equal the charge.
+   * A fee of ₿0 stays the fee-free label.
    */
-  const amount = (sats: number): ReactElement => {
+  const amount = (sats: number, role: 'charge' | 'sum' | 'other'): ReactElement => {
     const shopPayment = payment.info.purpose === 'shop';
-    const chargeSats = payment.amountSats;
-    const sumSats = payment.amountSats + payment.feesSats;
-    const isCharge = sats === chargeSats;
-    const isSum = payment.feesSats > 0 && sats === sumSats;
-    if (shopPayment && shop.pending && (isCharge || isSum)) {
+    if (shopPayment && shop.pending && (role === 'charge' || role === 'sum')) {
       return <>{formatBitcoin(sats, numberFormat)}</>;
     }
-    if (shopFigure !== null && isCharge) {
+    if (role === 'charge' && shopFigure !== null) {
       return (
         <>
           {formatBitcoin(sats, numberFormat)}
@@ -185,17 +162,19 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         </>
       );
     }
-    if (shopFigure !== null && isSum) {
+    if (role === 'sum' && shopFigure !== null) {
       const feeSpot = satsToFiatAmount(payment.feesSats, rateDay, fiat);
       const chargeFiat = formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat);
-      if (shopFigure.code === fiat && feeSpot !== null) {
+      const combined =
+        shopFigure.code === fiat && feeSpot !== null
+          ? addDecimalStrings(shopFigure.amount, feeSpot)
+          : null;
+      if (combined !== null) {
         return (
           <>
-            {formatBitcoin(sumSats, numberFormat)}
+            {formatBitcoin(sats, numberFormat)}
             <span aria-hidden="true"> · </span>
-            <span>
-              {formatFiatDisplay(addDecimalStrings(shopFigure.amount, feeSpot), fiat, numberFormat)}
-            </span>
+            <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
           </>
         );
       }
@@ -204,7 +183,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         <>
           <span>{chargeFiat}</span>
           <span aria-hidden="true"> · </span>
-          <span>{formatBitcoin(chargeSats, numberFormat)}</span>
+          <span>{formatBitcoin(payment.amountSats, numberFormat)}</span>
           <span aria-hidden="true"> + </span>
           <span>{formatBitcoin(payment.feesSats, numberFormat)}</span>
           {feeFiat === null ? null : (
@@ -328,20 +307,24 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         ('text' in title && title.text === info.description) ? null : (
           <Row label={t('wallet.payment.description')}>{info.description}</Row>
         )}
-        <Row label={t('wallet.payment.amount')}>{amount(payment.amountSats)}</Row>
+        <Row label={t('wallet.payment.amount')}>{amount(payment.amountSats, 'charge')}</Row>
         {(received && payment.feesSats === 0) || failed ? null : (
           <Row label={t('wallet.payment.fee')}>
-            {payment.feesSats === 0 ? t('wallet.payment.feeFree') : amount(payment.feesSats)}
+            {payment.feesSats === 0
+              ? t('wallet.payment.feeFree')
+              : amount(payment.feesSats, 'other')}
           </Row>
         )}
         {!received && !failed && payment.feesSats > 0 ? (
           <Row label={t('wallet.payment.total')}>
-            <span className="font-medium">{amount(payment.amountSats + payment.feesSats)}</span>
+            <span className="font-medium">
+              {amount(payment.amountSats + payment.feesSats, 'sum')}
+            </span>
           </Row>
         ) : null}
         {payment.method === 'deposit' && payment.feesSats > 0 ? (
           <Row label={t('wallet.payment.depositOnchain')}>
-            {amount(payment.amountSats + payment.feesSats)}
+            {amount(payment.amountSats + payment.feesSats, 'sum')}
           </Row>
         ) : null}
       </dl>

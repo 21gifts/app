@@ -33,6 +33,7 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { storedTypedFiat, type FiatCode } from '@/lib/committed-fiat';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -206,6 +207,8 @@ export interface InboxInvoice {
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
   sparkInvoice?: string | null | undefined;
+  /** Fiat the member typed. Shown as-is. Absent for a bitcoin amount. */
+  figure?: { code: FiatCode; amount: string };
 }
 
 /** Props for {@link InboxScreen}. */
@@ -1296,6 +1299,7 @@ export function InboxScreen({
               }
               amountSats={invoice.amountSats}
               rateDay={rateDay}
+              stored={storedTypedFiat(invoice.figure)}
               successTitle={
                 open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
               }
@@ -1310,6 +1314,7 @@ export function InboxScreen({
                 pr={invoice.pr}
                 amountSats={invoice.amountSats}
                 rateDay={rateDay}
+                chargeFigure={invoice.figure}
                 flow="inbox"
                 confirmLabel={(amount) => t('paySheet.sendAmount', { amount })}
               />

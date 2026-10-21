@@ -5,6 +5,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
 import { PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
+import { storedTypedFiat, type FiatCode } from '@/lib/committed-fiat';
 import type { FiatRateDay } from '@/lib/stats-money';
 
 /**
@@ -32,11 +33,14 @@ export function ForumReplyPayPage({
   onSentChange,
   loan,
   recipient,
+  figure,
 }: {
   amountSats: number;
   pr: string;
   sparkInvoice?: string | null | undefined;
   rateDay: FiatRateDay | null;
+  /** Fiat the member typed. Shown as-is. Absent for a bitcoin amount. */
+  figure?: { code: FiatCode; amount: string };
   onCancel: () => void;
   /** Told whether a payment is out, for a host that holds its form through the success step. */
   onSentChange?: ((sent: boolean) => void) | undefined;
@@ -56,6 +60,7 @@ export function ForumReplyPayPage({
       }
       amountSats={amountSats}
       rateDay={rateDay}
+      stored={storedTypedFiat(figure)}
       successTitle={
         recipient === undefined
           ? t('paySheet.sent')
@@ -69,6 +74,7 @@ export function ForumReplyPayPage({
         pr={pr}
         amountSats={amountSats}
         rateDay={rateDay}
+        chargeFigure={figure}
         flow="reaction"
         confirmLabel={(amount) =>
           t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', { amount })

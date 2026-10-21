@@ -10,6 +10,7 @@ import { PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
+import { storedTypedFiat, type FiatCode } from '@/lib/committed-fiat';
 import type { FiatRateDay } from '@/lib/stats-money';
 
 /** Pay-sheet validation or request failure. */
@@ -28,6 +29,8 @@ export interface ForumPayInvoice {
   sparkInvoice?: string | null | undefined;
   /** True for the posting fee of a new post or reply: paying it also posts that text. */
   postsOnPay?: boolean;
+  /** Fiat the member typed. Shown as-is. Absent for a bitcoin amount. */
+  figure?: { code: FiatCode; amount: string };
 }
 
 /**
@@ -180,6 +183,7 @@ export function ForumPaySheet({
           }
           amountSats={invoiceForCard.amountSats}
           rateDay={rateDay}
+          stored={storedTypedFiat(invoiceForCard.figure)}
           successTitle={
             postsOnPay
               ? t('paySheet.posted')
@@ -194,6 +198,7 @@ export function ForumPaySheet({
             pr={invoiceForCard.pr}
             amountSats={invoiceForCard.amountSats}
             rateDay={rateDay}
+            chargeFigure={invoiceForCard.figure}
             postsOnPay={postsOnPay}
             flow={postsOnPay ? 'post_fee' : 'gift'}
             confirmLabel={(amount) =>
