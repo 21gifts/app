@@ -353,13 +353,29 @@ describe('ShopAddWizard', () => {
 
   it('keeps Next off on the photos step while a rejected photo is still attached', () => {
     const view = renderWizard(
-      <ShopAddWizard {...props({ mode: 'edit', photoError: 'formatOrSize' })} />,
+      <ShopAddWizard
+        {...props({ mode: 'edit', photoError: 'formatOrSize', photoRejected: true })}
+      />,
     );
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('alert').textContent).toContain(
       'Remove or replace the rejected file to continue.',
     );
     view.unmount();
+    // A later pick's own reason shows next to the kept rejection, which still blocks.
+    const later = renderWizard(
+      <ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany', photoRejected: true })} />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'You can add up to 10 photos Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+    );
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    later.unmount();
+    const quiet = renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoRejected: true })} />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+    );
+    quiet.unmount();
     renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany' })} />);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
   });
@@ -815,7 +831,7 @@ describe('ShopAddWizard', () => {
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
     [
       'formatOrSize' as const,
-      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
     ],
     ['unsupported' as const, 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'],
   ])('shows %s photo feedback and its 10-photo count at the picker', (photoError, message) => {
@@ -835,7 +851,7 @@ describe('ShopAddWizard', () => {
     renderWizard(<ShopAddWizard {...props({ imagesOnly: true, photoError: 'formatOrSize' })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use a JPEG, PNG, or WebP photo under 1 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB.',
     );
   });
 

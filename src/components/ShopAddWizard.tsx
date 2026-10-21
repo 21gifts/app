@@ -23,6 +23,7 @@ import {
   usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
+import type { MessageKey } from '@/lib/messages';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -101,6 +102,8 @@ export interface ShopAddWizardProps {
   imagesOnly?: boolean;
   /** Photo-picker rule currently broken. */
   photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null;
+  /** True while media the API rejected for format or size are still attached. */
+  photoRejected?: boolean;
   /** Known API fallback to place back at its owning step and field. */
   serverProblem?: ShopApiProblem | null;
 }
@@ -112,6 +115,23 @@ const STEP_KEY = {
   4: 'shops.stepAccount',
   5: 'shops.stepSummary',
 } as const;
+
+/** Message key for one photo-picker reason. */
+function photoErrorKey(
+  error: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize',
+  imagesOnly: boolean,
+): MessageKey {
+  if (error === 'tooMany') {
+    return 'forum.errorTooMany';
+  }
+  if (error === 'formatOrSize') {
+    return imagesOnly ? 'inbox.errorFormatOrSize' : 'forum.errorFormatOrSize';
+  }
+  if (error === 'tooLarge') {
+    return imagesOnly ? 'inbox.errorTooLarge' : 'forum.errorTooLarge';
+  }
+  return imagesOnly ? 'inbox.errorUnsupported' : 'forum.errorUnsupported';
+}
 
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
@@ -147,6 +167,7 @@ export function ShopAddWizard({
   onRemoveKept,
   imagesOnly = false,
   photoError = null,
+  photoRejected = false,
   serverProblem = null,
 }: ShopAddWizardProps): ReactElement {
   const { t, locale } = useTranslations();
@@ -324,9 +345,7 @@ export function ShopAddWizard({
   const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
     placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
-  // Rejected files stay attached until the photos change, so the same request would fail again;
-  // a photo reason always returns the wizard to step 1.
-  const photoRejected = photoError === 'formatOrSize';
+  // Rejected files would fail the same request again; a photo reason returns the wizard to step 1.
   const nextDisabled =
     posting ||
     (step === 1 && photoRejected) ||
@@ -408,7 +427,7 @@ export function ShopAddWizard({
             }
             className="hidden"
             disabled={posting}
-            aria-invalid={photoError === null ? undefined : true}
+            aria-invalid={photoError === null && !photoRejected ? undefined : true}
             aria-describedby={photoFeedbackId}
             onChange={(event) => {
               const list = event.target.files;
@@ -438,24 +457,15 @@ export function ShopAddWizard({
                 n: keptMedia.filter((item) => item.kind === 'photo').length + photoDrafts.length,
               })}
             </p>
-            {photoError !== null ? (
+            {photoError !== null || photoRejected ? (
               <p role="alert" className="text-sm text-app-danger">
-                {t(
-                  photoError === 'tooMany'
-                    ? 'forum.errorTooMany'
-                    : photoError === 'formatOrSize'
-                      ? imagesOnly
-                        ? 'inbox.errorFormatOrSize'
-                        : 'forum.errorFormatOrSize'
-                      : photoError === 'tooLarge'
-                        ? imagesOnly
-                          ? 'inbox.errorTooLarge'
-                          : 'forum.errorTooLarge'
-                        : imagesOnly
-                          ? 'inbox.errorUnsupported'
-                          : 'forum.errorUnsupported',
-                )}
-                {photoRejected ? ` ${t('shops.photoRejectedHint')}` : null}
+                {[
+                  ...(photoError === null ? [] : [t(photoErrorKey(photoError, imagesOnly))]),
+                  ...(photoRejected && photoError !== 'formatOrSize'
+                    ? [t(photoErrorKey('formatOrSize', imagesOnly))]
+                    : []),
+                  ...(photoRejected ? [t('shops.photoRejectedHint')] : []),
+                ].join(' ')}
               </p>
             ) : null}
           </div>

@@ -241,6 +241,8 @@ export function ShopNoteEditControl({
   const [username, setUsername] = useState('');
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  // New photos the API rejected for format or size; they block the editor while still attached.
+  const [rejectedPhotos, setRejectedPhotos] = useState<readonly ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
@@ -381,9 +383,8 @@ export function ShopNoteEditControl({
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
-    // A new pick replaces the last pick's reason, so a repeated reason is announced again. A
-    // server rejection stays: the rejected photo is still attached.
-    setPhotoError((current) => (current === 'formatOrSize' ? current : null));
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setPhotoError(null);
     const prepared: ForumPhotoPayload[] = [];
     let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
@@ -407,7 +408,7 @@ export function ShopNoteEditControl({
         setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
       }
     }
-    setPhotoError((current) => (current === 'formatOrSize' ? current : nextError));
+    setPhotoError(nextError);
   }
 
   async function save(): Promise<void> {
@@ -484,6 +485,10 @@ export function ShopNoteEditControl({
         setSaveError(false);
         setSaveProblem(null);
         setPhotoError(photoProblem);
+        if (photoProblem === 'formatOrSize') {
+          // Stored photos were accepted before; only the new ones can be the rejected files.
+          setRejectedPhotos(photoDrafts);
+        }
       } else {
         setSaveError(true);
         setSaveProblem(problem);
@@ -580,6 +585,7 @@ export function ShopNoteEditControl({
               }}
               imagesOnly
               photoError={photoError}
+              photoRejected={rejectedPhotos.some((photo) => photoDrafts.includes(photo))}
               serverProblem={saveProblem}
             />
           </SundayWritingGate>

@@ -454,6 +454,17 @@ export function ForumLoader({
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
+  // Media the API rejected for format or size; they block the shop wizard while still attached.
+  const [rejectedMedia, setRejectedMedia] = useState<readonly object[]>([]);
+  const rememberRejectedMedia = (): void => {
+    setRejectedMedia([
+      ...photoDraftsRef.current,
+      ...(videoDraftRef.current === null ? [] : [videoDraftRef.current]),
+    ]);
+  };
+  const shopPhotoRejected = rejectedMedia.some(
+    (item) => item === videoDraft || photoDrafts.some((photo) => photo === item),
+  );
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
@@ -1620,6 +1631,9 @@ export function ForumLoader({
                   const mediaProblem =
                     err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
                   const shopProblem = composerShopError(err, feed === 'shops');
+                  if (mediaProblem === 'formatOrSize') {
+                    rememberRejectedMedia();
+                  }
                   setFormError(
                     mediaProblem ??
                       shopProblem ??
@@ -1757,10 +1771,14 @@ export function ForumLoader({
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
-    // A new pick replaces the last pick's reason, so a repeated reason is announced again. A
-    // server rejection stays until the rejected media is removed or replaced.
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
     setFormError((current) =>
-      current === 'unsupported' || current === 'tooLarge' || current === 'tooMany' ? null : current,
+      current === 'unsupported' ||
+      current === 'tooLarge' ||
+      current === 'tooMany' ||
+      current === 'formatOrSize'
+        ? null
+        : current,
     );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);
@@ -1776,11 +1794,7 @@ export function ForumLoader({
           if (!result.ok) {
             revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
             setVideoDraft(null);
-            // Rejected photos that are still attached keep their reason and the block.
-            const photosStay = photoDraftsRef.current.length > 0;
-            setFormError((current) =>
-              current === 'formatOrSize' && photosStay ? current : result.error,
-            );
+            setFormError(result.error);
             return;
           }
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
@@ -1792,7 +1806,6 @@ export function ForumLoader({
           return;
         }
 
-        const replacedVideo = videoDraftRef.current !== null;
         revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
         setVideoDraft(null);
         const nextPhotos = photoDraftsRef.current.slice(0, 10);
@@ -1826,11 +1839,7 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError((current) =>
-          current === 'formatOrSize' && !replacedVideo
-            ? current
-            : (nextError ?? (isShopComposerError(current) ? current : null)),
-        );
+        setFormError((current) => nextError ?? (isShopComposerError(current) ? current : null));
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');
@@ -2086,6 +2095,9 @@ export function ForumLoader({
       const mediaProblem =
         err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
       if (mediaProblem !== null) {
+        if (mediaProblem === 'formatOrSize') {
+          rememberRejectedMedia();
+        }
         setFormError(mediaProblem);
         return;
       }
@@ -2687,6 +2699,7 @@ export function ForumLoader({
                 setFormError((current) => (isAttachedPhotoError(current) ? current : null));
               },
               shopResetToken,
+              shopPhotoRejected,
             }
           : {})}
         {...(feed === 'shops'

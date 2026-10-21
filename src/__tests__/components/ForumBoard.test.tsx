@@ -2913,7 +2913,7 @@ describe('ForumBoard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB. Remove or replace the rejected file to continue.',
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
     );
   });
 

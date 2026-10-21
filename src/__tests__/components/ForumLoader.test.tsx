@@ -4783,9 +4783,12 @@ describe('ForumLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Could not post your message')).toBeNull();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    fireEvent.change(input, {
-      target: { files: [new File(['video-2'], 'shop-2.mp4', { type: 'video/mp4' })] },
+    const replacement = new File(['video-2'], 'shop-2.mp4', { type: 'video/mp4' });
+    prepareVideoMock.mockResolvedValueOnce({
+      ok: true,
+      video: { file: replacement, poster, previewUrl: 'blob:shop-video-2' },
     });
+    fireEvent.change(input, { target: { files: [replacement] } });
     await waitFor(() => {
       expect(screen.queryByRole('alert')).toBeNull();
     });
