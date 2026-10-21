@@ -126,6 +126,11 @@ type WalletSettled = {
   session: string | null;
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
+  /**
+   * A payment that pays the open charge only in its late minute, held until a
+   * read says whether a newer charge (another tab's) took it.
+   */
+  late: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> | null;
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
   paidBy: Map<string, Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
   closed: Set<string>;
@@ -151,6 +156,7 @@ function settledFor(session: string | null): WalletSettled {
       session,
       open: null,
       paid: new Map(),
+      late: null,
       paidBy: new Map(),
       closed: new Set(),
       early: [],
@@ -208,9 +214,61 @@ function settleOpen(
     ].slice(-POS_EARLY_PAYMENTS);
     return;
   }
-  memory.open = null;
-  memory.paid.set(open.id, { ...open, status: 'paid', paidAt: new Date().toISOString() });
-  memory.paidBy.set(open.id, payment);
+  if (payment.timestamp > Date.parse(open.expiresAt)) {
+    // Made in the late minute: another tab may have made a newer charge of this amount that took
+    // the receiving address, which only the api knows. Held until the till has read it.
+    memory.late = payment;
+    settledChanged();
+    return;
+  }
+  markPaid(memory, open, payment);
+}
+
+/** Charge `charge` is paid by `payment` on this till. */
+function markPaid(
+  memory: WalletSettled,
+  charge: PosCharge,
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
+): void {
+  if (memory.open?.id === charge.id) {
+    memory.open = null;
+  }
+  memory.paid.set(charge.id, { ...charge, status: 'paid', paidAt: new Date().toISOString() });
+  memory.paidBy.set(charge.id, payment);
+  settledChanged();
+}
+
+/**
+ * Settles the held late-minute payment once the till has read after it: a
+ * newer charge that `state` shows and that {@link pays} it takes it (nothing
+ * to confirm here when the api already shows that charge finished);
+ * otherwise, and when the read failed (`state` is `null`), the open charge does.
+ */
+function resolveLate(memory: WalletSettled, state: PosState | null): void {
+  const payment = memory.late;
+  const open = memory.open;
+  memory.late = null;
+  /* v8 ignore next 3 -- a held payment always has its open charge */
+  if (payment === null || open === null) {
+    return;
+  }
+  const newer =
+    state === null
+      ? undefined
+      : tillCharges(state).find(
+          (row) =>
+            row.id !== open.id &&
+            Date.parse(row.createdAt) > Date.parse(open.createdAt) &&
+            pays(row, payment),
+        );
+  if (newer === undefined) {
+    markPaid(memory, open, payment);
+    return;
+  }
+  if (newer.status === 'pending' && !memory.paid.has(newer.id)) {
+    markPaid(memory, newer, payment);
+    return;
+  }
   settledChanged();
 }
 
@@ -389,7 +447,9 @@ function usePosTillState(): PosTillState {
   });
   // Another session's till is never shown, not even while this session's read is on its way.
   const state = till.session === session ? till.state : null;
-  const [error, setError] = useState<string | null>(null);
+  // An error belongs to the session whose read, create or cancel set it: another session never sees it.
+  const [errorState, setErrorState] = useState<{ message: string; session: string } | null>(null);
+  const error = errorState !== null && errorState.session === session ? errorState.message : null;
   // Whether the error shown is a failed till read, which the next read that comes in clears.
   const readFailed = useRef(false);
   // A load skipped while a create or cancel was on its way, run once that ends.
@@ -406,7 +466,7 @@ function usePosTillState(): PosTillState {
   /** Shows `message` (or clears the error), which no later till read takes away. */
   function showError(message: string | null): void {
     readFailed.current = false;
-    setError(message);
+    setErrorState(message === null || session === null ? null : { message, session });
   }
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
@@ -420,6 +480,9 @@ function usePosTillState(): PosTillState {
   const quietReload = useRef(false);
   const [, setSettledVersion] = useState(0);
   const memory = settledFor(session);
+  const lateHeld = memory.late !== null;
+  // The read asked for by a held late-minute payment: it settles once a read from then on answers.
+  const lateRead = useRef<number | null>(null);
   const walletPaid = memory.paid;
   const closed = memory.closed;
 
@@ -471,18 +534,23 @@ function usePosTillState(): PosTillState {
             // The till answered: an earlier failed read no longer holds.
             if (readFailed.current) {
               readFailed.current = false;
-              setError(null);
+              setErrorState(null);
             }
           });
         });
       } catch {
+        // Without the read, a held late-minute payment goes to the open charge it paid.
+        if (alive && lateRead.current !== null && seq >= lateRead.current) {
+          lateRead.current = null;
+          resolveLate(settledFor(session), null);
+        }
         // A newer read already answered, so this failure says nothing about the till now.
         if (!alive || quiet || seq < reads.current.applied) {
           return;
         }
         whenCurrent(generation, mine, () => {
           readFailed.current = true;
-          setError(t('pos.error'));
+          setErrorState({ message: t('pos.error'), session });
         });
       }
     })();
@@ -543,6 +611,10 @@ function usePosTillState(): PosTillState {
     /* v8 ignore next -- a till this session read always has an answer */
     if (state !== null) {
       reassignPaid(memory, state);
+      if (memory.late !== null && lateRead.current !== null && reads.current.applied >= lateRead.current) {
+        lateRead.current = null;
+        resolveLate(memory, state);
+      }
     }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it.
@@ -565,6 +637,16 @@ function usePosTillState(): PosTillState {
       listenToWallet();
     }
   }, [session]);
+
+  useEffect(() => {
+    // A held late-minute payment asks the api once (not on a timer) which charge it paid.
+    // Read the memory now: the arming effect of this same commit may just have settled it.
+    if (lateHeld && session !== null && lateRead.current === null && settledFor(session).late !== null) {
+      lateRead.current = reads.current.started + 1;
+      quietReload.current = state !== null;
+      setReload((n) => n + 1);
+    }
+  }, [lateHeld, session, state]);
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
@@ -627,7 +709,7 @@ function usePosTillState(): PosTillState {
             setTill({ state: next, session });
             if (readFailed.current) {
               readFailed.current = false;
-              setError(null);
+              setErrorState(null);
             }
           });
         });
@@ -640,7 +722,7 @@ function usePosTillState(): PosTillState {
         }
         whenCurrent(generation, mine, () => {
           readFailed.current = true;
-          setError(t('pos.error'));
+          setErrorState({ message: t('pos.error'), session });
         });
       });
   }, [busy, charge, remaining, session, t]);
@@ -872,7 +954,7 @@ function usePosTillState(): PosTillState {
             );
           });
           readFailed.current = true;
-          setError(t('pos.error'));
+          setErrorState({ message: t('pos.error'), session });
         });
       }
     })();

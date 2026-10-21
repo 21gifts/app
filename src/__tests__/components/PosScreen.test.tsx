@@ -2915,8 +2915,7 @@ describe('PosScreen', () => {
         expect(reads).toBe(2);
       });
       receive(21, 0, paidAt);
-      expect(await confirmation()).toBeTruthy();
-      showTab();
+      // Made in the late minute: the till asks the api once which charge it paid.
       await waitFor(() => {
         expect(reads).toBe(3);
       });
@@ -2926,6 +2925,170 @@ describe('PosScreen', () => {
       expect(await within(history).findByText('Expired')).toBeTruthy();
       expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+
+    it('confirms a late-minute payment for its charge after one read shows no newer charge', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      // Held until the till has read once more; then it is the charge's.
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(await confirmation()).toBeTruthy();
+      expect(reads).toBe(3);
+    });
+
+    it('confirms a late-minute payment for its charge when the read after it fails', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 3) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      expect(await confirmation()).toBeTruthy();
+      expect(reads).toBe(3);
+    });
+
+    it('shows a create error only to the session that made the create', async () => {
+      let refuse: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              refuse = resolve;
+            });
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(refuse).toBeDefined();
+      });
+      act(() => {
+        useAuthStore.setState({ session: 'other', account: ACCOUNT });
+      });
+      await act(async () => {
+        refuse?.(jsonResponse({ error: 'A payment is already open' }, 409));
+        await Promise.resolve();
+      });
+      // The next session's till loads, and the first session's refusal is not its message.
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('confirms nothing on this till when the read shows a newer charge already paid', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const paidAt = Date.now();
+      const newerPaid = {
+        ...PAID,
+        id: 'c-newer-paid',
+        createdAt: new Date(Math.floor(paidAt / 1_000) * 1_000).toISOString(),
+        paidAt: new Date(paidAt).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          return jsonResponse({
+            charge: newerPaid,
+            history: [newerPaid, { ...ended, status: 'expired' }],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, paidAt);
+      // The api already shows the newer charge paid: that is the confirmation, not the charge before.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+    });
+
+    it('moves a late-minute payment to a newer charge a later read shows, after the read for it failed', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        expiresAt: new Date(Date.now() - 1_000).toISOString(),
+      };
+      const paidAt = Date.now();
+      const newer = {
+        ...OPEN,
+        id: 'c-later-read',
+        createdAt: new Date(Math.floor(paidAt / 1_000) * 1_000).toISOString(),
+        expiresAt: new Date(paidAt + 300_000).toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({
+            charge: newer,
+            history: [newer, { ...ended, status: 'expired' }],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, paidAt);
+      // Without the read the charge before takes it; the next read gives it to the newer charge.
+      expect(await confirmation()).toBeTruthy();
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBe(4);
+      });
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
     });
 
     it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {
