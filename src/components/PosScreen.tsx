@@ -1049,8 +1049,9 @@ function usePosTillState(): PosTillState {
  * stored with the charge when it was typed in a currency, and Cancel.
  * It never asks the api on a timer: the moment this tab's wallet reports a
  * payment that pays the charge ({@link onPaymentReceived}: its amount, or
- * that amount after the fee, made from the second of its creation to a
- * minute after its end), the charge is paid, and
+ * that amount after the fee, made from the second of its creation to its
+ * end; one made in the minute after its end is held until one read of the
+ * api shows which charge it paid), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
  * currency figure stored with the charge when there is one.
  * The till reads the api only on open, right before each create, on **Try again**
