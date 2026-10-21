@@ -390,6 +390,13 @@ async function dropConnection(): Promise<void> {
   if (knownPaymentIds !== null && knownPaymentsRead && connectionMnemonic !== null) {
     droppedKnown = { mnemonic: connectionMnemonic, ids: knownPaymentIds };
   }
+  if (connectionMnemonic !== null) {
+    // Reported before its known payments were read, and no later connection reports them: a till
+    // waiting for one still hears it.
+    for (const payment of heldPayments) {
+      tellReceived(connectionMnemonic, payment);
+    }
+  }
   connection = null;
   connectionMnemonic = null;
   knownPaymentsRead = false;

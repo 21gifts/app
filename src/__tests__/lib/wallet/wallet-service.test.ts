@@ -3078,6 +3078,30 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
+  it('tells onPaymentReceived a payment held by a connection that is replaced before its known payments are read', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.listPayments.mockImplementationOnce(() => new Promise<WalletPayment[]>(() => undefined));
+    await connectWallet(loadSdk);
+    const received: string[] = [];
+    const unsubscribe = onPaymentReceived((p) => {
+      received.push(p.id);
+    });
+    for (const listener of [...listeners]) {
+      (listener as (event: { type: string; payment?: WalletPayment }) => void)({
+        type: 'paymentSucceeded',
+        payment: payment('first-sync'),
+      });
+    }
+    expect(received).toEqual([]);
+    connection.listPayments.mockResolvedValueOnce([payment('first-sync')]);
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalledTimes(2));
+    await Promise.resolve();
+    expect(received).toEqual(['first-sync']);
+    unsubscribe();
+  });
+
   it('drops the payments held meanwhile when the known-payments read fails', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
