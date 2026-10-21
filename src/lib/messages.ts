@@ -261,7 +261,7 @@ const en = {
   'login.create': 'Open a new account',
   'login.nameHeading': 'Choose your name',
   'login.nameBody':
-    'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase.',
+    'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot, starting with a letter or digit. It is stored in lowercase.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Continue',
   'login.nameInvalid':
@@ -1433,7 +1433,7 @@ const de = {
   'login.create': 'Ein neues Konto eröffnen',
   'login.nameHeading': 'Wählen Sie Ihren Namen',
   'login.nameBody':
-    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
+    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
   'login.nameInvalid':
@@ -1538,7 +1538,7 @@ const de = {
   'forum.errorTooLong': 'Maximal 8000 Zeichen',
   'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
   'forum.shopPostUseShops':
-    'Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops.',
+    'Shop-Notizen brauchen den Shop-Namen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops.',
   'forum.errorNoteDeleted': 'Diese Notiz wurde gelöscht.',
   'forum.errorRateLimit':
     'Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
@@ -2036,7 +2036,7 @@ const de = {
   'shops.columnOperator': 'Betreiber',
   'shops.showMore': 'Mehr anzeigen',
   'shops.missing': '—',
-  'shops.placeName': 'Shopname',
+  'shops.placeName': 'Shop-Name',
   'shops.placeDialogTitle': 'Ort und Adresse des Shops',
   'shops.placeMapHint': 'Tippen Sie auf die Karte, um die Markierung zu setzen.',
   'shops.setPinAbove': 'Setzen Sie die Markierung auf der Karte oben.',
@@ -2053,13 +2053,13 @@ const de = {
   'shops.addressCity': 'Ort',
   'shops.addressCountry': 'Land',
   'shops.addressCountryChoose': 'Land wählen',
-  'shops.problemName': 'Geben Sie den Shopnamen ein.',
+  'shops.problemName': 'Geben Sie den Shop-Namen ein.',
   'shops.problemNameAddress':
-    'Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten.',
-  'shops.problemNameLong': 'Der Shopname darf höchstens 80 Zeichen lang sein.',
-  'shops.problemNameControls': 'Der Shopname darf keine Steuerzeichen enthalten.',
+    'Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten.',
+  'shops.problemNameLong': 'Der Shop-Name darf höchstens 80 Zeichen lang sein.',
+  'shops.problemNameControls': 'Der Shop-Name darf keine Steuerzeichen enthalten.',
   'shops.problemNameLongerThanText':
-    'Der Shopname muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text.',
+    'Der Shop-Name muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text.',
   'shops.problemShopTextLengthForName':
     'Der Shop-Text muss 20 bis 1000 Zeichen lang sein, bevor dieser Ort gespeichert werden kann. Bearbeiten Sie zuerst den Shop-Text.',
   'shops.problemAddress':
@@ -2090,11 +2090,11 @@ const de = {
     'Beschreiben Sie den Shop in mindestens {count, plural, one {# weiterem Zeichen} other {# weiteren Zeichen}}.',
   'shops.problemDescriptionLong':
     'Der Shop-Text ist zu lang. Kürzen Sie ihn auf höchstens 1000 Zeichen.',
-  'shops.problemDescriptionNotLonger': 'Der Shop-Text muss länger sein als der Shopname.',
+  'shops.problemDescriptionNotLonger': 'Der Shop-Text muss länger sein als der Shop-Name.',
   'shops.problemDescriptionControls':
     'Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten.',
   'shops.problemDescription':
-    'Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
+    'Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shop-Name sein.',
   'shops.problemAddressInvalid':
     'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
   'shops.problemUsernameMissing':
@@ -2631,7 +2631,7 @@ const es = {
   'login.create': 'Abrir una cuenta nueva',
   'login.nameHeading': 'Elige tu nombre',
   'login.nameBody':
-    'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto. Se guarda en minúsculas.',
+    'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto, empezando por una letra o un dígito. Se guarda en minúsculas.',
   'login.nameLabel': 'Nombre',
   'login.nameSubmit': 'Continuar',
   'login.nameInvalid':
@@ -3808,7 +3808,7 @@ const fil = {
   'login.create': 'Magbukas ng bagong account',
   'login.nameHeading': 'Piliin ang pangalan mo',
   'login.nameBody':
-    'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito.',
+    'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. Naka-lowercase ito.',
   'login.nameLabel': 'Pangalan',
   'login.nameSubmit': 'Magpatuloy',
   'login.nameInvalid':

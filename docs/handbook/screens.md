@@ -294,7 +294,7 @@ After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey
 
 ### Variant: name
 
-Heading **Choose your name**. This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase. Label **Name**, Button **Continue**. The muted iOS or Android line is not shown.
+Heading **Choose your name**. This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot, starting with a letter or digit. It is stored in lowercase. Label **Name**, Button **Continue**. The muted iOS or Android line is not shown.
 
 ![21.gifts login name](images/login-name.png)
 

@@ -1041,7 +1041,7 @@ describe('PlaceField', () => {
     expect(await screen.findByRole('dialog', { name: 'Ort und Adresse des Shops' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Setzen Sie die Markierung auf der Karte oben. Füllen Sie aus: Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
+        'Setzen Sie die Markierung auf der Karte oben. Füllen Sie aus: Shop-Name, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
       ),
     ).toBeTruthy();
   });

@@ -243,7 +243,7 @@ app/
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
-│   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── PlaceField.tsx       # Place pin on the forum composer; shop place-and-address dialog
 │   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
 │   │   ├── PlacePinChip.tsx      # Confirmed composer place with remove control
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
@@ -488,6 +488,10 @@ A server 400 is fallback only. Map a known API reason to its field or step and
 show that reason there; never replace a known reason with generic **Could not
 save** copy. Client rules live in shared API-mirroring helpers such as
 `src/lib/forum-shop.ts`, with unit tests that pin the same limits.
+
+Not yet migrated, and moved to this rule in follow-up pull requests: the
+username in `UsernameForm` and `LoginCard`, which is still checked only after
+submit, and the other profile and account forms.
 
 Forms must not hide fields with errors inside a small inner scroll area. A form
 that needs more room uses a dialog or sheet and still follows **One scroll

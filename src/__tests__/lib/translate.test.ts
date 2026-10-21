@@ -213,7 +213,7 @@ describe('catalogs', () => {
       }
     }
     expect(translate(getCatalog('en'), 'shops.problemName')).toBe('Enter the shop name.');
-    expect(translate(getCatalog('de'), 'shops.problemName')).toBe('Geben Sie den Shopnamen ein.');
+    expect(translate(getCatalog('de'), 'shops.problemName')).toBe('Geben Sie den Shop-Namen ein.');
     expect(translate(getCatalog('es'), 'shops.problemName')).toBe(
       'Introduce el nombre de la tienda.',
     );
