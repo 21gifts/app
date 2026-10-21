@@ -11,7 +11,7 @@ export const POS_PAID_VIBRATION: readonly number[] = [180, 90, 180];
 export interface PosPaidOverlayProps {
   /** The paid amount in bitcoin, already formatted (e.g. `₿98`). */
   amount: string;
-  /** The charge's currency figure fixed at creation, formatted, or `null` to show bitcoin only. */
+  /** The currency figure stored with the charge, or without one the current spot, formatted; `null` while there is neither. */
   fiat: string | null;
   /** Closes the confirmation: **Done**, and **New payment** before it opens `/pos/amount`. */
   onClose: () => void;
@@ -20,8 +20,8 @@ export interface PosPaidOverlayProps {
 /**
  * Full-screen confirmation that a till charge was paid: the whole window
  * turns green, a check draws itself inside pulsing rings, and **Paid** with
- * the amount in bitcoin, and the charge's fixed currency figure when there is
- * one, fills the middle, so nobody at the counter
+ * the amount in bitcoin, and the charge's stored currency figure (or the
+ * current spot without one), fills the middle, so nobody at the counter
  * can miss it. A phone vibrates once on open. **New payment** closes it and
  * opens `/pos/amount`; **Done** closes it. Focus moves to **New payment** on open.
  * With reduced motion the screen stays the same without the movement.

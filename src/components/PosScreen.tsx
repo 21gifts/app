@@ -32,13 +32,33 @@ import { visualPin } from '@/lib/visual-pin';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { announceReceivedForE2e, onPaymentReceived } from '@/lib/wallet/wallet-service';
 import type { AmountUnit } from '@/lib/api-types';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
+  satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
+
+/**
+ * Fiat under a till amount. A stored figure is shown as-is. With none, the
+ * current spot stands beside the bitcoin and is not written onto the charge.
+ */
+function posFiatText(
+  stored: { code: FiatCode; amount: string } | null,
+  sats: number,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): string | null {
+  if (stored !== null) {
+    return formatFiatDisplay(stored.amount, stored.code, numberFormat);
+  }
+  const spot = satsToFiatAmount(sats, rateDay, fiat);
+  return spot === null ? null : formatFiatDisplay(spot, fiat, numberFormat);
+}
 
 /** Remaining time as m:ss. */
 function formatLeft(ms: number): string {
@@ -442,9 +462,9 @@ type PosTillState = {
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
   remaining: number;
-  /** The currency figure stored with the open charge, otherwise `null` (bitcoin only). */
+  /** The currency figure stored with the open charge, otherwise `null` (the till shows the current spot). */
   chargeFigure: { code: FiatCode; amount: string } | null;
-  /** The currency figure stored with `paid`, otherwise `null` (bitcoin only). */
+  /** The currency figure stored with `paid`, otherwise `null` (the till shows the current spot). */
   paidFigure: { code: FiatCode; amount: string } | null;
   amount: string;
   setAmount: (value: string) => void;
@@ -1088,6 +1108,10 @@ export function PosTill(): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
+  const chargeText =
+    till.charge === null
+      ? null
+      : posFiatText(till.chargeFigure, till.charge.amountSats, till.rateDay, fiat, numberFormat);
   const setup = useWalletSetup();
   const shownPaid = till.paid;
   const paidId = till.paid?.id ?? null;
@@ -1103,20 +1127,6 @@ export function PosTill(): ReactElement {
       logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
     }
   }, [paidId, paidSats, paidFor]);
-  const chargeText = posFiatText(
-    till.chargeFiat,
-    till.charge?.amountSats ?? null,
-    till.rateDay,
-    fiat,
-    numberFormat,
-  );
-  const paidText = posFiatText(
-    till.paidFiat,
-    till.paid?.amountSats ?? null,
-    till.rateDay,
-    fiat,
-    numberFormat,
-  );
 
   return (
     <Card surface={false}>
@@ -1164,10 +1174,8 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.charge.amountSats, numberFormat)}
           </p>
-          {till.chargeFigure === null ? null : (
-            <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(till.chargeFigure.amount, till.chargeFigure.code, numberFormat)}
-            </p>
+          {chargeText === null ? null : (
+            <p className="text-center text-sm text-app-subtle">{chargeText}</p>
           )}
           <Button
             type="button"
@@ -1183,11 +1191,13 @@ export function PosTill(): ReactElement {
         <PosPaidOverlay
           key={shownPaid.id}
           amount={formatBitcoin(shownPaid.amountSats, numberFormat)}
-          fiat={
-            till.paidFigure === null
-              ? null
-              : formatFiatDisplay(till.paidFigure.amount, till.paidFigure.code, numberFormat)
-          }
+          fiat={posFiatText(
+            till.paidFigure,
+            shownPaid.amountSats,
+            till.rateDay,
+            fiat,
+            numberFormat,
+          )}
           onClose={() => {
             till.closePaid(shownPaid.id);
           }}

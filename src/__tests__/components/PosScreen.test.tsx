@@ -188,7 +188,7 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
-  it('never prices an open charge without a stored figure from the spot rate', async () => {
+  it('shows the current spot beside an open charge without a stored figure', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
@@ -207,11 +207,8 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByText('₿21')).toBeTruthy();
-    await waitFor(() => {
-      expect(fetchFxSpot).toHaveBeenCalled();
-    });
-    // No typed figure: bitcoin only (docs/fiat-amounts.md).
-    expect(screen.queryByText(/\$/)).toBeNull();
+    // No stored figure: the current spot in the viewer's currency, not written onto the charge.
+    expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
   it('shows the amount form when nothing is open', async () => {
@@ -1170,7 +1167,8 @@ describe('PosScreen', () => {
     }
 
     it('fills the screen with Paid, bitcoin, fiat, and New payment for a paid charge', async () => {
-      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+      // The till and its History each read the spot.
+      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
@@ -1191,15 +1189,16 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('The amount has arrived in your wallet.')).toBeTruthy();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
-      // This till did not create the charge, so it has no fixed figure; none is priced from the spot.
-      expect(within(dialog).queryByText(/\$/)).toBeNull();
-      expect(within(history).queryByText(/\$/)).toBeNull();
+      // No figure is stored with this charge: the current spot stands beside the bitcoin.
+      expect(await within(dialog).findByText('$0.02')).toBeTruthy();
+      expect(await within(history).findByText('$0.02')).toBeTruthy();
       expect(within(dialog).getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
       expect(screen.queryByText(/left$/)).toBeNull();
+      vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
     it('records a paid charge only for the session that read the till', async () => {
@@ -1257,11 +1256,6 @@ describe('PosScreen', () => {
     });
 
     it('shows a paid charge without fiat when there is no spot rate', async () => {
-      vi.mocked(fetchFxSpot).mockResolvedValue({
-        asOf: '2026-10-07T00:00:00.000Z',
-        source: 'test',
-        rates: {},
-      });
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [] })),
@@ -2599,7 +2593,7 @@ describe('PosScreen', () => {
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
-    it('shows bitcoin only for a charge typed in bitcoin, even with a spot rate', async () => {
+    it('shows the current spot, not a stored figure, for a charge typed in bitcoin', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT).mockResolvedValueOnce(SPOT);
       const created = { ...OPEN, id: 'c8', amountSats: 2_100, createdAt: new Date().toISOString() };
       // Bitcoin typed sends no figure.
@@ -2615,12 +2609,12 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(fetchFxSpot).toHaveBeenCalled();
       });
-      // No currency was typed, and none is made by converting the sats.
-      expect(screen.queryByText(/CHF/)).toBeNull();
+      // No currency was typed: the current spot in the viewer's currency stands beside it.
+      expect(await screen.findByText('CHF 1.68')).toBeTruthy();
       receive(2_100);
       const dialog = await confirmation();
       expect(within(dialog).getByText("₿2'100")).toBeTruthy();
-      expect(screen.queryByText(/CHF/)).toBeNull();
+      expect(within(dialog).getByText('CHF 1.68')).toBeTruthy();
     });
 
     it('takes over the charge a lost create made, with the figure stored on it and no error', async () => {
@@ -2722,7 +2716,7 @@ describe('PosScreen', () => {
         createdAt: new Date().toISOString(),
       });
       expect(alerted).toBe(true);
-      expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('does not take over a charge made well before a lost create', async () => {
@@ -2733,7 +2727,7 @@ describe('PosScreen', () => {
         createdAt: new Date(Date.now() - 60_000).toISOString(),
       });
       expect(alerted).toBe(true);
-      expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('does not take a charge the till already knows for a create whose answer was lost', async () => {

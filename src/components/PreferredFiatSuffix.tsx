@@ -70,8 +70,8 @@ export function preferredFiatSuffix(
       },
       fiat,
     );
-    if (figure === null) {
-      return null;
+    if (figure !== null) {
+      return fiatSuffixMarkup(figure.amount, figure.code, numberFormat);
     }
   }
   if (rateDay === null) {

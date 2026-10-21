@@ -10016,7 +10016,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-cancelled-read-failed');
   });
 
-  test('pos open bitcoin', async ({ page }) => {
+  test('pos open spot', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
@@ -10046,7 +10046,7 @@ test.describe('onboarding screens', () => {
     });
     const open = {
       id: 'pos-e2e',
-      amountSats: 5_000,
+      amountSats: 2_100,
       status: 'pending',
       createdAt: '2026-09-20T12:00:00.000Z',
       expiresAt: '2026-09-20T12:05:00.000Z',
@@ -10058,17 +10058,17 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ charge: open, history: [open] }),
       });
     });
-    // The charge was typed in bitcoin: no currency figure is stored with it.
+    // The charge was typed in bitcoin: no figure is stored, so the current spot stands beside it.
     await page.goto('/pos');
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText("₿5'000")).toBeVisible();
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText("₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await shotScreen(page, 'state-pos-open-bitcoin');
+    await shotScreen(page, 'state-pos-open-spot');
   });
 
-  test('pos cancelled bitcoin', async ({ page }) => {
+  test('pos cancelled spot', async ({ page }) => {
     await fulfillRateDay(page);
     await page.addInitScript(() => {
       const fixed = Date.parse('2026-09-20T12:00:00.000Z');
@@ -10098,7 +10098,7 @@ test.describe('onboarding screens', () => {
     });
     const open = {
       id: 'pos-e2e',
-      amountSats: 5_000,
+      amountSats: 2_100,
       status: 'pending',
       createdAt: '2026-09-20T12:00:00.000Z',
       expiresAt: '2026-09-20T12:05:00.000Z',
@@ -10119,15 +10119,14 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(body),
       });
     });
-    // Cancel on a charge stored without a figure: History lists it as Cancelled, bitcoin only.
+    // Cancel on a charge stored without a figure: History lists it as Cancelled, with the current spot.
     await page.goto('/pos');
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
     const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
     await expect(row.getByText('Cancelled')).toBeVisible();
-    await expect(row).toContainText("\u20bf5'000");
-    await expect(page.getByText(/\$/)).toHaveCount(0);
-    await shotScreen(page, 'state-pos-cancelled-bitcoin');
+    await expect(row).toContainText("₿2'100 · $2.10");
+    await shotScreen(page, 'state-pos-cancelled-spot');
   });
 
   test('pos paid', async ({ page }) => {
@@ -10175,8 +10174,8 @@ test.describe('onboarding screens', () => {
     const dialog = page.getByRole('alertdialog', { name: 'Paid' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('₿21')).toBeVisible();
-    // No figure is stored with this charge, and none is priced from the spot.
-    await expect(dialog.getByText('$0.02')).toHaveCount(0);
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(dialog.getByText('$0.02')).toBeVisible();
     await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
@@ -10464,8 +10463,8 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
-    // No figure is stored with these charges: bitcoin only, never a spot price.
-    await expect(history.getByText(/\$/)).toHaveCount(0);
+    // No figure is stored with these charges: each shows the current spot beside the bitcoin.
+    await expect(history.getByText('$2.10')).toBeVisible();
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
     await expect(history.getByText('Sep 18, 2026, 5:45 PM')).toBeVisible();
@@ -11046,7 +11045,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           charge: {
             id: 'pos-e2e',
-            amountSats: 5_000,
+            amountSats: 2_100,
             status: 'pending',
             createdAt: '2026-09-20T12:00:00.000Z',
             expiresAt: '2026-09-20T12:05:00.000Z',
@@ -11054,7 +11053,7 @@ test.describe('onboarding screens', () => {
           history: [
             {
               id: 'pos-e2e',
-              amountSats: 5_000,
+              amountSats: 2_100,
               status: 'pending',
               createdAt: '2026-09-20T12:00:00.000Z',
               expiresAt: '2026-09-20T12:05:00.000Z',
@@ -11069,9 +11068,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText("\u20bf5'000")).toBeVisible();
-    // No figure is stored with this charge: bitcoin only, never a spot price.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText("₿2'100")).toBeVisible();
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(page.getByText('$2.10')).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -11134,8 +11133,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    // No figure is stored with this charge: bitcoin only, never a spot price.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });

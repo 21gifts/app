@@ -4,6 +4,8 @@ import type { ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { committedFiatFigure } from '@/lib/committed-fiat';
 import { formatForumTime } from '@/lib/forum-time';
 import type { PosCharge } from '@/lib/pos';
@@ -42,8 +44,9 @@ export interface PosHistoryProps {
  * with the time it was paid, **Expired**, or **Cancelled**), the amount in
  * bitcoin with the currency figure stored on that charge, and the date and
  * time the charge was created. The open charge is shown above the list, not
- * in it. With no past charge the list is one sentence. A charge with no
- * stored figure stays bitcoin.
+ * in it. With no past charge the list is one sentence. A stored figure is
+ * shown as-is. A charge with no stored figure shows the current spot beside
+ * the bitcoin, and that spot is not written onto the charge.
  *
  * @param props - {@link PosHistoryProps}.
  * @returns The history section.
@@ -95,7 +98,9 @@ export function PosHistory({ history, openChargeId }: PosHistoryProps): ReactEle
                   </span>
                   <span className="text-sm tabular-nums lining-nums text-app-fg">
                     <span>{formatBitcoin(row.amountSats, numberFormat)}</span>
-                    {figure === null ? null : (
+                    {figure === null ? (
+                      preferredFiatSuffix(row.amountSats, rateDay, fiat, numberFormat)
+                    ) : (
                       <>
                         <span aria-hidden="true"> · </span>
                         <span>{formatFiatDisplay(figure.amount, figure.code, numberFormat)}</span>

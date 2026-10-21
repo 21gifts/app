@@ -3300,15 +3300,15 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:open-bitcoin",
-    "label": "/pos open-bitcoin",
-    "visual": "state-pos-open-bitcoin",
+    "id": "/pos:open-spot",
+    "label": "/pos open-spot",
+    "visual": "state-pos-open-spot",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:cancelled-bitcoin",
-    "label": "/pos cancelled-bitcoin",
-    "visual": "state-pos-cancelled-bitcoin",
+    "id": "/pos:cancelled-spot",
+    "label": "/pos cancelled-spot",
+    "visual": "state-pos-cancelled-spot",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
