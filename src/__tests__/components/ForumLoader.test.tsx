@@ -1497,10 +1497,13 @@ describe('ForumLoader', () => {
   it('feed="shops" keeps a rejected photo blocking after a further photo pick', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     const file = new File(['photo'], 'shop.jpg', { type: 'image/jpeg' });
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'cGhvdG8=', previewUrl: 'blob:shop-photo' },
-    });
+    // Each pick prepares a new photo object, as the real picker does.
+    prepareMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'cGhvdG8=', previewUrl: 'blob:shop-photo' },
+      }),
+    );
     postMock.mockRejectedValue(new Error('Photo must be a JPEG, PNG, or WebP under 1 MiB'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
