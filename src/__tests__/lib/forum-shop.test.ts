@@ -341,6 +341,7 @@ describe('forum-shop', () => {
   describe('usernameLookupVerdict', () => {
     it('finds an exact username case-insensitively', () => {
       expect(usernameLookupVerdict([{ username: 'Ada' }], '@ada')).toBe('found');
+      expect(usernameLookupVerdict([{ username: ' luna ' }], 'luna')).toBe('found');
     });
 
     it('distinguishes a short missing page from an inconclusive full page', () => {

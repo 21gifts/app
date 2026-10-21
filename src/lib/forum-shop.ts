@@ -451,7 +451,8 @@ export function usernameLookupVerdict(
   handle: string,
 ): 'found' | 'missing' | 'unknown' {
   const normalized = handle.replace(/^@/, '').toLowerCase();
-  if (rows.some((row) => row.username.toLowerCase() === normalized)) {
+  // The API matches on the trimmed username but returns it as stored.
+  if (rows.some((row) => row.username.trim().toLowerCase() === normalized)) {
     return 'found';
   }
   return rows.length >= MENTION_SUGGEST_PAGE ? 'unknown' : 'missing';
