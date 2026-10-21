@@ -1229,7 +1229,8 @@ function usePosTillState(): PosTillState {
  * The till reads the api only on open, right before each create, on **Try again**
  * after a failed load,
  * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
- * Cancel, once after a create or cancel whose answer was lost, once when a
+ * Cancel, once after a create or cancel whose answer was lost, once after a
+ * create the api refuses because a payment is already open, once when a
  * payment pays the open charge only in its late minute, once after a
  * payment that names no charge pays the open charge (whether another
  * device's newer charge of that amount took it), and when the
