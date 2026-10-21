@@ -719,9 +719,7 @@ describe('WalletSend base-chain address', () => {
         }),
       ),
     );
-    expect(screen.getByText(/^Total /).textContent).toBe(
-      "Total ₿11'000 · ₱12.00 · ₿10'000 + ₿1'000 · $1.00",
-    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₱12.00 · ₿10'000 + ₿1'000 · $1.00");
     expect(screen.queryByText('$11.00')).toBeNull();
   });
 
@@ -735,9 +733,7 @@ describe('WalletSend base-chain address', () => {
         }),
       ),
     );
-    expect(screen.getByText(/^Total /).textContent).toBe(
-      "Total ₿11'000 · $0.00 · ₿10'000 + ₿1'000 · $1.00",
-    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total $0.00 · ₿10'000 + ₿1'000 · $1.00");
   });
 
   it('shows the spot of the total when the charge stored no figure', () => {
@@ -748,9 +744,7 @@ describe('WalletSend base-chain address', () => {
   it('shows the stored figure in parts without a fee spot when the rate is missing', () => {
     vi.mocked(useSpotRate).mockReturnValue(null);
     renderSend(sendWith(onchainState({ chargeFigure: { code: 'USD', amount: '12.00' } })));
-    expect(screen.getByText(/^Total /).textContent).toBe(
-      "Total ₿51'420 · $12.00 · ₿50'000 + ₿1'420",
-    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total $12.00 · ₿50'000 + ₿1'420");
     expect(screen.queryByText(/\$51\.42/)).toBeNull();
   });
 });
