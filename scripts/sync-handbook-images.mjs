@@ -83,7 +83,13 @@ if (missing.length > 0) {
   for (const line of missing) {
     console.error(`  - ${line}`);
   }
-  process.exit(1);
+  // The shop-edit baseline job sets this so the build can start before those
+  // Linux files exist. A normal build still stops.
+  if (process.env.HANDBOOK_IMAGES_ALLOW_MISSING === '1') {
+    console.error('HANDBOOK_IMAGES_ALLOW_MISSING=1: continuing so new baselines can be recorded.');
+  } else {
+    process.exit(1);
+  }
 }
 
 console.log(`Handbook images synced: ${copied} files from visual baselines.`);

@@ -184,7 +184,8 @@ jobs:
           test "$SHARDS_RESULT" = "success"
 
   # Only when a dispatch asks for the new shop-edit baselines. Pull requests
-  # do not run these jobs. The ten-minute cap stays.
+  # do not run these jobs. The ten-minute cap stays. The record step allows
+  # missing handbook images so the build can start before those shots exist.
   shop-edit-snapshots:
     name: Shop-edit baselines (${{ matrix.project }})
     if: github.event_name == 'workflow_dispatch' && inputs.shop_edit_snapshots
@@ -205,9 +206,10 @@ jobs:
         run: npm ci
 
       - name: Record shop-edit baselines (${{ matrix.project }})
-        run: npm run e2e:visual -- --project=${{ matrix.project }} --update-snapshots --grep "$SHOP_EDIT_GREP"
+        run: npx playwright test e2e/visual.spec.ts --project=${{ matrix.project }} --update-snapshots --grep "$SHOP_EDIT_GREP"
         env:
           HOSTNAME: 0.0.0.0
+          HANDBOOK_IMAGES_ALLOW_MISSING: '1'
           SHOP_EDIT_GREP: >-
             shop-edit-saving|shop-edit-history-loading|shop-edit-place-map-loading|shop-edit-save-error|shop-edit-history-error|map-edit-saving|map-edit-history-loading|map-edit-place-map-loading|map-edit-save-error|map-edit-history-error|table-edit-saving|table-edit-history-loading|table-edit-place-map-loading|table-edit-save-error|table-edit-history-error|shops edit-saving|shops edit-history-loading|shops edit-place-map-loading|staff-place-map-loading
 
