@@ -888,7 +888,7 @@ const en = {
     'The house number must start with a digit, for example 12 or 12a.',
   'shops.problemHouseNumberLength': 'The house number must be at most 32 characters.',
   'shops.problemHouseNumberCharacters':
-    'After the first digit, the house number may only contain letters, digits, spaces, /, ., &, or hyphens.',
+    'After the first digit, the house number may only contain letters A–Z without accents, digits, spaces, /, ., &, or hyphens.',
   'shops.problemHouseNumberControls': 'The house number must not contain control characters.',
   'shops.problemPostalCodeRequired': 'Enter the postal code.',
   'shops.problemPostalCodeChLi':
@@ -2072,7 +2072,7 @@ const de = {
     'Die Hausnummer muss mit einer Ziffer beginnen, zum Beispiel 12 oder 12a.',
   'shops.problemHouseNumberLength': 'Die Hausnummer darf höchstens 32 Zeichen lang sein.',
   'shops.problemHouseNumberCharacters':
-    'Nach der ersten Ziffer darf die Hausnummer nur Buchstaben, Ziffern, Leerzeichen, /, ., & oder Bindestriche enthalten.',
+    'Nach der ersten Ziffer darf die Hausnummer nur Buchstaben A–Z ohne Akzente, Ziffern, Leerzeichen, /, ., & oder Bindestriche enthalten.',
   'shops.problemHouseNumberControls': 'Die Hausnummer darf keine Steuerzeichen enthalten.',
   'shops.problemPostalCodeRequired': 'Geben Sie die Postleitzahl ein.',
   'shops.problemPostalCodeChLi':
@@ -3259,7 +3259,7 @@ const es = {
   'shops.problemHouseNumberFormat': 'El número debe empezar con un dígito, por ejemplo 12 o 12a.',
   'shops.problemHouseNumberLength': 'El número debe tener como máximo 32 caracteres.',
   'shops.problemHouseNumberCharacters':
-    'Después del primer dígito, el número de la casa solo puede contener letras, dígitos, espacios, /, ., & o guiones.',
+    'Después del primer dígito, el número de la casa solo puede contener letras A–Z sin acentos, dígitos, espacios, /, ., & o guiones.',
   'shops.problemHouseNumberControls': 'El número no debe contener caracteres de control.',
   'shops.problemPostalCodeRequired': 'Introduce el código postal.',
   'shops.problemPostalCodeChLi':
@@ -4444,7 +4444,7 @@ const fil = {
     'Dapat magsimula sa digit ang numero ng bahay, halimbawa 12 o 12a.',
   'shops.problemHouseNumberLength': 'Hanggang 32 karakter lamang ang numero ng bahay.',
   'shops.problemHouseNumberCharacters':
-    'Pagkatapos ng unang digit, titik, digit, espasyo, /, ., &, o gitling lamang ang puwede sa numero ng bahay.',
+    'Pagkatapos ng unang digit, titik A–Z na walang tuldik, digit, espasyo, /, ., &, o gitling lamang ang puwede sa numero ng bahay.',
   'shops.problemHouseNumberControls': 'Hindi dapat may control character ang numero ng bahay.',
   'shops.problemPostalCodeRequired': 'Ilagay ang postal code.',
   'shops.problemPostalCodeChLi':

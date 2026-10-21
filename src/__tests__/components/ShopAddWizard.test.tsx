@@ -331,6 +331,26 @@ describe('ShopAddWizard', () => {
     });
   });
 
+  it('checks the shop name against a valid shop text while typing in the place dialog', async () => {
+    stubMaps();
+    renderWizard(
+      <ShopAddWizard
+        {...props({ mode: 'edit', draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Shop name'), {
+      target: { value: "Kiki's Bakery and Coffee House Zurich" },
+    });
+    expect(
+      screen.getByText(
+        'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
+  });
+
   it('shows no summary problem while a send clears the draft', () => {
     function PayingHost(): ReactElement {
       const [paying, setPaying] = useState(false);

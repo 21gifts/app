@@ -541,11 +541,13 @@ export function ShopAddWizard({
       ) : null}
       {step === 2 ? (
         <div className="flex flex-col gap-2">
+          {/* Check the name against the text only once the text meets its own rules. */}
           <PlaceField
             place={place}
             disabled={posting}
             onChange={onPlaceChange}
             shopDetails
+            {...(shopDescriptionProblem(draft, null) === null ? { shopText: draft } : {})}
             problem={serverProblem}
             autoOpenProblem={autoOpenPlaceProblem}
             onAvailabilityChange={setMapsUnavailable}

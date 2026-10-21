@@ -221,6 +221,9 @@ describe('forum-shop', () => {
       expect(shopAddressProblems({ ...ADDRESS, houseNumber: '12#' })).toEqual({
         houseNumber: 'characters',
       });
+      expect(shopAddressProblems({ ...ADDRESS, houseNumber: '12ä' })).toEqual({
+        houseNumber: 'characters',
+      });
     });
 
     it('checks control characters after trimming every address draft', () => {

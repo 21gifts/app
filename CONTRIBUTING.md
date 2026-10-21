@@ -492,7 +492,8 @@ save** copy. Client rules live in shared API-mirroring helpers such as
 So far the shop forms (and shop notes typed in the living-room composer)
 follow this rule. Not yet migrated, and moved to it in follow-up pull requests:
 the profile and account forms (including the username in `UsernameForm` and
-`LoginCard`), the living-room place name, replies, the pay sheet, contact,
+`LoginCard`), ordinary living-room posts and the Ask wizard text (empty or too
+long), the living-room place name, replies, the pay sheet, contact,
 inbox, POS, pay link, daily payments, and habits.
 
 Forms must not hide fields with errors inside a small inner scroll area. A form
