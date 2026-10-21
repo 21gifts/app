@@ -1579,7 +1579,11 @@ describe('InboxScreen', () => {
   function payInbox(
     props: {
       conversations?: Conversation[];
-      invoice?: { pr: string; amountSats: number } | null;
+      invoice?: {
+        pr: string;
+        amountSats: number;
+        figure?: { code: 'USD' | 'CHF' | 'EUR' | 'PHP'; amount: string };
+      } | null;
       onPayCancel?: () => void;
       rateDay?: FiatRateDay | null;
     } = {},
@@ -1711,6 +1715,23 @@ describe('InboxScreen', () => {
     const fiat = amount.nextElementSibling;
     expect(fiat?.tagName).toBe('P');
     expect(fiat?.textContent).toBe('$0.02');
+  });
+
+  it('shows the typed fiat on the confirmation, not the spot of the sats', () => {
+    renderWithLocale(
+      payInbox({
+        rateDay: RATE_DAY,
+        invoice: {
+          pr: 'lnbc21n1test',
+          amountSats: 21,
+          figure: { code: 'USD', amount: '12' },
+        },
+      }),
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    const amount = within(sheet).getByText(formatBitcoin(21));
+    expect(amount.nextElementSibling?.textContent).toBe('$12.00');
+    expect(within(sheet).queryByText('$0.02')).toBeNull();
   });
 
   it('nests a gift under the parent listitem and not as its own listitem', () => {

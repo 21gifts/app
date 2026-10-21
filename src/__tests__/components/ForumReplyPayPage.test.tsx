@@ -83,6 +83,22 @@ describe('ForumReplyPayPage', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the typed fiat on the confirmation, not the spot of the sats', () => {
+    renderWithLocale(
+      <ForumReplyPayPage
+        amountSats={21}
+        pr="lnbc21n1example"
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        recipient="Bob"
+        figure={{ code: 'USD', amount: '12' }}
+      />,
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getAllByText('$12.00').length).toBeGreaterThan(0);
+    expect(within(dialog).queryByText('$0.02')).toBeNull();
+  });
+
   it('reads Send without a name and shows no fiat line without a rate', () => {
     renderWithLocale(
       <ForumReplyPayPage amountSats={21} pr="lnbc21n1example" rateDay={null} onCancel={vi.fn()} />,

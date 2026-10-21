@@ -87,6 +87,8 @@ export function ForumPaySheet({
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
   const postsOnPay = invoiceForCard?.postsOnPay === true;
+  const typedFigure = invoiceForCard?.figure;
+  const typedStored = storedTypedFiat(typedFigure);
   const lending = loan !== undefined && !loan.full && !postsOnPay;
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -183,7 +185,7 @@ export function ForumPaySheet({
           }
           amountSats={invoiceForCard.amountSats}
           rateDay={rateDay}
-          stored={storedTypedFiat(invoiceForCard.figure)}
+          {...(typedStored === undefined ? {} : { stored: typedStored })}
           successTitle={
             postsOnPay
               ? t('paySheet.posted')
@@ -198,7 +200,7 @@ export function ForumPaySheet({
             pr={invoiceForCard.pr}
             amountSats={invoiceForCard.amountSats}
             rateDay={rateDay}
-            chargeFigure={invoiceForCard.figure}
+            {...(typedFigure === undefined ? {} : { chargeFigure: typedFigure })}
             postsOnPay={postsOnPay}
             flow={postsOnPay ? 'post_fee' : 'gift'}
             confirmLabel={(amount) =>
