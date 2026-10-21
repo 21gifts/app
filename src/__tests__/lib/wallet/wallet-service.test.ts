@@ -3081,7 +3081,9 @@ describe('onIncomingPayment', () => {
   it('tells onPaymentReceived a payment held by a connection that is replaced before its known payments are read', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
-    connection.listPayments.mockImplementationOnce(() => new Promise<WalletPayment[]>(() => undefined));
+    connection.listPayments.mockImplementationOnce(
+      () => new Promise<WalletPayment[]>(() => undefined),
+    );
     await connectWallet(loadSdk);
     const received: string[] = [];
     const unsubscribe = onPaymentReceived((p) => {
