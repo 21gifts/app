@@ -1451,7 +1451,7 @@ describe('InboxScreen', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('shows the default fiat on a gift-only last-sats list preview', () => {
+  it('shows the spot beside bitcoin on a gift-only last-sats list preview when a rate exists', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[{ ...DIRECT, lastText: '', lastSats: 21, lastFromMe: true }]}
@@ -1579,7 +1579,11 @@ describe('InboxScreen', () => {
   function payInbox(
     props: {
       conversations?: Conversation[];
-      invoice?: { pr: string; amountSats: number } | null;
+      invoice?: {
+        pr: string;
+        amountSats: number;
+        figure?: { code: 'USD' | 'CHF' | 'EUR' | 'PHP'; amount: string };
+      } | null;
       onPayCancel?: () => void;
       rateDay?: FiatRateDay | null;
     } = {},
@@ -1713,6 +1717,23 @@ describe('InboxScreen', () => {
     expect(fiat?.textContent).toBe('$0.02');
   });
 
+  it('shows the typed fiat on the confirmation, not the spot of the sats', () => {
+    renderWithLocale(
+      payInbox({
+        rateDay: RATE_DAY,
+        invoice: {
+          pr: 'lnbc21n1test',
+          amountSats: 21,
+          figure: { code: 'USD', amount: '12' },
+        },
+      }),
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    const amount = within(sheet).getByText(formatBitcoin(21));
+    expect(amount.nextElementSibling?.textContent).toBe('$12.00');
+    expect(within(sheet).queryByText('$0.02')).toBeNull();
+  });
+
   it('nests a gift under the parent listitem and not as its own listitem', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
@@ -1786,7 +1807,7 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $5.00`);
   });
 
-  it('uses the live rate on a nested gift when stored fiat is null', () => {
+  it('shows the spot beside bitcoin on a nested gift when stored fiat is null', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = {
       ...MESSAGE,
@@ -1822,10 +1843,9 @@ describe('InboxScreen', () => {
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
     expect(note.textContent).toContain(formatBitcoin(21));
     expect(note.textContent).toContain('$0.02');
-    expect(note.textContent).not.toContain('$5.00');
   });
 
-  it('shows the live viewer fiat when no fiat was stored', () => {
+  it('shows the spot beside bitcoin when no fiat was stored', () => {
     const parent = { ...MESSAGE, id: 'm1' };
     const gift = { ...MESSAGE, id: 'g1', name: 'Bob', text: '', sats: 21, giftFor: 'm1' };
     renderWithLocale(
@@ -1850,6 +1870,7 @@ describe('InboxScreen', () => {
       />,
     );
     const note = screen.getByRole('note');
+    expect(note.textContent).toContain(formatBitcoin(21));
     expect(note.textContent).toContain('$0.02');
     expect(note.getAttribute('aria-label')).toBe(`Paid by Bob: ${formatBitcoin(21)} · $0.02`);
   });
@@ -1941,7 +1962,7 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Hello team')).toBeTruthy();
   });
 
-  it('shows the live viewer fiat on gift bubbles when no fiat was stored', () => {
+  it('shows the spot beside bitcoin on gift bubbles when no fiat was stored', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[DIRECT]}

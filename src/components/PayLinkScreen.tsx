@@ -12,12 +12,19 @@ import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
+import {
+  committedFiatFigure,
+  storedTypedFiat,
+  type FiatCode,
+  type StoredFiat,
+} from '@/lib/committed-fiat';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -48,7 +55,8 @@ function PayLinkAmount(props: {
   );
 }
 
-interface PayCharge {
+interface PayCharge extends StoredFiat {
+  id: string | null;
   amountSats: number;
   expiresAt: string;
 }
@@ -76,12 +84,36 @@ function formatLeft(ms: number): string {
  * @param now - Clock in epoch milliseconds.
  * @returns The charge the page should show.
  */
+/** A stored decimal, or `null` when the field is absent or not a string. */
+function readDecimal(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+/** A stored fiat code, or `null` when the field is absent or not one of the four. */
+function readFiatCode(value: unknown): FiatCode | null {
+  if (value === 'USD' || value === 'CHF' || value === 'EUR' || value === 'PHP') {
+    return value;
+  }
+  return null;
+}
+
 function readCharge(value: unknown, now: number): PayCharge | null {
   if (value === null || typeof value !== 'object') {
     return null;
   }
-  const amountSats = (value as { amountSats?: unknown }).amountSats;
-  const expiresAt = (value as { expiresAt?: unknown }).expiresAt;
+  const record = value as {
+    id?: unknown;
+    amountSats?: unknown;
+    expiresAt?: unknown;
+    amountCurrency?: unknown;
+    amount?: unknown;
+    amountUsd?: unknown;
+    amountChf?: unknown;
+    amountEur?: unknown;
+    amountPhp?: unknown;
+  };
+  const amountSats = record.amountSats;
+  const expiresAt = record.expiresAt;
   if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
     return null;
   }
@@ -92,7 +124,17 @@ function readCharge(value: unknown, now: number): PayCharge | null {
   if (!Number.isFinite(expiresMs) || expiresMs <= now) {
     return null;
   }
-  return { amountSats, expiresAt };
+  return {
+    id: typeof record.id === 'string' ? record.id : null,
+    amountSats,
+    expiresAt,
+    amountCurrency: readFiatCode(record.amountCurrency),
+    amount: readDecimal(record.amount),
+    amountUsd: readDecimal(record.amountUsd),
+    amountChf: readDecimal(record.amountChf),
+    amountEur: readDecimal(record.amountEur),
+    amountPhp: readDecimal(record.amountPhp),
+  };
 }
 
 /**
@@ -106,20 +148,27 @@ function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
 }
 
-/** Viewer's fiat for a till amount, or nothing when no spot rate is ready. */
+/**
+ * Fiat under a pay-link amount. A stored figure is shown as-is. With none,
+ * the current spot stands beside the bitcoin and is not written back.
+ */
 function ChargeFiat(props: {
   amountSats: number;
   rateDay: FiatRateDay | null;
+  stored: StoredFiat | null;
 }): ReactElement | null {
-  const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
-  const amount = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  const { fiat } = useFiatPreference();
+  const figure = props.stored === null ? null : committedFiatFigure(props.stored, fiat);
+  const amount =
+    figure !== null ? figure.amount : satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  const code = figure !== null ? figure.code : fiat;
   if (amount === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(amount, fiat, numberFormat)}
+      {formatFiatDisplay(amount, code, numberFormat)}
     </p>
   );
 }
@@ -209,6 +258,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
+  const [mintedFigure, setMintedFigure] = useState<{ code: FiatCode; amount: string } | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
@@ -226,6 +276,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setMintedFigure(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -301,6 +352,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setMintedFigure(null);
     setFormError(null);
     postingRef.current = false;
     setPosting(false);
@@ -400,6 +452,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setInvoice(result.pr);
       setMintedSats(result.amountSats);
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
+      setMintedFigure(typedFiatFigure(unit, amount, fiat));
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -448,7 +501,15 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={activeSats} rateDay={rateDay} />
+                <ChargeFiat
+                  amountSats={activeSats}
+                  rateDay={rateDay}
+                  stored={
+                    chargeLive && charge !== null
+                      ? charge
+                      : (storedTypedFiat(mintedFigure ?? undefined) ?? null)
+                  }
+                />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}

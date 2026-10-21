@@ -5,9 +5,11 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { committedFiatFigure } from '@/lib/committed-fiat';
 import { formatForumTime } from '@/lib/forum-time';
 import type { PosCharge } from '@/lib/pos';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
 
 /** What a past charge ended as. */
 type PastStatus = 'paid' | 'expired' | 'cancelled';
@@ -31,28 +33,29 @@ function clockTime(iso: string, locale: string): string | null {
 
 /** Props for {@link PosHistory}. */
 export interface PosHistoryProps {
-  /** `history` of `GET /pos/charge`, newest first, as the api returns it. */
+  /** `history` of `GET /pos/charge`, newest first; a row this tab's wallet saw paid may already be paid. */
   history: readonly PosCharge[];
   /** Id of the charge the till shows as open above the list, or `null`. */
   openChargeId: string | null;
-  /** Current spot rate for the fiat beside each amount, or `null`. */
-  rateDay: FiatRateDay | null;
 }
 
 /**
  * Past till charges under the `/pos` QR, newest first: status (**Paid ✓**
  * with the time it was paid, **Expired**, or **Cancelled**), the amount in
- * bitcoin with the default fiat, and the date and time the charge was
- * created. The open charge is shown above the list, not in it. With no past
- * charge the list is one sentence.
+ * bitcoin with the currency figure stored on that charge, and the date and
+ * time the charge was created. The open charge is shown above the list, not
+ * in it. With no past charge the list is one sentence. A stored figure is
+ * shown as-is. A charge with no stored figure shows the current spot beside
+ * the bitcoin, and that spot is not written onto the charge.
  *
  * @param props - {@link PosHistoryProps}.
  * @returns The history section.
  */
-export function PosHistory({ history, openChargeId, rateDay }: PosHistoryProps): ReactElement {
+export function PosHistory({ history, openChargeId }: PosHistoryProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const rateDay = useSpotRate();
   const rows = history.filter((row) => row.id !== openChargeId);
 
   return (
@@ -77,6 +80,7 @@ export function PosHistory({ history, openChargeId, rateDay }: PosHistoryProps):
             } else {
               label = status === 'expired' ? t('pos.expired') : t('pos.cancelled');
             }
+            const figure = committedFiatFigure(row, fiat);
             return (
               <li
                 key={row.id}
@@ -94,7 +98,14 @@ export function PosHistory({ history, openChargeId, rateDay }: PosHistoryProps):
                   </span>
                   <span className="text-sm tabular-nums lining-nums text-app-fg">
                     <span>{formatBitcoin(row.amountSats, numberFormat)}</span>
-                    {preferredFiatSuffix(row.amountSats, rateDay, fiat, numberFormat)}
+                    {figure === null ? (
+                      preferredFiatSuffix(row.amountSats, rateDay, fiat, numberFormat)
+                    ) : (
+                      <>
+                        <span aria-hidden="true"> · </span>
+                        <span>{formatFiatDisplay(figure.amount, figure.code, numberFormat)}</span>
+                      </>
+                    )}
                   </span>
                 </div>
                 <time dateTime={row.createdAt} className="text-xs text-app-subtle">

@@ -9,15 +9,56 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, Card } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
+import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
 import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
- * `/wallet` payment list, newest first: direction, Bitcoin amount with the
- * default fiat, date, and the payer's note when there is one. Shown only
+ * Fiat beside a history amount. A shop payment shows the figure stored on its
+ * receipt once that read returns. Until then the row stays bitcoin, so a
+ * stored 12.00 is not flashed as a spot price. After the read, a charge with
+ * no stored figure shows the current spot. Every other payment shows the spot.
+ * The spot is not written onto the payment.
+ *
+ * @param props - The payment's method details and sat amount.
+ * @returns The fiat suffix, or `null` while a shop receipt is still out or no rate exists.
+ */
+function HistoryFiat(props: {
+  info: WalletPayment['info'];
+  amountSats: number;
+}): ReactElement | null {
+  const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
+  const rateDay = useSpotRate();
+  const shop = useShopChargeFigure(props.info.purpose === 'shop' ? props.info : null);
+  if (props.info.purpose === 'shop') {
+    if (shop.pending) {
+      return null;
+    }
+    if (shop.figure !== null) {
+      return (
+        <>
+          <span aria-hidden="true"> · </span>
+          <span className="shrink-0 tabular-nums lining-nums">
+            {formatFiatDisplay(shop.figure.amount, shop.figure.code, numberFormat)}
+          </span>
+        </>
+      );
+    }
+  }
+  return preferredFiatSuffix(props.amountSats, rateDay, fiat, numberFormat);
+}
+
+/**
+ * `/wallet` payment list, newest first: direction, Bitcoin amount with one
+ * fiat figure, date, and the payer's note when there is one. A shop payment
+ * shows the currency figure stored on that charge once the receipt returns.
+ * Any other payment, and a shop charge with no stored figure, shows the
+ * current spot. Shown only
  * while the wallet is ready. The next page loads when the end of the list
  * is in view, checked again after every completed load. Nothing renders during the first load.
  *
@@ -26,8 +67,6 @@ import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-
 export function WalletHistory(): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
-  const rateDay = useSpotRate();
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
   const heartContext = useHeartContext(
     payments.flatMap((payment) =>
@@ -124,6 +163,7 @@ export function WalletHistory(): ReactElement | null {
                     >
                       {received ? '+' : '−'}
                       {formatBitcoin(payment.amountSats, numberFormat)}
+                      <HistoryFiat info={payment.info} amountSats={payment.amountSats} />
                     </span>
                   </div>
                   <div className="flex items-baseline justify-between gap-x-3 text-xs text-app-subtle">
@@ -138,9 +178,6 @@ export function WalletHistory(): ReactElement | null {
                         </span>
                       )}
                     </time>
-                    <span className="shrink-0 tabular-nums lining-nums">
-                      {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
-                    </span>
                   </div>
                   {message === null ? null : (
                     <p className="truncate text-sm text-app-muted">{message}</p>

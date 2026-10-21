@@ -564,7 +564,7 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/Amount owed: \$1'000\.00 · ₿1'000'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in US dollars/)).toBeTruthy();
     expect(screen.getByText(/price falls/)).toBeTruthy();
     expect(screen.queryByText(/rising bitcoin price/)).toBeNull();
@@ -607,5 +607,44 @@ describe('ForumAskWizard', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Loan' })).toBeTruthy();
+  });
+
+  it('names the last day when only the bitcoin split has a remainder', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="4"
+        askDraftUnit="fiat"
+        askObligation="credit"
+        rateDay={{ sats: 100025000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      screen.getByText(
+        /\$1\.00 · ₿1'000 per day for 3 days, then \$1\.00 · ₿1'001 on the last day/,
+      ),
+    ).toBeTruthy();
+  });
+
+  it('keeps a typed fiat credit in fiat while the rate is not loaded', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        askDraftUnit="fiat"
+        askObligation="credit"
+      />,
+    );
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
   });
 });

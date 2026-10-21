@@ -292,7 +292,7 @@ test.describe('wallet history', () => {
     await expect(page.getByText('No payments yet.')).toBeVisible();
   });
 
-  test('wallet history-rows pin shows titled rows with signed amounts, fiat, status, and messages', async ({
+  test('wallet history-rows pin shows titled rows with signed amounts, status, and messages', async ({
     page,
   }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
@@ -368,7 +368,7 @@ test.describe('wallet history', () => {
     );
   });
 
-  test('Function: useSpotRateState — the payment screen shows its amounts only with the loaded fiat', async ({
+  test('Function: useSpotRateState — a payment that stored no fiat shows bitcoin while the spot is still loading, then the spot beside it', async ({
     page,
   }) => {
     let release: () => void = () => undefined;
@@ -383,9 +383,11 @@ test.describe('wallet history', () => {
     });
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
-    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toHaveCount(0);
     release();
     await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10').first()).toBeVisible();
   });
 
   test('wallet payment screen copies a technical value in full and shows no key or note id', async ({
@@ -472,6 +474,62 @@ test.describe('wallet history', () => {
     expect(payments?.y ?? 0).toBeGreaterThanOrEqual((balance?.y ?? 0) + (balance?.height ?? 0));
     expect(payments?.y ?? 0).toBeLessThan(send?.y ?? 0);
     await expect(page.locator('[data-scrollport] button', { hasText: 'Receive' })).toHaveCount(0);
+  });
+
+  test('Function: fetchShopChargeReceipt — a shop row shows the stored 12.00', async ({ page }) => {
+    await page.route(/\/pay\/charges\/01a12748-till$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: '01a12748-till',
+          amountSats: 1,
+          status: 'paid',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          expiresAt: '2026-01-01T00:05:00.000Z',
+          paidAt: '2026-01-01T00:01:00.000Z',
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: '12.00',
+        }),
+      });
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('₱12.00')).toBeVisible();
+    await expect(payments.getByText('$12.00')).toHaveCount(0);
+  });
+
+  test('Function: useShopChargeFigure — a shop row shows the stored 12.00', async ({ page }) => {
+    await page.route(/\/pay\/charges\/01a12748-till$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: '01a12748-till',
+          amountSats: 1,
+          status: 'paid',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          expiresAt: '2026-01-01T00:05:00.000Z',
+          paidAt: '2026-01-01T00:01:00.000Z',
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: '12.00',
+        }),
+      });
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('₱12.00')).toBeVisible();
+    await expect(payments.getByText('$12.00')).toHaveCount(0);
   });
 
   test('Function: useWalletHistory — pinned rows stay ten after scrolling', async ({ page }) => {

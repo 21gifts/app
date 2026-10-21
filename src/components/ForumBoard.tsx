@@ -1484,6 +1484,7 @@ export function ForumBoard({
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
                   sparkInvoice: payInvoice.sparkInvoice,
+                  ...(payInvoice.figure === undefined ? {} : { figure: payInvoice.figure }),
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
@@ -2262,6 +2263,9 @@ export function ForumBoard({
                                 amountSats={reactionPay.amountSats}
                                 pr={reactionPay.pr}
                                 sparkInvoice={reactionPay.sparkInvoice}
+                                {...(reactionPay.figure === undefined
+                                  ? {}
+                                  : { figure: reactionPay.figure })}
                                 rateDay={rateDay}
                                 onCancel={() => {
                                   reactionHold.closedByMember();

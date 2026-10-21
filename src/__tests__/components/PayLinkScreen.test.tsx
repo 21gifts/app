@@ -166,6 +166,35 @@ describe('PayLinkScreen', () => {
     expect(screen.getByText(/left/)).toBeTruthy();
   });
 
+  it('shows a typed fiat amount on the invoice, not the spot of the sats', async () => {
+    mockFetch(async (input, init) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '2000000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        expect(init?.body).toBe(JSON.stringify({ amountSats: 1 }));
+        return Response.json({ pr: 'lnbc10n1paylink', amountSats: 1 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0.01' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('₿1')).toBeTruthy();
+    expect(screen.getByText('$0.01')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('keeps the form when the invoice request fails', async () => {
     mockFetch(async (input) => {
       if (String(input).endsWith('/invoice')) {
@@ -539,7 +568,51 @@ describe('PayLinkScreen', () => {
     }
   });
 
-  it('shows the viewer fiat under an open till when a spot rate exists', async () => {
+  it('shows an open till when the charge id is not a string', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          id: 12,
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('shows an open till when the charge id is a string', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          id: 'chg_1',
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('₿21')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('shows the spot under an open till whose fiat fields are null', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
     mockFetch(async (input) => {
@@ -556,15 +629,118 @@ describe('PayLinkScreen', () => {
       }
       return Response.json({
         ...profile,
-        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+        charge: {
+          amountSats: 238093,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: null,
+          amount: null,
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
       });
     });
-    renderWithLocale(<PayLinkScreen lightning={ADA} />);
-    expect(await screen.findByText('$200.00')).toBeTruthy();
-    const spotCalls = vi
-      .mocked(fetch)
-      .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
-    expect(spotCalls).toHaveLength(1);
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText("₿238'093")).toBeTruthy();
+    await waitFor(() => {
+      const spotCalls = vi
+        .mocked(fetch)
+        .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
+      expect(spotCalls).toHaveLength(1);
+    });
+    expect(screen.getByText('$200.00')).toBeTruthy();
+  });
+
+  it('shows a stored visitor snapshot under an open till that has no typed pair', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          amountSats: 238093,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: null,
+          amount: null,
+          amountUsd: '5.00',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('$5.00')).toBeTruthy();
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByText('$200.00')).toBeNull();
+  });
+
+  it('shows 12.00 PHP on a pending charge to a viewer whose currency is USD', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '100000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('₱12.00')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('stays on bitcoin when a profile has no charge and a rate is loaded', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
+        });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', false);
+    });
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
   it('returns to the amount form when the till runs out', async () => {

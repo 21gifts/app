@@ -21,6 +21,20 @@
 - **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
+## Endpoint: GET /pay/[username]/charges/[id]
+
+- **Purpose:** Proxies the public shop-charge receipt. The body is the charge id, status, times, and the stored currency figures. It does not include the account id or a Spark invoice.
+- **Errors:** Upstream 404 when the charge is missing, 502 when the api cannot be reached.
+- **Used by:** `fetchShopChargeReceipt` when the paid Lightning address has a local part.
+- **Auth:** none.
+
+## Endpoint: GET /pay/charges/[id]
+
+- **Purpose:** Proxies the same public shop-charge receipt when the payment has no Lightning address. The body is the charge id, status, times, and the stored currency figures. It does not include the account id or a Spark invoice.
+- **Errors:** Upstream 404 when the charge is missing, 502 when the api cannot be reached.
+- **Used by:** `fetchShopChargeReceipt` when the username is null.
+- **Auth:** none.
+
 ## Endpoint: POST /pay/[username]/invoice
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
@@ -456,7 +470,7 @@
 
 ## Endpoint: GET /pos/charge
 
-- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till asks it every three seconds while a charge is open and for one minute after it ran out.
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till reads it on open, right before each create, on Try again after a failed load, when the session or the language changes, once when the open charge runs out, when the tab becomes visible again, after Cancel, once after a create or cancel whose answer was lost, once after a create the api refuses because a payment is already open (another tab's charge then shows), once when a payment pays the open charge only in its late minute (quiet once the till has an answer), once after a payment that names no charge pays the open charge or no charge this till knows, or names a charge no read listed (quiet once the till has an answer; it shows whether another device cancelled that charge and made a newer one of that amount, or opened the charge the payment pays, which then takes the payment), and after the paid confirmation is closed; never on a timer.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchPosState` (`PosTill`, `PosAmount`).
 - **Auth:** Bearer.

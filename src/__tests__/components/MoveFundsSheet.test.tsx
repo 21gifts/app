@@ -260,6 +260,7 @@ describe('MoveFundsSheet', () => {
       emit(received(12_000));
     });
     const done = screen.getByRole('dialog', { name: "₿12'000 arrived" });
+    expect(done.textContent).toContain("₿12'000");
     expect(done.textContent).toContain('$12.00');
     expect(done.textContent).toContain(
       "Your wallet now holds ₿21'000 · $21.00. Something left over there? You can do this again any time from Receive.",

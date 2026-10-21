@@ -33,6 +33,7 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { storedTypedFiat, type FiatCode } from '@/lib/committed-fiat';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -40,7 +41,6 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -206,6 +206,8 @@ export interface InboxInvoice {
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
   sparkInvoice?: string | null | undefined;
+  /** Fiat the member typed. Shown as-is. Absent for a bitcoin amount. */
+  figure?: { code: FiatCode; amount: string };
 }
 
 /** Props for {@link InboxScreen}. */
@@ -346,30 +348,31 @@ const STORED_FIAT_FIELD = {
 } as const;
 
 /**
- * Plain-text ₿ amount plus the visitor's default fiat.
- * A stored string wins. Otherwise the current spot rate. Bitcoin alone only
- * when neither figure exists.
+ * Plain-text ₿ amount plus one fiat figure.
+ * A stored string for that currency is shown as-is. A missing string uses the
+ * current spot and is not written back. Bitcoin stands alone only without a
+ * usable rate.
  */
 function giftAmountText(
   sats: number,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
+  rateDay: FiatRateDay | null,
   stored: {
     amountUsd?: string | null | undefined;
     amountChf?: string | null | undefined;
     amountEur?: string | null | undefined;
     amountPhp?: string | null | undefined;
   },
-  rateDay: FiatRateDay | null,
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
   const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-  const fiatAmount =
+  const amount =
     typeof storedAmount === 'string' ? storedAmount : satsToFiatAmount(sats, rateDay, fiat);
-  if (fiatAmount === null) {
+  if (amount === null) {
     return bitcoin;
   }
-  return `${bitcoin} · ${formatFiatDisplay(fiatAmount, fiat, numberFormat)}`;
+  return `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
 }
 
 /**
@@ -480,7 +483,7 @@ function ConversationListItem({
         ) : row.lastSats > 0 ? (
           <span className={listPreviewClass(row.lastFromMe)}>
             {formatBitcoin(row.lastSats, numberFormat)}
-            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat)}
+            {preferredFiatSuffix(row.lastSats, rateDay, fiat, numberFormat, {})}
           </span>
         ) : null}
       </button>
@@ -516,10 +519,9 @@ function ConversationListItem({
  * message, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
- * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
- * when the payment was made (a stored string as-is; null or a missing field
- * uses `rateDay`). Unpaid invoice previews omit the stored object and use the
- * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
+ * show a preferred-fiat suffix via `preferredFiatSuffix`. A stored string is
+ * shown as-is. A null or missing field uses the current spot and is not
+ * written back. Unpaid invoice previews use that same spot. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * pay sheet, where `WalletPay` pays from the member's in-app wallet; it shows
@@ -618,6 +620,8 @@ export function InboxScreen({
   // After a payment the sheet still shows its success step: the amount row stays disabled behind it.
   // Keyed by the invoice, so a held sheet's late report never reaches the next invoice.
   const payHold = usePaySheetHold(invoice === null ? null : invoice.pr);
+  const typedFigure = invoice?.figure;
+  const typedStored = storedTypedFiat(typedFigure);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -1065,7 +1069,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift, rateDay),
+                      amount: giftAmountText(gift.sats, fiat, numberFormat, rateDay, gift),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}
@@ -1296,6 +1300,7 @@ export function InboxScreen({
               }
               amountSats={invoice.amountSats}
               rateDay={rateDay}
+              {...(typedStored === undefined ? {} : { stored: typedStored })}
               successTitle={
                 open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
               }
@@ -1310,6 +1315,7 @@ export function InboxScreen({
                 pr={invoice.pr}
                 amountSats={invoice.amountSats}
                 rateDay={rateDay}
+                {...(typedFigure === undefined ? {} : { chargeFigure: typedFigure })}
                 flow="inbox"
                 confirmLabel={(amount) => t('paySheet.sendAmount', { amount })}
               />

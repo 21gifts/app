@@ -183,6 +183,48 @@ describe('WalletPay', () => {
     expect(hook.pay).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the stored PHP figure on the confirm label instead of the spot', () => {
+    hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        flow="reaction"
+        chargeFigure={{ code: 'PHP', amount: '12.00' }}
+        confirmLabel={(amount) => `Lend ${amount}`}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Lend ₿21 · ₱12.00' }).textContent).toBe(
+      'Lend ₿21 · ₱12.00',
+    );
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByText(/Fee/)).toBeNull();
+  });
+
+  it('shows the current spot on the confirm label when the charge stored none', () => {
+    hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        flow="reaction"
+        chargeFigure={null}
+        confirmLabel={(amount) => `Lend ${amount}`}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Lend ₿21 · $0.02' }).textContent).toBe(
+      'Lend ₿21 · $0.02',
+    );
+    expect(screen.queryByText('₱12.00')).toBeNull();
+    expect(screen.queryByText(/₱/)).toBeNull();
+    expect(screen.queryByText(/Fee/)).toBeNull();
+  });
+
   it('gives the confirm label the bitcoin amount alone when no rate is known', () => {
     hookWith('confirm', 0);
     renderWithLocale(

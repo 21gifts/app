@@ -548,6 +548,15 @@ describe('WalletSend amount', () => {
         .getAttribute('aria-pressed'),
     ).toBe('true');
   });
+
+  it('submits the typed fiat string with the sats', () => {
+    useAuthStore.setState({ account: { amountUnit: 'fiat' } as never });
+    const send = sendWith(LNURL_STATE);
+    renderSend(send);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(send.submitAmount).toHaveBeenCalledWith(12_000, { code: 'USD', amount: '12' });
+  });
 });
 
 const ONCHAIN_TARGET = {
@@ -558,15 +567,23 @@ const ONCHAIN_TARGET = {
 };
 
 function onchainState(
-  extra: { speed?: 'fast' | 'medium' | 'slow'; spendableFeeSats?: number; renewed?: true } = {},
+  extra: {
+    speed?: 'fast' | 'medium' | 'slow';
+    spendableFeeSats?: number;
+    renewed?: true;
+    amountSats?: number;
+    feeSats?: number;
+    chargeFigure?: { code: 'USD' | 'PHP'; amount: string } | null;
+  } = {},
 ): WalletSendState {
   const fees = { fast: 2_840, medium: 1_420, slow: 710 };
   const speed = extra.speed ?? 'medium';
   return {
     step: 'confirm',
     recipient: ONCHAIN_TARGET.recipient,
-    amountSats: 50_000,
-    feeSats: fees[speed],
+    amountSats: extra.amountSats ?? 50_000,
+    feeSats: extra.feeSats ?? fees[speed],
+    ...(extra.chargeFigure === undefined ? {} : { chargeFigure: extra.chargeFigure }),
     onchain: {
       fees,
       spendableFeeSats: extra.spendableFeeSats ?? 950_000,
@@ -677,6 +694,59 @@ describe('WalletSend base-chain address', () => {
     expect(screen.getByText(/^Fee /).textContent).toBe("Fee ₿1'420");
     expect(screen.getByText(/^Total /).textContent).toBe("Total ₿51'420");
   });
+
+  it('adds the fee spot to a stored dollar figure and does not price the sat sum', () => {
+    renderSend(
+      sendWith(
+        onchainState({
+          amountSats: 10_000,
+          feeSats: 1_000,
+          chargeFigure: { code: 'USD', amount: '12.00' },
+        }),
+      ),
+    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₿11'000 · $13.00");
+    expect(screen.queryByText('$11.00')).toBeNull();
+  });
+
+  it('keeps a stored peso figure in parts beside the fee spot', () => {
+    renderSend(
+      sendWith(
+        onchainState({
+          amountSats: 10_000,
+          feeSats: 1_000,
+          chargeFigure: { code: 'PHP', amount: '12.00' },
+        }),
+      ),
+    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₱12.00 · ₿10'000 + ₿1'000 · $1.00");
+    expect(screen.queryByText('$11.00')).toBeNull();
+  });
+
+  it('splits the total when the stored figure is not a decimal', () => {
+    renderSend(
+      sendWith(
+        onchainState({
+          amountSats: 10_000,
+          feeSats: 1_000,
+          chargeFigure: { code: 'USD', amount: '' },
+        }),
+      ),
+    );
+    expect(screen.getByText(/^Total /).textContent).toBe("Total $0.00 · ₿10'000 + ₿1'000 · $1.00");
+  });
+
+  it('shows the spot of the total when the charge stored no figure', () => {
+    renderSend(sendWith(onchainState({ chargeFigure: null })));
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₿51'420 · $51.42");
+  });
+
+  it('shows the stored figure in parts without a fee spot when the rate is missing', () => {
+    vi.mocked(useSpotRate).mockReturnValue(null);
+    renderSend(sendWith(onchainState({ chargeFigure: { code: 'USD', amount: '12.00' } })));
+    expect(screen.getByText(/^Total /).textContent).toBe("Total $12.00 · ₿50'000 + ₿1'420");
+    expect(screen.queryByText(/\$51\.42/)).toBeNull();
+  });
 });
 
 describe('WalletSend confirm and sent', () => {
@@ -697,6 +767,38 @@ describe('WalletSend confirm and sent', () => {
     expect(send.confirm).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the stored PHP figure under the bitcoin amount instead of the spot', () => {
+    renderSend(
+      sendWith({
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: 2_100,
+        feeSats: 0,
+        chargeFigure: { code: 'PHP', amount: '12.00' },
+      }),
+    );
+    expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.getByText('₱12.00')).toBeTruthy();
+    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
+  });
+
+  it('shows the current spot when the charge stored no figure', () => {
+    renderSend(
+      sendWith({
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: 2_100,
+        feeSats: 0,
+        chargeFigure: null,
+      }),
+    );
+    expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.getByText('$2.10')).toBeTruthy();
+    expect(screen.queryByText('₱12.00')).toBeNull();
+    expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
   });
 
   it('shows the fiat of a fee above zero', () => {
