@@ -668,6 +668,7 @@ describe('CreditLedger', () => {
     expect(await screen.findByText('Next repayment')).toBeTruthy();
     expect(document.body.textContent).toContain('Nov 1, 2026');
     expect(document.body.textContent).toContain('7 days at');
+    expect(document.body.textContent).toContain('₱40.00 · ₿4');
     expect(document.body.textContent).toContain('8 days · Scheduled');
     expect(document.body.textContent).toContain('Nov 8, 2026');
     expect(document.body.textContent).not.toContain('Nov 2, 2026');
@@ -933,7 +934,7 @@ function longPlan(options?: {
       name: 'Cyrill',
       username: 'cyrill',
       amount: cyrillAmount(day),
-      sats: null,
+      sats: 4,
       status: rowStatus,
       via: 'lightning' as const,
     });
