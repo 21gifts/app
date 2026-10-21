@@ -1539,7 +1539,7 @@ describe('PlaceField', () => {
     ],
     [
       'Shop description must be 20 to 1000 characters and longer than the shop name',
-      'The shop text must be 20 to 1000 characters and longer than the shop name.',
+      'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
     ],
     [
       'Place address is invalid',
@@ -1679,11 +1679,7 @@ describe('PlaceField', () => {
   });
 
   it('keeps Street unfocused after a rejection that is not about the address', async () => {
-    const onCommit = vi
-      .fn()
-      .mockRejectedValue(
-        new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
-      );
+    const onCommit = vi.fn().mockRejectedValue(new Error('No account with that username'));
     const listeners = stubMaps();
     renderWithLocale(
       <PlaceField
@@ -1702,7 +1698,7 @@ describe('PlaceField', () => {
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'The shop text must be 20 to 1000 characters and longer than the shop name.',
+      'No account with that username. Check the spelling of the 21.gifts username.',
     );
     const dialog = screen.getByRole('dialog');
     await waitFor(() => {

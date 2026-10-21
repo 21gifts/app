@@ -2810,8 +2810,7 @@ A moderator session. **Edit place** is open on the Cafe Luna note, the map is vi
 
 A moderator session. **Edit place** is open on a shop note (text **Fresh bread every morning.**).
 **Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The
-stored shop text changed on the server, so the fallback alert **The shop text must be 20 to 1000
-characters and longer than the shop name.** is visible in the dialog footer. The dialog stays open
+stored shop text changed on the server, so the alert **The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.** is visible in the dialog footer. The dialog stays open
 with **Use this place**.
 
 ![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)

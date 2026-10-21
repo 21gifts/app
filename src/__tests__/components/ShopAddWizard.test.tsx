@@ -351,6 +351,16 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
   });
 
+  it('keeps Next off on the photos step while a rejected photo is still attached', () => {
+    const view = renderWizard(
+      <ShopAddWizard {...props({ mode: 'edit', photoError: 'formatOrSize' })} />,
+    );
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    view.unmount();
+    renderWizard(<ShopAddWizard {...props({ mode: 'edit', photoError: 'tooMany' })} />);
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+  });
+
   it('shows no summary problem while a send clears the draft', () => {
     function PayingHost(): ReactElement {
       const [paying, setPaying] = useState(false);

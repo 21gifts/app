@@ -324,8 +324,12 @@ export function ShopAddWizard({
   const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
     placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
+  // Rejected files stay attached until the photos change, so the same request would fail again;
+  // a photo reason always returns the wizard to step 1.
+  const photoRejected = photoError === 'formatOrSize';
   const nextDisabled =
     posting ||
+    (step === 1 && photoRejected) ||
     (step === 2 && (!placeComplete || placeServerProblem)) ||
     (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
     (step === 4 && (usernameProblem !== null || usernamePending || usernameServerProblem));

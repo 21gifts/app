@@ -263,7 +263,7 @@ describe('ShopPlaceControl', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     expect(
       await screen.findByText(
-        'The shop text must be 20 to 1000 characters and longer than the shop name.',
+        'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
       ),
     ).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();

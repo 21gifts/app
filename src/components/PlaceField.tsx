@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, X } from 'lucide-react';
+import { MapPin, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -654,7 +654,12 @@ export function PlaceField(props: {
       if (problem === null) {
         setUnknownSaveError(true);
       } else {
-        setSaveError(SHOP_API_MESSAGE[problem]);
+        // The place route checks the stored shop text, which this dialog cannot edit.
+        setSaveError(
+          shopDetails && problem === 'shopDescription'
+            ? 'shops.problemNameLongerThanText'
+            : SHOP_API_MESSAGE[problem],
+        );
       }
     } finally {
       setSaving(false);
@@ -822,7 +827,7 @@ export function PlaceField(props: {
                       disabled={fieldsDisabled}
                       onClick={() => void commit(null)}
                     >
-                      <X aria-hidden="true" className="h-4 w-4" />
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
                     </IconButton>
                   ) : null}
                 </div>
