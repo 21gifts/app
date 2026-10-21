@@ -71,6 +71,13 @@
 - **Returns / side effects:** `{ code, amount }` with the exact stored decimal, or `null`. No I/O.
 - **Used by:** `useShopChargeFigure` (the visitor's fiat), `useWalletSend` (a shop charge, the visitor's fiat), `usePosTillState` (the open and paid till charge, the visitor's fiat), `PosHistory` (the visitor's fiat), `PayLinkScreen` (`ChargeFiat`, the visitor's fiat), `PaySheet` (the viewer's fiat as preferred), `preferredFiatSuffix` (snapshots only, with the viewer's fiat), `LoanRepayScreen` (goal snapshots, with the viewer's fiat).
 
+## Function: storedTypedFiat
+
+- **Purpose:** A typed `{ code, amount }` as the stored pair. `amountCurrency` and `amount` are that pair. The four snapshots stay null, so the viewer's currency is not added beside it. No figure returns undefined, and the caller then shows the current spot beside bitcoin.
+- **Inputs:** `figure` (`{ code, amount }` with `code` USD, CHF, EUR, or PHP) or `undefined`.
+- **Returns / side effects:** A `StoredFiat`, or `undefined`. No I/O. It does not read a rate and does not recompute the decimal.
+- **Used by:** `ForumPaySheet`, `ForumReplyPayPage`, `InboxScreen`, `PayLinkScreen`.
+
 ## Function: cancelPosCharge
 
 - **Purpose:** `DELETE /pos/charge`.
@@ -6220,6 +6227,27 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Raw `draft`, typing `unit`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** Whole sats, or `invalid`. No I/O.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
+## Function: typedFiatFigure
+
+- **Purpose:** The fiat the member typed, kept as that string. A bitcoin unit returns null. A draft that is not a fiat amount returns null. A comma becomes a dot, and one trailing separator is dropped, so `12.` is `12` and `1,50` is `1.50`. The spot of the sats is not this figure.
+- **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, fiat `code`.
+- **Returns / side effects:** `{ code, amount }` or `null`. No I/O.
+- **Used by:** `attachTypedFigure`, `WalletSend`, `PayLinkScreen`.
+
+## Function: attachTypedFigure
+
+- **Purpose:** Copies `value` and, when the draft is a typed fiat amount, adds that figure from `typedFiatFigure`. A bitcoin field, or a draft that is not a fiat amount, is returned unchanged.
+- **Inputs:** `value` (an object), `unit` (`btc` or `fiat`), raw `draft`, fiat `code`.
+- **Returns / side effects:** The same object, or a copy with `figure`. No I/O.
+- **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`, `MemberHabits`, `InboxLoader`.
+
+## Function: addDecimalStrings
+
+- **Purpose:** Sum of two non-negative dot-decimal strings. A missing dot is scale 0, so `12` plus `1.00` is `13.00`. Either string that is not such a decimal returns null. The result has at least one fraction digit. It never prices a sat sum.
+- **Inputs:** `left` and `right` decimal strings.
+- **Returns / side effects:** The sum string, or `null`. No I/O.
+- **Used by:** `WalletPaymentDetails` (a shop total when the stored currency matches the fee spot), `WalletSend` (an on-chain total the same way).
 
 ## Function: parseForumAskAmountInUnit
 
