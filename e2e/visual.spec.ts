@@ -742,7 +742,7 @@ const UNKNOWN_LUNA_MENTION_ACCOUNTS = Array.from({ length: 20 }, (_, index) => (
  * rejects the handle.
  */
 async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<void> {
-  await page.route('**/forum/accounts/by-username/**', async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
       status: 500,
       contentType: 'application/json',
@@ -790,7 +790,7 @@ async function holdMentionPeople(page: Page): Promise<() => void> {
     await route.abort();
   };
   await page.route('**/forum/mentions**', stall);
-  await page.route('**/forum/accounts/by-username/**', stall);
+  await page.route(/\/forum\/accounts\/by-username\//, stall);
   return release;
 }
 
@@ -22475,7 +22475,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add an account' }).click();
-    await page.route('**/forum/accounts/by-username/**', async (route) => {
+    await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
