@@ -303,6 +303,10 @@ const IDLE_BOARD = {
  *   (default false) is passed to both charts as `failed`. `loadPublicList`
  *   loads the four feeds without a session (the share link). `loadAboutPhoto`
  *   loads the About me photo on that link when the card has no profile-note id.
+ *   `shareViewKey`, when set, is the route key of `/view/:viewKey`. The copy
+ *   button then writes that capability URL, including when the signed-in
+ *   account is the owner, and does not fall back to the owner view key or the
+ *   short member link.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -316,6 +320,7 @@ export function MemberProfileScreen({
   activityFailed = false,
   loadPublicList,
   loadAboutPhoto,
+  shareViewKey,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
@@ -327,6 +332,7 @@ export function MemberProfileScreen({
   activityFailed?: boolean;
   loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
   loadAboutPhoto?: () => Promise<Blob>;
+  shareViewKey?: string;
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
@@ -1137,9 +1143,11 @@ export function MemberProfileScreen({
   const memberPath = `/members/${profile.id}`;
   const ownerViewKey = owner?.account.viewKey;
   let profileUrl =
-    ownerViewKey !== undefined
-      ? `${origin}/view/${ownerViewKey}`
-      : shortResourceUrl(origin, profile.id, memberPath);
+    shareViewKey !== undefined
+      ? `${origin}/view/${shareViewKey}`
+      : ownerViewKey !== undefined
+        ? `${origin}/view/${ownerViewKey}`
+        : shortResourceUrl(origin, profile.id, memberPath);
   /* v8 ignore next 3 -- SSR first paint: origin is empty until the client effect */
   if (origin === '') {
     profileUrl = '';

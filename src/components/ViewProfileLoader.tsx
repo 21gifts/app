@@ -63,8 +63,9 @@ function memberProfileFromView(view: ViewProfile): MemberProfile {
  * and `/members/:id`. When a session exists and the payload has an id, a
  * member refetch replaces the card so hearts and trust match. If that refetch
  * fails, the public card stays. Activity comes from the member route after a
- * successful refetch, otherwise from the public view activity. The claim
- * banner stays under the card.
+ * successful refetch, otherwise from the public view activity. The copy
+ * button receives this route's `viewKey`, so it writes the current capability
+ * URL. The claim banner stays under the card.
  *
  * @param props - Dynamic route `viewKey`.
  * @returns Loading, missing, error, or the shared profile card.
@@ -224,6 +225,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         activityFailed={activityFailed}
         {...(usePublicLists ? { loadPublicList: (kind) => fetchViewForumList(viewKey, kind) } : {})}
         loadAboutPhoto={() => fetchViewAboutMePhoto(viewKey)}
+        shareViewKey={viewKey}
       />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={hasPasskey} />
     </div>

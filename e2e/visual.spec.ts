@@ -19559,6 +19559,128 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-view-viewKey');
   });
 
+  test('state /view images', async ({ page }) => {
+    // state-view-images
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillMemberSlot(page, 'pictures', 'acc_e2e', 'profile-portrait.jpg');
+    await fulfillMemberSlot(page, 'banners', 'acc_e2e', 'profile-banner.jpg');
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByAltText('Wide profile image')).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(0);
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
+    );
+    await shotScreen(page, 'state-view-images');
+  });
+
+  test('state /view photo-only', async ({ page }) => {
+    // state-view-photo-only
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillMemberSlot(page, 'pictures', 'acc_e2e', 'profile-portrait.jpg');
+    await page.route('**/banners/acc_e2e', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: '{"error":"Not found"}',
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByAltText('Profile photo')).toBeVisible();
+    await expect(page.getByAltText('Wide profile image')).toHaveCount(0);
+    await shotScreen(page, 'state-view-photo-only');
+  });
+
+  test('state /view banner-only', async ({ page }) => {
+    // state-view-banner-only
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await fulfillMemberSlot(page, 'banners', 'acc_e2e', 'profile-banner.jpg');
+    await page.route('**/pictures/acc_e2e', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: '{"error":"Not found"}',
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByAltText('Wide profile image')).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toHaveCount(0);
+    await shotScreen(page, 'state-view-banner-only');
+  });
+
   test('state /view/[viewKey] cannot-receive', async ({ page }) => {
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({

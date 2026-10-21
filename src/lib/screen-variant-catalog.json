@@ -4764,6 +4764,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:images",
+    "label": "/view/[viewKey] images",
+    "visual": "state-view-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:photo-only",
+    "label": "/view/[viewKey] photo-only",
+    "visual": "state-view-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-only",
+    "label": "/view/[viewKey] banner-only",
+    "visual": "state-view-banner-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:missing",
     "label": "/view/[viewKey] missing",
     "visual": "state-view-missing",

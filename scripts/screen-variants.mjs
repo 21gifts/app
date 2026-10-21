@@ -5633,6 +5633,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/view/[viewKey]',
+    id: 'images',
+    image: 'view-images.png',
+    visual: 'state-view-images',
+    needle: 'state-view-images',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'photo-only',
+    image: 'view-photo-only.png',
+    visual: 'state-view-photo-only',
+    needle: 'state-view-photo-only',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'banner-only',
+    image: 'view-banner-only.png',
+    visual: 'state-view-banner-only',
+    needle: 'state-view-banner-only',
+  },
+  {
+    route: '/view/[viewKey]',
     id: 'missing',
     image: 'view-missing.png',
     visual: 'state-view-missing',

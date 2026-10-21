@@ -7498,9 +7498,9 @@ After a failed translation of that reaction. The feed shows `Could not translate
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR.
+- **Purpose:** Public copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)). Copy-profile-link on the card writes the current view URL. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR. A visitor sees no edit and no Message. Edits appear only when the signed-in account id matches. The card has no back, menu, or logout.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given, Received, outstanding debt, and outstanding credit from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when the profile has no wallet yet; activity failure keeps the card and the gift chart shows `profile.chartError` while the loan chart shows `profile.loanChartError`. Identity still `GET /view-key/:viewKey`.
-- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty` with no FiatPicker. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart. A filled gift or loan series can switch that chart's scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card. After **Log in instead** on an already-claimed profile, a spinner shows while that login runs, and a failed or unknown attempt keeps the claim alert and **Try again**, also over a held-back session. Once the login succeeds it opens the wallet: the shared login card (`WalletLoginCard`) stands in place until it is open, and stays with its no-PRF or error alert while that session is held back.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty` with no FiatPicker. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart. A filled gift or loan series can switch that chart's scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. The card has no back, menu, or logout. A visitor sees no edit and no Message. Name, location, and About me edit only when the signed-in account id matches; Message appears only for someone else's profile note. After **Log in instead** on an already-claimed profile, a spinner shows while that login runs, and a failed or unknown attempt keeps the claim alert and **Try again**, also over a held-back session. Once the login succeeds it opens the wallet: the shared login card (`WalletLoginCard`) stands in place until it is open, and stays with its no-PRF or error alert while that session is held back.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
@@ -7517,7 +7517,7 @@ Public profile of a member who cannot receive yet (`lightningAddressVerified: fa
 
 ### Variant: about-filled
 
-Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
+Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same card as default plus the About me heading and body text. Copy-profile-link remains. A visitor sees no edit. The owner edits when the signed-in account id matches.
 
 ![21.gifts public view about filled](images/view-about-filled.png)
 
@@ -7553,9 +7553,27 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: about-photo
 
-Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop). Copy-profile-link remains. No edit.
+Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same card as default plus the About me heading, bio, and photo (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop). Copy-profile-link remains. A visitor sees no edit. The owner edits when the signed-in account id matches.
 
 ![21.gifts public view about photo](images/view-about-photo.png)
+
+### Variant: images
+
+Public share link whose profile id is set and both public pictures are stored. The wide image and the round profile photo sit above the heading. Neither is the About me photo. No add buttons. The claim banner stays under the card when `hasPasskey` is false. A visitor sees no edit.
+
+![21.gifts public view profile images](images/view-images.png)
+
+### Variant: photo-only
+
+Same share link with only the round profile photo above the heading, centered. No wide image and no add button. A visitor sees no edit.
+
+![21.gifts public view profile photo](images/view-photo-only.png)
+
+### Variant: banner-only
+
+Same share link with only the wide image above the heading. No round photo and no add button. A visitor sees no edit.
+
+![21.gifts public view wide image](images/view-banner-only.png)
 
 ### Variant: missing
 
