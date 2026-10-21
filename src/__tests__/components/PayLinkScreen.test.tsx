@@ -583,7 +583,7 @@ describe('PayLinkScreen', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
-  it('shows bitcoin under an open till whose fiat fields are null, even with a rate', async () => {
+  it('shows the spot under an open till whose fiat fields are null', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
     mockFetch(async (input) => {
@@ -620,8 +620,7 @@ describe('PayLinkScreen', () => {
         .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
       expect(spotCalls).toHaveLength(1);
     });
-    expect(screen.queryByText('$200.00')).toBeNull();
-    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getByText('$200.00')).toBeTruthy();
   });
 
   it('shows 12.00 PHP on a pending charge to a viewer whose currency is USD', async () => {

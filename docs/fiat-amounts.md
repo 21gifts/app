@@ -1,8 +1,9 @@
 # Fiat amounts
 
 This rule is binding for every screen, every stored amount, and every review.
-It wins over any sentence in this repository that tells a committed amount to
-use the current spot rate, a later daily close, or a round trip through sats.
+It wins over any sentence that replaces a stored fiat figure with the current
+spot, a later daily close, or a round trip through sats. Every amount still
+shows bitcoin and one fiat figure.
 
 The supported currencies are USD, CHF, EUR, and PHP. The rule is the same for
 each of them. No currency is special.
@@ -23,8 +24,11 @@ currency that was typed.
 The other supported currencies are the amounts frozen at that same moment.
 Later screens show those frozen strings. They do not recompute them.
 
-A missing frozen string stays missing. It is not filled from the current spot,
-and it is not filled later from a daily close. The amount stays bitcoin.
+Every amount shows bitcoin and one fiat figure. A stored string is that
+figure, shown as-is. A missing frozen string is not written back and is not
+filled from a daily close. The fiat shown beside the bitcoin is then the
+current spot in the viewer's currency. Bitcoin stands alone only when that
+spot is not available yet.
 
 ## A till charge shows the typed figure to the shop and to the payer
 

@@ -6474,7 +6474,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('$0.02')).toBeNull();
   });
 
-  it('keeps a gift-only reply bitcoin when no fiat was stored', () => {
+  it('shows the spot beside a gift-only reply when no fiat was stored', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -6517,7 +6517,7 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText("send ₿21'000")).toBeTruthy();
-    expect(screen.queryByText('$21.00')).toBeNull();
+    expect(screen.getByText('$21.00')).toBeTruthy();
   });
 
   it('keeps a gift-only reply ₿-only when conversion is null', () => {
@@ -6865,7 +6865,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('₿21')).toBeTruthy();
   });
 
-  it('keeps a text reply gift bitcoin when no fiat was stored', () => {
+  it('shows the spot beside a text reply gift when no fiat was stored', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -6909,7 +6909,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('Thanks')).toBeTruthy();
     expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getByText('$0.02')).toBeTruthy();
     expect(screen.queryByText('$21.00')).toBeNull();
   });
 

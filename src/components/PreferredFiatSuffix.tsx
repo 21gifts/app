@@ -37,17 +37,18 @@ function storedDecimal(value: string | null | undefined): string | null {
 /**
  * Preferred-fiat suffix next to a ₿ amount.
  *
- * Omitted `stored` is a preview that is still being typed: the suffix is the
- * current spot rate. A passed `stored` object is a committed amount: the
- * visitor's stored string is shown as-is, and a null or missing field stays
- * absent. That path never uses the spot rate.
+ * A shown amount keeps both currencies whenever a stored string or a usable
+ * rate exists. A stored string for the visitor's currency is shown as-is and
+ * is never recomputed from sats. A null or missing field uses the current
+ * spot. The suffix is absent only when neither a stored string nor a usable
+ * rate exists.
  *
- * @param sats - Whole sats. Used only when `stored` is omitted.
- * @param rateDay - Current spot rate, or `null`. Used only when `stored` is omitted.
+ * @param sats - Whole sats. Used when no stored string exists for `fiat`.
+ * @param rateDay - Current spot rate, or `null`.
  * @param fiat - Visitor's default fiat.
  * @param numberFormat - Grouping style.
- * @param stored - Fiat stored with a committed amount. When passed, a missing
- *   string for `fiat` returns `null`.
+ * @param stored - Fiat stored with a committed amount. A string for `fiat`
+ *   wins over `rateDay`.
  * @returns ` · ` plus formatted fiat, or `null` when no figure exists.
  */
 export function preferredFiatSuffix(
@@ -69,10 +70,9 @@ export function preferredFiatSuffix(
       },
       fiat,
     );
-    if (figure === null) {
-      return null;
+    if (figure !== null) {
+      return fiatSuffixMarkup(figure.amount, figure.code, numberFormat);
     }
-    return fiatSuffixMarkup(figure.amount, figure.code, numberFormat);
   }
   if (rateDay === null) {
     return null;

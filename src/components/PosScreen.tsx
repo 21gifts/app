@@ -18,6 +18,7 @@ import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address
 import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { returnToView } from '@/lib/view-history';
@@ -27,8 +28,30 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
+  satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
+
+/**
+ * Fiat under a till amount. A stored figure is shown as-is. With none, the
+ * current spot stands beside the bitcoin and is not written onto the charge.
+ */
+function posFiatText(
+  stored: { code: FiatCode; amount: string } | null,
+  sats: number | null,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): string | null {
+  if (stored !== null) {
+    return formatFiatDisplay(stored.amount, stored.code, numberFormat);
+  }
+  if (sats === null) {
+    return null;
+  }
+  const spot = satsToFiatAmount(sats, rateDay, fiat);
+  return spot === null ? null : formatFiatDisplay(spot, fiat, numberFormat);
+}
 
 /** Draft the till stores: trim, one comma to a dot, fraction digits kept, no trailing dot. */
 function typedFiatDraft(draft: string): string {
@@ -473,6 +496,7 @@ function usePosTillState(): PosTillState {
 export function PosTill(): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
   const till = usePosTillState();
   const setup = useWalletSetup();
   const paidId = till.paid?.id ?? null;
@@ -485,6 +509,20 @@ export function PosTill(): ReactElement {
       logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
     }
   }, [paidId, paidSats, paidFor]);
+  const chargeText = posFiatText(
+    till.chargeFiat,
+    till.charge?.amountSats ?? null,
+    till.rateDay,
+    fiat,
+    numberFormat,
+  );
+  const paidText = posFiatText(
+    till.paidFiat,
+    till.paid?.amountSats ?? null,
+    till.rateDay,
+    fiat,
+    numberFormat,
+  );
 
   return (
     <Card surface={false}>
@@ -532,10 +570,8 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.charge.amountSats, numberFormat)}
           </p>
-          {till.chargeFiat === null ? null : (
-            <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(till.chargeFiat.amount, till.chargeFiat.code, numberFormat)}
-            </p>
+          {chargeText === null ? null : (
+            <p className="text-center text-sm text-app-subtle">{chargeText}</p>
           )}
           <Button
             type="button"
@@ -555,10 +591,8 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.paid.amountSats, numberFormat)}
           </p>
-          {till.paidFiat === null ? null : (
-            <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(till.paidFiat.amount, till.paidFiat.code, numberFormat)}
-            </p>
+          {paidText === null ? null : (
+            <p className="text-center text-sm text-app-subtle">{paidText}</p>
           )}
           <ButtonLink href="/pos/amount">{t('pos.newPayment')}</ButtonLink>
         </div>

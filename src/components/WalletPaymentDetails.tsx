@@ -13,17 +13,20 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { ExternalLinkWarning } from '@/components/ExternalLinkWarning';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
@@ -116,6 +119,8 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const { payment } = props;
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
+  const rateDay = useSpotRate();
   const shop = useShopChargeFigure(payment.info.purpose === 'shop' ? payment.info : null);
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
@@ -130,9 +135,33 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       : null;
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
-  /** A ₿ amount. Fees and totals have no stored fiat of their own. */
-  const amount = (sats: number): ReactElement => <>{formatBitcoin(sats, numberFormat)}</>;
-  const fiatAmount = payment.info.purpose === 'shop' ? shop.figure : null;
+  /** Bitcoin plus one fiat figure. The charge amount uses a stored shop figure. A fee of ₿0 stays the fee-free label. */
+  const amount = (sats: number): ReactElement => (
+    <>
+      {formatBitcoin(sats, numberFormat)}
+      {shopFigure !== null && sats === payment.amountSats ? (
+        <>
+          <span aria-hidden="true"> · </span>
+          <span>{formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat)}</span>
+        </>
+      ) : (
+        preferredFiatSuffix(sats, rateDay, fiat, numberFormat)
+      )}
+    </>
+  );
+  const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
+  const spotAmount =
+    payment.info.purpose === 'shop'
+      ? shop.pending || shopFigure !== null
+        ? null
+        : satsToFiatAmount(payment.amountSats, rateDay, fiat)
+      : satsToFiatAmount(payment.amountSats, rateDay, fiat);
+  const fiatAmount =
+    shopFigure !== null
+      ? shopFigure
+      : spotAmount === null
+        ? null
+        : { code: fiat, amount: spotAmount };
   const date = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(
     payment.timestamp,
   );
@@ -315,8 +344,10 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
  * Copy (transaction and output, payment request, payment hash, proof of
  * payment, payment id). The payment shows as soon as it is loaded. A shop
  * charge shows the currency figure stored on its receipt once that read
- * returns, and stays bitcoin while the read is out or the receipt is missing.
- * It does not wait on the spot rate. While the wallet is still connecting, could not be opened,
+ * returns. While that read is out the amount stays bitcoin, so a stored
+ * figure is not flashed as a spot price. After the read, a missing figure
+ * shows the current spot, as does every payment that is not a shop charge.
+ * That spot is not written onto the payment. While the wallet is still connecting, could not be opened,
  * or its one-time setup gave up, it shows that state (`WalletBalance`) and
  * loads the payment once the wallet is ready (a session whose wallet is not
  * open sees the login card in place, from `OnboardingGate`); without a wallet here it says the payment

@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
@@ -276,6 +277,7 @@ export function MenuAccountHeader({
               }`}
             >
               {formatBitcoin(loanSummary.payableSats, numberFormat)}
+              {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
             </p>
           </div>
           <ButtonLink href="/loans/repay" size="sm" onClick={onNavigate}>

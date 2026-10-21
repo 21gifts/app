@@ -122,7 +122,7 @@ describe('WalletHistory', () => {
     expect(rows[0]?.getAttribute('href')).toBe('/wallet/payment?id=a');
     expect(rows[0]?.textContent).toContain('Received');
     expect(rows[0]?.textContent).toContain("+₿21'000");
-    expect(rows[0]?.textContent).not.toContain('$');
+    expect(rows[0]?.textContent).toContain('$21.00');
     expect(rows[0]?.textContent).toContain('Thanks for the coffee');
     expect(rows[0]?.querySelector('time')?.getAttribute('datetime')).toBe(
       '2026-01-07T10:00:00.000Z',
@@ -161,9 +161,9 @@ describe('WalletHistory', () => {
     expect(rows[0]?.textContent).toContain('Shop payment');
     expect(rows[0]?.textContent).toContain('₱12.00');
     expect(rows[0]?.textContent).not.toContain('$');
-    expect(rows[1]?.textContent).not.toContain('$');
+    expect(rows[1]?.textContent).toContain('$21.00');
     expect(rows[1]?.textContent).not.toContain('₱');
-    expect(rows[2]?.textContent).not.toContain('$');
+    expect(rows[2]?.textContent).toContain('$21.00');
     expect(rows[2]?.textContent).not.toContain('₱');
   });
 

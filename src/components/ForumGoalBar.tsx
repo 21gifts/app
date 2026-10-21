@@ -14,6 +14,7 @@ import { forumAskPercent, formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
+  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -97,8 +98,9 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * plus the defined fiat when the ask was defined in fiat, `formatBitcoin(goalSats)`,
  * and the visitor's default fiat unless the ask was defined in that same fiat.
  * That visitor figure is the frozen snapshot when the string is present. A
- * missing snapshot stays absent on a posted ask. The wizard preview may still
- * fill it from the spot when the ask is not a defined fiat. Lengths use
+ * bitcoin ask with no snapshot shows the current spot beside the bitcoin.
+ * An ask already defined in a fiat keeps that fiat and bitcoin, and does not
+ * add the spot as a third figure. Lengths use
  * SVG `width` / `x` / `viewBox` attributes, not React `style`.
  *
  * A posted loan (`goalRepayable` with `messageId`, not the wizard preview)
@@ -108,8 +110,8 @@ function fiatSuffixMarkup(text: string): ReactElement {
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
- * @param rateDay - Current spot rate. Fills a missing viewer suffix only in the
- *   wizard preview, and only when the ask is not a defined fiat.
+ * @param rateDay - Current spot rate. Fills a missing viewer suffix when the
+ *   ask is not a defined fiat. It is not written onto the ask.
  * @param goalCurrency - Ask definition code when the api sent one.
  * @param goalAmount - Typed definition string when the api sent one.
  * @param goalAmountUsd - Frozen USD snapshot of the goal, or null.
@@ -120,8 +122,8 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountChf - Payment CHF snapshot used for a CHF fiat percent.
  * @param amountEur - Payment EUR snapshot used for a EUR fiat percent.
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
- * @param preview - Wizard unsent preview. May fill a missing viewer suffix from
- *   the spot when the ask is not a defined fiat.
+ * @param preview - Wizard unsent preview. A bitcoin preview uses the same spot
+ *   suffix as a posted bitcoin ask.
  * @param goalRepayable - Credit ask. The loan tag sits beside the author, not in this bar.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
@@ -230,7 +232,7 @@ export function ForumGoalBar({
       ? fiatSuffixMarkup(formatFiatDisplay(viewerSnapshot, fiat, numberFormat))
       : null;
   const liveViewer =
-    preview && !showDefinedFiat && frozenViewer === null
+    !showDefinedFiat && frozenViewer === null
       ? preferredFiatSuffix(goalSats, rateDay, fiat, numberFormat)
       : null;
   const askAmount = (
@@ -249,7 +251,9 @@ export function ForumGoalBar({
   if (goalRepayable === true && messageId !== undefined && !preview) {
     const withViewerFiat = (amountSats: number, stored: string | null | undefined): string => {
       const bitcoin = formatBitcoin(amountSats, numberFormat);
-      const priced = typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored) ? stored : null;
+      const storedText =
+        typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored) ? stored : null;
+      const priced = storedText ?? satsToFiatAmount(amountSats, rateDay ?? null, fiat);
       return priced === null
         ? bitcoin
         : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
@@ -319,6 +323,8 @@ export function ForumGoalBar({
           goalAmount={goalAmount}
           goalSats={goalSats}
           days={goalTermDays}
+          rateDay={rateDay ?? null}
+          fiat={fiat}
         />
       ) : null}
       <div className="flex items-center gap-2">
@@ -352,17 +358,21 @@ export function ForumGoalBar({
   );
 }
 
-/** Daily plan. Bitcoin is only bitcoin. Fiat keeps the stored amount's trailing zeros. */
+/** Daily plan. A bitcoin plan shows the current spot beside it. A fiat plan keeps the stored amount. */
 function CreditPlanLines({
   goalCurrency,
   goalAmount,
   goalSats,
   days,
+  rateDay,
+  fiat,
 }: {
   goalCurrency: ForumGoalCurrency | undefined;
   goalAmount: string | undefined;
   goalSats: number;
   days: number;
+  rateDay: FiatRateDay | null;
+  fiat: FiatCode;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -374,7 +384,9 @@ function CreditPlanLines({
   }
   const format = (value: bigint): string => {
     if (bitcoin || !isFiatGoalCurrency(goalCurrency)) {
-      return formatBitcoin(Number(value), numberFormat);
+      const btc = formatBitcoin(Number(value), numberFormat);
+      const priced = satsToFiatAmount(Number(value), rateDay, fiat);
+      return priced === null ? btc : `${btc} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
     }
     const whole = value / 100n;
     const frac = (value % 100n).toString().padStart(2, '0');

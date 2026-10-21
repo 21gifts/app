@@ -6687,7 +6687,9 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — a note without stored fiat shows bitcoin', async ({ page }) => {
+test('Function: satsToFiatAmount — a note without stored fiat shows the current spot beside bitcoin', async ({
+  page,
+}) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -6737,7 +6739,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows bitcoin', 
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
-  await expect(page.getByText('$0.02')).toHaveCount(0);
+  await expect(page.getByText('$0.02').first()).toBeVisible();
   await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
@@ -14980,7 +14982,7 @@ test('Function: fittingPrefix — a short wallet offers the ordered fitting pref
   await openLoanUi(page, '/loans/repay?visual=repay-short');
   await expect(
     page.getByRole('button', {
-      name: 'Send ₿500 now to Bruno, the rest after your top-up',
+      name: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
     }),
   ).toBeVisible();
 });
@@ -14996,7 +14998,7 @@ test('Function: useLoanRepay — wallet availability and sending pins reach the 
   await openLoanUi(page, '/loans/repay');
   await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
   await page.goto('/loans/repay?visual=repay-sending');
-  await expect(page.getByText("Sending ₿1'000…")).toBeVisible();
+  await expect(page.getByText("Sending ₿1'000 · $1.00…")).toBeVisible();
 });
 
 test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {

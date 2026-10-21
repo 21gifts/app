@@ -158,7 +158,7 @@ describe('PaySheet', () => {
     expect(screen.queryByText('$0.50')).toBeNull();
   });
 
-  it('shows no fiat line when the stored figure is absent', () => {
+  it('shows the current spot when the stored figure is absent', () => {
     renderWithLocale(
       sheet(true, vi.fn(), RATE_DAY, <Sent />, {
         amountCurrency: null,
@@ -170,7 +170,7 @@ describe('PaySheet', () => {
       }),
     );
     expect(screen.getByText('₿500')).not.toBeNull();
-    expect(screen.queryByText('$0.50')).toBeNull();
+    expect(screen.getByText('$0.50')).not.toBeNull();
     expect(screen.queryByText('₱12.00')).toBeNull();
   });
 

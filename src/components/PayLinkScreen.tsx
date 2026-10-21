@@ -18,6 +18,7 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
+  satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -141,16 +142,27 @@ function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
 }
 
-/** Stored figure of an open till charge. Absent when the charge stored none. */
-function ChargeFiat(props: { stored: StoredFiat }): ReactElement | null {
+/**
+ * Fiat under a pay-link amount. A stored figure is shown as-is. With none,
+ * the current spot stands beside the bitcoin and is not written back.
+ */
+function ChargeFiat(props: {
+  amountSats: number;
+  rateDay: FiatRateDay | null;
+  stored: StoredFiat | null;
+}): ReactElement | null {
   const { numberFormat } = useNumberFormat();
-  const figure = committedFiatFigure(props.stored);
-  if (figure === null) {
+  const { fiat } = useFiatPreference();
+  const figure = props.stored === null ? null : committedFiatFigure(props.stored);
+  const amount =
+    figure !== null ? figure.amount : satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  const code = figure !== null ? figure.code : fiat;
+  if (amount === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(figure.amount, figure.code, numberFormat)}
+      {formatFiatDisplay(amount, code, numberFormat)}
     </p>
   );
 }
@@ -479,7 +491,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                {chargeLive && charge !== null ? <ChargeFiat stored={charge} /> : null}
+                <ChargeFiat
+                  amountSats={activeSats}
+                  rateDay={rateDay}
+                  stored={chargeLive && charge !== null ? charge : null}
+                />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}

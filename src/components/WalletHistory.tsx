@@ -3,11 +3,14 @@
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, Card } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
@@ -15,30 +18,47 @@ import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
- * Fiat under a history row. A shop payment shows the figure stored on its
- * receipt once that read returns. Until then, and for every other payment,
- * the row stays bitcoin.
+ * Fiat beside a history amount. A shop payment shows the figure stored on its
+ * receipt once that read returns. Until then the row stays bitcoin, so a
+ * stored 12.00 is not flashed as a spot price. After the read, a charge with
+ * no stored figure shows the current spot. Every other payment shows the spot.
+ * The spot is not written onto the payment.
  *
- * @param props - The payment's method details.
- * @returns The stored figure, or `null`.
+ * @param props - The payment's method details and sat amount.
+ * @returns The fiat suffix, or `null` while a shop receipt is still out or no rate exists.
  */
-function HistoryFiat(props: { info: WalletPayment['info'] }): ReactElement | null {
+function HistoryFiat(props: {
+  info: WalletPayment['info'];
+  amountSats: number;
+}): ReactElement | null {
   const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
+  const rateDay = useSpotRate();
   const shop = useShopChargeFigure(props.info.purpose === 'shop' ? props.info : null);
-  if (shop.figure === null) {
-    return null;
+  if (props.info.purpose === 'shop') {
+    if (shop.pending) {
+      return null;
+    }
+    if (shop.figure !== null) {
+      return (
+        <>
+          <span aria-hidden="true"> · </span>
+          <span className="shrink-0 tabular-nums lining-nums">
+            {formatFiatDisplay(shop.figure.amount, shop.figure.code, numberFormat)}
+          </span>
+        </>
+      );
+    }
   }
-  return (
-    <span className="shrink-0 tabular-nums lining-nums">
-      {formatFiatDisplay(shop.figure.amount, shop.figure.code, numberFormat)}
-    </span>
-  );
+  return preferredFiatSuffix(props.amountSats, rateDay, fiat, numberFormat);
 }
 
 /**
- * `/wallet` payment list, newest first: direction, Bitcoin amount, date, and
- * the payer's note when there is one. A shop payment adds the currency figure
- * stored on that charge once the receipt returns. Shown only
+ * `/wallet` payment list, newest first: direction, Bitcoin amount with one
+ * fiat figure, date, and the payer's note when there is one. A shop payment
+ * shows the currency figure stored on that charge once the receipt returns.
+ * Any other payment, and a shop charge with no stored figure, shows the
+ * current spot. Shown only
  * while the wallet is ready. The next page loads when the end of the list
  * is in view, checked again after every completed load. Nothing renders during the first load.
  *
@@ -143,6 +163,7 @@ export function WalletHistory(): ReactElement | null {
                     >
                       {received ? '+' : '−'}
                       {formatBitcoin(payment.amountSats, numberFormat)}
+                      <HistoryFiat info={payment.info} amountSats={payment.amountSats} />
                     </span>
                   </div>
                   <div className="flex items-baseline justify-between gap-x-3 text-xs text-app-subtle">
@@ -157,7 +178,6 @@ export function WalletHistory(): ReactElement | null {
                         </span>
                       )}
                     </time>
-                    <HistoryFiat info={payment.info} />
                   </div>
                   {message === null ? null : (
                     <p className="truncate text-sm text-app-muted">{message}</p>

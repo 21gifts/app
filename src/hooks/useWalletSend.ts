@@ -128,7 +128,7 @@ export interface WalletSendOnchain extends WalletOnchainFees {
   renewed?: true;
 }
 
-/** Stored fiat of a till charge on the quote, confirm, or sent step. `null` means bitcoin only. */
+/** Stored fiat of a till charge on the quote, confirm, or sent step. `null` means the charge stored no fiat figure. */
 type ChargeFigure = { code: FiatCode; amount: string } | null;
 
 /** Step of the `/wallet` send flow. */

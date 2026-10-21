@@ -36,7 +36,9 @@ function snapshot(stored: StoredFiat, code: FiatCode): string | null {
 }
 
 /**
- * The figure both sides show. Null means show bitcoin and no fiat. Never takes a rate.
+ * The stored figure both sides show. Null means no stored figure: the caller
+ * shows the current spot beside bitcoin and does not write it back. Never
+ * takes a rate.
  *
  * When `amountCurrency` and `amount` are both set, that pair is the figure and
  * the viewer's currency is ignored. Otherwise, when `preferred` names a code

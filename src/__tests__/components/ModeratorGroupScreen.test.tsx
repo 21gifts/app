@@ -388,7 +388,7 @@ describe('ModeratorGroupScreen', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not send your message');
   });
 
-  it('shows bitcoin only on a sats message that stored no fiat', async () => {
+  it('shows the spot beside bitcoin on a sats message that stored no fiat', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValue({
       asOf: '2026-10-07T00:00:00.000Z',
       source: 'test',
@@ -399,9 +399,8 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
     await waitFor(() => {
-      expect(fetchFxSpot).toHaveBeenCalled();
+      expect(screen.getByText('$0.02')).toBeTruthy();
     });
-    expect(screen.queryByText('$0.02')).toBeNull();
   });
 
   it('survives a failing spot rate fetch', async () => {

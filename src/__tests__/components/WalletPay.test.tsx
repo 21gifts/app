@@ -204,7 +204,7 @@ describe('WalletPay', () => {
     expect(screen.queryByText(/Fee/)).toBeNull();
   });
 
-  it('shows bitcoin and no fiat on the confirm label when the charge stored none', () => {
+  it('shows the current spot on the confirm label when the charge stored none', () => {
     hookWith('confirm', 0);
     renderWithLocale(
       <WalletPay
@@ -217,10 +217,10 @@ describe('WalletPay', () => {
         confirmLabel={(amount) => `Lend ${amount}`}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Lend ₿21' }).textContent).toBe('Lend ₿21');
-    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Lend ₿21 · $0.02' }).textContent).toBe(
+      'Lend ₿21 · $0.02',
+    );
     expect(screen.queryByText('₱12.00')).toBeNull();
-    expect(screen.queryByText(/\$/)).toBeNull();
     expect(screen.queryByText(/₱/)).toBeNull();
     expect(screen.queryByText(/Fee/)).toBeNull();
   });
