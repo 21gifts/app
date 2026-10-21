@@ -522,10 +522,7 @@ function listenToWallet(): void {
               chargeId,
             };
       settleOpen(memory, till);
-      if (
-        memory.early.includes(till) &&
-        (chargeId === undefined || !memory.seen.has(chargeId))
-      ) {
+      if (memory.early.includes(till) && (chargeId === undefined || !memory.seen.has(chargeId))) {
         // It pays no charge this till knows, or names one no read listed: one read shows whether
         // another tab or device opened the charge it pays. Only for a payment the wallet just
         // reported, not a kept one tried again.
