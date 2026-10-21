@@ -268,7 +268,7 @@ test('Function: GoogleMapCanvas — a failed map script removes the shop map fra
   await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
   await expect.poll(() => scripts).toBe(1);
   await expect(page.getByTestId('shop-map')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Address' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Address', exact: true })).toBeVisible();
   await expect(page.getByText('Moon Street 21')).toBeVisible();
 });
 
