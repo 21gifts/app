@@ -1785,6 +1785,92 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByText('Ended')).toBeNull();
   });
 
+  it('keeps a newer Lightning detail when an older load fails later', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let details = 0;
+    let waits = 0;
+    let releaseOlder: (response: Response) => void = () => undefined;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        details += 1;
+        if (details === 1) {
+          return new Promise((resolve) => {
+            releaseOlder = resolve;
+          });
+        }
+        return Response.json({ pr: 'lnbc210n1new' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return waits === 1 ? Response.json(API_NOT_FOUND, { status: 404 }) : pending();
+      }
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(details).toBe(2);
+    await act(async () => {
+      releaseOlder(new Response('expired', { status: 404 }));
+    });
+    expect(screen.getByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    const pay = screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+    expect((pay as HTMLButtonElement).disabled).toBe(false);
+    expect(captureHrefs(() => fireEvent.click(pay))).toEqual(['lightning:lnbc210n1new']);
+  });
+
+  it('keeps a newer Lightning-detail failure when an older load succeeds later', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let details = 0;
+    let waits = 0;
+    let releaseOlder: (response: Response) => void = () => undefined;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        details += 1;
+        if (details === 1) {
+          return new Promise((resolve) => {
+            releaseOlder = resolve;
+          });
+        }
+        return new Response('expired', { status: 404 });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return waits === 1 ? Response.json(API_NOT_FOUND, { status: 404 }) : pending();
+      }
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(details).toBe(2);
+    await act(async () => {
+      releaseOlder(Response.json({ pr: 'lnbc210n1old' }));
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Could not create the invoice.');
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(
+      (
+        screen.getByRole('button', {
+          name: 'Pay with a Bitcoin wallet app',
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+  });
+
   it('retries a failed Lightning detail from Pay without minting', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let details = 0;

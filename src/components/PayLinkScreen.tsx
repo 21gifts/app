@@ -300,6 +300,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [shop, setShop] = useState<ShopPaymentView | null>(null);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
+  const invoiceLoadRef = useRef(0);
   /** Payment ids the page already started again for once, after the api did not know them. */
   const restartedRef = useRef(new Set<string>());
   /** Payment ids that closed without being paid; the page never shows them again. */
@@ -442,11 +443,16 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     });
   }, []);
 
-  /** Read the shop payment's BOLT11 from the callback's Lightning detail. */
+  /**
+   * Read the shop payment's BOLT11 from the callback's Lightning detail.
+   * Drop a load superseded by a newer one.
+   */
   const loadShopInvoice = useCallback(
     async (request: ShopPayRequest, generation: number): Promise<void> => {
+      invoiceLoadRef.current += 1;
+      const load = invoiceLoadRef.current;
       const pr = await fetchShopInvoice(request);
-      if (generationRef.current !== generation) {
+      if (generationRef.current !== generation || invoiceLoadRef.current !== load) {
         return;
       }
       patchShop(pr === null ? { invoiceFailed: true } : { invoice: pr, invoiceFailed: false });
