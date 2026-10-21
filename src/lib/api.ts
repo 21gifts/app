@@ -825,11 +825,13 @@ export async function setUsername(
  * @param address - The `name@domain.tld` Lightning Address to store.
  * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400). The not-zap sentence and
- * the exact format, unresolved, and already-in-use sentences are thrown unchanged.
- * Any other 400 is rewritten to visitor-facing copy, or a fallback when the body
- * has no error string. Other non-2xx statuses throw that fallback. A 2xx body
- * that fails {@link accountSchema} throws the schema error.
+ * @throws Error when the api rejects the address. A 409 whose body is the
+ * already-in-use sentence is thrown unchanged; any other 409 throws the save
+ * fallback. The not-zap sentence and the exact format and unresolved sentences
+ * are thrown unchanged on 400. Any other 400 is rewritten to visitor-facing
+ * copy, or a fallback when the body has no error string. Other non-2xx
+ * statuses throw that fallback. A 2xx body that fails {@link accountSchema}
+ * throws the schema error.
  */
 export async function setLightningAddress(
   sessionToken: string,
@@ -845,16 +847,20 @@ export async function setLightningAddress(
     },
     body: JSON.stringify({ address }),
   });
+  if (response.status === 409) {
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === LIGHTNING_ADDRESS_TAKEN_MESSAGE
+        ? LIGHTNING_ADDRESS_TAKEN_MESSAGE
+        : 'Could not save your Wallet of Satoshi address',
+    );
+  }
   if (response.status === 400) {
     const raw = await readApiError(response);
     if (raw === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
       throw new Error(LIGHTNING_ADDRESS_NOT_ZAP_ERROR);
     }
-    if (
-      raw === LIGHTNING_ADDRESS_FORMAT_MESSAGE ||
-      raw === LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE ||
-      raw === LIGHTNING_ADDRESS_TAKEN_MESSAGE
-    ) {
+    if (raw === LIGHTNING_ADDRESS_FORMAT_MESSAGE || raw === LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE) {
       throw new Error(raw);
     }
     throw new Error(

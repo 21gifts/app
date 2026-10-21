@@ -3009,7 +3009,7 @@ clicked yet.
 
 ### Variant: staff-place-map-loading
 
-A moderator session. **Add a place** on the Cafe Luna note is open as a dialog. The map key has not returned. **Loading the map.** is where the map frame would be. **The map is not available.** is not shown. **Tap the map to set the pin.** is visible. **Use this place** is disabled.
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog. The map key has not returned. **Loading the map.** is where the map frame would be. **The map is not available.** is not shown. **Tap the map to set the pin.** is not shown. **Use this place** is disabled.
 
 ![21.gifts shops staff place map loading](images/shops-staff-place-map-loading.png)
 

@@ -799,14 +799,21 @@ describe('setLightningAddress', () => {
     );
   });
 
-  it('throws the taken sentence unchanged', async () => {
+  it('throws the taken sentence unchanged on 409', async () => {
     stubFetch({
       ok: false,
-      status: 400,
+      status: 409,
       body: { error: 'Lightning Address is already in use' },
     });
     await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
       'Lightning Address is already in use',
+    );
+  });
+
+  it('falls back when a 409 body is not the taken sentence', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'missing_requirements' } });
+    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
+      'Could not save your Wallet of Satoshi address',
     );
   });
 

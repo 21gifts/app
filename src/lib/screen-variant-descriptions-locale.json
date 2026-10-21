@@ -2605,9 +2605,9 @@
     "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Nakikita ang mapa; naka-pin at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-map-loading": {
-    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo der Kartenrahmen wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tippen Sie auf die Karte, um die Markierung zu setzen. ist sichtbar. Diesen Ort verwenden ist deaktiviert.",
-    "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el marco. El mapa no está disponible. no se muestra. Toca el mapa para colocar el marcador. está visible. Usar este lugar está deshabilitado.",
-    "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng frame ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Nakikita ang I-tap ang mapa para ilagay ang pin. Naka-disable ang Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo der Kartenrahmen wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tippen Sie auf die Karte, um die Markierung zu setzen. wird nicht gezeigt. Diesen Ort verwenden ist deaktiviert.",
+    "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el marco. El mapa no está disponible. no se muestra. Toca el mapa para colocar el marcador. no se muestra. Usar este lugar está deshabilitado.",
+    "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng frame ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Hindi ipinapakita ang I-tap ang mapa para ilagay ang pin. Naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:expanded-received-only": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort You got it right. hat nichts gesendet. Unter dem Satz steht nur ₿100 · $0.09 erhalten. Diese 100 ist nicht die Notizsumme. Die Notizfußzeile bleibt ₿0.",

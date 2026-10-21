@@ -3012,7 +3012,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/me/lightning-address`.
 - **Inputs:** `sessionToken`, `address`, and optional `sundayWrite` (`enforce` default, or `setup` to omit `Time-Zone` during onboarding).
-- **Returns / side effects:** Updated `Account`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged. The exact format, unresolved, and already-in-use sentences are also thrown unchanged. Any other 400 is rewritten to a visitor-facing save error, or a fallback when the body has no error string. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
+- **Returns / side effects:** Updated `Account`. A 409 whose body is `Lightning Address is already in use` is thrown unchanged; any other 409 throws `'Could not save your Wallet of Satoshi address'`. HTTP 400 whose body is `LIGHTNING_ADDRESS_NOT_ZAP_ERROR` is thrown unchanged. The exact format and unresolved sentences are also thrown unchanged. Any other 400 is rewritten to a visitor-facing save error, or a fallback when the body has no error string. Other non-ok statuses throw `'Could not save your Wallet of Satoshi address'`.
 - **Used by:** `LightningAddressForm`.
 
 ## Function: translate
