@@ -1902,11 +1902,24 @@ describe('PublicMessageThread', () => {
   });
 
   it('shows the shop pencil to a moderator and applies a saved note', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     const shopRoot: ForumMessage = {
       ...root,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
+      place: shopPlace,
     };
     renderThread({ root: shopRoot });
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
@@ -1921,8 +1934,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopRoot,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 1, lng: 2, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: shopPlace,
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     renderThread({ root: shopRoot });
@@ -1931,25 +1944,84 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(screen.getByText('Cafe Sol')).toBeTruthy();
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
+  });
+
+  it('drops the shop pin when a saved note omits place', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const shopRoot: ForumMessage = {
+      ...root,
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      place: shopPlace,
+    };
+    const withoutPlace: ForumMessage = {
+      ...shopRoot,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    };
+    delete withoutPlace.place;
+    signIn({ role: 'moderator' });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
+    renderThread({ root: shopRoot });
+    const pinName = "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland";
+    expect(screen.getByRole('link', { name: pinName })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: pinName })).toBeNull();
   });
 
   it('drops the public note’s photo address after a shop edit', async () => {
     const shopRoot: ForumMessage = {
       ...root,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
       hasPhoto: true,
       photoCount: 1,
       replyCount: 1,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
     };
     signIn({ role: 'moderator' });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1976,7 +2048,7 @@ describe('PublicMessageThread', () => {
     );
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopRoot,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     renderThread({ root: shopRoot });
     await waitFor(() => {
@@ -2003,7 +2075,7 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));

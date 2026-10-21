@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -47,6 +48,7 @@ import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
+import { PlacePinChip } from '@/components/PlacePinChip';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -74,7 +76,15 @@ import {
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
-import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  SHOP_API_MESSAGE,
+  formatPlacePinText,
+  isShopApiProblem,
+  isShopNote,
+  shopProblemField,
+  stripShopHashtag,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -100,8 +110,17 @@ export type ForumFormError =
   | 'unsupported'
   | 'tooLarge'
   | 'tooMany'
+  | 'formatOrSize'
   | 'ask'
+  | 'shopElsewhere'
+  | ShopApiProblem
   | null;
+
+function isShopElsewhereFormError(error: ForumFormError): boolean {
+  return (
+    error === 'shopElsewhere' || (isShopApiProblem(error) && shopProblemField(error) === 'place')
+  );
+}
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
@@ -229,6 +248,8 @@ export interface ForumBoardProps {
   onShopUsernameChange?: (username: string) => void;
   /** Bumps after a shop is sent so the wizard closes. */
   shopResetToken?: number;
+  /** Media the API rejected for format or size, passed to the shop wizard. */
+  shopRejectedMedia?: readonly object[];
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
   /**
@@ -545,6 +566,7 @@ export function ForumBoard({
   shopUsername = '',
   onShopUsernameChange,
   shopResetToken = 0,
+  shopRejectedMedia = [],
   payMessageId,
   payHost = null,
   payDraft,
@@ -608,6 +630,14 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const shopElsewhereLive = !shopComposer && isShopNote(draft);
+  const shopElsewhereHintVisible =
+    !hideCompose &&
+    shopElsewhereLive &&
+    (!allowAsk ||
+      composeIntent === 'post' ||
+      (allowAsk && composeIntent === 'ask' && (askStep === 3 || askStep === 4)));
+  const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const router = useRouter();
   const scroller = useAppShellScroller();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -1134,8 +1164,7 @@ export function ForumBoard({
                     onClick={stopCardToggle}
                   >
                     <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {message.place.label ??
-                      `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
+                    {formatPlacePinText(message.place, locale)}
                   </Link>
                 ) : null}
                 {message.parentId === undefined && message.shopAccount !== undefined ? (
@@ -1845,6 +1874,7 @@ export function ForumBoard({
             onAskDraftChange={onAskDraftChange}
             draft={draft}
             onDraftChange={onDraftChange}
+            shopElsewhere={shopElsewhereLive}
             posting={posting}
             photoDrafts={photoDrafts}
             videoDraft={videoDraft}
@@ -1877,6 +1907,16 @@ export function ForumBoard({
             onSubmit={onPost}
             resetToken={shopResetToken}
             maxLength={composerMaxLength}
+            photoError={
+              formError === 'unsupported' ||
+              formError === 'tooLarge' ||
+              formError === 'tooMany' ||
+              formError === 'formatOrSize'
+                ? formError
+                : null
+            }
+            serverProblem={isShopApiProblem(formError) ? formError : null}
+            rejectedMedia={shopRejectedMedia}
           />
         </SundayWritingGate>
       ) : null}
@@ -1917,6 +1957,9 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
+                {...(shopElsewhereLive
+                  ? { ariaDescribedBy: shopElsewhereFeedbackId, ariaInvalid: true }
+                  : {})}
                 wrapperClassName="relative min-w-0 flex-1"
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
@@ -1924,7 +1967,7 @@ export function ForumBoard({
                 type="submit"
                 size="lg"
                 variant="primary"
-                disabled={posting}
+                disabled={posting || shopElsewhereLive}
                 aria-label={t('forum.post')}
               >
                 {posting ? (
@@ -1934,6 +1977,21 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {shopElsewhereLive ? (
+              <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+                {t('forum.shopPostUseShops')}
+              </p>
+            ) : null}
+            {placeDraft !== null && onPlaceDraftChange !== undefined ? (
+              <PlacePinChip
+                place={placeDraft}
+                disabled={posting}
+                onRemove={() => {
+                  onPlaceDraftChange(null);
+                  composerRef.current!.focus();
+                }}
+              />
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
@@ -2054,17 +2112,17 @@ export function ForumBoard({
             {t('forum.errorRateLimit')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'unsupported' ? (
+        {!hideCompose && !shopComposer && formError === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorUnsupported')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooLarge' ? (
+        {!hideCompose && !shopComposer && formError === 'tooLarge' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooLarge')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooMany' ? (
+        {!hideCompose && !shopComposer && formError === 'tooMany' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooMany')}
           </p>
@@ -2072,6 +2130,22 @@ export function ForumBoard({
         {!hideCompose && formError === 'ask' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorAskAmount')}
+          </p>
+        ) : null}
+        {!hideCompose &&
+        !shopComposer &&
+        !shopElsewhereHintVisible &&
+        isShopElsewhereFormError(formError) ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.shopPostUseShops')}
+          </p>
+        ) : null}
+        {!hideCompose &&
+        !shopComposer &&
+        isShopApiProblem(formError) &&
+        !isShopElsewhereFormError(formError) ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t(SHOP_API_MESSAGE[formError])}
           </p>
         ) : null}
       </div>

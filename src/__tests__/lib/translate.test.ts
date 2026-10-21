@@ -42,6 +42,33 @@ describe('translate', () => {
     expect(translate(en, 'profile.postCount', { count: 0 })).toBe('0 posts');
   });
 
+  it('pluralizes the remaining shop-description characters in every locale', () => {
+    expect(translate(getCatalog('en'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Describe the shop in at least 1 more character.',
+    );
+    expect(translate(getCatalog('en'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Describe the shop in at least 4 more characters.',
+    );
+    expect(translate(getCatalog('de'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Beschreiben Sie den Shop in mindestens 1 weiterem Zeichen.',
+    );
+    expect(translate(getCatalog('de'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Beschreiben Sie den Shop in mindestens 4 weiteren Zeichen.',
+    );
+    expect(translate(getCatalog('es'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Describe la tienda en al menos 1 carácter más.',
+    );
+    expect(translate(getCatalog('es'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Describe la tienda en al menos 4 caracteres más.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemDescriptionShort', { count: 1 })).toBe(
+      'Ilarawan ang shop sa hindi bababa sa 1 pang karakter.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemDescriptionShort', { count: 4 })).toBe(
+      'Ilarawan ang shop sa hindi bababa sa 4 pang karakter.',
+    );
+  });
+
   it('expands every plural message in every catalog', () => {
     for (const locale of ['en', 'de', 'es', 'fil'] as const) {
       const catalog = getCatalog(locale);
@@ -138,6 +165,62 @@ describe('catalogs', () => {
     for (const locale of ['de', 'es', 'fil'] as const) {
       expect(Object.keys(getCatalog(locale)).sort()).toEqual(enKeys);
     }
+  });
+
+  it('keeps shop address and 400 keys in every locale', () => {
+    const shopKeys = (Object.keys(catalogs.en) as MessageKey[]).filter((key) =>
+      key.startsWith('shops.'),
+    );
+    expect(shopKeys).toEqual(
+      expect.arrayContaining([
+        'shops.placeName',
+        'shops.placeNameHint',
+        'shops.fixFieldsNamed',
+        'shops.addressStreet',
+        'shops.addressHouseNumber',
+        'shops.addressPostalCode',
+        'shops.addressCity',
+        'shops.addressCountry',
+        'shops.addressCountryChoose',
+        'shops.problemName',
+        'shops.problemNameAddress',
+        'shops.problemNameLong',
+        'shops.problemNameControls',
+        'shops.problemAddress',
+        'shops.problemStreetRequired',
+        'shops.problemStreetLength',
+        'shops.problemHouseNumberFormat',
+        'shops.problemHouseNumberLength',
+        'shops.problemHouseNumberCharacters',
+        'shops.problemPostalCodeChLi',
+        'shops.problemPostalCodeOther',
+        'shops.problemCityLetter',
+        'shops.problemCountryRequired',
+        'shops.problemDescriptionShort',
+        'shops.problemDescriptionLong',
+        'shops.problemDescriptionNotLonger',
+        'shops.problemDescriptionControls',
+        'shops.problemUsernameMissing',
+        'shops.problemDescription',
+        'shops.problemAddressInvalid',
+      ]),
+    );
+    for (const locale of ['en', 'de', 'es', 'fil'] as const) {
+      const catalog = getCatalog(locale);
+      for (const key of shopKeys) {
+        const value = catalog[key];
+        expect(value.trim().length, `${locale} ${key}`).toBeGreaterThan(0);
+      }
+    }
+    expect(translate(getCatalog('en'), 'shops.problemName')).toBe('Enter the shop name.');
+    expect(translate(getCatalog('de'), 'shops.problemName')).toBe('Geben Sie den Shop-Namen ein.');
+    expect(translate(getCatalog('es'), 'shops.problemName')).toBe(
+      'Introduce el nombre de la tienda.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemName')).toBe('Ilagay ang pangalan ng shop.');
+    expect(translate(getCatalog('en'), 'shops.problemPostalCodeChLi')).toBe(
+      'The postal code must have 4 digits for Switzerland and Liechtenstein.',
+    );
   });
 
   it('resolves every English key without throwing', () => {

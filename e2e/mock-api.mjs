@@ -547,7 +547,17 @@ const server = http.createServer(async (req, res) => {
       json(res, 403, { error: 'Forbidden' });
       return;
     }
-    json(res, 200, { id: decodeURIComponent(pathName.split('/')[2] ?? ''), place: null });
+    let parsedPlace;
+    try {
+      parsedPlace = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid body' });
+      return;
+    }
+    json(res, 200, {
+      id: decodeURIComponent(pathName.split('/')[2] ?? ''),
+      place: parsedPlace?.place ?? null,
+    });
     return;
   }
 
@@ -762,6 +772,9 @@ const server = http.createServer(async (req, res) => {
       hasPhoto,
       role: account.role,
     };
+    if (parsed?.place !== undefined && parsed?.place !== null) {
+      created.place = parsed.place;
+    }
     if (hasPhoto) {
       forumPhotos.set(created.id, Buffer.from(parsed.photo.data, 'base64'));
     }

@@ -1,15 +1,31 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Field, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
+import {
+  SHOP_API_MESSAGE,
+  SHOP_DESCRIPTION_MAX,
+  formatShopAddressLine,
+  shopDescriptionProblem,
+  shopDescriptionRemaining,
+  shopDescriptionText,
+  shopPlaceComplete,
+  shopProblemField,
+  shopUsernameProblem,
+  usernameLookupVerdict,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
+import type { MessageKey } from '@/lib/messages';
+import { searchMentionAccounts } from '@/lib/mention-search';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** One step of the shop submission, after the closed button. */
 type ShopAddStep = 1 | 2 | 3 | 4 | 5;
@@ -72,7 +88,7 @@ export interface ShopAddWizardProps {
   onCancel?: () => void;
   /** Increments after a successful send so the wizard closes. */
   resetToken: number;
-  /** Maximum length of the text step. */
+  /** Text box limit; the 1000-character shop text rule is shown by the counter and error. */
   maxLength: number;
   /** `edit` opens on step 1 for an existing shop. Default `create`. */
   mode?: 'create' | 'edit';
@@ -84,6 +100,12 @@ export interface ShopAddWizardProps {
   onRemoveKept?: (index: number) => void;
   /** When true, the file picker accepts stills only. */
   imagesOnly?: boolean;
+  /** Photo-picker rule currently broken. */
+  photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null;
+  /** Media the API rejected for format or size; marked and blocking while still attached. */
+  rejectedMedia?: readonly object[];
+  /** Known API fallback to place back at its owning step and field. */
+  serverProblem?: ShopApiProblem | null;
 }
 
 const STEP_KEY = {
@@ -94,11 +116,29 @@ const STEP_KEY = {
   5: 'shops.stepSummary',
 } as const;
 
+/** Message key for one photo-picker reason. */
+function photoErrorKey(
+  error: 'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize',
+  imagesOnly: boolean,
+): MessageKey {
+  if (error === 'tooMany') {
+    return 'forum.errorTooMany';
+  }
+  if (error === 'formatOrSize') {
+    return imagesOnly ? 'inbox.errorFormatOrSize' : 'forum.errorFormatOrSize';
+  }
+  if (error === 'tooLarge') {
+    return imagesOnly ? 'inbox.errorTooLarge' : 'forum.errorTooLarge';
+  }
+  return imagesOnly ? 'inbox.errorUnsupported' : 'forum.errorUnsupported';
+}
+
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
  * are photos, place, text, an optional 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
- * soon as `@` is typed. Adding a shop shows Next on the photo step.
+ * soon as `@` is typed. A failed optional-account lookup does not block the
+ * API-validated submit. Adding a shop shows Next on the photo step.
  * Edit mode shows an icon-only Close (X) there. Its accessible name is Cancel.
  *
  * @param props - Draft fields and the send callback.
@@ -126,16 +166,35 @@ export function ShopAddWizard({
   keptMedia = [],
   onRemoveKept,
   imagesOnly = false,
+  photoError = null,
+  rejectedMedia = [],
+  serverProblem = null,
 }: ShopAddWizardProps): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
+  const session = useAuthStore((state) => state.session);
   const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const idPrefix = useId();
+  const photoFeedbackId = `${idPrefix}-photo-feedback`;
+  const photoAddButtonId = `${idPrefix}-photo-add`;
+  const descriptionHintId = `${idPrefix}-description-feedback`;
+  const accountUsernameId = `${idPrefix}-account-username`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
+  const currentStepRef = useRef(step);
+  currentStepRef.current = step;
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
   // Skip the mount run. useState already opened on the right step, and
   // repeating it undoes a Next click from the same turn the editor opened.
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
+  const initialUsername = useRef(username);
+  const lastAutoOpenedPlaceProblem = useRef<ShopApiProblem | null>(null);
+  const rejectionFocusStep = useRef<1 | 3 | 4 | null>(null);
+  const [mapsUnavailable, setMapsUnavailable] = useState(false);
+  const [usernameLookup, setUsernameLookup] = useState<
+    'idle' | 'checking' | 'found' | 'missing' | 'unknown' | 'failed'
+  >('idle');
 
   useEffect(() => {
     const key = `${mode}:${String(resetToken)}`;
@@ -149,6 +208,92 @@ export function ShopAddWizard({
   useEffect(() => {
     setSummaryArmed(step === 5);
   }, [step]);
+
+  useEffect(() => {
+    if (serverProblem === null) return;
+    const field = shopProblemField(serverProblem);
+    if (field === 'place') {
+      rejectionFocusStep.current = null;
+      setStep(2);
+      return;
+    }
+    const target = field === 'text' ? 3 : 4;
+    rejectionFocusStep.current = currentStepRef.current === target ? null : target;
+    setStep(target);
+  }, [serverProblem]);
+
+  const serverProblemField = serverProblem === null ? null : shopProblemField(serverProblem);
+  const placeServerProblem = serverProblemField === 'place';
+  const autoOpenPlaceProblem =
+    step === 2 &&
+    serverProblem !== null &&
+    placeServerProblem &&
+    serverProblem !== lastAutoOpenedPlaceProblem.current;
+
+  useEffect(() => {
+    // A cleared problem may come back from the next post; announce it again then.
+    if (serverProblem === null) {
+      lastAutoOpenedPlaceProblem.current = null;
+    } else if (autoOpenPlaceProblem) {
+      lastAutoOpenedPlaceProblem.current = serverProblem;
+    }
+  }, [autoOpenPlaceProblem, serverProblem]);
+
+  useEffect(() => {
+    // A photo reason from the server returns an open wizard to the photos step.
+    if (photoError !== null && currentStepRef.current !== 'closed') {
+      rejectionFocusStep.current = currentStepRef.current === 1 ? null : 1;
+      setStep(1);
+    }
+  }, [photoError]);
+
+  useEffect(() => {
+    const target = rejectionFocusStep.current;
+    if (target === null || target !== step) return;
+    rejectionFocusStep.current = null;
+    // Restore focus after a rejected submit replaced its button with the owning step.
+    const control =
+      step === 1
+        ? document.getElementById(photoAddButtonId)
+        : step === 3
+          ? descriptionRef.current
+          : document.getElementById(accountUsernameId);
+    control!.focus();
+  }, [accountUsernameId, photoAddButtonId, step]);
+
+  const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
+  const usernameFormatProblem = shopUsernameProblem(username);
+  useEffect(() => {
+    if (normalizedUsername === '') {
+      setUsernameLookup('idle');
+      return;
+    }
+    if (usernameFormatProblem !== null) {
+      setUsernameLookup('idle');
+      return;
+    }
+    if (session === null || (mode === 'edit' && username === initialUsername.current)) {
+      setUsernameLookup('found');
+      return;
+    }
+    let cancelled = false;
+    setUsernameLookup('checking');
+    const timer = window.setTimeout(() => {
+      void searchMentionAccounts(session, normalizedUsername)
+        .then((rows) => {
+          if (!cancelled) {
+            setUsernameLookup(usernameLookupVerdict(rows, normalizedUsername));
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setUsernameLookup('failed');
+        });
+    }, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mode, normalizedUsername, session, username, usernameFormatProblem]);
 
   useLayoutEffect(() => {
     if (step === 'closed' || step === 1) {
@@ -187,6 +332,77 @@ export function ShopAddWizard({
 
   const title = t(STEP_KEY[step]);
   const cancelEdit = mode === 'edit' ? onCancel : undefined;
+  const placeComplete = shopPlaceComplete(place);
+  const descriptionProblem = shopDescriptionProblem(draft, place?.label ?? null);
+  const usernameProblem =
+    usernameFormatProblem !== null
+      ? 'format'
+      : normalizedUsername !== '' && usernameLookup === 'missing'
+        ? 'missing'
+        : null;
+  const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
+  const descriptionServerProblem = serverProblemField === 'text';
+  const usernameServerProblem = serverProblemField === 'username';
+  const placeServerMessage =
+    placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
+  // Rejected files would fail the same request again; a photo reason returns the wizard to step 1.
+  const isRejected = (item: object): boolean => rejectedMedia.includes(item);
+  const photoRejected =
+    (videoDraft !== null && isRejected(videoDraft)) || photoDrafts.some(isRejected);
+  const nextDisabled =
+    posting ||
+    (step === 1 && photoRejected) ||
+    (step === 2 && (!placeComplete || placeServerProblem)) ||
+    (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
+    (step === 4 && (usernameProblem !== null || usernamePending || usernameServerProblem));
+  const submitDisabled =
+    posting ||
+    !summaryArmed ||
+    !placeComplete ||
+    placeServerProblem ||
+    descriptionProblem !== null ||
+    descriptionServerProblem ||
+    usernameProblem !== null ||
+    usernamePending ||
+    usernameServerProblem;
+  const descriptionHint =
+    descriptionServerProblem && serverProblem !== null
+      ? t(SHOP_API_MESSAGE[serverProblem])
+      : descriptionProblem === 'short'
+        ? t('shops.problemDescriptionShort', { count: shopDescriptionRemaining(draft) })
+        : descriptionProblem === 'long'
+          ? t('shops.problemDescriptionLong')
+          : descriptionProblem === 'notLonger'
+            ? t('shops.problemDescriptionNotLonger')
+            : descriptionProblem === 'controls'
+              ? t('shops.problemDescriptionControls')
+              : null;
+  const usernameError =
+    usernameServerProblem && serverProblem !== null
+      ? t(SHOP_API_MESSAGE[serverProblem])
+      : usernameProblem === 'format'
+        ? t('login.nameInvalid')
+        : usernameProblem === 'missing'
+          ? t('shops.problemUsernameMissing')
+          : undefined;
+  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
+  // While a send is in flight (for example the fee sheet), the parent may clear the draft.
+  const summaryProblem =
+    step !== 5 || posting
+      ? null
+      : !placeComplete
+        ? mapsUnavailable
+          ? t('shops.placeUnavailableReason')
+          : t('shops.placeRequired')
+        : placeServerMessage !== null
+          ? placeServerMessage
+          : descriptionHint !== null
+            ? descriptionHint
+            : usernameError !== undefined
+              ? usernameError
+              : usernamePending
+                ? t('shops.usernameChecking')
+                : null;
 
   return (
     <form
@@ -214,6 +430,8 @@ export function ShopAddWizard({
             }
             className="hidden"
             disabled={posting}
+            aria-invalid={photoError === null && !photoRejected ? undefined : true}
+            aria-describedby={photoFeedbackId}
             onChange={(event) => {
               const list = event.target.files;
               if (list !== null && list.length > 0) {
@@ -223,10 +441,12 @@ export function ShopAddWizard({
             }}
           />
           <IconButton
+            id={photoAddButtonId}
             type="button"
             size="lg"
             variant="secondary"
             aria-label={t('forum.attach')}
+            aria-describedby={photoFeedbackId}
             disabled={posting}
             onClick={() => {
               fileInputRef.current?.click();
@@ -234,6 +454,26 @@ export function ShopAddWizard({
           >
             <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
           </IconButton>
+          <div id={photoFeedbackId} className="flex flex-col gap-1">
+            <p className="text-sm text-app-muted">
+              {t('shops.photoCount', {
+                n: keptMedia.filter((item) => item.kind === 'photo').length + photoDrafts.length,
+              })}
+            </p>
+            {photoError !== null || photoRejected ? (
+              <p role="alert" className="flex flex-col text-sm text-app-danger">
+                {[
+                  ...(photoError === null ? [] : [t(photoErrorKey(photoError, imagesOnly))]),
+                  ...(photoRejected && photoError !== 'formatOrSize'
+                    ? [t(photoErrorKey('formatOrSize', imagesOnly))]
+                    : []),
+                  ...(photoRejected ? [t('shops.photoRejectedHint')] : []),
+                ].map((line) => (
+                  <span key={line}>{line}</span>
+                ))}
+              </p>
+            ) : null}
+          </div>
           {keptMedia.map((item, index) =>
             item.kind === 'video' ? (
               <div key={`${item.url}:${index}`} className="flex items-start gap-3">
@@ -274,7 +514,10 @@ export function ShopAddWizard({
             <div className="flex items-start gap-3">
               <video
                 src={videoDraft.previewUrl}
-                className="h-20 w-20 rounded-lg object-cover"
+                className={`h-20 w-20 rounded-lg object-cover${
+                  isRejected(videoDraft) ? ' border-2 border-app-danger' : ''
+                }`}
+                {...(isRejected(videoDraft) ? { 'aria-describedby': photoFeedbackId } : {})}
                 muted
                 playsInline
                 preload="metadata"
@@ -299,7 +542,10 @@ export function ShopAddWizard({
                   <img
                     src={photo.previewUrl}
                     alt={t('forum.previewAlt')}
-                    className="h-20 w-20 rounded-lg object-cover"
+                    className={`h-20 w-20 rounded-lg object-cover${
+                      isRejected(photo) ? ' border-2 border-app-danger' : ''
+                    }`}
+                    {...(isRejected(photo) ? { 'aria-describedby': photoFeedbackId } : {})}
                   />
                   <IconButton
                     type="button"
@@ -320,33 +566,75 @@ export function ShopAddWizard({
         </div>
       ) : null}
       {step === 2 ? (
-        <PlaceField place={place} disabled={posting} onChange={onPlaceChange} showPreview={false} />
+        <div className="flex flex-col gap-2">
+          {/* Check the name against the text only once the text meets its own rules. */}
+          <PlaceField
+            place={place}
+            disabled={posting}
+            onChange={onPlaceChange}
+            shopDetails
+            {...(shopDescriptionProblem(draft, null) === null ? { shopText: draft } : {})}
+            problem={serverProblem}
+            autoOpenProblem={autoOpenPlaceProblem}
+            onAvailabilityChange={setMapsUnavailable}
+          />
+          {!placeComplete || placeServerMessage !== null ? (
+            // The open place dialog announces a server place problem; this
+            // line keeps the reason visible after the dialog is closed.
+            <p className="text-sm text-app-danger">
+              {placeServerMessage ??
+                (mapsUnavailable ? t('shops.placeUnavailableReason') : t('shops.placeRequired'))}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {step === 3 ? (
-        <MentionTextarea
-          ariaLabel={t('shops.textLabel')}
-          value={draft}
-          onChange={onDraftChange}
-          maxLength={maxLength}
-          rows={4}
-          disabled={posting}
-          wrapperClassName="relative w-full"
-          className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
-        />
+        <div className="flex flex-col gap-2">
+          <MentionTextarea
+            textareaRef={descriptionRef}
+            ariaLabel={t('shops.textLabel')}
+            value={draft}
+            onChange={onDraftChange}
+            maxLength={maxLength}
+            ariaDescribedBy={descriptionHintId}
+            ariaInvalid={descriptionProblem !== null || descriptionServerProblem}
+            rows={4}
+            disabled={posting}
+            wrapperClassName="relative w-full"
+            className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
+          />
+          <div id={descriptionHintId} className="flex flex-col gap-1">
+            {descriptionHint !== null ? (
+              <p
+                role={descriptionServerProblem ? 'alert' : undefined}
+                className="text-sm text-app-danger"
+              >
+                {descriptionHint}
+              </p>
+            ) : null}
+            <p className="text-sm text-app-muted">
+              {t('shops.descriptionCount', {
+                n: shopDescriptionText(draft).length,
+                max: SHOP_DESCRIPTION_MAX,
+              })}
+            </p>
+          </div>
+        </div>
       ) : null}
       {step === 4 ? (
-        <label className="flex min-w-0 max-w-full flex-col gap-1">
-          <span className="text-sm text-app-fg">{t('shops.accountOptional')}</span>
-          <input
-            aria-label={t('shops.accountLabel')}
+        <div className="flex flex-col gap-1">
+          <Field
+            id={accountUsernameId}
+            label={t('shops.accountLabel')}
             value={username}
-            onChange={(event) => {
-              onUsernameChange(event.target.value);
-            }}
             disabled={posting}
-            className="min-h-11 w-full min-w-0 max-w-full rounded-2xl border border-app-border-strong px-4 text-base text-app-fg disabled:opacity-50"
+            hint={usernameHint}
+            {...(usernameError === undefined
+              ? {}
+              : { error: usernameError, errorAnnounce: usernameServerProblem })}
+            onChange={(event) => onUsernameChange(event.target.value)}
           />
-        </label>
+        </div>
       ) : null}
       {step === 5 ? (
         <dl className="flex flex-col gap-2 text-sm text-app-fg">
@@ -361,11 +649,20 @@ export function ShopAddWizard({
           <div>
             <dt className="text-app-muted">{t('shops.stepPlace')}</dt>
             <dd>
-              {place === null
-                ? t('shops.summaryNone')
-                : typeof place.label === 'string' && place.label.trim() !== ''
-                  ? place.label
-                  : `${place.lat}, ${place.lng}`}
+              {place === null ? (
+                t('shops.summaryNone')
+              ) : (
+                <>
+                  {typeof place.label === 'string' && place.label.trim() !== ''
+                    ? place.label
+                    : `${place.lat}, ${place.lng}`}
+                  {place.address !== undefined && place.address !== null ? (
+                    <span className="mt-1 block">
+                      {formatShopAddressLine(place.address, locale)}
+                    </span>
+                  ) : null}
+                </>
+              )}
             </dd>
           </div>
           <div>
@@ -376,14 +673,11 @@ export function ShopAddWizard({
           </div>
           <div>
             <dt className="text-app-muted">{t('shops.stepAccount')}</dt>
-            <dd>
-              {username.trim() === ''
-                ? t('shops.summaryNone')
-                : `@${username.trim().replace(/^@/, '')}`}
-            </dd>
+            <dd>{normalizedUsername === '' ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
           </div>
         </dl>
       ) : null}
+      {summaryProblem === null ? null : <p className="text-sm text-app-danger">{summaryProblem}</p>}
       <div className="flex flex-wrap gap-2">
         {step === 1 && cancelEdit !== undefined ? (
           <IconButton
@@ -405,7 +699,7 @@ export function ShopAddWizard({
             key="shop-step-next"
             type="button"
             variant="primary"
-            disabled={posting}
+            disabled={nextDisabled}
             onClick={() => {
               setSummaryArmed(false);
               setStep((current) => advanceShopStep(current));
@@ -414,12 +708,7 @@ export function ShopAddWizard({
             {t('shops.next')}
           </Button>
         ) : (
-          <Button
-            key="shop-step-submit"
-            type="submit"
-            variant="primary"
-            disabled={posting || !summaryArmed}
-          >
+          <Button key="shop-step-submit" type="submit" variant="primary" disabled={submitDisabled}>
             {submitLabel ?? t('forum.post')}
           </Button>
         )}

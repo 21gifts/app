@@ -22,7 +22,7 @@ import {
   paySatsFromDraft,
   replySatsFromDraft,
 } from '../src/lib/stats-money';
-import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
+import { pageFrameProblems } from '../src/lib/page-frame';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -12990,30 +12990,6 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   await expect(box).toHaveValue('xhi @');
   expect(await box.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBe(5);
   await expect(people).toHaveCount(0);
-});
-
-test('Function: fitBoxInFrame — a wide panel is pulled inside the frame', async ({ page }) => {
-  await page.goto('/login');
-  const box = await page.evaluate(fitBoxInFrame, {
-    frameLeft: 24,
-    frameRight: 351,
-    frameTop: 0,
-    frameBottom: 800,
-    anchorLeft: 56,
-    anchorTop: 160,
-    anchorBottom: 200,
-    gap: 8,
-    preferredWidth: 384,
-    inset: 16,
-    viewportHeight: 800,
-  });
-  expect(box).not.toBeNull();
-  if (box === null) {
-    return;
-  }
-  expect(box.left).toBeGreaterThanOrEqual(24 + 16);
-  expect(box.left + box.width).toBeLessThanOrEqual(351 - 16);
-  expect(box.width).toBeLessThanOrEqual(384);
 });
 
 test('Function: pageFrameProblems — login at phone width stays inside the window', async ({

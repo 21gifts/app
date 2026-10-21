@@ -9,7 +9,7 @@ import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button, Card, IconButton } from '@/components/ui';
 import { fetchForumMessage, fetchPlaces } from '@/lib/api';
 import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
-import { isShopNote } from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote } from '@/lib/forum-shop';
 import { fetchMapsKey } from '@/lib/maps-key';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -87,7 +87,7 @@ function ShopPinEdit({
  * @returns The map card, or only the body when `embedded` is true.
  */
 export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {}): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const [places, setPlaces] = useState<ForumPlaceRow[] | null>(null);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
@@ -160,7 +160,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
         />
         <ul className="flex flex-col gap-2">
           {places.map((place) => {
-            const label = place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+            const label = formatPlacePinText(place, locale);
             const selected = place.id === pinId;
             const href = place.shopNpub === null ? `/messages/${place.id}` : `/${place.shopNpub}`;
             return (
@@ -214,6 +214,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                                 lat: pin.lat,
                                 lng: pin.lng,
                                 label: pin.label ?? null,
+                                address: pin.address ?? null,
                                 shopNpub:
                                   updated.shopNpub === undefined ? row.shopNpub : updated.shopNpub,
                               }

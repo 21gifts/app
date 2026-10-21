@@ -1393,6 +1393,47 @@ describe('forumMessageSchema place', () => {
     expect(forumMessageSchema.parse(base).place).toBeUndefined();
   });
 
+  it('accepts a structured address and a null address', () => {
+    const address = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address },
+      }).place,
+    ).toEqual({ lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address });
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address: null },
+      }).place,
+    ).toEqual({ lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address: null });
+  });
+
+  it('throws when an address field is missing', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        place: {
+          lat: 47.3769,
+          lng: 8.5417,
+          label: "Kiki's Bakery",
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+          },
+        },
+      }),
+    ).toThrow();
+  });
+
   it('throws when empty text has a place but no photo, video, or sats', () => {
     expect(() =>
       forumMessageSchema.parse({

@@ -37,6 +37,45 @@ async function seedSignedIn(page: Page, mapsKey: string | null = null): Promise<
   });
 }
 
+async function stubPlaceMap(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    class MapShim {
+      readonly el: HTMLElement;
+
+      constructor(el: HTMLElement) {
+        this.el = el;
+      }
+
+      setCenter(): void {}
+
+      addListener(
+        event: string,
+        handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+      ): void {
+        if (event === 'click') {
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+    }
+
+    class MarkerShim {
+      setPosition(): void {}
+
+      getPosition(): null {
+        return null;
+      }
+
+      addListener(): void {}
+    }
+
+    (window as unknown as { google?: unknown }).google = {
+      maps: { Map: MapShim, Marker: MarkerShim },
+    };
+  });
+}
+
 test('Function: proxyMessagesPlacesGet — GET /forum/messages/places without bearer is 401', async ({
   request,
 }) => {
@@ -276,4 +315,39 @@ test('Function: PlaceField — add a place is on the shop composer', async ({ pa
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  const unavailable = page.getByText('The map is not available.');
+  await expect(unavailable).toHaveCount(1);
+  await expect(unavailable).toBeVisible();
+  await expect(page.getByLabel('Shop name', { exact: true })).toBeVisible();
+});
+
+test('Function: PlacePinChip — confirmed composer place stays in flow and can be removed', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page, 'e2e');
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await page.getByLabel('Place name').fill('Stall');
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  const chip = page.getByText('Stall', { exact: true }).locator('..');
+  await expect(chip).toBeVisible();
+  await expect.poll(() => chip.evaluate((node) => getComputedStyle(node).position)).toBe('static');
+  await page.getByRole('button', { name: 'Remove place' }).click();
+  await expect(page.getByText('Stall', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
 });
