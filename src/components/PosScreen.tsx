@@ -127,13 +127,13 @@ type WalletSettled = {
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
   /**
-   * A payment that pays the open charge only in its late minute, held until a
-   * read says whether a newer charge (another tab's) took it.
+   * Payments that pay the open charge only in its late minute, each with that
+   * charge, held until a read says whether a newer charge (another tab's) took it.
    */
-  late: {
+  late: Array<{
     payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>;
     charge: PosCharge;
-  } | null;
+  }>;
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
   paidBy: Map<string, Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
   closed: Set<string>;
@@ -159,7 +159,7 @@ function settledFor(session: string | null): WalletSettled {
       session,
       open: null,
       paid: new Map(),
-      late: null,
+      late: [],
       paidBy: new Map(),
       closed: new Set(),
       early: [],
@@ -220,7 +220,7 @@ function settleOpen(
   if (payment.timestamp > Date.parse(open.expiresAt)) {
     // Made in the late minute: another tab may have made a newer charge of this amount that took
     // the receiving address, which only the api knows. Held until the till has read it.
-    memory.late = { payment, charge: open };
+    memory.late = [...memory.late, { payment, charge: open }];
     settledChanged();
     return;
   }
@@ -242,36 +242,45 @@ function markPaid(
 }
 
 /**
- * Settles the held late-minute payment once the till has read after it: a
- * newer charge that `state` shows and that {@link pays} it takes it (nothing
+ * Settles the held late-minute payments, in the order the wallet reported
+ * them, once the till has read after them: a newer charge that `state` shows,
+ * that {@link pays} a payment and that no payment took yet, takes it (nothing
  * to confirm here when the api already shows that charge finished);
- * otherwise, and when the read failed (`state` is `null`), the open charge does.
+ * otherwise, and when the read failed (`state` is `null`), the charge it was
+ * held for does, unless an earlier payment already paid that charge, when it
+ * is kept like any payment no known charge took.
  */
 function resolveLate(memory: WalletSettled, state: PosState | null): void {
   const held = memory.late;
-  memory.late = null;
-  /* v8 ignore next 3 -- only called with a held payment */
-  if (held === null) {
-    return;
-  }
-  // The charge the payment was held for, even when Cancel or a create has cleared the open one since.
-  const { payment, charge: open } = held;
-  const newer =
-    state === null
-      ? undefined
-      : tillCharges(state).find(
-          (row) =>
-            row.id !== open.id &&
-            Date.parse(row.createdAt) > Date.parse(open.createdAt) &&
-            pays(row, payment),
-        );
-  if (newer === undefined) {
-    markPaid(memory, open, payment);
-    return;
-  }
-  if (newer.status === 'pending' && !memory.paid.has(newer.id)) {
-    markPaid(memory, newer, payment);
-    return;
+  memory.late = [];
+  const taken = new Set<string>();
+  for (const { payment, charge } of held) {
+    const newer =
+      state === null
+        ? undefined
+        : tillCharges(state).find(
+            (row) =>
+              row.id !== charge.id &&
+              !taken.has(row.id) &&
+              !memory.paid.has(row.id) &&
+              Date.parse(row.createdAt) > Date.parse(charge.createdAt) &&
+              pays(row, payment),
+          );
+    if (newer !== undefined) {
+      taken.add(newer.id);
+      if (newer.status === 'pending') {
+        markPaid(memory, newer, payment);
+      }
+      continue;
+    }
+    if (!memory.paid.has(charge.id)) {
+      markPaid(memory, charge, payment);
+      continue;
+    }
+    memory.early = [
+      ...memory.early,
+      { amountSats: payment.amountSats, feesSats: payment.feesSats, timestamp: payment.timestamp },
+    ].slice(-POS_EARLY_PAYMENTS);
   }
   settledChanged();
 }
@@ -489,7 +498,7 @@ function usePosTillState(): PosTillState {
   const quietReload = useRef(false);
   const [, setSettledVersion] = useState(0);
   const memory = settledFor(session);
-  const lateHeld = memory.late !== null;
+  const lateHeld = memory.late.length > 0;
   // The read asked for by a held late-minute payment: it settles once a read from then on answers.
   const lateRead = useRef<number | null>(null);
   const walletPaid = memory.paid;
@@ -621,7 +630,7 @@ function usePosTillState(): PosTillState {
     if (state !== null) {
       reassignPaid(memory, state);
       if (
-        memory.late !== null &&
+        memory.late.length > 0 &&
         lateRead.current !== null &&
         reads.current.applied >= lateRead.current
       ) {
@@ -658,7 +667,7 @@ function usePosTillState(): PosTillState {
       lateHeld &&
       session !== null &&
       lateRead.current === null &&
-      settledFor(session).late !== null
+      settledFor(session).late.length > 0
     ) {
       lateRead.current = reads.current.started + 1;
       quietReload.current = state !== null;

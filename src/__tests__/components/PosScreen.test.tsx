@@ -3192,6 +3192,102 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('settles two late-minute payments held for one read, each for the charge it paid', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      // Both in the late minute, in two whole seconds after the charge ran out.
+      const firstPaid = Math.floor(now / 1_000) * 1_000 - 2_000;
+      const secondPaid = firstPaid + 1_000;
+      // Another tab made this charge between the two payments.
+      const newer = {
+        ...OPEN,
+        id: 'c-between',
+        createdAt: new Date(secondPaid).toISOString(),
+        expiresAt: new Date(secondPaid + 300_000).toISOString(),
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          return jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, firstPaid);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      receive(21, 0, secondPaid);
+      await act(async () => {
+        answerLateRead?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      // One read, two payments: the charge before took the first, the newer charge the second.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      await waitFor(() => {
+        expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(2);
+      });
+      expect(within(history).queryByText('Expired')).toBeNull();
+      expect(reads).toBe(4);
+    });
+
+    it('keeps a second late-minute payment that only the already paid charge before would take', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      receive(21);
+      await act(async () => {
+        answerLateRead?.(jsonResponse({ charge: null, history: [ended] }));
+        await Promise.resolve();
+      });
+      // The charge is paid once; the second payment is kept, not counted twice.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      await waitFor(() => {
+        expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      });
+    });
+
     it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {
       const first = { ...OPEN, createdAt: new Date().toISOString() };
       const later = {
