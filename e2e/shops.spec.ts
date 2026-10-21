@@ -1425,7 +1425,7 @@ test('Function: shopApiProblem — a shop 400 is shown at its field', async ({ p
   await page.getByRole('button', { name: 'Use this place' }).click();
   const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
   await expect(dialog.getByRole('alert')).toHaveText(
-    'The shop text must be 20 to 1000 characters and longer than the shop name.',
+    'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
   );
 });
 
