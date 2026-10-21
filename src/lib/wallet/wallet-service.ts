@@ -165,6 +165,33 @@ let droppedKnown: { mnemonic: string; ids: Set<string> } | null = null;
 let connectionMnemonic: string | null = null;
 
 /**
+ * Ids of the payments the {@link onPaymentReceived} listeners heard, with the
+ * phrase they belong to: whichever way a payment is reported, and across
+ * reconnects, they hear it once. A sign-out or another phrase starts it over.
+ */
+let toldReceived: { mnemonic: string; ids: Set<string> } | null = null;
+
+/**
+ * Tells every {@link onPaymentReceived} listener about `payment`, unless they
+ * already heard it for this phrase.
+ *
+ * @param mnemonic - Phrase of the connection that reports it.
+ * @param payment - The received, completed payment.
+ */
+function tellReceived(mnemonic: string, payment: WalletPayment): void {
+  if (toldReceived === null || toldReceived.mnemonic !== mnemonic) {
+    toldReceived = { mnemonic, ids: new Set() };
+  }
+  if (toldReceived.ids.has(payment.id)) {
+    return;
+  }
+  toldReceived.ids.add(payment.id);
+  for (const listener of receivedListeners) {
+    listener(payment);
+  }
+}
+
+/**
  * Host the app is served from. The wallet's address lives on this host, and
  * the app forwards the wallet's address calls to the api.
  *
@@ -505,47 +532,29 @@ async function rememberKnownPayments(
     // Used up only by a list that was read: after a failed one the next connection compares with it.
     const dropped = droppedKnown;
     droppedKnown = null;
-    const told = new Set<string>();
     if (dropped !== null && dropped.mnemonic === mnemonic) {
-      // Completed while the wallet reconnected after a failure: no event reported it, but a till
-      // waiting for it still hears it, once, oldest first.
+      // Completed while the wallet reconnected: no event reported it, but a till waiting for it
+      // still hears it, oldest first.
       for (const payment of [...listed].reverse()) {
         if (!dropped.ids.has(payment.id)) {
-          told.add(payment.id);
-          for (const listener of receivedListeners) {
-            listener(payment);
-          }
+          tellReceived(mnemonic, payment);
         }
       }
     }
     for (const payment of held) {
       if (known.has(payment.id)) {
         // Reported live while the list was read, so new to this tab although the list holds it:
-        // the onPaymentReceived listeners (a till waiting for it) still hear it, once.
-        if (!told.has(payment.id)) {
-          told.add(payment.id);
-          for (const listener of receivedListeners) {
-            listener(payment);
-          }
-        }
+        // the onPaymentReceived listeners (a till waiting for it) still hear it.
+        tellReceived(mnemonic, payment);
         continue;
       }
-      // A second report of it in this list goes to the branch above and is not told again.
-      told.add(payment.id);
-      void announcePayment(known, payment);
+      void announcePayment(known, mnemonic, payment);
     }
     return;
   }
-  // Without the list, a payment reported meanwhile may be new: a till waiting for it hears it, once.
-  const told = new Set<string>();
+  // Without the list, a payment reported meanwhile may be new: a till waiting for it hears it.
   for (const payment of held) {
-    if (told.has(payment.id)) {
-      continue;
-    }
-    told.add(payment.id);
-    for (const listener of receivedListeners) {
-      listener(payment);
-    }
+    tellReceived(mnemonic, payment);
   }
 }
 
@@ -559,17 +568,20 @@ async function rememberKnownPayments(
  * it); the {@link onPaymentReceived} listeners were told before the read.
  *
  * @param known - The known payment ids of the current connection.
+ * @param mnemonic - Phrase of that connection.
  * @param payment - The received, completed payment.
  * @returns Resolves after the listeners were told, or when the connection ended.
  */
-async function announcePayment(known: Set<string>, payment: WalletPayment): Promise<void> {
+async function announcePayment(
+  known: Set<string>,
+  mnemonic: string,
+  payment: WalletPayment,
+): Promise<void> {
   if (known.has(payment.id)) {
     return;
   }
   known.add(payment.id);
-  for (const listener of receivedListeners) {
-    listener(payment);
-  }
+  tellReceived(mnemonic, payment);
   await refreshWallet();
   while (readsInFlight.size > 0) {
     await Promise.allSettled(readsInFlight);
@@ -590,8 +602,9 @@ async function announcePayment(known: Set<string>, payment: WalletPayment): Prom
  * read is held until that list is in.
  *
  * @param event - The SDK event.
+ * @param mnemonic - Phrase of the connection that sent it.
  */
-function onWalletEvent(event: WalletSdkEvent): void {
+function onWalletEvent(event: WalletSdkEvent, mnemonic: string): void {
   if (event.type === 'synced') {
     void refreshWallet();
     return;
@@ -609,7 +622,7 @@ function onWalletEvent(event: WalletSdkEvent): void {
     heldPayments.push(payment);
     return;
   }
-  void announcePayment(knownPaymentIds, payment);
+  void announcePayment(knownPaymentIds, mnemonic, payment);
 }
 
 /**
@@ -729,7 +742,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       connectionMnemonic = mnemonic;
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
-          onWalletEvent(event);
+          onWalletEvent(event, mnemonic);
         }
       });
       if (run !== runCounter) {
@@ -847,6 +860,7 @@ export async function disconnectWallet(): Promise<void> {
   await dropConnection();
   // Signed out: the next connection is a fresh start, not a reconnect.
   droppedKnown = null;
+  toldReceived = null;
 }
 
 /**

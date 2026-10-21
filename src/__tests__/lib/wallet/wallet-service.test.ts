@@ -3041,6 +3041,43 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
+  it('tells onPaymentReceived a payment once, also when a failed read told it and a later reconnect lists it', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.listPayments.mockResolvedValueOnce([payment('old')]);
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+    const received: string[] = [];
+    const unsubscribe = onPaymentReceived((p) => {
+      received.push(p.id);
+    });
+    let rejectList!: (error: Error) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((_resolve, reject) => {
+          rejectList = reject;
+        }),
+    );
+    await connectWallet(loadSdk);
+    for (const listener of listeners) {
+      (listener as (event: { type: string; payment?: WalletPayment }) => void)({
+        type: 'paymentSucceeded',
+        payment: payment('paid'),
+      });
+    }
+    rejectList(new Error('list failed'));
+    await vi.waitFor(() => expect(received).toEqual(['paid']));
+    // The next connection lists it, and the last list that was read did not.
+    connection.listPayments.mockResolvedValueOnce([payment('paid'), payment('old')]);
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalledTimes(3));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(received).toEqual(['paid']);
+    unsubscribe();
+  });
+
   it('drops the payments held meanwhile when the known-payments read fails', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
