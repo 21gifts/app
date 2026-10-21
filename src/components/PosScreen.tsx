@@ -130,7 +130,10 @@ type WalletSettled = {
    * A payment that pays the open charge only in its late minute, held until a
    * read says whether a newer charge (another tab's) took it.
    */
-  late: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> | null;
+  late: {
+    payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>;
+    charge: PosCharge;
+  } | null;
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
   paidBy: Map<string, Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
   closed: Set<string>;
@@ -217,7 +220,7 @@ function settleOpen(
   if (payment.timestamp > Date.parse(open.expiresAt)) {
     // Made in the late minute: another tab may have made a newer charge of this amount that took
     // the receiving address, which only the api knows. Held until the till has read it.
-    memory.late = payment;
+    memory.late = { payment, charge: open };
     settledChanged();
     return;
   }
@@ -245,13 +248,14 @@ function markPaid(
  * otherwise, and when the read failed (`state` is `null`), the open charge does.
  */
 function resolveLate(memory: WalletSettled, state: PosState | null): void {
-  const payment = memory.late;
-  const open = memory.open;
+  const held = memory.late;
   memory.late = null;
-  /* v8 ignore next 3 -- a held payment always has its open charge */
-  if (payment === null || open === null) {
+  /* v8 ignore next 3 -- only called with a held payment */
+  if (held === null) {
     return;
   }
+  // The charge the payment was held for, even when Cancel or a create has cleared the open one since.
+  const { payment, charge: open } = held;
   const newer =
     state === null
       ? undefined
@@ -311,6 +315,11 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
 
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
 function armOpen(memory: WalletSettled, charge: PosCharge): void {
+  // A charge this tab's wallet already paid takes no further payment, even while the api still
+  // shows it open.
+  if (memory.paid.has(charge.id)) {
+    return;
+  }
   memory.open = charge;
   const early = memory.early;
   memory.early = [];
@@ -787,7 +796,11 @@ function usePosTillState(): PosTillState {
       const seqBefore = startRead(reads);
       try {
         const fresh = await fetchPosState(session);
-        if (fresh.charge !== null && fresh.charge.status === 'pending') {
+        if (
+          fresh.charge !== null &&
+          fresh.charge.status === 'pending' &&
+          !creating.paid.has(fresh.charge.id)
+        ) {
           // Another tab opened a charge meanwhile: the api would refuse this create, and that
           // charge is the till's open charge, so the till shows it (and arms it) and creates none.
           whenCurrent(generation, mine, () => {

@@ -3091,6 +3091,107 @@ describe('PosScreen', () => {
       expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
     });
 
+    it('creates the next charge when the read before it still shows the one the wallet just paid', async () => {
+      const posted: unknown[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            posted.push(JSON.parse(String(init.body)));
+            return jsonResponse(
+              { charge: { ...OPEN, id: 'c-next', createdAt: new Date().toISOString() } },
+              201,
+            );
+          }
+          // The api's paid worker has not run yet: the paid charge is still open there.
+          return jsonResponse({ charge: OPEN, history: [OPEN] });
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      fireEvent.click(within(await confirmation()).getByRole('link', { name: 'New payment' }));
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      await pressAmount('42');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(posted).toEqual([{ amountSats: 42 }]);
+      });
+    });
+
+    it('arms no charge the wallet already paid, so a later payment of that amount is not held for it', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          // The api still shows the charge open after the wallet paid it.
+          return jsonResponse({ charge: reads === 2 ? null : ended, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
+      const before = reads;
+      // Another payment of that amount in the same late minute: the paid charge does not take it.
+      receive(21);
+      await act(async () => undefined);
+      expect(reads).toBe(before);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('keeps a late-minute payment held before Cancel for the charge it paid', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ charge: null });
+          }
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          return jsonResponse(
+            reads === 1
+              ? { charge: ended, history: [ended] }
+              : reads === 2
+                ? { charge: ended, history: [ended] }
+                : { charge: null, history: [{ ...ended, status: 'cancelled' }] },
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      // Cancel before the read for the held payment answers; the cancel goes through.
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      await act(async () => {
+        answerLateRead?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      // The payment was made before the cancel: it pays the charge.
+      expect(await confirmation()).toBeTruthy();
+    });
+
     it('does not bring back a confirmation a newer open charge hid once that charge ends', async () => {
       const first = { ...OPEN, createdAt: new Date().toISOString() };
       const later = {
