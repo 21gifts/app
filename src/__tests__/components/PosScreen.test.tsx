@@ -3251,6 +3251,66 @@ describe('PosScreen', () => {
       expect(reads).toBe(4);
     });
 
+    it('confirms the newest of two charges paid at once first, then the other', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+        amountCurrency: 'USD',
+        amount: '5',
+      };
+      const createdNewer = Math.floor(now / 1_000) * 1_000 - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer-figure',
+        createdAt: new Date(createdNewer).toISOString(),
+        expiresAt: new Date(createdNewer + 300_000).toISOString(),
+        amountCurrency: 'USD',
+        amount: '8',
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          return jsonResponse({ charge: newer, history: [newer, ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // Two payments after the newer charge was made: the first goes to it, the second to the one before.
+      receive(21, 0, createdNewer + 1_000);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      receive(21, 0, createdNewer + 2_000);
+      await act(async () => {
+        answerLateRead?.(jsonResponse({ charge: newer, history: [newer, ended] }));
+        await Promise.resolve();
+      });
+      const first = await confirmation();
+      expect(within(first).getByText('$8.00')).toBeTruthy();
+      fireEvent.click(within(first).getByRole('button', { name: 'Done' }));
+      const second = await confirmation();
+      expect(within(second).getByText('$5.00')).toBeTruthy();
+      fireEvent.click(within(second).getByRole('button', { name: 'Done' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
+    });
+
     it('keeps a second late-minute payment that only the already paid charge before would take', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let reads = 0;

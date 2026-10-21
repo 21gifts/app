@@ -300,9 +300,11 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
     if (older === undefined) {
       continue;
     }
+    // Not a charge another payment already paid: one payment pays one charge.
     const newer = tillCharges(state).find(
       (row) =>
         row.id !== id &&
+        !memory.paid.has(row.id) &&
         Date.parse(row.createdAt) > Date.parse(older.createdAt) &&
         pays(row, payment),
     );
@@ -311,7 +313,7 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
     }
     memory.paid.delete(id);
     memory.paidBy.delete(id);
-    if (newer.status === 'pending' && !memory.paid.has(newer.id)) {
+    if (newer.status === 'pending') {
       memory.paid.set(newer.id, { ...newer, status: 'paid', paidAt: new Date().toISOString() });
       memory.paidBy.set(newer.id, payment);
     }
@@ -586,14 +588,15 @@ function usePosTillState(): PosTillState {
   const pending = shown !== null && shown.status === 'pending' ? shown : null;
   const charge = pending !== null && !walletPaid.has(pending.id) ? pending : null;
   const serverPaid = shown !== null && shown.status === 'paid' ? shown : null;
-  const latest = newerCharge(serverPaid, [...walletPaid.values()].at(-1) ?? null);
+  // The newest paid charge whose confirmation is not closed yet, by creation; once it is closed the
+  // next one shows, so two payments settled at once both confirm.
+  const latest = [serverPaid, ...walletPaid.values()].reduce<PosCharge | null>(
+    (newest, row) => (row === null || closed.has(row.id) ? newest : newerCharge(newest, row)),
+    null,
+  );
   // A newer open charge hides an older paid one: its confirmation is over.
-  const paid =
-    latest !== null && !closed.has(latest.id) && newerCharge(charge, latest) === latest
-      ? latest
-      : null;
-  const hiddenPaidId =
-    latest !== null && paid === null && !closed.has(latest.id) ? latest.id : null;
+  const paid = latest !== null && newerCharge(charge, latest) === latest ? latest : null;
+  const hiddenPaidId = latest !== null && paid === null ? latest.id : null;
   const history =
     state === null
       ? []
