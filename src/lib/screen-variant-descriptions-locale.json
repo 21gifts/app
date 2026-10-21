@@ -6094,6 +6094,16 @@
     "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. Editor vacío de Sobre mí después de que PUT /me/about responde 500. Aviso No se pudo guardar. Inténtalo de nuevo.",
     "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Bakanteng editor ng Tungkol sa akin pagkatapos sumagot ng 500 ang PUT /me/about. Babala Hindi ma-save. Pakisubukan muli."
   },
+  "/members/[accountId]:name-editing": {
+    "de": "Angemeldeter Inhaber auf /members/:id, die Konto-Id stimmt überein. Link kopieren schreibt weiterhin den kurzen /l/-Link. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
+    "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
+    "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+  },
+  "/members/[accountId]:location-editing": {
+    "de": "Angemeldeter Inhaber auf /members/:id, die Konto-Id stimmt überein. Link kopieren schreibt weiterhin den kurzen /l/-Link. Ort bearbeiten öffnet das Ortsfeld. Die Zeile Nicht angegeben ist weg.",
+    "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. Editar ubicación abre el campo del lugar. La línea No indicada desaparece.",
+    "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Binubuksan ng I-edit ang lugar ang field ng lugar. Wala na ang linyang Hindi nakasaad."
+  },
   "/view/[viewKey]:banner-not-wide": {
     "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Ein quadratisches Foto für das leere breite Bild öffnet den Zuschneider in der Kopfzeile (Zieh das Foto, um das breite Bild zu wählen, Diesen Ausschnitt verwenden). Breites Bild hinzufügen ist weg. Profilfoto hinzufügen bleibt.",
     "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. Elegir una foto cuadrada para la imagen ancha vacía abre el recorte del encabezado (Arrastra la foto para elegir la imagen ancha, Usar este recorte). Añadir una imagen ancha desaparece. Añadir una foto de perfil permanece.",
@@ -6168,5 +6178,30 @@
     "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Leerer Über-mich-Editor, nachdem PUT /me/about mit 500 antwortet. Hinweis Konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. Editor vacío de Sobre mí después de que PUT /me/about responde 500. Aviso No se pudo guardar. Inténtalo de nuevo.",
     "fil": "Naka-sign in na may-ari sa /view/:viewKey, tumutugma ang account id. Isinusulat ng kopyahin ang link ang URL ng view na ito. Maaaring nasa ilalim ng kard ang banner ng pag-activate. Bakanteng editor ng Tungkol sa akin pagkatapos sumagot ng 500 ang PUT /me/about. Babala Hindi ma-save. Pakisubukan muli."
+  },
+  "/view/[viewKey]:name-editing": {
+    "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
+    "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
+    "fil": "Naka-sign in na may-ari sa /view/:viewKey, tumutugma ang account id. Isinusulat ng kopyahin ang link ang URL ng view na ito. Maaaring nasa ilalim ng kard ang banner ng pag-activate. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+  },
+  "/view/[viewKey]:location-editing": {
+    "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Ort bearbeiten öffnet das Ortsfeld. Die Zeile Nicht angegeben ist weg.",
+    "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. Editar ubicación abre el campo del lugar. La línea No indicada desaparece.",
+    "fil": "Naka-sign in na may-ari sa /view/:viewKey, tumutugma ang account id. Isinusulat ng kopyahin ang link ang URL ng view na ito. Maaaring nasa ilalim ng kard ang banner ng pag-activate. Binubuksan ng I-edit ang lugar ang field ng lugar. Wala na ang linyang Hindi nakasaad."
+  },
+  "/view/[viewKey]:software-developer": {
+    "de": "Öffentliche Karte auf /view/:viewKey. Neben dem Namen steht Software Developer, ohne Rollen-Pille. Das Aktivieren-Banner kann unter der Karte stehen.",
+    "es": "Tarjeta pública en /view/:viewKey. Junto al nombre está Software Developer, sin píldora de rol. El banner de activación puede quedar bajo la tarjeta.",
+    "fil": "Pampublikong kard sa /view/:viewKey. Katabi ng pangalan ang Software Developer, walang role pill. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
+  },
+  "/view/[viewKey]:funding-program-open": {
+    "de": "Öffentliche Karte auf /view/:viewKey. Das Funding-Symbol ist gedrückt und der Teilnahmesatz ist sichtbar. Das Aktivieren-Banner kann unter der Karte stehen.",
+    "es": "Tarjeta pública en /view/:viewKey. El icono del programa de financiación está pulsado y la frase de participación es visible. El banner de activación puede quedar bajo la tarjeta.",
+    "fil": "Pampublikong kard sa /view/:viewKey. Napindot ang icon ng funding program at nakikita ang pangungusap ng paglahok. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
+  },
+  "/view/[viewKey]:role-open": {
+    "de": "Öffentliche Karte auf /view/:viewKey. Die Rolle Verifiziert ist gedrückt und ihr Satz ist sichtbar. Das Aktivieren-Banner kann unter der Karte stehen.",
+    "es": "Tarjeta pública en /view/:viewKey. La píldora Verificado está pulsada y su frase es visible. El banner de activación puede quedar bajo la tarjeta.",
+    "fil": "Pampublikong kard sa /view/:viewKey. Napindot ang pill na Verified at nakikita ang pangungusap nito. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
   }
 }

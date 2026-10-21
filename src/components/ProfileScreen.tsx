@@ -50,8 +50,10 @@ function ownerPreview(account: Account): MemberProfile {
  * visitor loads. Preferences live on `/settings`.
  *
  * The card paints from the account immediately, so the chart is never swapped
- * for `forum.loading`. Empty gift activity is `profile.chartEmpty`. A failed
- * activity fetch shows `profile.chartError` on the gift chart and
+ * for `forum.loading`. A fetched card whose id is not this account is ignored,
+ * including while the next fetch is in flight and after it fails. Empty gift
+ * activity is `profile.chartEmpty`. A failed activity fetch shows
+ * `profile.chartError` on the gift chart and
  * `profile.loanChartError` on the loan chart. An empty loan series renders
  * nothing.
  *
@@ -153,7 +155,7 @@ export function ProfileScreen(): ReactElement {
     );
   }
 
-  const shown = member ?? (preview as MemberProfile);
+  const shown = member !== null && member.id === account.id ? member : (preview as MemberProfile);
 
   return (
     <>

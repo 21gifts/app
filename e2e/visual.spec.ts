@@ -21631,6 +21631,152 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-view-about-save-error');
   });
+
+  test('members name-editing', async ({ page }) => {
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await shotScreen(page, 'state-members-name-editing');
+  });
+
+  test('members location-editing', async ({ page }) => {
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerMembers(page);
+    await page.getByRole('button', { name: 'Edit location' }).click();
+    await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
+    await expect(page.getByText('Not set')).toHaveCount(0);
+    await shotScreen(page, 'state-members-location-editing');
+  });
+
+  test('view name-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await shotScreen(page, 'state-view-name-editing');
+  });
+
+  test('view location-editing', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openOwnerView(page);
+    await page.getByRole('button', { name: 'Edit location' }).click();
+    await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
+    await expect(page.getByText('Not set')).toHaveCount(0);
+    await shotScreen(page, 'state-view-location-editing');
+  });
+
+  test('view software-developer', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          staffTag: 'software_developer',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Software Developer')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
+    await shotScreen(page, 'state-view-software-developer');
+  });
+
+  test('view funding-program-open', async ({ page }) => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'verified',
+          fundingReviewedAt: admittedAt,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page
+      .getByRole('button', { name: /Takes part in the 21.gifts funding program since/ })
+      .click();
+    await expect(
+      page.getByText(
+        `Takes part in the 21.gifts funding program since ${formatForumTimeFromMs(admittedAt, 'en')}`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-view-funding-program-open');
+  });
+
+  test('view role-open', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'verified',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      page.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-view-role-open');
+  });
 });
 
 test.describe('profile funding states', () => {

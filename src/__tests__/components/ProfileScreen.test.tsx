@@ -429,6 +429,68 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText(`${window.location.origin}/l/`)).toBeNull();
   });
 
+  it('drops the previous member card when the signed-in account changes', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByRole('button', { name: '14 posts' })).toBeTruthy();
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    let rejectNext: (err: Error) => void = () => undefined;
+    vi.mocked(fetchMember).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectNext = reject;
+      }),
+    );
+    const nextKey = 'b'.repeat(64);
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      writable: true,
+      value: { writeText },
+    });
+    act(() => {
+      useAuthStore.setState({
+        session: 'tok',
+        account: {
+          ...current,
+          id: 'acc_2',
+          name: 'Bea',
+          username: 'bea',
+          role: 'moderator',
+          lightningAddress: 'bea@walletofsatoshi.com',
+          lightningAddressVerified: true,
+          viewKey: nextKey,
+        },
+      });
+    });
+
+    expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.queryByText('Moderator functions')).toBeNull();
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(screen.getByText('bea@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '0 posts' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Edit$/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/view/${nextKey}`);
+    });
+
+    await act(async () => {
+      rejectNext(new Error('down'));
+    });
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(screen.getByText('bea@21.gifts')).toBeTruthy();
+    expect(screen.queryByText('Moderator functions')).toBeNull();
+  });
+
   it('passes the About me message id into the readable bio', () => {
     const account = useAuthStore.getState().account;
     useAuthStore.setState({

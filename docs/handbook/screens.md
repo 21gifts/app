@@ -5060,6 +5060,18 @@ Signed-in owner on /members/:id, where the account id matches. Copy link still w
 
 ![21.gifts member profile](images/members-about-save-error.png)
 
+### Variant: name-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts member profile](images/members-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts member profile](images/members-location-editing.png)
+
 ## Screen: /members/[accountId]/verify
 
 - **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
@@ -7803,6 +7815,36 @@ Signed-in owner on /view/:viewKey, where the account id matches. Copy link write
 Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Empty About me editor after PUT /me/about answers 500. Alert Could not save. Please try again.
 
 ![21.gifts public view profile](images/view-about-save-error.png)
+
+### Variant: name-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts public view profile](images/view-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts public view profile](images/view-location-editing.png)
+
+### Variant: software-developer
+
+Public card on /view/:viewKey. Beside the name, a static Software Developer label. There is no role pill. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-software-developer.png)
+
+### Variant: funding-program-open
+
+Public card on /view/:viewKey. The funding-program icon is pressed and the participation sentence is visible. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-funding-program-open.png)
+
+### Variant: role-open
+
+Public card on /view/:viewKey. The Verified role pill is pressed and its sentence is visible. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-role-open.png)
 
 ## Screen: /handbook
 
