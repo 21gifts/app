@@ -2264,6 +2264,38 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByRole('img', { name: 'Selected photo' })).toBeNull();
   });
 
+  it('drops a photo that fails after cancel', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let rejectPhoto: (error: Error) => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPhoto = reject;
+        }),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByText('Wait until this photo is ready.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    });
+    await act(async () => {
+      rejectPhoto(new Error('decode failed'));
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Selected photo' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('keeps save locked until the picked photo is ready', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

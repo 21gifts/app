@@ -18135,10 +18135,12 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Place name');
     await expect(name).toBeVisible();
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await name.scrollIntoViewIfNeeded();
+    await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-pending', false);
     release();
   });
@@ -21174,10 +21176,12 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Shop name', { exact: true });
     await expect(name).toBeVisible();
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await name.scrollIntoViewIfNeeded();
+    await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-pending', false);
     release();
   });
@@ -22471,7 +22475,19 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add an account' }).click();
+    await page.route('**/forum/accounts/by-username/**', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    const lookup = page.waitForResponse((response) =>
+      new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+    );
     await note.getByLabel('Username').fill('missing');
+    await lookup;
+    await expect(note.getByText('Checking that account…')).toHaveCount(0);
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeEnabled();

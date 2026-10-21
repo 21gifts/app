@@ -334,6 +334,19 @@ describe('LocationForm', () => {
     expect(save.disabled).toBe(true);
   });
 
+  it('does not post a location that breaks the field rule', () => {
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    const field = screen.getByPlaceholderText('City, country, or anywhere');
+    fireEvent.change(field, { target: { value: 'a'.repeat(81) } });
+    const save = screen.getByRole('button', { name: 'Save' });
+    const form = save.closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    expect(setLocation).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Location must be at most 80 characters.');
+  });
+
   it('maps the api length sentence onto the field', async () => {
     vi.mocked(setLocation).mockRejectedValue(new Error('Location must be at most 80 characters'));
     renderWithLocale(<LocationForm />);

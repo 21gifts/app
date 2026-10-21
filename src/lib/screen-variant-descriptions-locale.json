@@ -3220,9 +3220,9 @@
     "fil": "Naka-expand ang tala ni Ada. Ang sagot ni Cyrill ay ang pangungusap na You got it right. Walang ipinadala at walang natanggap, kaya walang linya ng halaga sa ilalim ng pangungusap. Ang paanan ng tala ay ₿0, dahil ang sagot na ito ay hindi nagdagdag ng regalo. Nanatili si Ada sa feed dahil siya ay moderator."
   },
   "/welcome:composer-place-pending": {
-    "de": "Ort hinzufügen ist als Dialog geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt noch. Das Ortsnamenfeld und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
-    "es": "Añadir un lugar está abierto como diálogo, la clave ha llegado y el script del mapa sigue cargando. El campo del nombre y Usar este lugar desactivado están visibles; el marco está vacío.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar, dumating ang susi, at nilo-load pa ang script ng mapa. Nakikita ang field ng pangalan at ang naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
+    "de": "Ort hinzufügen ist als Dialog geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt noch. Die Karte wird geladen. steht dort, wo die Karte wäre. Das Ortsnamenfeld und das deaktivierte Diesen Ort verwenden sind sichtbar. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Añadir un lugar está abierto como diálogo, la clave ha llegado y el script del mapa sigue cargando. Cargando el mapa. está donde estaría el mapa. El campo del nombre y Usar este lugar desactivado están visibles. El mapa no está disponible. no se muestra.",
+    "fil": "Bukas bilang dialog ang Magdagdag ng lugar, dumating ang susi, at nilo-load pa ang script ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Nakikita ang field ng pangalan at ang naka-disable na Gamitin ang lugar na ito. Hindi ipinapakita ang Hindi available ang mapa."
   },
   "/contact:success": {
     "de": "Nach einem erfolgreichen Senden wechselt die App zu /messages?c= und zeigt den offiziellen 21.gifts-Thread (den Nachrichtentext, nicht einen Sackgassen-Dankessatz). Der Verfasser mit sichtbarem ImagePlus-Anhang. Nachricht und Senden teilen sich eine Zeile; der Betrag sitzt unter der Nachricht.",
@@ -3335,9 +3335,9 @@
     "fil": "Ulo Piliin ang pangalan mo. Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. Naka-lowercase ito. Etiketa Pangalan, pindutan Magpatuloy. Hindi ipinapakita ang mapurol na linya ng iOS o Android."
   },
   "/shops:composer-place-pending": {
-    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Shop-Name und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
-    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía, la clave ha llegado y el script carga. Nombre de la tienda y Usar este lugar desactivado están visibles; el marco está vacío.",
-    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
+    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Die Karte wird geladen. steht dort, wo die Karte wäre. Shop-Name und das deaktivierte Diesen Ort verwenden sind sichtbar. Die Karte ist nicht verfügbar. wird nicht gezeigt. Die Ladenliste ist noch leer.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía, la clave ha llegado y el script carga. Cargando el mapa. está donde estaría el mapa. Nombre de la tienda y Usar este lugar desactivado están visibles. El mapa no está disponible. no se muestra. La lista de tiendas sigue vacía.",
+    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nasa lugar ng mapa ang Ikinakarga ang mapa. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito. Hindi ipinapakita ang Hindi available ang mapa. Walang laman pa ang listahan ng shop."
   },
   "/statistics:shop-error": {
     "de": "Mitarbeiterseite (Moderator). Das Personendiagramm bleibt sichtbar (Personen je UTC-Tag). Die geschlossenen Moderatorenfunktionen sitzen zwischen dem Personendiagramm und dem Shop-Bereich; Auszahlung pro Person anzeigen ist noch nicht sichtbar. Der Shop-Bereich darunter zeigt Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen.",

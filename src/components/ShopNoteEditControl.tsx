@@ -454,9 +454,6 @@ export function ShopNoteEditControl({
         nextError = result.error;
       }
     }
-    if (prepareGenerationRef.current !== generation) {
-      return;
-    }
     if (prepared.length > 0) {
       const room = 10 - photoCountRef.current;
       if (room <= 0) nextError = 'tooMany';

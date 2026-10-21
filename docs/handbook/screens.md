@@ -1494,9 +1494,9 @@ After **Stall** was confirmed and the dialog closed, **Add a place** was pressed
 
 ### Variant: composer-place-pending
 
-**Add a place** is open as a dialog, the key has arrived, and the map script has not loaded. The
-place name field and disabled **Use this place** control are visible while the frame is empty. A
-failed script or rejected key shows the same unavailable state as `composer-place`.
+**Add a place** is open as a dialog, the key has arrived, and the map script has not loaded.
+**Loading the map.** is where the map would be. The place name field and disabled **Use this
+place** control are visible. **The map is not available.** is not shown.
 
 ![21.gifts welcome composer place pending](images/welcome-composer-place-pending.png)
 
@@ -2758,9 +2758,10 @@ the pin and **Use this place**. **Next** stays enabled. The shop list is still e
 
 ### Variant: composer-place-pending
 
-**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and the
-map script has not loaded. The **Shop name** field and disabled **Use this place** control are
-visible while the frame is empty. A failed script or rejected key shows the unavailable state.
+**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and
+the map script has not loaded. **Loading the map.** is where the map would be. The **Shop name**
+field and disabled **Use this place** control are visible. **The map is not available.** is not
+shown. The shop list is still empty.
 
 ![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
 
