@@ -1178,7 +1178,9 @@ function usePosTillState(): PosTillState {
  * after a failed load,
  * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
  * Cancel, once after a create or cancel whose answer was lost, once when a
- * payment pays the open charge only in its late minute, and when the
+ * payment pays the open charge only in its late minute, once after a
+ * payment that names no charge pays the open charge (whether another
+ * device's newer charge of that amount took it), and when the
  * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
