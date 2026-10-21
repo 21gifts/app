@@ -3076,7 +3076,7 @@ describe('onIncomingPayment', () => {
       });
     }
     rejectList(new Error('list failed'));
-    await vi.waitFor(() => expect(received).toEqual(['paid']));
+    await vi.waitFor(() => expect(received).toEqual(['old', 'paid']));
     // The next connection lists it, and the last list that was read did not.
     connection.listPayments.mockResolvedValueOnce([payment('paid'), payment('old')]);
     await connectWallet(loadSdk);
