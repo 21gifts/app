@@ -96,6 +96,17 @@ async function installBaselineMap(page: Page, options?: { click?: boolean }): Pr
   });
 }
 
+/** Make every place dialog report that no Maps key is available. */
+async function installUnavailableMap(page: Page): Promise<void> {
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: null }),
+    });
+  });
+}
+
 /**
  * Key is set and the Maps script has not finished. Release after the shot
  * so the request does not stay open.
@@ -702,20 +713,39 @@ async function chooseMentionAda(page: Page, field: Locator): Promise<void> {
   await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
 }
 
-/** Signed-in composer suggestions: first page is Ada and Adam. */
-async function fulfillMentionPeople(page: Page): Promise<void> {
+/** Signed-in composer suggestions; the default first page is Ada and Adam. */
+async function fulfillMentionPeople(
+  page: Page,
+  accounts: unknown[] = [
+    { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+    { id: 'acc-adam', username: 'adam', name: 'Adam' },
+  ],
+): Promise<void> {
   await page.route('**/forum/mentions**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: [
-          { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
-          { id: 'acc-adam', username: 'adam', name: 'Adam' },
-        ],
-      }),
+      body: JSON.stringify({ accounts }),
     });
   });
+}
+
+const UNKNOWN_LUNA_MENTION_ACCOUNTS = Array.from({ length: 20 }, (_, index) => ({
+  id: `acc-luna-${String(index + 1)}`,
+  username: `luna.${String(index + 1).padStart(2, '0')}`,
+  name: `Luna ${String(index + 1)}`,
+}));
+
+/** Enter a username after a full, inconclusive mention page and wait for the lookup to settle. */
+async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<void> {
+  const lookup = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === '/forum/mentions' && url.searchParams.get('q') === username;
+  });
+  await page.getByLabel('21.gifts username').fill(username);
+  await lookup;
+  await expect(page.getByText('Checking that account…')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 }
 
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
@@ -731,6 +761,340 @@ async function fulfillPublicThreadReplies(
       body: JSON.stringify({ messages }),
     });
   });
+}
+
+/** Keep mention lookup pending until the visual state has been captured. */
+async function holdMentionPeople(page: Page): Promise<() => void> {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/forum/mentions**', async (route) => {
+    await held;
+    await route.abort();
+  });
+  return release;
+}
+
+/** Open a shop editor on a non-/shops host with the same fixture as its visual sequence. */
+async function openHostedShopEditor(
+  page: Page,
+  host: 'welcome' | 'members' | 'messages',
+  rejectPhotos = false,
+  mapUnavailable = false,
+): Promise<void> {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  const id =
+    host === 'welcome'
+      ? 'm-shop'
+      : host === 'members'
+        ? '55555555-5555-4555-8555-555555555555'
+        : '12121212-1212-4121-8121-121212121212';
+  const place = {
+    lat: 14.6,
+    lng: 120.98,
+    label: 'Happyland',
+    address: {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    },
+  };
+  const shopNote = {
+    id,
+    ...(host === 'members' ? { accountId: memberId } : {}),
+    name: host === 'members' ? 'Carol' : 'Ada',
+    text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+    createdAt: host === 'members' ? '2026-08-02T10:00:00.000Z' : '2026-08-28T12:00:00.000Z',
+    sats: host === 'welcome' ? 5 : 0,
+    payable: host === 'welcome',
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: host === 'members' ? 'verified' : 'basis',
+    replyCount: 0,
+    place,
+  };
+
+  if (mapUnavailable) {
+    await installUnavailableMap(page);
+  } else {
+    await installBaselineMap(page, { click: true });
+  }
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ edits: [] }),
+    });
+  });
+  if (rejectPhotos) {
+    await page.route(`**/forum/messages/${id}/photos`, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+      });
+    });
+  }
+
+  if (host === 'welcome') {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopNote] }),
+      });
+    });
+    await page.goto('/welcome');
+  } else if (host === 'members') {
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopNote] }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+  } else {
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(shopNote),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(shopNote),
+        });
+      },
+    );
+    await page.goto(`/messages/${id}`);
+  }
+
+  await page.getByRole('button', { name: 'Edit shop note' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+}
+
+/** Move an already-open shop editor to its account step. */
+async function advanceShopEditorToUsername(page: Page): Promise<void> {
+  for (let step = 1; step < 4; step += 1) {
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+  await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+}
+
+/** Open the shop-place dialog and wait for its unavailable-map state. */
+async function openUnavailableShopPlace(page: Page): Promise<void> {
+  const placeStep = page.getByText('2 / 5 · Place');
+  await expect(placeStep).toBeVisible();
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  const unavailable = page.getByText('The map is not available.');
+  await expect(unavailable).toBeVisible();
+  await unavailable.scrollIntoViewIfNeeded();
+}
+
+/** Close the unavailable place dialog and wait for the persistent wizard reason. */
+async function closeUnavailableShopPlace(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const reason = page.getByText('The map is unavailable, so a shop place cannot be added.');
+  await expect(reason).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await reason.scrollIntoViewIfNeeded();
+}
+
+/** Enter and assert the shared invalid 21.gifts username state in a shop wizard. */
+async function enterInvalidShopUsername(page: Page): Promise<void> {
+  await page.getByLabel('21.gifts username').fill('_');
+  const invalid = page.getByText(
+    'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+  );
+  await expect(invalid).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await invalid.scrollIntoViewIfNeeded();
+}
+
+/** Make the image preparation path produce its ordinary too-large result. */
+async function stubTooLargeShopPhoto(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+      return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+    };
+  });
+}
+
+/** Pick files that produce one of the client-side shop photo errors. */
+async function pickShopPhotoError(
+  page: Page,
+  error: 'unsupported' | 'tooLarge' | 'tooMany',
+): Promise<void> {
+  // The living-room composer has its own file input; the shop wizard's is tied to its photo feedback.
+  const input = page.locator('input[type="file"][aria-describedby$="-photo-feedback"]');
+  if (error === 'unsupported') {
+    await input.setInputFiles({
+      name: 'tiny.gif',
+      mimeType: 'image/gif',
+      buffer: Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'),
+    });
+    return;
+  }
+  await input.setInputFiles(
+    error === 'tooMany'
+      ? Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg')
+      : 'e2e/fixtures/tiny.jpg',
+  );
+}
+
+/** Submit a newly picked edit photo and wait for the API rejection to return to Photos. */
+async function submitRejectedShopPhotoEdit(page: Page): Promise<void> {
+  await page
+    .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
+    .setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({ timeout: 10_000 });
+  for (let step = 1; step < 5; step += 1) {
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+}
+
+/** Advance an open edit wizard to Text. */
+async function advanceShopEditorToText(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+}
+
+/** Enter the same forbidden control character as the create-flow visual. */
+async function enterShopDescriptionControlError(page: Page): Promise<void> {
+  const box = page.getByLabel('Shop text');
+  await box.evaluate((node) => {
+    const field = node as HTMLTextAreaElement;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    setValue?.call(field, 'Fresh bread\u0001 every morning.');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(
+    page.getByText('The shop text must not contain control characters other than line breaks.'),
+  ).toBeVisible();
+}
+
+/** Open the edit wizard's existing place in its form sheet. */
+async function openShopEditorPlaceDialog(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  const placeStep = page.getByText('2 / 5 · Place');
+  await expect(placeStep).toBeVisible();
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+}
+
+/** Enter the same invalid address values as the create-flow visual. */
+async function enterShopPlaceFieldErrors(page: Page): Promise<void> {
+  const address = page.getByTestId('shop-address-fields');
+  await address.getByLabel('House number', { exact: true }).fill('abc');
+  await address.getByLabel('Postal code', { exact: true }).fill('80');
+  await address.getByLabel('City', { exact: true }).fill('1234');
+  await expect(
+    page.getByText('The house number must start with a digit, for example 12 or 12a.'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+  ).toBeVisible();
+  // Show the row errors in full above the pinned footer.
+  await page.getByText('The city must contain a letter.').scrollIntoViewIfNeeded();
+}
+
+/** Set the long create-flow shop name, confirm it, and open Text. */
+async function openShopTextNotLongerError(page: Page): Promise<void> {
+  await advanceShopEditorToText(page);
+  await page
+    .getByLabel('Shop text')
+    .fill('Fresh bread every morning and afternoon in Zurich every day.');
+  await page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' }).click();
+  const placeStep = page.getByText('2 / 5 · Place');
+  await placeStep
+    .locator('..')
+    .getByRole('button', { name: /place$/i })
+    .click();
+  await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery and Coffee House Zurich");
+  // Some edit fixtures store a place without a country.
+  await page.getByLabel('Country', { exact: true }).selectOption('CH');
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await expect(page.getByText('The shop text must be longer than the shop name.')).toBeVisible();
 }
 
 /** Signed-in Ada viewing Carol (username `carol`), for the Shop sticker states. */
@@ -2183,9 +2547,12 @@ test.describe('login variant baselines', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
-        hasText: 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+        hasText:
+          'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       }),
-    ).toHaveText('Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.');
+    ).toHaveText(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
     await shotScreen(page, 'state-login-name-invalid');
   });
 
@@ -3123,9 +3490,11 @@ test.describe('onboarding screens', () => {
   });
 
   test('welcome shop-edit-open', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -3154,12 +3523,24 @@ test.describe('onboarding screens', () => {
             {
               id: 'm-shop',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 5,
               payable: true,
               hasPhoto: false,
               role: 'basis',
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
             },
           ],
         }),
@@ -3170,6 +3551,41 @@ test.describe('onboarding screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     });
     await page.goto('/welcome');
@@ -3185,6 +3601,16 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-place');
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -3198,6 +3624,139 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
+  });
+
+  test('welcome shop-edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-user-checking');
+    release();
+  });
+
+  test('welcome shop-edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-user-missing');
+  });
+
+  test('welcome shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-invalid');
+  });
+
+  test('welcome shop-edit-place-unavailable-open', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-welcome-shop-edit-place-unavailable-open');
+  });
+
+  test('welcome shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-unsupported');
+  });
+
+  test('welcome shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-too-large');
+  });
+
+  test('welcome shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-too-many');
+  });
+
+  test('welcome shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photos-format-or-size');
+  });
+
+  test('welcome shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-text-error');
+  });
+
+  test('welcome shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-text-not-longer');
+  });
+
+  test('welcome shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place-name-address');
+  });
+
+  test('welcome shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-welcome-shop-edit-place-field-invalid');
   });
 
   test('state /welcome laws', async ({ page }) => {
@@ -6354,9 +6913,11 @@ test.describe('onboarding screens', () => {
   test('state /members shop-edit-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '55555555-5555-4555-8555-555555555555';
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -6402,7 +6963,7 @@ test.describe('onboarding screens', () => {
               id: noteId,
               accountId: memberId,
               name: 'Carol',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-02T10:00:00.000Z',
               sats: 0,
               payable: false,
@@ -6411,6 +6972,18 @@ test.describe('onboarding screens', () => {
               videoContentType: null,
               role: 'verified',
               replyCount: 0,
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
             },
           ],
         }),
@@ -6430,6 +7003,45 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ edits: [] }),
       });
     });
+    await page.route(`**/forum/messages/${noteId}/text`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-02T10:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'verified',
+          replyCount: 0,
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/shop-account`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Edit shop note' }).click();
@@ -6444,6 +7056,16 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-place');
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -6457,6 +7079,139 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-save-rejected');
+  });
+
+  test('state /members shop-edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-user-checking');
+    release();
+  });
+
+  test('state /members shop-edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-user-missing');
+  });
+
+  test('state /members shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-members-shop-edit-user-invalid');
+  });
+
+  test('state /members shop-edit-place-unavailable-open', async ({ page }) => {
+    await openHostedShopEditor(page, 'members', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-members-shop-edit-place-unavailable-open');
+  });
+
+  test('state /members shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-unsupported');
+  });
+
+  test('state /members shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-too-large');
+  });
+
+  test('state /members shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-too-many');
+  });
+
+  test('state /members shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'members', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photos-format-or-size');
+  });
+
+  test('state /members shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-text-error');
+  });
+
+  test('state /members shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-text-not-longer');
+  });
+
+  test('state /members shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place-name-address');
+  });
+
+  test('state /members shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-members-shop-edit-place-field-invalid');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -10980,9 +11735,11 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] shop-edit-open', async ({ page }) => {
     const id = '12121212-1212-4121-8121-121212121212';
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -11016,16 +11773,64 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ edits: [] }),
       });
     });
+    await page.route(`**/forum/messages/${id}/text`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/shop-account`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
     const shopNote = {
       id,
       name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 0,
       payable: false,
       hasPhoto: false,
       role: 'basis',
       replyCount: 0,
+      place: {
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Happyland',
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
     };
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
@@ -11057,6 +11862,16 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-place');
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -11070,6 +11885,139 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
+  });
+
+  test('state /messages/[id] shop-edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-user-checking');
+    release();
+  });
+
+  test('state /messages/[id] shop-edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-user-missing');
+  });
+
+  test('state /messages/[id] shop-edit-user-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-invalid');
+  });
+
+  test('state /messages/[id] shop-edit-place-unavailable-open', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages', false, true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-place-unavailable-open');
+  });
+
+  test('state /messages/[id] shop-edit-photos-unsupported', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
+  });
+
+  test('state /messages/[id] shop-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-too-large');
+  });
+
+  test('state /messages/[id] shop-edit-photos-too-many', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
+  });
+
+  test('state /messages/[id] shop-edit-photos-format-or-size', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages', true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photos-format-or-size');
+  });
+
+  test('state /messages/[id] shop-edit-text-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-text-error');
+  });
+
+  test('state /messages/[id] shop-edit-text-not-longer', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-text-not-longer');
+  });
+
+  test('state /messages/[id] shop-edit-place-name-address', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place-name-address');
+  });
+
+  test('state /messages/[id] shop-edit-place-field-invalid', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-place-field-invalid');
   });
 
   test('state /messages sunday', async ({ page }) => {
@@ -15862,6 +16810,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-text-filled');
   });
 
+  test('state /welcome ask-shop-elsewhere', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const composer = page.getByLabel('Your message');
+    await composer.fill('Need help at #21GiftsShop');
+    await expect(
+      page.getByText('Shop notes need the shop name and full address. Post this shop from Shops.'),
+    ).toBeVisible();
+    await expect(composer).toHaveAttribute('aria-invalid', 'true');
+    await expect(composer).toHaveAttribute('aria-describedby', /shop-elsewhere/);
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-shop-elsewhere');
+  });
+
   async function openAskPreview(
     page: Page,
     options: {
@@ -16786,7 +17752,7 @@ test.describe('welcome forum variants', () => {
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-welcome-composer-place-map', false);
@@ -16822,6 +17788,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
+  test('welcome composer-place-reopen', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Stall');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add a place' });
+    await expect(dialog.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Remove place' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-place-reopen');
+  });
+
   test('welcome composer-place-pending', async ({ page }) => {
     const release = await holdMapScript(page);
     await seedAda(page);
@@ -16833,7 +17817,7 @@ test.describe('welcome forum variants', () => {
     await expect(name).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await name.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-pending', false);
     release();
@@ -17179,6 +18163,37 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByAltText('Selected photo')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue('Caption when posting fails.');
     await shotScreen(page, 'state-welcome-error-request-photo-and-text');
+  });
+
+  test('welcome error-shop-elsewhere', async ({ page }) => {
+    await seedAda(page, 'verified');
+    await emptyForum(page);
+    const posts: string[] = [];
+    page.on('request', (request) => {
+      if (
+        request.method() === 'POST' &&
+        new URL(request.url()).pathname.endsWith('/forum/messages')
+      ) {
+        posts.push(request.url());
+      }
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    const composer = page.getByLabel('Your message');
+    await composer.fill('Cafe Luna is open every day. #21GiftsShop');
+    const feedback = page.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    await expect(feedback).toBeVisible();
+    await expect(feedback).not.toHaveAttribute('role', 'alert');
+    await expect(composer).toHaveAttribute('aria-invalid', 'true');
+    await expect(composer).toHaveValue('Cafe Luna is open every day. #21GiftsShop');
+    const feedbackId = await feedback.getAttribute('id');
+    expect(feedbackId).not.toBeNull();
+    await expect(composer).toHaveAttribute('aria-describedby', feedbackId ?? '');
+    await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
+    expect(posts).toHaveLength(0);
+    await shotScreen(page, 'state-welcome-error-shop-elsewhere');
   });
 
   test('welcome menu-open', async ({ page }) => {
@@ -17873,6 +18888,228 @@ test.describe('shops screens', () => {
     });
   }
 
+  const COMPLETE_SHOP_PLACE = {
+    lat: 47.3769,
+    lng: 8.5417,
+    label: "Kiki's Bakery",
+    address: {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    },
+  };
+
+  const COMPLETE_SHOP_TEXT = 'Cafe Luna is open every morning.\n\n#21GiftsShop';
+
+  async function fillShopAddress(page: Page, name = "Kiki's Bakery"): Promise<void> {
+    const address = page.getByTestId('shop-address-fields');
+    await page.getByLabel('Shop name', { exact: true }).fill(name);
+    await address.getByLabel('Street', { exact: true }).fill('Bahnhofstrasse');
+    await address.getByLabel('House number', { exact: true }).fill('12');
+    await address.getByLabel('Postal code', { exact: true }).fill('8001');
+    await address.getByLabel('City', { exact: true }).fill('Zürich');
+    const country = address.getByLabel('Country', { exact: true });
+    await country.selectOption('CH');
+    // Filling scrolls the dialog body to a timing-dependent offset.
+    await country.evaluate((node) => {
+      (node as HTMLSelectElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+  }
+
+  async function openShopsEditor(
+    page: Page,
+    view: 'post' | 'map' | 'table',
+    mapEnabled = false,
+    rejectPhotos = false,
+  ): Promise<void> {
+    await seedAda(page, 'moderator');
+    if (view === 'map') {
+      await page.route(/\/messages(?:\?|$)/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ messages: [] }),
+        });
+      });
+      await page.route('**/forum/messages/places', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            places: [
+              {
+                id: 'm-shop',
+                name: 'Ada',
+                createdAt: '2026-08-28T12:00:00.000Z',
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                shop: true,
+              },
+            ],
+          }),
+        });
+      });
+      if (!mapEnabled) {
+        await page.route('**/maps/key', async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ key: null }),
+          });
+        });
+      }
+      await page.route(
+        (url) => {
+          const path = new URL(url).pathname;
+          return path === '/forum/messages/m-shop' || path === '/forum/messages/m-shop/edits';
+        },
+        async (route) => {
+          const path = new URL(route.request().url()).pathname;
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(
+              path.endsWith('/edits')
+                ? { edits: [] }
+                : {
+                    id: 'm-shop',
+                    name: 'Ada',
+                    text: COMPLETE_SHOP_TEXT,
+                    createdAt: '2026-08-28T12:00:00.000Z',
+                    sats: 0,
+                    payable: false,
+                    hasPhoto: false,
+                    place: COMPLETE_SHOP_PLACE,
+                  },
+            ),
+          });
+        },
+      );
+    } else {
+      const id = view === 'table' ? 'm-shop' : 'm-staff';
+      await page.route(/\/messages(?:\?|$)/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            messages: [
+              {
+                id,
+                name: 'Ada',
+                text: COMPLETE_SHOP_TEXT,
+                createdAt: '2026-08-28T12:00:00.000Z',
+                sats: view === 'table' ? 5 : 0,
+                payable: view === 'table',
+                hasPhoto: false,
+                role: 'basis',
+                place:
+                  view === 'table'
+                    ? {
+                        lat: 14.6,
+                        lng: 120.98,
+                        label: 'Happyland',
+                        address: COMPLETE_SHOP_PLACE.address,
+                      }
+                    : COMPLETE_SHOP_PLACE,
+                ...(view === 'table'
+                  ? { shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' } }
+                  : {}),
+              },
+            ],
+          }),
+        });
+      });
+      await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ edits: [] }),
+        });
+      });
+    }
+
+    if (rejectPhotos) {
+      const id = view === 'post' ? 'm-staff' : 'm-shop';
+      await page.route(`**/forum/messages/${id}/photos`, async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+        });
+      });
+    }
+
+    await page.goto('/shops');
+    if (view === 'map') {
+      await page.getByRole('button', { name: 'Map' }).click();
+    } else if (view === 'table') {
+      await page.getByRole('button', { name: 'Table' }).click();
+    }
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  }
+
+  async function openCreateShopUsernameStep(page: Page): Promise<void> {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+  }
+
+  async function openCreateShopPhotosStep(page: Page, moderator = false): Promise<void> {
+    await stubPlaceMap(page);
+    await seedAda(page, moderator ? 'moderator' : 'basis');
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  }
+
+  async function openStaffAccountControl(page: Page): Promise<Locator> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add an account' }).click();
+    await expect(note.getByLabel('Username')).toHaveValue('@');
+    return note;
+  }
+
   test('shops default', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -17904,6 +19141,7 @@ test.describe('shops screens', () => {
   });
 
   test('state /shops mention-suggest', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
@@ -17929,6 +19167,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     const box = page.getByRole('textbox', { name: 'Shop text' });
     await expect(box).toBeVisible();
@@ -17938,6 +19180,7 @@ test.describe('shops screens', () => {
   });
 
   test('state /shops mention-inserted', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
@@ -17963,6 +19206,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     const box = page.getByRole('textbox', { name: 'Shop text' });
     await expect(box).toBeVisible();
@@ -18154,11 +19401,12 @@ test.describe('shops screens', () => {
           body: JSON.stringify({
             id: 'm-shop',
             name: 'Ada',
-            text: 'Cafe Luna\n\n#21GiftsShop',
+            text: COMPLETE_SHOP_TEXT,
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 0,
             payable: false,
             hasPhoto: false,
+            place: COMPLETE_SHOP_PLACE,
           }),
         });
       },
@@ -18194,6 +19442,186 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-summary');
+  });
+
+  test('shops map-edit-save-rejected', async ({ page }) => {
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          place: COMPLETE_SHOP_PLACE,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
+    await openShopsEditor(page, 'map');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-save-rejected');
+  });
+
+  test('shops map-edit-place-open', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await page.getByRole('button', { name: 'Next' }).click();
+    const placeStep = page.getByText('2 / 5 · Place');
+    await expect(placeStep).toBeVisible();
+    await placeStep
+      .locator('..')
+      .getByRole('button', { name: /place$/i })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-place-open');
+  });
+
+  test('shops map-edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-user-checking');
+    release();
+  });
+
+  test('shops map-edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-user-missing');
+  });
+
+  test('shops map-edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-map-edit-user-invalid');
+  });
+
+  test('shops map-edit-place-unavailable-open', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'map');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-map-edit-place-unavailable-open');
+  });
+
+  test('shops map-edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-unsupported');
+  });
+
+  test('shops map-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-too-large');
+  });
+
+  test('shops map-edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-too-many');
+  });
+
+  test('shops map-edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'map', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photos-format-or-size');
+  });
+
+  test('shops map-edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-text-error');
+  });
+
+  test('shops map-edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-text-not-longer');
+  });
+
+  test('shops map-edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-place-name-address');
+  });
+
+  test('shops map-edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-map-edit-place-field-invalid');
   });
 
   test('shops map-edit-load-failed', async ({ page }) => {
@@ -18429,7 +19857,12 @@ test.describe('shops screens', () => {
               payable: true,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
               shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
             },
           ],
@@ -18454,13 +19887,18 @@ test.describe('shops screens', () => {
             {
               id: 'm-shop',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 5,
               payable: true,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
               shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
             },
           ],
@@ -18503,6 +19941,193 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-table-edit-summary');
   });
 
+  test('shops table-edit-save-rejected', async ({ page }) => {
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: COMPLETE_SHOP_PLACE.address,
+          },
+          shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page, 'luna-new');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-save-rejected');
+  });
+
+  test('shops table-edit-place-open', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    const placeStep = page.getByText('2 / 5 · Place');
+    await expect(placeStep).toBeVisible();
+    await placeStep
+      .locator('..')
+      .getByRole('button', { name: /place$/i })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-place-open');
+  });
+
+  test('shops table-edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-user-checking');
+    release();
+  });
+
+  test('shops table-edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-user-missing');
+  });
+
+  test('shops table-edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-table-edit-user-invalid');
+  });
+
+  test('shops table-edit-place-unavailable-open', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'table');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-table-edit-place-unavailable-open');
+  });
+
+  test('shops table-edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-unsupported');
+  });
+
+  test('shops table-edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-too-large');
+  });
+
+  test('shops table-edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-too-many');
+  });
+
+  test('shops table-edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'table', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photos-format-or-size');
+  });
+
+  test('shops table-edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-text-error');
+  });
+
+  test('shops table-edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'table');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-text-not-longer');
+  });
+
+  test('shops table-edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'table');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-place-name-address');
+  });
+
+  test('shops table-edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'table');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-table-edit-place-field-invalid');
+  });
+
   const shopTableRow = {
     id: 'm-shop',
     name: 'Ada',
@@ -18512,7 +20137,12 @@ test.describe('shops screens', () => {
     payable: true,
     hasPhoto: false,
     role: 'basis',
-    place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    place: {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Cafe Luna',
+      address: COMPLETE_SHOP_PLACE.address,
+    },
     shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
   };
 
@@ -18537,7 +20167,12 @@ test.describe('shops screens', () => {
       const cursor = new URL(route.request().url()).searchParams.get('cursor');
       const message =
         cursor === 'c2'
-          ? { ...shopTableRow, id: 'm-stall', text: 'Other stall\n\n#21GiftsShop' }
+          ? {
+              ...shopTableRow,
+              id: 'm-stall',
+              text: 'Other stall\n\n#21GiftsShop',
+              place: { ...shopTableRow.place, label: 'Other stall' },
+            }
           : shopTableRow;
       await route.fulfill({
         status: 200,
@@ -18551,8 +20186,8 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
-    await expect(page.getByText('Other stall')).toBeVisible();
-    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Other stall', { exact: true })).toBeVisible();
+    await expect(page.getByText('Cafe Luna', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-table-next');
   });
@@ -18578,7 +20213,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
-    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Cafe Luna', { exact: true })).toBeVisible();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
@@ -18781,7 +20416,12 @@ test.describe('shops screens', () => {
               payable: false,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
             },
           ],
         }),
@@ -18847,7 +20487,7 @@ test.describe('shops screens', () => {
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-composer-place-map', false);
@@ -18863,10 +20503,11 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Stall');
+    await fillShopAddress(page, 'Stall');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeEnabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-confirm', false);
   });
@@ -18881,7 +20522,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Stall');
+    await fillShopAddress(page, 'Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await expect(page.getByText('Stall', { exact: true })).toHaveCount(0);
@@ -18899,11 +20540,11 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    const name = page.getByLabel('Place name');
+    const name = page.getByLabel('Shop name', { exact: true });
     await expect(name).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await name.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-pending', false);
     release();
@@ -18921,28 +20562,12 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-unlabeled', false);
-  });
-
-  test('shops composer-place-set-coords', async ({ page }) => {
-    await stubPlaceMap(page);
-    await seedAda(page);
-    await fulfillMixedSatsMessages(page);
-    await page.goto('/shops');
-    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
-    await page.getByRole('button', { name: 'Add a shop' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Add a place' }).click();
-    await page.locator('.h-64').click();
-    await page.getByRole('button', { name: 'Use this place' }).click();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
-    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-    await shotScreen(page, 'state-shops-composer-place-set-coords');
   });
 
   test('shops staff-place', async ({ page }) => {
@@ -18986,12 +20611,13 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
               hasPhoto: false,
               role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
             },
           ],
         }),
@@ -19032,6 +20658,139 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-edit-summary');
   });
 
+  test('shops edit-place-open', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'post');
+    await page.getByRole('button', { name: 'Next' }).click();
+    const placeStep = page.getByText('2 / 5 · Place');
+    await expect(placeStep).toBeVisible();
+    await placeStep
+      .locator('..')
+      .getByRole('button', { name: /place$/i })
+      .click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-place-open');
+  });
+
+  test('shops edit-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-user-checking');
+    release();
+  });
+
+  test('shops edit-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-user-missing');
+  });
+
+  test('shops edit-user-invalid', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await enterInvalidShopUsername(page);
+    await shotScreen(page, 'state-shops-edit-user-invalid');
+  });
+
+  test('shops edit-place-unavailable-open', async ({ page }) => {
+    await installUnavailableMap(page);
+    await openShopsEditor(page, 'post');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-edit-place-unavailable-open');
+  });
+
+  test('shops edit-photos-unsupported', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-unsupported');
+  });
+
+  test('shops edit-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-too-large');
+  });
+
+  test('shops edit-photos-too-many', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-too-many');
+  });
+
+  test('shops edit-photos-format-or-size', async ({ page }) => {
+    await openShopsEditor(page, 'post', false, true);
+    await submitRejectedShopPhotoEdit(page);
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photos-format-or-size');
+  });
+
+  test('shops edit-text-error', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToText(page);
+    await enterShopDescriptionControlError(page);
+    await page
+      .getByText('The shop text must not contain control characters other than line breaks.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-text-error');
+  });
+
+  test('shops edit-text-not-longer', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'post');
+    await openShopTextNotLongerError(page);
+    await page
+      .getByText('The shop text must be longer than the shop name.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-text-not-longer');
+  });
+
+  test('shops edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'post');
+    await openShopEditorPlaceDialog(page);
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-place-name-address');
+  });
+
+  test('shops edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'post');
+    await openShopEditorPlaceDialog(page);
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-edit-place-field-invalid');
+  });
+
   test('shops edit-save-error', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -19043,12 +20802,13 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
               hasPhoto: false,
               role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
             },
           ],
         }),
@@ -19074,7 +20834,9 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByLabel('Shop text').fill('Cafe Luna updated');
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
@@ -19083,6 +20845,86 @@ test.describe('shops screens', () => {
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-save-error');
+  });
+
+  test('shops edit-save-rejected', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/text', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-staff',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          place: COMPLETE_SHOP_PLACE,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(alert).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-save-rejected');
   });
 
   test('shops edit-history-error', async ({ page }) => {
@@ -19201,7 +21043,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19235,7 +21077,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19279,6 +21121,64 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-edit-error');
   });
 
+  test('shops staff-place-edit-rejected', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Fresh bread every morning.\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        // The stored shop text changed after the list loaded, so only the API can reject this.
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await fillShopAddress(page, 'Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+    const reason = dialog.getByRole('alert');
+    await expect(reason).toHaveText(
+      'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+    );
+    await expect(confirm).toBeVisible();
+    await reason.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-rejected');
+  });
+
   test('shops staff-place-edit-unavailable', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -19290,7 +21190,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19309,7 +21209,7 @@ test.describe('shops screens', () => {
     const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
   });
@@ -19325,7 +21225,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19394,7 +21294,7 @@ test.describe('shops screens', () => {
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-staff-place-map', false);
@@ -19412,7 +21312,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19427,10 +21327,11 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Happyland');
+    await fillShopAddress(page, 'Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeEnabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-confirm', false);
   });
@@ -19463,52 +21364,147 @@ test.describe('shops screens', () => {
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
-    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
   });
 
-  test('shops staff-place-set-coords', async ({ page }) => {
+  test('shops staff-place-hint', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page, 'moderator');
-    const noteBody = {
-      id: 'm-staff',
-      name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 0,
-      payable: false,
-      hasPhoto: false,
-      role: 'basis',
-    };
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ messages: [noteBody] }),
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
       });
     });
-    await page.route(
-      (url) => new URL(url).pathname.endsWith('/place'),
-      async (route) => {
-        if (route.request().method() !== 'PATCH') {
-          await route.continue();
-          return;
-        }
-        const body = route.request().postDataJSON() as { place?: unknown };
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ ...noteBody, place: body.place }),
-        });
-      },
-    );
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(
+      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
+    ).toBeVisible();
+    await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
+    await page.getByLabel('Shop name', { exact: true }).evaluate((node) => {
+      (node as HTMLInputElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-hint', false);
+  });
+
+  test('shops staff-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
+    const error = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-name-address');
+  });
+
+  test('shops staff-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await enterShopPlaceFieldErrors(page);
+    await shotScreen(page, 'state-shops-staff-place-field-invalid');
+  });
+
+  test('shops staff-place-set-coords', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.5, lng: 120.9, label: null },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
     await shotScreen(page, 'state-shops-staff-place-set-coords');
@@ -19526,7 +21522,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19555,7 +21551,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Happyland');
+    await fillShopAddress(page, 'Happyland');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(
       page.getByRole('alert').filter({
@@ -19601,6 +21597,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Ada Lovelace')).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
+    await expect(save).toBeDisabled();
+    await expect(note.getByText('Type or pick the 21.gifts username to save.')).toBeVisible();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account');
@@ -19640,9 +21638,50 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
+    await expect(save).toBeEnabled();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-chosen');
+  });
+
+  test('shops staff-account-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('missing');
+    const checking = note.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-checking');
+    release();
+  });
+
+  test('shops staff-account-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('missing');
+    const missing = note.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-missing');
+  });
+
+  test('shops staff-account-invalid', async ({ page }) => {
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('_');
+    const invalid = note.getByText(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
+    await expect(invalid).toBeVisible();
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-invalid');
   });
 
   test('shops staff-account-set', async ({ page }) => {
@@ -19678,7 +21717,9 @@ test.describe('shops screens', () => {
 
   test('shops staff-account-error', async ({ page }) => {
     await seedAda(page, 'moderator');
-    await fulfillMentionPeople(page);
+    await fulfillMentionPeople(page, [
+      { id: 'acc-missing', username: 'missing', name: 'Missing account' },
+    ]);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -19718,15 +21759,20 @@ test.describe('shops screens', () => {
     await note.getByRole('button', { name: 'Add an account' }).click();
     await note.getByLabel('Username').fill('missing');
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
-    await note.getByRole('button', { name: 'Save account' }).click();
-    await expect(note.getByRole('alert')).toHaveText('No account with that username.');
     const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeEnabled();
+    await save.click();
+    await expect(
+      note.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
+    ).toBeVisible();
     await expect(save).toBeVisible();
+    await expect(save).toBeDisabled();
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-error');
   });
 
   test('shops add steps', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
@@ -19737,14 +21783,295 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await shotScreen(page, 'state-shops-add-place');
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await expect(page.getByText(/Fill in: Shop name/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-place-empty');
+    await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery");
+    await expect(
+      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
+    ).toBeVisible();
+    await shotScreen(page, 'state-shops-add-place-hint');
+    await fillShopAddress(page);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeEnabled();
+    await shotScreen(page, 'state-shops-add-place-complete');
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await expect(page.getByText('20 more characters.')).toBeVisible();
     await shotScreen(page, 'state-shops-add-text');
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await shotScreen(page, 'state-shops-add-user');
+    await page.getByLabel('21.gifts username').fill('_');
+    await expect(
+      page.getByText(
+        /Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit/,
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-user-invalid');
+    await page.getByLabel('21.gifts username').fill('');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText("Kiki's Bakery")).toBeVisible();
+    await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
+    const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+    await expect(post).toBeEnabled();
+    await expect
+      .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
+      .toBe('1');
+    await shotScreen(page, 'state-shops-add-summary');
+  });
+
+  test('shops add-photos-unsupported', async ({ page }) => {
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'unsupported');
+    const error = page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-unsupported');
+  });
+
+  test('shops add-photos-too-large', async ({ page }) => {
+    await stubTooLargeShopPhoto(page);
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'tooLarge');
+    const error = page.getByText('Keep photos under 1 MB and videos under 32 MB');
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-too-large');
+  });
+
+  test('shops add-photos-too-many', async ({ page }) => {
+    await openCreateShopPhotosStep(page);
+    await pickShopPhotoError(page, 'tooMany');
+    const error = page.getByText('You can add up to 10 photos');
+    await expect(error).toBeVisible({ timeout: 10_000 });
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-too-many');
+  });
+
+  test('shops add-photos-format-or-size', async ({ page }) => {
+    await openCreateShopPhotosStep(page, true);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Photo must be a JPEG, PNG, or WebP under 1 MiB' }),
+        });
+      },
+    );
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const error = page.getByText(
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+    );
+    await expect(error).toBeVisible();
+    await error.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-photos-format-or-size');
+  });
+
+  test('shops add-user-checking', async ({ page }) => {
+    const release = await holdMentionPeople(page);
+    await openCreateShopUsernameStep(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const checking = page.getByText('Checking that account…');
+    await expect(checking).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await checking.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-user-checking');
+    release();
+  });
+
+  test('shops add-user-missing', async ({ page }) => {
+    await fulfillMentionPeople(page, []);
+    await openCreateShopUsernameStep(page);
+    await page.getByLabel('21.gifts username').fill('missing');
+    const missing = page.getByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    await expect(missing).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await missing.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-user-missing');
+  });
+
+  test('shops add-place-unavailable', async ({ page }) => {
+    await installUnavailableMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await openUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-add-place-unavailable-open');
+    await closeUnavailableShopPlace(page);
+    await shotScreen(page, 'state-shops-add-place-unavailable');
+  });
+
+  test('shops add-place-name-address', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page, 'Bahnhofstrasse Bakery');
+    await expect(
+      page.getByText('The shop name must not contain the street or the postal code.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    // Show the field error in the dialog body.
+    await page
+      .getByText('The shop name must not contain the street or the postal code.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-place-name-address');
+  });
+
+  test('shops add-place-field-invalid', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    const address = page.getByTestId('shop-address-fields');
+    const houseNumber = address.getByLabel('House number', { exact: true });
+    await houseNumber.fill('abc');
+    await address.getByLabel('Postal code', { exact: true }).fill('80');
+    await address.getByLabel('City', { exact: true }).fill('1234');
+    await expect(
+      page.getByText('The house number must start with a digit, for example 12 or 12a.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
+    ).toBeVisible();
+    await expect(page.getByText('The city must contain a letter.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await page.getByText('The city must contain a letter.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-place-field-invalid');
+  });
+
+  test('shops add-description-error', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    const box = page.getByLabel('Shop text');
+    await box.evaluate((node) => {
+      const field = node as HTMLTextAreaElement;
+      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+      setValue?.call(field, 'Fresh bread\u0001 every morning.');
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(
+      page.getByText('The shop text must not contain control characters other than line breaks.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-description-error');
+  });
+
+  test('shops add-text-not-longer', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page, "Kiki's Bakery and Coffee House Zurich");
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    const box = page.getByLabel('Shop text');
+    await box.fill('Fresh bread every morning.');
+    await box.evaluate((node) => {
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await expect(page.getByText('The shop text must be longer than the shop name.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-text-not-longer');
+  });
+
+  test('shops add-post-rejected', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await fulfillMixedSatsMessages(page);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Messages are unavailable',
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
@@ -19752,7 +22079,13 @@ test.describe('shops screens', () => {
     await expect
       .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
       .toBe('1');
-    await shotScreen(page, 'state-shops-add-summary');
+    await post.evaluate((element) => {
+      (element as unknown as { click: () => void }).click();
+    });
+    const alert = page.getByText('Could not post your message');
+    await expect(alert).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-post-rejected');
   });
 });
 
@@ -23986,7 +26319,8 @@ test.describe('habit tracker baselines', () => {
       'aria-pressed',
       'true',
     );
-    // Weekly scrolls only to itself, by a layout-timed offset; show Add habit for a stable shot.
+    // Weekly scrolls only to itself, by a layout-timed offset;
+    // show Add habit for a stable shot.
     await page.getByRole('button', { name: 'Add habit' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-habit-tracker-add-weekly');
   });

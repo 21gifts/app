@@ -104,7 +104,23 @@ describe('PlacesMapScreen', () => {
   it('lists pins, coordinates, and the selected pin', async () => {
     window.history.replaceState(null, '', '/map?pin=m-pin');
     useAuthStore.setState({ session: 'tok' });
-    fetchPlacesMock.mockResolvedValue([ROW, { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 }]);
+    fetchPlacesMock.mockResolvedValue([
+      ROW,
+      { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 },
+      {
+        ...ROW,
+        id: 'm-3',
+        label: 'Cafe Sol',
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      { ...ROW, id: 'm-4', label: '', lat: 3, lng: 4 },
+    ]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
@@ -114,6 +130,12 @@ describe('PlacesMapScreen', () => {
       'break-words',
     );
     expect(screen.getByRole('link', { name: 'Ada · 1.00000, 2.00000' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', {
+        name: 'Ada · Cafe Sol · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected'),
     ).toBe('true');
@@ -516,10 +538,17 @@ describe('PlacesMapScreen', () => {
       setup: null,
       missing: [],
     } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
     const note: ForumMessage = {
       id: 'm-pin',
       name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 5,
       payable: true,
@@ -529,7 +558,12 @@ describe('PlacesMapScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
-      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
     };
     useAuthStore.setState({ session: 'tok', account: null });
     fetchPlacesMock.mockResolvedValue([
@@ -546,8 +580,8 @@ describe('PlacesMapScreen', () => {
       .mockResolvedValueOnce(note);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...note,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 3, lng: 4, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: 'Stall', address: completeAddress },
     });
     renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
@@ -575,12 +609,16 @@ describe('PlacesMapScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findByRole('link', { name: 'Ada · Stall' })).toBeTruthy();
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Stall · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
 
     const saveOpened = async (value: string): Promise<void> => {
@@ -597,23 +635,178 @@ describe('PlacesMapScreen', () => {
 
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...note,
-      text: 'Cafe Norte\n\n#21GiftsShop',
-      place: { lat: 3, lng: 4, label: null },
+      text: 'Cafe Norte is open every morning.\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: 'Norte', address: completeAddress },
     });
-    await saveOpened('Cafe Norte');
-    expect(await screen.findByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
+    await saveOpened('Cafe Norte is open every morning.');
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Norte · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
 
-    const withoutPlace: ForumMessage = { ...note, text: 'Cafe Sur\n\n#21GiftsShop' };
+    const withoutPlace: ForumMessage = {
+      ...note,
+      text: 'Cafe Sur is open every morning.\n\n#21GiftsShop',
+    };
     delete withoutPlace.place;
     vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
-    await saveOpened('Cafe Sur');
+    await saveOpened('Cafe Sur is open every morning.');
     await waitFor(() => {
-      expect(screen.queryByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeNull();
+      expect(
+        screen.queryByRole('link', {
+          name: 'Ada · Norte · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+        }),
+      ).toBeNull();
     });
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
     await waitFor(() => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
+  });
+
+  it('shows the address when a saved shop pin has no label', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+    };
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: null, address: completeAddress },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe West is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('keeps the label alone when a saved shop pin has no address', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+    };
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: 'Stall' },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe West is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByRole('link', { name: 'Ada · Stall' })).toBeTruthy();
   });
 });

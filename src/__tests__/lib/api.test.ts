@@ -2122,6 +2122,24 @@ describe('postMessage', () => {
     );
 
     fetchMock.mockClear();
+    const withAddress = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    await postMessage('tok', { text: 'Hello from Ada', place: withAddress });
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual(
+      expect.objectContaining({ text: 'Hello from Ada', place: withAddress }),
+    );
+
+    fetchMock.mockClear();
     await postMessage('tok', { text: 'Hello from Ada' });
     const without = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(JSON.parse(String(without.body))).not.toHaveProperty('place');
@@ -2363,6 +2381,18 @@ describe('postMessage', () => {
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
   });
 
+  it.each([
+    'Shop name is required',
+    'Shop name must not contain the address',
+    'Shop address is required',
+    'Shop description must be 20 to 1000 characters and longer than the shop name',
+    'Text must be 1–8000 characters or include a photo',
+    'Place address is invalid',
+  ])('throws the shop 400 body %s unchanged', async (error) => {
+    stubFetch({ ok: false, status: 400, body: { error } });
+    await expect(postMessage('sess', { text: 'x' })).rejects.toThrow(error);
+  });
+
   it('throws the api error message on a 404', async () => {
     stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
     await expect(postMessage('sess', { text: 'x', shopUsername: 'missing' })).rejects.toThrow(
@@ -2456,6 +2486,39 @@ describe('postMessageVideo', () => {
     expect(labeled.get('placeLat')).toBe('1.2');
     expect(labeled.get('placeLng')).toBe('3.4');
     expect(labeled.get('placeLabel')).toBe('Harbor');
+    expect(labeled.get('placeStreet')).toBeNull();
+    expect(labeled.get('placeHouseNumber')).toBeNull();
+    expect(labeled.get('placePostalCode')).toBeNull();
+    expect(labeled.get('placeCity')).toBeNull();
+    expect(labeled.get('placeCountry')).toBeNull();
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', {
+      text: 'Hello from Ada',
+      video: file,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+    });
+    const withAddress = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const addressed = withAddress.body as FormData;
+    expect(addressed.get('placeLat')).toBe('47.3769');
+    expect(addressed.get('placeLng')).toBe('8.5417');
+    expect(addressed.get('placeLabel')).toBe("Kiki's Bakery");
+    expect(addressed.get('placeStreet')).toBe('Bahnhofstrasse');
+    expect(addressed.get('placeHouseNumber')).toBe('12');
+    expect(addressed.get('placePostalCode')).toBe('8001');
+    expect(addressed.get('placeCity')).toBe('Zürich');
+    expect(addressed.get('placeCountry')).toBe('CH');
 
     fetchMock.mockClear();
     await postMessageVideo('tok', {
@@ -2468,6 +2531,7 @@ describe('postMessageVideo', () => {
     expect(unlabeled.get('placeLat')).toBe('1.2');
     expect(unlabeled.get('placeLng')).toBe('3.4');
     expect(unlabeled.get('placeLabel')).toBeNull();
+    expect(unlabeled.get('placeStreet')).toBeNull();
 
     fetchMock.mockClear();
     await postMessageVideo('tok', { text: 'Hello from Ada', video: file });
@@ -2476,6 +2540,11 @@ describe('postMessageVideo', () => {
     expect(empty.get('placeLat')).toBeNull();
     expect(empty.get('placeLng')).toBeNull();
     expect(empty.get('placeLabel')).toBeNull();
+    expect(empty.get('placeStreet')).toBeNull();
+    expect(empty.get('placeHouseNumber')).toBeNull();
+    expect(empty.get('placePostalCode')).toBeNull();
+    expect(empty.get('placeCity')).toBeNull();
+    expect(empty.get('placeCountry')).toBeNull();
     expect(empty.get('shopUsername')).toBeNull();
 
     fetchMock.mockClear();
@@ -5671,6 +5740,51 @@ describe('setMessagePlace', () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setMessagePlace('token', 'm1', null)).rejects.toThrow('Could not save place');
   });
+
+  it('sends the structured address on the place pin', async () => {
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, place: pin },
+    });
+    await expect(setMessagePlace('token', 'm1', pin)).resolves.toEqual({
+      ...parsedForumMessage,
+      place: pin,
+    });
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      place: pin,
+    });
+  });
+
+  it.each([
+    'Shop name is required',
+    'Shop name must not contain the address',
+    'Shop address is required',
+    'Place label must be at most 80 characters',
+    'Place address is invalid',
+  ])('throws the shop 400 body %s unchanged', async (error) => {
+    stubFetch({ ok: false, status: 400, body: { error } });
+    await expect(
+      setMessagePlace('token', 'm1', { lat: 1, lng: 2, label: "Kiki's Bakery" }),
+    ).rejects.toThrow(error);
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setMessagePlace('token', 'm1', null)).rejects.toThrow('Could not save place');
+  });
 });
 
 describe('setMessageShopAccount', () => {
@@ -5710,6 +5824,27 @@ describe('setMessageShopAccount', () => {
     );
   });
 
+  it('uses the generic account-save error for a deleted-note 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(setMessageShopAccount('token', 'm1', 'luna')).rejects.toThrow(
+      'Could not save account',
+    );
+  });
+
+  it('throws the username reason from a 400 unchanged', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Username is not valid' } });
+    await expect(setMessageShopAccount('token', 'm1', '_')).rejects.toThrow(
+      'Username is not valid',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setMessageShopAccount('token', 'm1', '_')).rejects.toThrow(
+      'Could not save account',
+    );
+  });
+
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
@@ -5741,6 +5876,29 @@ describe('setMessageShopText', () => {
 
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(setMessageShopText('token', 'm1', 'Cafe')).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+
+  it.each([
+    'Shop name is required',
+    'Shop name must not contain the address',
+    'Shop address is required',
+    'Shop description must be 20 to 1000 characters and longer than the shop name',
+    'Text must be 1–8000 characters',
+    'Text must be 1–8000 characters or include a photo',
+    'Text must be 1–8000 characters or include a photo or video',
+    'Place address is invalid',
+  ])('throws the shop 400 body %s unchanged', async (error) => {
+    stubFetch({ ok: false, status: 400, body: { error } });
+    await expect(
+      setMessageShopText('token', 'm1', 'Cafe Luna is open every morning.'),
+    ).rejects.toThrow(error);
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
     await expect(setMessageShopText('token', 'm1', 'Cafe')).rejects.toThrow(
       'Could not save shop note',
     );
@@ -5779,6 +5937,20 @@ describe('setMessageShopPhotos', () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
       'Could not save shop note',
+    );
+  });
+
+  it('throws the generic shop-note error for a non-400 photo response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+
+  it('preserves a known shop reason from a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Shop address is required' } });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
+      'Shop address is required',
     );
   });
 });

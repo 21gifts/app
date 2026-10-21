@@ -243,7 +243,9 @@ app/
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
-│   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── PlaceField.tsx       # Place pin on the forum composer; shop place-and-address dialog
+│   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
+│   │   ├── PlacePinChip.tsx     # Confirmed composer place with remove control
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
@@ -277,6 +279,7 @@ app/
 │   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── countries.ts         # ISO country codes + localized country option labels
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
@@ -303,7 +306,7 @@ app/
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
-│   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
+│   │   ├── forum-shop.ts        # API-matching shop validation rules, error mapping, and #21GiftsShop helpers
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
@@ -465,6 +468,39 @@ width is the phone, which is wider than the padded column, and that is what shif
 `scripts/check-scrollports.mjs` fails lint on those widths. Every visual screenshot runs
 `pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll
 sideways.
+
+### Input feedback while entering (hard requirement)
+
+Every rule the API enforces on a user-entered field is checked in the app while
+the user enters data (on change, at the latest on blur). The message sits
+directly under that field, which has `aria-invalid="true"` and
+`aria-describedby` pointing to the message. When two fields share a row (for
+example street and house number), their messages sit directly under that row
+in field order, and each message names its field.
+
+The step or submit button is disabled while a rule is broken, and the reason is
+visible: the field message, or a summary line beside the button when that field
+is not on screen. Messages state what is wrong and how to fix it, including the
+concrete limit (for example, **4 digits for Switzerland**), never only **Check
+the X**.
+
+A server 400 is fallback only. Map a known API reason to its field or step and
+show that reason there; never replace a known reason with generic **Could not
+save** copy. Client rules live in shared API-mirroring helpers such as
+`src/lib/forum-shop.ts`, with unit tests that pin the same limits.
+
+So far the shop forms (and shop notes typed in the living-room composer)
+follow this rule. One exception there: whether a shop username exists is checked while
+typing only when `GET /forum/mentions` gives a conclusive answer; a full page or
+a failed lookup is decided by the API until an exact lookup exists. Not yet migrated, and moved to it in follow-up pull requests:
+the profile and account forms (including the username in `UsernameForm` and
+`LoginCard`), ordinary living-room posts and the Ask wizard text (empty or too
+long), the living-room place name, replies, the pay sheet, contact,
+inbox, POS, pay link, daily payments, and habits.
+
+Forms must not hide fields with errors inside a small inner scroll area. A form
+that needs more room uses a dialog or sheet and still follows **One scroll
+surface**.
 
 ### Components
 

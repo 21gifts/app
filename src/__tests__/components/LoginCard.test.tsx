@@ -559,7 +559,7 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     fireEvent.submit(screen.getByLabelText('Name').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe(
-      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
     );
     expect(submitNameSpy).not.toHaveBeenCalled();
   });

@@ -51,6 +51,10 @@ export interface MentionTextareaProps {
   maxLength?: number;
   /** Rows. */
   rows?: number;
+  /** Ids of hint or validation copy describing the field. */
+  ariaDescribedBy?: string;
+  /** Whether the current value breaks a validation rule. */
+  ariaInvalid?: boolean;
   /** Existing composer ref, when the caller focuses the field. */
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }
@@ -111,6 +115,8 @@ export function MentionTextarea({
   placeholder,
   maxLength,
   rows,
+  ariaDescribedBy,
+  ariaInvalid = false,
   textareaRef,
 }: MentionTextareaProps): ReactElement {
   const session = useAuthStore((state) => state.session);
@@ -364,6 +370,8 @@ export function MentionTextarea({
         }
       }}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      aria-invalid={ariaInvalid || undefined}
       aria-controls={open ? listId : undefined}
       aria-activedescendant={open ? `${listId}-${String(activeIndex)}` : undefined}
       {...(placeholder === undefined ? {} : { placeholder })}

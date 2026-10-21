@@ -261,10 +261,11 @@ const en = {
   'login.create': 'Open a new account',
   'login.nameHeading': 'Choose your name',
   'login.nameBody':
-    'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase.',
+    'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot, starting with a letter or digit. It is stored in lowercase.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Continue',
-  'login.nameInvalid': 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+  'login.nameInvalid':
+    'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
   'login.nameTaken': 'That username is already in use.',
   'login.unknownHeading': 'This passkey is not an account',
   'login.unknownBody':
@@ -366,6 +367,8 @@ const en = {
   'forum.errorEmpty': 'Enter a message or add a photo or video',
   'forum.errorTooLong': 'Keep it to 8000 characters',
   'forum.errorRequest': 'Could not post your message',
+  'forum.shopPostUseShops':
+    'Shop notes need the shop name and full address. Post this shop from Shops.',
   'forum.errorNoteDeleted': 'This note was deleted.',
   'forum.errorRateLimit': 'Too many messages. Please wait a moment and try again.',
   'forum.listLabel': 'All messages',
@@ -447,9 +450,11 @@ const en = {
   'forum.shopAccountSave': 'Save account',
   'forum.shopAccountRemove': 'Remove account',
   'forum.shopAccountSaveFailed': 'The account could not be saved. Please try again.',
-  'forum.shopAccountMissing': 'No account with that username.',
+  'forum.shopAccountHint': 'Type or pick the 21.gifts username to save.',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
+  'forum.errorFormatOrSize':
+    'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
   'forum.errorTooMany': 'You can add up to 10 photos',
   'forum.askCadenceLabel': 'One-time or daily',
   'forum.askOnce': 'One-time',
@@ -834,6 +839,9 @@ const en = {
   'shops.cancel': 'Cancel',
   'shops.accountOptional': 'Optional. Leave blank to skip.',
   'shops.accountLabel': '21.gifts username',
+  'shops.photoCount': '{n} / 10',
+  'shops.descriptionCount': '{n} / {max}',
+  'shops.usernameChecking': 'Checking that account…',
   'shops.textLabel': 'Shop text',
   'shops.summaryNone': 'None',
   'shops.saveChanges': 'Save changes',
@@ -846,6 +854,68 @@ const en = {
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Show more',
   'shops.missing': '—',
+  'shops.placeName': 'Shop name',
+  'shops.placeDialogTitle': 'Shop place and address',
+  'shops.placeMapHint': 'Tap the map to set the pin.',
+  'shops.setPinAbove': 'Set the pin on the map above.',
+  'shops.photoRejectedHint': 'Remove or replace the marked files to continue.',
+  'shops.editShopTextFirst': 'Edit the shop text first.',
+  'shops.fillIn': 'Fill in: {fields}.',
+  'shops.fixFieldsNamed': 'Fix: {fields}.',
+  'shops.placeRequired': "Add the shop's place and address.",
+  'shops.placeUnavailableReason': 'The map is unavailable, so a shop place cannot be added.',
+  'shops.placeNameHint': "A short name, for example “Kiki's Bakery”. Not the address.",
+  'shops.addressStreet': 'Street',
+  'shops.addressHouseNumber': 'House number',
+  'shops.addressPostalCode': 'Postal code',
+  'shops.addressCity': 'City',
+  'shops.addressCountry': 'Country',
+  'shops.addressCountryChoose': 'Choose a country',
+  'shops.problemName': 'Enter the shop name.',
+  'shops.problemNameAddress': 'The shop name must not contain the street or the postal code.',
+  'shops.problemNameLong': 'The shop name must be at most 80 characters.',
+  'shops.problemNameControls': 'The shop name must not contain control characters.',
+  'shops.problemNameLongerThanText':
+    'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+  'shops.problemShopTextLengthForName':
+    'The shop text must be 20 to 1000 characters before this place can be saved. Edit the shop text first.',
+  'shops.problemAddress':
+    'Enter the full address: street, house number, postal code, city and country.',
+  'shops.problemStreetRequired': 'Enter the street (1–120 characters).',
+  'shops.problemStreetLength': 'The street must be 1–120 characters.',
+  'shops.problemStreetControls': 'The street must not contain control characters.',
+  'shops.problemHouseNumberRequired': 'Enter the house number.',
+  'shops.problemHouseNumberFormat':
+    'The house number must start with a digit, for example 12 or 12a.',
+  'shops.problemHouseNumberLength': 'The house number must be at most 32 characters.',
+  'shops.problemHouseNumberCharacters':
+    'After the first digit, the house number may only contain letters A–Z without accents, digits, spaces, /, ., &, or hyphens.',
+  'shops.problemHouseNumberControls': 'The house number must not contain control characters.',
+  'shops.problemPostalCodeRequired': 'Enter the postal code.',
+  'shops.problemPostalCodeChLi':
+    'The postal code must have 4 digits for Switzerland and Liechtenstein.',
+  'shops.problemPostalCodeOther':
+    'The postal code must start with a letter or digit and have 2–16 letters, digits, spaces, or hyphens.',
+  'shops.problemPostalCodeControls': 'The postal code must not contain control characters.',
+  'shops.problemCityRequired': 'Enter the city (1–80 characters).',
+  'shops.problemCityLength': 'The city must be 1–80 characters.',
+  'shops.problemCityLetter': 'The city must contain a letter.',
+  'shops.problemCityControls': 'The city must not contain control characters.',
+  'shops.problemCountryRequired': 'Choose a country.',
+  'shops.problemCountryInvalid': 'Choose a country from the list.',
+  'shops.problemDescriptionShort':
+    'Describe the shop in at least {count, plural, one {# more character} other {# more characters}}.',
+  'shops.problemDescriptionLong':
+    'The shop text is too long. Shorten it to at most 1000 characters.',
+  'shops.problemDescriptionNotLonger': 'The shop text must be longer than the shop name.',
+  'shops.problemDescriptionControls':
+    'The shop text must not contain control characters other than line breaks.',
+  'shops.problemDescription':
+    'The shop text must be 20 to 1000 characters and longer than the shop name.',
+  'shops.problemAddressInvalid':
+    'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
+  'shops.problemUsernameMissing':
+    'No account with that username. Check the spelling of the 21.gifts username.',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -866,6 +936,7 @@ const en = {
   'inbox.removePhoto': 'Remove photo',
   'inbox.errorUnsupported': 'Use a JPEG, PNG, or WebP photo',
   'inbox.errorTooLarge': 'Keep photos under 1 MB',
+  'inbox.errorFormatOrSize': 'Use a JPEG, PNG, or WebP photo under 1 MB.',
   'inbox.errorTooMany': 'You can add up to 10 photos',
   'inbox.photoAlt': 'Photo from {name}',
   'inbox.errorEmpty': 'Enter a message',
@@ -1363,10 +1434,11 @@ const de = {
   'login.create': 'Ein neues Konto eröffnen',
   'login.nameHeading': 'Wählen Sie Ihren Namen',
   'login.nameBody':
-    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
+    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
-  'login.nameInvalid': '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt.',
+  'login.nameInvalid':
+    'Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer.',
   'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':
@@ -1466,6 +1538,8 @@ const de = {
   'forum.errorEmpty': 'Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu',
   'forum.errorTooLong': 'Maximal 8000 Zeichen',
   'forum.errorRequest': 'Nachricht konnte nicht gesendet werden',
+  'forum.shopPostUseShops':
+    'Shop-Notizen brauchen den Shop-Namen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops.',
   'forum.errorNoteDeleted': 'Diese Notiz wurde gelöscht.',
   'forum.errorRateLimit':
     'Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
@@ -1550,10 +1624,13 @@ const de = {
   'forum.shopAccountRemove': 'Konto entfernen',
   'forum.shopAccountSaveFailed':
     'Das Konto konnte nicht gespeichert werden. Bitte erneut versuchen.',
-  'forum.shopAccountMissing': 'Kein Konto mit diesem Benutzernamen.',
+  'forum.shopAccountHint':
+    'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus, um zu speichern.',
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
+  'forum.errorFormatOrSize':
+    'Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB oder ein Video im MP4-, WebM- oder MOV-Format unter 32 MB.',
   'forum.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'forum.askCadenceLabel': 'Einmalig oder täglich',
   'forum.askOnce': 'Einmalig',
@@ -1945,6 +2022,9 @@ const de = {
   'shops.cancel': 'Abbrechen',
   'shops.accountOptional': 'Optional. Leer lassen, um zu überspringen.',
   'shops.accountLabel': '21.gifts-Benutzername',
+  'shops.photoCount': '{n} / 10',
+  'shops.descriptionCount': '{n} / {max}',
+  'shops.usernameChecking': 'Konto wird geprüft…',
   'shops.textLabel': 'Shop-Text',
   'shops.summaryNone': 'Keiner',
   'shops.saveChanges': 'Änderungen speichern',
@@ -1957,6 +2037,70 @@ const de = {
   'shops.columnOperator': 'Betreiber',
   'shops.showMore': 'Mehr anzeigen',
   'shops.missing': '—',
+  'shops.placeName': 'Shop-Name',
+  'shops.placeDialogTitle': 'Ort und Adresse des Shops',
+  'shops.placeMapHint': 'Tippen Sie auf die Karte, um die Markierung zu setzen.',
+  'shops.setPinAbove': 'Setzen Sie die Markierung auf der Karte oben.',
+  'shops.photoRejectedHint': 'Entfernen oder ersetzen Sie die markierten Dateien, um fortzufahren.',
+  'shops.editShopTextFirst': 'Bearbeiten Sie zuerst den Shop-Text.',
+  'shops.fillIn': 'Füllen Sie aus: {fields}.',
+  'shops.fixFieldsNamed': 'Korrigieren Sie: {fields}.',
+  'shops.placeRequired': 'Fügen Sie Ort und Adresse des Shops hinzu.',
+  'shops.placeUnavailableReason':
+    'Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden.',
+  'shops.placeNameHint': "Ein kurzer Name, zum Beispiel „Kiki's Bakery“. Nicht die Adresse.",
+  'shops.addressStreet': 'Strasse',
+  'shops.addressHouseNumber': 'Hausnummer',
+  'shops.addressPostalCode': 'Postleitzahl',
+  'shops.addressCity': 'Ort',
+  'shops.addressCountry': 'Land',
+  'shops.addressCountryChoose': 'Land wählen',
+  'shops.problemName': 'Geben Sie den Shop-Namen ein.',
+  'shops.problemNameAddress':
+    'Der Shop-Name darf die Strasse oder die Postleitzahl nicht enthalten.',
+  'shops.problemNameLong': 'Der Shop-Name darf höchstens 80 Zeichen lang sein.',
+  'shops.problemNameControls': 'Der Shop-Name darf keine Steuerzeichen enthalten.',
+  'shops.problemNameLongerThanText':
+    'Der Shop-Name muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text.',
+  'shops.problemShopTextLengthForName':
+    'Der Shop-Text muss 20 bis 1000 Zeichen lang sein, bevor dieser Ort gespeichert werden kann. Bearbeiten Sie zuerst den Shop-Text.',
+  'shops.problemAddress':
+    'Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land.',
+  'shops.problemStreetRequired': 'Geben Sie die Strasse ein (1–120 Zeichen).',
+  'shops.problemStreetLength': 'Die Strasse muss 1–120 Zeichen lang sein.',
+  'shops.problemStreetControls': 'Die Strasse darf keine Steuerzeichen enthalten.',
+  'shops.problemHouseNumberRequired': 'Geben Sie die Hausnummer ein.',
+  'shops.problemHouseNumberFormat':
+    'Die Hausnummer muss mit einer Ziffer beginnen, zum Beispiel 12 oder 12a.',
+  'shops.problemHouseNumberLength': 'Die Hausnummer darf höchstens 32 Zeichen lang sein.',
+  'shops.problemHouseNumberCharacters':
+    'Nach der ersten Ziffer darf die Hausnummer nur Buchstaben A–Z ohne Akzente, Ziffern, Leerzeichen, /, ., & oder Bindestriche enthalten.',
+  'shops.problemHouseNumberControls': 'Die Hausnummer darf keine Steuerzeichen enthalten.',
+  'shops.problemPostalCodeRequired': 'Geben Sie die Postleitzahl ein.',
+  'shops.problemPostalCodeChLi':
+    'Die Postleitzahl muss für die Schweiz und Liechtenstein 4 Ziffern haben.',
+  'shops.problemPostalCodeOther':
+    'Die Postleitzahl muss mit einem Buchstaben oder einer Ziffer beginnen und 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche enthalten.',
+  'shops.problemPostalCodeControls': 'Die Postleitzahl darf keine Steuerzeichen enthalten.',
+  'shops.problemCityRequired': 'Geben Sie den Ort ein (1–80 Zeichen).',
+  'shops.problemCityLength': 'Der Ort muss 1–80 Zeichen lang sein.',
+  'shops.problemCityLetter': 'Der Ort muss einen Buchstaben enthalten.',
+  'shops.problemCityControls': 'Der Ort darf keine Steuerzeichen enthalten.',
+  'shops.problemCountryRequired': 'Wählen Sie ein Land.',
+  'shops.problemCountryInvalid': 'Wählen Sie ein Land aus der Liste.',
+  'shops.problemDescriptionShort':
+    'Beschreiben Sie den Shop in mindestens {count, plural, one {# weiterem Zeichen} other {# weiteren Zeichen}}.',
+  'shops.problemDescriptionLong':
+    'Der Shop-Text ist zu lang. Kürzen Sie ihn auf höchstens 1000 Zeichen.',
+  'shops.problemDescriptionNotLonger': 'Der Shop-Text muss länger sein als der Shop-Name.',
+  'shops.problemDescriptionControls':
+    'Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten.',
+  'shops.problemDescription':
+    'Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shop-Name sein.',
+  'shops.problemAddressInvalid':
+    'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
+  'shops.problemUsernameMissing':
+    'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -1977,6 +2121,7 @@ const de = {
   'inbox.removePhoto': 'Foto entfernen',
   'inbox.errorUnsupported': 'JPEG, PNG oder WebP verwenden',
   'inbox.errorTooLarge': 'Fotos unter 1 MB halten',
+  'inbox.errorFormatOrSize': 'Verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format unter 1 MB.',
   'inbox.errorTooMany': 'Sie können bis zu 10 Fotos hinzufügen',
   'inbox.photoAlt': 'Foto von {name}',
   'inbox.errorEmpty': 'Bitte schreiben Sie eine Nachricht',
@@ -2488,10 +2633,11 @@ const es = {
   'login.create': 'Abrir una cuenta nueva',
   'login.nameHeading': 'Elige tu nombre',
   'login.nameBody':
-    'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto. Se guarda en minúsculas.',
+    'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto, empezando por una letra o un dígito. Se guarda en minúsculas.',
   'login.nameLabel': 'Nombre',
   'login.nameSubmit': 'Continuar',
-  'login.nameInvalid': 'De 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto.',
+  'login.nameInvalid':
+    'Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito.',
   'login.nameTaken': 'Ese usuario ya está en uso.',
   'login.unknownHeading': 'Esta llave de acceso no es una cuenta',
   'login.unknownBody':
@@ -2589,6 +2735,8 @@ const es = {
   'forum.errorEmpty': 'Escribe un mensaje o añade una foto o un vídeo',
   'forum.errorTooLong': 'Máximo 8000 caracteres',
   'forum.errorRequest': 'No se pudo publicar el mensaje',
+  'forum.shopPostUseShops':
+    'Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas.',
   'forum.errorNoteDeleted': 'Esta nota fue eliminada.',
   'forum.errorRateLimit': 'Demasiados mensajes. Espera un momento e inténtalo de nuevo.',
   'forum.listLabel': 'Todos los mensajes',
@@ -2670,9 +2818,11 @@ const es = {
   'forum.shopAccountSave': 'Guardar la cuenta',
   'forum.shopAccountRemove': 'Quitar la cuenta',
   'forum.shopAccountSaveFailed': 'No se pudo guardar la cuenta. Inténtalo de nuevo.',
-  'forum.shopAccountMissing': 'No hay ninguna cuenta con ese nombre de usuario.',
+  'forum.shopAccountHint': 'Escribe o elige el nombre de usuario de 21.gifts para guardar.',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
+  'forum.errorFormatOrSize':
+    'Usa una foto JPEG, PNG o WebP de menos de 1 MB, o un vídeo MP4, WebM o MOV de menos de 32 MB.',
   'forum.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'forum.askCadenceLabel': 'Una vez o cada día',
   'forum.askOnce': 'Una vez',
@@ -3061,6 +3211,9 @@ const es = {
   'shops.cancel': 'Cancelar',
   'shops.accountOptional': 'Opcional. Déjalo en blanco para saltarlo.',
   'shops.accountLabel': 'Usuario de 21.gifts',
+  'shops.photoCount': '{n} / 10',
+  'shops.descriptionCount': '{n} / {max}',
+  'shops.usernameChecking': 'Comprobando la cuenta…',
   'shops.textLabel': 'Texto de la tienda',
   'shops.summaryNone': 'Ninguno',
   'shops.saveChanges': 'Guardar cambios',
@@ -3073,6 +3226,70 @@ const es = {
   'shops.columnOperator': 'Operador',
   'shops.showMore': 'Mostrar más',
   'shops.missing': '—',
+  'shops.placeName': 'Nombre de la tienda',
+  'shops.placeDialogTitle': 'Lugar y dirección de la tienda',
+  'shops.placeMapHint': 'Toca el mapa para colocar el marcador.',
+  'shops.setPinAbove': 'Pon el marcador en el mapa de arriba.',
+  'shops.photoRejectedHint': 'Quita o reemplaza los archivos marcados para continuar.',
+  'shops.editShopTextFirst': 'Edita primero el texto de la tienda.',
+  'shops.fillIn': 'Completa: {fields}.',
+  'shops.fixFieldsNamed': 'Corrige: {fields}.',
+  'shops.placeRequired': 'Añade el lugar y la dirección de la tienda.',
+  'shops.placeUnavailableReason':
+    'El mapa no está disponible, por lo que no se puede añadir el lugar.',
+  'shops.placeNameHint': "Un nombre corto, por ejemplo «Kiki's Bakery». No la dirección.",
+  'shops.addressStreet': 'Calle',
+  'shops.addressHouseNumber': 'Número',
+  'shops.addressPostalCode': 'Código postal',
+  'shops.addressCity': 'Ciudad',
+  'shops.addressCountry': 'País',
+  'shops.addressCountryChoose': 'Elige un país',
+  'shops.problemName': 'Introduce el nombre de la tienda.',
+  'shops.problemNameAddress':
+    'El nombre de la tienda no debe contener la calle ni el código postal.',
+  'shops.problemNameLong': 'El nombre de la tienda debe tener como máximo 80 caracteres.',
+  'shops.problemNameControls': 'El nombre de la tienda no debe contener caracteres de control.',
+  'shops.problemNameLongerThanText':
+    'El nombre de la tienda debe ser más corto que el texto de la tienda. Acorta el nombre o edita primero el texto de la tienda.',
+  'shops.problemShopTextLengthForName':
+    'El texto de la tienda debe tener entre 20 y 1000 caracteres antes de poder guardar este lugar. Edita primero el texto de la tienda.',
+  'shops.problemAddress':
+    'Introduce la dirección completa: calle, número, código postal, ciudad y país.',
+  'shops.problemStreetRequired': 'Introduce la calle (1–120 caracteres).',
+  'shops.problemStreetLength': 'La calle debe tener entre 1 y 120 caracteres.',
+  'shops.problemStreetControls': 'La calle no debe contener caracteres de control.',
+  'shops.problemHouseNumberRequired': 'Introduce el número de la casa.',
+  'shops.problemHouseNumberFormat': 'El número debe empezar con un dígito, por ejemplo 12 o 12a.',
+  'shops.problemHouseNumberLength': 'El número debe tener como máximo 32 caracteres.',
+  'shops.problemHouseNumberCharacters':
+    'Después del primer dígito, el número de la casa solo puede contener letras A–Z sin acentos, dígitos, espacios, /, ., & o guiones.',
+  'shops.problemHouseNumberControls': 'El número no debe contener caracteres de control.',
+  'shops.problemPostalCodeRequired': 'Introduce el código postal.',
+  'shops.problemPostalCodeChLi':
+    'El código postal debe tener 4 dígitos para Suiza y Liechtenstein.',
+  'shops.problemPostalCodeOther':
+    'El código postal debe empezar con una letra o un dígito y tener entre 2 y 16 letras, dígitos, espacios o guiones.',
+  'shops.problemPostalCodeControls': 'El código postal no debe contener caracteres de control.',
+  'shops.problemCityRequired': 'Introduce la ciudad (1–80 caracteres).',
+  'shops.problemCityLength': 'La ciudad debe tener entre 1 y 80 caracteres.',
+  'shops.problemCityLetter': 'La ciudad debe contener una letra.',
+  'shops.problemCityControls': 'La ciudad no debe contener caracteres de control.',
+  'shops.problemCountryRequired': 'Elige un país.',
+  'shops.problemCountryInvalid': 'Elige un país de la lista.',
+  'shops.problemDescriptionShort':
+    'Describe la tienda en al menos {count, plural, one {# carácter más} other {# caracteres más}}.',
+  'shops.problemDescriptionLong':
+    'El texto de la tienda es demasiado largo. Acórtalo a un máximo de 1000 caracteres.',
+  'shops.problemDescriptionNotLonger':
+    'El texto de la tienda debe ser más largo que el nombre de la tienda.',
+  'shops.problemDescriptionControls':
+    'El texto de la tienda no debe contener caracteres de control salvo saltos de línea.',
+  'shops.problemDescription':
+    'El texto de la tienda debe tener entre 20 y 1000 caracteres y ser más largo que el nombre de la tienda.',
+  'shops.problemAddressInvalid':
+    'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
+  'shops.problemUsernameMissing':
+    'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -3093,6 +3310,7 @@ const es = {
   'inbox.removePhoto': 'Quitar foto',
   'inbox.errorUnsupported': 'Usa una foto JPEG, PNG o WebP',
   'inbox.errorTooLarge': 'Mantén las fotos por debajo de 1 MB',
+  'inbox.errorFormatOrSize': 'Usa una foto JPEG, PNG o WebP de menos de 1 MB.',
   'inbox.errorTooMany': 'Puedes añadir hasta 10 fotos',
   'inbox.photoAlt': 'Foto de {name}',
   'inbox.errorEmpty': 'Escribe un mensaje',
@@ -3593,10 +3811,11 @@ const fil = {
   'login.create': 'Magbukas ng bagong account',
   'login.nameHeading': 'Piliin ang pangalan mo',
   'login.nameBody':
-    'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito.',
+    'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. Naka-lowercase ito.',
   'login.nameLabel': 'Pangalan',
   'login.nameSubmit': 'Magpatuloy',
-  'login.nameInvalid': '1–32 character: a-z, 0-9, hyphen, underscore, o tuldok.',
+  'login.nameInvalid':
+    'Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit.',
   'login.nameTaken': 'Ginagamit na ang username na iyan.',
   'login.unknownHeading': 'Hindi account ang passkey na ito',
   'login.unknownBody':
@@ -3696,6 +3915,8 @@ const fil = {
   'forum.errorEmpty': 'Maglagay ng mensahe o magdagdag ng litrato o bidyo',
   'forum.errorTooLong': 'Hanggang 8000 na karakter',
   'forum.errorRequest': 'Hindi ma-post ang mensahe',
+  'forum.shopPostUseShops':
+    'Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Tindahan.',
   'forum.errorNoteDeleted': 'Nabura na ang notang ito.',
   'forum.errorRateLimit': 'Sobrang daming mensahe. Maghintay sandali at subukan ulit.',
   'forum.listLabel': 'Lahat ng mensahe',
@@ -3777,9 +3998,11 @@ const fil = {
   'forum.shopAccountSave': 'I-save ang account',
   'forum.shopAccountRemove': 'Alisin ang account',
   'forum.shopAccountSaveFailed': 'Hindi ma-save ang account. Pakisubukan muli.',
-  'forum.shopAccountMissing': 'Walang account na may ganitong username.',
+  'forum.shopAccountHint': 'I-type o piliin ang username sa 21.gifts para ma-save.',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
+  'forum.errorFormatOrSize':
+    'Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB, o MP4, WebM, o MOV na bidyong wala pang 32 MB.',
   'forum.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'forum.askCadenceLabel': 'Isang beses o araw-araw',
   'forum.askOnce': 'Isang beses',
@@ -4174,6 +4397,9 @@ const fil = {
   'shops.cancel': 'Kanselahin',
   'shops.accountOptional': 'Opsyonal. Iwanang blangko para laktawan.',
   'shops.accountLabel': 'Username sa 21.gifts',
+  'shops.photoCount': '{n} / 10',
+  'shops.descriptionCount': '{n} / {max}',
+  'shops.usernameChecking': 'Tinitingnan ang account…',
   'shops.textLabel': 'Teksto ng shop',
   'shops.summaryNone': 'Wala',
   'shops.saveChanges': 'I-save ang mga pagbabago',
@@ -4186,6 +4412,70 @@ const fil = {
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Magpakita pa',
   'shops.missing': '—',
+  'shops.placeName': 'Pangalan ng shop',
+  'shops.placeDialogTitle': 'Lugar at address ng shop',
+  'shops.placeMapHint': 'I-tap ang mapa para ilagay ang pin.',
+  'shops.setPinAbove': 'Ilagay ang pin sa mapa sa itaas.',
+  'shops.photoRejectedHint': 'Alisin o palitan ang mga minarkahang file para magpatuloy.',
+  'shops.editShopTextFirst': 'I-edit muna ang teksto ng shop.',
+  'shops.fillIn': 'Punan: {fields}.',
+  'shops.fixFieldsNamed': 'Ayusin: {fields}.',
+  'shops.placeRequired': 'Idagdag ang lugar at address ng shop.',
+  'shops.placeUnavailableReason':
+    'Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop.',
+  'shops.placeNameHint': "Isang maikling pangalan, halimbawa “Kiki's Bakery”. Hindi ang address.",
+  'shops.addressStreet': 'Kalye',
+  'shops.addressHouseNumber': 'Numero ng bahay',
+  'shops.addressPostalCode': 'Postal code',
+  'shops.addressCity': 'Lungsod',
+  'shops.addressCountry': 'Bansa',
+  'shops.addressCountryChoose': 'Pumili ng bansa',
+  'shops.problemName': 'Ilagay ang pangalan ng shop.',
+  'shops.problemNameAddress': 'Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code.',
+  'shops.problemNameLong': 'Hanggang 80 karakter ang pangalan ng shop.',
+  'shops.problemNameControls': 'Hindi dapat may control character ang pangalan ng shop.',
+  'shops.problemNameLongerThanText':
+    'Dapat mas maikli ang pangalan ng shop kaysa sa teksto ng shop. Paikliin ang pangalan o i-edit muna ang teksto ng shop.',
+  'shops.problemShopTextLengthForName':
+    'Dapat 20 hanggang 1000 karakter ang teksto ng shop bago ma-save ang lugar na ito. I-edit muna ang teksto ng shop.',
+  'shops.problemAddress':
+    'Ilagay ang buong address: kalye, numero ng bahay, postal code, lungsod at bansa.',
+  'shops.problemStreetRequired': 'Ilagay ang kalye (1–120 karakter).',
+  'shops.problemStreetLength': 'Dapat 1–120 karakter ang kalye.',
+  'shops.problemStreetControls': 'Hindi dapat may control character ang kalye.',
+  'shops.problemHouseNumberRequired': 'Ilagay ang numero ng bahay.',
+  'shops.problemHouseNumberFormat':
+    'Dapat magsimula sa digit ang numero ng bahay, halimbawa 12 o 12a.',
+  'shops.problemHouseNumberLength': 'Hanggang 32 karakter lamang ang numero ng bahay.',
+  'shops.problemHouseNumberCharacters':
+    'Pagkatapos ng unang digit, titik A–Z na walang tuldik, digit, espasyo, /, ., &, o gitling lamang ang puwede sa numero ng bahay.',
+  'shops.problemHouseNumberControls': 'Hindi dapat may control character ang numero ng bahay.',
+  'shops.problemPostalCodeRequired': 'Ilagay ang postal code.',
+  'shops.problemPostalCodeChLi':
+    'Dapat 4 na digit ang postal code para sa Switzerland at Liechtenstein.',
+  'shops.problemPostalCodeOther':
+    'Dapat magsimula sa titik o digit ang postal code at magkaroon ng 2–16 titik, digit, espasyo, o gitling.',
+  'shops.problemPostalCodeControls': 'Hindi dapat may control character ang postal code.',
+  'shops.problemCityRequired': 'Ilagay ang lungsod (1–80 karakter).',
+  'shops.problemCityLength': 'Dapat 1–80 karakter ang lungsod.',
+  'shops.problemCityLetter': 'Dapat may titik ang lungsod.',
+  'shops.problemCityControls': 'Hindi dapat may control character ang lungsod.',
+  'shops.problemCountryRequired': 'Pumili ng bansa.',
+  'shops.problemCountryInvalid': 'Pumili ng bansa mula sa listahan.',
+  'shops.problemDescriptionShort':
+    'Ilarawan ang shop sa hindi bababa sa {count, plural, one {# pang karakter} other {# pang karakter}}.',
+  'shops.problemDescriptionLong':
+    'Masyadong mahaba ang teksto ng shop. Paikliin ito sa hindi hihigit sa 1000 karakter.',
+  'shops.problemDescriptionNotLonger':
+    'Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop.',
+  'shops.problemDescriptionControls':
+    'Hindi dapat may control character ang teksto ng shop maliban sa line break.',
+  'shops.problemDescription':
+    'Dapat 20 hanggang 1000 karakter ang teksto ng shop at mas mahaba kaysa sa pangalan ng shop.',
+  'shops.problemAddressInvalid':
+    'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
+  'shops.problemUsernameMissing':
+    'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
@@ -4206,6 +4496,7 @@ const fil = {
   'inbox.removePhoto': 'Alisin ang litrato',
   'inbox.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato',
   'inbox.errorTooLarge': 'Panatilihing wala pang 1 MB ang mga litrato',
+  'inbox.errorFormatOrSize': 'Gumamit ng JPEG, PNG, o WebP na litratong wala pang 1 MB.',
   'inbox.errorTooMany': 'Pwede kang magdagdag ng hanggang 10 litrato',
   'inbox.photoAlt': 'Litrato mula kay {name}',
   'inbox.errorEmpty': 'Maglagay ng mensahe',

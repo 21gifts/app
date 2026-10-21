@@ -4,6 +4,7 @@ import { ImagePlus, Loader2, X } from 'lucide-react';
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -74,6 +75,7 @@ export function ForumAskWizard({
   onAskDraftChange,
   draft,
   onDraftChange,
+  shopElsewhere = false,
   posting,
   photoDrafts,
   videoDraft,
@@ -101,6 +103,8 @@ export function ForumAskWizard({
   onAskDraftChange: (value: string) => void;
   draft: string;
   onDraftChange: (value: string) => void;
+  /** Whether the message draft contains the shop tag outside the shop composer. */
+  shopElsewhere?: boolean;
   posting: boolean;
   photoDrafts: ForumPhotoPayload[];
   videoDraft: ForumVideoPayload | null;
@@ -117,6 +121,7 @@ export function ForumAskWizard({
   const amountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const draftUnit = askDraftUnit ?? amountUnit;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const parsedAsk = parseForumAskAmountInUnit(askDraft, draftUnit, rateDay, fiat);
   const { numberFormat } = useNumberFormat();
   const [creditPhase, setCreditPhase] = useState<CreditAskPhase>('amount');
@@ -412,13 +417,21 @@ export function ForumAskWizard({
             maxLength={composerMaxLength}
             rows={4}
             disabled={posting}
+            {...(shopElsewhere
+              ? { ariaDescribedBy: shopElsewhereFeedbackId, ariaInvalid: true }
+              : {})}
             wrapperClassName="relative w-full"
             className="min-h-11 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
           />
+          {shopElsewhere ? (
+            <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+              {t('forum.shopPostUseShops')}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
-            disabled={posting}
+            disabled={posting || shopElsewhere}
             onClick={() => {
               onStepChange(4);
             }}
@@ -486,12 +499,19 @@ export function ForumAskWizard({
               />
             ) : null}
           </div>
+          {shopElsewhere ? (
+            <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+              {t('forum.shopPostUseShops')}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
             size="lg"
             disabled={
-              posting || (draft.trim() === '' && photoDrafts.length === 0 && videoDraft === null)
+              posting ||
+              shopElsewhere ||
+              (draft.trim() === '' && photoDrafts.length === 0 && videoDraft === null)
             }
             onClick={onPost}
           >

@@ -65,7 +65,23 @@ import {
 } from '@/lib/forum-feed';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
+import {
+  SHOP_HASHTAG,
+  apiMediaProblem,
+  ensureShopHashtag,
+  isShopApiProblem,
+  isShopNote,
+  shopApiProblem,
+  shopDescriptionProblem,
+  shopNameProblem,
+  shopPlaceComplete,
+  shopProblemField,
+  shopUsernameProblem,
+  stripShopHashtag,
+  usernameLookupVerdict,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -98,6 +114,38 @@ function isRateLimitError(err: unknown): boolean {
   }
   return /too many (messages|payments)/i.test(err.message);
 }
+
+/**
+ * Composer error for an API 400: the shop problem, or `shopElsewhere` when a
+ * non-shop composer cannot fix shop-only name or address details.
+ *
+ * @param err - Rejection from posting.
+ * @param shop - Whether the composer is the shop composer.
+ * @returns The composer error, or `null` when the text is not a shop 400.
+ */
+function composerShopError(err: unknown, shop: boolean): ShopApiProblem | 'shopElsewhere' | null {
+  const problem = err instanceof Error ? shopApiProblem(err.message, shop) : null;
+  return !shop && problem !== null && shopProblemField(problem) === 'place'
+    ? 'shopElsewhere'
+    : problem;
+}
+
+/** Whether media changes should preserve the current shop-related composer error. */
+function isShopComposerError(error: ForumFormError): error is ShopApiProblem | 'shopElsewhere' {
+  return error === 'shopElsewhere' || isShopApiProblem(error);
+}
+
+/** Photo reasons that stay until the photos change, because the rejected files are still attached. */
+function isAttachedPhotoError(error: ForumFormError): boolean {
+  return error === 'tooMany' || error === 'formatOrSize';
+}
+
+const SHOP_NAME_FORM_ERROR = {
+  name: 'shopName',
+  nameAddress: 'shopNameAddress',
+  nameLong: 'shopNameLong',
+  nameControls: 'shopNameControls',
+} as const satisfies Record<NonNullable<ReturnType<typeof shopNameProblem>>, ShopApiProblem>;
 
 /** Revokes a blob object URL when present; no-op for undefined or empty. */
 function revokeObjectUrlIfPresent(url: string | undefined): void {
@@ -311,7 +359,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
   if (feed !== 'shops') {
     return null;
   }
-  const handle = username.trim().replace(/^@/, '');
+  const handle = username.trim().replace(/^@/, '').trim().toLowerCase();
   return handle === '' ? null : handle;
 }
 
@@ -406,6 +454,14 @@ export function ForumLoader({
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
+  // Media the API rejected for format or size; they block the shop wizard while still attached.
+  const [rejectedMedia, setRejectedMedia] = useState<readonly object[]>([]);
+  const rememberRejectedMedia = (): void => {
+    setRejectedMedia([
+      ...photoDraftsRef.current,
+      ...(videoDraftRef.current === null ? [] : [videoDraftRef.current]),
+    ]);
+  };
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
@@ -1419,6 +1475,14 @@ export function ForumLoader({
       .catch(() => undefined);
   };
 
+  // The kept caption carries the shop tag on Shops; the wizard edits the text without it.
+  const restoreComposeCaption = (): void => {
+    const keptCaption = pendingComposeTextRef.current;
+    if (keptCaption !== null && keptCaption !== '') {
+      setDraft(feed === 'shops' ? stripShopHashtag(keptCaption) : keptCaption);
+    }
+  };
+
   const clearPaySheet = (): void => {
     bumpPayPollGeneration();
     setPayMessageId(null);
@@ -1432,10 +1496,7 @@ export function ForumLoader({
     notePostInFlightRef.current = false;
     setPayHost(null);
     setReplyPayPreview(null);
-    const keptCaption = pendingComposeTextRef.current;
-    if (keptCaption !== null && keptCaption !== '') {
-      setDraft(keptCaption);
-    }
+    restoreComposeCaption();
   };
 
   const startPayPoll = (
@@ -1563,13 +1624,20 @@ export function ForumLoader({
                   pendingComposeGoalRef.current = undefined;
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
-                } catch {
-                  setFormError('request');
-                  composeFeePaidRef.current = true;
-                  const keptCaption = pendingComposeTextRef.current;
-                  if (keptCaption !== null && keptCaption !== '') {
-                    setDraft(keptCaption);
+                } catch (err) {
+                  const mediaProblem =
+                    err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
+                  const shopProblem = composerShopError(err, feed === 'shops');
+                  if (mediaProblem === 'formatOrSize') {
+                    rememberRejectedMedia();
                   }
+                  setFormError(
+                    mediaProblem ??
+                      shopProblem ??
+                      (isRateLimitError(err) ? 'rateLimit' : 'request'),
+                  );
+                  composeFeePaidRef.current = true;
+                  restoreComposeCaption();
                   setPayWaiting(false);
                   setPayInvoice(null);
                   setPayMessageId(null);
@@ -1700,6 +1768,15 @@ export function ForumLoader({
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setFormError((current) =>
+      current === 'unsupported' ||
+      current === 'tooLarge' ||
+      current === 'tooMany' ||
+      current === 'formatOrSize'
+        ? null
+        : current,
+    );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);
       try {
@@ -1720,7 +1797,9 @@ export function ForumLoader({
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           setPhotoDrafts([]);
           setVideoDraft(result.video);
-          setFormError(null);
+          // A successful pick keeps a shop error; a failed pick's reason replaces it
+          // in the single error slot, and the next post shows it again.
+          setFormError((current) => (isShopComposerError(current) ? current : null));
           return;
         }
 
@@ -1757,7 +1836,7 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(nextError);
+        setFormError((current) => nextError ?? (isShopComposerError(current) ? current : null));
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');
@@ -1772,7 +1851,7 @@ export function ForumLoader({
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError(null);
+    setFormError((current) => (isShopComposerError(current) ? current : null));
   };
 
   const applyCreatedNote = (
@@ -1873,6 +1952,51 @@ export function ForumLoader({
     if (session === null) return;
     setPosting(true);
     setFormError(null);
+    if (feed !== 'shops' && isShopNote(trimmed)) {
+      setFormError('shopElsewhere');
+      notePostInFlightRef.current = false;
+      setPosting(false);
+      return;
+    }
+    if (feed === 'shops') {
+      const nameProblem =
+        pendingPlace === null ? null : shopNameProblem(pendingPlace.label, pendingPlace.address);
+      if (!shopPlaceComplete(pendingPlace)) {
+        setFormError(nameProblem === null ? 'shopAddress' : SHOP_NAME_FORM_ERROR[nameProblem]);
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      const descriptionProblem = shopDescriptionProblem(trimmed, pendingPlace.label);
+      if (descriptionProblem !== null) {
+        setFormError(
+          descriptionProblem === 'controls' ? 'shopDescriptionControls' : 'shopDescription',
+        );
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      if (shopUsernameProblem(shopUsername) !== null) {
+        setFormError('usernameInvalid');
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      const handle = composeShopUsername(feed, shopUsername);
+      if (handle !== null) {
+        try {
+          const matches = await searchMentionAccounts(session, handle.toLowerCase());
+          if (usernameLookupVerdict(matches, handle) === 'missing') {
+            setFormError('usernameMissing');
+            notePostInFlightRef.current = false;
+            setPosting(false);
+            return;
+          }
+        } catch {
+          // A failed optional lookup is inconclusive; the posting API validates it.
+        }
+      }
+    }
     let awaitingPay = false;
     try {
       if (
@@ -1965,6 +2089,20 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
+      const mediaProblem =
+        err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
+      if (mediaProblem !== null) {
+        if (mediaProblem === 'formatOrSize') {
+          rememberRejectedMedia();
+        }
+        setFormError(mediaProblem);
+        return;
+      }
+      const shopProblem = composerShopError(err, feed === 'shops');
+      if (shopProblem !== null) {
+        setFormError(shopProblem);
+        return;
+      }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
@@ -2552,9 +2690,13 @@ export function ForumLoader({
               shopUsername,
               onShopUsernameChange: (value: string) => {
                 setShopUsername(value);
-                setFormError(null);
+                // The username step is reachable only once the place and text are valid, so an
+                // error left here belongs to the username or the last request, unless it is about
+                // photos that are still attached.
+                setFormError((current) => (isAttachedPhotoError(current) ? current : null));
               },
               shopResetToken,
+              shopRejectedMedia: rejectedMedia,
             }
           : {})}
         {...(feed === 'shops'
@@ -2710,10 +2852,29 @@ export function ForumLoader({
         posting={posting || preparing}
         draft={draft}
         placeDraft={placeDraft}
-        onPlaceDraftChange={setPlaceDraft}
+        onPlaceDraftChange={(next) => {
+          // The shop text must be longer than the name, so a new name may fix a text rejection.
+          const nameChanged = (next?.label ?? '') !== (placeDraft?.label ?? '');
+          setPlaceDraft(next);
+          setFormError((current) =>
+            current !== null &&
+            isShopApiProblem(current) &&
+            (shopProblemField(current) === 'place' ||
+              (current === 'shopDescription' && nameChanged))
+              ? null
+              : current,
+          );
+        }}
         onDraftChange={(value) => {
           setDraft(value);
-          setFormError(null);
+          setFormError((current) =>
+            (current !== null &&
+              isShopApiProblem(current) &&
+              shopProblemField(current) !== 'text') ||
+            isAttachedPhotoError(current)
+              ? current
+              : null,
+          );
         }}
         askDraft={askDraft}
         askDraftUnit={askDraftUnit}
@@ -2756,7 +2917,7 @@ export function ForumLoader({
           pickGeneration.current += 1;
           setPhotoDrafts([]);
           setVideoDraft(null);
-          setFormError(null);
+          setFormError((current) => (isShopComposerError(current) ? current : null));
         }}
         photoUrls={photoUrls}
         videoUrls={videoUrls}
