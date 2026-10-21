@@ -179,6 +179,19 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getAllByText('$2.10').length).toBeGreaterThan(0);
   });
 
+  it('keeps a shop amount in bitcoin while its receipt is still loading', () => {
+    const shop = {
+      ...fixture(ZAP),
+      info: { purpose: 'shop' as const, chargeId: 'chg_abc', lnAddress: 'shop@21.gifts' },
+    };
+    vi.mocked(useShopChargeFigure).mockReturnValue({ pending: true, figure: null });
+    showPayment(shop);
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+    expect(row('Amount').textContent).toBe("₿2'100");
+    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.queryByText('₱12.00')).toBeNull();
+  });
+
   it('shows a received zap as a gift on the post: signed bitcoin amount and the message, without a key or note id', () => {
     showPayment(fixture(ZAP));
     expect(screen.getByText('Gift on your post')).toBeTruthy();

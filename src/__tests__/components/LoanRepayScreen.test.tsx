@@ -288,6 +288,7 @@ describe('LoanRepayScreen', () => {
       }),
     );
     show({ sundayRest: false, loans: [usdLoan] });
+    expect(screen.getByText("$30.00 · ₿30'000 · 30 days · $1.00 · ₿1'000 per day")).toBeTruthy();
     expect(screen.getByText("$1.00 · ₿1'000")).toBeTruthy();
     expect(screen.queryByText('$1.00')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
@@ -920,7 +921,9 @@ describe('LoanRepayScreen', () => {
     await screen.findAllByText('A sewing machine for my repair stall');
     expect(screen.getAllByText('School books for my daughter')).toHaveLength(2);
     const list = screen.getByRole('region', { name: 'Your loans' });
-    expect(within(list).getByText('EUR 12.00 · 10 days · EUR 1.20 per day')).toBeTruthy();
+    expect(
+      within(list).getByText("EUR 12.00 · ₿12'000 · 10 days · EUR 1.20 · ₿1'200 per day"),
+    ).toBeTruthy();
     expect(
       within(list).getAllByRole('link', { name: 'Repayment list' })[0]?.getAttribute('href'),
     ).toBe('/messages/loan-1/repayment-list');

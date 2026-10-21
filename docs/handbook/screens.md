@@ -987,7 +987,7 @@ The initial `GET /me/loans` is still pending. A spinner and **Loading your loans
 
 ### Variant: multi
 
-Two payable loans are combined: **Due today**, **₿2'200**, **to 5 people · 2 loans**, **From your wallet · ₿21'000 · $21.00**, and **Send ₿2'200 · $2.20**. **Your loans** contains the sewing-machine loan and the school-books loan; the latter shows **₱300.00 · 10 days · ₱30.00 per day**, **Repaid ₿4'800 · $4.80 of ₱300.00 · ₿12'000**, and **Day 5 of 10**.
+Two payable loans are combined: **Due today**, **₿2'200**, **to 5 people · 2 loans**, **From your wallet · ₿21'000 · $21.00**, and **Send ₿2'200 · $2.20**. **Your loans** contains the sewing-machine loan and the school-books loan; the latter shows **₱300.00 · ₿12'000 · 10 days · ₱30.00 · ₿1'200 per day**, **Repaid ₿4'800 · $4.80 of ₱300.00 · ₿12'000**, and **Day 5 of 10**.
 
 ![21.gifts loans repay multiple loans](images/loans-repay-multi.png)
 
@@ -999,7 +999,7 @@ The two-loan state with **Who gets paid** open. Rows are grouped under each loan
 
 ### Variant: fiat
 
-The PHP loan alone leads with its own currency: **Due today**, large **₱30.00 · ₿1'200**, **to 2 people**, **From your wallet · ₿21'000 · $21.00**, and **Send ₱30.00 · ₿1'200**. Its plan is **₱300.00 · 10 days · ₱30.00 per day** and its repaid line is **Repaid ₿4'800 · $4.80 of ₱300.00 · ₿12'000**.
+The PHP loan alone leads with its own currency: **Due today**, large **₱30.00 · ₿1'200**, **to 2 people**, **From your wallet · ₿21'000 · $21.00**, and **Send ₱30.00 · ₿1'200**. Its plan is **₱300.00 · ₿12'000 · 10 days · ₱30.00 · ₿1'200 per day** and its repaid line is **Repaid ₿4'800 · $4.80 of ₱300.00 · ₿12'000**.
 
 ![21.gifts loans repay fiat-defined loan](images/loans-repay-fiat.png)
 
@@ -2482,7 +2482,7 @@ Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How r
 
 ### Variant: ask-credit-plan-fiat
 
-Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same start rule with the November 1, 2026 floor and both November examples. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
+Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same start rule with the November 1, 2026 floor and both November examples. The daily line is **To repay per day: $33.33 · ₿33'333 per day for 29 days, then $33.43 · ₿33'343 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
 
 ![21.gifts welcome ask credit plan fiat](images/welcome-ask-credit-plan-fiat.png)
 
@@ -2494,7 +2494,7 @@ Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repea
 
 ### Variant: ask-credit-confirm-want-fiat
 
-Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The start rule with the November 1, 2026 floor and both November examples, and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00 · ₿1'000'000.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The start rule with the November 1, 2026 floor and both November examples, and **To repay per day: $33.33 · ₿33'333 per day for 29 days, then $33.43 · ₿33'343 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want fiat](images/welcome-ask-credit-confirm-want-fiat.png)
 
@@ -2506,7 +2506,7 @@ Credit, step **6 of 9**, bitcoin. Heading **Can you repay it?** The sentence is 
 
 ### Variant: ask-credit-confirm-can-fiat
 
-Credit, step **6 of 9**, US dollars. Heading **Can you repay it?** The sentence is **I can repay the amount owed on this plan: $33.33 per day for 29 days, then $33.43 on the last day.** The button **I can repay this.** is the confirmation. There is no checkbox.
+Credit, step **6 of 9**, US dollars. Heading **Can you repay it?** The sentence is **I can repay the amount owed on this plan: $33.33 · ₿33'333 per day for 29 days, then $33.43 · ₿33'343 on the last day.** The button **I can repay this.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm can fiat](images/welcome-ask-credit-confirm-can-fiat.png)
 
@@ -2542,7 +2542,7 @@ Credit, step **9 of 9**, with **Daily** and **Credit** pressed, after the same b
 
 ### Variant: ask-credit-preview-fiat
 
-Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The preview shows a **Loan** tag, the dollar amount, and the daily dollar plan (**To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.**). **Post** is the only submit. The counter reads **9 of 9**.
+Credit, step **9 of 9**, after a **1000** US-dollar ask and the same message. **Credit** is pressed. The preview shows a **Loan** tag, the dollar amount, and the daily dollar plan (**To repay per day: $33.33 · ₿33'333 per day for 29 days, then $33.43 · ₿33'343 on the last day.**). **Post** is the only submit. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview fiat](images/welcome-ask-credit-preview-fiat.png)
 

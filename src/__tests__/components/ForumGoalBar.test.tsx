@@ -261,25 +261,26 @@ describe('ForumGoalBar', () => {
     rerender(
       <ForumGoalBar
         sats={0}
-        goalSats={1}
+        goalSats={1_000_000}
         goalRepayable
         goalTermDays={30}
         goalCurrency="USD"
         goalAmount="1000"
       />,
     );
-    expect(screen.getByText(/\$33\.33 per day for 29 days/)).toBeTruthy();
+    expect(screen.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeTruthy();
+    expect(screen.getByText(/\$33\.43 · ₿33'343/)).toBeTruthy();
     rerender(
       <ForumGoalBar
         sats={0}
-        goalSats={1}
+        goalSats={12_000}
         goalRepayable
         goalTermDays={1}
         goalCurrency="USD"
         goalAmount="12.00"
       />,
     );
-    expect(screen.getByText(/\$12\.00 per day for 1 days/)).toBeTruthy();
+    expect(screen.getByText(/\$12\.00 · ₿12'000 per day for 1 days/)).toBeTruthy();
     expect(screen.queryByText(/\$12 per day/)).toBeNull();
     rerender(
       <ForumGoalBar
