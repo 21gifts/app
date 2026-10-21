@@ -10595,7 +10595,7 @@ test('Function: onPaymentReceived — without a wallet payment an open charge st
   expect(loads()).toBe(1);
 });
 
-test('Function: onPaymentReceived — the reported payment pays the open charge at once, without asking the api', async ({
+test('Function: onPaymentReceived — the reported payment pays the open charge at once, before the api is asked', async ({
   page,
 }) => {
   const loads = await routeTillWith(page, {
@@ -10609,7 +10609,8 @@ test('Function: onPaymentReceived — the reported payment pays the open charge 
   // The pin reports the charge amount through the wallet listener (announceReceivedForE2e).
   await page.goto('/pos?visual=pos-received');
   await expect(page.getByRole('alertdialog', { name: 'Paid' })).toBeVisible();
-  expect(loads()).toBe(1);
+  // Then one read checks the payment, and no more.
+  await expect.poll(() => loads()).toBe(2);
 });
 
 test('Function: announceReceivedForE2e — the pos-received pin reports the open amount to the wallet listener', async ({
