@@ -2975,7 +2975,7 @@ describe('onIncomingPayment', () => {
     unsubscribeIncoming();
   });
 
-  it('tells onPaymentReceived nothing old after a sign-out, a failed known-payments read, or another phrase', async () => {
+  it('tells onPaymentReceived nothing old after a sign-out or for another phrase, and compares across a failed read', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();
     const received: string[] = [];
@@ -2995,15 +2995,21 @@ describe('onIncomingPayment', () => {
     await disconnectWallet();
     rememberSessionPhrase(MNEMONIC);
     await opened(async () => [payment('b'), payment('a')]);
-    // This connection's read fails, so it knows nothing to compare with.
+    expect(received).toEqual([]);
+    // This connection's read fails: the next one still compares with the last list that was read.
+    await opened(async () => {
+      throw new Error('list failed');
+    });
+    // Its own failed list gives the connection after it nothing new to compare with either.
     await opened(async () => {
       throw new Error('list failed');
     });
     await opened(async () => [payment('c'), payment('b'), payment('a')]);
+    await vi.waitFor(() => expect(received).toEqual(['c']));
     // Another wallet: its payments are not the dropped one's.
     rememberSessionPhrase(`${MNEMONIC} other`);
     await opened(async () => [payment('d'), payment('c')]);
-    expect(received).toEqual([]);
+    expect(received).toEqual(['c']);
     unsubscribe();
   });
 

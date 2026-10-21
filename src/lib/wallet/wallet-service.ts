@@ -154,8 +154,8 @@ let heldPayments: WalletPayment[] = [];
 let knownPaymentsRead = false;
 
 /**
- * The known payment ids of a connection that dropped after a failure, with
- * its phrase, until the next connection of that phrase has read its own: a
+ * The known payment ids of a connection that dropped, with its phrase, until
+ * a later connection has read its own (a failed read keeps them): a
  * payment that list holds and this one did not completed while the wallet
  * was reconnecting.
  */
@@ -499,11 +499,12 @@ async function rememberKnownPayments(
   const known = new Set(listed.map((payment) => payment.id));
   knownPaymentIds = known;
   knownPaymentsRead = read;
-  const dropped = droppedKnown;
-  droppedKnown = null;
   const held = heldPayments;
   heldPayments = [];
   if (read) {
+    // Used up only by a list that was read: after a failed one the next connection compares with it.
+    const dropped = droppedKnown;
+    droppedKnown = null;
     const told = new Set<string>();
     if (dropped !== null && dropped.mnemonic === mnemonic) {
       // Completed while the wallet reconnected after a failure: no event reported it, but a till
