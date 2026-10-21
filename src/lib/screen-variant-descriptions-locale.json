@@ -2710,9 +2710,9 @@
     "fil": "Binubuksan ng Magdagdag ng shop at Susunod ang hakbang 2 sa 5 · Lugar. Bukas bilang dialog ang Lugar at address ng shop, hindi available ang mapa, at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:composer-place-set": {
-    "de": "Eine Stecknadel namens Stall mit vollständiger Adresse wurde bestätigt, dann schloss sich der Dialog Ort und Adresse des Shops. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt aktiviert. Die Ladenliste ist weiterhin leer.",
-    "es": "Se confirmó un marcador llamado Stall con dirección completa, luego se cerró el diálogo Lugar y dirección de la tienda. Ese nombre no se muestra. Quitar el lugar aparece solo después de abrir el marcador de nuevo. Siguiente sigue activado. La lista de tiendas sigue vacía.",
-    "fil": "Nakumpirma ang tulos na Stall na may buong address, tapos nagsara ang dialog na Lugar at address ng shop. Hindi ipinapakita ang pangalang iyon. Ang Alisin ang lugar ay lumilitaw lang pagkabukas ulit ng tulos. Naka-enable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
+    "de": "Eine Stecknadel namens Stall mit vollständiger Adresse wurde bestätigt, dann schloss sich der Dialog Ort und Adresse des Shops. Dieser Name wird nicht angezeigt. Der Shop-Dialog hat kein Ort entfernen; beim erneuten Öffnen erscheinen die Stecknadel und Diesen Ort verwenden. Weiter bleibt aktiviert. Die Ladenliste ist weiterhin leer.",
+    "es": "Se confirmó un marcador llamado Stall con dirección completa, luego se cerró el diálogo Lugar y dirección de la tienda. Ese nombre no se muestra. El diálogo de la tienda no tiene Quitar el lugar; al abrirlo de nuevo aparecen el marcador y Usar este lugar. Siguiente sigue activado. La lista de tiendas sigue vacía.",
+    "fil": "Nakumpirma ang tulos na Stall na may buong address, tapos nagsara ang dialog na Lugar at address ng shop. Hindi ipinapakita ang pangalang iyon. Walang Alisin ang lugar ang dialog ng shop; pagbukas ulit, makikita ang tulos at Gamitin ang lugar na ito. Naka-enable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
   },
   "/grants/applications/[accountId]:default": {
     "de": "Personal (Gründer) hat den Antrag für Rose geladen. Frage Stimmen ihre Profilbeiträge mit den Grundprinzipien von 21.gifts überein? Ja / Nein. Keine Antragszeit unter dem Namen. Der Beitrag behält seine eigene Zeit.",
