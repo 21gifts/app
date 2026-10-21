@@ -260,7 +260,12 @@ function markPaid(memory: WalletSettled, charge: PosCharge, payment: TillPayment
   if (memory.open?.id === charge.id) {
     memory.open = null;
   }
-  memory.paid.set(charge.id, { ...charge, status: 'paid', paidAt: new Date().toISOString() });
+  // Paid when the wallet made the payment, not when this tab matched it.
+  memory.paid.set(charge.id, {
+    ...charge,
+    status: 'paid',
+    paidAt: new Date(payment.timestamp).toISOString(),
+  });
   memory.paidBy.set(charge.id, payment);
   settledChanged();
 }
@@ -336,7 +341,11 @@ function reassignPaid(memory: WalletSettled, state: PosState): void {
     memory.paid.delete(id);
     memory.paidBy.delete(id);
     if (newer.status !== 'paid') {
-      memory.paid.set(newer.id, { ...newer, status: 'paid', paidAt: new Date().toISOString() });
+      memory.paid.set(newer.id, {
+        ...newer,
+        status: 'paid',
+        paidAt: new Date(payment.timestamp).toISOString(),
+      });
       memory.paidBy.set(newer.id, payment);
     }
     moved = true;

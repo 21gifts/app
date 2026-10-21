@@ -3435,6 +3435,26 @@ describe('PosScreen', () => {
       expect(reads).toBe(before);
     });
 
+    it('lists a charge the wallet paid with the time the wallet made the payment', async () => {
+      const madeAt = Date.now() - 3 * 3_600_000;
+      const open = {
+        ...OPEN,
+        createdAt: new Date(madeAt - 1_000).toISOString(),
+        expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+      };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => jsonResponse({ charge: open, history: [open] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21, 0, madeAt);
+      expect(await confirmation()).toBeTruthy();
+      const history = screen.getByRole('region', { name: 'History' });
+      const time = new Intl.DateTimeFormat('en', { timeStyle: 'short' }).format(new Date(madeAt));
+      expect(within(history).getByText(`Paid ✓ ${time}`)).toBeTruthy();
+    });
+
     it('confirms a run-out charge a Spark payment names when no charge is open', async () => {
       const ended = {
         ...OPEN,

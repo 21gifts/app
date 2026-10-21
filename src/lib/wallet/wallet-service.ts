@@ -464,8 +464,10 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
  * Reads the payments a fresh connection already holds, so that only a payment
  * that completes later is announced. A payment that completed while this list
  * was read is announced once it is in, unless the list holds it. A failed
- * read counts as none known and drops the payments held meanwhile: the SDK
- * announces only payments that change, so nothing old is announced then.
+ * read counts as none known and drops the payments held meanwhile for the
+ * {@link onIncomingPayment} listeners: the SDK announces only payments that
+ * change, so nothing old is announced then. The {@link onPaymentReceived}
+ * listeners still hear each of them once, as nothing else reports them.
  * After a reconnect of the same phrase, a listed payment the dropped
  * connection did not know (it completed in between) is told to the
  * {@link onPaymentReceived} listeners, once.
@@ -530,6 +532,18 @@ async function rememberKnownPayments(
       // A second report of it in this list goes to the branch above and is not told again.
       told.add(payment.id);
       void announcePayment(known, payment);
+    }
+    return;
+  }
+  // Without the list, a payment reported meanwhile may be new: a till waiting for it hears it, once.
+  const told = new Set<string>();
+  for (const payment of held) {
+    if (told.has(payment.id)) {
+      continue;
+    }
+    told.add(payment.id);
+    for (const listener of receivedListeners) {
+      listener(payment);
     }
   }
 }

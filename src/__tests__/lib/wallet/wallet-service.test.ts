@@ -3007,6 +3007,34 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
+  it('still tells onPaymentReceived, once each, the payments held while the known-payments read failed', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let rejectList!: (error: Error) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((_resolve, reject) => {
+          rejectList = reject;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const received: string[] = [];
+    const unsubscribe = onPaymentReceived((p) => {
+      received.push(p.id);
+    });
+    for (const id of ['live', 'live', 'other']) {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)({
+          type: 'paymentSucceeded',
+          payment: payment(id),
+        });
+      }
+    }
+    rejectList(new Error('list failed'));
+    await vi.waitFor(() => expect(received).toEqual(['live', 'other']));
+    unsubscribe();
+  });
+
   it('drops the payments held meanwhile when the known-payments read fails', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
