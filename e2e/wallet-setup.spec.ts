@@ -301,7 +301,7 @@ test.describe('wallet history', () => {
     await expect(rows).toHaveCount(10);
     await expect(rows.nth(0)).toContainText('Gift on your post');
     await expect(rows.nth(0)).toContainText("+₿2'100");
-    await expect(rows.nth(0)).not.toContainText('$2.10');
+    await expect(rows.nth(0)).toContainText('$2.10');
     await expect(rows.nth(0)).toContainText('Great photo!');
     await expect(rows.nth(1)).toContainText('Gift');
     await expect(rows.nth(1)).not.toContainText('Gift to @alice');
@@ -368,7 +368,7 @@ test.describe('wallet history', () => {
     );
   });
 
-  test('Function: useSpotRateState — a payment that stored no fiat shows bitcoin while the spot is still loading', async ({
+  test('Function: useSpotRateState — a payment that stored no fiat shows bitcoin while the spot is still loading, then the spot beside it', async ({
     page,
   }) => {
     let release: () => void = () => undefined;
@@ -387,7 +387,7 @@ test.describe('wallet history', () => {
     await expect(page.getByText('$2.10')).toHaveCount(0);
     release();
     await expect(page.getByText("+₿2'100")).toBeVisible();
-    await expect(page.getByText('$2.10')).toHaveCount(0);
+    await expect(page.getByText('$2.10').first()).toBeVisible();
   });
 
   test('wallet payment screen copies a technical value in full and shows no key or note id', async ({

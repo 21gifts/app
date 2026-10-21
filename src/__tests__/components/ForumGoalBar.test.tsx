@@ -69,11 +69,11 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
   });
 
-  it('leaves the spot fiat off a legacy ask when no USD snapshot is stored', () => {
+  it('shows the spot fiat on a legacy ask when no USD snapshot is stored', () => {
     renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />);
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
-    expect(screen.queryByText('$21.00')).toBeNull();
+    expect(screen.getByText('$21.00')).toBeTruthy();
     expect(screen.getByText('110%')).toBeTruthy();
   });
 
@@ -235,8 +235,7 @@ describe('ForumGoalBar', () => {
       />,
     );
     expect(screen.queryByText(/Interest 0%/)).toBeNull();
-    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
-    expect(screen.queryByText(/\$0\.10/)).toBeNull();
+    expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
     rerender(
       <ForumGoalBar
         sats={0}
@@ -247,8 +246,7 @@ describe('ForumGoalBar', () => {
         rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
       />,
     );
-    expect(screen.getByText(/₿100 per day for 30 days/)).toBeTruthy();
-    expect(screen.queryByText(/\$0\.10/)).toBeNull();
+    expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
     rerender(
       <ForumGoalBar
         sats={0}
@@ -326,10 +324,8 @@ describe('ForumGoalBar on a posted loan', () => {
     expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
     expect(screen.queryByText('Ask')).toBeNull();
     expect(screen.queryByText(/per day/)).toBeNull();
-    expect(screen.getByText("₿10'500")).toBeTruthy();
-    expect(screen.getByText("of ₿21'000 lent")).toBeTruthy();
-    expect(screen.queryByText('$10.50')).toBeNull();
-    expect(screen.queryByText('$21.00')).toBeNull();
+    expect(screen.getByText("₿10'500 · $10.50")).toBeTruthy();
+    expect(screen.getByText("of ₿21'000 · $21.00 lent")).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Repayment list' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
     expect(onLend).toHaveBeenCalledTimes(1);

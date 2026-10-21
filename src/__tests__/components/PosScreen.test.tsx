@@ -121,7 +121,7 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
-  it('shows bitcoin and no spot figure when an open charge stored no fiat', async () => {
+  it('shows the spot beside bitcoin when an open charge stored no fiat', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
@@ -149,8 +149,7 @@ describe('PosScreen', () => {
     await waitFor(() => {
       expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
     });
-    expect(screen.queryByText('$0.02')).toBeNull();
-    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getByText('$0.02')).toBeTruthy();
   });
 
   it('shows 12.00 PHP on an open charge to a viewer whose currency is USD', async () => {
@@ -1173,8 +1172,8 @@ describe('PosScreen', () => {
       });
     }
 
-    it('shows Paid, bitcoin, and New payment for a paid charge with no stored fiat', async () => {
-      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+    it('shows Paid, bitcoin, the spot, and New payment for a paid charge with no stored fiat', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
@@ -1195,10 +1194,10 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
       });
-      expect(screen.queryByText('$0.02')).toBeNull();
+      expect(screen.getAllByText('$0.02').length).toBeGreaterThan(0);
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
-      expect(within(history).queryByText('$0.02')).toBeNull();
+      expect(within(history).getByText('$0.02')).toBeTruthy();
       expect(screen.getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
@@ -1288,6 +1287,11 @@ describe('PosScreen', () => {
     });
 
     it('shows a paid charge without fiat when there is no spot rate', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValue({
+        asOf: '2026-10-07T00:00:00.000Z',
+        source: 'test',
+        rates: {},
+      });
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [] })),

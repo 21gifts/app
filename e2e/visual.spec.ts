@@ -5060,7 +5060,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-short',
-      text: 'Send ₿500 now to Bruno, the rest after your top-up',
+      text: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
     });
     await shotScreen(page, 'state-loans-repay-short');
   });
@@ -5070,7 +5070,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-short',
-      text: 'Send ₿500 now to Bruno, the rest after your top-up',
+      text: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
       pressWho: true,
     });
     await expect(page.getByText('Diego')).toBeVisible();
@@ -5232,7 +5232,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-sending',
-      text: "Sending ₿1'000…",
+      text: "Sending ₿1'000 · $1.00…",
     });
     await shotScreen(page, 'state-loans-repay-sending');
   });
@@ -5242,7 +5242,7 @@ test.describe('loans repay screens', () => {
       loans: [loanA],
       ledgers: { 'loan-a': ledgerA },
       visual: 'repay-sending',
-      text: "Sending ₿1'000…",
+      text: "Sending ₿1'000 · $1.00…",
       pressWho: true,
     });
     await expect(page.getByText('Diego')).toBeVisible();
@@ -10273,7 +10273,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
     await expect(page.getByText('₿21', { exact: true })).toHaveCount(2);
-    await expect(page.getByText('$0.02')).toHaveCount(0);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
       '/pos/amount',
@@ -10351,7 +10351,7 @@ test.describe('onboarding screens', () => {
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
     await expect(history.getByText("₿2'100")).toBeVisible();
-    await expect(history.getByText('$2.10')).toHaveCount(0);
+    await expect(history.getByText('$2.10')).toBeVisible();
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
     await expect(history.getByText('Sep 18, 2026, 5:45 PM')).toBeVisible();
@@ -12313,7 +12313,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await page.getByText('Need help with a train ticket').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-credit');
@@ -12575,7 +12575,7 @@ test.describe('onboarding screens', () => {
     await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
     await expect(success.getByRole('button')).toHaveCount(0);
     // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
-    await expect(page.getByText(/^₿10'710 of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByLabel('Amount to lend')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
@@ -14164,7 +14164,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A credit from Carol.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -16871,7 +16871,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText("₿21'000", { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
@@ -17394,8 +17394,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText(/7 days at/)).toBeVisible();
     await expect(page.getByText('All other days are')).toBeVisible();
     await expect(page.getByText('₿10').first()).toBeVisible();
-    await expect(page.getByText('$0.01')).toHaveCount(0);
-    await expect(page.getByText('$0.08')).toHaveCount(0);
+    await expect(page.getByText('$0.01').first()).toBeVisible();
+    await expect(page.getByText('$0.08').first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
     const month = page.getByRole('heading', { name: 'November 2026' });
     const footnote = page.getByText('All other days are');
@@ -17824,7 +17824,7 @@ test.describe('onboarding screens', () => {
     await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
     await expect(success.getByRole('button')).toHaveCount(0);
     // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
-    await expect(page.getByText(/^₿10'710 of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByLabel('Amount to lend')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
@@ -23667,7 +23667,7 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/^of ₿21'000 lent$/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
@@ -24625,7 +24625,7 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview');
   });
 
@@ -24654,7 +24654,7 @@ test.describe('welcome forum variants', () => {
     );
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByRole('status')).toContainText('paid back');
     await shotScreen(page, 'state-welcome-ask-credit-preview-loan-open');

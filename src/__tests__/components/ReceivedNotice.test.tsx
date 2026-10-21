@@ -60,7 +60,7 @@ describe('ReceivedNotice', () => {
     expect(status.className).toContain('max-w-sm');
     expect(status.className).toContain('border-app-success/40');
     expect(screen.getByText('You received ₿500')).toBeTruthy();
-    expect(screen.queryByText('$0.50')).toBeNull();
+    expect(screen.getByText('$0.50')).toBeTruthy();
     expect(screen.queryByText(/bruno/)).toBeNull();
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/wallet');

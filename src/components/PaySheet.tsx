@@ -194,9 +194,9 @@ export interface PaySheetProps {
   /** Current spot rate for the fiat line, or `null` while there is none. */
   rateDay: FiatRateDay | null;
   /**
-   * Fiat stored with an existing amount. When set, the sheet shows that
-   * figure and does not price the sats. Omit it while the amount is still
-   * being typed: that preview keeps the spot.
+   * Fiat stored with an existing amount. A stored figure is shown as-is.
+   * When it is missing, or while the amount is still being typed, the sheet
+   * shows the current spot beside the bitcoin.
    */
   stored?: StoredFiat;
   /** Heading of the success step, e.g. **Sent to Ana**, **Lent to Ana**, **Paid and posted**, or **Sent**. */
@@ -359,16 +359,13 @@ export function PaySheet({
 
   const shown = entered && !leaving;
   const storedFigure = stored === undefined ? null : committedFiatFigure(stored, fiat);
-  const spotAmount = stored === undefined ? satsToFiatAmount(amountSats, rateDay, fiat) : null;
-  let fiatLine: string | null = null;
-  if (stored !== undefined) {
-    fiatLine =
-      storedFigure === null
+  const spotAmount = satsToFiatAmount(amountSats, rateDay, fiat);
+  const fiatLine =
+    storedFigure !== null
+      ? formatFiatDisplay(storedFigure.amount, storedFigure.code, numberFormat)
+      : spotAmount === null
         ? null
-        : formatFiatDisplay(storedFigure.amount, storedFigure.code, numberFormat);
-  } else if (spotAmount !== null) {
-    fiatLine = formatFiatDisplay(spotAmount, fiat, numberFormat);
-  }
+        : formatFiatDisplay(spotAmount, fiat, numberFormat);
   const amount = (
     <div className="flex flex-col items-center gap-0.5">
       <p className="text-4xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg">

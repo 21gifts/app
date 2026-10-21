@@ -357,6 +357,11 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
               amount: formatBitcoin(state.arrivedSats, numberFormat),
             })}
           </h2>
+          {fiatOf(state.arrivedSats) === null ? null : (
+            <p className="text-sm tabular-nums lining-nums text-app-muted">
+              {fiatOf(state.arrivedSats)}
+            </p>
+          )}
           <p className="text-sm text-app-muted">
             {balanceSats === null
               ? t('moveFunds.arrivedAgain')

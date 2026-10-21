@@ -267,12 +267,10 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     amount: string,
     figure?: { code: FiatCode; amount: string } | null,
   ): ReactElement => {
-    let live: string | null = null;
-    if (figure === undefined) {
-      live = fiatText(sats);
-    } else if (figure !== null) {
-      live = formatFiatDisplay(figure.amount, figure.code, numberFormat);
-    }
+    const live =
+      figure !== undefined && figure !== null
+        ? formatFiatDisplay(figure.amount, figure.code, numberFormat)
+        : fiatText(sats);
     return (
       <div className="flex flex-col items-center gap-2">
         <p className={LARGE_AMOUNT_CLASS}>{amount}</p>

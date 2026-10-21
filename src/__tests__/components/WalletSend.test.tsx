@@ -715,7 +715,7 @@ describe('WalletSend confirm and sent', () => {
     expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
   });
 
-  it('shows no fiat line when the charge stored no figure', () => {
+  it('shows the current spot when the charge stored no figure', () => {
     renderSend(
       sendWith({
         step: 'confirm',
@@ -726,9 +726,9 @@ describe('WalletSend confirm and sent', () => {
       }),
     );
     expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.getByText('$2.10')).toBeTruthy();
     expect(screen.queryByText('₱12.00')).toBeNull();
-    expect(screen.queryByText('$2.10')).toBeNull();
-    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
   });
 
   it('shows the fiat of a fee above zero', () => {

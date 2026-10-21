@@ -15,7 +15,14 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams('id=p1'),
 }));
-vi.mock('@/hooks/useSpotRate', () => ({ useSpotRateState: vi.fn() }));
+vi.mock('@/hooks/useSpotRate', () => {
+  const useSpotRateState = vi.fn((_enabled?: boolean) => ({ rateDay: null, loading: false }));
+  return {
+    useSpotRateState,
+    useSpotRate: (enabled?: boolean): FiatRateDay | null =>
+      useSpotRateState(enabled).rateDay ?? null,
+  };
+});
 vi.mock('@/hooks/useShopChargeFigure', () => ({
   useShopChargeFigure: vi.fn(() => ({ pending: false, figure: null })),
 }));
@@ -161,7 +168,7 @@ describe('WalletPaymentDetails', () => {
     });
     showPayment(shop);
     expect(screen.getByText("+₿2'100")).toBeTruthy();
-    expect(screen.getByText('₱12.00')).toBeTruthy();
+    expect(screen.getAllByText('₱12.00').length).toBeGreaterThan(0);
     expect(screen.queryByText('$2.10')).toBeNull();
     expect(screen.queryByText(/\$/)).toBeNull();
     cleanup();
@@ -169,22 +176,21 @@ describe('WalletPaymentDetails', () => {
     showPayment(shop);
     expect(screen.getByText("+₿2'100")).toBeTruthy();
     expect(screen.queryByText('₱12.00')).toBeNull();
-    expect(screen.queryByText('$2.10')).toBeNull();
-    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getAllByText('$2.10').length).toBeGreaterThan(0);
   });
 
   it('shows a received zap as a gift on the post: signed bitcoin amount and the message, without a key or note id', () => {
     showPayment(fixture(ZAP));
     expect(screen.getByText('Gift on your post')).toBeTruthy();
     expect(screen.getByText("+₿2'100")).toBeTruthy();
-    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.getAllByText('$2.10').length).toBeGreaterThan(0);
     expect(screen.getByText('Completed').className).toContain('text-app-success');
     expect(screen.getByText('Great photo!')).toBeTruthy();
     expect(row('Type').textContent).toBe('Instant payment');
     expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Post', { selector: 'dt' })).toBeNull();
     expect(document.body.textContent).not.toMatch(/npub1|note1|Zap/);
-    expect(row('Amount').textContent).toBe("₿2'100");
+    expect(row('Amount').textContent).toBe("₿2'100 · $2.10");
     // A fee-less receive has no fee row, and a received payment shows no recipient node.
     expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
@@ -203,8 +209,8 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByText('Thanks for dinner')).toBeTruthy();
     expect(row('To').textContent).toBe('bob@example.com');
     expect(within(row('To')).queryByRole('link')).toBeNull();
-    expect(row('Fee').textContent).toBe('₿3');
-    expect(row('Total').textContent).toBe("₿10'003");
+    expect(row('Fee').textContent).toBe('₿3 · $0.00');
+    expect(row('Total').textContent).toBe("₿10'003 · $10.00");
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Description', { selector: 'dt' })).toBeNull();
   });

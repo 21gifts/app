@@ -39,6 +39,7 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
+  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -345,14 +346,16 @@ const STORED_FIAT_FIELD = {
 } as const;
 
 /**
- * Plain-text ₿ amount plus the visitor's stored fiat.
- * A stored string for that currency is shown as-is. A missing string stays
- * bitcoin. This is a committed gift, so it does not use the spot rate.
+ * Plain-text ₿ amount plus one fiat figure.
+ * A stored string for that currency is shown as-is. A missing string uses the
+ * current spot and is not written back. Bitcoin stands alone only without a
+ * usable rate.
  */
 function giftAmountText(
   sats: number,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
+  rateDay: FiatRateDay | null,
   stored: {
     amountUsd?: string | null | undefined;
     amountChf?: string | null | undefined;
@@ -362,10 +365,12 @@ function giftAmountText(
 ): string {
   const bitcoin = formatBitcoin(sats, numberFormat);
   const storedAmount = stored[STORED_FIAT_FIELD[fiat]];
-  if (typeof storedAmount !== 'string') {
+  const amount =
+    typeof storedAmount === 'string' ? storedAmount : satsToFiatAmount(sats, rateDay, fiat);
+  if (amount === null) {
     return bitcoin;
   }
-  return `${bitcoin} · ${formatFiatDisplay(storedAmount, fiat, numberFormat)}`;
+  return `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
 }
 
 /**
@@ -512,10 +517,9 @@ function ConversationListItem({
  * message, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
- * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
- * when the payment was made (a stored string as-is; null or a missing field
- * stays absent). Unpaid invoice previews omit the stored object and use the
- * spot rate. A settled amount with no stored string stays bitcoin. A message whose `giftFor` points at
+ * show a preferred-fiat suffix via `preferredFiatSuffix`. A stored string is
+ * shown as-is. A null or missing field uses the current spot and is not
+ * written back. Unpaid invoice previews use that same spot. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * pay sheet, where `WalletPay` pays from the member's in-app wallet; it shows
@@ -1061,7 +1065,7 @@ export function InboxScreen({
                     role="note"
                     aria-label={t('inbox.giftForLabel', {
                       name: gift.name,
-                      amount: giftAmountText(gift.sats, fiat, numberFormat, gift),
+                      amount: giftAmountText(gift.sats, fiat, numberFormat, rateDay, gift),
                     })}
                     data-message-id={gift.id}
                     data-gift-for={message.id}

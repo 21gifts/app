@@ -157,14 +157,16 @@ export function LoanRepayScreen(): ReactElement {
   }
 
   const bitcoinText = (sats: number): string => formatBitcoin(sats, numberFormat);
-  const holding = (sats: number): string => {
+  const fiatOnly = (sats: number): string | null => {
     const amount = satsToFiatAmount(sats, rateDay, fiat);
-    const bitcoin = bitcoinText(sats);
-    if (amount === null) {
-      return bitcoin;
-    }
-    return `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
+    return amount === null ? null : formatFiatDisplay(amount, fiat, numberFormat);
   };
+  const money = (sats: number): string => {
+    const converted = fiatOnly(sats);
+    const bitcoin = bitcoinText(sats);
+    return converted === null ? bitcoin : `${bitcoin} · ${converted}`;
+  };
+  const holding = money;
   const wholeLoanText = (item: MyLoan): string => {
     const bitcoin = bitcoinText(item.totalSats);
     if (isFiatCode(item.goalCurrency)) {
@@ -183,7 +185,7 @@ export function LoanRepayScreen(): ReactElement {
       fiat,
     );
     if (figure === null) {
-      return bitcoin;
+      return money(item.totalSats);
     }
     return `${bitcoin} · ${formatFiatDisplay(figure.amount, figure.code, numberFormat)}`;
   };
@@ -239,7 +241,7 @@ export function LoanRepayScreen(): ReactElement {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextIsTomorrow = summary.next.dueOn === localDay(tomorrow);
     const variables = {
-      amount: bitcoinText(summary.next.sats),
+      amount: money(summary.next.sats),
       count: nextPeople,
       date: dateLabel(summary.next.dueOn, true),
     };
@@ -278,6 +280,7 @@ export function LoanRepayScreen(): ReactElement {
           numberFormat,
         )}`
       : formatBitcoin(shownSats, numberFormat);
+  const smallAmount = definedPayable !== null ? null : fiatOnly(shownSats);
 
   const rowAmount = (share: DueShare): string => {
     // `dueShares` creates every share from this exact loan array and preserves its index.
@@ -290,7 +293,7 @@ export function LoanRepayScreen(): ReactElement {
       return defined === '' ? '–' : defined;
     }
     if (defined === '') {
-      return bitcoinText(share.sats);
+      return money(share.sats);
     }
     return `${defined} · ${bitcoinText(share.sats)}`;
   };
@@ -322,7 +325,7 @@ export function LoanRepayScreen(): ReactElement {
         <>
           <p className="flex items-center gap-2 font-semibold text-app-success">
             <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: bitcoinText(sentAmount) })}
+            {t('loans.repaid', { amount: money(sentAmount) })}
           </p>
           <p className="mt-2 text-sm text-app-fg">
             {t('loans.lastFor', {
@@ -335,7 +338,7 @@ export function LoanRepayScreen(): ReactElement {
         <>
           <p className="flex items-center gap-2 font-semibold text-app-success">
             <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: bitcoinText(sentAmount) })}
+            {t('loans.repaid', { amount: money(sentAmount) })}
           </p>
           {repay.feeSats > 0 ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
@@ -346,7 +349,7 @@ export function LoanRepayScreen(): ReactElement {
       )}
       {summary.waitingSats > 0 ? (
         <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
-          {t('loans.waitsLater', { amount: bitcoinText(summary.waitingSats) })}
+          {t('loans.waitsLater', { amount: money(summary.waitingSats) })}
         </p>
       ) : null}
       {nextLine() === null ? null : (
@@ -386,7 +389,7 @@ export function LoanRepayScreen(): ReactElement {
         </p>
         <Button variant="primary" size="lg" onClick={() => rememberAndPay()}>
           {t('loans.sendAmount', {
-            amount: definedPayable !== null ? bigAmount : bitcoinText(payable),
+            amount: definedPayable !== null ? bigAmount : money(payable),
           })}
         </Button>
       </>
@@ -423,7 +426,7 @@ export function LoanRepayScreen(): ReactElement {
             onClick={() => rememberAndPay(new Set(fitting.map(shareKey)))}
           >
             {t('loans.sendNow', {
-              amount: bitcoinText(fittingSats),
+              amount: money(fittingSats),
               names: fittingNames,
             })}
           </button>
@@ -457,7 +460,7 @@ export function LoanRepayScreen(): ReactElement {
       payArea = (
         <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          {t('loans.sending', { amount: bitcoinText(sendingSats ?? payable) })}
+          {t('loans.sending', { amount: money(sendingSats ?? payable) })}
         </p>
       );
       break;
@@ -510,6 +513,9 @@ export function LoanRepayScreen(): ReactElement {
       <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
         {bigAmount}
       </p>
+      {smallAmount === null ? null : (
+        <p className="text-sm tabular-nums lining-nums text-app-muted">{smallAmount}</p>
+      )}
 
       <p className="mt-2 text-sm text-app-muted">
         {t(payablePeople === 1 ? 'loans.toOne' : 'loans.toMany', { count: payablePeople })}
@@ -526,7 +532,7 @@ export function LoanRepayScreen(): ReactElement {
           <p>
             {payable > 0
               ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
-                  amount: bitcoinText(waiting),
+                  amount: money(waiting),
                   count: summary.waitingPeople,
                 })
               : t(summary.waitingPeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}
@@ -622,7 +628,7 @@ export function LoanRepayScreen(): ReactElement {
         <p className="mt-3 flex items-center gap-2 text-sm text-app-success">
           <Check aria-hidden="true" className="h-4 w-4" />
           {t('loans.sent', {
-            amount: bitcoinText(repay.sentSats),
+            amount: money(repay.sentSats),
             names: repay.sentNames.join(', '),
           })}
         </p>
@@ -676,14 +682,14 @@ export function LoanRepayScreen(): ReactElement {
                 : formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat);
             const planPerDay =
               loan.goalCurrency === 'BTC'
-                ? bitcoinText(Number(split?.perDay ?? 0n))
+                ? money(Number(split?.perDay ?? 0n))
                 : formatDefinedGoalAmount(
                     centsString(split?.perDay ?? 0n),
                     loan.goalCurrency,
                     numberFormat,
                   );
             const repaidText = t('loans.repaidOf', {
-              repaid: bitcoinText(loan.repaidSats),
+              repaid: money(loan.repaidSats),
               total: wholeLoanText(loan),
             });
             const repaidPercent =

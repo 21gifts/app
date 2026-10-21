@@ -34,10 +34,9 @@ export interface WalletPayProps {
    */
   rateDay: FiatRateDay | null;
   /**
-   * Stored figure of a till charge. Omit it for a payment that is still being
-   * typed: that amount keeps the spot. `null` is a charge that stored no fiat,
-   * so the label stays bitcoin. A figure is shown as stored and is not priced
-   * from the spot.
+   * Stored figure of a till charge. A figure is shown as stored and is not
+   * priced from the spot. Omit it, or pass `null` when the charge stored no
+   * fiat: the label keeps bitcoin and the current spot.
    */
   chargeFigure?: { code: FiatCode; amount: string } | null;
   /** Feature whose sheet this is: named on the report of a payment that did not go out. */
@@ -93,17 +92,17 @@ export function WalletPay({
   const { fiat } = useFiatPreference();
   const bitcoin = formatBitcoin(amountSats, numberFormat);
   let amountWithFiat = bitcoin;
-  if (chargeFigure === undefined) {
-    const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
-    if (amountPriced !== null) {
-      amountWithFiat = `${bitcoin} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
-    }
-  } else if (chargeFigure !== null) {
+  if (chargeFigure !== undefined && chargeFigure !== null) {
     amountWithFiat = `${bitcoin} · ${formatFiatDisplay(
       chargeFigure.amount,
       chargeFigure.code,
       numberFormat,
     )}`;
+  } else {
+    const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
+    if (amountPriced !== null) {
+      amountWithFiat = `${bitcoin} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
+    }
   }
   const { view, sent, feeSats, missingSats, pay, retry } = useWalletPay(
     sparkInvoice,
