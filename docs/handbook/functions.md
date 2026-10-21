@@ -1407,13 +1407,6 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** A full-width, content-capped muted chip with MapPin, localized label or coordinates, and an icon-only **Remove place** control. Removal calls `onRemove`; disabled state reaches the control. On the device's local Sunday the chip content is removed by the same writing gate as the place field.
 - **Used by:** `ForumBoard`, below the top-level composer row after the live composer hint, before media previews and request feedback.
 
-## Function: fitBoxInFrame
-
-- **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
-- **Inputs:** Frame left, right, top, and bottom, anchor left, top, and bottom, gap, preferred width, inset, and viewport height, all in pixels.
-- **Returns / side effects:** `{ left, width, maxHeight, top, bottom }` with exactly one of top or bottom set, or null. No DOM writes and no network.
-- **Used by:** Unit tests that pin the standalone frame-placement helper. `PlaceField` now uses a modal dialog/sheet instead of an anchored panel.
-
 ## Function: pageFrameProblems
 
 - **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. A box inside `[data-scroll-x]` is ignored for the horizontal check unless it is position:fixed and its border box already crosses the left or right edge of the window. The sideways row itself is not ignored.
