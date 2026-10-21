@@ -10494,12 +10494,13 @@ test('Function: PosTill — an open charge turns into Paid the moment the wallet
       body: JSON.stringify({ charge, history: [charge] }),
     });
   });
-  // The pin plays this tab's wallet receiving the open amount; the api is not asked again.
+  // The pin plays this tab's wallet receiving the open amount: Paid shows without waiting for the
+  // api, and one read (not a timer) then checks the payment.
   await page.goto('/pos?visual=pos-received');
   const dialog = page.getByRole('alertdialog', { name: 'Paid' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('₿21')).toBeVisible();
-  expect(loads).toBe(1);
+  await expect.poll(() => loads).toBe(2);
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
   await dialog.getByRole('link', { name: 'New payment' }).click();
   await expect(page).toHaveURL(/\/pos\/amount$/);
