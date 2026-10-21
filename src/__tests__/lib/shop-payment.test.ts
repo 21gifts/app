@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchShopInvoice,
   fetchShopPayLink,
+  jsonAmountText,
   openShopPayment,
   SHOP_PAYMENT_RECHECK_DELAY_MS,
   SHOP_PAYMENT_START_TIMEOUT_MS,
@@ -168,11 +169,58 @@ describe('fetchShopPayLink', () => {
     }
   });
 
+  it('reads 1 to 99 sats that the JSON body writes as a number in exponent form', async () => {
+    // JSON.parse turns 0.00000021 into 2.1e-7, whose String() is "2.1e-7".
+    const cases: [number, number][] = [
+      [1e-8, 1],
+      [2.1e-7, 21],
+      [9.9e-7, 99],
+      [0.00021, 21_000],
+    ];
+    for (const [amount, sats] of cases) {
+      stubFetch(async () =>
+        Response.json({
+          ...OPEN_AMOUNT,
+          transferAmounts: [],
+          requestedAmount: { asset: 'BTC', amount },
+        }),
+      );
+      const link = await fetchShopPayLink('ada');
+      expect(link.kind === 'payment' ? link.request.amountSats : null).toBe(sats);
+    }
+    stubFetch(async () =>
+      Response.json({
+        ...OPEN_AMOUNT,
+        transferAmounts: [
+          { method: 'Lightning', assets: [{ asset: 'BTC', amount: 2.1e-7 }] },
+          {
+            method: 'Polygon',
+            assets: [
+              { asset: 'USDT', amount: 2.1e-7 },
+              { asset: 'USDC', amount: 1e-9 },
+              { asset: 'DAI', amount: '2.1e-7' },
+            ],
+          },
+        ],
+      }),
+    );
+    const link = await fetchShopPayLink('ada');
+    expect(link.kind === 'payment' ? link.request : null).toMatchObject({
+      amountSats: 21,
+      lines: [
+        { method: 'Polygon', asset: 'USDT', amount: '0.00000021' },
+        { method: 'Polygon', asset: 'DAI', amount: '2.1e-7' },
+      ],
+    });
+  });
+
   it('reports a pay request without a readable bitcoin amount as an error', async () => {
     const unreadable: unknown[] = [
       { transferAmounts: [], requestedAmount: undefined },
       { transferAmounts: [], requestedAmount: { asset: 'USD', amount: 12.5 } },
-      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 1e-8 } },
+      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 1e-9 } },
+      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 0.000000021 } },
+      { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: -0.00021 } },
       { transferAmounts: [], requestedAmount: { asset: 'BTC', amount: 0 } },
       { transferAmounts: [], requestedAmount: null },
     ];
@@ -238,6 +286,41 @@ describe('fetchShopPayLink', () => {
     for (const patch of broken) {
       stubFetch(async () => Response.json({ ...OPEN_AMOUNT, ...(patch as object) }));
       expect(await fetchShopPayLink('ada')).toEqual({ kind: 'error' });
+    }
+  });
+});
+
+describe('jsonAmountText', () => {
+  it('writes a JSON number as exact plain decimal text and keeps a string as written', () => {
+    expect(jsonAmountText(1e-8)).toBe('0.00000001');
+    expect(jsonAmountText(2.1e-7)).toBe('0.00000021');
+    expect(jsonAmountText(9.9e-7)).toBe('0.00000099');
+    expect(jsonAmountText(0.00238093)).toBe('0.00238093');
+    expect(jsonAmountText(12.5)).toBe('12.5');
+    expect(jsonAmountText(12)).toBe('12');
+    expect(jsonAmountText(10)).toBe('10');
+    expect(jsonAmountText(0)).toBe('0');
+    expect(jsonAmountText('2.1e-7')).toBe('2.1e-7');
+    expect(jsonAmountText(' 12.50 ')).toBe(' 12.50 ');
+  });
+
+  it('rejects a number with more than 8 decimals, a negative or non-finite number, and other values', () => {
+    for (const value of [
+      1e-9,
+      0.000000021,
+      0.1 + 0.2,
+      1e21,
+      -1e-8,
+      -12.5,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+      null,
+      undefined,
+      true,
+      {},
+    ]) {
+      expect(jsonAmountText(value)).toBeNull();
     }
   });
 });

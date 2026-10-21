@@ -168,6 +168,9 @@ async function pageNow(page: Page): Promise<number> {
  *   every Lightning detail; `detailHangs` never answers the Lightning detail.
  *   `openedWithoutWindow` opens the payment without `expiresAt`, so the page
  *   has no window time to show.
+ * - `lightningAsNumber` writes the Lightning entry's BTC amount as a JSON
+ *   number in plain notation, like `requestedAmount` (`0.00000021` for 21
+ *   sats, which `JSON.parse` reads as `2.1e-7`).
  * - `GET /lnurlp/wait/p1` with a `since` equal to the last entry's
  *   `paymentStatus` is held and never answered, as the api holds it while the
  *   status is unchanged.
@@ -189,6 +192,7 @@ export async function stubShopPayment(
     detailFails?: boolean;
     detailHangs?: boolean;
     openedWithoutWindow?: boolean;
+    lightningAsNumber?: boolean;
   },
 ): Promise<void> {
   const posts = options.posts ?? [options.charge === true ? 409 : 'opened'];
@@ -319,7 +323,7 @@ export async function stubShopPayment(
         {
           method: 'Lightning',
           minFee: 0,
-          assets: [{ asset: 'BTC', amount: btcAmount(sats) }],
+          assets: [{ asset: 'BTC', amount: '<lightning>' }],
           available: true,
         },
         ...(options.lightningOnly === true ? [] : stablecoins),
@@ -329,7 +333,12 @@ export async function stubShopPayment(
       status: 200,
       contentType: 'application/json',
       // `requestedAmount.amount` is a JSON number in plain notation, never `2.1e-7`.
-      body: body.replace('"<requested>"', btcAmount(sats)),
+      body: body
+        .replace('"<requested>"', btcAmount(sats))
+        .replace(
+          '"<lightning>"',
+          options.lightningAsNumber === true ? btcAmount(sats) : `"${btcAmount(sats)}"`,
+        ),
     });
   });
   await page.route(

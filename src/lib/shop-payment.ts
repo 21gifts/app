@@ -149,6 +149,31 @@ function isPlainPayRequest(body: { [P in PayLinkField]?: unknown }): boolean {
   );
 }
 
+/**
+ * Text of an amount from a pay link's JSON. A string stays exactly as written.
+ * A JSON number (the contract writes `requestedAmount.amount` as one, and
+ * `JSON.parse` turns `0.00000021` into `2.1e-7`) becomes plain decimal text
+ * without an exponent and without trailing zeros (`2.1e-7` → `0.00000021`,
+ * `12.5` → `12.5`, `12` → `12`), but only when it is finite, not negative,
+ * and has at most 8 decimals, so the text is exactly the number.
+ *
+ * @param value - `amount` field as parsed from the JSON body.
+ * @returns The text, or `null` for any other value or number.
+ */
+export function jsonAmountText(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  const fixed = value.toFixed(8);
+  if (!/^\d+\.\d{8}$/.test(fixed) || Number(fixed) !== value) {
+    return null;
+  }
+  return fixed.replace(/\.?0+$/, '');
+}
+
 function transferLines(value: unknown): ShopTransferLine[] {
   if (!Array.isArray(value)) {
     return [];
@@ -167,12 +192,9 @@ function transferLines(value: unknown): ShopTransferLine[] {
     }
     for (const assetItem of entry.assets) {
       const asset = fields<'asset' | 'amount'>(assetItem);
-      if (
-        asset !== null &&
-        typeof asset.asset === 'string' &&
-        (typeof asset.amount === 'string' || typeof asset.amount === 'number')
-      ) {
-        lines.push({ method: entry.method, asset: asset.asset, amount: String(asset.amount) });
+      const amount = asset === null ? null : jsonAmountText(asset.amount);
+      if (asset !== null && typeof asset.asset === 'string' && amount !== null) {
+        lines.push({ method: entry.method, asset: asset.asset, amount });
       }
     }
   }
@@ -180,15 +202,17 @@ function transferLines(value: unknown): ShopTransferLine[] {
 }
 
 /**
- * Whole sats of a BTC amount as the pay link writes it (`0.00238093`, `12`),
- * exact through `scaleDecimalTo8`; `null` for any other value, an exponent
- * form, zero, or more than a safe integer.
+ * Whole sats of a BTC amount as the pay link writes it (`0.00238093`, `12`,
+ * or the JSON number `2.1e-7`), exact through `jsonAmountText` and
+ * `scaleDecimalTo8`; `null` for any other value, a string in exponent form,
+ * zero, or more than a safe integer.
  */
 function btcAmountSats(value: unknown): number | null {
-  if (typeof value !== 'string' && typeof value !== 'number') {
+  const text = jsonAmountText(value);
+  if (text === null) {
     return null;
   }
-  const sats = scaleDecimalTo8(String(value));
+  const sats = scaleDecimalTo8(text);
   if (sats === null || sats < 1n || sats > BigInt(Number.MAX_SAFE_INTEGER)) {
     return null;
   }

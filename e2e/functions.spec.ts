@@ -7787,6 +7787,28 @@ test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a m
   expect(opens).toEqual([]);
 });
 
+test('Function: jsonAmountText — 21 sats written as JSON numbers open the shop payment', async ({
+  page,
+}) => {
+  await stubWalletLocationAssign(page);
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const minted = recordRequests(page, '/invoice');
+  // Both bitcoin amounts of the pay link are the JSON number 0.00000021, which JSON.parse
+  // reads as 2.1e-7: the page still reads them as the 21 sats the payer entered.
+  await stubShopPayment(page, { lightningAsNumber: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc210n1shop');
+  expect(minted).toEqual([]);
+});
+
 test('Function: openShopPayment — Continue opens a shop payment, a repeat failure mints nothing', async ({
   page,
 }) => {
