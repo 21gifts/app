@@ -2142,6 +2142,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shop-edit-photo-preparing",
+    "label": "/members/[accountId] shop-edit-photo-preparing",
+    "visual": "state-members-shop-edit-photo-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:shop-edit-history-loading",
     "label": "/members/[accountId] shop-edit-history-loading",
     "visual": "state-members-shop-edit-history-loading",
@@ -3930,6 +3936,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:shop-edit-photo-preparing",
+    "label": "/messages/[id] shop-edit-photo-preparing",
+    "visual": "state-messages-id-shop-edit-photo-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:shop-edit-history-loading",
     "label": "/messages/[id] shop-edit-history-loading",
     "visual": "state-messages-id-shop-edit-history-loading",
@@ -4308,6 +4320,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:shop-edit-photo-preparing",
+    "label": "/welcome shop-edit-photo-preparing",
+    "visual": "state-welcome-shop-edit-photo-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:shop-edit-history-loading",
     "label": "/welcome shop-edit-history-loading",
     "visual": "state-welcome-shop-edit-history-loading",
@@ -4554,6 +4572,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:map-edit-photo-preparing",
+    "label": "/shops map-edit-photo-preparing",
+    "visual": "state-shops-map-edit-photo-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map-edit-history-loading",
     "label": "/shops map-edit-history-loading",
     "visual": "state-shops-map-edit-history-loading",
@@ -4755,6 +4779,12 @@
     "id": "/shops:table-edit-saving",
     "label": "/shops table-edit-saving",
     "visual": "state-shops-table-edit-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-preparing",
+    "label": "/shops table-edit-photo-preparing",
+    "visual": "state-shops-table-edit-photo-preparing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5163,6 +5193,12 @@
     "id": "/shops:edit-saving",
     "label": "/shops edit-saving",
     "visual": "state-shops-edit-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-preparing",
+    "label": "/shops edit-photo-preparing",
+    "visual": "state-shops-edit-photo-preparing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

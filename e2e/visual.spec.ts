@@ -1061,6 +1061,40 @@ async function enterInvalidShopUsername(page: Page): Promise<void> {
   await invalid.scrollIntoViewIfNeeded();
 }
 
+/** Keep shop-photo preparation pending so the waiting sentence stays on screen. */
+async function hangShopPhotoPrepare(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.createImageBitmap = () => new Promise(() => undefined);
+  });
+}
+
+/**
+ * Attach one still to an open shop editor and wait for the preparing state.
+ * Next and Cancel stay usable. The attach control stays locked.
+ * The caller takes the screenshot so the variant needle stays in the test.
+ */
+async function showPreparingShopPhoto(
+  page: Page,
+  extra?: (page: Page) => Promise<void>,
+): Promise<void> {
+  await page
+    .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
+    .setInputFiles('e2e/fixtures/tiny.jpg');
+  const waiting = page.getByText('Wait until this photo is ready.');
+  await expect(waiting).toBeVisible();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+  // Welcome also shows the composer attach control. The editor's control is the one tied to its photo feedback.
+  await expect(page.locator('button[aria-describedby$="-photo-feedback"]')).toBeDisabled();
+  await expect(page.getByText('Saving this shop note.')).toHaveCount(0);
+  await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+  if (extra !== undefined) {
+    await extra(page);
+  }
+  await waiting.scrollIntoViewIfNeeded();
+}
+
 /** Make the image preparation path produce its ordinary too-large result. */
 async function stubTooLargeShopPhoto(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -3736,6 +3770,13 @@ test.describe('onboarding screens', () => {
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-saving');
     release();
+  });
+
+  test('welcome shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing');
   });
 
   test('welcome shop-edit-history-loading', async ({ page }) => {
@@ -7270,6 +7311,13 @@ test.describe('onboarding screens', () => {
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-saving');
     release();
+  });
+
+  test('state /members shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing');
   });
 
   test('state /members shop-edit-history-loading', async ({ page }) => {
@@ -12158,6 +12206,13 @@ test.describe('onboarding screens', () => {
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-saving');
     release();
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing');
   });
 
   test('state /messages/[id] shop-edit-history-loading', async ({ page }) => {
@@ -19976,6 +20031,16 @@ test.describe('shops screens', () => {
     release();
   });
 
+  test('shops map-edit-photo-preparing', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(page, async (current) => {
+      await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    });
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing');
+  });
+
   test('shops map-edit-history-loading', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
@@ -20564,6 +20629,13 @@ test.describe('shops screens', () => {
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-saving');
     release();
+  });
+
+  test('shops table-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing');
   });
 
   test('shops table-edit-history-loading', async ({ page }) => {
@@ -21500,6 +21572,13 @@ test.describe('shops screens', () => {
     await saving.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-saving');
     release();
+  });
+
+  test('shops edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-shops-edit-photo-preparing');
   });
 
   test('shops edit-history-loading', async ({ page }) => {

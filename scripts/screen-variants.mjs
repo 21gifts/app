@@ -2573,6 +2573,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'shop-edit-photo-preparing',
+    image: 'members-shop-edit-photo-preparing.png',
+    visual: 'state-members-shop-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-members-shop-edit-photo-preparing')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-history-loading',
     image: 'members-shop-edit-history-loading.png',
     visual: 'state-members-shop-edit-history-loading',
@@ -4661,6 +4668,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'shop-edit-photo-preparing',
+    image: 'messages-id-shop-edit-photo-preparing.png',
+    visual: 'state-messages-id-shop-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-photo-preparing')",
+  },
+  {
+    route: '/messages/[id]',
     id: 'shop-edit-history-loading',
     image: 'messages-id-shop-edit-history-loading.png',
     visual: 'state-messages-id-shop-edit-history-loading',
@@ -5102,6 +5116,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'shop-edit-photo-preparing',
+    image: 'welcome-shop-edit-photo-preparing.png',
+    visual: 'state-welcome-shop-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-photo-preparing')",
+  },
+  {
+    route: '/welcome',
     id: 'shop-edit-history-loading',
     image: 'welcome-shop-edit-history-loading.png',
     visual: 'state-welcome-shop-edit-history-loading',
@@ -5389,6 +5410,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-edit-photo-preparing',
+    image: 'shops-map-edit-photo-preparing.png',
+    visual: 'state-shops-map-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-shops-map-edit-photo-preparing')",
+  },
+  {
+    route: '/shops',
     id: 'map-edit-history-loading',
     image: 'shops-map-edit-history-loading.png',
     visual: 'state-shops-map-edit-history-loading',
@@ -5624,6 +5652,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-table-edit-saving.png',
     visual: 'state-shops-table-edit-saving',
     needle: "shotScreen(page, 'state-shops-table-edit-saving')",
+  },
+  {
+    route: '/shops',
+    id: 'table-edit-photo-preparing',
+    image: 'shops-table-edit-photo-preparing.png',
+    visual: 'state-shops-table-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-shops-table-edit-photo-preparing')",
   },
   {
     route: '/shops',
@@ -6100,6 +6135,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-edit-saving.png',
     visual: 'state-shops-edit-saving',
     needle: "shotScreen(page, 'state-shops-edit-saving')",
+  },
+  {
+    route: '/shops',
+    id: 'edit-photo-preparing',
+    image: 'shops-edit-photo-preparing.png',
+    visual: 'state-shops-edit-photo-preparing',
+    needle: "shotScreen(page, 'state-shops-edit-photo-preparing')",
   },
   {
     route: '/shops',

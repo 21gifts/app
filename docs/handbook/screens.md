@@ -1896,6 +1896,12 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ![21.gifts welcome shop edit saving](images/welcome-shop-edit-saving.png)
 
+### Variant: shop-edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing](images/welcome-shop-edit-photo-preparing.png)
+
 ### Variant: shop-edit-history-loading
 
 A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
@@ -2189,6 +2195,12 @@ A moderator opened **Edit shop note** on **Map**, changed the text, and **Save c
 
 ![21.gifts shops map edit saving](images/shops-map-edit-saving.png)
 
+### Variant: map-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing](images/shops-map-edit-photo-preparing.png)
+
 ### Variant: map-edit-history-loading
 
 A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Map** stays selected. No second **Map** heading.
@@ -2435,6 +2447,12 @@ inconclusive, then the API rejected the account update. The editor returns to st
 A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit saving](images/shops-table-edit-saving.png)
+
+### Variant: table-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing](images/shops-table-edit-photo-preparing.png)
 
 ### Variant: table-edit-history-loading
 
@@ -2921,6 +2939,12 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
 
 ![21.gifts shops edit saving](images/shops-edit-saving.png)
+
+### Variant: edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts shops edit photo preparing](images/shops-edit-photo-preparing.png)
 
 ### Variant: edit-history-loading
 
@@ -3831,6 +3855,12 @@ username. Check the spelling of the 21.gifts username.**
 A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
 
 ![21.gifts member shop edit saving](images/members-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts member shop edit photo preparing](images/members-shop-edit-photo-preparing.png)
 
 ### Variant: shop-edit-history-loading
 
@@ -5825,6 +5855,12 @@ username. Check the spelling of the 21.gifts username.**
 A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
 
 ![21.gifts public message shop edit saving](images/messages-id-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing](images/messages-id-shop-edit-photo-preparing.png)
 
 ### Variant: shop-edit-history-loading
 

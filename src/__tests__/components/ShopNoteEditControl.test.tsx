@@ -1743,6 +1743,26 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows an empty shop name when the stored pin omits its label', async () => {
+    signIn();
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pin = {
+      lat: COMPLETE_PLACE.lat,
+      lng: COMPLETE_PLACE.lng,
+      address: COMPLETE_PLACE.address,
+    };
+    renderEdit(
+      <ShopNoteEditControl message={{ ...shopMessage, place: pin }} onUpdated={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', '');
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('saves a pin that differs only by a pipe split in street and house number', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
