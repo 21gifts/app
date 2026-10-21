@@ -3918,7 +3918,12 @@ describe('PosScreen', () => {
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(within(await confirmation()).getByText('₿21')).toBeTruthy();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      // The read on open, then the one that checks the payment; no more.
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+      await act(async () => undefined);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it('ignores the pos-received pin in a production build', async () => {
