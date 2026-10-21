@@ -45,7 +45,7 @@ npm run dev    # → http://localhost:3000
 | `npm run e2e:update-snapshots` | Rewrite Linux Chromium visual baselines                                                                                                       |
 | `npm run e2e:check`            | Fail if a screen lacks `page.goto`, a variant lacks its e2e needle, an endpoint lacks `request.<verb>`, or an export lacks `Function: <Name>` |
 | `npm run handbook:images`      | Copy Playwright Linux visual baselines into `public/handbook-images/`                                                                         |
-| `npm run screenshot:check`     | Fail if a screen or variant lacks a Playwright PNG, an unexpected PNG is present, a variant has no shot in `e2e/visual.spec.ts`, or a changed PNG still passes in its base version |
+| `npm run screenshot:check`     | Fail on a missing or unexpected PNG, a variant with no shot in `e2e/visual.spec.ts`, or a baseline change the visual test does not need       |
 | `npm run handbook:check`       | Fail if any screen, variant, export, or HTTP endpoint lacks a handbook section                                                                |
 
 ## Project structure
