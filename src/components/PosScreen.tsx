@@ -317,17 +317,23 @@ function resolveLate(memory: WalletSettled, state: PosState | null): void {
   memory.late = [];
   const taken = new Set<string>();
   for (const { payment, charge } of held) {
-    const newer =
+    // Newer charges the payment could pay: made after it was, so the receiving address was theirs.
+    const newerOnes =
       state === null
-        ? undefined
-        : tillCharges(state).find(
+        ? []
+        : tillCharges(state).filter(
             (row) =>
               row.id !== charge.id &&
-              !taken.has(row.id) &&
-              !memory.paid.has(row.id) &&
               Date.parse(row.createdAt) > Date.parse(charge.createdAt) &&
               pays(row, payment),
           );
+    const newer = newerOnes.find((row) => !taken.has(row.id) && !memory.paid.has(row.id));
+    if (newer === undefined && newerOnes.length > 0) {
+      // Each newer charge it could pay already took a payment: kept, and never given to the older
+      // charge, as it was made while the newer one held the receiving address.
+      keepEarly(memory, payment);
+      continue;
+    }
     if (newer !== undefined) {
       taken.add(newer.id);
       // The wallet saw the money arrive: paid here even when another tab cancelled it meanwhile.

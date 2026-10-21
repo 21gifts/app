@@ -3373,6 +3373,64 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('gives the charge before no late-minute payment made after a newer charge took one', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      // Another tab made this charge before both payments.
+      const madeAt = Math.floor(now / 1_000) * 1_000 - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        createdAt: new Date(madeAt).toISOString(),
+        expiresAt: new Date(madeAt + 300_000).toISOString(),
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      const later = { charge: newer, history: [newer, { ...ended, status: 'expired' }] };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: reads === 1 ? ended : null, history: [ended] });
+          }
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          return jsonResponse(later);
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, madeAt + 1_000);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      receive(21, 0, madeAt + 2_000);
+      await act(async () => {
+        answerLateRead?.(jsonResponse(later));
+        await Promise.resolve();
+      });
+      // The newer charge took the first; the second is not the charge before's.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      await waitFor(() => {
+        expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      });
+      await act(async () => undefined);
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+      expect(within(history).getByText('Expired')).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
     it('settles two late-minute payments held for one read, each for the charge it paid', async () => {
       const now = Date.now();
       const ended = {
