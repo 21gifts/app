@@ -4368,7 +4368,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: onPaymentReceived
 
-- **Purpose:** Subscribes to the same received payments as `onIncomingPayment` (received, completed, not held by the wallet when it connected, once per payment id, after the known payments of the connection were read), but tells the listener the moment the SDK reports the payment complete: right after its id is added to the known ids, before the balance is read again (`refreshWallet`). For a screen that must react to the money arriving without waiting for that read. A payment announced when the connection ended meanwhile was still told here.
+- **Purpose:** Subscribes to the same received payments as `onIncomingPayment` (received, completed, not held by the wallet when it connected, once per payment id, after the known payments of the connection were read), but tells the listener the moment the SDK reports the payment complete: right after its id is added to the known ids, before the balance is read again (`refreshWallet`). A payment the SDK reported while the known payments of the connection were read is told here once even when that list already holds it (`onIncomingPayment` leaves it out). For a screen that must react to the money arriving without waiting for that read. A payment announced when the connection ended meanwhile was still told here.
 - **Inputs:** `listener(payment: WalletPayment)`.
 - **Returns / side effects:** Unsubscribe function. No network of its own.
 - **Used by:** the point-of-sale screens (`PosTill`, `PosAmount`), which subscribe once per tab when a signed-in till page first opens and stay subscribed.

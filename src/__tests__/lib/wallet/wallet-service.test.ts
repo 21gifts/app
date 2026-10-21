@@ -2886,6 +2886,34 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
+  it('tells onPaymentReceived a payment reported while the known payments are read, even when listed', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let resolveList!: (payments: WalletPayment[]) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const received: string[] = [];
+    const unsubscribe = onPaymentReceived((p) => {
+      received.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    // Reported live while the list is read; the list then already holds it.
+    emit({ type: 'paymentSucceeded', payment: payment('listed') });
+    emit({ type: 'paymentSucceeded', payment: payment('listed') });
+    resolveList([payment('listed'), payment('old')]);
+    await vi.waitFor(() => expect(received).toEqual(['listed']));
+    unsubscribe();
+  });
+
   it('drops the payments held meanwhile when the known-payments read fails', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();

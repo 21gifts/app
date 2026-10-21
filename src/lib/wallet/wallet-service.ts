@@ -473,7 +473,19 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
   const held = heldPayments;
   heldPayments = [];
   if (read) {
+    const told = new Set<string>();
     for (const payment of held) {
+      if (known.has(payment.id)) {
+        // Reported live while the list was read, so new to this tab although the list holds it:
+        // the onPaymentReceived listeners (a till waiting for it) still hear it, once.
+        if (!told.has(payment.id)) {
+          told.add(payment.id);
+          for (const listener of receivedListeners) {
+            listener(payment);
+          }
+        }
+        continue;
+      }
       void announcePayment(known, payment);
     }
   }
@@ -560,8 +572,9 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
 /**
  * Subscribes to the same received payments as {@link onIncomingPayment}, but
  * tells the listener the moment the SDK reports the payment complete, before
- * the balance is read again. For a screen that must react to the money
- * arriving without waiting for that read.
+ * the balance is read again, and also a payment the SDK reported while the
+ * known payments were read even when that list already holds it. For a screen
+ * that must react to the money arriving without waiting for that read.
  *
  * @param listener - Called with each newly received payment.
  * @returns Unsubscribe function.
