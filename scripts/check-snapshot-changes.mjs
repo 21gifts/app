@@ -28,8 +28,11 @@ const SNAP_DIR = path.join('e2e', 'visual.spec.ts-snapshots');
  * @returns {string} Standard output without trailing whitespace.
  */
 function git(root, args) {
-  return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
-    .trim();
+  return execFileSync('git', args, {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
 }
 
 /**
