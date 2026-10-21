@@ -46,8 +46,8 @@
 ## Function: PosHistory
 
 - **Purpose:** Past till charges under the `/pos` QR and charge, newest first, in the api's order; `PosTill` may already show a row the api still has open as paid, with `paidAt` the time this tab matched the payment to the charge (when the wallet reported it, or, for a payment kept until the charge was read, when that read came in). Heading **History**. Each row: the status (**Paid ✓** with the local time it was paid, in green; **Paid ✓** alone when the api sent no valid `paidAt`; **Expired**; or **Cancelled**), the amount in bitcoin with the currency figure stored with that charge (`committedFiatFigure`; without one the current spot in the viewer's currency, not stored), and the date and time the charge was created. The open charge is shown above the list and is left out of it. Any other `pending` row is shown as **Expired**, because the api has at most one open charge and returns it as `charge`. With no past charge: **No payments yet.** The api returns at most its newest 20 charges; the list shows what it returns and has no paging.
-- **Inputs:** `history` (`PosCharge[]` from `GET /pos/charge`) and `openChargeId` (the charge shown as open above, or `null`). Each row calls `committedFiatFigure` with no preferred currency. There is no `rateDay`.
-- **Returns / side effects:** A section named **History**. No I/O.
+- **Inputs:** `history` (`PosCharge[]` from `GET /pos/charge`) and `openChargeId` (the charge shown as open above, or `null`). Each row calls `committedFiatFigure` with no preferred currency; a row without a stored figure takes the current spot from `useSpotRate` (`rateDay`) through `preferredFiatSuffix`, and that figure is not written onto the charge.
+- **Returns / side effects:** A section named **History**. Its only I/O is the spot read of `useSpotRate` (`GET /fx/spot`).
 - **Used by:** `PosTill`.
 
 ## Function: resetPosTillWriteForTests
