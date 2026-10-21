@@ -20312,17 +20312,24 @@ const GIVEN_RECEIVED_ACTIVITY = {
 test.describe('profile activity chart variants', () => {
   async function seedAdaProfile(
     page: Page,
-    extras?: { aboutMe?: string | null; aboutMeHasPhoto?: boolean; aboutMessageId?: string },
+    extras?: {
+      id?: string;
+      aboutMe?: string | null;
+      aboutMeHasPhoto?: boolean;
+      aboutMessageId?: string;
+    },
   ): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
-    await page.route(/\/me$/, async (route) => {
+    // `/pictures/me` and `/banners/me` also end in `/me`. This route is only the account.
+    await page.route(/(?<![A-Za-z])\/me(?:\?.*)?$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           ...E2E_ACCOUNT,
+          id: extras?.id ?? E2E_ACCOUNT.id,
           name: 'Ada',
           location: null,
           username: 'alice',
@@ -20955,6 +20962,9 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-profile-about-save-error');
   });
+  /** `/members/:id` accepts only a UUID. The signed-in account uses this same id. */
+  const OWNER_MEMBER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
   async function openOwnerCard(page: Page, href: string): Promise<void> {
     await page.goto(href);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -20966,7 +20976,36 @@ test.describe('profile activity chart variants', () => {
   }
 
   async function openOwnerMembers(page: Page): Promise<void> {
-    await openOwnerCard(page, '/members/acc_e2e');
+    await page.route(new RegExp('/forum/members/' + OWNER_MEMBER_ID + '$'), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: OWNER_MEMBER_ID,
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(
+      new RegExp('/forum/members/' + OWNER_MEMBER_ID + '/activity(?:\\?|$)'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
+    await openOwnerCard(page, '/members/' + OWNER_MEMBER_ID);
   }
 
   async function openOwnerView(page: Page): Promise<void> {
@@ -20994,7 +21033,7 @@ test.describe('profile activity chart variants', () => {
     await openOwnerCard(page, '/view/' + viewKey);
   }
   test('members banner-not-wide', async ({ page }) => {
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21019,7 +21058,7 @@ test.describe('profile activity chart variants', () => {
       });
       await route.fulfill({ status: 204, body: '' });
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21045,7 +21084,7 @@ test.describe('profile activity chart variants', () => {
       }
       await route.fallback();
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21063,7 +21102,7 @@ test.describe('profile activity chart variants', () => {
         return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
       };
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21076,7 +21115,7 @@ test.describe('profile activity chart variants', () => {
   });
 
   test('members picture-unsupported', async ({ page }) => {
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.locator('input[name="profile-photo"]').setInputFiles({
@@ -21094,7 +21133,7 @@ test.describe('profile activity chart variants', () => {
         return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
       };
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21112,7 +21151,7 @@ test.describe('profile activity chart variants', () => {
       }
       await route.fallback();
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page
@@ -21134,7 +21173,7 @@ test.describe('profile activity chart variants', () => {
       });
       await route.fulfill({ status: 204, body: '' });
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     const button = page.getByRole('button', { name: 'Add a profile photo' });
@@ -21170,7 +21209,11 @@ test.describe('profile activity chart variants', () => {
         body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
       });
     });
-    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await seedAdaProfile(page, {
+      id: OWNER_MEMBER_ID,
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Edit About me' }).click();
@@ -21191,7 +21234,7 @@ test.describe('profile activity chart variants', () => {
   });
 
   test('members about-editing', async ({ page }) => {
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Write your About me' }).click();
@@ -21204,7 +21247,7 @@ test.describe('profile activity chart variants', () => {
   });
 
   test('members about-banner-crop', async ({ page }) => {
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await chooseEditorWideImage(page);
@@ -21224,7 +21267,7 @@ test.describe('profile activity chart variants', () => {
       });
       await route.fulfill({ status: 204, body: '' });
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await chooseEditorWideImage(page);
@@ -21248,7 +21291,7 @@ test.describe('profile activity chart variants', () => {
       }
       await route.fallback();
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await chooseEditorWideImage(page);
@@ -21264,7 +21307,7 @@ test.describe('profile activity chart variants', () => {
         return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
       };
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await chooseEditorWideImage(page);
@@ -21282,7 +21325,7 @@ test.describe('profile activity chart variants', () => {
         body: JSON.stringify({ error: 'unavailable' }),
       });
     });
-    await seedAdaProfile(page);
+    await seedAdaProfile(page, { id: OWNER_MEMBER_ID });
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Write your About me' }).click();
