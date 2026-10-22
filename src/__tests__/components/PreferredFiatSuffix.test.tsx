@@ -47,6 +47,7 @@ describe('preferredFiatSuffix', () => {
     );
     expect(screen.getByText('$5.00')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
+    expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
     cleanup();
     render(
       <p>
@@ -55,7 +56,6 @@ describe('preferredFiatSuffix', () => {
     );
     expect(screen.getByText('$10.125')).toBeTruthy();
     expect(screen.queryByText('$10.13')).toBeNull();
-    expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
   });
 
   it('uses the spot when the stored field is null', () => {

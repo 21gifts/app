@@ -24,6 +24,7 @@ import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
+import type { FiatCode } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
@@ -142,6 +143,10 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
   const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
+  const storedFiatText = (amount: string, code: FiatCode): string => {
+    const exact = formatDefinedGoalAmount(amount, code, numberFormat);
+    return exact === '' ? formatFiatDisplay(amount, code, numberFormat) : exact;
+  };
   /**
    * Bitcoin plus one fiat figure. A shop charge amount, and its total, stay
    * bitcoin until the receipt returns. The charge amount then shows the stored
@@ -159,13 +164,13 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         <>
           {formatBitcoin(sats, numberFormat)}
           <span aria-hidden="true"> · </span>
-          <span>{formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat)}</span>
+          <span>{storedFiatText(shopFigure.amount, shopFigure.code)}</span>
         </>
       );
     }
     if (role === 'sum' && shopFigure !== null) {
       const feeSpot = satsToFiatAmount(payment.feesSats, rateDay, fiat);
-      const chargeFiat = formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat);
+      const chargeFiat = storedFiatText(shopFigure.amount, shopFigure.code);
       const combined =
         shopFigure.code === fiat && feeSpot !== null
           ? addDecimalStrings(shopFigure.amount, feeSpot)
@@ -175,7 +180,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
           <>
             {formatBitcoin(sats, numberFormat)}
             <span aria-hidden="true"> · </span>
-            <span>{formatDefinedGoalAmount(combined, fiat, numberFormat)}</span>
+            <span>{storedFiatText(combined, fiat)}</span>
           </>
         );
       }
@@ -245,7 +250,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         {fiatAmount === null ? null : (
           <p className="text-sm tabular-nums lining-nums text-app-muted">
             {shopFigure !== null
-              ? formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat)
+              ? storedFiatText(shopFigure.amount, shopFigure.code)
               : formatFiatDisplay(fiatAmount.amount, fiatAmount.code, numberFormat)}
           </p>
         )}

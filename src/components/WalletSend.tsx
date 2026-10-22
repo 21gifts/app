@@ -254,6 +254,10 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     takeText(value);
   };
 
+  const storedFiatText = (amount: string, code: FiatCode): string => {
+    const exact = formatDefinedGoalAmount(amount, code, numberFormat);
+    return exact === '' ? formatFiatDisplay(amount, code, numberFormat) : exact;
+  };
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
   const fiatText = (sats: number): string | null => {
@@ -281,14 +285,14 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
           node: (
             <>
               <span aria-hidden="true"> · </span>
-              <span>{formatDefinedGoalAmount(combined, fiat, numberFormat)}</span>
+              <span>{storedFiatText(combined, fiat)}</span>
             </>
           ),
         };
       }
     }
     const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
-    const stored = formatDefinedGoalAmount(figure.amount, figure.code, numberFormat);
+    const stored = storedFiatText(figure.amount, figure.code);
     return {
       kind: 'parts',
       node: (
@@ -320,7 +324,7 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   ): ReactElement => {
     const live =
       figure !== undefined && figure !== null
-        ? formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)
+        ? storedFiatText(figure.amount, figure.code)
         : fiatText(sats);
     return (
       <div className="flex flex-col items-center gap-2">
