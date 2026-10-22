@@ -2211,6 +2211,27 @@ describe('MemberProfileScreen', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
+  it('stores the spot of the posting fee, not a typed fiat reply, when the author cannot receive', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, amountUnit: 'fiat' } });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
   it('posts a verified reply unpaid when the author cannot receive', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(

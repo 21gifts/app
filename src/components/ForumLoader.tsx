@@ -2465,11 +2465,8 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(
-          sats,
-          replyRateRef.current,
-          typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
-        ),
+        // The 1-sat posting fee is not the typed reply. Store only the spot.
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -2477,20 +2474,13 @@ export function ForumLoader({
       }
       setPayMessageId(target.messageId);
       setPayError(null);
-      setPayInvoice(
-        attachTypedFigure(
-          {
-            messageId: target.messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice,
-            postsOnPay: true,
-          },
-          replyShownUnit,
-          replyAmountDraft,
-          fiat,
-        ),
-      );
+      setPayInvoice({
+        messageId: target.messageId,
+        pr: invoice.pr,
+        amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
+      });
       setPayHost('composer');
       setReplyDraft('');
       setReplyAmountDraft('');
