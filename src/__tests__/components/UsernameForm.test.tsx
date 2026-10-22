@@ -80,7 +80,11 @@ describe('UsernameForm', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('That username is already taken')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada2' } });
     vi.mocked(setUsername).mockRejectedValueOnce(new Error('username-invalid'));
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(
@@ -88,10 +92,17 @@ describe('UsernameForm', () => {
         'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada3' } });
     vi.mocked(setUsername).mockRejectedValueOnce('boom');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('Could not save your username')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('disables the control and shows a spinner while a request is in flight', async () => {
@@ -143,16 +154,17 @@ describe('UsernameForm', () => {
     expect(setUsername).not.toHaveBeenCalled();
   });
 
-  it('maps the api username sentences onto the field without disabling continue', async () => {
+  it('maps the api username sentences onto the field and disables continue', async () => {
     vi.mocked(setUsername).mockRejectedValueOnce(new Error('Username is already in use'));
     renderWithLocale(<UsernameForm />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('That username is already taken')).toBeTruthy();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
-      false,
+      true,
     );
 
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada2' } });
     vi.mocked(setUsername).mockRejectedValueOnce(
       new Error('Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot'),
     );
@@ -163,7 +175,7 @@ describe('UsernameForm', () => {
       ),
     ).toBeTruthy();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
-      false,
+      true,
     );
   });
 

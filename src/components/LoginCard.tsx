@@ -94,7 +94,10 @@ export function LoginCard(): ReactElement {
       <NameView
         draft={nameDraft}
         error={passkey.nameError}
-        onDraftChange={setNameDraft}
+        onDraftChange={(value) => {
+          setNameDraft(value);
+          passkey.clearNameError();
+        }}
         onSubmit={() => {
           passkey.submitName(nameDraft);
         }}
@@ -268,6 +271,7 @@ function NameView({ draft, error, onDraftChange, onSubmit }: NameViewProps): Rea
   const [touched, setTouched] = useState(false);
   const problem = usernameProblem(draft);
   const clientBroken = touched && problem !== null;
+  const serverBroken = error === 'taken' || error === 'invalid';
   const message = clientBroken
     ? t('login.nameInvalid')
     : error === 'taken'
@@ -307,7 +311,7 @@ function NameView({ draft, error, onDraftChange, onSubmit }: NameViewProps): Rea
             setTouched(true);
           }}
         />
-        <Button type="submit" disabled={clientBroken}>
+        <Button type="submit" disabled={clientBroken || serverBroken}>
           {t('login.nameSubmit')}
         </Button>
       </form>

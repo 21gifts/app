@@ -41,8 +41,9 @@ function usernameFailure(caught: unknown): UsernameServer {
  *
  * An untouched field stays quiet. After a change, blur, or submit, an empty or
  * badly shaped handle is shown under the field and Continue is disabled. A
- * taken or unknown server failure stays under the field without disabling
- * Continue, so a valid handle can be sent again.
+ * taken or rejected handle stays under the field and Continue stays disabled
+ * until the draft changes. An unknown save failure stays under the field and
+ * leaves Continue enabled.
  *
  * @param props - `onboarding` shows the field at the top and **Continue** in
  *   `AppShellFooter`; `overlay` keeps **Continue** in the form. There is no Skip.
@@ -65,6 +66,7 @@ export function UsernameForm({
   const errorId = `${fieldId}-error`;
   const problem = usernameProblem(draft);
   const clientVisible = touched && problem !== null;
+  const serverBlocks = server === 'taken' || server === 'invalid';
   let messageKey:
     | 'setup.usernameEmpty'
     | 'setup.usernameInvalid'
@@ -117,7 +119,7 @@ export function UsernameForm({
       type="submit"
       form={variant === 'onboarding' ? formId : undefined}
       size="lg"
-      disabled={busy || clientVisible}
+      disabled={busy || clientVisible || serverBlocks}
       icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
     >
       {t('setup.continue')}

@@ -21,6 +21,7 @@ const submitNameSpy = vi.fn();
 const authenticateSpy = vi.fn();
 const retrySpy = vi.fn();
 const cancelPasskeySpy = vi.fn();
+const clearNameErrorSpy = vi.fn();
 
 const originalClipboard = navigator.clipboard;
 const originalExecCommand = document.execCommand;
@@ -50,6 +51,7 @@ function mockPasskey(
     authenticate: authenticateSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
+    clearNameError: clearNameErrorSpy,
     error: status === 'error' ? error : null,
     nameError: status === 'name' ? nameError : null,
   });
@@ -519,6 +521,7 @@ describe('LoginCard', () => {
         authenticate: authenticateSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
+        clearNameError: clearNameErrorSpy,
         error: null,
         nameError: null,
       });
@@ -543,6 +546,7 @@ describe('LoginCard', () => {
         authenticate: authenticateSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
+        clearNameError: clearNameErrorSpy,
         error: null,
         nameError: null,
       });
@@ -569,11 +573,18 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('alert').textContent).toBe('That username is already in use.');
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
-      false,
+      true,
     );
   });
 
-  it('shows invalid copy when nameError is invalid and leaves continue enabled', () => {
+  it('clears a taken name when the draft changes', () => {
+    mockPasskey('name', null, 'taken');
+    renderWithLocale(<LoginCard />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'ada' } });
+    expect(clearNameErrorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows invalid copy when nameError is invalid and disables continue', () => {
     mockPasskey('name', null, 'invalid');
     renderWithLocale(<LoginCard />);
     const field = screen.getByLabelText('Name');
@@ -582,7 +593,7 @@ describe('LoginCard', () => {
       'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
     );
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
-      false,
+      true,
     );
   });
 

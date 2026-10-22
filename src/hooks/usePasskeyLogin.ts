@@ -92,6 +92,8 @@ export interface UsePasskeyLogin {
   error: string | null;
   /** Username problem while `status === 'name'`, otherwise `null`. */
   nameError: 'invalid' | 'taken' | null;
+  /** Drops a taken or invalid name so a changed draft can be submitted. */
+  clearNameError: () => void;
 }
 
 /**
@@ -930,6 +932,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     })();
   }, [beginRun, completeAuthentication, finishWithError]);
 
+  const clearNameError = useCallback((): void => {
+    setNameError(null);
+  }, []);
+
   const retry = useCallback((): void => {
     if (entryKindRef.current === 'login') {
       login();
@@ -960,6 +966,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     submitName,
     authenticate,
     retry,
+    clearNameError,
     cancel,
     error: status === 'error' ? lastError : null,
     nameError: status === 'name' ? nameError : null,

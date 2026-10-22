@@ -306,7 +306,7 @@ Pressing Continue with an empty name, or a name that after trim and lowercase do
 
 ### Variant: name-taken
 
-A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
+A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). **Continue** stays disabled until the name changes. When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
