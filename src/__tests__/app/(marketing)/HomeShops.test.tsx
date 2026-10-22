@@ -594,6 +594,7 @@ describe('HomeShops', () => {
     expect(help.className).toContain('w-11');
     expect(help.className).toContain('bg-app-btn');
     expect(help.textContent).not.toContain('?');
+    expect(screen.queryByText(copy.helpLabel)).toBeNull();
     const viewGroup = screen.getByRole('group', { name: copy.view });
     expect(viewGroup.getAttribute('style')).toBeNull();
     expect(viewGroup.className).toBe(
@@ -1403,6 +1404,7 @@ describe('HomeShops', () => {
 
     const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
     expect(help.textContent).not.toContain('?');
+    expect(screen.queryByText(copy.helpLabel)).toBeNull();
     const popover = document.getElementById(popoverTarget(help));
     if (popover === null) throw new Error('missing popover');
     expect(popover.getAttribute('popover')).toBe('auto');
