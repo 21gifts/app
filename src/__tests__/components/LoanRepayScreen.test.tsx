@@ -317,11 +317,7 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(
-      screen.getByText(
-        '$10.00 · 4 days · $2.50 per day',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('$10.00 · 4 days · $2.50 per day')).toBeTruthy();
     expect(
       screen.getByText(
         "₿10'001 · $10.00 · ₿2'500 · $2.50 per day for 3 days, then ₿2'501 · $2.50 on the last day",
@@ -373,7 +369,7 @@ describe('LoanRepayScreen', () => {
     );
     show({ sundayRest: false, loans: [phpLoan] });
     expect(screen.getByText('₱30.00')).toBeTruthy();
-    expect(screen.getByRole('button', { name: "Send ₱30.00 · ₿536" })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send ₱30.00 · ₿536' })).toBeTruthy();
     expect(screen.queryByText('$0.54')).toBeNull();
     const waitingNotice = screen.getByText(/waits for a lender/).parentElement;
     expect(waitingNotice?.querySelector('svg')?.getAttribute('class')).toContain(
@@ -957,9 +953,7 @@ describe('LoanRepayScreen', () => {
     await screen.findAllByText('A sewing machine for my repair stall');
     expect(screen.getAllByText('School books for my daughter')).toHaveLength(2);
     const list = screen.getByRole('region', { name: 'Your loans' });
-    expect(
-      within(list).getByText('EUR 12.00 · 10 days · EUR 1.20 per day'),
-    ).toBeTruthy();
+    expect(within(list).getByText('EUR 12.00 · 10 days · EUR 1.20 per day')).toBeTruthy();
     expect(
       within(list).getAllByRole('link', { name: 'Repayment list' })[0]?.getAttribute('href'),
     ).toBe('/messages/loan-1/repayment-list');
