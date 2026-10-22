@@ -1076,6 +1076,7 @@ async function hangShopPhotoPrepare(page: Page): Promise<void> {
 async function showPreparingShopPhoto(
   page: Page,
   extra?: (page: Page) => Promise<void>,
+  nextClicks = 0,
 ): Promise<void> {
   await page
     .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
@@ -1089,6 +1090,23 @@ async function showPreparingShopPhoto(
   await expect(page.locator('button[aria-describedby$="-photo-feedback"]')).toBeDisabled();
   await expect(page.getByText('Saving this shop note.')).toHaveCount(0);
   await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+  const titles = [
+    '1 / 5 · Photos',
+    '2 / 5 · Place',
+    '3 / 5 · Text',
+    '4 / 5 · 21.gifts user',
+    '5 / 5 · Summary',
+  ];
+  for (let click = 0; click < nextClicks; click += 1) {
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+  if (nextClicks > 0) {
+    await expect(page.getByText(titles[nextClicks] ?? '')).toBeVisible();
+    await expect(waiting).toBeVisible();
+  }
+  if (nextClicks === 4) {
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  }
   if (extra !== undefined) {
     await extra(page);
   }
@@ -3777,6 +3795,34 @@ test.describe('onboarding screens', () => {
     await openHostedShopEditor(page, 'welcome');
     await showPreparingShopPhoto(page);
     await shotScreen(page, 'state-welcome-shop-edit-photo-preparing');
+  });
+
+  test('welcome shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-place');
+  });
+
+  test('welcome shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-text');
+  });
+
+  test('welcome shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-user');
+  });
+
+  test('welcome shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-summary');
   });
 
   test('welcome shop-edit-history-loading', async ({ page }) => {
@@ -7318,6 +7364,34 @@ test.describe('onboarding screens', () => {
     await openHostedShopEditor(page, 'members');
     await showPreparingShopPhoto(page);
     await shotScreen(page, 'state-members-shop-edit-photo-preparing');
+  });
+
+  test('state /members shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-place');
+  });
+
+  test('state /members shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-text');
+  });
+
+  test('state /members shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-user');
+  });
+
+  test('state /members shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-summary');
   });
 
   test('state /members shop-edit-history-loading', async ({ page }) => {
@@ -12213,6 +12287,34 @@ test.describe('onboarding screens', () => {
     await openHostedShopEditor(page, 'messages');
     await showPreparingShopPhoto(page);
     await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-place');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-text');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-user');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-summary');
   });
 
   test('state /messages/[id] shop-edit-history-loading', async ({ page }) => {
@@ -20041,6 +20143,62 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-photo-preparing');
   });
 
+  test('shops map-edit-photo-preparing-place', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      1,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-place');
+  });
+
+  test('shops map-edit-photo-preparing-text', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      2,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-text');
+  });
+
+  test('shops map-edit-photo-preparing-user', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      3,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-user');
+  });
+
+  test('shops map-edit-photo-preparing-summary', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      4,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-summary');
+  });
+
   test('shops map-edit-history-loading', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
@@ -20636,6 +20794,34 @@ test.describe('shops screens', () => {
     await openShopsEditor(page, 'table');
     await showPreparingShopPhoto(page);
     await shotScreen(page, 'state-shops-table-edit-photo-preparing');
+  });
+
+  test('shops table-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-place');
+  });
+
+  test('shops table-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-text');
+  });
+
+  test('shops table-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-user');
+  });
+
+  test('shops table-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-summary');
   });
 
   test('shops table-edit-history-loading', async ({ page }) => {
@@ -21579,6 +21765,34 @@ test.describe('shops screens', () => {
     await openShopsEditor(page, 'post');
     await showPreparingShopPhoto(page);
     await shotScreen(page, 'state-shops-edit-photo-preparing');
+  });
+
+  test('shops edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-place');
+  });
+
+  test('shops edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-text');
+  });
+
+  test('shops edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-user');
+  });
+
+  test('shops edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-summary');
   });
 
   test('shops edit-history-loading', async ({ page }) => {
