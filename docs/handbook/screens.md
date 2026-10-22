@@ -408,6 +408,30 @@ Open till, mint failed. The shop sticker, time left, the sat amount, the viewer'
 Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts name setup](images/setup-name.png)
 
+### Variant: empty
+
+Blur or Continue on an empty name shows **Enter your name** (`name.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup empty](images/setup-name-empty.png)
+
+### Variant: long
+
+A name longer than 80 characters after trim shows **Name must be 1–80 characters.** (`name.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup long](images/setup-name-long.png)
+
+### Variant: controls
+
+A name that includes a control character shows **Name cannot include control characters.** (`name.errorControls`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup controls](images/setup-name-controls.png)
+
+### Variant: request
+
+When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts name setup request](images/setup-name-request.png)
+
 ## Screen: /setup/username
 
 - **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
@@ -420,6 +444,30 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
 
+### Variant: empty
+
+Blur or Continue on an empty username shows **Enter a username** (`setup.usernameEmpty`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup empty](images/setup-username-empty.png)
+
+### Variant: invalid
+
+A username outside the handle rule, including the same sentence from the server shows **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** (`setup.usernameInvalid`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup invalid](images/setup-username-invalid.png)
+
+### Variant: taken
+
+When POST /me/username answers 409 Username is already in use, the form shows **That username is already taken** (`setup.usernameTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again.
+
+![21.gifts username setup taken](images/setup-username-taken.png)
+
+### Variant: request
+
+When POST /me/username answers 500, the form shows **Could not save your username** (`setup.usernameRequest`). **Continue** stays available.
+
+![21.gifts username setup request](images/setup-username-request.png)
+
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — after username (`account.setup === 'address'`). Name may already be saved or skipped; username is required.
@@ -431,6 +479,48 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts address setup](images/setup-address.png)
+
+### Variant: empty
+
+Blur or Continue on an empty Wallet of Satoshi address shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup empty](images/setup-address-empty.png)
+
+### Variant: long
+
+An address longer than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup long](images/setup-address-long.png)
+
+### Variant: format
+
+An address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup format](images/setup-address-format.png)
+
+### Variant: taken
+
+When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup taken](images/setup-address-taken.png)
+
+### Variant: not-found
+
+When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup not found](images/setup-address-not-found.png)
+
+### Variant: not-zap
+
+When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Continue** stays disabled until the draft changes. Restoring the blocked address locks again. **Skip** stays available.
+
+![21.gifts address setup not zap](images/setup-address-not-zap.png)
+
+### Variant: request
+
+When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts address setup request](images/setup-address-request.png)
 
 ## Screen: /setup/rules
 
@@ -4447,6 +4537,90 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 Notifications section with `role="alert"` after clicking On on the This device pill when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
+### Variant: name-empty
+
+The name editor is open and the field is cleared shows **Enter your name** (`name.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name empty](images/profile-name-empty.png)
+
+### Variant: name-long
+
+The name editor is open with a name longer than 80 characters shows **Name must be 1–80 characters.** (`name.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name long](images/profile-name-long.png)
+
+### Variant: name-controls
+
+The name editor is open with a control character in the name shows **Name cannot include control characters.** (`name.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name controls](images/profile-name-controls.png)
+
+### Variant: name-request
+
+The name editor is open. When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile name request](images/profile-name-request.png)
+
+### Variant: location-long
+
+The location editor is open with more than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location long](images/profile-location-long.png)
+
+### Variant: location-controls
+
+The location editor is open with a control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location controls](images/profile-location-controls.png)
+
+### Variant: location-request
+
+The location editor is open. When POST /me/location answers 500, the form shows **Could not save your location** (`location.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile location request](images/profile-location-request.png)
+
+### Variant: address-empty
+
+The address editor is open and the field is cleared shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address empty](images/profile-address-empty.png)
+
+### Variant: address-long
+
+The address editor is open with more than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address long](images/profile-address-long.png)
+
+### Variant: address-format
+
+The address editor is open with an address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address format](images/profile-address-format.png)
+
+### Variant: address-taken
+
+The address editor is open. When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address taken](images/profile-address-taken.png)
+
+### Variant: address-not-found
+
+The address editor is open. When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address not found](images/profile-address-not-found.png)
+
+### Variant: address-not-zap
+
+The address editor is open. When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Save** stays disabled until the draft changes. Restoring the blocked address locks again. The alert is in the window.
+
+![21.gifts profile address not zap](images/profile-address-not-zap.png)
+
+### Variant: address-request
+
+The address editor is open. When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile address request](images/profile-address-request.png)
 
 ## Screen: /grants
 

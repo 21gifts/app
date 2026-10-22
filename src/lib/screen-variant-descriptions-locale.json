@@ -4788,5 +4788,150 @@
     "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit _ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
     "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con _ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
     "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at _ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
+  },
+  "/setup/name:empty": {
+    "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Desenfocar o Continuar con un nombre vacío muestra Introduce tu nombre (name.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang blur o Magpatuloy sa walang laman na pangalan ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:long": {
+    "de": "Ein Name mit mehr als 80 Zeichen nach dem Kürzen zeigt Der Name muss 1–80 Zeichen haben. (name.errorLength). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Un nombre de más de 80 caracteres tras recortar muestra El nombre debe tener de 1 a 80 caracteres. (name.errorLength). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang pangalan na mahigit 80 character pagkatapos ng trim ay nagpapakita ng Ang pangalan ay dapat 1–80 character. (name.errorLength). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:controls": {
+    "de": "Ein Name mit einem Steuerzeichen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Un nombre que incluye un carácter de control muestra El nombre no puede incluir caracteres de control. (name.errorControls). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang pangalan na may control character ay nagpapakita ng Hindi puwedeng may control character ang pangalan. (name.errorControls). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:request": {
+    "de": "Wenn POST /me/name mit 500 antwortet, zeigt das Formular Name konnte nicht gespeichert werden (name.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/name responde 500, el formulario muestra No se pudo guardar el nombre (name.errorRequest). Continuar permanece disponible. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/name ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang pangalan (name.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
+  },
+  "/setup/username:empty": {
+    "de": "Unschärfe oder Weiter bei einem leeren Benutzernamen zeigt Bitte einen Benutzernamen eingeben (setup.usernameEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "es": "Desenfocar o Continuar con un usuario vacío muestra Escribe un nombre de usuario (setup.usernameEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. ",
+    "fil": "Ang blur o Magpatuloy sa walang laman na username ay nagpapakita ng Maglagay ng username (setup.usernameEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
+  },
+  "/setup/username:invalid": {
+    "de": "Ein Benutzername außerhalb der Handle-Regel, einschließlich desselben Satzes vom Server zeigt Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. (setup.usernameInvalid). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "es": "Un usuario fuera de la regla del identificador, incluida la misma frase del servidor muestra Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. (setup.usernameInvalid). Continuar permanece deshabilitado hasta que el borrador cambie. ",
+    "fil": "Ang username na labas sa tuntunin ng handle, kasama ang parehong pangungusap mula sa server ay nagpapakita ng Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. (setup.usernameInvalid). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
+  },
+  "/setup/username:taken": {
+    "de": "Wenn POST /me/username mit 409 Username is already in use antwortet, zeigt das Formular Dieser Benutzername ist schon vergeben (setup.usernameTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut.",
+    "es": "Cuando POST /me/username responde 409 Username is already in use, el formulario muestra Ese nombre de usuario ya está en uso (setup.usernameTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear.",
+    "fil": "Kapag ang POST /me/username ay sumasagot ng 409 Username is already in use, ipinapakita ng form ang Nakuha na ang username na iyan (setup.usernameTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock."
+  },
+  "/setup/username:request": {
+    "de": "Wenn POST /me/username mit 500 antwortet, zeigt das Formular Benutzername konnte nicht gespeichert werden (setup.usernameRequest). Weiter bleibt verfügbar. ",
+    "es": "Cuando POST /me/username responde 500, el formulario muestra No se pudo guardar el nombre de usuario (setup.usernameRequest). Continuar permanece disponible. ",
+    "fil": "Kapag ang POST /me/username ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang username (setup.usernameRequest). Nananatiling available ang Magpatuloy. "
+  },
+  "/setup/address:empty": {
+    "de": "Unschärfe oder Weiter bei einer leeren Wallet of Satoshi address zeigt Bitte geben Sie Ihre Wallet of Satoshi address ein (la.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Desenfocar o Continuar con una Wallet of Satoshi address vacía muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang blur o Magpatuloy sa walang laman na Wallet of Satoshi address ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:long": {
+    "de": "Eine Adresse mit mehr als 255 Zeichen zeigt Höchstens 255 Zeichen. (la.errorLength). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Una dirección de más de 255 caracteres muestra Como máximo 255 caracteres. (la.errorLength). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang address na mahigit 255 character ay nagpapakita ng Hanggang 255 character lang. (la.errorLength). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:format": {
+    "de": "Eine Adresse, die nicht name@domain.tld ist zeigt Adresse wie name@domain.tld, höchstens 255 Zeichen. (la.errorFormat). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Una dirección que no es name@domain.tld muestra Usa una dirección como name@domain.tld, de 255 caracteres como máximo. (la.errorFormat). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:taken": {
+    "de": "Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi address ist schon vergeben. (la.errorTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:not-found": {
+    "de": "Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi address wurde nicht gefunden (la.errorNotFound). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:not-zap": {
+    "de": "Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:request": {
+    "de": "Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Wallet of Satoshi address konnte nicht aktualisiert werden (la.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Continuar permanece disponible. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
+  },
+  "/profile:name-empty": {
+    "de": "Der Namenseditor ist offen und das Feld ist geleert zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto y el campo está vacío muestra Introduce tu nombre (name.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan at walang laman ang field ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-long": {
+    "de": "Der Namenseditor ist offen mit einem Namen über 80 Zeichen zeigt Der Name muss 1–80 Zeichen haben. (name.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto con un nombre de más de 80 caracteres muestra El nombre debe tener de 1 a 80 caracteres. (name.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan na may pangalan na mahigit 80 character ay nagpapakita ng Ang pangalan ay dapat 1–80 character. (name.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-controls": {
+    "de": "Der Namenseditor ist offen mit einem Steuerzeichen im Namen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto con un carácter de control en el nombre muestra El nombre no puede incluir caracteres de control. (name.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan na may control character sa pangalan ay nagpapakita ng Hindi puwedeng may control character ang pangalan. (name.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-request": {
+    "de": "Der Namenseditor ist offen. Wenn POST /me/name mit 500 antwortet, zeigt das Formular Name konnte nicht gespeichert werden (name.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto. Cuando POST /me/name responde 500, el formulario muestra No se pudo guardar el nombre (name.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan. Kapag ang POST /me/name ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang pangalan (name.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:location-long": {
+    "de": "Der Ortseditor ist offen mit mehr als 80 Zeichen zeigt Der Ort darf höchstens 80 Zeichen haben. (location.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto con más de 80 caracteres muestra El lugar debe tener como máximo 80 caracteres. (location.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar na may mahigit 80 character ay nagpapakita ng Hanggang 80 character lang ang lugar. (location.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:location-controls": {
+    "de": "Der Ortseditor ist offen mit einem Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto con un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar na may control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:location-request": {
+    "de": "Der Ortseditor ist offen. Wenn POST /me/location mit 500 antwortet, zeigt das Formular Ort konnte nicht gespeichert werden (location.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto. Cuando POST /me/location responde 500, el formulario muestra No se pudo guardar la ubicación (location.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar. Kapag ang POST /me/location ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang lugar (location.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:address-empty": {
+    "de": "Der Adresseditor ist offen und das Feld ist geleert zeigt Bitte geben Sie Ihre Wallet of Satoshi address ein (la.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto y el campo está vacío muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address at walang laman ang field ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-long": {
+    "de": "Der Adresseditor ist offen mit mehr als 255 Zeichen zeigt Höchstens 255 Zeichen. (la.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto con más de 255 caracteres muestra Como máximo 255 caracteres. (la.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address na may mahigit 255 character ay nagpapakita ng Hanggang 255 character lang. (la.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-format": {
+    "de": "Der Adresseditor ist offen mit einer Adresse, die nicht name@domain.tld ist zeigt Adresse wie name@domain.tld, höchstens 255 Zeichen. (la.errorFormat). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto con una dirección que no es name@domain.tld muestra Usa una dirección como name@domain.tld, de 255 caracteres como máximo. (la.errorFormat). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address na may address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-taken": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi address ist schon vergeben. (la.errorTaken). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
+  },
+  "/profile:address-not-found": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi address wurde nicht gefunden (la.errorNotFound). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
+  },
+  "/profile:address-not-zap": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nasa window ang alerto."
+  },
+  "/profile:address-request": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Wallet of Satoshi address konnte nicht aktualisiert werden (la.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
   }
 }

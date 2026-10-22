@@ -1042,13 +1042,19 @@ Fill `AppShell` `align="center"`; `ProfileChromeLeft` with `HomeWordmark` + Lang
 
 Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmark />} />}` (span, not a link) `topRight={<SignedInChrome />}`. `OnboardingGate screen="name"` → `NameSetup`: `AppShellHeader` **h1** “Your name” → `NameForm onboarding` (prompt, `Field`, alert, **Continue** and labeled **Skip** in `AppShellFooter`).
 
+Handbook states: default, empty, long, controls, request.
+
 ### `/setup/username`
 
 Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmark />} />}` (span, not a link) `topRight={<SignedInChrome />}`. `OnboardingGate screen="username"` → `UsernameSetup`: `AppShellHeader` **h1** “Your 21.gifts name”, hint, `UsernameForm onboarding` (field, alert, **Continue** in `AppShellFooter`). No Skip.
 
+Handbook states: default, empty, invalid, taken, request.
+
 ### `/setup/address`
 
 Same column. `ProfileChromeLeft` with a wordmark span + Menu. **h1** “Your Wallet of Satoshi address”. Hello line muted when a name exists. `LightningAddressForm onboarding` (**Continue** and labeled **Skip**). Placeholder `you@walletofsatoshi.com` stays (product token).
+
+Handbook states: default, empty, long, format, taken, not-found, not-zap, request.
 
 ### `/setup/rules`
 
@@ -1084,6 +1090,8 @@ Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate scre
 ### `/profile`
 
 Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card sm` `surface={false}` → resting header when a profile photo or wide image is stored (wide image `aspect-[5/2] w-full rounded-2xl object-cover`; round photo `h-16 w-16 rounded-full object-cover`, overlapping the wide image's lower edge when both exist, otherwise centered; a missing wide image or profile photo is the button **Add a wide image** or **Add a profile photo**; neither is the About me photo) → **h1** Profile → `AccountActivityChart` has no FiatPicker (signed-in); empty = `profile.chartEmpty`, no SVG; populated ₿ | selected fiat `tone="gift"` → About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text + pencil; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor has no control; copy-profile-link on the card — never a forum post) → Name overline + value + edit `IconButton` → Location overline + value or `location.unset` + edit/clear `IconButton` (pencil / check / X / trash) → the same public facts as the member card (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (press reveals the sentence; screenshot state `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions, activity feed; no Message, no staff actions) → Wallet of Satoshi address overline + mono value + edit/delete → `PushToggle` (Notifications heading, first pill All/Active/Mentions plus muted hint, second pill This device On/Off when Push APIs are ready; selected fill `bg-app-btn`; On/Off text so color is not the only encoding) → `LanguagePreferenceSwitcher` (overline + `SegmentedControl tone="neutral"` English / Deutsch / Español / Filipino, one-row `rounded-full` like Theme) → `ThemeSwitcher` (overline + `SegmentedControl tone="neutral"` System / Light / Dark) → `FiatPreferenceSwitcher` (overline + `FiatPicker` `tone="neutral"` CHF|EUR|USD|PHP) → `NumberFormatSwitcher` last (overline + `SegmentedControl tone="neutral"` with samples `10'000.23` / `10,000.23` / `23.000,33`). Given/Received labels stay.
+
+Handbook states for the name, location, and Wallet of Satoshi editors: name-empty, name-long, name-controls, name-request, location-long, location-controls, location-request, address-empty, address-long, address-format, address-taken, address-not-found, address-not-zap, address-request.
 
 ### `/grants`
 

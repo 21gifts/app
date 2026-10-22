@@ -230,6 +230,28 @@ describe('LightningAddressForm', () => {
     expect(alert.textContent).toBe('That Wallet of Satoshi address could not be found');
     expect(setLightningAddress).toHaveBeenCalledWith('sess', PLACEHOLDER, 'setup');
     expect(screen.getByPlaceholderText(PLACEHOLDER)).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByRole('button', { name: /skip/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'other@walletofsatoshi.com' },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: PLACEHOLDER },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('shows the not-zap message when the address cannot receive these payments', async () => {
@@ -611,7 +633,12 @@ describe('LightningAddressForm', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'That Wallet of Satoshi address could not be found',
     );
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(field, { target: { value: 'other@walletofsatoshi.com' } });
+    expect(screen.queryByRole('alert')).toBeNull();
     vi.mocked(setLightningAddress).mockRejectedValueOnce(
       new Error('Not a valid Lightning Address (expected name@domain)'),
     );
@@ -659,6 +686,43 @@ describe('LightningAddressForm', () => {
     fireEvent.change(field, { target: { value: 'bob@walletofsatoshi.com' } });
     expect(screen.queryByRole('alert')).toBeNull();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('disables profile save after an address could not be found until the draft changes', async () => {
+    useAuthStore.setState({ session: 'sess', account: linkedAccount });
+    vi.mocked(setLightningAddress).mockRejectedValue(
+      new Error('That Wallet of Satoshi address could not be found'),
+    );
+    renderWithLocale(<LightningAddressForm />);
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'gone@walletofsatoshi.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'That Wallet of Satoshi address could not be found',
+    );
+    expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'back@walletofsatoshi.com' },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(screen.getByPlaceholderText(PLACEHOLDER), {
+      target: { value: 'gone@walletofsatoshi.com' },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(
       false,
     );
   });

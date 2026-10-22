@@ -2836,6 +2836,494 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-setup-address');
   });
 
+  test.describe('field validation screens', () => {
+    async function openSetup(
+      page: Page,
+      path: string,
+      account: typeof E2E_ACCOUNT,
+      heading: string,
+    ): Promise<void> {
+      await page.addInitScript(() => {
+        localStorage.setItem('21gifts.session', 'sess-e2e');
+      });
+      await page.route(/\/me$/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(account),
+        });
+      });
+      await page.goto(path);
+      await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+    }
+
+    async function failPost(
+      page: Page,
+      path: RegExp,
+      status: number,
+      error: string,
+    ): Promise<void> {
+      await page.route(path, async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status,
+          contentType: 'application/json',
+          body: JSON.stringify({ error }),
+        });
+      });
+    }
+
+    async function shootAlert(
+      page: Page,
+      text: string,
+      button: 'Continue' | 'Save',
+      locked: boolean,
+    ): Promise<void> {
+      const alert = page.getByRole('alert').filter({ hasText: text });
+      await expect(alert).toHaveText(text);
+      await alert.scrollIntoViewIfNeeded();
+      const submit = page.getByRole('button', { name: button, exact: true });
+      if (locked) {
+        await expect(submit).toBeDisabled();
+      } else {
+        await expect(submit).toBeEnabled();
+      }
+    }
+
+    const setupName = E2E_ACCOUNT;
+    const setupUsername = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      username: null,
+      setup: 'username' as const,
+      missing: ['username', 'lightning-address', 'rules'] as typeof E2E_ACCOUNT.missing,
+    };
+    const setupAddress = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      setup: 'lightning-address' as const,
+      missing: ['lightning-address', 'rules'] as typeof E2E_ACCOUNT.missing,
+    };
+
+    test('setup name empty', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      const field = page.getByRole('textbox', { name: 'Name' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter your name', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-empty');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name long', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await page.getByRole('textbox', { name: 'Name' }).fill('a'.repeat(81));
+
+      await shootAlert(page, 'Name must be 1–80 characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-long');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name controls', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await page.getByRole('textbox', { name: 'Name' }).fill(`Ada${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Name cannot include control characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-controls');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name request', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await failPost(page, /\/me\/name$/, 500, 'nope');
+      await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your name', 'Continue', false);
+      await shotScreen(page, 'state-setup-name-request');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup username empty', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      const field = page.getByRole('textbox', { name: 'Your 21.gifts name' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter a username', 'Continue', true);
+      await shotScreen(page, 'state-setup-username-empty');
+    });
+
+    test('setup username invalid', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('!');
+
+      await shootAlert(
+        page,
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-username-invalid');
+    });
+
+    test('setup username taken', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await failPost(page, /\/me\/username$/, 409, 'Username is already in use');
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('takenname');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That username is already taken', 'Continue', true);
+      await shotScreen(page, 'state-setup-username-taken');
+    });
+
+    test('setup username request', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await failPost(page, /\/me\/username$/, 500, 'nope');
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('freshname');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your username', 'Continue', false);
+      await shotScreen(page, 'state-setup-username-request');
+    });
+
+    test('setup address empty', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter your Wallet of Satoshi address', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-empty');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address long', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await page.getByRole('textbox', { name: 'Wallet of Satoshi address' }).fill('a'.repeat(256));
+
+      await shootAlert(page, 'Use at most 255 characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-long');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address format', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await page.getByRole('textbox', { name: 'Wallet of Satoshi address' }).fill('bad@example');
+
+      await shootAlert(
+        page,
+        'Use an address like name@domain.tld, at most 255 characters.',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-address-format');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address taken', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(page, /\/me\/lightning-address$/, 409, 'Lightning Address is already in use');
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address is already in use.', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-taken');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address not-found', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'Lightning Address could not be resolved',
+      );
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('gone@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address could not be found', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-not-found');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address not-zap', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+      );
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('nozap@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(
+        page,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-address-not-zap');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address request', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(page, /\/me\/lightning-address$/, 500, 'nope');
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not update your Wallet of Satoshi address', 'Continue', false);
+      await shotScreen(page, 'state-setup-address-request');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('profile name-empty', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill('');
+      await field.blur();
+
+      await shootAlert(page, 'Enter your name', 'Save', true);
+      await shotScreen(page, 'state-profile-name-empty');
+    });
+
+    test('profile name-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill('a'.repeat(81));
+
+      await shootAlert(page, 'Name must be 1–80 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-name-long');
+    });
+
+    test('profile name-controls', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill(`Ada${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Name cannot include control characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-name-controls');
+    });
+
+    test('profile name-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await failPost(page, /\/me\/name$/, 500, 'nope');
+      await field.fill('Bea');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your name', 'Save', false);
+      await shotScreen(page, 'state-profile-name-request');
+    });
+
+    test('profile location-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await field.fill('a'.repeat(81));
+
+      await shootAlert(page, 'Location must be at most 80 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-location-long');
+    });
+
+    test('profile location-controls', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await field.fill(`Manila${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Location cannot include control characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-location-controls');
+    });
+
+    test('profile location-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await failPost(page, /\/me\/location$/, 500, 'nope');
+      await field.fill('Manila');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your location', 'Save', false);
+      await shotScreen(page, 'state-profile-location-request');
+    });
+
+    test('profile address-empty', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('');
+      await field.blur();
+
+      await shootAlert(page, 'Enter your Wallet of Satoshi address', 'Save', true);
+      await shotScreen(page, 'state-profile-address-empty');
+    });
+
+    test('profile address-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('a'.repeat(256));
+
+      await shootAlert(page, 'Use at most 255 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-address-long');
+    });
+
+    test('profile address-format', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('bad@example');
+
+      await shootAlert(
+        page,
+        'Use an address like name@domain.tld, at most 255 characters.',
+        'Save',
+        true,
+      );
+      await shotScreen(page, 'state-profile-address-format');
+    });
+
+    test('profile address-taken', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(page, /\/me\/lightning-address$/, 409, 'Lightning Address is already in use');
+      await field.fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address is already in use.', 'Save', true);
+      await shotScreen(page, 'state-profile-address-taken');
+    });
+
+    test('profile address-not-found', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'Lightning Address could not be resolved',
+      );
+      await field.fill('gone@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address could not be found', 'Save', true);
+      await shotScreen(page, 'state-profile-address-not-found');
+    });
+
+    test('profile address-not-zap', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+      );
+      await field.fill('nozap@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(
+        page,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+        'Save',
+        true,
+      );
+      await shotScreen(page, 'state-profile-address-not-zap');
+    });
+
+    test('profile address-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(page, /\/me\/lightning-address$/, 500, 'nope');
+      await field.fill('bob@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not update your Wallet of Satoshi address', 'Save', false);
+      await shotScreen(page, 'state-profile-address-request');
+    });
+  });
+
   test('screen /setup/rules', async ({ page }) => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');

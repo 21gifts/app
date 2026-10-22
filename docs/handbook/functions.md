@@ -256,21 +256,21 @@
 ## Function: NameForm
 
 - **Purpose:** Logged-in form to set or edit a display name. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile / overlay: icon-only actions (no Skip). Optional `onSaved` after a successful save.
-- **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty and request failures are typed keys so they re-render after a locale change.
+- **Inputs:** Reads `useAuthStore`. User input: name string. Visitor-facing copy via `useTranslations`. Empty, length, control, and request failures are typed keys (`name.errorEmpty`, `name.errorLength`, `name.errorControls`, `name.errorRequest`) so they re-render after a locale change. After an empty, too-long, or control-character name, Continue/Save stays disabled until the draft changes. A request failure leaves Continue/Save enabled. Skip stays available.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/name` on save; POST `/me/setup/skip` on Skip. Merges `name`, `setup`, and `missing`.
 - **Used by:** `NameSetup` on `/setup/name`, `ProfileScreen` on `/profile`, and `RequirementsOverlay`.
 
 ## Function: LocationForm
 
 - **Purpose:** Logged-in profile row to set, edit, or clear a free-text location. Icon-only actions (pencil / check / X / trash). Empty after trim is a valid save and clears. Not an onboarding step and has no Skip.
-- **Inputs:** Reads `useAuthStore`. Optional `startEditing` opens the field on mount. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). Request failures use `location.errorRequest`.
+- **Inputs:** Reads `useAuthStore`. Optional `startEditing` opens the field on mount. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). After a too-long value or a control character, Save stays disabled until the draft changes. A request failure leaves Save enabled and uses `location.errorRequest`. Blank after trim is a valid clear.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/location` on save or clear. Merges only `location` so a concurrent name or address write is not overwritten.
 - **Used by:** `ProfileScreen` on `/profile`. `FundingApplyScreen` renders it in the apply walk, which is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
 
 ## Function: LightningAddressForm
 
 - **Purpose:** Logged-in form to link, edit, or unlink a Wallet of Satoshi address. Onboarding (`variant="onboarding"`): field at the top, **Continue** and labeled **Skip** at the bottom. Profile / overlay: icon-only actions (no Skip). Optional `onSaved` after a successful address save (not Skip or unlink).
-- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. After `taken`, the in-use sentence stays under the field and Continue/Save stays disabled until the draft changes. Changing the draft clears it, and restoring that address does not lock again. Inline alerts (`empty` / `notFound` / `request` / `notZap` / `taken`) are not separate screen variants.
+- **Inputs:** Reads `useAuthStore`. User input: address string. Visitor-facing copy via `useTranslations`. Empty, length, format, taken, not-found, request, and `notZap` failures are typed keys (`la.errorEmpty`, `la.errorLength`, `la.errorFormat`, `la.errorTaken`, `la.errorNotFound`, `la.errorRequest`, `la.errorNotZap`) so they re-render after a locale change. After `notFound`, the not-found sentence stays and Continue/Save stays disabled until the draft changes. Changing the draft clears it, and restoring that address does not lock again. After `notZap`, Continue/Save stays disabled while the trimmed draft equals the blocked address; changing the draft clears the alert and re-enables; restoring the blocked address re-locks. After `taken`, the in-use sentence stays under the field and Continue/Save stays disabled until the draft changes. Changing the draft clears it, and restoring that address does not lock again. A request failure leaves Continue/Save enabled. Skip stays available.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/lightning-address` on save; POST `/me/setup/skip` on Skip. Merges address fields plus `setup` and `missing`.
 - **Used by:** `AddressSetup` on `/setup/address`, `ProfileScreen` on `/profile`, and `RequirementsOverlay`.
 
@@ -434,7 +434,7 @@
 ## Function: UsernameForm
 
 - **Purpose:** Username field and **Continue**. Posts `POST /me/username`. Cannot skip.
-- **Inputs:** Auth store session; optional `onSaved`.
+- **Inputs:** Auth store session; optional `onSaved`. After an empty, invalid, or taken username, Continue stays disabled until the draft changes. A request failure leaves Continue enabled.
 - **Returns / side effects:** Taken/invalid/request stay on the form. Success updates the store and calls `onSaved`.
 - **Used by:** `UsernameSetup`, `RequirementsOverlay`.
 
