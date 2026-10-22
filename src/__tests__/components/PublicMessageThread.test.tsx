@@ -308,7 +308,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: 'nope' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
@@ -320,7 +320,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '0' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
@@ -332,9 +332,40 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '9007199254740993' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
+  });
+
+  it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn({ amountUnit: 'fiat' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.change(payAmountInput(), { target: { value: '1.00' } });
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const pending = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(pending.closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    const settled = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(settled.closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(payAmountInput(), { target: { value: '' } });
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
   });
 
   it('shows a pay error when the invoice request fails', async () => {
@@ -806,7 +837,7 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
@@ -973,7 +1004,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: '999999999999999999999' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -992,7 +1023,40 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: 'x' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fiat reply amount quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    signIn({ amountUnit: 'fiat' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(replyAmountInput(), { target: { value: '1.00' } });
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    const pending = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(form);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    const settled = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(form);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -1004,7 +1068,7 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(postMessage).not.toHaveBeenCalled();
   });
 

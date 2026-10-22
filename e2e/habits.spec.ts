@@ -175,12 +175,12 @@ async function openHabitPay(
 test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
   await openHabitPay(page, null);
   await page.getByLabel('Amount').fill('0');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(
     page.getByRole('alert').filter({
       hasText: 'Expected a JSON body with an integer "amountSats"',
     }),
   ).toHaveText('Expected a JSON body with an integer "amountSats"');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
 });
 
 test('screen /habit-tracker donate-request', async ({ page }) => {
@@ -378,11 +378,41 @@ test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   await seedAda(page);
   await page.unroute('**/gifts/stats**');
   await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
   await stubHabits(page, PUBLIC_LIST);
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
+  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
   await expect(cont).toBeDisabled();
+  await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
+  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
   await cont.scrollIntoViewIfNeeded();
   await expect(cont).toBeInViewport();
 });
@@ -506,10 +536,10 @@ test('screen /habit-tracker edit-save-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'Keep the habit name to 80 characters',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('Keep the habit name to 80 characters');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -576,10 +606,10 @@ test('screen /habit-tracker add-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Add habit' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'Keep the habit name to 80 characters',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('Keep the habit name to 80 characters');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.locator('#habit-add-name')).toHaveValue('Stretch');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -620,10 +650,10 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'Keep the comment to 2000 characters',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('Keep the comment to 2000 characters');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(draft).toHaveValue('still here');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -1021,10 +1051,34 @@ test('Function: postMemberHabit — the owner logs the open period through the p
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: useLatestRateDayState — Continue stays disabled until the gift-day rate settles', async ({
+test('Function: useLatestRateDayState — a fiat Gift stays quiet until the rate settles', async ({
   page,
 }) => {
   await seedAda(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
   let release!: () => void;
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -1038,12 +1092,18 @@ test('Function: useLatestRateDayState — Continue stays disabled until the gift
     });
   });
   await stubHabits(page, PUBLIC_LIST);
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
+  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
-  await expect(cont).toBeDisabled();
-  release();
   await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeDisabled();
+  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
+  release();
+  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
+  await expect(cont).toBeDisabled();
 });
 
 test('Function: HabitTrackerTopRight — Log in without a session and the menu with one', async ({

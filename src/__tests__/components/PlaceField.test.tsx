@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GoogleMapCanvas } from '@/components/GoogleMapCanvas';
 import { PlaceField } from '@/components/PlaceField';
+import { PLACE_LABEL_API_MESSAGE } from '@/lib/entry-text';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 type LatLng = { lat: () => number; lng: () => number };
@@ -1959,5 +1960,35 @@ describe('PlaceField', () => {
     }
     expect(ids).toHaveLength(12);
     expect(new Set(ids).size).toBe(12);
+  });
+
+  it('shows the living-room place limit as the name is typed', async () => {
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Place name'), {
+      target: { value: 'a'.repeat(81) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep the place name to 80 characters');
+    expect(
+      (screen.getByRole('button', { name: 'Use this place' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('keeps a rejected place-label limit on a name the form already accepted', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error(PLACE_LABEL_API_MESSAGE));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} onCommit={onCommit} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Keep the place name to 80 characters');
+    expect(screen.getByRole('button', { name: 'Use this place' })).toBeTruthy();
   });
 });

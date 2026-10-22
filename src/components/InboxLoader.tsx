@@ -4,8 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import {
+  replyDraftProblem,
+  replySatsFromDraft,
+  shownDraftPayError,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import {
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
@@ -125,7 +130,7 @@ export function InboxLoader(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled: rateSettled } = useLatestRateDayState();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);
@@ -670,6 +675,14 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     const trimmed = draft.trim();
+    const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
+    if (amountProblem === 'quiet') {
+      return;
+    }
+    if (amountProblem === 'no-rate') {
+      setFormError('noRate');
+      return;
+    }
     const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
@@ -876,6 +889,8 @@ export function InboxLoader(): ReactElement | null {
   /* v8 ignore next -- empty ?c= is the same as no thread */
   const threadId = threadAllowed ? openId : null;
   const showFilter = staff;
+  const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
+  const shownFormError = shownDraftPayError(formError, amountProblem, 'amount', 'noRate');
   return (
     <InboxScreen
       conversations={waitingStaffRoom ? null : conversations}
@@ -912,17 +927,18 @@ export function InboxLoader(): ReactElement | null {
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);
-        setFormError(null);
+        setFormError((current) => (current === 'amount' ? current : null));
       }}
       amountDraft={amountDraft}
       onAmountDraftChange={(value) => {
         setAmountDraft(value);
-        setFormError(null);
+        setFormError((current) => (current === 'amount' || current === 'noRate' ? null : current));
       }}
       onAmountUnitChange={setAmountUnit}
       onPost={onPost}
       posting={posting || preparing}
-      formError={formError}
+      formError={shownFormError}
+      amountUnsettled={amountProblem === 'quiet'}
       showFilter={showFilter}
       invoice={invoice}
       onPayCancel={() => {

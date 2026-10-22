@@ -170,9 +170,9 @@
     "fil": "Naghihintay sa pagkuha ng pampublikong mensahe. Naglo-load…"
   },
   "/contact:validation-error": {
-    "de": "Klick auf Senden bei leerem Eingabefeld → Bitte schreiben Sie eine Nachricht.",
-    "es": "Clic en Enviar con el redactor vacío → Escribe un mensaje.",
-    "fil": "I-click ang Ipadala nang walang laman ang pambuo ng mensahe → Maglagay ng mensahe."
+    "de": "Klick auf Senden bei leerem Eingabefeld → Bitte schreiben Sie eine Nachricht. Senden bleibt aus.",
+    "es": "Clic en Enviar con el redactor vacío → Escribe un mensaje. Enviar permanece desactivado.",
+    "fil": "I-click ang Ipadala nang walang laman ang pambuo ng mensahe → Maglagay ng mensahe. Nananatiling naka-off ang Ipadala."
   },
   "/messages:error": {
     "de": "Abrufen der Liste fehlgeschlagen. Schaltfläche Erneut versuchen. Auswahl fehlt.",
@@ -948,6 +948,11 @@
     "de": "Ort hinzufügen ist als Dialog geöffnet und der Kartenschlüssel ist leer. Die Karte ist nicht verfügbar und Diesen Ort verwenden ist sichtbar und deaktiviert.",
     "es": "Añadir un lugar está abierto como diálogo y la clave del mapa está vacía. El mapa no está disponible y Usar este lugar está visible y desactivado.",
     "fil": "Bukas bilang dialog ang Magdagdag ng lugar at walang laman ang susi ng mapa. Hindi available ang mapa at nakikita ngunit naka-disable ang Gamitin ang lugar na ito."
+  },
+  "/welcome:composer-place-too-long": {
+    "de": "Ort hinzufügen ist offen und der Kartenschlüssel ist leer. Der Ortsname ist länger als 80 Zeichen. Maximal 80 Zeichen für den Ortsnamen steht unter dem Feld, und Diesen Ort verwenden bleibt aus. Nadel Maximal 80 Zeichen für den Ortsnamen.",
+    "es": "Añadir un lugar está abierto y la clave del mapa está vacía. El nombre del lugar supera los 80 caracteres. Máximo 80 caracteres para el nombre del lugar aparece bajo el campo, y Usar este lugar permanece desactivado. Aguja Máximo 80 caracteres para el nombre del lugar.",
+    "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa. Mahigit 80 character ang pangalan ng lugar. Nasa ilalim ng field ang Hanggang 80 character ang pangalan ng lugar, at nananatiling naka-off ang Gamitin ang lugar na ito. Karayom Hanggang 80 character ang pangalan ng lugar."
   },
   "/profile:posts-open": {
     "de": "14 Beiträge ist gedrückt und der Feed zeigt Second post from Ada. Nadel Second post from Ada.",
@@ -3130,9 +3135,9 @@
     "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa Cafe Luna. Bukas ang Hakbang 1 sa 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:validation-error": {
-    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu. Das Verfassen ist auf 8000 Zeichen begrenzt (wie POST /forum/messages); zu lange Entwürfe zeigen Maximal 8000 Zeichen und werden nicht gesendet.",
-    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo. El redactor tiene tope de 8000 caracteres (igual que POST /forum/messages); los borradores demasiado largos muestran Máximo 8000 caracteres y no se envían.",
-    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo. Limitado ang pambuo sa 8000 na karakter (tulad ng POST /forum/messages); ang masyadong mahahabang burador ay nagpapakita ng Hanggang 8000 na karakter at hindi ipinapadala."
+    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu, und Senden bleibt aus. Ein Entwurf über 8000 Zeichen zeigt Maximal 8000 Zeichen, solange er zu lang ist, und Senden bleibt aus. Das Verfassen schneidet den Entwurf nicht ab.",
+    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo, y Publicar permanece desactivado. Un borrador de más de 8000 caracteres muestra Máximo 8000 caracteres mientras sigue siendo demasiado largo, y Publicar permanece desactivado. El redactor no corta el borrador.",
+    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo, at nananatiling naka-off ang I-post. Ang burador na higit sa 8000 character ay nagpapakita ng Hanggang 8000 na karakter habang masyado pa itong mahaba, at nananatiling naka-off ang I-post. Hindi pinuputol ng pambuo ang burador."
   },
   "/messages/[id]:goal-fiat": {
     "de": "Nicht angemeldeter Permalink einer englischen Notiz, definiert als $1.50 mit eingefrorenem ₿1'000 und Beschriftung 0%. Kein zweiter Dollarbetrag. Die Notiz entspricht der Sprache der Oberfläche, daher bietet die Karte kein Übersetzen. Der empfangene Betrag ist ₿0 · $0.00. Kein Anfragen im Verfassen.",
@@ -3270,9 +3275,9 @@
     "fil": "Utang, hakbang 9 sa 9, pagkatapos ng isang hiling na 1000 dolyar ng US at ng parehong mensahe. Naka-pindot ang Utang. Ipinapakita ng preview ang isang etiketa ng Pautang, ang halaga sa dolyar, at ang araw-araw na plano sa dolyar ($33.33 sa loob ng 29 araw, pagkatapos $33.43 sa huling araw). Ang I-post ang tanging pagsusumite. Binabasa ng pamilang ang 9 sa 9."
   },
   "/grants/payments/amounts:invalid": {
-    "de": "Gründerin, Betrag 0 hinzufügen, Hinweis Der Betrag ist ungültig. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Der Betrag ist ungültig.",
-    "es": "Fundador, añadir importe 0, aviso El importe no es válido. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja El importe no es válido.",
-    "fil": "Tagapagtatag, magdagdag ng halagang 0, alerto Hindi wasto ang amount. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Hindi wasto ang amount."
+    "de": "Gründerin, Betrag 0 im Hinzufügen-Feld. Bitte geben Sie einen Betrag grösser als null ein steht unter dem Feld und Hinzufügen bleibt aus. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Bitte geben Sie einen Betrag grösser als null ein.",
+    "es": "Fundador, importe 0 en el campo de añadir. Introduce un importe mayor que cero aparece bajo el campo y Añadir permanece desactivado. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja Introduce un importe mayor que cero.",
+    "fil": "Tagapagtatag, halagang 0 sa field ng pagdagdag. Maglagay ng halagang higit sa zero ang nasa ilalim ng field at nananatiling naka-off ang Magdagdag. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Maglagay ng halagang higit sa zero."
   },
   "/login:error": {
     "de": "Beginn oder Abschluss der Anmeldung ist fehlgeschlagen. Text Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut. (login.error) und Erneut versuchen. Handybilder zeigen auch die gedämpfte Zeile für installiertes iOS. Eine alte-iOS-Registrierung, die nicht abschliessen kann, ist die Variante ios-version, nicht dieses Bild. Dort wird kein Konto angelegt.",
@@ -3895,9 +3900,9 @@
     "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin. Nakikita ang Halaga at Magpatuloy."
   },
   "/habit-tracker:donate-rate-pending": {
-    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Das Blatt ist gescrollt, sodass Weiter auf dem Bildschirm ist und deaktiviert bleibt, und es gibt keine Fiat-Zeile.",
-    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. La hoja está desplazada para que Continuar esté en pantalla y permanezca desactivado, y no se muestra ninguna línea fiat.",
-    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Naka-scroll ang sheet kaya nasa screen ang Magpatuloy at nananatiling naka-disable, at walang linyang fiat."
+    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Der Betrag ist 1.00 in USD. Unter dem Betrag steht No exchange rate yet. Weiter bleibt deaktiviert. Die Zahlungsfehlermeldung zum fehlenden Kurs und eine Bitcoin-Zeile fehlen.",
+    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. El importe es 1.00 en USD. Debajo del importe está No exchange rate yet. Continuar permanece desactivado. No se muestra el error de pago por el tipo que falta, y no hay una línea de bitcoin.",
+    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Ang halaga ay 1.00 sa USD. Nasa ilalim ng halaga ang No exchange rate yet. Nanatiling naka-disable ang Magpatuloy. Hindi ipinapakita ang error sa bayad para sa nawawalang rate, at walang linyang bitcoin."
   },
   "/habit-tracker:donate-fiat": {
     "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen und der Betragsschalter steht auf USD. Das Feld zeigt den Fiat-Betrag, und das Bitcoin-Äquivalent steht darunter.",
@@ -3984,10 +3989,25 @@
     "es": "Sesión de Ada. Se pulsó Confirmar archivado y el guardado falló. La misma alerta No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo. y Reintentar están sobre la lista. ¿Archivar este hábito? Su historial seguirá visible. permanece, con Confirmar archivado y Cancelar archivado. El formulario de edición no está abierto.",
     "fil": "Sesyon ni Ada. Pinindot ang Kumpirmahin ang pag-archive at nabigo ang pag-save. Ang parehong alerto Hindi ma-load o ma-save ang tracker. Pakisubukan muli. at Subukan muli ay nasa itaas ng listahan. Nanatili ang I-archive ang gawi na ito? Mananatili ang kasaysayan nito., kasama ang Kumpirmahin ang pag-archive at Kanselahin ang pag-archive. Hindi bukas ang form ng pag-edit."
   },
+  "/habit-tracker:add-name-empty": {
+    "de": "Adas Sitzung. Gewohnheit hinzufügen wurde mit leerem Namen gedrückt. Bitte geben Sie einen Namen ein steht unter dem Feld und Gewohnheit hinzufügen bleibt aus. Es wurde keine Gewohnheit gespeichert. Nadel Bitte geben Sie einen Namen ein.",
+    "es": "Sesión de Ada. Se pulsó Añadir hábito con el Nombre vacío. Escribe un nombre aparece bajo el campo y Añadir hábito permanece desactivado. No se guardó ningún hábito. Aguja Escribe un nombre.",
+    "fil": "Sesyon ni Ada. Pinindot ang Magdagdag ng gawi na walang laman ang Pangalan. Nasa ilalim ng field ang Maglagay ng pangalan at nananatiling naka-off ang Magdagdag ng gawi. Walang gawing naitago. Karayom Maglagay ng pangalan."
+  },
+  "/habit-tracker:add-name-too-long": {
+    "de": "Adas Sitzung. Der Name zum Hinzufügen ist länger als 80 Zeichen. Maximal 80 Zeichen für den Namen steht unter dem Feld, bevor Gewohnheit hinzufügen gedrückt wird, und Gewohnheit hinzufügen bleibt aus. Nadel Maximal 80 Zeichen für den Namen.",
+    "es": "Sesión de Ada. El Nombre para añadir supera los 80 caracteres. Máximo 80 caracteres para el nombre aparece bajo el campo antes de pulsar Añadir hábito, y Añadir hábito permanece desactivado. Aguja Máximo 80 caracteres para el nombre.",
+    "fil": "Sesyon ni Ada. Mahigit 80 character ang Pangalan para idagdag. Nasa ilalim ng field ang Hanggang 80 character ang pangalan bago pindutin ang Magdagdag ng gawi, at nananatiling naka-off ang Magdagdag ng gawi. Karayom Hanggang 80 character ang pangalan."
+  },
   "/habit-tracker:add-error": {
     "de": "Adas Sitzung. Gewohnheit hinzufügen wurde mit Name Stretch gedrückt, und das Speichern ist fehlgeschlagen. Es wurde keine Gewohnheit gespeichert. Der Hinweis Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen. und Erneut versuchen bleiben über Noch keine Gewohnheiten. Das Feld Name zeigt weiterhin Stretch. Das Bearbeitungsformular und die Archivierungsbestätigung sind nicht offen.",
     "es": "Sesión de Ada. Se pulsó Añadir hábito con Nombre Stretch y el guardado falló. No se guardó ningún hábito. La alerta No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo. y Reintentar permanecen sobre Todavía no hay hábitos. El campo Nombre sigue mostrando Stretch. El formulario de edición y la confirmación de archivo no están abiertos.",
     "fil": "Sesyon ni Ada. Pinindot ang Magdagdag ng gawi na may Pangalan Stretch at nabigo ang pag-save. Walang gawing naitago. Ang alerto Hindi ma-load o ma-save ang tracker. Pakisubukan muli. at Subukan muli ay nananatili sa itaas ng Wala pang gawi. Ipinapakita pa ng field na Pangalan ang Stretch. Hindi bukas ang form ng pag-edit at ang kumpirmasyon ng pag-archive."
+  },
+  "/habit-tracker:comment-empty": {
+    "de": "Adas Sitzung. Posten wurde mit leerem Kommentar auf ihrer offenen Gewohnheit gedrückt. Bitte schreiben Sie einen Kommentar steht unter Kommentar schreiben und Posten bleibt aus. Nadel Bitte schreiben Sie einen Kommentar.",
+    "es": "Sesión de Ada. Se pulsó Publicar con un comentario vacío en su hábito abierto. Escribe un comentario aparece bajo Escribe un comentario y Publicar permanece desactivado. Aguja Escribe un comentario.",
+    "fil": "Sesyon ni Ada. Pinindot ang I-post na may walang lamang komento sa bukas niyang gawi. Nasa ilalim ng Sumulat ng komento ang Maglagay ng komento at nananatiling naka-off ang I-post. Karayom Maglagay ng komento."
   },
   "/habit-tracker:comment-error": {
     "de": "Adas Sitzung. Posten wurde mit dem Entwurf still here gedrückt, und das Speichern ist fehlgeschlagen. Derselbe Hinweis Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen. und Erneut versuchen bleiben. Kommentar schreiben zeigt weiterhin still here. Das Bearbeitungsformular und die Archivierungsbestätigung sind nicht offen.",

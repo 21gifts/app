@@ -21,6 +21,7 @@ import {
 } from '@/lib/forum-shop';
 import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
 import { fetchMapsKey } from '@/lib/maps-key';
+import { PLACE_LABEL_API_MESSAGE, placeLabelProblem } from '@/lib/entry-text';
 import type { MessageKey } from '@/lib/messages';
 
 const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
@@ -182,6 +183,7 @@ export function PlaceField(props: {
   const [addressDraft, setAddressDraft] = useState<ForumPlaceAddressDraft>({ ...EMPTY_ADDRESS });
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
+  const [serverLabelTooLong, setServerLabelTooLong] = useState(false);
   const [addressTouched, setAddressTouched] = useState<ReadonlySet<ShopAddressField>>(
     () => new Set(),
   );
@@ -544,11 +546,15 @@ export function PlaceField(props: {
     }
   }
   const invalidFields = Object.keys(addressProblems) as ShopAddressField[];
+  const livingLabelTooLong =
+    !shopDetails && (placeLabelProblem(labelDraft) !== null || serverLabelTooLong);
+  const livingLabelError = livingLabelTooLong ? t('forum.placeLabelTooLong') : undefined;
   const blocked =
     markerPos === null ||
     unavailable ||
     saveError !== null ||
     reportedProblem !== null ||
+    livingLabelTooLong ||
     (shopDetails &&
       (nameProblem !== null || shopTextNameError !== undefined || invalidFields.length > 0));
   const fieldLabel: Record<ShopAddressField, string> = {
@@ -587,7 +593,7 @@ export function PlaceField(props: {
     saveError !== null && nameCommitError === undefined ? t(saveError) : reportedAddressError;
   // The unavailable map is already explained where the map would be.
   const liveFooterReasons = [
-    // The hint under the map says how; the footer only summarises it.
+    // The place-name message sits under the field. The footer only summarises the rest.
     ...(markerPos === null ? [t('shops.setPinAbove')] : []),
     ...(nameBlockedByTextLength ? [t('shops.editShopTextFirst')] : []),
     ...(missingFields.length > 0 ? [t('shops.fillIn', { fields: missingFields.join(', ') })] : []),
@@ -620,6 +626,10 @@ export function PlaceField(props: {
       setOpen(false);
     } catch (error) {
       failedSaveActionRef.current = next === null ? 'remove' : 'commit';
+      if (!shopDetails && error instanceof Error && error.message === PLACE_LABEL_API_MESSAGE) {
+        setServerLabelTooLong(true);
+        return;
+      }
       const problem = error instanceof Error ? shopApiProblem(error.message, shopDetails) : null;
       if (problem === null) {
         setUnknownSaveError(true);
@@ -729,20 +739,36 @@ export function PlaceField(props: {
                       />
                     </>
                   ) : (
-                    <input
-                      type="text"
-                      maxLength={80}
-                      aria-label={t('forum.placeLabel')}
-                      value={labelDraft}
-                      disabled={fieldsDisabled}
-                      onChange={(event) => {
-                        setLabelDraft(event.target.value);
-                        setSaveError(null);
-                        setReportedProblem(null);
-                        setUnknownSaveError(false);
-                      }}
-                      className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
-                    />
+                    <>
+                      <input
+                        id="living-place-label"
+                        type="text"
+                        aria-label={t('forum.placeLabel')}
+                        value={labelDraft}
+                        disabled={fieldsDisabled}
+                        aria-invalid={livingLabelError !== undefined || undefined}
+                        aria-describedby={
+                          livingLabelError !== undefined ? 'living-place-label-error' : undefined
+                        }
+                        onChange={(event) => {
+                          setLabelDraft(event.target.value);
+                          setServerLabelTooLong(false);
+                          setSaveError(null);
+                          setReportedProblem(null);
+                          setUnknownSaveError(false);
+                        }}
+                        className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+                      />
+                      {livingLabelError === undefined ? null : (
+                        <p
+                          id="living-place-label-error"
+                          role="alert"
+                          className="text-sm text-app-danger"
+                        >
+                          {livingLabelError}
+                        </p>
+                      )}
+                    </>
                   )}
                   {unknownSaveError ? (
                     <p role="alert" className="text-sm text-app-danger">

@@ -600,7 +600,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Add a place')).toBeNull();
     expect(photo.compareDocumentPosition(place) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(place.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
+    expect(field.getAttribute('maxLength')).toBeNull();
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(screen.queryByText('Dismiss')).toBeNull();
   });
@@ -756,16 +756,17 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('sets the new-post textarea maxLength from composerMaxLength', () => {
+  it('shows the composer limit while the draft is still over it', () => {
+    const onPost = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[]}
         error={false}
         loading={false}
         posting={false}
-        draft=""
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH - 13)}
         onDraftChange={() => undefined}
-        onPost={() => undefined}
+        onPost={onPost}
         onRetry={() => undefined}
         formError={null}
         composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
@@ -773,9 +774,14 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
-      String(FORUM_MESSAGE_MAX_LENGTH - 14),
+    const field = screen.getByLabelText('Your message');
+    expect(field.getAttribute('maxLength')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(
+      true,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    expect(onPost).not.toHaveBeenCalled();
   });
 
   it('hides the composer and mode control when composerHidden', () => {
@@ -2917,6 +2923,65 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('shows empty and too-long alerts for the shop composer and after blur', () => {
+    const view = renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="empty"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    view.rerender(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooLong"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    view.rerender(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
   it('shows formError ask alert', () => {
     renderWithLocale(
       <ForumBoard
@@ -3071,6 +3136,53 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('110%')).toBeNull();
   });
 
+  it('stays quiet when the draft is cleared while a post is still in flight', () => {
+    const board = (posting: boolean, draft: string) => (
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={posting}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />
+    );
+    const view = renderWithLocale(board(true, 'Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+    view.rerender(board(true, ''));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+    view.rerender(board(false, ''));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+  });
+
+  it('keeps the empty message when the person deletes the draft', () => {
+    const board = (draft: string) => (
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />
+    );
+    const view = renderWithLocale(board('Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    view.rerender(board(''));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
   it('disables submit and shows a spinner while posting', () => {
     renderWithLocale(
       <ForumBoard
@@ -3112,6 +3224,28 @@ describe('ForumBoard', () => {
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    expect(onPost).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
+  it('calls onPost when the draft already has text', () => {
+    const onPost = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Hi"
+        onDraftChange={() => undefined}
+        onPost={onPost}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });

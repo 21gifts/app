@@ -102,6 +102,21 @@ describe('PayLinkScreen', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('shows an empty amount after the field is left', async () => {
+    mockFetch(async () => Response.json(profile));
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.blur(screen.getByLabelText('Amount'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
   it('shows the name and rejects an amount outside the window', async () => {
     mockFetch(async () => Response.json(profile));
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
@@ -296,6 +311,9 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('No USD exchange rate yet.');
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    expect(postedInvoice()).toBe(false);
   });
 
   it('shows the invoice QR after a successful mint', async () => {

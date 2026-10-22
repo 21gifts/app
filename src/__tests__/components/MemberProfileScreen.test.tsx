@@ -328,6 +328,7 @@ beforeEach(() => {
   vi.mocked(fetchMemberPosts).mockResolvedValue([]);
   vi.mocked(fetchMemberReplies).mockResolvedValue([]);
   vi.mocked(fetchReplies).mockResolvedValue([]);
+  vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
   vi.mocked(openConversation).mockResolvedValue({
     id: 'conv-1',
     kind: 'member_member',
@@ -1423,7 +1424,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: 'x' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(within(replyCard).getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -1528,6 +1529,48 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
+  });
+
+  it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(within(replyCard).queryByText('No USD exchange rate yet.')).toBeNull();
+    const pending = within(replyCard).getByRole('button', {
+      name: 'Continue',
+    }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(pending.closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(within(replyCard).getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    const settled = within(replyCard).getByRole('button', {
+      name: 'Continue',
+    }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(settled.closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '' } });
+    expect(within(replyCard).queryByText('No USD exchange rate yet.')).toBeNull();
   });
 
   it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
@@ -2401,7 +2444,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -2518,7 +2561,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000/);
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
@@ -2701,8 +2744,48 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fillPaidReply('reply', 'abc');
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fiat reply amount quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    const pending = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(form);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    const settled = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(form);
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -2733,7 +2816,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fillPaidReply('reply', '9007199254740992');
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });

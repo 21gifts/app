@@ -19,7 +19,7 @@ import {
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
-  'amount' | 'habitAmount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
+  'amount' | 'habitAmount' | 'noRate' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
 
 /** Active pay invoice shown under a forum card or a habit comment. */
 export interface ForumPayInvoice {
@@ -144,17 +144,14 @@ export function ForumPaySheet({
           rateDay={rateDay}
           onValueChange={onPayDraftChange}
           {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
+          {...(payError === 'amount'
+            ? { error: t('forum.payErrorAmount') }
+            : payError === 'habitAmount'
+              ? { error: t('habit.payErrorAmount') }
+              : payError === 'noRate'
+                ? { error: t('pos.noRate', { code: fiat }) }
+                : {})}
         />
-        {payError === 'amount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('forum.payErrorAmount')}
-          </p>
-        ) : null}
-        {payError === 'habitAmount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('habit.payErrorAmount')}
-          </p>
-        ) : null}
         {payError === 'request' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorRequest')}
@@ -177,7 +174,13 @@ export function ForumPaySheet({
         ) : null}
         <Button
           type="submit"
-          disabled={payBusy || ratePending}
+          disabled={
+            payBusy ||
+            ratePending ||
+            payError === 'amount' ||
+            payError === 'habitAmount' ||
+            payError === 'noRate'
+          }
           icon={
             payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
           }

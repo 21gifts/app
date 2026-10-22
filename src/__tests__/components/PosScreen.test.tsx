@@ -283,6 +283,8 @@ describe('PosScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('No PHP exchange rate yet.');
     });
+    fireEvent.submit(screen.getByRole('button', { name: 'Create payment' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('No PHP exchange rate yet.');
     expect(
       fetchMock.mock.calls.some(
         (call) =>

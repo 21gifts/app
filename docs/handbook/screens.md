@@ -1281,7 +1281,7 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 8000 characters (same as `POST /forum/messages`); over-length drafts show **Keep it to 8000 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**, and **Post** stays off. A draft over 8000 characters shows **Keep it to 8000 characters** while it is still too long, and **Post** stays off. The composer does not cut the draft.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
@@ -1553,6 +1553,12 @@ One unpaid note on **All** whose place has no label. The card shows a MapPin lin
 **The map is not available.** The pinned **Use this place** control is visible and disabled.
 
 ![21.gifts welcome composer place](images/welcome-composer-place.png)
+
+### Variant: composer-place-too-long
+
+**Add a place** is open and the map key is empty. The place name is longer than 80 characters. **Keep the place name to 80 characters** sits under the field, and **Use this place** stays off. Needle `Keep the place name to 80 characters`.
+
+![21.gifts welcome composer place too long](images/welcome-composer-place-too-long.png)
 
 ### Variant: composer-place-map
 
@@ -3425,7 +3431,7 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ### Variant: donate-rate-pending
 
-Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
+Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The amount is **1.00** in USD. Under the amount is **No exchange rate yet**. **Continue** stays disabled. The payment error for a settled missing rate is not shown, and no bitcoin equivalent line is shown.
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
 
@@ -3537,11 +3543,29 @@ Ada's session. **Add habit** was pressed with Name **Stretch** and the save fail
 
 ![21.gifts habit tracker add error](images/habit-tracker-add-error.png)
 
+### Variant: add-name-empty
+
+Ada's session. **Add habit** was pressed with an empty Name. **Enter a habit name** sits under the field and **Add habit** stays off. No habit was stored. Needle `Enter a habit name`.
+
+![21.gifts habit tracker add name empty](images/habit-tracker-add-name-empty.png)
+
+### Variant: add-name-too-long
+
+Ada's session. The add Name is longer than 80 characters. **Keep the habit name to 80 characters** shows under the field before **Add habit** is pressed, and **Add habit** stays off. Needle `Keep the habit name to 80 characters`.
+
+![21.gifts habit tracker add name too long](images/habit-tracker-add-name-too-long.png)
+
 ### Variant: comment-error
 
 Ada's session. **Post** was pressed with the draft **still here** and the save failed. The same alert and **Try again** stay. **Write a comment** still shows **still here**. The edit form and the archive confirmation are not open.
 
 ![21.gifts habit tracker comment error](images/habit-tracker-comment-error.png)
+
+### Variant: comment-empty
+
+Ada's session. **Post** was pressed with an empty comment on her open habit. **Enter a comment** sits under **Write a comment** and **Post** stays off. Needle `Enter a comment`.
+
+![21.gifts habit tracker comment empty](images/habit-tracker-comment-empty.png)
 
 ### Variant: add-saved
 
@@ -3583,7 +3607,7 @@ Idle composer with lead and rules link.
 
 ### Variant: validation-error
 
-Click **Send** with an empty composer → **Enter a message**.
+Click **Send** with an empty composer → **Enter a message**. **Send** stays off.
 
 ![21.gifts contact validation error](images/contact-validation-error.png)
 
@@ -4837,7 +4861,7 @@ Moderator on the direct URL. Heading **Daily payment amounts** and **You cannot 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `The amount is not valid.`
+Founder, type 0 in the add amount. **Enter an amount greater than zero** shows under the field and **Add** stays off. The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `Enter an amount greater than zero`.
 
 ![21.gifts daily payment amounts invalid](images/grants-payments-amounts-invalid.png)
 
@@ -5111,7 +5135,7 @@ No on the first question says When your posts match, you can apply again.
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Wordmark → `/welcome`. A thread opened from the list returns to the list; it does not always go to `/messages`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 8000-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. The conversation list does not offer Translate. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via the top-left arrow scrolls the conversation list to the top once when that previous view is the list. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is; the gift-day rate when that field is null or missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
-- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
+- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread. A blank message with a typed amount (0 is billed as 1 sat) or with a photo sends; a blank message with a blank amount and no photo asks for a message and leaves Send off. After the send finishes, the cleared composer stays quiet until the next blur or send. Return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
 - **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 

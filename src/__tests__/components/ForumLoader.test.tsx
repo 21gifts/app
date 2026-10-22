@@ -2957,6 +2957,8 @@ describe('ForumLoader', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '   ' } });
@@ -2978,7 +2980,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: `${'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}` },
     });
-    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -6263,11 +6265,18 @@ describe('ForumLoader', () => {
     });
 
     const replyCard = await clickReplyGift();
+    await waitFor(() => {
+      expect(
+        (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: 'x' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(within(replyCard).getByLabelText('Amount').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     expect(invoiceMock).not.toHaveBeenCalled();
     expect((within(replyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('x');
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
   });
 
   it('rejects a non-positive pay amount before calling the api', async () => {
@@ -6287,6 +6296,117 @@ describe('ForumLoader', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: GiftStats) => void = () => undefined;
+    fetchGiftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }),
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const pending = within(replyCard).getByRole('button', {
+      name: 'Continue',
+    }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(pending.closest('form')!);
+    expect(invoiceMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      releaseStats(EMPTY_STATS);
+    });
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    const settled = within(replyCard).getByRole('button', {
+      name: 'Continue',
+    }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(settled.closest('form')!);
+    expect(invoiceMock).not.toHaveBeenCalled();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+  });
+
+  it('pays a fiat Gift once the rate arrives', async () => {
+    let releaseStats: (stats: GiftStats) => void = () => undefined;
+    fetchGiftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }),
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1000n1example', amountSats: 1000 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(
+      (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    await act(async () => {
+      releaseStats({
+        ...EMPTY_STATS,
+        spendOverTime: [
+          {
+            day: '2026-06-01',
+            sats: 100_000_000,
+            cumulativeSats: 100_000_000,
+            btc: '1.00000000',
+            cumulativeBtc: '1.00000000',
+            usd: '100000.00',
+            cumulativeUsd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+            cumulativeChf: '80000.00',
+            cumulativeEur: '90000.00',
+            cumulativePhp: '5600000.00',
+          },
+        ],
+      });
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    const ready = within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(ready.disabled).toBe(false);
+    fireEvent.click(ready);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 1000, undefined, {
+        amountUsd: '1.00',
+        amountChf: '0.80',
+        amountEur: '0.90',
+        amountPhp: '56.00',
+      });
+    });
   });
 
   it('shows pay request error when invoice fails', async () => {
@@ -7518,6 +7638,29 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).not.toContain('All');
   });
 
+  it('rejects a reply whose trimmed text is longer than 8000 characters', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: `  ${'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}  ` },
+    });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(composeTargetMock).not.toHaveBeenCalled();
+  });
+
   it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
@@ -8586,6 +8729,50 @@ describe('ForumLoader', () => {
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fiat reply amount quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: GiftStats) => void = () => undefined;
+    fetchGiftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }),
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    const pending = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.submit(form);
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+
+    await act(async () => {
+      releaseStats(EMPTY_STATS);
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    const settled = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(settled.disabled).toBe(true);
+    fireEvent.submit(form);
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
   });
 
   it('starts a 1-sat invoice when an unpaid reply is 403', async () => {

@@ -1419,6 +1419,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-too-long',
+    image: 'welcome-composer-place-too-long.png',
+    visual: 'state-welcome-composer-place-too-long',
+    needle: 'Keep the place name to 80 characters',
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-map',
     image: 'welcome-composer-place-map.png',
     visual: 'state-welcome-composer-place-map',
@@ -1944,10 +1951,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'add-name-empty',
+    image: 'habit-tracker-add-name-empty.png',
+    visual: 'state-habit-tracker-add-name-empty',
+    needle: 'Enter a habit name',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'add-name-too-long',
+    image: 'habit-tracker-add-name-too-long.png',
+    visual: 'state-habit-tracker-add-name-too-long',
+    needle: 'Keep the habit name to 80 characters',
+  },
+  {
+    route: '/habit-tracker',
     id: 'comment-error',
     image: 'habit-tracker-comment-error.png',
     visual: 'state-habit-tracker-comment-error',
     needle: 'screen /habit-tracker comment-error',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'comment-empty',
+    image: 'habit-tracker-comment-empty.png',
+    visual: 'state-habit-tracker-comment-empty',
+    needle: 'Enter a comment',
   },
   {
     route: '/habit-tracker',
@@ -3348,7 +3376,7 @@ export const SCREEN_VARIANTS = [
     id: 'invalid',
     image: 'grants-payments-amounts-invalid.png',
     visual: 'state-grants-payments-amounts-invalid',
-    needle: 'The amount is not valid.',
+    needle: 'Enter an amount greater than zero',
   },
   {
     route: '/grants/payments/amounts',

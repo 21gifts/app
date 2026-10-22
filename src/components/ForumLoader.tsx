@@ -16,12 +16,15 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import {
   fiatDraftForSats,
   parseAmountDraft,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
+  shownDraftPayError,
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
@@ -502,7 +505,7 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled: rateSettled } = useLatestRateDayState();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   useEffect(() => {
@@ -2197,6 +2200,15 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    /* v8 ignore next 3 -- the sheet returns while this same draft is still waiting on the rate */
+    if (payProblem === 'quiet') {
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
+      return;
+    }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
@@ -2593,7 +2605,6 @@ export function ForumLoader({
       return;
     }
     const trimmed = replyDraft.trim();
-    /* v8 ignore next 4 -- textarea maxLength */
     if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
       return;
@@ -2610,6 +2621,17 @@ export function ForumLoader({
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
     if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSettled,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet' || replyProblem === 'no-rate') {
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
@@ -2657,6 +2679,25 @@ export function ForumLoader({
     void pending();
   };
 
+  const replyTrimmed = replyDraft.trim();
+  const replyParentAccountId =
+    expandedId === null
+      ? undefined
+      : messages?.find((message) => message.id === expandedId)?.accountId;
+  const replyExempt = isReplyPaymentExempt(account, replyParentAccountId);
+  const replyOverhead = expandedId === null ? 0 : `inReplyTo:${expandedId}\n`.length;
+  const replyTextTooLong =
+    replyTrimmed.length > FORUM_MESSAGE_MAX_LENGTH ||
+    (!replyExempt && replyTrimmed.length + replyOverhead > FORUM_MESSAGE_MAX_LENGTH);
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownDraftPayError(payError, livePayProblem, 'amount', 'noRate');
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -2924,7 +2965,7 @@ export function ForumLoader({
         payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
-        payError={payError}
+        payError={shownPayError}
         repayNotice={repayNotice}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
@@ -2948,8 +2989,9 @@ export function ForumLoader({
         onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
-          setPayError(null);
+          setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
         }}
+        payRatePending={livePayProblem === 'quiet'}
         onPaySubmit={onPaySubmit}
         onPayCancel={clearPaySheet}
         rateDay={rateDay}
@@ -2984,6 +3026,10 @@ export function ForumLoader({
         onReplyPost={onReplyPost}
         replyPosting={replyPosting}
         replyFormError={replyFormError}
+        replyTextTooLong={replyTextTooLong}
+        replyAmountQuiet={replyAmountProblem === 'quiet'}
+        replyAmountNoRate={replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={replyAmountProblem === 'invalid'}
       />
     </>
   );

@@ -15,6 +15,7 @@ import {
   updateDailyRosterRecipient,
 } from '@/lib/api';
 import type { DailyRoster } from '@/lib/api-types';
+import { shownEntryProblem } from '@/lib/entry-text';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -47,6 +48,16 @@ const PERSON_QUERY = /^[a-z0-9][a-z0-9._-]{0,31}$/;
  * @param raw - Field text.
  * @returns The amount, or `null` when it must not be posted.
  */
+function usdProblem(raw: string): 'empty' | 'invalid' | null {
+  if (raw.trim() === '') {
+    return 'empty';
+  }
+  if (parseUsd(raw) === null) {
+    return 'invalid';
+  }
+  return null;
+}
+
 function parseUsd(raw: string): number | null {
   const trimmed = raw.trim();
   if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(trimmed)) {
@@ -450,6 +461,8 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     rows: readonly DailyPerson[];
   } | null>(null);
   const [addUsd, setAddUsd] = useState('');
+  const [addUsdTouched, setAddUsdTouched] = useState(false);
+  const [editUsdTouched, setEditUsdTouched] = useState(false);
   const attempt = load === null ? 0 : load.attempt;
   const sessionToken = load === null ? null : load.session;
   const query = sessionToken === null ? null : mentionQuery(addQuery);
@@ -527,9 +540,9 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
 
   const onSaveAmount = (event: FormEvent<HTMLFormElement>, address: string): void => {
     event.preventDefault();
+    setEditUsdTouched(true);
     const amountUsd = parseUsd(amountDraft);
     if (amountUsd === null) {
-      load.setSaveError('funding.daily.invalidRow');
       return;
     }
     void load
@@ -543,9 +556,9 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
 
   const onAdd = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    setAddUsdTouched(true);
     const amountUsd = parseUsd(addUsd);
     if (amountUsd === null) {
-      load.setSaveError('funding.daily.invalidRow', 'add');
       return;
     }
     if (addPerson === null) {
@@ -559,6 +572,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
         setAddPerson(null);
         setAddQuery('');
         setAddUsd('');
+        setAddUsdTouched(false);
         return next;
       },
       false,
@@ -566,6 +580,10 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     );
   };
 
+  const addUsdShown = shownEntryProblem(usdProblem(addUsd), addUsdTouched);
+  const editUsdShown = shownEntryProblem(usdProblem(amountDraft), editUsdTouched);
+  const addUsdError = addUsdShown === null ? undefined : t('funding.daily.badAmount');
+  const editUsdError = editUsdShown === null ? undefined : t('funding.daily.badAmount');
   let editorBody: ReactNode = null;
   if (roster !== null && editor && !forbidden) {
     editorBody = (
@@ -649,6 +667,12 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         inputMode="decimal"
                         disabled={pending}
                         aria-label={`${t('funding.daily.usd')} ${label}`}
+                        {...(editUsdError === undefined
+                          ? {}
+                          : { error: editUsdError, errorAnnounce: true })}
+                        onBlur={() => {
+                          setEditUsdTouched(true);
+                        }}
                         onChange={(event) => {
                           setAmountDraft(event.target.value);
                         }}
@@ -658,7 +682,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         variant="primary"
                         size="md"
                         aria-label={t('funding.daily.save')}
-                        disabled={pending}
+                        disabled={pending || editUsdShown !== null}
                       >
                         {saveIcon}
                       </IconButton>
@@ -670,6 +694,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         disabled={pending}
                         onClick={() => {
                           setEditingAddress(null);
+                          setEditUsdTouched(false);
                           load.setSaveError(null);
                         }}
                       >
@@ -690,6 +715,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         onClick={() => {
                           setAmountDraft(String(row.amountUsd));
                           setEditingAddress(row.address);
+                          setEditUsdTouched(false);
                           load.setSaveError(null);
                         }}
                       >
@@ -791,11 +817,15 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             value={addUsd}
             inputMode="decimal"
             disabled={pending}
+            {...(addUsdError === undefined ? {} : { error: addUsdError, errorAnnounce: true })}
+            onBlur={() => {
+              setAddUsdTouched(true);
+            }}
             onChange={(event) => {
               setAddUsd(event.target.value);
             }}
           />
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || addUsdShown !== null}>
             {t('funding.daily.add')}
           </Button>
         </form>

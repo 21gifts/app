@@ -432,6 +432,10 @@ export function parseAmountDraft(
   if (!Number.isFinite(amount)) {
     return { kind: 'invalid' };
   }
+  // Zero needs no rate. Reply and inbox bill it as 1 sat. A pay sheet still rejects it.
+  if (amount === 0) {
+    return { kind: 'sats', sats: 0 };
+  }
   if (amount > 0 && (day === null || !fiatTotalUsable(fiatFieldOnDay(day, code)))) {
     return { kind: 'no-rate' };
   }
@@ -490,4 +494,99 @@ export function paySatsFromDraft(
     return 'invalid';
   }
   return parsed.sats;
+}
+
+/** Live amount problem. `quiet` is a fiat amount whose rate is still loading. */
+export type DraftRateProblem = 'quiet' | 'no-rate' | 'invalid' | null;
+
+/**
+ * Pay-sheet problem for the draft that is on screen now.
+ * A blank field is 21 sats. Zero is invalid. A positive fiat amount with no
+ * rate stays quiet until the rate request has settled, then it is `no-rate`.
+ *
+ * @param unit - Active typing unit.
+ * @param draft - Raw field value.
+ * @param day - Gift day, or `null`.
+ * @param code - Preferred fiat.
+ * @param settled - True once the rate request has finished.
+ * @returns The problem to show, or `null` when the draft can be paid.
+ */
+export function payDraftProblem(
+  unit: 'btc' | 'fiat',
+  draft: string,
+  day: FiatRateDay | null,
+  code: FiatCode,
+  settled: boolean,
+): DraftRateProblem {
+  const parsed = parseAmountDraft(unit, draft, day, code);
+  if (parsed.kind === 'empty') {
+    return null;
+  }
+  if (parsed.kind === 'no-rate') {
+    return settled ? 'no-rate' : 'quiet';
+  }
+  if (parsed.kind !== 'sats' || parsed.sats < 1) {
+    return 'invalid';
+  }
+  return null;
+}
+
+/**
+ * Reply and inbox amount problem for the draft that is on screen now.
+ * Blank is not a problem. Zero bills as 1 sat. A positive fiat amount with
+ * no rate stays quiet until the rate request has settled, then it is `no-rate`.
+ *
+ * @param unit - Active typing unit.
+ * @param draft - Raw field value.
+ * @param day - Gift day, or `null`.
+ * @param code - Preferred fiat.
+ * @param settled - True once the rate request has finished.
+ * @returns The problem to show, or `null` when the draft can be sent.
+ */
+export function replyDraftProblem(
+  unit: 'btc' | 'fiat',
+  draft: string,
+  day: FiatRateDay | null,
+  code: FiatCode,
+  settled: boolean,
+): DraftRateProblem {
+  const parsed = parseAmountDraft(unit, draft, day, code);
+  if (parsed.kind === 'empty' || parsed.kind === 'sats') {
+    return null;
+  }
+  if (parsed.kind === 'no-rate') {
+    return settled ? 'no-rate' : 'quiet';
+  }
+  return 'invalid';
+}
+
+/**
+ * Field error to render for a draft.
+ * A live no-rate or invalid draft wins. A stored amount or no-rate error is
+ * dropped once the draft is acceptable, including while the rate is still
+ * loading, so a rate that arrives later does not keep the old message.
+ * Any other stored error stays.
+ *
+ * @param stored - Error kept for a failed request, or `null`.
+ * @param problem - Live draft problem.
+ * @param invalidCode - Code for a draft that is not a payable amount.
+ * @param noRateCode - Code for a settled missing rate.
+ * @returns The error to show.
+ */
+export function shownDraftPayError<T extends string>(
+  stored: T | null,
+  problem: DraftRateProblem,
+  invalidCode: T,
+  noRateCode: T,
+): T | null {
+  if (problem === 'no-rate') {
+    return noRateCode;
+  }
+  if (problem === 'invalid') {
+    return invalidCode;
+  }
+  if (stored === invalidCode || stored === noRateCode) {
+    return null;
+  }
+  return stored;
 }

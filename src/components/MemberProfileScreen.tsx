@@ -48,12 +48,16 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast, verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
   latestRateDayFor,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
+  shownDraftPayError,
   shownFiatForSats,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -1057,6 +1061,15 @@ export function MemberProfileScreen({
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
+    /* v8 ignore next 3 -- the sheet returns while this same draft is still waiting on the rate */
+    if (payProblem === 'quiet') {
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
+      return;
+    }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
@@ -1201,6 +1214,17 @@ export function MemberProfileScreen({
       setReplyFormError('tooLong');
       return;
     }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSeries !== null,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet' || replyProblem === 'no-rate') {
+      return;
+    }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const token = session;
     const parentId = expandedId;
@@ -1267,6 +1291,23 @@ export function MemberProfileScreen({
     })();
   };
 
+  const rateSettled = rateSeries !== null;
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownDraftPayError(payError, livePayProblem, 'amount', 'noRate');
+  const replyParentInPosts =
+    expandedId === null ? undefined : posts?.find((message) => message.id === expandedId);
+  let replyParentAccountId = replyParentInPosts?.accountId;
+  /* v8 ignore next 3 -- reactions open the parent note, so the composer id is always a loaded post */
+  if (replyParentInPosts === undefined && expandedId !== null) {
+    replyParentAccountId = activityReplies?.find((message) => message.id === expandedId)?.accountId;
+  }
   const sharedForumProps = {
     photoUrls,
     rateDay,
@@ -1274,14 +1315,15 @@ export function MemberProfileScreen({
     payHost,
     payDraft,
     payBusy,
-    payError,
+    payError: shownPayError,
+    payRatePending: livePayProblem === 'quiet',
     repayNotice,
     payInvoice,
     payWaiting,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
-      setPayError(null);
+      setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
     },
     onPayUnitChange: setPayShownUnit,
     onReplyUnitChange: setReplyShownUnit,
@@ -1312,6 +1354,14 @@ export function MemberProfileScreen({
     },
     replyPosting,
     replyFormError,
+    replyTextTooLong: replyTextIsTooLong(
+      replyDraft,
+      expandedId,
+      isReplyPaymentExempt(account, replyParentAccountId),
+    ),
+    replyAmountQuiet: replyAmountProblem === 'quiet',
+    replyAmountNoRate: replyAmountProblem === 'no-rate',
+    replyAmountInvalid: replyAmountProblem === 'invalid',
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
   };

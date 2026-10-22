@@ -77,6 +77,7 @@ type PosTillState = {
   busy: boolean;
   rateDay: FiatRateDay | null;
   canCharge: boolean;
+  amountError: string | null;
   needsUsername: boolean;
   needsAddress: boolean;
   onCreate: (event: FormEvent) => Promise<void>;
@@ -97,6 +98,7 @@ function usePosTillState(): PosTillState {
   const [error, setErrorState] = useState<string | null>(null);
   const [loadingAlert, setLoadingAlert] = useState(false);
   const [amount, setAmount] = useState('');
+  const [amountTouched, setAmountTouched] = useState(false);
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -179,6 +181,24 @@ function usePosTillState(): PosTillState {
     (account.lightningAddress ?? '').trim() === '';
   const canCharge =
     (account?.username ?? '') !== '' && (account?.lightningAddress ?? '').trim() !== '';
+  const amountParsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+  const amountBlank = amount.trim() === '';
+  let amountError: string | null = null;
+  if (amountBlank) {
+    if (amountTouched) {
+      amountError = t('pos.badAmount');
+    }
+  } else if (!(shownUnit === 'fiat' && !rateSettled && amountParsed.kind === 'no-rate')) {
+    if (amountParsed.kind === 'no-rate') {
+      amountError = t('pos.noRate', { code: fiat });
+    } else if (
+      amountParsed.kind !== 'sats' ||
+      !Number.isInteger(amountParsed.sats) ||
+      amountParsed.sats < 1
+    ) {
+      amountError = t('pos.badAmount');
+    }
+  }
 
   useEffect(() => {
     if (
@@ -209,17 +229,9 @@ function usePosTillState(): PosTillState {
     if (!loadingAlert || !rateSettled) {
       return;
     }
-    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (parsed.kind === 'no-rate') {
-      setError(t('pos.noRate', { code: fiat }));
-      return;
-    }
-    if (parsed.kind === 'sats' && parsed.sats >= 1) {
-      setError(null);
-      return;
-    }
-    setError(t('pos.badAmount'));
-  }, [amount, fiat, loadingAlert, rateDay, rateSettled, shownUnit, t]);
+    setLoadingAlert(false);
+    setErrorState(null);
+  }, [loadingAlert, rateSettled]);
 
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -227,16 +239,17 @@ function usePosTillState(): PosTillState {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    setAmountTouched(true);
     if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
       setError(t('pos.rateLoading', { code: fiat }), true);
       return;
     }
     if (parsed.kind === 'no-rate') {
-      setError(t('pos.noRate', { code: fiat }));
+      setError(null);
       return;
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
-      setError(t('pos.badAmount'));
+      setError(null);
       return;
     }
     const amountSats = parsed.sats;
@@ -326,6 +339,7 @@ function usePosTillState(): PosTillState {
     busy,
     rateDay,
     canCharge,
+    amountError,
     needsUsername,
     needsAddress,
     onCreate,
@@ -463,8 +477,9 @@ export function PosAmount(): ReactElement {
             onUnitChange={till.setShownUnit}
             disabled={till.busy}
             rateDay={till.rateDay}
+            {...(till.amountError === null ? {} : { error: till.amountError })}
           />
-          <Button type="submit" disabled={till.busy}>
+          <Button type="submit" disabled={till.busy || till.amountError !== null}>
             {t('pos.create')}
           </Button>
         </form>

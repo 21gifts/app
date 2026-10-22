@@ -1152,6 +1152,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:composer-place-too-long",
+    "label": "/welcome composer-place-too-long",
+    "visual": "state-welcome-composer-place-too-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-place-map",
     "label": "/welcome composer-place-map",
     "visual": "state-welcome-composer-place-map",
@@ -1602,9 +1608,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:add-name-empty",
+    "label": "/habit-tracker add-name-empty",
+    "visual": "state-habit-tracker-add-name-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:add-name-too-long",
+    "label": "/habit-tracker add-name-too-long",
+    "visual": "state-habit-tracker-add-name-too-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:comment-error",
     "label": "/habit-tracker comment-error",
     "visual": "state-habit-tracker-comment-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment-empty",
+    "label": "/habit-tracker comment-empty",
+    "visual": "state-habit-tracker-comment-empty",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

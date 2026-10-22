@@ -60,6 +60,15 @@ describe('ForumPaySheet', () => {
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a missing fiat rate and does not submit', () => {
+    const { onPaySubmit } = sheet('noRate', false);
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.submit(button.closest('form') as HTMLFormElement);
+    expect(onPaySubmit).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the habit amount sentence, not the forum amount sentence', () => {
     sheet('habitAmount', false);
     expect(screen.getByRole('alert').textContent).toBe(

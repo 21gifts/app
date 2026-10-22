@@ -527,10 +527,12 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: 'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -543,7 +545,8 @@ describe('InboxLoader', () => {
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.5' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Amount').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Still here' } });
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     fireEvent.change(screen.getByLabelText('Amount'), {
       target: { value: '999999999999999999999999' },
@@ -551,6 +554,42 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fiat amount quiet until the rate settles, then names the missing rate', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    giftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    expect(send.disabled).toBe(true);
+    fireEvent.submit(send.closest('form')!);
+    expect(invoiceMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByLabelText('Amount').closest('form')!);
+    expect(invoiceMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
   });
 
   it.each([

@@ -1607,6 +1607,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-pl');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -6848,6 +6849,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: '.', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeDisabled();
     await shotScreen(page, 'state-pos-bad-amount');
   });
 
@@ -18421,6 +18423,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
     await shotScreen(page, 'state-welcome-validation-error');
   });
 
@@ -18844,6 +18847,18 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     await expect(page.getByText('The map is not available.')).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-place');
+  });
+
+  test('welcome composer-place-too-long', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.getByRole('textbox', { name: 'Place name' }).fill('a'.repeat(81));
+    await expect(page.getByText('Keep the place name to 80 characters')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-composer-place-too-long');
   });
 
   test('welcome composer-place-map', async ({ page }) => {
@@ -23781,6 +23796,7 @@ test.describe('contact screens', () => {
     await page.goto('/contact');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByText('Enter a message')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
     await shotScreen(page, 'state-contact-validation-error');
   });
 
@@ -27516,9 +27532,9 @@ test.describe('daily payments', () => {
     await stubRoster(page);
     await page.goto('/grants/payments/amounts');
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
-    await page.getByRole('button', { name: 'Add' }).click();
-    const invalidAlert = page.getByText('The amount is not valid.');
+    const invalidAlert = page.getByText('Enter an amount greater than zero');
     await expect(invalidAlert).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add' })).toBeDisabled();
     await scrollAddFormIntoShot(page);
     await expect(invalidAlert).toBeInViewport();
     await expect(page.getByRole('textbox', { name: 'Person' })).toBeInViewport();
@@ -28005,11 +28021,36 @@ test.describe('habit tracker baselines', () => {
     await seedHabitAda(page);
     await page.unroute('**/gifts/stats**');
     await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          amountUnit: 'fiat',
+        }),
+      });
+    });
     await stubHabitList(page, HABIT_PUBLIC);
+    const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
     await page.goto('/habit-tracker');
+    await meDone;
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     const cont = page.getByRole('button', { name: 'Continue' });
+    await expect(cont).toBeEnabled();
+    await page.getByLabel('Amount').fill('1.00');
     await expect(cont).toBeDisabled();
+    await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
+    await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
     await cont.scrollIntoViewIfNeeded();
     await expect(cont).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-rate-pending');
@@ -28088,12 +28129,12 @@ test.describe('habit tracker baselines', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
-    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
         hasText: 'Expected a JSON body with an integer "amountSats"',
       }),
     ).toHaveText('Expected a JSON body with an integer "amountSats"');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-habit-tracker-donate-habit-amount');
   });
 
@@ -28353,7 +28394,7 @@ test.describe('habit tracker baselines', () => {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Invalid name' }),
+          body: JSON.stringify({ error: 'nope' }),
         });
         return;
       }
@@ -28429,7 +28470,7 @@ test.describe('habit tracker baselines', () => {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Invalid name' }),
+          body: JSON.stringify({ error: 'nope' }),
         });
         return;
       }
@@ -28462,6 +28503,52 @@ test.describe('habit tracker baselines', () => {
     await shotScreen(page, 'state-habit-tracker-add-error');
   });
 
+  test('screen /habit-tracker add-name-empty', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add habit' }).click();
+    await expect(page.getByText('Enter a habit name')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add habit' })).toBeDisabled();
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-add-name-empty');
+  });
+
+  test('screen /habit-tracker add-name-too-long', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    await page.locator('#habit-add-name').fill('a'.repeat(81));
+    await expect(page.getByText('Keep the habit name to 80 characters')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add habit' })).toBeDisabled();
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-add-name-too-long');
+  });
+
   test('screen /habit-tracker comment-error', async ({ page }) => {
     await seedHabitAda(page);
     await page.route('**/habits', async (route) => {
@@ -28469,7 +28556,7 @@ test.describe('habit tracker baselines', () => {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Invalid name' }),
+          body: JSON.stringify({ error: 'nope' }),
         });
         return;
       }
@@ -28508,6 +28595,37 @@ test.describe('habit tracker baselines', () => {
       node.scrollTop = 0;
     });
     await shotScreen(page, 'state-habit-tracker-comment-error');
+  });
+
+  test('screen /habit-tracker comment-empty', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              description: '',
+              periods: [],
+              comments: [],
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(page.getByText('Enter a comment')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-comment-empty');
   });
 
   test('screen /habit-tracker add-saved', async ({ page }) => {
