@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
+import type {
+  ChangeEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  ReactElement,
+} from 'react';
 import { CircleHelp } from 'lucide-react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { Button } from '@/components/ui/Button';
@@ -167,7 +172,9 @@ function placesQuery(input: {
 }): string {
   const params = new URLSearchParams();
   if (input.country !== '') params.set('country', input.country);
-  if (input.shopName !== '') params.set('shopName', input.shopName);
+  if (input.shopName === 'SPAR' || input.shopName === 'others') {
+    params.set('shopName', input.shopName);
+  }
   if (input.blockchain !== '') params.set('blockchain', input.blockchain);
   if (input.asset !== '') params.set('asset', input.asset);
   return params.toString();
@@ -359,6 +366,12 @@ function markerTitle(activity: string, copy: HomeShopsCopy): string {
   if (activity === 'olderThan30Days') return copy.idle;
   if (activity === 'none') return copy.none;
   return activity;
+}
+
+function markerAriaLabel(name: string, title: string): string {
+  if (name !== '' && title !== '') return `${name}, ${title}`;
+  if (name !== '') return name;
+  return title;
 }
 
 function coverPhotoUrl(place: Record<string, unknown>): string | null {
@@ -603,8 +616,11 @@ function FilterMenu({
   onChange: (next: string) => void;
 }): ReactElement {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const menuId = useId();
   const labelId = useId();
+  const listboxId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -624,39 +640,133 @@ function FilterMenu({
     };
   }, [open, menuId]);
 
-  function choose(event: ReactMouseEvent<HTMLButtonElement>, next: string): void {
-    event.stopPropagation();
+  function optionDomId(index: number): string {
+    return `${listboxId}-option-${String(index)}`;
+  }
+
+  function highlightIndex(): number {
+    let index = 0;
+    let cursor = 0;
+    for (const option of options) {
+      if (option.value === value) index = cursor;
+      cursor += 1;
+    }
+    return index;
+  }
+
+  function clampIndex(next: number): number {
+    if (next < 0) return 0;
+    const last = options.length - 1;
+    if (next > last) return last;
+    return next;
+  }
+
+  function valueAt(index: number): string {
+    let chosen = '';
+    let cursor = 0;
+    for (const option of options) {
+      if (cursor === index) chosen = option.value;
+      cursor += 1;
+    }
+    return chosen;
+  }
+
+  function focusTrigger(): void {
+    (triggerRef.current as HTMLButtonElement).focus();
+  }
+
+  function openAtCurrent(): void {
+    setActiveIndex(highlightIndex());
+    setOpen(true);
+  }
+
+  function commit(next: string): void {
     if (next !== value) onChange(next);
     setOpen(false);
+    focusTrigger();
+  }
+
+  function choose(event: ReactMouseEvent<HTMLButtonElement>, next: string): void {
+    event.stopPropagation();
+    commit(next);
   }
 
   function toggle(): void {
-    setOpen((current) => !current);
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    openAtCurrent();
   }
+
+  function move(delta: number): void {
+    setActiveIndex(clampIndex(activeIndex + delta));
+  }
+
+  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!open) {
+        openAtCurrent();
+        return;
+      }
+      move(event.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+    if (event.key === 'Home' || event.key === 'End') {
+      if (!open) return;
+      event.preventDefault();
+      setActiveIndex(event.key === 'Home' ? 0 : options.length - 1);
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!open) {
+        openAtCurrent();
+        return;
+      }
+      commit(valueAt(activeIndex));
+      return;
+    }
+    if (event.key === 'Escape') {
+      if (!open) return;
+      setOpen(false);
+      focusTrigger();
+    }
+  }
+
+  const optionClass = 'min-h-11 border-0 bg-transparent p-0 text-left font-inherit';
 
   return (
     <div data-shops-menu={menuId}>
       <span id={labelId}>{label}</span>
       <button
+        ref={triggerRef}
         type="button"
+        role="combobox"
         className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
+        aria-controls={listboxId}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-labelledby={labelId}
+        {...(open ? { 'aria-activedescendant': optionDomId(activeIndex) } : {})}
         onClick={toggle}
+        onKeyDown={onTriggerKeyDown}
       >
         {selectedLabel(options, value, allLabel)}
       </button>
       {open ? (
-        <div role="listbox" aria-labelledby={labelId}>
-          {options.map((option) => (
+        <div role="listbox" id={listboxId} aria-labelledby={labelId}>
+          {options.map((option, index) => (
             <button
               key={option.value === '' ? 'all' : option.value}
+              id={optionDomId(index)}
               type="button"
               role="option"
               tabIndex={-1}
               aria-selected={option.value === value}
-              className="min-h-11 border-0 bg-transparent p-0 text-left font-inherit"
+              className={index === activeIndex ? `${optionClass} is-active` : optionClass}
               onClick={(event) => {
                 event.stopPropagation();
                 choose(event, option.value);
@@ -731,9 +841,16 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     if (!failedRef.current) {
       for (const row of rowsRef.current) {
         if (row.position === null) continue;
-        const element = document.createElement('div');
+        const element = document.createElement('button');
+        element.type = 'button';
         element.className = row.markerClass;
         element.title = row.markerTitle;
+        element.setAttribute('aria-label', markerAriaLabel(row.name, row.markerTitle));
+        element.addEventListener('keydown', (event: KeyboardEvent) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          element.click();
+        });
         const marker = new session.lib.Marker({ element });
         marker.setLngLat(row.position);
         marker.setPopup(new session.lib.Popup({ offset: 16 }).setDOMContent(popupContent(row)));

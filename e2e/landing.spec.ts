@@ -119,7 +119,7 @@ test('Function: HomeShops lists a published shop and hides other providers', asy
   const sample = page.getByRole('link', { name: 'Sample', exact: true });
   await expect(sample).toHaveAttribute('href', `/npub1${'q'.repeat(58)}`);
   await expect(sample).not.toHaveAttribute('href', /opencryptopay\.io/);
-  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
   await page.getByRole('option', { name: 'Monthly', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: 'Idle shop', exact: true })).toHaveCount(0);
@@ -187,7 +187,7 @@ test('Function: HomeShops leaves only All when activities are missing', async ({
     },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
   const activityMenu = page.getByRole('listbox');
   await expect(activityMenu.getByRole('option')).toHaveCount(1);
   await expect(activityMenu.getByRole('option', { name: 'All', exact: true })).toBeVisible();

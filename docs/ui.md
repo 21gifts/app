@@ -287,7 +287,7 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
-The homepage shops block is the named exception. Its surface is white `#fff` with text `#272b38` and control borders `#ced1da`. The selected Map/Table pill is `#272b38` on white. Shop pins are created outside JSX, so their paint stays in `globals.css`: red `#d23b3b`, daily `#ff4d00`, weekly `#ff7a29`, monthly `#ffa05c`, idle `#ffc48f`, none `#ffe3cc`, a 2px white border, and a 1px ring `box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25)`. That ring is the pin edge, not a card shadow. Do not move those pin classes onto app theme tokens.
+The homepage shops block is the named exception. Its surface is white `#fff` with text `#272b38` and control borders `#ced1da`. The selected Map/Table pill is `#272b38` on white. Shop pins are created outside JSX, so their paint stays in `globals.css`: red `#d23b3b`, daily `#ff4d00`, weekly `#ff7a29`, monthly `#ffa05c`, idle `#ffc48f`, none `#ffe3cc`, a 2px white border, and a 1px ring `box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25)`. That ring is the pin edge, not a card shadow. Do not move those pin classes onto app theme tokens. The map pin is a button. Its hit target is 24×24 px. The painted dot stays 14×14 px, with the same border and ring on that dot. Legend swatches stay 14×14 px.
 
 **Motion.**
 

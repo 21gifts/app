@@ -278,18 +278,26 @@ function changeSelect(element: HTMLSelectElement, value: string): void {
 }
 
 function menuButton(label: string): HTMLElement {
-  return screen.getByRole('button', { name: label });
+  return screen.getByRole('combobox', { name: label });
 }
 
 function openMenu(label: string): HTMLElement {
   const button = menuButton(label);
-  for (const other of screen.queryAllByRole('button')) {
+  for (const other of screen.queryAllByRole('combobox')) {
     if (other !== button && other.getAttribute('aria-expanded') === 'true') {
       fireEvent.click(other);
     }
   }
   if (button.getAttribute('aria-expanded') !== 'true') fireEvent.click(button);
   return button;
+}
+
+function activeOption(button: HTMLElement): HTMLElement {
+  const id = button.getAttribute('aria-activedescendant');
+  if (id === null || id === '') throw new Error('missing active option');
+  const option = document.getElementById(id);
+  if (option === null) throw new Error('missing active option');
+  return option;
 }
 
 function listboxOptions(): HTMLElement[] {
@@ -869,6 +877,164 @@ describe('HomeShops', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('opens a closed menu from ArrowDown on the current option', () => {
+    renderShops();
+    const button = menuButton(copy.blockchain);
+    expect(button.getAttribute('role')).toBe('combobox');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.hasAttribute('aria-activedescendant')).toBe(false);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    const listbox = screen.getByRole('listbox');
+    expect(button.getAttribute('aria-controls')).toBe(listbox.id);
+    const selected = within(listbox).getByRole('option', { selected: true });
+    expect(button.getAttribute('aria-activedescendant')).toBe(selected.id);
+    expect(button.getAttribute('role')).toBe('combobox');
+  });
+
+  it('moves ArrowDown one option and stops on the last option', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    const button = menuButton(copy.blockchain);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const first = button.getAttribute('aria-activedescendant');
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const second = button.getAttribute('aria-activedescendant');
+    expect(second).not.toBe(first);
+    expect(activeOption(button).textContent).toBe('Bitcoin');
+    const selected = within(screen.getByRole('listbox')).getByRole('option', { selected: true });
+    expect(selected.textContent).toBe(copy.all);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    expect(button.getAttribute('aria-activedescendant')).toBe(second);
+    expect(activeOption(button).textContent).toBe('Bitcoin');
+  });
+
+  it('keeps ArrowUp on the first option and opens a closed menu upward', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    const button = menuButton(copy.blockchain);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const first = button.getAttribute('aria-activedescendant');
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expect(button.getAttribute('aria-activedescendant')).toBe(first);
+    expect(activeOption(button).textContent).toBe(copy.all);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-activedescendant')).toBe(
+      within(screen.getByRole('listbox')).getByRole('option', { selected: true }).id,
+    );
+  });
+
+  it('ignores Home and End while closed and jumps to the ends while open', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    const button = menuButton(copy.blockchain);
+    fireEvent.keyDown(button, { key: 'Home' });
+    fireEvent.keyDown(button, { key: 'End' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const last = button.getAttribute('aria-activedescendant');
+    fireEvent.keyDown(button, { key: 'Home' });
+    const options = within(screen.getByRole('listbox')).getAllByRole('option');
+    const firstOption = options[0];
+    if (firstOption === undefined) throw new Error('missing first option');
+    expect(button.getAttribute('aria-activedescendant')).toBe(firstOption.id);
+    fireEvent.keyDown(button, { key: 'End' });
+    expect(button.getAttribute('aria-activedescendant')).toBe(last);
+    expect(activeOption(button).textContent).toBe('Bitcoin');
+  });
+
+  it('opens with Enter and commits the highlighted blockchain without activity', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    const button = menuButton(copy.blockchain);
+    const before = callsTo('/map/places').length;
+    fireEvent.keyDown(button, { key: 'Enter' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(button, { key: 'Enter' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(callsTo('/map/places').length).toBe(before);
+    expect(document.activeElement).toBe(button);
+    fireEvent.keyDown(button, { key: 'Enter' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: 'Enter' });
+    expect(callsTo('/map/places').length).toBe(before + 1);
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?blockchain=Bitcoin`);
+    expect(latestPlaces().url).not.toContain('activity');
+    expect(latestPlaces().url).not.toContain('techProvider');
+    expect(button.textContent).toBe('Bitcoin');
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('opens with Space and commits the highlighted blockchain', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    const button = menuButton(copy.blockchain);
+    const before = callsTo('/map/places').length;
+    fireEvent.keyDown(button, { key: ' ' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    fireEvent.keyDown(button, { key: ' ' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(callsTo('/map/places').length).toBe(before);
+    expect(document.activeElement).toBe(button);
+    fireEvent.keyDown(button, { key: ' ' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: ' ' });
+    expect(callsTo('/map/places').length).toBe(before + 1);
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?blockchain=Bitcoin`);
+    expect(latestPlaces().url).not.toContain('activity');
+    expect(latestPlaces().url).not.toContain('techProvider');
+    expect(button.textContent).toBe('Bitcoin');
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('leaves the listbox open when the trigger receives a letter', () => {
+    renderShops();
+    const button = menuButton(copy.blockchain);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const active = button.getAttribute('aria-activedescendant');
+    fireEvent.keyDown(button, { key: 'a' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(button.getAttribute('aria-activedescendant')).toBe(active);
+  });
+
+  it('closes from Escape on document and returns focus from Escape on the trigger', () => {
+    renderShops();
+    const button = menuButton(copy.blockchain);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(document.activeElement).toBe(button);
+    fireEvent.keyDown(button, { key: 'Escape' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('keeps the option classes and marks only the highlighted option', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    openMenu(copy.blockchain);
+    const base = 'min-h-11 border-0 bg-transparent p-0 text-left font-inherit';
+    const options = within(screen.getByRole('listbox')).getAllByRole('option');
+    const highlighted = options.filter((option) => option.className.includes('is-active'));
+    expect(highlighted).toHaveLength(1);
+    for (const option of options) {
+      expect(option.className).toContain(base);
+    }
+    const active = highlighted[0];
+    if (active === undefined) throw new Error('missing highlighted option');
+    expect(active.className).toContain('is-active');
+    expect(active.getAttribute('aria-selected')).toBe('true');
+  });
+
   it('sends only set query fields and drops an asset the chain no longer lists', async () => {
     const filters = basicFilters({
       countries: ['PH', 'DE'],
@@ -993,6 +1159,50 @@ describe('HomeShops', () => {
     expect(bodyNames()).toEqual(['Bea']);
     changeSelect(nameSelect(), '');
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
+  });
+
+  it('sends shopName only for SPAR and others and still filters other names', async () => {
+    const filters = basicFilters({
+      shopNames: ['SPAR', 'others', 'Mini'],
+    });
+    const rows = placesBody([
+      giftsPlace('Ann', { shopName: 'SPAR' }),
+      giftsPlace('Bea', { shopName: 'Mini' }),
+      giftsPlace('Cara', { shopName: 'Other' }),
+      giftsPlace('Mia', { shopName: 'Minis' }),
+    ]);
+    renderShops();
+    await resolveLatest(filters, rows);
+    const beforeMini = callsTo('/map/places').length;
+    changeSelect(nameSelect(), 'Mini');
+    expect(callsTo('/map/places').length).toBe(beforeMini);
+    expect(bodyNames()).toEqual(['Bea']);
+    for (const call of callsTo('/map/places')) {
+      expect(call.url).not.toContain('shopName=Mini');
+    }
+
+    changeSelect(nameSelect(), 'SPAR');
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
+    await resolvePlaces(rows);
+
+    changeSelect(nameSelect(), 'others');
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=others`);
+    await resolvePlaces(rows);
+
+    changeSelect(nameSelect(), 'SPAR');
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
+    await resolvePlaces(rows);
+
+    const beforeSwitch = callsTo('/map/places').length;
+    changeSelect(nameSelect(), 'Mini');
+    expect(callsTo('/map/places').length).toBe(beforeSwitch + 1);
+    expect(latestPlaces().url).toBe(DEV_PLACES);
+    expect(latestPlaces().url).not.toContain('shopName');
+    await resolvePlaces(rows);
+    expect(bodyNames()).toEqual(['Bea']);
+    for (const call of callsTo('/map/places')) {
+      expect(call.url).not.toContain('shopName=Mini');
+    }
   });
 
   it('filters activity on the client and keeps unknown choices out of the rows', async () => {
@@ -1326,8 +1536,12 @@ describe('HomeShops', () => {
     expect(lib.markers).toHaveLength(1);
     const marker = lib.markers[0];
     if (marker === undefined) throw new Error('missing marker');
+    expect(marker.element.tagName).toBe('BUTTON');
+    expect(marker.element.getAttribute('type')).toBe('button');
+    expect(marker.element.getAttribute('style')).toBeNull();
     expect(marker.element.className).toBe('shop-place-marker is-daily');
     expect(marker.element.title).toBe(copy.daily);
+    expect(marker.element.getAttribute('aria-label')).toBe(`Pin, ${copy.daily}`);
     expect(marker.setLngLat).toHaveBeenCalledWith([121, 14.6]);
     expect(marker.setPopup).toHaveBeenCalledWith(lib.popups[0]);
     expect(marker.addTo).toHaveBeenCalledWith(map);
@@ -1343,6 +1557,12 @@ describe('HomeShops', () => {
     expect(map.setZoom).toHaveBeenCalledTimes(2);
 
     expect(document.body.contains(marker.element)).toBe(true);
+    const pinClick = vi.spyOn(marker.element, 'click');
+    fireEvent.keyDown(marker.element, { key: 'Enter' });
+    fireEvent.keyDown(marker.element, { key: ' ' });
+    fireEvent.keyDown(marker.element, { key: 'a' });
+    expect(pinClick).toHaveBeenCalledTimes(2);
+    pinClick.mockRestore();
     cleanup();
     expect(map.remove).toHaveBeenCalledTimes(1);
     expect(document.body.contains(marker.element)).toBe(false);
@@ -1385,6 +1605,14 @@ describe('HomeShops', () => {
     expect(titles).toEqual(
       [copy.daily, copy.weekly, copy.monthly, copy.idle, copy.none, 'weird', ''].sort(),
     );
+    const markerByTitle = (title: string): HTMLElement => {
+      const found = lib.markers.find((item) => item.element.title === title);
+      if (found === undefined) throw new Error(`missing marker ${title}`);
+      return found.element;
+    };
+    expect(markerByTitle(copy.daily).getAttribute('aria-label')).toBe(`Ann, ${copy.daily}`);
+    expect(markerByTitle('').getAttribute('aria-label')).toBe('Gus');
+    expect(markerByTitle('weird').getAttribute('aria-label')).toBe('Fay, weird');
     const gus = lib.popups.find(
       (popup) => popup.content?.querySelector('a')?.textContent === 'Gus',
     );
@@ -1392,6 +1620,25 @@ describe('HomeShops', () => {
     const paragraphs = [...gus.content.querySelectorAll('p')];
     expect(paragraphs.some((paragraph) => paragraph.textContent === copy.none)).toBe(false);
     expect(paragraphs.some((paragraph) => paragraph.textContent === '')).toBe(false);
+  });
+
+  it('labels a nameless pin with its activity title or an empty label', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('', { activity: 'none', lat: 1, lon: 2 }),
+        giftsPlace('', { activity: '', lat: 3, lon: 4 }),
+      ]),
+    );
+    await fireScript('load');
+    const noneMarker = lib.markers.find((item) => item.element.title === copy.none);
+    const emptyMarker = lib.markers.find((item) => item.element.title === '');
+    if (noneMarker === undefined || emptyMarker === undefined) throw new Error('missing marker');
+    expect(noneMarker.element.tagName).toBe('BUTTON');
+    expect(noneMarker.element.getAttribute('aria-label')).toBe(copy.none);
+    expect(emptyMarker.element.getAttribute('aria-label')).toBe('');
   });
 
   it('builds marker popups with safe photos, local links, and categories', async () => {

@@ -1646,7 +1646,7 @@ test.describe('screen baselines', () => {
   test('state / shops-blockchain', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
     await shotScreen(page, 'state-root-shops-blockchain');
   });
@@ -1654,9 +1654,9 @@ test.describe('screen baselines', () => {
   test('state / shops-asset', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await page.getByRole('option', { name: 'Bitcoin' }).click();
-    await page.getByRole('button', { name: 'Asset', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
     await shotScreen(page, 'state-root-shops-asset');
   });
@@ -1664,7 +1664,7 @@ test.describe('screen baselines', () => {
   test('state / shops-activity', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await page.getByRole('button', { name: 'Activity', exact: true }).click();
+    await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
     await shotScreen(page, 'state-root-shops-activity');
   });
