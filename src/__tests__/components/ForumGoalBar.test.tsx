@@ -298,6 +298,19 @@ describe('ForumGoalBar', () => {
     rerender(
       <ForumGoalBar
         sats={0}
+        goalSats={1.5}
+        goalRepayable
+        goalTermDays={4}
+        goalCurrency="USD"
+        goalAmount="10.00"
+      />,
+    );
+    expect(screen.getByText(/\$2\.50 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/\$2\.50 ·/)).toBeNull();
+    expect(screen.queryByText(/last day/)).toBeNull();
+    rerender(
+      <ForumGoalBar
+        sats={0}
         goalSats={1}
         goalRepayable
         goalTermDays={30}

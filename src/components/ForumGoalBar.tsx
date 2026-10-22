@@ -386,8 +386,12 @@ function CreditPlanLines({
   if (split === null) {
     return null;
   }
+  // A fractional sat amount has no whole-sat split, so the plan stays the defined fiat.
+  const wholeSats = Number.isInteger(goalSats) ? BigInt(goalSats) : null;
   const satSplit =
-    bitcoin || !isFiatGoalCurrency(goalCurrency) ? null : splitCreditPlan(BigInt(goalSats), days);
+    bitcoin || !isFiatGoalCurrency(goalCurrency) || wholeSats === null
+      ? null
+      : splitCreditPlan(wholeSats, days);
   const format = (value: bigint, part: 'perDay' | 'last'): string => {
     if (bitcoin || !isFiatGoalCurrency(goalCurrency)) {
       const btc = formatBitcoin(Number(value), numberFormat);
