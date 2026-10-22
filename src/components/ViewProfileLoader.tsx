@@ -1,31 +1,84 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
-import { ViewProfileScreen } from '@/components/ViewProfileScreen';
-import { fetchViewActivity, fetchViewProfile } from '@/lib/api';
-import type { AccountActivity, ViewProfile } from '@/lib/api-types';
+import {
+  fetchMember,
+  fetchMemberActivity,
+  fetchViewAboutMePhoto,
+  fetchViewActivity,
+  fetchViewForumList,
+  fetchViewProfile,
+} from '@/lib/api';
+import {
+  memberProfileSchema,
+  type AccountActivity,
+  type MemberProfile,
+  type ViewProfile,
+} from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 
 const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
 /**
- * Client loader for `/view/[viewKey]`: validates the key, fetches the public
- * profile, then given/received and loan activity for the charts (even when the
- * profile has no wallet yet). An activity fetch failure keeps the card and
- * sets `activityFailed`. Missing loan fields become empty series. Does not use
- * `useAuthStore`.
+ * Maps the public view-key card onto the member profile the other routes use.
+ * Trust stays empty. `createdAt` becomes an ISO string. A missing id stays
+ * empty so the page still renders an older short body. `aboutMessageId` is
+ * kept so Translate still has the note id when that body has no profile note.
+ *
+ * @param view - Parsed view-key profile.
+ * @returns The same card shape `MemberProfileScreen` renders.
+ */
+function memberProfileFromView(view: ViewProfile): MemberProfile {
+  return memberProfileSchema.parse({
+    id: view.id ?? '',
+    name: view.name,
+    location: view.location,
+    role: view.role ?? 'basis',
+    lightningAddress: view.lightningAddressVerified ? view.lightningAddress : null,
+    createdAt: new Date(view.createdAt).toISOString(),
+    profileMessage: view.profileMessage ?? null,
+    postCount: view.postCount ?? 0,
+    replyCount: view.replyCount ?? 0,
+    aboutMe: view.aboutMe,
+    aboutMeHasPhoto: view.aboutMeHasPhoto,
+    ...(view.aboutMessageId !== undefined ? { aboutMessageId: view.aboutMessageId } : {}),
+    ...(view.username !== undefined ? { username: view.username } : {}),
+    ...(view.shopCount !== undefined ? { shopCount: view.shopCount } : {}),
+    ...(view.creditCount !== undefined ? { creditCount: view.creditCount } : {}),
+    ...(view.fundingReviewedAt !== undefined ? { fundingReviewedAt: view.fundingReviewedAt } : {}),
+    ...(view.fundingReviewedByName !== undefined
+      ? { fundingReviewedByName: view.fundingReviewedByName }
+      : {}),
+    ...(view.staffTag !== undefined ? { staffTag: view.staffTag } : {}),
+  });
+}
+
+/**
+ * Client loader for `/view/[viewKey]`. Validates the key, fetches the public
+ * profile, and renders `MemberProfileScreen` — the same card as `/profile`
+ * and `/members/:id`. When a session exists and the payload has an id, a
+ * member refetch replaces the card so hearts and trust match. If that refetch
+ * fails, the public card stays. Activity comes from the member route after a
+ * successful refetch, otherwise from the public view activity. The copy
+ * button receives this route's `viewKey`, so it writes the current capability
+ * URL. The claim banner stays under the card.
  *
  * @param props - Dynamic route `viewKey`.
- * @returns Loading, missing, error, or the read-only profile card with activate/claim control.
+ * @returns Loading, missing, error, or the shared profile card.
  */
 export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElement {
   const { t } = useTranslations();
+  const session = useAuthStore((state) => state.session);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     VIEW_KEY_RE.test(viewKey) ? 'loading' : 'missing',
   );
-  const [profile, setProfile] = useState<ViewProfile | null>(null);
+  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [usePublicLists, setUsePublicLists] = useState(true);
   const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
   const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
   const [owed, setOwed] = useState<NonNullable<AccountActivity['owedOverTime']>>([]);
@@ -37,6 +90,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     if (!VIEW_KEY_RE.test(viewKey)) {
       setStatus('missing');
       setProfile(null);
+      setHasPasskey(false);
+      setUsePublicLists(true);
       setReceived([]);
       setDonated([]);
       setOwed([]);
@@ -48,6 +103,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     let cancelled = false;
     setStatus('loading');
     setProfile(null);
+    setHasPasskey(false);
+    setUsePublicLists(true);
     setReceived([]);
     setDonated([]);
     setOwed([]);
@@ -64,7 +121,29 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
           setStatus('missing');
           return;
         }
-        setProfile(next);
+        let card = memberProfileFromView(next);
+        let publicLists = true;
+        let activitySession: string | null = null;
+        if (session !== null && typeof next.id === 'string' && next.id !== '') {
+          try {
+            const member = await fetchMember(session, next.id);
+            if (cancelled) {
+              return;
+            }
+            if (member !== null) {
+              card = member;
+              publicLists = false;
+              activitySession = session;
+            }
+          } catch {
+            if (cancelled) {
+              return;
+            }
+          }
+        }
+        setProfile(card);
+        setHasPasskey(next.hasPasskey);
+        setUsePublicLists(publicLists);
         setStatus('ready');
         setReceived([]);
         setDonated([]);
@@ -73,7 +152,10 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         setActivityFailed(false);
 
         try {
-          const activity = await fetchViewActivity(viewKey);
+          const activity =
+            activitySession !== null
+              ? await fetchMemberActivity(activitySession, card.id)
+              : await fetchViewActivity(viewKey);
           if (cancelled) {
             return;
           }
@@ -102,7 +184,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     return () => {
       cancelled = true;
     };
-  }, [viewKey, attempt]);
+  }, [viewKey, attempt, session]);
 
   if (status === 'loading') {
     return <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>;
@@ -130,20 +212,22 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     );
   }
 
-  const readyProfile = profile as ViewProfile;
+  const readyProfile = profile as MemberProfile;
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <ViewProfileScreen
+      <MemberProfileScreen
         profile={readyProfile}
-        viewKey={viewKey}
         received={received}
         donated={donated}
         owed={owed}
         credit={credit}
         activityFailed={activityFailed}
+        {...(usePublicLists ? { loadPublicList: (kind) => fetchViewForumList(viewKey, kind) } : {})}
+        loadAboutPhoto={() => fetchViewAboutMePhoto(viewKey)}
+        shareViewKey={viewKey}
       />
-      <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />
+      <ViewProfileClaim viewKey={viewKey} hasPasskey={hasPasskey} />
     </div>
   );
 }

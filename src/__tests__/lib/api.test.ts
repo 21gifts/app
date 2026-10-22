@@ -66,6 +66,7 @@ import {
   fetchVapidPublicKey,
   fetchViewAboutMePhoto,
   fetchViewActivity,
+  fetchViewForumList,
   fetchViewProfile,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -1702,6 +1703,54 @@ describe('fetchViewActivity', () => {
     stubFetch({ ok: true, status: 200, body: { donatedSats: 0 } });
     await expect(fetchViewActivity(viewKey)).rejects.toThrow(
       'Could not load gift stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchViewForumList', () => {
+  const viewKey = 'b'.repeat(64);
+  const post = {
+    id: 'post-1',
+    accountId: '22222222-2222-4222-8222-222222222222',
+    name: 'Carol',
+    text: 'A post from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+    heartCount: 0,
+    hearted: false,
+  };
+
+  it('returns the validated list from the view-key proxy', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [post] } });
+    await expect(fetchViewForumList(viewKey, 'posts')).resolves.toEqual([post]);
+    expect(fetchMock).toHaveBeenCalledWith(`/view-key/${encodeURIComponent(viewKey)}/posts`);
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchViewForumList(viewKey, 'replies')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchViewForumList(viewKey, 'shops')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchViewForumList(viewKey, 'credits')).rejects.toThrow(
+      'Could not load messages. Please try again.',
     );
   });
 });

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
 import {
   fetchAboutMePhoto,
-  fetchAccountActivity,
+  fetchMemberActivity,
   fetchMember,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -59,7 +59,7 @@ const EMPTY_ACTIVITY: AccountActivity = {
 };
 
 vi.mock('@/lib/api', () => ({
-  fetchAccountActivity: vi.fn().mockResolvedValue({
+  fetchMemberActivity: vi.fn().mockResolvedValue({
     donatedSats: 0,
     receivedSats: 0,
     donatedOverTime: [],
@@ -90,7 +90,27 @@ vi.mock('@/lib/api', () => ({
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMemberPosts: vi.fn().mockResolvedValue([]),
   fetchMemberShops: vi.fn().mockResolvedValue([]),
+  fetchMemberCredits: vi.fn().mockResolvedValue([]),
   fetchMemberReplies: vi.fn().mockResolvedValue([]),
+  skipSetup: vi.fn(),
+  CannotReceiveError: class CannotReceiveError extends Error {
+    constructor() {
+      super('cannot_receive');
+      this.name = 'CannotReceiveError';
+    }
+  },
+  NoteDeletedError: class NoteDeletedError extends Error {
+    constructor() {
+      super('This note was deleted');
+      this.name = 'NoteDeletedError';
+    }
+  },
+  WalletRequiredError: class WalletRequiredError extends Error {
+    constructor() {
+      super('wallet_required');
+      this.name = 'WalletRequiredError';
+    }
+  },
   fetchMessagePhoto: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
@@ -210,8 +230,8 @@ const OWN_MEMBER: MemberProfile = {
 beforeEach(() => {
   hydrateReady = true;
   replace.mockReset();
-  vi.mocked(fetchAccountActivity).mockReset();
-  vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
+  vi.mocked(fetchMemberActivity).mockReset();
+  vi.mocked(fetchMemberActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(putAboutMe).mockReset();
   vi.mocked(fetchMember).mockReset();
   vi.mocked(fetchMember).mockReturnValue(new Promise(() => undefined));
@@ -288,12 +308,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
-      expect(vi.mocked(fetchAccountActivity)).toHaveBeenCalledWith('tok');
+      expect(vi.mocked(fetchMemberActivity)).toHaveBeenCalledWith('tok', 'acc_1');
     });
   });
 
   it('keeps the chart mounted with no Loading… while fetch is pending', () => {
-    vi.mocked(fetchAccountActivity).mockReturnValue(new Promise<AccountActivity>(() => undefined));
+    vi.mocked(fetchMemberActivity).mockReturnValue(new Promise<AccountActivity>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
@@ -305,12 +325,20 @@ describe('ProfileScreen', () => {
   });
 
   it('says the gifts could not be loaded when activity fails', async () => {
-    vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
+    vi.mocked(fetchMemberActivity).mockRejectedValue(new Error('down'));
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
     expect(screen.queryByText('No gifts yet.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('redirects to setup/rules when member activity is missing requirements', async () => {
+    vi.mocked(fetchMemberActivity).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
   });
 
   it('shows a series day tick after activity loads', async () => {
@@ -367,7 +395,7 @@ describe('ProfileScreen', () => {
       ],
       fx: FX_ALL,
     };
-    vi.mocked(fetchAccountActivity).mockResolvedValue(seriesActivity);
+    vi.mocked(fetchMemberActivity).mockResolvedValue(seriesActivity);
     renderWithLocale(<ProfileScreen />);
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
@@ -381,6 +409,88 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText(`${window.location.origin}/view/${VIEW_KEY}`)).toBeNull();
     expect(screen.queryByText(VIEW_KEY)).toBeNull();
     expect(screen.queryByText(`/view/${VIEW_KEY}`)).toBeNull();
+  });
+
+  it('copies the owner view URL without showing it', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      writable: true,
+      value: { writeText },
+    });
+    renderWithLocale(<ProfileScreen />);
+    const copy = await screen.findByRole('button', { name: 'Copy link to this profile' });
+    fireEvent.click(copy);
+    const shareUrl = `${window.location.origin}/view/${VIEW_KEY}`;
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(shareUrl);
+    });
+    expect(screen.queryByText(shareUrl)).toBeNull();
+    expect(screen.queryByText(`${window.location.origin}/l/`)).toBeNull();
+  });
+
+  it('drops the previous member card when the signed-in account changes', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByRole('button', { name: '14 posts' })).toBeTruthy();
+    expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
+
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    let rejectNext: (err: Error) => void = () => undefined;
+    vi.mocked(fetchMember).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectNext = reject;
+      }),
+    );
+    const nextKey = 'b'.repeat(64);
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      writable: true,
+      value: { writeText },
+    });
+    act(() => {
+      useAuthStore.setState({
+        session: 'tok',
+        account: {
+          ...current,
+          id: 'acc_2',
+          name: 'Bea',
+          username: 'bea',
+          role: 'moderator',
+          lightningAddress: 'bea@walletofsatoshi.com',
+          lightningAddressVerified: true,
+          viewKey: nextKey,
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
+      expect(screen.queryByText('alice@21.gifts')).toBeNull();
+      expect(screen.queryByText('Moderator functions')).toBeNull();
+      expect(screen.getByText('bea@21.gifts')).toBeTruthy();
+      expect(screen.getByRole('button', { name: '0 posts' })).toBeTruthy();
+    });
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Edit$/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/view/${nextKey}`);
+    });
+
+    await act(async () => {
+      rejectNext(new Error('down'));
+    });
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '14 posts' })).toBeNull();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(screen.getByText('bea@21.gifts')).toBeTruthy();
+    expect(screen.queryByText('Moderator functions')).toBeNull();
   });
 
   it('passes the About me message id into the readable bio', () => {
@@ -634,15 +744,87 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
   });
 
+  it('keeps the staff label and funding mark from the account when fetchMember fails', async () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        role: 'verified',
+        funding: {
+          status: 'pending',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    const pending = renderWithLocale(<ProfileScreen />);
+    expect(
+      screen.queryByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeNull();
+    pending.unmount();
+
+    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        role: 'verified',
+        staffTag: 'software_developer',
+        funding: {
+          status: 'admitted',
+          trialUtcDate: null,
+          admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+          reviewedByName: 'Cyrill',
+        },
+      },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeTruthy();
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
+    ).toBeTruthy();
+  });
+
+  it('shows the public gifts address from the account before fetchMember returns', () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+      },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+  });
+
   it('shows the public gifts address, shop sticker, and post count after fetchMember', async () => {
     vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Shop sticker' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '14 posts' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: 'Verified' })).toHaveLength(1);
   });
 
-  it('hides Software Developer on the embedded facts card even when fetchMember returns the staff tag', async () => {
+  it('shows Software Developer beside the name when fetchMember returns the staff tag', async () => {
     vi.mocked(fetchMember).mockResolvedValue({
       ...OWN_MEMBER,
       role: 'basis',
@@ -650,7 +832,8 @@ describe('ProfileScreen', () => {
     });
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
-    expect(screen.queryByText('Software Developer')).toBeNull();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
   it('shows forum.error and keeps the name editor when fetchMember rejects, and retry fetches again', async () => {
@@ -855,21 +1038,20 @@ describe('ProfileScreen', () => {
     vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     renderWithLocale(<ProfileScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
-      (input) => input.getAttribute('name') === null,
-    );
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
       type: 'image/jpeg',
     });
-    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.change(photoInput, { target: { files: [file] } });
     await waitFor(() => {
       expect(putProfilePhoto).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
         data: 'pic',
       });
     });
-    fireEvent.change(inputs[2] as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.change(bannerInput, { target: { files: [file] } });
     expect(prepareForumPhoto).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -878,6 +1060,63 @@ describe('ProfileScreen', () => {
         data: 'wide',
       });
     });
+  });
+
+  it('shows each empty-slot add control once while About me is editing', async () => {
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const portraitAdds = screen.getAllByRole('button', { name: 'Add a profile photo' });
+    expect(portraitAdds).toHaveLength(1);
+    expect(portraitAdds[0]?.textContent?.trim()).toBe('Add a profile photo');
+    const bannerAdds = screen.getAllByRole('button', { name: 'Add a wide image' });
+    expect(bannerAdds).toHaveLength(1);
+    expect(bannerAdds[0]?.textContent?.trim()).toBe('Add a wide image');
+    expect(screen.getAllByRole('button', { name: 'Add a photo' })).toHaveLength(1);
+  });
+
+  it('shows replace and remove in the open editor after the header saves a profile photo', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(screen.getAllByRole('button', { name: 'Add a profile photo' })).toHaveLength(1);
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([9])], { type: 'image/jpeg' }),
+    );
+    const input = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+    await screen.findByRole('button', { name: 'Remove profile photo' });
+    expect(screen.getAllByRole('button', { name: 'Add a profile photo' })).toHaveLength(1);
+    expect(screen.queryByText('Add a profile photo')).toBeNull();
+  });
+
+  it('removes a stored wide image from the About me editor', async () => {
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(await screen.findByRole('button', { name: 'Remove wide image' })).toBeTruthy();
+    vi.mocked(fetchWideBanner).mockRejectedValue(new Error('gone'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledWith('tok', null);
+      expect(screen.queryByAltText('Wide profile image')).toBeNull();
+    });
+    const bannerAdds = screen.getAllByRole('button', { name: 'Add a wide image' });
+    expect(bannerAdds).toHaveLength(1);
+    expect(bannerAdds[0]?.textContent?.trim()).toBe('Add a wide image');
   });
 
   it('saves a profile photo from the empty-slot button', async () => {
@@ -1168,12 +1407,16 @@ describe('ProfileScreen', () => {
   it('keeps the header crop when About me saves the profile photo', async () => {
     vi.mocked(putProfilePhoto).mockClear();
     vi.mocked(putWideBanner).mockClear();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
     vi.mocked(prepareForumPhoto).mockResolvedValue({
       ok: true,
       photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
     });
     vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
     renderWithLocale(<ProfileScreen />);
+    await screen.findByAltText('Profile photo');
     await screen.findByRole('button', { name: 'Add a wide image' });
     const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
     const wide = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'header.jpg', {
@@ -1181,6 +1424,7 @@ describe('ProfileScreen', () => {
     });
     fireEvent.change(bannerInput, { target: { files: [wide] } });
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(await screen.findByRole('button', { name: 'Remove profile photo' })).toBeTruthy();
     const aboutPicture = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
       (input) => input.getAttribute('name') === null,
     )[1] as HTMLInputElement;
@@ -1437,6 +1681,20 @@ describe('ProfileScreen', () => {
     view.unmount();
     await act(async () => {
       rejectMember(new Error('late'));
+    });
+  });
+
+  it('ignores member activity that fails after unmount', async () => {
+    let rejectActivity: (err: Error) => void = () => undefined;
+    vi.mocked(fetchMemberActivity).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectActivity = reject;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectActivity(new Error('late'));
     });
   });
 });

@@ -4572,9 +4572,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the gift chart never says **Loading…** and has no retry control. Directly under it, `LoanBalanceChart` shows the sats the member still owes and the sats still owed to them: empty or in-flight renders nothing, a thrown load is `profile.loanChartError`, and the line includes zero and may fall below zero. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; when the author cannot receive yet (`authorCanReceive: false`) the heart and its count show disabled with **Can't receive yet** before them; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart and **+1** at once, before any request, for 700 ms. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats (except toward an author who cannot receive yet: then it shows `forum.errorEmpty` and invoices nothing); a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Posts, replies, shops, and credits use `forumPhotoSrc` (`/messages/{id}/photo.jpg`, extra stills `/photo/{n}.jpg`). About me stays a `fetchMessagePhoto` blob. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. ForumBoard does not paint photos on nested replies. A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip); a missing wallet is explained in the same dialog. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Without a receiving address (`lightningAddress: null`), **Can't receive yet** replaces the address, the QR, and **Shop sticker**. When the member can receive, under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
+- **Purpose:** Signed-in member identity card (public profile photo and wide image above the heading when stored — on someone else's card a missing slot draws nothing and is not an add button; the owner gets **Add a wide image** and **Add a profile photo** — chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the gift chart never says **Loading…** and has no retry control. Directly under it, `LoanBalanceChart` shows the sats the member still owes and the sats still owed to them: empty or in-flight renders nothing, a thrown load is `profile.loanChartError`, and the line includes zero and may fall below zero. Location is read-only on someone else's card. When the signed-in account id matches, the owner edits the centered name, location, About me, profile photo, and wide image on this same card, including the same press results as `/profile`. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; when the author cannot receive yet (`authorCanReceive: false`) the heart and its count show disabled with **Can't receive yet** before them; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart and **+1** at once, before any request, for 700 ms. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats (except toward an author who cannot receive yet: then it shows `forum.errorEmpty` and invoices nothing); a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Posts, replies, shops, and credits use `forumPhotoSrc` (`/messages/{id}/photo.jpg`, extra stills `/photo/{n}.jpg`). About me stays a `fetchMessagePhoto` blob. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. ForumBoard does not paint photos on nested replies. A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip); a missing wallet is explained in the same dialog. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Without a receiving address (`lightningAddress: null`), **Can't receive yet** replaces the address, the QR, and **Shop sticker**. When the member can receive, under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` (gift and loan series) even before the member's wallet is verified; `GET /fx/spot` (via `useSpotRate`) for the spot rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** The card shows the gift chart and, directly under it, `LoanBalanceChart`. On the signed-in member's own funded credit, use **Repay your loan** to open `/loans/repay`. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift (a reply whose author cannot receive yet shows it disabled with **Can't receive yet**). Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies, and so may every role on their own note (no **Amount** field there); below verified a text reply to someone else's note invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Posts, replies, shops, and credits use `forumPhotoSrc`; About me stays a `fetchMessagePhoto` blob. Complete a `RequirementsOverlay` for a missing name or rules agreement before a reply. Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
+- **Actions:** The card shows the gift chart and, directly under it, `LoanBalanceChart`. On the signed-in member's own funded credit, use **Repay your loan** to open `/loans/repay`. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift (a reply whose author cannot receive yet shows it disabled with **Can't receive yet**). Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies, and so may every role on their own note (no **Amount** field there); below verified a text reply to someone else's note invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Posts, replies, shops, and credits use `forumPhotoSrc`; About me stays a `fetchMessagePhoto` blob. Complete a `RequirementsOverlay` for a missing name or rules agreement before a reply. Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit when the viewer is someone else. When the signed-in account id matches, name and location edit on this card. A moderator sees **Edit shop note** on a shop post in the posts feed.
 - **Shop activity:** The `profile.shopCount` Shops button sits after reactions, renders only when optional `shopCount > 0`, and opens the on-demand shops `ForumBoard` from `GET /forum/members/:id/shops`. It behaves like the posts feed, including top-level expansion and moderator shop-note editing; shop notes are not removed from Posts.
 - **Credit activity:** The `profile.creditCount` Credits button sits after shops, renders only when optional `creditCount > 0`, and opens the on-demand credits `ForumBoard` from `GET /forum/members/:id/credits`. It behaves like the posts feed, including top-level expansion, photos, truncation, empty state, and shared pay/expand state, and does not pass `shopNoteEdit`. Credit notes remain in Posts.
 
@@ -4583,7 +4583,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ### Variant: default
 
-Member identity card with About me inside the card when `aboutMe` is set; read-only location; Message on the card when another member has a `profileMessage`. Not a forum post. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the gift chart never says **Loading…** and has no retry control. Directly under it, `LoanBalanceChart` shows the sats the member still owes and the sats still owed to them: empty or in-flight renders nothing, a thrown load is `profile.loanChartError`, and the line includes zero and may fall below zero.
+Member identity card with About me inside the card when `aboutMe` is set; location is read-only on someone else's card; Message on the card when another member has a `profileMessage`. Not a forum post. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the gift chart never says **Loading…** and has no retry control. Directly under it, `LoanBalanceChart` shows the sats the member still owes and the sats still owed to them: empty or in-flight renders nothing, a thrown load is `profile.loanChartError`, and the line includes zero and may fall below zero.
 
 ![21.gifts member profile](images/members.png)
 
@@ -4592,6 +4592,24 @@ Member identity card with About me inside the card when `aboutMe` is set; read-o
 Basis member identity card. Beside the name, a static Software Developer label (a span, not a button and not a role). There is no role pill. A verified member with this label also has no Verified pill. About me and Message stay as on the default member card.
 
 ![21.gifts member software developer](images/members-software-developer.png)
+
+### Variant: images
+
+Member card with both public pictures above the heading: the wide image and the round profile photo overlapping its lower edge. Neither is the About me photo. No add buttons.
+
+![21.gifts member profile images](images/members-images.png)
+
+### Variant: photo-only
+
+Member card with only the round profile photo above the heading, centered. No wide image and no add button.
+
+![21.gifts member profile photo](images/members-photo-only.png)
+
+### Variant: banner-only
+
+Member card with only the wide image above the heading. No round photo and no add button.
+
+![21.gifts member wide image](images/members-banner-only.png)
 
 ### Variant: posts-open
 
@@ -5031,6 +5049,114 @@ The same moderator chose eleven photos on step **1 / 5 · Photos**. Ten were add
 
 ![21.gifts member shop edit photo too many](images/members-shop-edit-photo-too-many.png)
 
+### Variant: banner-not-wide
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Choosing a square photo for the empty wide image opens the header cropper (Drag the photo to choose the wide image, Use this crop). Add a wide image is gone. Add a profile photo stays.
+
+![21.gifts member profile](images/members-banner-not-wide.png)
+
+### Variant: banner-crop-saving
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Same header cropper while PUT /banners/me has not answered. Use this crop is disabled and shows a spinner. Add a profile photo is disabled and does not spin.
+
+![21.gifts member profile](images/members-banner-crop-saving.png)
+
+### Variant: banner-crop-save-error
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. PUT /banners/me answers 500 after Use this crop. Alert Could not save. Please try again. The cropper stays open.
+
+![21.gifts member profile](images/members-banner-crop-save-error.png)
+
+### Variant: banner-crop-too-large
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Use this crop encodes a JPEG over 1 MB. Alert Keep photos under 1 MB. The cropper stays open.
+
+![21.gifts member profile](images/members-banner-crop-too-large.png)
+
+### Variant: picture-unsupported
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Choosing a file that is not a JPEG, PNG, or WebP for the profile photo. Alert Use a JPEG, PNG, or WebP photo. Both add buttons stay.
+
+![21.gifts member profile](images/members-picture-unsupported.png)
+
+### Variant: picture-too-large
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Choosing a profile photo whose encoded JPEG is over 1 MB. Alert Keep photos under 1 MB. Both add buttons stay.
+
+![21.gifts member profile](images/members-picture-too-large.png)
+
+### Variant: picture-save-error
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. PUT /pictures/me answers 500 after a JPEG is chosen. Alert Could not save. Please try again.
+
+![21.gifts member profile](images/members-picture-save-error.png)
+
+### Variant: picture-saving
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Add a profile photo is disabled and shows a spinner while PUT /pictures/me has not answered.
+
+![21.gifts member profile](images/members-picture-saving.png)
+
+### Variant: images-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Stored portrait, wide image, and About me photo. Edit About me shows Remove profile photo, Remove wide image, Remove photo, and Add a photo. The header replace controls stay because the slots are stored.
+
+![21.gifts member profile](images/members-images-editing.png)
+
+### Variant: about-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Empty About me. Write your About me opens the textarea. The editor shows one Add a photo. The header keeps one Add a profile photo and one Add a wide image. Those empty adds are not repeated in the editor.
+
+![21.gifts member profile](images/members-about-editing.png)
+
+### Variant: about-banner-crop
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. About me editor with the header wide-image cropper open (Drag the photo to choose the wide image). Add a profile photo stays. The editor does not add another wide-image control.
+
+![21.gifts member profile](images/members-about-banner-crop.png)
+
+### Variant: about-banner-crop-saving
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. That header cropper while PUT /banners/me has not answered. Use this crop spins and is disabled. Save About me stays enabled and does not spin.
+
+![21.gifts member profile](images/members-about-banner-crop-saving.png)
+
+### Variant: about-banner-crop-save-error
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. That header cropper after PUT /banners/me answers 500. Alert Could not save. Please try again. The cropper stays open.
+
+![21.gifts member profile](images/members-about-banner-crop-save-error.png)
+
+### Variant: about-banner-crop-too-large
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. That header cropper after Use this crop encodes a JPEG over 1 MB. Alert Keep photos under 1 MB. The cropper stays open.
+
+![21.gifts member profile](images/members-about-banner-crop-too-large.png)
+
+### Variant: about-save-error
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Empty About me editor after PUT /me/about answers 500. Alert Could not save. Please try again.
+
+![21.gifts member profile](images/members-about-save-error.png)
+
+### Variant: name-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts member profile](images/members-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /members/:id, where the account id matches. Copy link still writes the short /l/ link. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts member profile](images/members-location-editing.png)
+
+### Variant: role-open
+
+Public card on /members/:id. The Verified role pill is pressed and its sentence is visible. Copy link writes the short /l/ link.
+
+![21.gifts member profile](images/members-role-open.png)
+
 ## Screen: /members/[accountId]/verify
 
 - **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
@@ -5253,16 +5379,16 @@ Signed-in Ada in CHF with a spot rate. **Create payment** with `9999999999999` C
 
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`), then `LoanBalanceChart` directly under it (Debt and Credit; empty or in-flight renders nothing; a thrown load shows `profile.loanChartError`; the axis includes zero and may fall below zero; missing loan fields stay hidden) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is an icon-only camera then the button **Add a wide image** or **Add a profile photo**: **Take a wide photo** (back camera) or **Take a profile photo** (front camera)), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with camera, attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions; without a receiving address (`lightningAddress: null`) **Can't receive yet** replaces the address, the QR, and the sticker). The card holds identity only: notifications, language, theme, fiat currency, number format, and the default amount are on `/settings`. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with the account header, then **Home** and **Balance**; the Profile row shows no given or received amounts. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
-- **Inputs:** Session account (name + location + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; Given, Received, outstanding debt, and outstanding credit from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even before the wallet is verified; refetch when `sparkWalletVerified` turns true. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`).
-- **Actions:** Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile (current), **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me, and from that editor take with the camera or attach from the gallery, or remove, each of the three pictures (About me photo, profile photo, and wide image); copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; when the gift series or the loan series has data, toggle that chart between ₿ and the selected fiat.
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`), then `LoanBalanceChart` directly under it (Debt and Credit; empty or in-flight renders nothing; a thrown load shows `profile.loanChartError`; the axis includes zero and may fall below zero; missing loan fields stay hidden) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is an icon-only camera then the button **Add a wide image** or **Add a profile photo**: **Take a wide photo** (back camera) or **Take a profile photo** (front camera)), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise; the editor keeps **Take a photo** and **Add a photo**, and a stored profile photo or wide image keeps replace and remove; empty profile-photo and wide-image adds stay on the header), copy-profile-link on the card, edit the centered name (role pill, Software Developer label, and funding-program icon in that same row, the same marks a visitor sees) and the centered location (Ort), then the same public facts a visitor sees on `/members/:id` (`username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions; without a receiving address (`lightningAddress: null`) **Can't receive yet** replaces the address, the QR, and the sticker). The card holds identity only: notifications, language, theme, fiat currency, number format, and the default amount are on `/settings`. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with the account header, then **Home** and **Balance**; the Profile row shows no given or received amounts. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
+- **Inputs:** Session account (name + location + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; The card is `GET /forum/members/:id` via `fetchMember`. Given, Received, outstanding debt, and outstanding credit are `GET /forum/members/:id/activity` via `fetchMemberActivity`, the same series a visitor loads. Fetch even before the wallet is verified. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`).
+- **Actions:** Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile (current), **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me; empty profile-photo and wide-image adds use the labeled header buttons, and the editor does not repeat those adds while the slot is empty; the editor keeps **Take a photo** and **Add a photo**; a stored profile photo or wide image keeps its replace icon and remove control; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; when the gift series or the loan series has data, toggle that chart between ₿ and the selected fiat.
 - **Shop activity:** The shared `MemberProfileScreen` facts place `profile.shopCount` after Reactions only when optional `shopCount > 0`; it opens the same shops feed as the member page.
 - **Credit activity:** The shared `MemberProfileScreen` facts place `profile.creditCount` after shops only when optional `creditCount > 0`; it opens the same credits feed as the member page. That feed follows the posts feed, including top-level expansion, photos, truncation, empty state, and shared pay/expand state, and does not enable shop-note editing. Credit notes remain in Posts.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Above the heading, **Take a wide photo** then **Add a wide image**, and **Take a profile photo** then **Add a profile photo**, when those pictures are not stored. Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); directly under it, `LoanBalanceChart` (empty or in-flight renders nothing, error `profile.loanChartError`, populated Debt and Credit with the same ₿ | fiat scale, axis through zero and below); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), and nothing after them: no settings rows; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (account header, then **Home** and **Balance**; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Neither chart swaps to **Loading…**. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart.
+Above the heading, **Take a wide photo** then **Add a wide image**, and **Take a profile photo** then **Add a profile photo**, when those pictures are not stored. Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); directly under it, `LoanBalanceChart` (empty or in-flight renders nothing, error `profile.loanChartError`, populated Debt and Credit with the same ₿ | fiat scale, axis through zero and below); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; a centered name with the pencil beside it and, in that same row, the role pill when the role is verified or above, the Software Developer label when `staffTag` is `software_developer`, and the funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence); a centered location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (`username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), and nothing after them: no settings rows; no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (account header, then **Home** and **Balance**; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Neither chart swaps to **Loading…**. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart.
 ![21.gifts profile](images/profile.png)
 
 ### Variant: sunday
@@ -5300,6 +5426,12 @@ Same overlay after opening **Second language**. The list opens downward over the
 The funding-program icon is pressed and the participation sentence is visible. Needle `state-profile-funding-program-press`.
 
 ![21.gifts profile funding program](images/profile-funding-program-press.png)
+
+### Variant: software-developer
+
+Basis account. Beside the centered name, a static Software Developer label, then the pencil. There is no role pill. The rest of the public card matches the default profile, including the edit controls.
+
+![21.gifts profile software developer](images/profile-software-developer.png)
 
 ### Variant: posts-open
 
@@ -5483,31 +5615,31 @@ Owner editor opened from variant **images**. The same three stubs are loaded (sq
 
 ### Variant: about-editing
 
-Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor still shows three icon-only cameras, each followed by its attach: **Take a photo** then **Add a photo** (`profile.about.attach`), **Take a profile photo** then **Add a profile photo** (`profile.about.portrait`), and **Take a wide photo** then **Add a wide image** (`profile.about.banner`); the six icons wrap onto a second line on a narrow phone. No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor shows one icon-only camera **Take a photo** (`camera.takePhoto`) then **Add a photo** (`profile.about.attach`). The header already shows **Take a wide photo** then the labeled **Add a wide image**, and **Take a profile photo** then the labeled **Add a profile photo**, so the editor does not repeat those while the slots are empty. No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 
 ### Variant: about-banner-crop
 
-About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header camera and **Add a wide image** stay, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+About me editor with the wide-image cropper in the profile header. From the empty CTA, **Write your About me**, then a square portrait on the header input `profile-banner`. The header **Take a wide photo** and the labeled **Add a wide image** are replaced by the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). **Take a profile photo** and **Add a profile photo** stay. The editor shows only **Take a photo** then **Add a photo**. Needle `state-profile-about-banner-crop`.
 
 ![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
 
 ### Variant: about-banner-crop-saving
 
-Same editor cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** is disabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
+Same header cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** stays enabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
 
 ![21.gifts profile About me banner crop saving](images/profile-about-banner-crop-saving.png)
 
 ### Variant: about-banner-crop-save-error
 
-Same editor cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
+Same header cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
 
 ![21.gifts profile About me banner crop save error](images/profile-about-banner-crop-save-error.png)
 
 ### Variant: about-banner-crop-too-large
 
-Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
+Same header cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
 
 ![21.gifts profile About me banner crop too large](images/profile-about-banner-crop-too-large.png)
 
@@ -5516,6 +5648,24 @@ Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Ke
 Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500, opening the editor from empty, and clicking Save. Copy **Could not save. Please try again.**
 
 ![21.gifts profile About me save error](images/profile-about-save-error.png)
+
+### Variant: name-editing
+
+Signed-in owner on /profile. Copy link writes /view/:viewKey. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts profile name editing](images/profile-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /profile. Copy link writes /view/:viewKey. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts profile location editing](images/profile-location-editing.png)
+
+### Variant: role-open
+
+Signed-in owner on /profile with the Verified role. The role pill is pressed and its sentence is visible. Copy link writes /view/:viewKey.
+
+![21.gifts profile role open](images/profile-role-open.png)
 
 ## Screen: /grants
 
@@ -7554,9 +7704,9 @@ After a failed translation of that reaction. The feed shows `Could not translate
 
 ## Screen: /view/[viewKey]
 
-- **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR.
+- **Purpose:** Public copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)). Copy-profile-link on the card writes the current view URL. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR. A visitor sees no edit and no Message. Edits appear only when the signed-in account id matches. The card has no back, menu, or logout.
 - **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given, Received, outstanding debt, and outstanding credit from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when the profile has no wallet yet; activity failure keeps the card and the gift chart shows `profile.chartError` while the loan chart shows `profile.loanChartError`. Identity still `GET /view-key/:viewKey`.
-- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty` with no FiatPicker. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart. A filled gift or loan series can switch that chart's scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card. After **Log in instead** on an already-claimed profile, a spinner shows while that login runs, and a failed or unknown attempt keeps the claim alert and **Try again**, also over a held-back session. Once the login succeeds it opens the wallet: the shared login card (`WalletLoginCard`) stands in place until it is open, and stays with its no-PRF or error alert while that session is held back.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Empty series shows `profile.chartEmpty` with no FiatPicker. A failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart. A filled gift or loan series can switch that chart's scale between ₿ and the selected fiat. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. The card has no back, menu, or logout. A visitor sees no edit and no Message. Name, location, and About me edit only when the signed-in account id matches; Message appears only for someone else's profile note. After **Log in instead** on an already-claimed profile, a spinner shows while that login runs, and a failed or unknown attempt keeps the claim alert and **Try again**, also over a held-back session. Once the login succeeds it opens the wallet: the shared login card (`WalletLoginCard`) stands in place until it is open, and stays with its no-PRF or error alert while that session is held back. Staff Trust Chain actions stay off while the card is still the public payload, including after a failed member refetch. They appear only after that refetch replaces the card.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
@@ -7573,7 +7723,7 @@ Public profile of a member who cannot receive yet (`lightningAddressVerified: fa
 
 ### Variant: about-filled
 
-Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same read-only card as default plus the About me heading and body text. Copy-profile-link remains. No edit.
+Valid known key with a filled About me (`aboutMe` is a real bio, not a name-copy). Same card as default plus the About me heading and body text. Copy-profile-link remains. A visitor sees no edit. The owner edits when the signed-in account id matches.
 
 ![21.gifts public view about filled](images/view-about-filled.png)
 
@@ -7609,9 +7759,27 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: about-photo
 
-Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same read-only card as default plus the About me heading, bio, and photo (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop). Copy-profile-link remains. No edit.
+Valid known key with About me text and photo (`aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`). Same card as default plus the About me heading, bio, and photo (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop). Copy-profile-link remains. A visitor sees no edit. The owner edits when the signed-in account id matches.
 
 ![21.gifts public view about photo](images/view-about-photo.png)
+
+### Variant: images
+
+Public share link whose profile id is set and both public pictures are stored. The wide image and the round profile photo sit above the heading. Neither is the About me photo. No add buttons. The claim banner stays under the card when `hasPasskey` is false. A visitor sees no edit.
+
+![21.gifts public view profile images](images/view-images.png)
+
+### Variant: photo-only
+
+Same share link with only the round profile photo above the heading, centered. No wide image and no add button. A visitor sees no edit.
+
+![21.gifts public view profile photo](images/view-photo-only.png)
+
+### Variant: banner-only
+
+Same share link with only the wide image above the heading. No round photo and no add button. A visitor sees no edit.
+
+![21.gifts public view wide image](images/view-banner-only.png)
 
 ### Variant: missing
 
@@ -7660,6 +7828,126 @@ Unclaimed profile after **Activate** from a tab that runs an older app build (`a
 Telegram or another in-app WebView detected on an unclaimed profile. Escape card under the profile (**Open this page in your browser**, **Open in browser**, **Copy link**); no yellow **Activate** banner.
 
 ![21.gifts public view in-app](images/view-in-app.png)
+
+### Variant: banner-not-wide
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Choosing a square photo for the empty wide image opens the header cropper (Drag the photo to choose the wide image, Use this crop). Add a wide image is gone. Add a profile photo stays.
+
+![21.gifts public view profile](images/view-banner-not-wide.png)
+
+### Variant: banner-crop-saving
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Same header cropper while PUT /banners/me has not answered. Use this crop is disabled and shows a spinner. Add a profile photo is disabled and does not spin.
+
+![21.gifts public view profile](images/view-banner-crop-saving.png)
+
+### Variant: banner-crop-save-error
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. PUT /banners/me answers 500 after Use this crop. Alert Could not save. Please try again. The cropper stays open.
+
+![21.gifts public view profile](images/view-banner-crop-save-error.png)
+
+### Variant: banner-crop-too-large
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Use this crop encodes a JPEG over 1 MB. Alert Keep photos under 1 MB. The cropper stays open.
+
+![21.gifts public view profile](images/view-banner-crop-too-large.png)
+
+### Variant: picture-unsupported
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Choosing a file that is not a JPEG, PNG, or WebP for the profile photo. Alert Use a JPEG, PNG, or WebP photo. Both add buttons stay.
+
+![21.gifts public view profile](images/view-picture-unsupported.png)
+
+### Variant: picture-too-large
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Choosing a profile photo whose encoded JPEG is over 1 MB. Alert Keep photos under 1 MB. Both add buttons stay.
+
+![21.gifts public view profile](images/view-picture-too-large.png)
+
+### Variant: picture-save-error
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. PUT /pictures/me answers 500 after a JPEG is chosen. Alert Could not save. Please try again.
+
+![21.gifts public view profile](images/view-picture-save-error.png)
+
+### Variant: picture-saving
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Add a profile photo is disabled and shows a spinner while PUT /pictures/me has not answered.
+
+![21.gifts public view profile](images/view-picture-saving.png)
+
+### Variant: images-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Stored portrait, wide image, and About me photo. Edit About me shows Remove profile photo, Remove wide image, Remove photo, and Add a photo. The header replace controls stay because the slots are stored.
+
+![21.gifts public view profile](images/view-images-editing.png)
+
+### Variant: about-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Empty About me. Write your About me opens the textarea. The editor shows one Add a photo. The header keeps one Add a profile photo and one Add a wide image. Those empty adds are not repeated in the editor.
+
+![21.gifts public view profile](images/view-about-editing.png)
+
+### Variant: about-banner-crop
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. About me editor with the header wide-image cropper open (Drag the photo to choose the wide image). Add a profile photo stays. The editor does not add another wide-image control.
+
+![21.gifts public view profile](images/view-about-banner-crop.png)
+
+### Variant: about-banner-crop-saving
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. That header cropper while PUT /banners/me has not answered. Use this crop spins and is disabled. Save About me stays enabled and does not spin.
+
+![21.gifts public view profile](images/view-about-banner-crop-saving.png)
+
+### Variant: about-banner-crop-save-error
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. That header cropper after PUT /banners/me answers 500. Alert Could not save. Please try again. The cropper stays open.
+
+![21.gifts public view profile](images/view-about-banner-crop-save-error.png)
+
+### Variant: about-banner-crop-too-large
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. That header cropper after Use this crop encodes a JPEG over 1 MB. Alert Keep photos under 1 MB. The cropper stays open.
+
+![21.gifts public view profile](images/view-about-banner-crop-too-large.png)
+
+### Variant: about-save-error
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Empty About me editor after PUT /me/about answers 500. Alert Could not save. Please try again.
+
+![21.gifts public view profile](images/view-about-save-error.png)
+
+### Variant: name-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. The name pencil opens the name field. The role, staff, and funding marks move under that field.
+
+![21.gifts public view profile](images/view-name-editing.png)
+
+### Variant: location-editing
+
+Signed-in owner on /view/:viewKey, where the account id matches. Copy link writes this view URL. The claim banner can sit under the card. Edit location opens the location field. The resting "Not set" line is gone.
+
+![21.gifts public view profile](images/view-location-editing.png)
+
+### Variant: software-developer
+
+Public card on /view/:viewKey. Beside the name, a static Software Developer label. There is no role pill. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-software-developer.png)
+
+### Variant: funding-program-open
+
+Public card on /view/:viewKey. The funding-program icon is pressed and the participation sentence is visible. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-funding-program-open.png)
+
+### Variant: role-open
+
+Public card on /view/:viewKey. The Verified role pill is pressed and its sentence is visible. The claim banner can sit under the card.
+
+![21.gifts public view profile](images/view-role-open.png)
 
 ## Screen: /handbook
 

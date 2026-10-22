@@ -3348,6 +3348,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:software-developer",
+    "label": "/profile software-developer",
+    "visual": "state-profile-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:default",
     "label": "/pos default",
     "visual": "screen-pos",
@@ -3555,6 +3561,24 @@
     "id": "/members/[accountId]:software-developer",
     "label": "/members/[accountId] software-developer",
     "visual": "state-members-accountId-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:images",
+    "label": "/members/[accountId] images",
+    "visual": "state-members-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:photo-only",
+    "label": "/members/[accountId] photo-only",
+    "visual": "state-members-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-only",
+    "label": "/members/[accountId] banner-only",
+    "visual": "state-members-banner-only",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3996,6 +4020,114 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:banner-not-wide",
+    "label": "/members/[accountId] banner-not-wide",
+    "visual": "state-members-banner-not-wide",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-saving",
+    "label": "/members/[accountId] banner-crop-saving",
+    "visual": "state-members-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-save-error",
+    "label": "/members/[accountId] banner-crop-save-error",
+    "visual": "state-members-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-too-large",
+    "label": "/members/[accountId] banner-crop-too-large",
+    "visual": "state-members-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-unsupported",
+    "label": "/members/[accountId] picture-unsupported",
+    "visual": "state-members-picture-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-too-large",
+    "label": "/members/[accountId] picture-too-large",
+    "visual": "state-members-picture-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-save-error",
+    "label": "/members/[accountId] picture-save-error",
+    "visual": "state-members-picture-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-saving",
+    "label": "/members/[accountId] picture-saving",
+    "visual": "state-members-picture-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:images-editing",
+    "label": "/members/[accountId] images-editing",
+    "visual": "state-members-images-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-editing",
+    "label": "/members/[accountId] about-editing",
+    "visual": "state-members-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop",
+    "label": "/members/[accountId] about-banner-crop",
+    "visual": "state-members-about-banner-crop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-saving",
+    "label": "/members/[accountId] about-banner-crop-saving",
+    "visual": "state-members-about-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-save-error",
+    "label": "/members/[accountId] about-banner-crop-save-error",
+    "visual": "state-members-about-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-too-large",
+    "label": "/members/[accountId] about-banner-crop-too-large",
+    "visual": "state-members-about-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-save-error",
+    "label": "/members/[accountId] about-save-error",
+    "visual": "state-members-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:name-editing",
+    "label": "/members/[accountId] name-editing",
+    "visual": "state-members-name-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:location-editing",
+    "label": "/members/[accountId] location-editing",
+    "visual": "state-members-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:role-open",
+    "label": "/members/[accountId] role-open",
+    "visual": "state-members-role-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]/verify:default",
     "label": "/members/[accountId]/verify default",
     "visual": "screen-members-accountId-verify",
@@ -4227,6 +4359,24 @@
     "id": "/profile:about-save-error",
     "label": "/profile about-save-error",
     "visual": "state-profile-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:name-editing",
+    "label": "/profile name-editing",
+    "visual": "state-profile-name-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:location-editing",
+    "label": "/profile location-editing",
+    "visual": "state-profile-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:role-open",
+    "label": "/profile role-open",
+    "visual": "state-profile-role-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4818,6 +4968,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:images",
+    "label": "/view/[viewKey] images",
+    "visual": "state-view-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:photo-only",
+    "label": "/view/[viewKey] photo-only",
+    "visual": "state-view-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-only",
+    "label": "/view/[viewKey] banner-only",
+    "visual": "state-view-banner-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:missing",
     "label": "/view/[viewKey] missing",
     "visual": "state-view-missing",
@@ -4863,6 +5031,126 @@
     "id": "/view/[viewKey]:in-app",
     "label": "/view/[viewKey] in-app",
     "visual": "state-view-in-app",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-not-wide",
+    "label": "/view/[viewKey] banner-not-wide",
+    "visual": "state-view-banner-not-wide",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-saving",
+    "label": "/view/[viewKey] banner-crop-saving",
+    "visual": "state-view-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-save-error",
+    "label": "/view/[viewKey] banner-crop-save-error",
+    "visual": "state-view-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-too-large",
+    "label": "/view/[viewKey] banner-crop-too-large",
+    "visual": "state-view-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-unsupported",
+    "label": "/view/[viewKey] picture-unsupported",
+    "visual": "state-view-picture-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-too-large",
+    "label": "/view/[viewKey] picture-too-large",
+    "visual": "state-view-picture-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-save-error",
+    "label": "/view/[viewKey] picture-save-error",
+    "visual": "state-view-picture-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-saving",
+    "label": "/view/[viewKey] picture-saving",
+    "visual": "state-view-picture-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:images-editing",
+    "label": "/view/[viewKey] images-editing",
+    "visual": "state-view-images-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-editing",
+    "label": "/view/[viewKey] about-editing",
+    "visual": "state-view-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop",
+    "label": "/view/[viewKey] about-banner-crop",
+    "visual": "state-view-about-banner-crop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-saving",
+    "label": "/view/[viewKey] about-banner-crop-saving",
+    "visual": "state-view-about-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-save-error",
+    "label": "/view/[viewKey] about-banner-crop-save-error",
+    "visual": "state-view-about-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-too-large",
+    "label": "/view/[viewKey] about-banner-crop-too-large",
+    "visual": "state-view-about-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-save-error",
+    "label": "/view/[viewKey] about-save-error",
+    "visual": "state-view-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:name-editing",
+    "label": "/view/[viewKey] name-editing",
+    "visual": "state-view-name-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:location-editing",
+    "label": "/view/[viewKey] location-editing",
+    "visual": "state-view-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:software-developer",
+    "label": "/view/[viewKey] software-developer",
+    "visual": "state-view-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:funding-program-open",
+    "label": "/view/[viewKey] funding-program-open",
+    "visual": "state-view-funding-program-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:role-open",
+    "label": "/view/[viewKey] role-open",
+    "visual": "state-view-role-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemberIdentityPills } from '@/components/MemberIdentityPills';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
@@ -113,6 +114,12 @@ vi.mock('@/lib/api', () => ({
   fetchMemberPosts: vi.fn(),
   fetchMemberShops: vi.fn(),
   fetchMemberCredits: vi.fn(),
+  fetchAboutMePhoto: vi.fn(),
+  fetchProfilePhoto: vi.fn().mockRejectedValue(new Error('none')),
+  fetchWideBanner: vi.fn().mockRejectedValue(new Error('none')),
+  putAboutMe: vi.fn(),
+  putProfilePhoto: vi.fn(),
+  putWideBanner: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
@@ -417,6 +424,10 @@ beforeEach(() => {
   });
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock');
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(null, { status: 404 })),
+  );
 });
 
 afterEach(async () => {
@@ -613,6 +624,179 @@ describe('MemberProfileScreen', () => {
     expect(
       screen.queryByRole('img', { name: /Takes part in the 21.gifts funding program/ }),
     ).toBeNull();
+  });
+
+  it('omitPills hides the role pill on the facts card', () => {
+    renderWithLocale(
+      <MemberProfileScreen factsOnly omitPills profile={profile} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+  });
+
+  it('MemberIdentityPills renders no marks while the profile is still loading', () => {
+    renderWithLocale(
+      <MemberIdentityPills profile={null}>
+        {(marks, hints) => (
+          <div>
+            <span>Ada</span>
+            {marks}
+            {hints}
+          </div>
+        )}
+      </MemberIdentityPills>,
+    );
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('shows the public photo and wide image and revokes them on unmount', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response(new Uint8Array([1, 2]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          });
+        }
+        if (url.endsWith(`/banners/${profile.id}`)) {
+          return new Response(new Uint8Array([3, 4]), {
+            status: 200,
+            headers: { 'content-type': 'image/png' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    expect(await screen.findByRole('img', { name: 'Profile photo' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Wide profile image' })).toBeTruthy();
+    view.unmount();
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
+  });
+
+  it('shows only the public photo when the wide image is missing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(await screen.findByRole('img', { name: 'Profile photo' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+  });
+
+  it('shows only the public wide image when the photo is missing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/banners/${profile.id}`)) {
+          return new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/webp' },
+          });
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(await screen.findByRole('img', { name: 'Wide profile image' })).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+  });
+
+  it('draws nothing for a non-image body, an empty image, or a failed public image load', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith(`/pictures/${profile.id}`)) {
+          return new Response('nope', { status: 200, headers: { 'content-type': 'text/plain' } });
+        }
+        return new Response(new Uint8Array(), {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg' },
+        });
+      }),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+    view.unmount();
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('offline');
+      }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Wide profile image' })).toBeNull();
+  });
+
+  it('does not fetch public images on the owner facts card and drops a late image after unmount', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(
+      <MemberProfileScreen factsOnly profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const pending: Array<(response: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          }),
+      ),
+    );
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(pending.length).toBe(2);
+    view.unmount();
+    await act(async () => {
+      for (const resolve of pending) {
+        resolve(
+          new Response(new Uint8Array([1]), {
+            status: 200,
+            headers: { 'content-type': 'image/jpeg' },
+          }),
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByRole('img', { name: 'Profile photo' })).toBeNull();
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
   });
 
   it('shows name, address, chart empty state, and role pill', () => {
@@ -1373,6 +1557,48 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText(`${window.location.origin}/l/22222222`)).toBeNull();
     expect(screen.queryByText(`${window.location.origin}/members/${profile.id}`)).toBeNull();
     expect(screen.queryByText(`/members/${profile.id}`)).toBeNull();
+  });
+
+  it('copies the short member link for the owner when no share key is passed', async () => {
+    const ownerKey = 'c'.repeat(64);
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id, viewKey: ownerKey },
+    });
+    const writeText = stubClipboard(() => Promise.resolve());
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/l/22222222`);
+    });
+    expect(writeText).not.toHaveBeenCalledWith(`${window.location.origin}/view/${ownerKey}`);
+  });
+
+  it('copies the share-link URL when shareViewKey is set, including for the owner', async () => {
+    const shareKey = 'b'.repeat(64);
+    const ownerKey = 'c'.repeat(64);
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id, viewKey: ownerKey },
+    });
+    const writeText = stubClipboard(() => Promise.resolve());
+    renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} shareViewKey={shareKey} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link to this profile' }));
+    const shareUrl = `${window.location.origin}/view/${shareKey}`;
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(shareUrl);
+    });
+    expect(writeText).not.toHaveBeenCalledWith(`${window.location.origin}/view/${ownerKey}`);
+    expect(writeText).not.toHaveBeenCalledWith(`${window.location.origin}/l/22222222`);
+    expect(screen.queryByText(shareUrl)).toBeNull();
   });
 
   it('shows About me through the profile note id', () => {
@@ -4607,6 +4833,26 @@ describe('MemberProfileScreen', () => {
     expect(photoMock).not.toHaveBeenCalled();
   });
 
+  it('loads the About me photo from the share link when the note id is absent', async () => {
+    const loadAboutPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, aboutMeHasPhoto: true, profileMessage: null }}
+        received={[]}
+        donated={[]}
+        loadAboutPhoto={loadAboutPhoto}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    expect(loadAboutPhoto).toHaveBeenCalledTimes(1);
+    expect(fetchPublicMessagePhoto).not.toHaveBeenCalled();
+  });
+
   it('shows the About me photo when aboutMeHasPhoto is true', async () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -5074,5 +5320,48 @@ describe('MemberProfileScreen in-app wallet pay', () => {
       NO_RATE_SHOWN,
     );
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+});
+
+describe('MemberProfileScreen public lists', () => {
+  it('loads the public list instead of the member route', async () => {
+    const loadPublicList = vi.fn().mockResolvedValue([]);
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, postCount: 1 }}
+        received={[]}
+        donated={[]}
+        loadPublicList={loadPublicList}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(loadPublicList).toHaveBeenCalledWith('posts');
+    });
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
+  });
+
+  it('shows the feed error when the public list fails', async () => {
+    const loadPublicList = vi.fn().mockRejectedValue(new Error('down'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, postCount: 1 }}
+        received={[]}
+        donated={[]}
+        loadPublicList={loadPublicList}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('shows the feed error when there is no session and no public list', async () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
   });
 });

@@ -44,6 +44,7 @@ import {
   proxyProfilePhotoPut,
   proxyWideBannerGet,
   proxyWideBannerPut,
+  proxyPublicProfileSlotGet,
   proxyMeAboutPut,
   proxyMeNamePost,
   proxyMeUsernamePost,
@@ -98,6 +99,7 @@ import {
   proxyTranslateConversationMessagePost,
   proxyTranslateNotePost,
   proxyViewActivityGet,
+  proxyViewListGet,
   proxyTrustAppointModeratorPost,
   proxyTrustChainGet,
   proxyTrustConfirmModeratorPost,
@@ -399,6 +401,82 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/pictures/me', { method: 'PUT', body: '{"photo":null}' }),
     );
     expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/pictures/me');
+  });
+
+  it('proxyPublicProfileSlotGet returns the first image and 404 otherwise', async () => {
+    const fetchMock = stubApi();
+    const missing = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/bad'),
+      'pictures',
+      '[accountId]',
+    );
+    expect(missing.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const jpeg = new Response(new Uint8Array([1]), {
+      status: 200,
+      headers: { 'content-type': 'image/jpeg' },
+    });
+    fetchMock.mockResolvedValueOnce(jpeg);
+    const picture = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(picture.status).toBe(200);
+    expect(picture.headers.get('content-type')).toBe('image/jpeg');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/acc_1.jpg');
+
+    const plain = new Response('{}', { status: 200 });
+    plain.headers.delete('content-type');
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(plain)
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([2]), {
+          status: 200,
+          headers: { 'content-type': 'image/webp' },
+        }),
+      );
+    const webp = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(webp.headers.get('content-type')).toBe('image/webp');
+    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/pictures/acc_1.webp');
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+    const banner = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/banners/acc_1'),
+      'banners',
+      'acc_1',
+    );
+    expect(banner.status).toBe(404);
+    expect(await banner.json()).toEqual({ error: 'Not found' });
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/banners/acc_1.jpg');
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/banners/acc_1.png');
+    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/banners/acc_1.webp');
+  });
+
+  it('proxyPublicProfileSlotGet returns an upstream 502 without the other extensions', async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Upstream api unreachable' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    const down = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(down.status).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/acc_1.jpg');
   });
 
   it('proxyWideBannerGet and proxyWideBannerPut hit /banners/me', async () => {
@@ -1021,6 +1099,17 @@ describe('api proxy wrappers', () => {
       viewKey,
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/activity`);
+  });
+
+  it('proxyViewListGet hits /view/:viewKey/posts', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewListGet(
+      new Request(`http://localhost/view-key/${viewKey}/posts`),
+      viewKey,
+      'posts',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/posts`);
   });
 
   it('proxyPushVapidPublicGet hits /push/vapid-public', async () => {

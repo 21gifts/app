@@ -240,6 +240,50 @@ export async function proxyWideBannerPut(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/banners/me');
 }
 
+/** Account id accepted by the public picture and banner file routes. */
+const PUBLIC_PROFILE_ID_RE = /^[0-9A-Za-z_-]{1,80}$/;
+
+/** Extensions the api pairs with a stored JPEG, PNG, or WebP. */
+const PUBLIC_PROFILE_EXTS = ['jpg', 'png', 'webp'] as const;
+
+/**
+ * Proxies a public profile photo or wide image.
+ *
+ * The api file is `/{slot}/{accountId}.{ext}` and the extension must match
+ * the stored MIME. This tries JPEG, then PNG, then WebP, and returns the
+ * first image. A missing slot is 404. An upstream status of 500 or more,
+ * including 502 when the api is unreachable, is returned as-is. No bearer.
+ *
+ * @param request - Incoming App Router request.
+ * @param slot - `pictures` for the round photo, `banners` for the wide image.
+ * @param accountId - Account id from the URL. Anything else is 404.
+ * @returns The image response, or 404 JSON when none of the three files match.
+ */
+export async function proxyPublicProfileSlotGet(
+  request: Request,
+  slot: 'pictures' | 'banners',
+  accountId: string,
+): Promise<Response> {
+  if (!PUBLIC_PROFILE_ID_RE.test(accountId)) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  for (const ext of PUBLIC_PROFILE_EXTS) {
+    const upstream = await proxyApiRequest(
+      request,
+      `/${slot}/${encodeURIComponent(accountId)}.${ext}`,
+    );
+    const type = upstream.headers.get('content-type') ?? '';
+    if (upstream.status === 200 && type.startsWith('image/')) {
+      return upstream;
+    }
+    if (upstream.status >= 500) {
+      return upstream;
+    }
+    await upstream.body?.cancel();
+  }
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+
 /**
  * Proxies POST /me/setup/skip to the 21.gifts api.
  *
@@ -1527,6 +1571,22 @@ export async function proxyViewGet(request: Request, viewKey: string): Promise<R
  */
 export async function proxyViewActivityGet(request: Request, viewKey: string): Promise<Response> {
   return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/activity`);
+}
+
+/**
+ * Proxies GET /view/:viewKey/posts|shops|credits|replies (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @param kind - Which public list to load.
+ * @returns The upstream response.
+ */
+export async function proxyViewListGet(
+  request: Request,
+  viewKey: string,
+  kind: 'posts' | 'shops' | 'credits' | 'replies',
+): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/${kind}`);
 }
 
 /**

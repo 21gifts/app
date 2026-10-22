@@ -1898,6 +1898,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const viewListMatch = pathName.match(/^\/view\/([^/]+)\/(posts|shops|credits|replies)$/);
+  if (method === 'GET' && viewListMatch) {
+    json(res, 200, { messages: [] });
+    return;
+  }
+
   const viewAboutPhotoMatch = pathName.match(/^\/view\/([^/]+)\/about\/photo$/);
   if (method === 'GET' && viewAboutPhotoMatch) {
     const key = viewAboutPhotoMatch[1];

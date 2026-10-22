@@ -1,13 +1,17 @@
 'use client';
 
-import { HandHeart, Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
+import { LocationForm } from '@/components/LocationForm';
+import { MemberIdentityPills } from '@/components/MemberIdentityPills';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
+import { NameForm } from '@/components/NameForm';
+import { ProfileImages } from '@/components/ProfileImages';
 import {
   ForumBoard,
   type ForumFormError,
@@ -19,18 +23,24 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import {
   CannotReceiveError,
+  fetchAboutMePhoto,
   fetchComposeTarget,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMemberShops,
   fetchMemberCredits,
   fetchMessagePhoto,
+  fetchProfilePhoto,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  fetchWideBanner,
+  putAboutMe,
+  putProfilePhoto,
+  putWideBanner,
   markNotificationsReadForMessage,
   NoteDeletedError,
   openConversation,
@@ -45,21 +55,13 @@ import {
   type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
-import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import {
-  authorCannotReceive,
-  isOwnNote,
-  isReplyPaymentExempt,
-  roleAtLeast,
-  verifiedChipHiddenByStaffTag,
-} from '@/lib/roles';
-import { formatForumTimeFromMs } from '@/lib/forum-time';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
@@ -110,18 +112,124 @@ function isAuthorWalletError(err: unknown): boolean {
   return err instanceof CannotReceiveError;
 }
 
-/** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+/**
+ * Loads the public round photo and wide image for a visitor card.
+ *
+ * A missing slot stays null, so the card draws nothing for it. Not the
+ * About me note photo. Disabled on the owner facts card, which loads
+ * `/pictures/me` and `/banners/me` itself.
+ *
+ * @param accountId - Member id. The same-origin routes are `/pictures/:id` and `/banners/:id`.
+ * @param enabled - When false, no request is made.
+ * @returns Object URLs, or null while missing.
+ */
+function useVisitorProfileImages(
+  accountId: string,
+  enabled: boolean,
+): { pictureUrl: string | null; bannerUrl: string | null } {
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
 
-const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let cancelled = false;
+    const created: string[] = [];
+    const load = async (slot: 'pictures' | 'banners'): Promise<string | null> => {
+      try {
+        const response = await fetch(`/${slot}/${accountId}`);
+        if (!response.ok) {
+          return null;
+        }
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          return null;
+        }
+        const url = URL.createObjectURL(blob);
+        created.push(url);
+        return url;
+      } catch {
+        return null;
+      }
+    };
+    void (async () => {
+      const [picture, banner] = await Promise.all([load('pictures'), load('banners')]);
+      if (cancelled) {
+        for (const url of created) {
+          URL.revokeObjectURL(url);
+        }
+        return;
+      }
+      if (picture !== null) {
+        setPictureUrl(picture);
+      }
+      if (banner !== null) {
+        setBannerUrl(banner);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      for (const url of created) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [accountId, enabled]);
 
-function isMemberTaggedRole(role: string): role is MemberTaggedRole {
-  return role in ROLE_TAG_KEYS;
+  return { pictureUrl, bannerUrl };
+}
+
+/**
+ * Resting public header: the wide image and the round photo visitors see.
+ * Neither is the About me note photo. A missing slot is absent, not an add button.
+ *
+ * @param props - Object URLs. Both null renders nothing.
+ * @returns The header, or null.
+ */
+function PublicProfileHeader({
+  pictureUrl,
+  bannerUrl,
+}: {
+  pictureUrl: string | null;
+  bannerUrl: string | null;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (bannerUrl !== null) {
+    const overlapped = pictureUrl !== null;
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public wide image */}
+          <img
+            src={bannerUrl}
+            alt={t('profile.about.bannerAlt')}
+            className="aspect-[5/2] w-full rounded-2xl object-cover"
+          />
+          {pictureUrl !== null ? (
+            // eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo
+            <img
+              src={pictureUrl}
+              alt={t('profile.about.portraitAlt')}
+              className="absolute bottom-0 left-1/2 h-16 w-16 -translate-x-1/2 translate-y-1/2 rounded-full object-cover ring-4 ring-app-card"
+            />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+  if (pictureUrl !== null) {
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo */}
+        <img
+          src={pictureUrl}
+          alt={t('profile.about.portraitAlt')}
+          className="mx-auto h-16 w-16 rounded-full object-cover"
+        />
+      </div>
+    );
+  }
+  return null;
 }
 
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
@@ -169,46 +277,6 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
-function fundingParticipationLabel(
-  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
-  locale: string,
-  admittedAt: number,
-  reviewerName: string | null | undefined,
-): string {
-  const name = (reviewerName ?? '').trim();
-  const date = formatForumTimeFromMs(admittedAt, locale);
-  if (name !== '') {
-    return t('funding.participatesSinceBy', { date, name });
-  }
-  return t('funding.participatesSince', { date });
-}
-
-function FundingProgramMark({
-  admittedAt,
-  reviewerName = null,
-  expanded,
-  onToggle,
-}: {
-  admittedAt: number;
-  reviewerName?: string | null;
-  expanded: boolean;
-  onToggle: () => void;
-}): ReactElement {
-  const { t, locale } = useTranslations();
-  const label = fundingParticipationLabel(t, locale, admittedAt, reviewerName);
-  return (
-    <IconButton
-      size="sm"
-      variant="secondary"
-      aria-label={label}
-      aria-expanded={expanded}
-      onClick={onToggle}
-    >
-      <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
-    </IconButton>
-  );
-}
-
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
  * Address, role pill, optional funding-program icon-only button (HandHeart;
@@ -216,7 +284,8 @@ function FundingProgramMark({
  * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
  * is a number, copy-profile-link, optional Message, post/reply counts, optional
  * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
- * when the viewer is a moderator and the subject is someone else. About me is
+ * when the viewer is a moderator, the subject is someone else, and the card is
+ * not the public share payload (`loadPublicList` unset). About me is
  * not a forum post. When the member cannot receive yet (`lightningAddress`
  * null), the gifts block shows a "Can't receive yet" label instead of the
  * address, QR, and shop sticker.
@@ -224,7 +293,19 @@ function FundingProgramMark({
  * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
  *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
- *   `activityFailed` (default false) is passed to both charts as `failed`.
+ *   `omitPills` (default false) hides those pills. The routed pages do not
+ *   use either flag. When the signed-in account id equals this profile, the
+ *   full card shows the owner photo, About me, name, and location editors.
+ *   The role, staff, and funding marks stay beside the name. Visitor images
+ *   load only when `factsOnly` is false and the viewer is not the owner. A
+ *   missing public photo or wide image draws nothing. `activityFailed`
+ *   (default false) is passed to both charts as `failed`. `loadPublicList`
+ *   loads the four feeds without a session (the share link). `loadAboutPhoto`
+ *   loads the About me photo on that link when the card has no profile-note id.
+ *   `shareViewKey`, when set, is the route key the copy button writes, including
+ *   when the signed-in account is the owner. `/profile` passes the owner view
+ *   key. `/view/:viewKey` passes the open key. Without it, the button writes
+ *   the short `/l/` link, including for the owner on `/members/:id`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -234,7 +315,11 @@ export function MemberProfileScreen({
   owed = [],
   credit = [],
   factsOnly = false,
+  omitPills = false,
   activityFailed = false,
+  loadPublicList,
+  loadAboutPhoto,
+  shareViewKey,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
@@ -242,13 +327,24 @@ export function MemberProfileScreen({
   owed?: NonNullable<AccountActivity['owedOverTime']>;
   credit?: NonNullable<AccountActivity['creditOverTime']>;
   factsOnly?: boolean;
+  omitPills?: boolean;
   activityFailed?: boolean;
+  loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
+  loadAboutPhoto?: () => Promise<Blob>;
+  shareViewKey?: string;
 }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const owner =
+    session !== null && account !== null && account.id === profile.id ? { session, account } : null;
   const { fiat } = useFiatPreference();
+  const visitorImages = useVisitorProfileImages(
+    profile.id,
+    !factsOnly && owner === null && profile.id !== '',
+  );
+  const [imageEpoch, setImageEpoch] = useState(0);
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
   const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
@@ -282,6 +378,9 @@ export function MemberProfileScreen({
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
+  useEffect(() => {
+    setListedProfile(profile);
+  }, [profile]);
   const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops' | 'credits'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -412,13 +511,17 @@ export function MemberProfileScreen({
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
-    if (session === null) {
-      setLoading(false);
-      setError(true);
-      return;
-    }
+    const token = session;
     try {
-      const next = await fetchFn(session, profile.id);
+      let next: ForumMessage[];
+      if (loadPublicList !== undefined) {
+        next = await loadPublicList(kind);
+      } else if (token === null) {
+        setError(true);
+        return;
+      } else {
+        next = await fetchFn(token, profile.id);
+      }
       if (loadGen.current === gen) {
         setList(next);
       }
@@ -1034,20 +1137,17 @@ export function MemberProfileScreen({
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
-  const [roleHintOpen, setRoleHintOpen] = useState(false);
-  const [fundingHintOpen, setFundingHintOpen] = useState(false);
-  const tagged = isMemberTaggedRole(listedProfile.role) ? listedProfile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(listedProfile.role, listedProfile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
-  const fundingReviewedAt = listedProfile.fundingReviewedAt;
-  const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   const memberPath = `/members/${profile.id}`;
-  /* v8 ignore next -- SSR first paint: origin empty until client */
-  const profileUrl = origin !== '' ? shortResourceUrl(origin, profile.id, memberPath) : '';
+  let profileUrl =
+    shareViewKey !== undefined
+      ? `${origin}/view/${shareViewKey}`
+      : shortResourceUrl(origin, profile.id, memberPath);
+  /* v8 ignore next 3 -- SSR first paint: origin is empty until the client effect */
+  if (origin === '') {
+    profileUrl = '';
+  }
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -1423,6 +1523,12 @@ export function MemberProfileScreen({
     profile.profileMessage !== null && profile.profileMessage.hasPhoto
       ? profile.profileMessage.id
       : undefined;
+  const publicAboutMessageId =
+    profile.profileMessage !== null && profile.profileMessage.id !== ''
+      ? profile.profileMessage.id
+      : typeof profile.aboutMessageId === 'string' && profile.aboutMessageId !== ''
+        ? profile.aboutMessageId
+        : undefined;
 
   const giftsBlock = (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
@@ -1620,52 +1726,20 @@ export function MemberProfileScreen({
     return (
       <>
         {requirementOverlay}
-        {roleKeys !== null ||
-        showFundingReviewed ||
-        listedProfile.staffTag === 'software_developer' ? (
-          <div className="flex w-full flex-wrap items-center justify-center gap-2">
-            {roleKeys !== null ? (
-              <button
-                type="button"
-                aria-expanded={roleHintOpen}
-                onClick={() => {
-                  setRoleHintOpen((open) => !open);
-                }}
-                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-              >
-                {t(roleKeys.label)}
-              </button>
-            ) : null}
-            {listedProfile.staffTag === 'software_developer' ? (
-              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {t('forum.staff.softwareDeveloper')}
-              </span>
-            ) : null}
-            {typeof fundingReviewedAt === 'number' ? (
-              <FundingProgramMark
-                admittedAt={fundingReviewedAt}
-                reviewerName={listedProfile.fundingReviewedByName ?? null}
-                expanded={fundingHintOpen}
-                onToggle={() => setFundingHintOpen((open) => !open)}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        {roleHintOpen && roleKeys !== null ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {t(roleKeys.hint)}
-          </p>
-        ) : null}
-        {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {fundingParticipationLabel(
-              t,
-              locale,
-              fundingReviewedAt,
-              listedProfile.fundingReviewedByName,
+        {omitPills ? null : (
+          <MemberIdentityPills profile={listedProfile}>
+            {(marks, hints) => (
+              <>
+                {marks !== null ? (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-2">
+                    {marks}
+                  </div>
+                ) : null}
+                {hints}
+              </>
             )}
-          </p>
-        ) : null}
+          </MemberIdentityPills>
+        )}
         {giftsBlock}
         {countButtons}
         {activityFeed}
@@ -1678,32 +1752,120 @@ export function MemberProfileScreen({
       {requirementOverlay}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <Card surface={false}>
+          {owner !== null ? (
+            <ProfileImages
+              key={owner.session}
+              imageEpoch={imageEpoch}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+            />
+          ) : (
+            <PublicProfileHeader
+              pictureUrl={visitorImages.pictureUrl}
+              bannerUrl={visitorImages.bannerUrl}
+            />
+          )}
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
           <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
-          <AboutMeSection
-            mode="public"
-            aboutMe={profile.aboutMe}
-            name={profile.name}
-            {...(profile.aboutMe !== null &&
-            profile.profileMessage !== null &&
-            profile.profileMessage.id !== ''
-              ? { messageId: profile.profileMessage.id }
-              : {})}
-            hasPhoto={profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true}
-            {...(profileMessagePhotoId !== undefined
-              ? {
-                  loadPhoto: () =>
-                    session !== null
-                      ? fetchMessagePhoto(session, profileMessagePhotoId)
-                      : fetchPublicMessagePhoto(profileMessagePhotoId),
+          {owner !== null ? (
+            <AboutMeSection
+              mode="owner"
+              aboutMe={owner.account.aboutMe}
+              name={owner.account.name}
+              {...(typeof owner.account.aboutMessageId === 'string' &&
+              owner.account.aboutMessageId !== ''
+                ? { messageId: owner.account.aboutMessageId }
+                : {})}
+              hasPhoto={owner.account.aboutMeHasPhoto === true}
+              loadPhoto={() => fetchAboutMePhoto(owner.session)}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              omitEmptySlotAdds
+              imageEpoch={imageEpoch}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+              onSave={async (text, photo) => {
+                const token = owner.session;
+                try {
+                  const updated =
+                    photo === undefined
+                      ? await putAboutMe(token, text)
+                      : await putAboutMe(token, text, photo);
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  const current = useAuthStore.getState().account;
+                  if (current === null) {
+                    return false;
+                  }
+                  const nextAboutId = updated.aboutMessageId;
+                  setAccount({
+                    ...current,
+                    aboutMe: updated.aboutMe,
+                    aboutMeHasPhoto: updated.aboutMeHasPhoto,
+                    ...(nextAboutId === undefined || nextAboutId === ''
+                      ? {}
+                      : { aboutMessageId: nextAboutId }),
+                  });
+                } catch (err) {
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  if (err instanceof MissingRequirementsError) {
+                    if (err.missing.includes('rules')) {
+                      returnToView('/setup/rules', router);
+                      return;
+                    }
+                    throw err;
+                  }
+                  throw err;
                 }
-              : {})}
-            /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
-            {...(profileUrl !== '' ? { profileUrl } : {})}
-          />
+              }}
+            />
+          ) : (
+            <AboutMeSection
+              mode="public"
+              aboutMe={profile.aboutMe}
+              name={profile.name}
+              {...(profile.aboutMe !== null && publicAboutMessageId !== undefined
+                ? { messageId: publicAboutMessageId }
+                : {})}
+              hasPhoto={
+                profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true
+              }
+              {...(profileMessagePhotoId !== undefined
+                ? {
+                    loadPhoto: () =>
+                      session !== null
+                        ? fetchMessagePhoto(session, profileMessagePhotoId)
+                        : fetchPublicMessagePhoto(profileMessagePhotoId),
+                  }
+                : loadAboutPhoto !== undefined
+                  ? { loadPhoto: loadAboutPhoto }
+                  : {})}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+            />
+          )}
           {showMessage ? (
             <Button
               type="button"
@@ -1722,69 +1884,49 @@ export function MemberProfileScreen({
               {t('profile.message')}
             </Button>
           ) : null}
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('name.heading')}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <p className="min-w-0 truncate text-sm text-app-fg">
-                {listedProfile.name ?? t('view.unnamed')}
-              </p>
-              {roleKeys !== null ? (
-                <button
-                  type="button"
-                  aria-expanded={roleHintOpen}
-                  onClick={() => {
-                    setRoleHintOpen((open) => !open);
-                  }}
-                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                >
-                  {t(roleKeys.label)}
-                </button>
-              ) : null}
-              {listedProfile.staffTag === 'software_developer' ? (
-                <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                  {t('forum.staff.softwareDeveloper')}
-                </span>
-              ) : null}
-              {typeof fundingReviewedAt === 'number' ? (
-                <FundingProgramMark
-                  admittedAt={fundingReviewedAt}
-                  reviewerName={listedProfile.fundingReviewedByName ?? null}
-                  expanded={fundingHintOpen}
-                  onToggle={() => setFundingHintOpen((open) => !open)}
-                />
-              ) : null}
-            </div>
-            {roleHintOpen && roleKeys !== null ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {t(roleKeys.hint)}
-              </p>
-            ) : null}
-            {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {fundingParticipationLabel(
-                  t,
-                  locale,
-                  fundingReviewedAt,
-                  listedProfile.fundingReviewedByName,
+          {owner !== null ? (
+            <MemberIdentityPills profile={listedProfile}>
+              {(marks, hints) => (
+                <>
+                  <NameForm variant="profile" besideName={marks} belowName={hints} />
+                  <LocationForm />
+                </>
+              )}
+            </MemberIdentityPills>
+          ) : (
+            <>
+              <MemberIdentityPills profile={listedProfile}>
+                {(marks, hints) => (
+                  <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                    <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                      {t('name.heading')}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <p className="min-w-0 truncate text-sm text-app-fg">
+                        {listedProfile.name ?? t('view.unnamed')}
+                      </p>
+                      {marks}
+                    </div>
+                    {hints}
+                  </div>
                 )}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('location.heading')}
-            </p>
-            <p className="min-w-0 truncate text-center text-sm text-app-fg">
-              {profile.location !== null && profile.location.trim() !== ''
-                ? profile.location
-                : t('location.unset')}
-            </p>
-          </div>
+              </MemberIdentityPills>
+              <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                  {t('location.heading')}
+                </p>
+                <p className="min-w-0 truncate text-center text-sm text-app-fg">
+                  {profile.location !== null && profile.location.trim() !== ''
+                    ? profile.location
+                    : t('location.unset')}
+                </p>
+              </div>
+            </>
+          )}
           {giftsBlock}
           {countButtons}
           {account !== null &&
+          loadPublicList === undefined &&
           roleAtLeast(account.role, 'moderator') &&
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />

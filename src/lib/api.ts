@@ -913,6 +913,32 @@ export async function fetchMemberReplies(
 }
 
 /**
+ * Fetches one public list on a view-key profile (newest first, no session).
+ *
+ * @param viewKey - 64-hex view key.
+ * @param kind - `posts`, `replies`, `shops`, or `credits`.
+ * @returns The message list; rows that fail the note schema are dropped.
+ * @throws Error with visitor-facing copy on a non-2xx status or an invalid envelope.
+ */
+export async function fetchViewForumList(
+  viewKey: string,
+  kind: 'posts' | 'replies' | 'shops' | 'credits',
+): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/view-key/${encodeURIComponent(viewKey)}/${kind}`);
+    if (!response.ok) {
+      throw new Error('Could not load messages. Please try again.');
+    }
+    return forumListSchema.parse(await response.json()).messages;
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Could not load messages. Please try again.') {
+      throw err;
+    }
+    throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
  * Sets the unique 21.gifts username (LUD-16 local-part).
  *
  * @param sessionToken - Bearer session.

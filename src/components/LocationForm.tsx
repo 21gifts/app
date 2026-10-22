@@ -21,7 +21,8 @@ function hasLocation(location: string | null | undefined): boolean {
 
 /**
  * Lets a signed-in giver set, edit, or clear the free-text location on their
- * profile card.
+ * profile card. The resting value is centered, in the same color whether it
+ * is set or still **Not set**, with the pencil and trash beside it.
  *
  * Reads the current account and session token from the auth store and merges
  * only `location` into that account so a concurrent name write is
@@ -159,14 +160,8 @@ export function LocationForm({
           </form>
         </SundayWritingGate>
       ) : (
-        <div className="flex items-center gap-2">
-          <p
-            className={
-              set
-                ? 'min-w-0 flex-1 truncate text-sm text-app-fg'
-                : 'min-w-0 flex-1 truncate text-sm text-app-muted'
-            }
-          >
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <p className="min-w-0 truncate text-center text-sm text-app-fg">
             {set ? location : t('location.unset')}
           </p>
           <SundayWritingGate>

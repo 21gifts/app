@@ -255,6 +255,20 @@
 - **Used by:** `putWideBanner`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /pictures/[accountId]
+
+- **Purpose:** Same-origin public proxy of the round profile photo for that account. Tries api `GET /pictures/{accountId}.jpg`, then `.png`, then `.webp`. No bearer. Not the wide image and not the About me note photo.
+- **Errors:** 404 when the id is not a public file id or none of the three files is an image. 502 if the api is unreachable.
+- **Used by:** `MemberProfileScreen` visitor header.
+- **Auth:** None.
+
+## Endpoint: GET /banners/[accountId]
+
+- **Purpose:** Same-origin public proxy of the wide profile image for that account. Tries api `GET /banners/{accountId}.jpg`, then `.png`, then `.webp`. No bearer. Not the profile photo and not the About me note photo.
+- **Errors:** 404 when the id is not a public file id or none of the three files is an image. 502 if the api is unreachable.
+- **Used by:** `MemberProfileScreen` visitor header.
+- **Auth:** None.
+
 ## Endpoint: GET /me/about/photo
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/about/photo` (raw JPEG/PNG/WebP bytes for the signed-in About me note). Always render via blob URLs — not bare `<img src>`.
@@ -493,7 +507,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` for given and received sat totals plus both cumulative day series (house gifts and forum zaps).
 - **Errors:** Upstream 401, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile`.
+- **Used by:** `fetchAccountActivity` via `useAccountTotals`. The profile chart uses `fetchMemberActivity`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /view-key/[viewKey]
@@ -507,7 +521,35 @@
 
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` for the public profile given and received series.
 - **Errors:** Upstream 404, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchViewActivity` via `ViewProfileLoader`.
+- **Used by:** `fetchViewActivity` via `ViewProfileLoader` when the card stays public.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/posts
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/posts`. The body is `{ messages }`, the same list as the member posts route.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/shops
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/shops`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/credits
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/credits`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/replies
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/replies`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
 - **Auth:** Public.
 
 ## Endpoint: GET /forum/messages

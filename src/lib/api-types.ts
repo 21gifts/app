@@ -265,10 +265,25 @@ export const viewProfileSchema = z.object({
   aboutMessageId: z.string().nullable().optional(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
+  /** Account id. Optional so an older short body still parses. */
+  id: z.string().min(1).optional(),
+  /** Membership role. Optional so an older short body still parses. */
+  role: z.enum(ROLE_ORDER).optional(),
+  postCount: z.number().int().nonnegative().optional(),
+  replyCount: z.number().int().nonnegative().optional(),
+  shopCount: z.number().int().nonnegative().optional(),
+  creditCount: z.number().int().nonnegative().optional(),
+  /** Live profile note, or null. Optional so an older short body still parses. */
+  profileMessage: z.record(z.unknown()).nullable().optional(),
+  fundingReviewedAt: z.number().nullable().optional(),
+  fundingReviewedByName: z.string().nullable().optional(),
+  /** Optional staff label; only `software_developer` is accepted. */
+  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
- * Public profile fields returned by the view-key endpoint (no id, linkingKey, role, or viewKey).
+ * Public profile fields returned by the view-key endpoint.
+ * Omits the view-key value, linkingKey, trust, and owner settings.
  * `aboutMeHasPhoto` is true when the live profile note has a photo.
  */
 export type ViewProfile = z.infer<typeof viewProfileSchema>;
@@ -1371,6 +1386,11 @@ export const memberProfileSchema = z.object({
   aboutMe: z.string().nullable(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */
   aboutMeHasPhoto: z.boolean().optional().default(false),
+  /**
+   * Forum message id for About me when `profileMessage` is absent. The share
+   * link sends this on a short body. Optional so a member payload still parses.
+   */
+  aboutMessageId: z.string().nullable().optional(),
   trust: accountTrustSchema.optional().default(accountTrustNull),
   /**
    * Admission time (epoch ms) when the member is admitted to daily grants.
