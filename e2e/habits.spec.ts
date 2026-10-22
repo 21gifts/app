@@ -536,9 +536,9 @@ test('screen /habit-tracker edit-save-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Keep the habit name to 80 characters',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Keep the habit name to 80 characters');
+  ).toHaveText('The habit name is not valid');
   await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
@@ -606,9 +606,9 @@ test('screen /habit-tracker add-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Add habit' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Keep the habit name to 80 characters',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Keep the habit name to 80 characters');
+  ).toHaveText('The habit name is not valid');
   await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.locator('#habit-add-name')).toHaveValue('Stretch');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
@@ -622,7 +622,7 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Invalid name' }),
+        body: JSON.stringify({ error: 'Invalid comment' }),
       });
       return;
     }
@@ -650,9 +650,9 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Keep the comment to 2000 characters',
+      hasText: 'The comment is not valid',
     }),
-  ).toHaveText('Keep the comment to 2000 characters');
+  ).toHaveText('The comment is not valid');
   await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(draft).toHaveValue('still here');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);

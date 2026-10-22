@@ -56,6 +56,19 @@ function habitFieldCopy(
   return t('habit.textTooLong');
 }
 
+function habitRejectedCopy(t: (key: MessageKey) => string, kind: HabitFieldKind): string {
+  if (kind === 'comment') {
+    return t('habit.commentRejected');
+  }
+  if (kind === 'name') {
+    return t('habit.nameRejected');
+  }
+  if (kind === 'description') {
+    return t('habit.descriptionRejected');
+  }
+  return t('habit.notesRejected');
+}
+
 function habitFieldError(
   t: (key: MessageKey) => string,
   kind: HabitFieldKind,
@@ -70,11 +83,7 @@ function habitFieldError(
   if (!apiHere) {
     return undefined;
   }
-  return kind === 'comment'
-    ? t('habit.commentTooLong')
-    : kind === 'name'
-      ? t('habit.nameTooLong')
-      : t('habit.textTooLong');
+  return habitRejectedCopy(t, kind);
 }
 
 /**
@@ -87,6 +96,10 @@ function habitFieldError(
  * deletion confirm, and the new-habit draft and unsent comments before paint.
  * The same gift body is not posted again while that request is still waiting.
  * A confirmed add may be sent again. It is not reserved for the whole session.
+ * An API rejection of a name, description, or notes the form already accepted
+ * sits under that field and does not claim a length the text does not break.
+ * A comment post does that only for `Invalid comment`. Any other comment
+ * rejection stays the tracker alert.
  * A reload releases only actions that had already reached the server when
  * that reload started, and a request is ignored when the visit changed,
  * including when the same account comes back.
@@ -349,7 +362,7 @@ export function MemberHabits(): ReactElement {
         setHabitApi({ where: 'edit', id: body['id'], field });
         return false;
       }
-      if (field !== null && action === 'comment' && typeof body['habitId'] === 'string') {
+      if (action === 'comment' && field === 'comment' && typeof body['habitId'] === 'string') {
         setHabitApi({ where: 'comment', id: body['habitId'], field: 'comment' });
         return false;
       }

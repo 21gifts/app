@@ -2841,6 +2841,7 @@ describe('MemberHabits', () => {
             name?: string;
             description?: string;
             notes?: string;
+            text?: string;
           };
           if (body.action === 'add' && body.description === 'too') {
             return json({ error: 'Invalid description' }, 400);
@@ -2858,6 +2859,9 @@ describe('MemberHabits', () => {
             return json({ error: 'Invalid notes' }, 400);
           }
           if (body.action === 'edit' && body.name === 'Walk') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'comment' && body.text === 'not this field') {
             return json({ error: 'Invalid name' }, 400);
           }
           if (body.action === 'comment') {
@@ -2890,19 +2894,19 @@ describe('MemberHabits', () => {
     fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Ok' } });
     fireEvent.change(add.getByLabelText('Description'), { target: { value: 'too' } });
     fireEvent.submit(addForm);
-    expect(await screen.findByText('Keep it to 2000 characters')).toBeTruthy();
+    expect(await screen.findByText('The description is not valid')).toBeTruthy();
     fireEvent.change(add.getByLabelText('Description'), { target: { value: 'fine' } });
-    expect(screen.queryByText('Keep it to 2000 characters')).toBeNull();
+    expect(screen.queryByText('The description is not valid')).toBeNull();
     fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: 'too' } });
     fireEvent.submit(addForm);
-    expect(await screen.findByText('Keep it to 2000 characters')).toBeTruthy();
+    expect(await screen.findByText('The notes are not valid')).toBeTruthy();
     fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: 'fine' } });
-    expect(screen.queryByText('Keep it to 2000 characters')).toBeNull();
+    expect(screen.queryByText('The notes are not valid')).toBeNull();
     fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Nope' } });
     fireEvent.submit(addForm);
-    expect(await screen.findByText('Keep the habit name to 80 characters')).toBeTruthy();
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
     fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Yep' } });
-    expect(screen.queryByText('Keep the habit name to 80 characters')).toBeNull();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const saveForm = formsNamed('Save')[0];
@@ -2916,19 +2920,19 @@ describe('MemberHabits', () => {
     expect(screen.getByText('Enter a habit name')).toBeTruthy();
     fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Walk' } });
     fireEvent.submit(saveForm);
-    expect(await screen.findByText('Keep the habit name to 80 characters')).toBeTruthy();
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
     fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Ran' } });
-    expect(screen.queryByText('Keep the habit name to 80 characters')).toBeNull();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
     fireEvent.change(edit.getByLabelText('Description'), { target: { value: 'too-desc' } });
     fireEvent.submit(saveForm);
-    expect(await screen.findByText('Keep it to 2000 characters')).toBeTruthy();
+    expect(await screen.findByText('The description is not valid')).toBeTruthy();
     fireEvent.change(edit.getByLabelText('Description'), { target: { value: 'Outside' } });
-    expect(screen.queryByText('Keep it to 2000 characters')).toBeNull();
+    expect(screen.queryByText('The description is not valid')).toBeNull();
     fireEvent.change(edit.getByLabelText('Internal notes'), { target: { value: 'too-notes' } });
     fireEvent.submit(saveForm);
-    expect(await screen.findByText('Keep it to 2000 characters')).toBeTruthy();
+    expect(await screen.findByText('The notes are not valid')).toBeTruthy();
     fireEvent.change(edit.getByLabelText('Internal notes'), { target: { value: 'secret' } });
-    expect(screen.queryByText('Keep it to 2000 characters')).toBeNull();
+    expect(screen.queryByText('The notes are not valid')).toBeNull();
 
     const comment = screen.getAllByLabelText('Write a comment')[0];
     if (!(comment instanceof HTMLTextAreaElement)) {
@@ -2941,8 +2945,16 @@ describe('MemberHabits', () => {
     fireEvent.change(comment, { target: { value: 'hello' } });
     fireEvent.blur(comment);
     fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
-    expect(await screen.findByText('Keep the comment to 2000 characters')).toBeTruthy();
+    expect(await screen.findByText('The comment is not valid')).toBeTruthy();
     fireEvent.change(comment, { target: { value: 'hello!' } });
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
+    fireEvent.change(comment, { target: { value: 'not this field' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(
+      await screen.findByText('Could not load or save the tracker. Please try again.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
     expect(screen.queryByText('Keep the comment to 2000 characters')).toBeNull();
 
     fireEvent.click(
