@@ -2255,19 +2255,19 @@
     "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts at nagpapakita ng Pangalan, Lugar, Bansa, Tindahan, Tech provider, at Aktibidad."
   },
   "/:shops-blockchain": {
-    "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt.",
-    "es": "El bloque de tiendas bajo el héroe tiene abierta la lista Blockchain. La opción de cuadro de lista Bitcoin es visible. País, Nombre, Blockchain, Activo y Actividad siguen en ese orden, y Mapa sigue elegido.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay bukas ang listahan ng Blockchain. Nakikita ang opsyon sa listbox na Bitcoin. Nananatili ang Bansa, Pangalan, Blockchain, Asset, at Aktibidad sa ganitong ayos, at napili pa rin ang Mapa."
+    "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "El bloque de tiendas bajo el héroe tiene abierta la lista Blockchain. La opción de cuadro de lista Bitcoin es visible. País, Nombre, Blockchain, Activo y Actividad siguen en ese orden, y Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay bukas ang listahan ng Blockchain. Nakikita ang opsyon sa listbox na Bitcoin. Nananatili ang Bansa, Pangalan, Blockchain, Asset, at Aktibidad sa ganitong ayos, at napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-asset": {
-    "de": "Bitcoin ist bereits gewählt. Die Asset-Liste ist geöffnet und die Listbox-Option BTC ist sichtbar. Karte bleibt gewählt.",
-    "es": "Bitcoin ya está elegido. La lista Activo está abierta y la opción de cuadro de lista BTC es visible. Mapa sigue elegido.",
-    "fil": "Napili na ang Bitcoin. Bukas ang listahan ng Asset at nakikita ang opsyon sa listbox na BTC. Napili pa rin ang Mapa."
+    "de": "Bitcoin ist bereits gewählt. Die Asset-Liste ist geöffnet und die Listbox-Option BTC ist sichtbar. Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "Bitcoin ya está elegido. La lista Activo está abierta y la opción de cuadro de lista BTC es visible. Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Napili na ang Bitcoin. Bukas ang listahan ng Asset at nakikita ang opsyon sa listbox na BTC. Napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-activity": {
-    "de": "Die Aktivitätsliste ist geöffnet und die Listbox-Option Täglich ist sichtbar. Karte bleibt gewählt. Aktivität wird nicht in der Places-Abfrage gesendet.",
-    "es": "La lista Actividad está abierta y la opción de cuadro de lista Diario es visible. Mapa sigue elegido. Actividad no se envía en la consulta de lugares.",
-    "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
+    "de": "Die Aktivitätsliste ist geöffnet und die Listbox-Option Täglich ist sichtbar. Karte bleibt gewählt. Aktivität wird nicht in der Places-Abfrage gesendet. Die Karte ist maskiert.",
+    "es": "La lista Actividad está abierta y la opción de cuadro de lista Diario es visible. Mapa sigue elegido. Actividad no se envía en la consulta de lugares. El mapa está enmascarado.",
+    "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar. Nakamaskara ang mapa."
   },
   "/:shops-marker": {
     "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind maskiert.",
@@ -2288,6 +2288,11 @@
     "de": "Das MapLibre-Skript wird abgebrochen, wie im Verhaltenstest. Tabelle ist gewählt und der Ladefehler Die Standortliste konnte nicht geladen werden. ist sichtbar.",
     "es": "El script de MapLibre se aborta, como en la prueba de comportamiento. Tabla está elegida y el error de carga No se pudo cargar la lista de locales. es visible.",
     "fil": "Na-a-abort ang script ng MapLibre, tulad ng sa behavior test. Napili ang Talaan at nakikita ang error sa pag-load na Hindi ma-load ang listahan ng mga lokasyon."
+  },
+  "/:shops-loading": {
+    "de": "Die Filter-Anfrage ist noch nicht fertig. Karte bleibt gewählt. Die Standortliste konnte nicht geladen werden. ist nicht sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Der Kartenbereich ist sichtbar und maskiert.",
+    "es": "La solicitud de filtros no ha terminado. Mapa sigue elegido. No se pudo cargar la lista de locales. no está visible. Aún no hay locales publicados. no está visible. El panel del mapa está visible y enmascarado.",
+    "fil": "Hindi pa tapos ang kahilingan sa filter. Napili pa rin ang Mapa. Hindi nakikita ang Hindi ma-load ang listahan ng mga lokasyon. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakikita ang pane ng mapa at ito ay nakamaskara."
   },
   "/:shops-empty-map": {
     "de": "Die Places-Antwort ist ein leeres Array. Noch keine Standorte veröffentlicht. ist sichtbar. Die Karte bleibt sichtbar und ist maskiert.",

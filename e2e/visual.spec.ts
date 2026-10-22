@@ -1651,7 +1651,7 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-blockchain');
+    await shotScreen(page, 'state-root-shops-blockchain', true, page.locator('#shop-places-map'));
   });
 
   test('state / shops-asset', async ({ page }) => {
@@ -1661,7 +1661,7 @@ test.describe('screen baselines', () => {
     await page.getByRole('option', { name: 'Bitcoin' }).click();
     await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-asset');
+    await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
   });
 
   test('state / shops-activity', async ({ page }) => {
@@ -1669,7 +1669,7 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-activity');
+    await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
   });
 
   test('state / shops-marker', async ({ page }) => {

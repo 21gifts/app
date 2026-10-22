@@ -37,19 +37,19 @@ The shops block under the hero is on the table. Filters stay above a Map/Table c
 
 ### Variant: shops-blockchain
 
-The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected.
+The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected. The map is masked.
 
 ![21.gifts home shops blockchain](images/root-shops-blockchain.png)
 
 ### Variant: shops-asset
 
-Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected.
+Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected. The map is masked.
 
 ![21.gifts home shops asset](images/root-shops-asset.png)
 
 ### Variant: shops-activity
 
-The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query.
+The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query. The map is masked.
 
 ![21.gifts home shops activity](images/root-shops-activity.png)
 
