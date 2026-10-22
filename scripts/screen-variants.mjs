@@ -93,6 +93,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Español' })",
   },
   {
+    route: '/',
+    id: 'shops-table',
+    image: 'root-shops-table.png',
+    visual: 'state-root-shops-table',
+    needle: "getByRole('columnheader', { name: 'Tech provider' })",
+  },
+  {
     route: '/legal',
     id: 'default',
     image: 'legal.png',

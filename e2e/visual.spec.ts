@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
@@ -685,7 +685,7 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   });
 }
 
-async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+async function shotScreen(page: Page, arg: string, fullPage = true, mask?: Locator): Promise<void> {
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
@@ -701,6 +701,7 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
     ...SHOT,
+    ...(mask === undefined ? {} : { mask: [mask] }),
   });
 }
 
@@ -1514,14 +1515,86 @@ async function fulfillConversationTranslatePost(
   });
 }
 
+function isHomeMapRequest(url: URL): boolean {
+  if (url.hostname.includes('openfreemap.org')) {
+    return true;
+  }
+  const api =
+    url.hostname === 'api.opencryptopay.io' || url.hostname === 'dev-api.opencryptopay.io';
+  return api && (url.pathname === '/map/filters' || url.pathname === '/map/places');
+}
+
+async function fulfillHomeMap(route: Route): Promise<void> {
+  const url = new URL(route.request().url());
+  if (url.hostname.includes('openfreemap.org')) {
+    await route.fulfill({ status: 200, body: '' });
+    return;
+  }
+  const body =
+    url.pathname === '/map/filters'
+      ? {
+          activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
+          countries: ['PH'],
+          shopNames: ['SPAR'],
+          techProviders: [
+            {
+              name: '21.gifts',
+              blockchains: ['Bitcoin'],
+              assets: ['BTC'],
+              pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+            },
+            {
+              name: 'DFX.swiss',
+              blockchains: ['Liquid'],
+              assets: ['L-BTC'],
+              pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+            },
+          ],
+        }
+      : {
+          places: [
+            {
+              id: `npub1${'q'.repeat(58)}`,
+              name: 'Sample',
+              shopName: 'SPAR',
+              country: 'PH',
+              activity: 'daily',
+              lat: 14.6,
+              lon: 121.0,
+              techProvider: '21.gifts',
+            },
+            {
+              name: 'Other desk',
+              techProvider: 'DFX.swiss',
+              id: 'dfx-hidden',
+              country: 'PH',
+              activity: 'daily',
+              lat: 14.7,
+              lon: 121.1,
+            },
+          ],
+        };
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(body),
+  });
+}
+
+async function stubHomeMap(page: Page): Promise<void> {
+  await page.route((url) => isHomeMapRequest(url), fulfillHomeMap);
+}
+
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
+    await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
-    await shotScreen(page, 'screen-root');
+    await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
   test('state / mobile-nav', async ({ page }, testInfo) => {
+    await stubHomeMap(page);
     await page.goto('/');
     if (isMobileProject(testInfo)) {
       await page.getByRole('button', { name: 'Menu' }).click();
@@ -1533,14 +1606,23 @@ test.describe('screen baselines', () => {
         page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
       ).toBeVisible();
     }
-    await shotScreen(page, 'state-root-mobile-nav');
+    await shotScreen(page, 'state-root-mobile-nav', true, page.locator('#shop-places-map'));
   });
 
   test('state / language-open', async ({ page }) => {
+    await stubHomeMap(page);
     await page.goto('/');
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Español' })).toBeVisible();
-    await shotScreen(page, 'state-root-language');
+    await shotScreen(page, 'state-root-language', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-table', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-table');
   });
 
   test('screen /legal', async ({ page }) => {

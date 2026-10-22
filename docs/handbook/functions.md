@@ -5134,3 +5134,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `sessionToken` — bearer token; `body` — JSON action; `timeZone` — when true, also sends the device `Time-Zone` header.
 - **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
 - **Used by:** `MemberHabits`.
+
+## Function: HomeShops
+
+- **Purpose:** Marketing homepage section under the hero and before how it works. Shows filters, a Map/Table control, then a map or a table. A shop is listed only when its tech provider is exactly 21.gifts. The country filter stays. A shop id that matches the shop npub pattern links to `/{id}` on this site. A failed map library, missing map container, or failed map construction opens the table and shows the load-error sentence. That failure is not an empty list.
+- **Inputs:** Translated labels from the server page, including the CSV button label and the URL column label. Place and filter data come from the public map API after mount. Filters are loaded once, before the first places request. Places reload when country, name, blockchain, or asset changes. Activity filters the places already loaded.
+- **Returns / side effects:** A section element. Fetches the place list in the browser. Downloads a CSV of the visible rows when the visitor asks and at least one row is visible. No server write.
+- **Used by:** The marketing page at `/`.

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Home, { metadata as homeMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { getCatalog } from '@/lib/messages';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -29,6 +30,7 @@ describe('Home', () => {
   it('renders the product headline', async () => {
     renderWithLocale(await Home());
     expect(screen.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: getCatalog('en')['homeShops.title'] })).toBeTruthy();
   });
 
   it('states what the product is', async () => {

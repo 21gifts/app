@@ -2249,6 +2249,11 @@
     "es": "El selector de idioma del encabezado publicitario está abierto. Cuadro de lista personalizado (panel redondeado, filas de endónimos con una marca en la configuración regional actual) — no la interfaz del sistema.",
     "fil": "Bukas ang pampalit ng wika sa pampromosyong ulo. Pasadyang listahan (bilugang panid, mga hanay ng endonym na may tsek sa kasalukuyang wika) — hindi ang mukha ng sistema."
   },
+  "/:shops-table": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Tabelle listet nur Läden, deren Tech-Anbieter genau 21.gifts ist, und zeigt Name, Ort, Land, Shop, Tech-Anbieter und Aktivität.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La tabla lista solo tiendas cuyo proveedor técnico es exactamente 21.gifts y muestra Nombre, Lugar, País, Tienda, Proveedor técnico y Actividad.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts at nagpapakita ng Pangalan, Lugar, Bansa, Tindahan, Tech provider, at Aktibidad."
+  },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, después de que falle Publicar. La vista previa permanece, con No se pudo publicar el mensaje debajo. Crédito sigue pulsado. El contador muestra 9 de 9.",
