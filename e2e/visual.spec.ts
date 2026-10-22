@@ -28136,6 +28136,7 @@ test.describe('habit tracker baselines', () => {
       }),
     ).toHaveText('Expected a JSON body with an integer "amountSats"');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Continue' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-habit-tracker-donate-habit-amount');
   });
 

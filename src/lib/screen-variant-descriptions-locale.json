@@ -3915,9 +3915,9 @@
     "fil": "Sesyon ni Ada pagkatapos ng Magpatuloy sa komento ng iba. Ipinapakita ng kard ang Magbayad ng ₿21, ang QR code ng bayad sa Bitcoin sa desktop, at Magbayad gamit ang Wallet of Satoshi. Hindi ipinapakita ang hilaw na invoice."
   },
   "/habit-tracker:donate-habit-amount": {
-    "de": "Adas Sitzung. Bitcoin senden ist offen. Weiter wurde mit einem Betrag gedrückt, der keine ganze Zahl Sats von 1 bis 10.000.000 ist. Das Blatt zeigt Expected a JSON body with an integer \"amountSats\".",
-    "es": "Sesión de Ada. Enviar Bitcoin está abierto. Se pulsó Continuar con un importe que no es un número entero de sats de 1 a 10.000.000. La hoja muestra Expected a JSON body with an integer \"amountSats\".",
-    "fil": "Sesyon ni Ada. Bukas ang Magpadala ng Bitcoin. Pinindot ang Magpatuloy na may halagang hindi buong bilang ng sats mula 1 hanggang 10,000,000. Ipinapakita ng sheet ang Expected a JSON body with an integer \"amountSats\"."
+    "de": "Adas Sitzung. Bitcoin senden ist offen und der Betrag ist 0. Expected a JSON body with an integer \"amountSats\" steht unter dem Betrag, und Weiter ist schon aus. Es startet keine Zahlung.",
+    "es": "Sesión de Ada. Enviar Bitcoin está abierto y el importe es 0. Expected a JSON body with an integer \"amountSats\" queda bajo el importe, y Continuar ya está desactivado. No empieza ningún pago.",
+    "fil": "Sesyon ni Ada. Bukas ang Magpadala ng Bitcoin at 0 ang halaga. Nasa ilalim ng halaga ang Expected a JSON body with an integer \"amountSats\", at naka-off na ang Magpatuloy. Walang bayad na nagsisimula."
   },
   "/habit-tracker:donate-request": {
     "de": "Adas Sitzung. Bitcoin senden ist offen. Weiter wurde gedrückt, und die Zahlung konnte nicht gestartet werden. Das Blatt zeigt Die Bitcoin-Zahlung konnte nicht gestartet werden.",

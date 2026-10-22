@@ -3449,7 +3449,7 @@ Ada's session after **Continue** on someone else's comment. The card shows **Pay
 
 ### Variant: donate-habit-amount
 
-Ada's session. **Send Bitcoin** is open. **Continue** was pressed with an amount that is not a whole number of sats from 1 through 10,000,000. The sheet shows **Expected a JSON body with an integer "amountSats"**.
+Ada's session. **Send Bitcoin** is open and the amount is 0. **Expected a JSON body with an integer "amountSats"** sits under the amount, and **Continue** is already off. No payment starts.
 
 ![21.gifts habit tracker donate habit amount](images/habit-tracker-donate-habit-amount.png)
 
