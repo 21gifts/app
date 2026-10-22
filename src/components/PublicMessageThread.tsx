@@ -32,6 +32,7 @@ import {
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
+  typedFiatFigure,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { PAY_POLL_MS } from '@/lib/payment-link';
@@ -647,7 +648,11 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, replyRateRef.current),
+        shownFiatForSats(
+          sats,
+          replyRateRef.current,
+          typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+        ),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -729,14 +734,22 @@ export function PublicMessageThread(props: {
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -863,7 +876,7 @@ export function PublicMessageThread(props: {
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, payRate),
+            shownFiatForSats(sats, payRate, typedFiatFigure(payShownUnit, payDraft, fiat)),
           );
           if (generation !== payPollGeneration.current) {
             return null;

@@ -5,7 +5,12 @@ import { useCallback, useEffect, useRef, useState, type ReactElement } from 'rea
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { attachTypedFigure, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import {
+  attachTypedFigure,
+  replySatsFromDraft,
+  shownFiatForSats,
+  typedFiatFigure,
+} from '@/lib/stats-money';
 import {
   CannotReceiveError,
   CONVERSATION_LIVE_POLL_MS,
@@ -724,7 +729,7 @@ export function InboxLoader(): ReactElement | null {
             conversationId,
             sats,
             trimmed === '' ? undefined : trimmed,
-            shownFiatForSats(sats, rateDay),
+            shownFiatForSats(sats, rateDay, typedFiatFigure(amountUnit, amountDraft, fiat)),
           );
         } catch (err) {
           if (openIdRef.current === conversationId) {

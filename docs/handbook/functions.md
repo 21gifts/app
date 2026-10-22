@@ -2858,8 +2858,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: shownFiatForSats
 
-- **Purpose:** The four fiat amounts shown for a sat amount the visitor is about to pay, using the same spot rate as the preview. They are stored with the new payment.
-- **Inputs:** Whole `sats` and `rateDay` (`FiatRateDay | null`).
+- **Purpose:** The four fiat amounts stored for a sat amount the visitor is about to pay, using the same spot rate as the preview. A typed fiat figure replaces that currency's spot with the typed amount at two decimals. The other three currencies stay the spot captured at the same moment. A bitcoin entry stores the spot for every currency.
+- **Inputs:** Whole `sats`, `rateDay` (`FiatRateDay | null`), and optional `typed` (`{ code, amount }` or `null`). Omitted or `null` stores only the spot.
 - **Returns / side effects:** `{ amountUsd, amountChf, amountEur, amountPhp }`, each a two-decimal string or `null`. No I/O.
 - **Used by:** `ForumLoader`, `InboxLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 

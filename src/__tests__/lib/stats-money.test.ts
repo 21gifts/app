@@ -157,6 +157,31 @@ describe('shownFiatForSats', () => {
       amountEur: null,
       amountPhp: null,
     });
+    expect(shownFiatForSats(21, RATE_DAY, null)).toEqual(shownFiatForSats(21, RATE_DAY));
+  });
+
+  it('stores a typed figure in that currency and leaves the other three at the spot', () => {
+    const spot = shownFiatForSats(12_000, RATE_DAY);
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12' })).toEqual({
+      ...spot,
+      amountUsd: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'CHF', amount: '11.5' })).toEqual({
+      ...spot,
+      amountChf: '11.50',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'EUR', amount: '12.00' })).toEqual({
+      ...spot,
+      amountEur: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'PHP', amount: '12.125' })).toEqual({
+      ...spot,
+      amountPhp: '12.13',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12.124' }).amountUsd).toBe(
+      '12.12',
+    );
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: 'nope' })).toEqual(spot);
   });
 });
 

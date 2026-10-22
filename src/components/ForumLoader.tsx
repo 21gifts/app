@@ -26,6 +26,7 @@ import {
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
+  typedFiatFigure,
 } from '@/lib/stats-money';
 import {
   CannotReceiveError,
@@ -2097,7 +2098,7 @@ export function ForumLoader({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, payRate),
+            shownFiatForSats(sats, payRate, typedFiatFigure(payShownUnit, payDraft, fiat)),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -2361,14 +2362,22 @@ export function ForumLoader({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             )
           : await postMessageInvoice(
               session,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -2456,7 +2465,11 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, replyRateRef.current),
+        shownFiatForSats(
+          sats,
+          replyRateRef.current,
+          typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+        ),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {

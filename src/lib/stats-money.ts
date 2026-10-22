@@ -235,19 +235,65 @@ export interface ShownFiat {
 }
 
 /**
- * The fiat the payer sees for these sats, using the same rate as the preview.
+ * Two-decimal form of a typed figure for a stored snapshot column.
+ * Missing fraction digits are padded. Further digits round half up.
+ * This rounds the typed figure, not the sats.
+ */
+function twoDecimalStored(amount: string): string | null {
+  if (!/^\d+(\.\d+)?$/.test(amount)) {
+    return null;
+  }
+  const dot = amount.indexOf('.');
+  const whole = dot < 0 ? amount : amount.slice(0, dot);
+  const frac = dot < 0 ? '' : amount.slice(dot + 1);
+  if (frac.length <= 2) {
+    return `${whole}.${frac.padEnd(2, '0')}`;
+  }
+  const keep = frac.slice(0, 2);
+  if (frac[2] < '5') {
+    return `${whole}.${keep}`;
+  }
+  const bumped = (BigInt(`${whole}${keep}`) + 1n).toString().padStart(whole.length + 2, '0');
+  return `${bumped.slice(0, -2)}.${bumped.slice(-2)}`;
+}
+
+/**
+ * The fiat stored with these sats, using the same rate as the preview.
+ * A typed figure replaces that currency's spot. The other three stay the spot.
  *
  * @param sats - Whole sats about to be paid.
  * @param rateDay - Current spot rate, or null when no rate is on screen.
+ * @param typed - Fiat the payer typed, or null when the field was bitcoin.
  * @returns Four strings or nulls. Null is stored as empty, not filled in later.
  */
-export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): ShownFiat {
-  return {
+export function shownFiatForSats(
+  sats: number,
+  rateDay: FiatRateDay | null,
+  typed?: { code: FiatCode; amount: string } | null,
+): ShownFiat {
+  const shown: ShownFiat = {
     amountUsd: satsToFiatAmount(sats, rateDay, 'USD'),
     amountChf: satsToFiatAmount(sats, rateDay, 'CHF'),
     amountEur: satsToFiatAmount(sats, rateDay, 'EUR'),
     amountPhp: satsToFiatAmount(sats, rateDay, 'PHP'),
   };
+  if (typed === undefined || typed === null) {
+    return shown;
+  }
+  const exact = twoDecimalStored(typed.amount);
+  if (exact === null) {
+    return shown;
+  }
+  if (typed.code === 'USD') {
+    shown.amountUsd = exact;
+  } else if (typed.code === 'CHF') {
+    shown.amountChf = exact;
+  } else if (typed.code === 'EUR') {
+    shown.amountEur = exact;
+  } else {
+    shown.amountPhp = exact;
+  }
+  return shown;
 }
 
 /**
