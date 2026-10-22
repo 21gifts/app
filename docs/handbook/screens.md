@@ -368,7 +368,7 @@ PHP is pressed and the amount is 100. **Continue** while the gift-day request ha
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Continue** shows **No PHP exchange rate yet.** The form stays. No **Pay**.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Continue** is already off. The form stays. No **Pay**.
 
 ![21.gifts pay link no rate](images/pl-no-rate.png)
 
@@ -1281,7 +1281,7 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**, and **Post** stays off. A draft over 8000 characters shows **Keep it to 8000 characters** while it is still too long, and **Post** stays off. The composer does not cut the draft.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**, and **Post** stays off. The composer does not cut the draft.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
@@ -4276,7 +4276,7 @@ PHP is pressed and the amount is 100. **Create payment** while the gift-day requ
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Create payment** shows **No PHP exchange rate yet.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Create payment** is already off. The keypad stays. No QR.
 
 ![21.gifts point of sale no rate](images/pos-no-rate.png)
 

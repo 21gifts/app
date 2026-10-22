@@ -1390,7 +1390,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Client loader for in-app contact on `/contact`. Session from `useAuthStore`; returns null without a session. Posts via `postContact`. On success fetches conversations and navigates to `/messages` or `/messages?c=` for the official 21.gifts thread. No local success-hide of the form. Uses `nextContactRequirement` so missing name/rules open `RequirementsOverlay` (no Skip); Lightning Address is not required for contact.
 - **Inputs:** None (reads session from the auth store).
-- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError. Empty or whitespace drafts set `empty`; trimmed text longer than 8000 characters sets `tooLong` and does not call `postContact`. After a successful post, `fetchConversations` then `router.push` to the inbox and `posting` stays true until unmount. A failed post sets `request` and clears `posting` so Send can retry.
+- **Returns / side effects:** React element wrapping `ContactScreen`, or `null`. Owns draft/posting/formError. Empty or whitespace drafts set `empty`; trimmed text longer than 8000 characters sets `tooLong` and does not call `postContact`. After a successful post, the draft is cleared and `posting` is set false before `fetchConversations` and `router.push` to the inbox, so the cleared composer stays quiet. A failed post sets `request` and clears `posting` so Send can retry.
 - **Used by:** Screen `/contact`.
 
 ## Function: ContactPage
@@ -1402,7 +1402,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ContactScreen
 
-- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and a messenger-style composer (textarea with icon-only Send `IconButton`, catalog `aria-label` `contact.send`, `maxLength` 8000). Success is owned by `ContactLoader` (navigate to the inbox thread), not a local success copy.
+- **Purpose:** Presentational in-app contact: heading **Contact**, lead, link to living-room rules, and a messenger-style composer (textarea with icon-only Send `IconButton`, catalog `aria-label` `contact.send`, no HTML max length). Over 8000 characters is the field message. Success is owned by `ContactLoader` (navigate to the inbox thread), not a local success copy.
 - **Inputs:** `ContactScreenProps` — `posting`, `draft`, `onDraftChange`, `onPost`, `formError` (`empty` / `tooLong` / `request`).
 - **Returns / side effects:** React element. No network.
 - **Used by:** `ContactLoader`.

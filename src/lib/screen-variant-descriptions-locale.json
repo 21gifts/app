@@ -1095,9 +1095,9 @@
     "fil": "Pinindot ang PHP at ang halaga ay 100. Magpatuloy habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
   },
   "/pl:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Weiter zeigt Für PHP gibt es noch keinen Wechselkurs. Das Formular bleibt. Kein Bezahlen.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Continuar muestra Aún no hay tipo de cambio para PHP. El formulario permanece. Sin Pagar.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Magpatuloy ang Wala pang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Für PHP gibt es noch keinen Wechselkurs steht unter dem Betrag, und Weiter ist schon aus. Das Formular bleibt. Kein Bezahlen.",
+    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Aún no hay tipo de cambio para PHP queda bajo el importe, y Continuar ya está desactivado. El formulario permanece. Sin Pagar.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Nasa ilalim ng halaga ang Wala pang palitan para sa PHP, at naka-off na ang Magpatuloy. Nanatili ang pormularyo. Walang Magbayad."
   },
   "/welcome:ask-preparing": {
     "de": "Schritt 2 von 4 von Um Geld bitten, während das Foto noch vorbereitet wird. Noch kein Vorschaubild. Weiter bleibt deaktiviert.",
@@ -1805,9 +1805,9 @@
     "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang keypad. Walang QR."
   },
   "/pos/amount:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Zahlung anlegen zeigt Für PHP gibt es noch keinen Wechselkurs. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Crear pago muestra Aún no hay tipo de cambio para PHP. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Gumawa ng bayad ang Wala pang palitan para sa PHP. Nanatili ang keypad. Walang QR."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Für PHP gibt es noch keinen Wechselkurs steht unter dem Betrag, und Zahlung anlegen ist schon aus. Die Tastatur bleibt. Kein QR.",
+    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Aún no hay tipo de cambio para PHP queda bajo el importe, y Crear pago ya está desactivado. El teclado permanece. Sin QR.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Nasa ilalim ng halaga ang Wala pang palitan para sa PHP, at naka-off na ang Gumawa ng bayad. Nanatili ang keypad. Walang QR."
   },
   "/shops:table-error": {
     "de": "Tabelle ist ausgewählt und die erste Seite ist fehlgeschlagen. Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen. Der Verfasser ist weg.",
@@ -3135,9 +3135,9 @@
     "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa Cafe Luna. Bukas ang Hakbang 1 sa 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:validation-error": {
-    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu, und Senden bleibt aus. Ein Entwurf über 8000 Zeichen zeigt Maximal 8000 Zeichen, solange er zu lang ist, und Senden bleibt aus. Das Verfassen schneidet den Entwurf nicht ab.",
-    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo, y Publicar permanece desactivado. Un borrador de más de 8000 caracteres muestra Máximo 8000 caracteres mientras sigue siendo demasiado largo, y Publicar permanece desactivado. El redactor no corta el borrador.",
-    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo, at nananatiling naka-off ang I-post. Ang burador na higit sa 8000 character ay nagpapakita ng Hanggang 8000 na karakter habang masyado pa itong mahaba, at nananatiling naka-off ang I-post. Hindi pinuputol ng pambuo ang burador."
+    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu, und Senden bleibt aus. Das Verfassen schneidet den Entwurf nicht ab.",
+    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo, y Publicar permanece desactivado. El redactor no corta el borrador.",
+    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo, at nananatiling naka-off ang I-post. Hindi pinuputol ng pambuo ang burador."
   },
   "/messages/[id]:goal-fiat": {
     "de": "Nicht angemeldeter Permalink einer englischen Notiz, definiert als $1.50 mit eingefrorenem ₿1'000 und Beschriftung 0%. Kein zweiter Dollarbetrag. Die Notiz entspricht der Sprache der Oberfläche, daher bietet die Karte kein Übersetzen. Der empfangene Betrag ist ₿0 · $0.00. Kein Anfragen im Verfassen.",
