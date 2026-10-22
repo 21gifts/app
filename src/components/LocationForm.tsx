@@ -1,13 +1,36 @@
 'use client';
 
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
-import { useState, type FormEvent, type ReactElement } from 'react';
+import { useId, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui';
 import { setLocation } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { LOCATION_LENGTH_MESSAGE, locationProblem } from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Shown under the location field, or under the display row after a failed clear. */
+type LocationVisible = 'long' | 'controls' | 'request';
+
+/**
+ * Catalog key for a visible location message.
+ *
+ * @param kind - The problem currently shown.
+ * @returns The message key.
+ */
+function locationErrorKey(
+  kind: LocationVisible,
+): 'location.errorLength' | 'location.errorControls' | 'location.errorRequest' {
+  switch (kind) {
+    case 'long':
+      return 'location.errorLength';
+    case 'controls':
+      return 'location.errorControls';
+    case 'request':
+      return 'location.errorRequest';
+  }
+}
 
 /**
  * True when the stored location is a non-empty trimmed string.
@@ -28,6 +51,10 @@ function hasLocation(location: string | null | undefined): boolean {
  * not overwritten. Renders nothing when no account — or, defensively, no
  * session token — is present. Empty after trim is a valid save and clears.
  *
+ * An untouched field stays quiet. After a change, blur, or submit, a broken
+ * length or control rule is shown under the field and Save is disabled. Clear
+ * stays its own action. A known api length sentence uses the length key.
+ *
  * @param props - Optional `startEditing` opens the field on mount.
  * @returns The location section, or `null` when there is nothing to show.
  */
@@ -43,7 +70,9 @@ export function LocationForm({
   const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [serverError, setServerError] = useState<'long' | 'request' | null>(null);
+  const errorId = useId();
 
   if (account === null || session === null) {
     return null;
@@ -51,6 +80,17 @@ export function LocationForm({
 
   const location = account.location;
   const set = hasLocation(location);
+  const problem = locationProblem(draft);
+  let fieldKind: LocationVisible | null = null;
+  if (editing) {
+    if (touched && problem !== null) {
+      fieldKind = problem;
+    } else {
+      fieldKind = serverError;
+    }
+  }
+  const displayKind = editing ? null : serverError;
+  const submitDisabled = busy || fieldKind === 'long' || fieldKind === 'controls';
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -64,15 +104,20 @@ export function LocationForm({
     onFresh: (result: Account) => void,
   ): Promise<void> => {
     setBusy(true);
-    setError(false);
+    setServerError(null);
     try {
       const result = await action(session);
       if (useAuthStore.getState().session !== session) {
         return;
       }
       onFresh(result);
-    } catch {
-      setError(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message === LOCATION_LENGTH_MESSAGE) {
+        setServerError('long');
+      } else {
+        setServerError('request');
+      }
     } finally {
       setBusy(false);
     }
@@ -88,12 +133,16 @@ export function LocationForm({
       location: updated.location,
     });
     setEditing(false);
+    setTouched(false);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const trimmed = draft.trim();
-    void runGuarded((token) => setLocation(token, trimmed), applyLocation);
+    setTouched(true);
+    if (locationProblem(draft) !== null) {
+      return;
+    }
+    void runGuarded((token) => setLocation(token, draft.trim()), applyLocation);
   };
 
   const handleClear = (): void => {
@@ -103,7 +152,8 @@ export function LocationForm({
   const startEdit = (): void => {
     setDraft(location ?? '');
     setEditing(true);
-    setError(false);
+    setServerError(null);
+    setTouched(false);
   };
 
   const submitIcon = busy ? (
@@ -111,6 +161,13 @@ export function LocationForm({
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
+
+  const fieldAlert =
+    fieldKind === null ? null : (
+      <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
+        {t(locationErrorKey(fieldKind))}
+      </p>
+    );
 
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
@@ -129,15 +186,25 @@ export function LocationForm({
                 placeholder={t('location.placeholder')}
                 aria-label={t('location.aria')}
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  setTouched(true);
+                  setServerError(null);
+                }}
+                onBlur={() => {
+                  setTouched(true);
+                }}
                 disabled={busy}
+                {...(fieldKind === null
+                  ? {}
+                  : { 'aria-invalid': true as const, 'aria-describedby': errorId })}
                 className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
               />
               <IconButton
                 type="submit"
                 variant="primary"
                 size="md"
-                disabled={busy}
+                disabled={submitDisabled}
                 aria-label={t('location.save')}
               >
                 {submitIcon}
@@ -150,12 +217,14 @@ export function LocationForm({
                 aria-label={t('location.cancel')}
                 onClick={() => {
                   setEditing(false);
-                  setError(false);
+                  setServerError(null);
+                  setTouched(false);
                 }}
               >
                 <X aria-hidden="true" className="h-4 w-4" />
               </IconButton>
             </div>
+            {fieldAlert}
           </form>
         </SundayWritingGate>
       ) : (
@@ -198,9 +267,9 @@ export function LocationForm({
         </div>
       )}
 
-      {error ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('location.errorRequest')}
+      {displayKind !== null ? (
+        <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
+          {t(locationErrorKey(displayKind))}
         </p>
       ) : null}
     </div>

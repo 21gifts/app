@@ -1127,6 +1127,21 @@ export async function proxyForumMentionsGet(request: Request): Promise<Response>
 }
 
 /**
+ * Proxies GET /forum/accounts/by-username/:username to api
+ * `GET /accounts/by-username/:username`.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param username - Username from the dynamic route segment.
+ * @returns The upstream response.
+ */
+export async function proxyForumAccountByUsernameGet(
+  request: Request,
+  username: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/accounts/by-username/${encodeURIComponent(username)}`);
+}
+
+/**
  * Proxies POST /notifications/read-all to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

@@ -139,6 +139,34 @@ function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): b
   return placeStamp(left) === placeStamp(right);
 }
 
+/**
+ * Place captured when the editor opened.
+ * A later parent render must not share this object.
+ */
+function copyOpenedPlace(place: ForumPlacePin | null | undefined): ForumPlacePin | null {
+  if (place === null || place === undefined) {
+    return null;
+  }
+  const copy: ForumPlacePin = {
+    lat: place.lat,
+    lng: place.lng,
+    label: place.label === undefined ? null : place.label,
+  };
+  if (place.address !== undefined) {
+    copy.address =
+      place.address === null
+        ? null
+        : {
+            street: place.address.street,
+            houseNumber: place.address.houseNumber,
+            postalCode: place.address.postalCode,
+            city: place.address.city,
+            country: place.address.country,
+          };
+  }
+  return copy;
+}
+
 function usernameOf(value: string): string {
   return value.trim().replace(/^@/, '').trim().toLowerCase();
 }
@@ -264,6 +292,13 @@ export function ShopNoteEditControl({
   // Photos kept plus picked; a pick reads it after preparing, when another
   // pick or a removal may already have changed the rendered count.
   const photoCountRef = useRef(0);
+  // Opening values, not the live message props. A parent quick-edit must not
+  // be written back unless this editor changed that field.
+  const openedTextRef = useRef('');
+  const openedPlaceRef = useRef<ForumPlacePin | null>(null);
+  const openedUsernameRef = useRef('');
+  // Bumped when a pick must be ignored: cancel, the open pencil, or a new open.
+  const prepareGenerationRef = useRef(0);
   useEffect(() => {
     photoCountRef.current =
       kept.filter((item) => item.kind === 'photo').length + photoDrafts.length;
@@ -306,17 +341,32 @@ export function ShopNoteEditControl({
       return;
     }
     openingRef.current = true;
+    prepareGenerationRef.current += 1;
+    setPreparing(false);
+    setPhotoDrafts([]);
     try {
       keptStillBytes.current.clear();
-      setDraft(stripShopHashtag(message.text));
-      setPlace(message.place ?? null);
-      setUsername(message.shopAccount?.username ?? '');
-      setPhotoDrafts([]);
+      const openedText = stripShopHashtag(message.text);
+      const openedPlace = copyOpenedPlace(message.place);
+      const openedUsername = message.shopAccount?.username ?? '';
+      openedTextRef.current = openedText;
+      openedPlaceRef.current = openedPlace;
+      openedUsernameRef.current = openedUsername;
+      setDraft(openedText);
+      setPlace(copyOpenedPlace(message.place));
+      setUsername(openedUsername);
       setSaveError(false);
       setSaveProblem(null);
       setPhotoError(null);
       setHistory(null);
       setHistoryError(false);
+      void fetchShopNoteEdits(token, message.id)
+        .then((rows) => {
+          setHistory(rows);
+        })
+        .catch(() => {
+          setHistoryError(true);
+        });
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
       if (photos.length < message.photoCount) {
         setKept([]);
@@ -362,13 +412,6 @@ export function ShopNoteEditControl({
         ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
       ]);
       setOpen(true);
-      void fetchShopNoteEdits(token, message.id)
-        .then((rows) => {
-          setHistory(rows);
-        })
-        .catch(() => {
-          setHistoryError(true);
-        });
     } finally {
       openingRef.current = false;
     }
@@ -387,19 +430,28 @@ export function ShopNoteEditControl({
   async function onPickFiles(files: File[]): Promise<void> {
     // A new pick replaces the last pick's reason, so a repeated reason is announced again.
     setPhotoError(null);
+    const generation = prepareGenerationRef.current;
     setPreparing(true);
     const prepared: ForumPhotoPayload[] = [];
     let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
+      let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
       try {
-        const result = await prepareForumPhoto(file);
-        if (result.ok) {
-          prepared.push(result.photo);
-        } else if (nextError === null) {
-          nextError = result.error;
-        }
+        result = await prepareForumPhoto(file);
       } catch {
+        if (prepareGenerationRef.current !== generation) {
+          return;
+        }
         if (nextError === null) nextError = 'unsupported';
+        continue;
+      }
+      if (prepareGenerationRef.current !== generation) {
+        return;
+      }
+      if (result.ok) {
+        prepared.push(result.photo);
+      } else if (nextError === null) {
+        nextError = result.error;
       }
     }
     if (prepared.length > 0) {
@@ -416,14 +468,18 @@ export function ShopNoteEditControl({
   }
 
   async function save(): Promise<void> {
+    if (preparing) {
+      return;
+    }
     setSaving(true);
     setSaveError(false);
     setSaveProblem(null);
     setPhotoError(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
-      const textChanged = draft !== stripShopHashtag(message.text);
-      const placeChanged = !placesEqual(place, message.place ?? null);
+      const textChanged = draft !== openedTextRef.current;
+      const openedPlace = openedPlaceRef.current;
+      const placeChanged = !placesEqual(place, openedPlace);
       const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged && !photosReady) {
         setSaveError(true);
@@ -452,6 +508,9 @@ export function ShopNoteEditControl({
         }
       }
       let latest = message;
+      // The open snapshot decides whether this editor changed the place.
+      // Write order uses the place still on the message: a parent rename can
+      // make the new text invalid until that place is written.
       const stored = message.place ?? null;
       const placeFirst =
         textChanged &&
@@ -471,7 +530,7 @@ export function ShopNoteEditControl({
         onUpdated(latest);
       }
       const nextUser = usernameOf(username);
-      const prevUser = message.shopAccount?.username ?? '';
+      const prevUser = usernameOf(openedUsernameRef.current);
       if (nextUser !== prevUser) {
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
         onUpdated(latest);
@@ -521,6 +580,8 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
+            prepareGenerationRef.current += 1;
+            setPreparing(false);
             setOpen(false);
             return;
           }
@@ -535,6 +596,13 @@ export function ShopNoteEditControl({
             <ShopAddWizard
               mode="edit"
               posting={saving || preparing}
+              allowStepsWhilePosting={preparing && !saving}
+              {...(preparing
+                ? { busyLabel: t('shops.photoPreparing') }
+                : saving
+                  ? { busyLabel: t('shops.saving') }
+                  : {})}
+              cancelDisabled={saving}
               draft={draft}
               onDraftChange={(value) => {
                 setDraft(value);
@@ -582,6 +650,8 @@ export function ShopNoteEditControl({
                 void save();
               }}
               onCancel={() => {
+                prepareGenerationRef.current += 1;
+                setPreparing(false);
                 setSaveError(false);
                 setSaveProblem(null);
                 setOpen(false);
@@ -610,11 +680,11 @@ export function ShopNoteEditControl({
             <p role="alert" className="text-xs text-app-danger">
               {t('forum.editHistoryFailed')}
             </p>
-          ) : null}
-          {history !== null && history.length === 0 ? (
+          ) : history === null ? (
+            <p className="text-xs text-app-muted">{t('forum.editHistoryLoading')}</p>
+          ) : history.length === 0 ? (
             <p className="text-xs text-app-muted">{t('forum.editHistoryEmpty')}</p>
-          ) : null}
-          {history !== null && history.length > 0 ? (
+          ) : (
             <ul className="flex flex-col gap-2">
               {history.map((edit) => {
                 const who = edit.actor.name?.trim() ? edit.actor.name : edit.actor.id;
@@ -638,7 +708,7 @@ export function ShopNoteEditControl({
                 );
               })}
             </ul>
-          ) : null}
+          )}
         </div>
       ) : null}
     </div>

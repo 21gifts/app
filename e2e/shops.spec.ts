@@ -373,13 +373,11 @@ async function seedAda(
 }
 
 async function stubLunaMentionLookup(page: import('@playwright/test').Page): Promise<void> {
-  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: [{ id: 'acc-luna', username: 'luna', name: 'Luna' }],
-      }),
+      body: JSON.stringify({ id: 'acc-luna', username: 'luna', name: 'Luna' }),
     });
   });
 }
@@ -1022,15 +1020,17 @@ test('Function: shopUsernameProblem — format errors appear while typing before
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
-test('usernameLookupVerdict — a missing account blocks Next', async ({ page }) => {
+test('Function: lookupAccountByUsername — a missing account is shown while typing', async ({
+  page,
+}) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
-      status: 200,
+      status: 404,
       contentType: 'application/json',
-      body: JSON.stringify({ accounts: [] }),
+      body: JSON.stringify({ error: 'No account with that username' }),
     });
   });
   await page.goto('/shops');
@@ -1050,23 +1050,17 @@ test('usernameLookupVerdict — a missing account blocks Next', async ({ page })
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
-test('Function: usernameLookupVerdict — a full suggestion page is inconclusive', async ({
+test('Function: lookupAccountByUsername — a failed lookup does not block Next', async ({
   page,
 }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
-      status: 200,
+      status: 500,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: Array.from({ length: 20 }, (_, index) => ({
-          id: `acc-${String(index)}`,
-          username: `other-${String(index)}`,
-          name: `Other ${String(index)}`,
-        })),
-      }),
+      body: JSON.stringify({ error: 'unavailable' }),
     });
   });
   await page.goto('/shops');
@@ -1130,19 +1124,13 @@ test('Function: isShopApiProblem — a shop-feed account rejection returns to th
   await stubPlaceMap(page);
   await seedAda(page, 'verified');
   await fulfillForumMessages(page, []);
-  // A full suggestion page without the exact name leaves the lookup undecided,
+  // A failed exact lookup does not decide that the account is missing,
   // so only the API can tell that the account does not exist.
-  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
-      status: 200,
+      status: 500,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: Array.from({ length: 20 }, (_, index) => ({
-          id: `acc-${String(index)}`,
-          username: `other-${String(index)}`,
-          name: `Other ${String(index)}`,
-        })),
-      }),
+      body: JSON.stringify({ error: 'unavailable' }),
     });
   });
   await page.route(
@@ -1229,19 +1217,13 @@ test('Function: shopProblemField — editing the username clears its server reje
   await stubPlaceMap(page);
   await seedAda(page, 'verified');
   await fulfillForumMessages(page, []);
-  // A full suggestion page without the exact name leaves the lookup undecided,
+  // A failed exact lookup does not decide that the account is missing,
   // so only the API can tell that the account does not exist.
-  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
-      status: 200,
+      status: 500,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: Array.from({ length: 20 }, (_, index) => ({
-          id: `acc-${String(index)}`,
-          username: `other-${String(index)}`,
-          name: `Other ${String(index)}`,
-        })),
-      }),
+      body: JSON.stringify({ error: 'unavailable' }),
     });
   });
   await page.route(

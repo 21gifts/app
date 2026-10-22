@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ShopAddWizard, type ShopAddWizardProps } from '@/components/ShopAddWizard';
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
@@ -8,15 +8,17 @@ import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ShopApiProblem } from '@/lib/forum-shop';
 import type { ForumVideoPayload } from '@/lib/forum-video';
-import { searchMentionAccounts } from '@/lib/mention-search';
+import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/mention-search', () => ({
   searchMentionAccounts: vi.fn(),
+  lookupAccountByUsername: vi.fn(),
 }));
 
 const searchPeople = vi.mocked(searchMentionAccounts);
+const lookupAccount = vi.mocked(lookupAccountByUsername);
 
 vi.mock('next/link', () => ({
   default: ({
@@ -43,9 +45,16 @@ function renderWizard(ui: ReactElement) {
   );
 }
 
+beforeEach(() => {
+  // The shop text step mounts MentionTextarea, which always asks for suggestions.
+  searchPeople.mockResolvedValue([]);
+  lookupAccount.mockResolvedValue('found');
+});
+
 afterEach(() => {
   cleanup();
   searchPeople.mockReset();
+  lookupAccount.mockReset();
   vi.unstubAllGlobals();
   delete (window as { google?: unknown }).google;
   delete (window as { gm_authFailure?: unknown }).gm_authFailure;
@@ -709,7 +718,7 @@ describe('ShopAddWizard', () => {
 
   it('shows a pending username check when the account changes on the summary', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    searchPeople.mockImplementation(() => new Promise<never>(() => undefined));
+    lookupAccount.mockImplementation(() => new Promise<never>(() => undefined));
     function SummaryHost(): ReactElement {
       const [username, setUsername] = useState('');
       return (
@@ -978,7 +987,9 @@ describe('ShopAddWizard', () => {
 
   it('checks a valid username exists before enabling Next', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    searchPeople.mockResolvedValue([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+    lookupAccount.mockImplementation(async (_token, username) =>
+      username === 'ada' ? 'found' : 'missing',
+    );
     function UsernameHost(): ReactElement {
       const [username, setUsername] = useState('missing');
       return (
@@ -1007,17 +1018,17 @@ describe('ShopAddWizard', () => {
     });
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
-    expect(searchPeople).toHaveBeenCalledWith('sess', 'missing');
+    expect(lookupAccount).toHaveBeenCalledWith('sess', 'missing');
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'ada' } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });
-    expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
+    expect(lookupAccount).toHaveBeenCalledWith('sess', 'ada');
   });
 
   it('trims again after a leading at-sign before checking the username', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    searchPeople.mockResolvedValue([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+    lookupAccount.mockResolvedValue('found');
     renderWizard(
       <ShopAddWizard
         {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: '@ ada' })}
@@ -1030,18 +1041,12 @@ describe('ShopAddWizard', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });
-    expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
+    expect(lookupAccount).toHaveBeenCalledWith('sess', 'ada');
   });
 
-  it('allows Next when a full suggestion page has no exact username', async () => {
+  it('blocks Next when the exact username lookup is missing', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    searchPeople.mockResolvedValue(
-      Array.from({ length: 20 }, (_, index) => ({
-        id: `acc-${String(index)}`,
-        username: `other-${String(index)}`,
-        name: `Other ${String(index)}`,
-      })),
-    );
+    lookupAccount.mockResolvedValue('missing');
     renderWizard(
       <ShopAddWizard
         {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: 'luna' })}
@@ -1052,18 +1057,19 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+      expect(
+        screen.getByText(
+          'No account with that username. Check the spelling of the 21.gifts username.',
+        ),
+      ).toBeTruthy();
     });
-    expect(
-      screen.queryByText(
-        'No account with that username. Check the spelling of the 21.gifts username.',
-      ),
-    ).toBeNull();
+    expect(screen.queryByText('Checking that account…')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
   it('allows Next without a message when the username lookup fails', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    searchPeople.mockRejectedValue(new Error('offline'));
+    lookupAccount.mockRejectedValue(new Error('offline'));
     renderWizard(
       <ShopAddWizard
         {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: 'ada' })}
@@ -1077,6 +1083,11 @@ describe('ShopAddWizard', () => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });
     expect(screen.queryByText('The account could not be checked. Please try again.')).toBeNull();
+    expect(
+      screen.queryByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toBeNull();
   });
 
   it.each([

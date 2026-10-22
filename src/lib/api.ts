@@ -1,4 +1,11 @@
 import { z } from 'zod';
+import {
+  LIGHTNING_ADDRESS_FORMAT_MESSAGE,
+  LIGHTNING_ADDRESS_TAKEN_MESSAGE,
+  LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE,
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_TAKEN_MESSAGE,
+} from '@/lib/profile-fields';
 import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
@@ -362,8 +369,10 @@ export async function setLocation(sessionToken: string, location: string): Promi
  * @param photo - JPEG payload to set, `null` to clear, omitted to keep the stored photo.
  * @returns The updated {@link Account}.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error `'Could not save. Please try again.'` on any other non-2xx
- * status or a 409 body that is not `missing_requirements`.
+ * @throws Error with the api string on 400 when the body has one. The About me
+ * length sentence passes through {@link toUserFacingError} unchanged.
+ * @throws Error `'Could not save. Please try again.'` on a 400 without an error
+ * string, a 409 that is not `missing_requirements`, or any other non-2xx status.
  * @throws when the 2xx body fails {@link accountSchema} validation.
  */
 export async function putAboutMe(
@@ -408,6 +417,12 @@ export async function putAboutMe(
       throw missing;
     }
     throw new Error('Could not save. Please try again.');
+  }
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    if (raw !== null) {
+      throw new Error(toUserFacingError(raw));
+    }
   }
   if (!response.ok) {
     throw new Error('Could not save. Please try again.');
@@ -765,7 +780,12 @@ export async function fetchMemberReplies(
  * @param username - Handle (`a-z0-9-_.`).
  * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
- * @throws Error with visitor-facing copy on 400/409 or other failures.
+ * @throws Error `Username is already in use` when a 409 body is that sentence,
+ * otherwise `'username-taken'` on 409.
+ * @throws Error `Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot`
+ * when a 400 body is that sentence, `'username-invalid'` when a 400 body has no
+ * error string, and the raw api string for any other 400.
+ * @throws Error `'username-request'` on any other failure.
  */
 export async function setUsername(
   sessionToken: string,
@@ -782,10 +802,15 @@ export async function setUsername(
     body: JSON.stringify({ username }),
   });
   if (response.status === 409) {
-    throw new Error('username-taken');
+    const raw = await readApiError(response);
+    throw new Error(raw === USERNAME_TAKEN_MESSAGE ? USERNAME_TAKEN_MESSAGE : 'username-taken');
   }
   if (response.status === 400) {
-    throw new Error('username-invalid');
+    const raw = await readApiError(response);
+    if (raw === null) {
+      throw new Error('username-invalid');
+    }
+    throw new Error(raw === USERNAME_FORMAT_MESSAGE ? USERNAME_FORMAT_MESSAGE : raw);
   }
   if (!response.ok) {
     throw new Error('username-request');
@@ -800,9 +825,13 @@ export async function setUsername(
  * @param address - The `name@domain.tld` Lightning Address to store.
  * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400) — rewritten to
- * visitor-facing copy — on any other non-2xx status, or when the body fails
- * {@link accountSchema} validation.
+ * @throws Error when the api rejects the address. A 409 whose body is the
+ * already-in-use sentence is thrown unchanged; any other 409 throws the save
+ * fallback. The not-zap sentence and the exact format and unresolved sentences
+ * are thrown unchanged on 400. Any other 400 is rewritten to visitor-facing
+ * copy, or a fallback when the body has no error string. Other non-2xx
+ * statuses throw that fallback. A 2xx body that fails {@link accountSchema}
+ * throws the schema error.
  */
 export async function setLightningAddress(
   sessionToken: string,
@@ -818,10 +847,21 @@ export async function setLightningAddress(
     },
     body: JSON.stringify({ address }),
   });
+  if (response.status === 409) {
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === LIGHTNING_ADDRESS_TAKEN_MESSAGE
+        ? LIGHTNING_ADDRESS_TAKEN_MESSAGE
+        : 'Could not save your Wallet of Satoshi address',
+    );
+  }
   if (response.status === 400) {
     const raw = await readApiError(response);
     if (raw === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
       throw new Error(LIGHTNING_ADDRESS_NOT_ZAP_ERROR);
+    }
+    if (raw === LIGHTNING_ADDRESS_FORMAT_MESSAGE || raw === LIGHTNING_ADDRESS_UNRESOLVED_MESSAGE) {
+      throw new Error(raw);
     }
     throw new Error(
       raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),

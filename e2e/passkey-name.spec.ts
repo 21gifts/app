@@ -241,7 +241,7 @@ test('passkey name empty and invalid values do not open the passkey dialog', asy
 
   for (const value of ['.ada', '_', 'a b']) {
     await page.getByRole('textbox', { name: 'Name' }).fill(value);
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expectRejected();
   }
 });

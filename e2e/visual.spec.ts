@@ -736,15 +736,28 @@ const UNKNOWN_LUNA_MENTION_ACCOUNTS = Array.from({ length: 20 }, (_, index) => (
   name: `Luna ${String(index + 1)}`,
 }));
 
-/** Enter a username after a full, inconclusive mention page and wait for the lookup to settle. */
+/**
+ * Enter a username whose exact lookup fails, so Next stays available.
+ * A 404 would show “no account” and block the step. The later save is what
+ * rejects the handle.
+ */
 async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<void> {
-  const lookup = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.pathname === '/forum/mentions' && url.searchParams.get('q') === username;
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'unavailable' }),
+    });
   });
+  const lookup = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+  );
   await page.getByLabel('21.gifts username').fill(username);
   await lookup;
   await expect(page.getByText('Checking that account…')).toHaveCount(0);
+  await expect(
+    page.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
+  ).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 }
 
@@ -763,17 +776,82 @@ async function fulfillPublicThreadReplies(
   });
 }
 
-/** Keep mention lookup pending until the visual state has been captured. */
+/**
+ * Keep the suggestion list and the exact username lookup pending until the
+ * visual state has been captured.
+ */
 async function holdMentionPeople(page: Page): Promise<() => void> {
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/forum/mentions**', async (route) => {
+  const stall = async (route: { abort: () => Promise<void> }): Promise<void> => {
     await held;
     await route.abort();
+  };
+  await page.route('**/forum/mentions**', stall);
+  await page.route(/\/forum\/accounts\/by-username\//, stall);
+  return release;
+}
+
+/**
+ * Keep one JSON response pending until the shot has been taken, then fulfill
+ * it so the test can finish without aborting the request.
+ */
+async function holdJson(page: Page, url: string, body: unknown): Promise<() => void> {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(url, async (route) => {
+    await held;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
   });
   return release;
+}
+
+/** Body accepted by the shop-text save parser after a held request is released. */
+function savedShopNote(id: string): {
+  id: string;
+  name: string;
+  text: string;
+  createdAt: string;
+  sats: number;
+  payable: boolean;
+  hasPhoto: boolean;
+} {
+  return {
+    id,
+    name: 'Ada',
+    text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+  };
+}
+
+/** Close an editor that is sitting on the photo step. */
+async function closeOpenShopEditor(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toHaveCount(0);
+}
+
+/** Change only the shop text and press Save changes on the summary. */
+async function saveChangedShopText(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page
+    .getByLabel('Shop text')
+    .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await page.getByRole('button', { name: 'Save changes' }).click();
 }
 
 /** Open a shop editor on a non-/shops host with the same fixture as its visual sequence. */
@@ -981,6 +1059,58 @@ async function enterInvalidShopUsername(page: Page): Promise<void> {
   await expect(invalid).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
   await invalid.scrollIntoViewIfNeeded();
+}
+
+/** Keep shop-photo preparation pending so the waiting sentence stays on screen. */
+async function hangShopPhotoPrepare(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.createImageBitmap = () => new Promise(() => undefined);
+  });
+}
+
+/**
+ * Attach one still to an open shop editor and wait for the preparing state.
+ * Next and Cancel stay usable. The attach control stays locked.
+ * The caller takes the screenshot so the variant needle stays in the test.
+ */
+async function showPreparingShopPhoto(
+  page: Page,
+  extra?: (page: Page) => Promise<void>,
+  nextClicks = 0,
+): Promise<void> {
+  await page
+    .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
+    .setInputFiles('e2e/fixtures/tiny.jpg');
+  const waiting = page.getByText('Wait until this photo is ready.');
+  await expect(waiting).toBeVisible();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+  // Welcome also shows the composer attach control. The editor's control is the one tied to its photo feedback.
+  await expect(page.locator('button[aria-describedby$="-photo-feedback"]')).toBeDisabled();
+  await expect(page.getByText('Saving this shop note.')).toHaveCount(0);
+  await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+  const titles = [
+    '1 / 5 · Photos',
+    '2 / 5 · Place',
+    '3 / 5 · Text',
+    '4 / 5 · 21.gifts user',
+    '5 / 5 · Summary',
+  ];
+  for (let click = 0; click < nextClicks; click += 1) {
+    await page.getByRole('button', { name: 'Next' }).click();
+  }
+  if (nextClicks > 0) {
+    await expect(page.getByText(titles[nextClicks] ?? '')).toBeVisible();
+    await expect(waiting).toBeVisible();
+  }
+  if (nextClicks === 4) {
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  }
+  if (extra !== undefined) {
+    await extra(page);
+  }
+  await waiting.scrollIntoViewIfNeeded();
 }
 
 /** Make the image preparation path produce its ordinary too-large result. */
@@ -2706,6 +2836,494 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-setup-address');
   });
 
+  test.describe('field validation screens', () => {
+    async function openSetup(
+      page: Page,
+      path: string,
+      account: typeof E2E_ACCOUNT,
+      heading: string,
+    ): Promise<void> {
+      await page.addInitScript(() => {
+        localStorage.setItem('21gifts.session', 'sess-e2e');
+      });
+      await page.route(/\/me$/, async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(account),
+        });
+      });
+      await page.goto(path);
+      await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+    }
+
+    async function failPost(
+      page: Page,
+      path: RegExp,
+      status: number,
+      error: string,
+    ): Promise<void> {
+      await page.route(path, async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status,
+          contentType: 'application/json',
+          body: JSON.stringify({ error }),
+        });
+      });
+    }
+
+    async function shootAlert(
+      page: Page,
+      text: string,
+      button: 'Continue' | 'Save',
+      locked: boolean,
+    ): Promise<void> {
+      const alert = page.getByRole('alert').filter({ hasText: text });
+      await expect(alert).toHaveText(text);
+      await alert.scrollIntoViewIfNeeded();
+      const submit = page.getByRole('button', { name: button, exact: true });
+      if (locked) {
+        await expect(submit).toBeDisabled();
+      } else {
+        await expect(submit).toBeEnabled();
+      }
+    }
+
+    const setupName = E2E_ACCOUNT;
+    const setupUsername = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      username: null,
+      setup: 'username' as const,
+      missing: ['username', 'lightning-address', 'rules'] as typeof E2E_ACCOUNT.missing,
+    };
+    const setupAddress = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      setup: 'lightning-address' as const,
+      missing: ['lightning-address', 'rules'] as typeof E2E_ACCOUNT.missing,
+    };
+
+    test('setup name empty', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      const field = page.getByRole('textbox', { name: 'Name' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter your name', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-empty');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name long', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await page.getByRole('textbox', { name: 'Name' }).fill('a'.repeat(81));
+
+      await shootAlert(page, 'Name must be 1–80 characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-long');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name controls', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await page.getByRole('textbox', { name: 'Name' }).fill(`Ada${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Name cannot include control characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-name-controls');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup name request', async ({ page }) => {
+      await openSetup(page, '/setup/name', setupName, 'Your name');
+
+      await failPost(page, /\/me\/name$/, 500, 'nope');
+      await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your name', 'Continue', false);
+      await shotScreen(page, 'state-setup-name-request');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup username empty', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      const field = page.getByRole('textbox', { name: 'Your 21.gifts name' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter a username', 'Continue', true);
+      await shotScreen(page, 'state-setup-username-empty');
+    });
+
+    test('setup username invalid', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('!');
+
+      await shootAlert(
+        page,
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-username-invalid');
+    });
+
+    test('setup username taken', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await failPost(page, /\/me\/username$/, 409, 'Username is already in use');
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('takenname');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That username is already taken', 'Continue', true);
+      await shotScreen(page, 'state-setup-username-taken');
+    });
+
+    test('setup username request', async ({ page }) => {
+      await openSetup(page, '/setup/username', setupUsername, 'Your 21.gifts name');
+
+      await failPost(page, /\/me\/username$/, 500, 'nope');
+      await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('freshname');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your username', 'Continue', false);
+      await shotScreen(page, 'state-setup-username-request');
+    });
+
+    test('setup address empty', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+      await field.focus();
+      await field.blur();
+
+      await shootAlert(page, 'Enter your Wallet of Satoshi address', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-empty');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address long', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await page.getByRole('textbox', { name: 'Wallet of Satoshi address' }).fill('a'.repeat(256));
+
+      await shootAlert(page, 'Use at most 255 characters.', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-long');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address format', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await page.getByRole('textbox', { name: 'Wallet of Satoshi address' }).fill('bad@example');
+
+      await shootAlert(
+        page,
+        'Use an address like name@domain.tld, at most 255 characters.',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-address-format');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address taken', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(page, /\/me\/lightning-address$/, 409, 'Lightning Address is already in use');
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address is already in use.', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-taken');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address not-found', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'Lightning Address could not be resolved',
+      );
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('gone@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address could not be found', 'Continue', true);
+      await shotScreen(page, 'state-setup-address-not-found');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address not-zap', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+      );
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('nozap@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(
+        page,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+        'Continue',
+        true,
+      );
+      await shotScreen(page, 'state-setup-address-not-zap');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('setup address request', async ({ page }) => {
+      await openSetup(page, '/setup/address', setupAddress, 'Your Wallet of Satoshi address');
+
+      await failPost(page, /\/me\/lightning-address$/, 500, 'nope');
+      await page
+        .getByRole('textbox', { name: 'Wallet of Satoshi address' })
+        .fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Continue', exact: true }).click();
+
+      await shootAlert(page, 'Could not update your Wallet of Satoshi address', 'Continue', false);
+      await shotScreen(page, 'state-setup-address-request');
+      await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+    });
+
+    test('profile name-empty', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill('');
+      await field.blur();
+
+      await shootAlert(page, 'Enter your name', 'Save', true);
+      await shotScreen(page, 'state-profile-name-empty');
+    });
+
+    test('profile name-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill('a'.repeat(81));
+
+      await shootAlert(page, 'Name must be 1–80 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-name-long');
+    });
+
+    test('profile name-controls', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await field.fill(`Ada${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Name cannot include control characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-name-controls');
+    });
+
+    test('profile name-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+      const field = page.getByRole('textbox', { name: 'Name', exact: true });
+
+      await failPost(page, /\/me\/name$/, 500, 'nope');
+      await field.fill('Bea');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your name', 'Save', false);
+      await shotScreen(page, 'state-profile-name-request');
+    });
+
+    test('profile location-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await field.fill('a'.repeat(81));
+
+      await shootAlert(page, 'Location must be at most 80 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-location-long');
+    });
+
+    test('profile location-controls', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await field.fill(`Manila${String.fromCharCode(1)}`);
+
+      await shootAlert(page, 'Location cannot include control characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-location-controls');
+    });
+
+    test('profile location-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit location' }).click();
+      const field = page.getByRole('textbox', { name: 'Location', exact: true });
+
+      await failPost(page, /\/me\/location$/, 500, 'nope');
+      await field.fill('Manila');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not save your location', 'Save', false);
+      await shotScreen(page, 'state-profile-location-request');
+    });
+
+    test('profile address-empty', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('');
+      await field.blur();
+
+      await shootAlert(page, 'Enter your Wallet of Satoshi address', 'Save', true);
+      await shotScreen(page, 'state-profile-address-empty');
+    });
+
+    test('profile address-long', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('a'.repeat(256));
+
+      await shootAlert(page, 'Use at most 255 characters.', 'Save', true);
+      await shotScreen(page, 'state-profile-address-long');
+    });
+
+    test('profile address-format', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await field.fill('bad@example');
+
+      await shootAlert(
+        page,
+        'Use an address like name@domain.tld, at most 255 characters.',
+        'Save',
+        true,
+      );
+      await shotScreen(page, 'state-profile-address-format');
+    });
+
+    test('profile address-taken', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(page, /\/me\/lightning-address$/, 409, 'Lightning Address is already in use');
+      await field.fill('ada@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address is already in use.', 'Save', true);
+      await shotScreen(page, 'state-profile-address-taken');
+    });
+
+    test('profile address-not-found', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'Lightning Address could not be resolved',
+      );
+      await field.fill('gone@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'That Wallet of Satoshi address could not be found', 'Save', true);
+      await shotScreen(page, 'state-profile-address-not-found');
+    });
+
+    test('profile address-not-zap', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(
+        page,
+        /\/me\/lightning-address$/,
+        400,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+      );
+      await field.fill('nozap@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(
+        page,
+        'This Wallet of Satoshi address cannot receive these Bitcoin payments',
+        'Save',
+        true,
+      );
+      await shotScreen(page, 'state-profile-address-not-zap');
+    });
+
+    test('profile address-request', async ({ page }) => {
+      await seedProfilePage(page);
+      await openProfile(page);
+
+      await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+      const field = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+
+      await failPost(page, /\/me\/lightning-address$/, 500, 'nope');
+      await field.fill('bob@walletofsatoshi.com');
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+      await shootAlert(page, 'Could not update your Wallet of Satoshi address', 'Save', false);
+      await shotScreen(page, 'state-profile-address-request');
+    });
+  });
+
   test('screen /setup/rules', async ({ page }) => {
     await openRulesSetup(page);
     await page.goto('/setup/rules');
@@ -3643,6 +4261,119 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
+  });
+
+  test('welcome shop-edit-saving', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    const release = await holdJson(page, '**/forum/messages/m-shop/text', savedShopNote('m-shop'));
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-saving');
+    release();
+  });
+
+  test('welcome shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing');
+  });
+
+  test('welcome shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-place');
+  });
+
+  test('welcome shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-text');
+  });
+
+  test('welcome shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-user');
+  });
+
+  test('welcome shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'welcome');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-welcome-shop-edit-photo-preparing-summary');
+  });
+
+  test('welcome shop-edit-history-loading', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, '**/forum/messages/m-shop/edits', { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-history-loading');
+    release();
+  });
+
+  test('welcome shop-edit-save-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await saveChangedShopText(page);
+    const alert = page.getByText('Could not save this shop note');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-save-error');
+  });
+
+  test('welcome shop-edit-history-error', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    await closeOpenShopEditor(page);
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    const alert = page.getByText('Could not load the history');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('Loading the history.')).toHaveCount(0);
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-history-error');
+  });
+
+  test('welcome shop-edit-place-map-loading', async ({ page }) => {
+    await openHostedShopEditor(page, 'welcome');
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place-map-loading');
+    release();
   });
 
   test('welcome shop-edit-user-checking', async ({ page }) => {
@@ -7098,6 +7829,123 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-save-rejected');
+  });
+
+  test('state /members shop-edit-saving', async ({ page }) => {
+    const id = '55555555-5555-4555-8555-555555555555';
+    await openHostedShopEditor(page, 'members');
+    const release = await holdJson(page, `**/forum/messages/${id}/text`, savedShopNote(id));
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-saving');
+    release();
+  });
+
+  test('state /members shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing');
+  });
+
+  test('state /members shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-place');
+  });
+
+  test('state /members shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-text');
+  });
+
+  test('state /members shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-user');
+  });
+
+  test('state /members shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'members');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-members-shop-edit-photo-preparing-summary');
+  });
+
+  test('state /members shop-edit-history-loading', async ({ page }) => {
+    const id = '55555555-5555-4555-8555-555555555555';
+    await openHostedShopEditor(page, 'members');
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, `**/forum/messages/${id}/edits`, { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-history-loading');
+    release();
+  });
+
+  test('state /members shop-edit-save-error', async ({ page }) => {
+    const id = '55555555-5555-4555-8555-555555555555';
+    await openHostedShopEditor(page, 'members');
+    await page.route(`**/forum/messages/${id}/text`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await saveChangedShopText(page);
+    const alert = page.getByText('Could not save this shop note');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-save-error');
+  });
+
+  test('state /members shop-edit-history-error', async ({ page }) => {
+    const id = '55555555-5555-4555-8555-555555555555';
+    await openHostedShopEditor(page, 'members');
+    await closeOpenShopEditor(page);
+    await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    const alert = page.getByText('Could not load the history');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('Loading the history.')).toHaveCount(0);
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-history-error');
+  });
+
+  test('state /members shop-edit-place-map-loading', async ({ page }) => {
+    await openHostedShopEditor(page, 'members');
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place-map-loading');
+    release();
   });
 
   test('state /members shop-edit-user-checking', async ({ page }) => {
@@ -11906,6 +12754,123 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
   });
 
+  test('state /messages/[id] shop-edit-saving', async ({ page }) => {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await openHostedShopEditor(page, 'messages');
+    const release = await holdJson(page, `**/forum/messages/${id}/text`, savedShopNote(id));
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-saving');
+    release();
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-place');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-text');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-user');
+  });
+
+  test('state /messages/[id] shop-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openHostedShopEditor(page, 'messages');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-preparing-summary');
+  });
+
+  test('state /messages/[id] shop-edit-history-loading', async ({ page }) => {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await openHostedShopEditor(page, 'messages');
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, `**/forum/messages/${id}/edits`, { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-history-loading');
+    release();
+  });
+
+  test('state /messages/[id] shop-edit-save-error', async ({ page }) => {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await openHostedShopEditor(page, 'messages');
+    await page.route(`**/forum/messages/${id}/text`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await saveChangedShopText(page);
+    const alert = page.getByText('Could not save this shop note');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-save-error');
+  });
+
+  test('state /messages/[id] shop-edit-history-error', async ({ page }) => {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await openHostedShopEditor(page, 'messages');
+    await closeOpenShopEditor(page);
+    await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    const alert = page.getByText('Could not load the history');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('Loading the history.')).toHaveCount(0);
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-history-error');
+  });
+
+  test('state /messages/[id] shop-edit-place-map-loading', async ({ page }) => {
+    await openHostedShopEditor(page, 'messages');
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place-map-loading');
+    release();
+  });
+
   test('state /messages/[id] shop-edit-user-checking', async ({ page }) => {
     const release = await holdMentionPeople(page);
     await openHostedShopEditor(page, 'messages');
@@ -14265,6 +15230,38 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-about-editing');
   });
 
+  test('profile about-long', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-about-long');
+  });
+
+  test('profile about-controls', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-about-controls');
+  });
+
   test('profile about-banner-crop', async ({ page }) => {
     // state-profile-about-banner-crop
     await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
@@ -14857,6 +15854,40 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-grants-apply-about');
   });
 
+  test('state /grants/apply about-long', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima' });
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-apply-about-long');
+  });
+
+  test('state /grants/apply about-controls', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima' });
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-apply-about-controls');
+  });
+
   test('state /grants/apply sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
@@ -14878,6 +15909,42 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-photo');
   });
 
+  test('profile apply photo-long', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-photo-long');
+  });
+
+  test('profile apply photo-controls', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-photo-controls');
+  });
+
   test('profile apply location', async ({ page }) => {
     await seedApply(page, {
       username: 'joey-rosima',
@@ -14887,6 +15954,44 @@ test.describe('profile apply screens', () => {
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add the place you live.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-location');
+  });
+
+  test('profile apply location-long', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'Location', exact: true }).fill('a'.repeat(81));
+    const alert = page.getByRole('alert').filter({
+      hasText: 'Location must be at most 80 characters.',
+    });
+    await expect(alert).toHaveText('Location must be at most 80 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-location-long');
+  });
+
+  test('profile apply location-controls', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await page
+      .getByRole('textbox', { name: 'Location', exact: true })
+      .fill(`Manila${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'Location cannot include control characters.',
+    });
+    await expect(alert).toHaveText('Location cannot include control characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-location-controls');
   });
 
   test('profile apply question', async ({ page }) => {
@@ -17815,10 +18920,12 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Place name');
     await expect(name).toBeVisible();
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await name.scrollIntoViewIfNeeded();
+    await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-pending', false);
     release();
   });
@@ -19637,6 +20744,160 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-save-rejected');
   });
 
+  test('shops map-edit-saving', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    const release = await holdJson(page, '**/forum/messages/m-shop/text', savedShopNote('m-shop'));
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-saving');
+    release();
+  });
+
+  test('shops map-edit-photo-preparing', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(page, async (current) => {
+      await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    });
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing');
+  });
+
+  test('shops map-edit-photo-preparing-place', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      1,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-place');
+  });
+
+  test('shops map-edit-photo-preparing-text', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      2,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-text');
+  });
+
+  test('shops map-edit-photo-preparing-user', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      3,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-user');
+  });
+
+  test('shops map-edit-photo-preparing-summary', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'map', true);
+    await showPreparingShopPhoto(
+      page,
+      async (current) => {
+        await expect(current.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+      },
+      4,
+    );
+    await shotScreen(page, 'state-shops-map-edit-photo-preparing-summary');
+  });
+
+  test('shops map-edit-history-loading', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, '**/forum/messages/m-shop/edits', { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-history-loading');
+    release();
+  });
+
+  test('shops map-edit-save-error', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await saveChangedShopText(page);
+    const alert = page.getByText('Could not save this shop note');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-save-error');
+  });
+
+  test('shops map-edit-history-error', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    await closeOpenShopEditor(page);
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    const alert = page.getByText('Could not load the history');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('Loading the history.')).toHaveCount(0);
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-history-error');
+  });
+
+  test('shops map-edit-place-map-loading', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await openShopsEditor(page, 'map', true);
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-place-map-loading');
+    release();
+  });
+
   test('shops map-edit-place-open', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
@@ -20139,6 +21400,119 @@ test.describe('shops screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-save-rejected');
+  });
+
+  test('shops table-edit-saving', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    const release = await holdJson(page, '**/forum/messages/m-shop/text', savedShopNote('m-shop'));
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-saving');
+    release();
+  });
+
+  test('shops table-edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing');
+  });
+
+  test('shops table-edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-place');
+  });
+
+  test('shops table-edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-text');
+  });
+
+  test('shops table-edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-user');
+  });
+
+  test('shops table-edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'table');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-shops-table-edit-photo-preparing-summary');
+  });
+
+  test('shops table-edit-history-loading', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, '**/forum/messages/m-shop/edits', { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-history-loading');
+    release();
+  });
+
+  test('shops table-edit-save-error', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await saveChangedShopText(page);
+    const alert = page.getByText('Could not save this shop note');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-save-error');
+  });
+
+  test('shops table-edit-history-error', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    await closeOpenShopEditor(page);
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unavailable' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    const alert = page.getByText('Could not load the history');
+    await expect(alert).toBeVisible();
+    await expect(page.getByText('Loading the history.')).toHaveCount(0);
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-history-error');
+  });
+
+  test('shops table-edit-place-map-loading', async ({ page }) => {
+    await openShopsEditor(page, 'table');
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-place-map-loading');
+    release();
   });
 
   test('shops table-edit-place-open', async ({ page }) => {
@@ -20688,10 +22062,12 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Shop name', { exact: true });
     await expect(name).toBeVisible();
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await name.scrollIntoViewIfNeeded();
+    await loading.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-pending', false);
     release();
   });
@@ -20991,6 +22367,87 @@ test.describe('shops screens', () => {
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-save-error');
+  });
+
+  test('shops edit-saving', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    const release = await holdJson(
+      page,
+      '**/forum/messages/m-staff/text',
+      savedShopNote('m-staff'),
+    );
+    await saveChangedShopText(page);
+    const saving = page.getByText('Saving this shop note.');
+    await expect(saving).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await saving.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-saving');
+    release();
+  });
+
+  test('shops edit-photo-preparing', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page);
+    await shotScreen(page, 'state-shops-edit-photo-preparing');
+  });
+
+  test('shops edit-photo-preparing-place', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 1);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-place');
+  });
+
+  test('shops edit-photo-preparing-text', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 2);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-text');
+  });
+
+  test('shops edit-photo-preparing-user', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 3);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-user');
+  });
+
+  test('shops edit-photo-preparing-summary', async ({ page }) => {
+    await hangShopPhotoPrepare(page);
+    await openShopsEditor(page, 'post');
+    await showPreparingShopPhoto(page, undefined, 4);
+    await shotScreen(page, 'state-shops-edit-photo-preparing-summary');
+  });
+
+  test('shops edit-history-loading', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    await closeOpenShopEditor(page);
+    const release = await holdJson(page, '**/forum/messages/m-staff/edits', { edits: [] });
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const loading = page.getByText('Loading the history.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('Could not save this shop note')).toHaveCount(0);
+    await expect(page.getByText('Could not load the history')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-history-loading');
+    release();
+  });
+
+  test('shops edit-place-map-loading', async ({ page }) => {
+    await openShopsEditor(page, 'post');
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await openShopEditorPlaceDialog(page);
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-place-map-loading');
+    release();
   });
 
   test('shops edit-save-rejected', async ({ page }) => {
@@ -21444,6 +22901,42 @@ test.describe('shops screens', () => {
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-staff-place-map', false);
+  });
+
+  test('shops staff-place-map-loading', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    const release = await holdJson(page, '**/maps/key', { key: null });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    const loading = page.getByText('Loading the map.');
+    await expect(loading).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await expect(page.getByText('Tap the map to set the pin.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await loading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-map-loading', false);
+    release();
   });
 
   test('shops staff-place-confirm', async ({ page }) => {
@@ -21903,7 +23396,19 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add an account' }).click();
+    await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    const lookup = page.waitForResponse((response) =>
+      new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+    );
     await note.getByLabel('Username').fill('missing');
+    await lookup;
+    await expect(note.getByText('Checking that account…')).toHaveCount(0);
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeEnabled();

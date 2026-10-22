@@ -306,7 +306,7 @@ Pressing Continue with an empty name, or a name that after trim and lowercase do
 
 ### Variant: name-taken
 
-A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
+A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). **Continue** stays disabled until the name changes. When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
@@ -408,6 +408,30 @@ Open till, mint failed. The shop sticker, time left, the sat amount, the viewer'
 Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts name setup](images/setup-name.png)
 
+### Variant: empty
+
+Blur or Continue on an empty name shows **Enter your name** (`name.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup empty](images/setup-name-empty.png)
+
+### Variant: long
+
+A name longer than 80 characters after trim shows **Name must be 1–80 characters.** (`name.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup long](images/setup-name-long.png)
+
+### Variant: controls
+
+A name that includes a control character shows **Name cannot include control characters.** (`name.errorControls`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup controls](images/setup-name-controls.png)
+
+### Variant: request
+
+When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts name setup request](images/setup-name-request.png)
+
 ## Screen: /setup/username
 
 - **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
@@ -420,6 +444,30 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
 
+### Variant: empty
+
+Blur or Continue on an empty username shows **Enter a username** (`setup.usernameEmpty`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup empty](images/setup-username-empty.png)
+
+### Variant: invalid
+
+A username outside the handle rule, including the same sentence from the server shows **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** (`setup.usernameInvalid`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup invalid](images/setup-username-invalid.png)
+
+### Variant: taken
+
+When POST /me/username answers 409 Username is already in use, the form shows **That username is already taken** (`setup.usernameTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again.
+
+![21.gifts username setup taken](images/setup-username-taken.png)
+
+### Variant: request
+
+When POST /me/username answers 500, the form shows **Could not save your username** (`setup.usernameRequest`). **Continue** stays available.
+
+![21.gifts username setup request](images/setup-username-request.png)
+
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — after username (`account.setup === 'address'`). Name may already be saved or skipped; username is required.
@@ -431,6 +479,48 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts address setup](images/setup-address.png)
+
+### Variant: empty
+
+Blur or Continue on an empty Wallet of Satoshi address shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup empty](images/setup-address-empty.png)
+
+### Variant: long
+
+An address longer than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup long](images/setup-address-long.png)
+
+### Variant: format
+
+An address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup format](images/setup-address-format.png)
+
+### Variant: taken
+
+When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup taken](images/setup-address-taken.png)
+
+### Variant: not-found
+
+When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup not found](images/setup-address-not-found.png)
+
+### Variant: not-zap
+
+When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Continue** stays disabled until the draft changes. Restoring the blocked address locks again. **Skip** stays available.
+
+![21.gifts address setup not zap](images/setup-address-not-zap.png)
+
+### Variant: request
+
+When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts address setup request](images/setup-address-request.png)
 
 ## Screen: /setup/rules
 
@@ -1494,9 +1584,9 @@ After **Stall** was confirmed and the dialog closed, **Add a place** was pressed
 
 ### Variant: composer-place-pending
 
-**Add a place** is open as a dialog, the key has arrived, and the map script has not loaded. The
-place name field and disabled **Use this place** control are visible while the frame is empty. A
-failed script or rejected key shows the same unavailable state as `composer-place`.
+**Add a place** is open as a dialog, the key has arrived, and the map script has not loaded.
+**Loading the map.** is where the map would be. The place name field and disabled **Use this
+place** control are visible. **The map is not available.** is not shown.
 
 ![21.gifts welcome composer place pending](images/welcome-composer-place-pending.png)
 
@@ -1890,6 +1980,66 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
+### Variant: shop-edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts welcome shop edit saving](images/welcome-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing](images/welcome-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing place](images/welcome-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing text](images/welcome-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing user](images/welcome-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing summary](images/welcome-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts welcome shop edit history loading](images/welcome-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts welcome shop edit save error](images/welcome-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts welcome shop edit history error](images/welcome-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts welcome shop edit place map loading](images/welcome-shop-edit-place-map-loading.png)
+
 ## Screen: /[npub]
 
 - **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
@@ -2153,6 +2303,66 @@ stays selected.
 
 ![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
 
+### Variant: map-edit-saving
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit saving](images/shops-map-edit-saving.png)
+
+### Variant: map-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing](images/shops-map-edit-photo-preparing.png)
+
+### Variant: map-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing place](images/shops-map-edit-photo-preparing-place.png)
+
+### Variant: map-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing text](images/shops-map-edit-photo-preparing-text.png)
+
+### Variant: map-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing user](images/shops-map-edit-photo-preparing-user.png)
+
+### Variant: map-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing summary](images/shops-map-edit-photo-preparing-summary.png)
+
+### Variant: map-edit-history-loading
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history loading](images/shops-map-edit-history-loading.png)
+
+### Variant: map-edit-save-error
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit save error](images/shops-map-edit-save-error.png)
+
+### Variant: map-edit-history-error
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history error](images/shops-map-edit-history-error.png)
+
+### Variant: map-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Map** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit place map loading](images/shops-map-edit-place-map-loading.png)
+
 ### Variant: map-edit-load-failed
 
 A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did not load. The alert **Could not load this shop note** is visible. The editor is not open. **Map** stays selected. No second **Map** heading.
@@ -2369,6 +2579,66 @@ inconclusive, then the API rejected the account update. The editor returns to st
 21.gifts username.** **Table** stays selected.
 
 ![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
+
+### Variant: table-edit-saving
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit saving](images/shops-table-edit-saving.png)
+
+### Variant: table-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing](images/shops-table-edit-photo-preparing.png)
+
+### Variant: table-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing place](images/shops-table-edit-photo-preparing-place.png)
+
+### Variant: table-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing text](images/shops-table-edit-photo-preparing-text.png)
+
+### Variant: table-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing user](images/shops-table-edit-photo-preparing-user.png)
+
+### Variant: table-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing summary](images/shops-table-edit-photo-preparing-summary.png)
+
+### Variant: table-edit-history-loading
+
+A moderator opened **Edit shop note** on **Table**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history loading](images/shops-table-edit-history-loading.png)
+
+### Variant: table-edit-save-error
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit save error](images/shops-table-edit-save-error.png)
+
+### Variant: table-edit-history-error
+
+A moderator opened **Edit shop note** on **Table**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history error](images/shops-table-edit-history-error.png)
+
+### Variant: table-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Table** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit place map loading](images/shops-table-edit-place-map-loading.png)
 
 ### Variant: add-photos
 
@@ -2668,9 +2938,10 @@ the pin and **Use this place**. **Next** stays enabled. The shop list is still e
 
 ### Variant: composer-place-pending
 
-**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and the
-map script has not loaded. The **Shop name** field and disabled **Use this place** control are
-visible while the frame is empty. A failed script or rejected key shows the unavailable state.
+**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and
+the map script has not loaded. **Loading the map.** is where the map would be. The **Shop name**
+field and disabled **Use this place** control are visible. **The map is not available.** is not
+shown. The shop list is still empty.
 
 ![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
 
@@ -2825,6 +3096,54 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ![21.gifts shops edit save error](images/shops-edit-save-error.png)
 
+### Variant: edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts shops edit saving](images/shops-edit-saving.png)
+
+### Variant: edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts shops edit photo preparing](images/shops-edit-photo-preparing.png)
+
+### Variant: edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing place](images/shops-edit-photo-preparing-place.png)
+
+### Variant: edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing text](images/shops-edit-photo-preparing-text.png)
+
+### Variant: edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing user](images/shops-edit-photo-preparing-user.png)
+
+### Variant: edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts shops edit photo preparing summary](images/shops-edit-photo-preparing-summary.png)
+
+### Variant: edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts shops edit history loading](images/shops-edit-history-loading.png)
+
+### Variant: edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts shops edit place map loading](images/shops-edit-place-map-loading.png)
+
 ### Variant: edit-save-rejected
 
 A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
@@ -2897,6 +3216,12 @@ map frame is visible and **Use this place** is pinned and disabled because the m
 clicked yet.
 
 ![21.gifts shops staff place map](images/shops-staff-place-map.png)
+
+### Variant: staff-place-map-loading
+
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog. The map key has not returned. **Loading the map.** is where the map frame would be. **The map is not available.** is not shown. **Tap the map to set the pin.** is not shown. **Use this place** is disabled.
+
+![21.gifts shops staff place map loading](images/shops-staff-place-map-loading.png)
 
 ### Variant: staff-place-confirm
 
@@ -3711,6 +4036,66 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
 
+### Variant: shop-edit-saving
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts member shop edit saving](images/members-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts member shop edit photo preparing](images/members-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing place](images/members-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing text](images/members-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing user](images/members-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts member shop edit photo preparing summary](images/members-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts member shop edit history loading](images/members-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts member shop edit save error](images/members-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts member shop edit history error](images/members-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts member shop edit place map loading](images/members-shop-edit-place-map-loading.png)
+
 ## Screen: /members/[accountId]/verify
 
 - **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
@@ -4111,6 +4496,18 @@ Owner in the About me textarea editor. From the empty CTA, click **Write your Ab
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 
+### Variant: about-long
+
+The About me editor is open with more than 8000 characters shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me long](images/profile-about-long.png)
+
+### Variant: about-controls
+
+The About me editor is open with a control character shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me controls](images/profile-about-controls.png)
+
 ### Variant: about-banner-crop
 
 About me editor with the wide-image cropper in the profile header. From the empty CTA, **Write your About me**, then a square portrait on the header input `profile-banner`. The labeled **Add a wide image** is replaced by the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). **Add a profile photo** stays. The editor shows only **Add a photo**. Needle `state-profile-about-banner-crop`.
@@ -4152,6 +4549,90 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 Notifications section with `role="alert"` after clicking On on the This device pill when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
+### Variant: name-empty
+
+The name editor is open and the field is cleared shows **Enter your name** (`name.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name empty](images/profile-name-empty.png)
+
+### Variant: name-long
+
+The name editor is open with a name longer than 80 characters shows **Name must be 1–80 characters.** (`name.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name long](images/profile-name-long.png)
+
+### Variant: name-controls
+
+The name editor is open with a control character in the name shows **Name cannot include control characters.** (`name.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name controls](images/profile-name-controls.png)
+
+### Variant: name-request
+
+The name editor is open. When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile name request](images/profile-name-request.png)
+
+### Variant: location-long
+
+The location editor is open with more than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location long](images/profile-location-long.png)
+
+### Variant: location-controls
+
+The location editor is open with a control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location controls](images/profile-location-controls.png)
+
+### Variant: location-request
+
+The location editor is open. When POST /me/location answers 500, the form shows **Could not save your location** (`location.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile location request](images/profile-location-request.png)
+
+### Variant: address-empty
+
+The address editor is open and the field is cleared shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address empty](images/profile-address-empty.png)
+
+### Variant: address-long
+
+The address editor is open with more than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address long](images/profile-address-long.png)
+
+### Variant: address-format
+
+The address editor is open with an address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address format](images/profile-address-format.png)
+
+### Variant: address-taken
+
+The address editor is open. When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address taken](images/profile-address-taken.png)
+
+### Variant: address-not-found
+
+The address editor is open. When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address not found](images/profile-address-not-found.png)
+
+### Variant: address-not-zap
+
+The address editor is open. When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Save** stays disabled until the draft changes. Restoring the blocked address locks again. The alert is in the window.
+
+![21.gifts profile address not zap](images/profile-address-not-zap.png)
+
+### Variant: address-request
+
+The address editor is open. When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile address request](images/profile-address-request.png)
 
 ## Screen: /grants
 
@@ -4470,6 +4951,18 @@ Verified username joey-rosima with status none or rejected sees the first apply 
 
 ![21.gifts apply about](images/grants-apply-about.png)
 
+### Variant: about-long
+
+The first apply step is open. More than 8000 characters in About me shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about long](images/grants-apply-about-long.png)
+
+### Variant: about-controls
+
+The first apply step is open. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about controls](images/grants-apply-about-controls.png)
+
 ### Variant: sunday
 
 On Sunday the About-me step shows Writing is paused on Sunday and hides Save.
@@ -4482,11 +4975,35 @@ After a real About me, the next step asks for a photo.
 
 ![21.gifts apply photo](images/profile-apply-photo.png)
 
+### Variant: photo-long
+
+The photo step is open after a real About me. More than 8000 characters in the editor shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo long](images/profile-apply-photo-long.png)
+
+### Variant: photo-controls
+
+The photo step is open after a real About me. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo controls](images/profile-apply-photo-controls.png)
+
 ### Variant: location
 
 After About me and a photo, the next step asks for the place you live.
 
 ![21.gifts apply location](images/profile-apply-location.png)
+
+### Variant: location-long
+
+The location step is open. More than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location long](images/profile-apply-location-long.png)
+
+### Variant: location-controls
+
+The location step is open. A control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location controls](images/profile-apply-location-controls.png)
 
 ### Variant: question
 
@@ -5674,6 +6191,66 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts public message shop edit saving](images/messages-id-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing](images/messages-id-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing place](images/messages-id-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing text](images/messages-id-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing user](images/messages-id-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing summary](images/messages-id-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts public message shop edit history loading](images/messages-id-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts public message shop edit save error](images/messages-id-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts public message shop edit history error](images/messages-id-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts public message shop edit place map loading](images/messages-id-shop-edit-place-map-loading.png)
 
 ### Variant: sunday
 

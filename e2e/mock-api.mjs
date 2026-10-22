@@ -430,6 +430,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const accountByUsernameMatch = /^\/accounts\/by-username\/([^/]+)$/.exec(pathName);
+  if (method === 'GET' && accountByUsernameMatch !== null) {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const username = decodeURIComponent(accountByUsernameMatch[1]).toLowerCase();
+    const known = [
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+      { id: 'acc-adam', username: 'adam', name: 'Adam' },
+      { id: 'acc-ben', username: 'ben', name: 'Ben' },
+      { id: 'acc-ashton', username: 'ashton', name: 'Ashton' },
+      { id: 'acc-astrid', username: 'astrid', name: 'Astrid' },
+    ];
+    const account = known.find((row) => row.username === username);
+    if (account === undefined) {
+      json(res, 404, { error: 'No account with that username' });
+      return;
+    }
+    json(res, 200, account);
+    return;
+  }
+
   const shortLinkMatch = pathName.match(/^\/links\/([0-9a-f]{8})$/i);
   if (method === 'GET' && shortLinkMatch) {
     const code = shortLinkMatch[1].toLowerCase();
