@@ -193,6 +193,13 @@ test('Function: HomeShops leaves only All when activities are missing', async ({
   await expect(activityMenu.getByRole('option', { name: 'All', exact: true })).toBeVisible();
 });
 
+test('Function: FilterMenu opens the blockchain list', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+  await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
+});
+
 test('legal page is reachable', async ({ page }) => {
   await page.goto('/legal');
   await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();

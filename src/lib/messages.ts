@@ -1224,6 +1224,13 @@ const en = {
     'Choosing Monthly also shows Weekly and Daily. Choosing Weekly also shows Daily.',
   'homeShops.csv': 'Download CSV',
   'homeShops.colUrl': 'URL',
+  'homeShops.zoomIn': 'Zoom in',
+  'homeShops.zoomOut': 'Zoom out',
+  'homeShops.resetBearing': 'Reset bearing to north',
+  'homeShops.toggleAttribution': 'Toggle attribution',
+  'homeShops.mapFeedback': 'Map feedback',
+  'homeShops.closePopup': 'Close popup',
+  'homeShops.mapTitle': 'Map',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -2485,6 +2492,13 @@ const de = {
     'Monatlich zeigt auch Wöchentlich und Täglich. Wöchentlich zeigt auch Täglich.',
   'homeShops.csv': 'CSV herunterladen',
   'homeShops.colUrl': 'URL',
+  'homeShops.zoomIn': 'Hineinzoomen',
+  'homeShops.zoomOut': 'Herauszoomen',
+  'homeShops.resetBearing': 'Norden ausrichten',
+  'homeShops.toggleAttribution': 'Quellenangabe ein- oder ausblenden',
+  'homeShops.mapFeedback': 'Karten-Feedback',
+  'homeShops.closePopup': 'Popup schließen',
+  'homeShops.mapTitle': 'Karte',
 } satisfies Messages;
 
 const es = {
@@ -3713,6 +3727,13 @@ const es = {
     'Mensual también muestra Semanal y Diario. Semanal también muestra Diario.',
   'homeShops.csv': 'Descargar CSV',
   'homeShops.colUrl': 'URL',
+  'homeShops.zoomIn': 'Acercar',
+  'homeShops.zoomOut': 'Alejar',
+  'homeShops.resetBearing': 'Orientar al norte',
+  'homeShops.toggleAttribution': 'Mostrar u ocultar la atribución',
+  'homeShops.mapFeedback': 'Comentarios del mapa',
+  'homeShops.closePopup': 'Cerrar el popup',
+  'homeShops.mapTitle': 'Mapa',
 } satisfies Messages;
 
 const fil = {
@@ -4951,6 +4972,13 @@ const fil = {
     'Kasama sa Buwanan ang Lingguhan at Araw-araw. Kasama sa Lingguhan ang Araw-araw.',
   'homeShops.csv': 'I-download ang CSV',
   'homeShops.colUrl': 'URL',
+  'homeShops.zoomIn': 'I-zoom in',
+  'homeShops.zoomOut': 'I-zoom out',
+  'homeShops.resetBearing': 'Ituro sa hilaga',
+  'homeShops.toggleAttribution': 'Ipakita o itago ang attribution',
+  'homeShops.mapFeedback': 'Feedback sa mapa',
+  'homeShops.closePopup': 'Isara ang popup',
+  'homeShops.mapTitle': 'Mapa',
 } satisfies Messages;
 
 /**

@@ -5141,3 +5141,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Translated labels from the server page, including the CSV button label and the URL column label. Place and filter data come from the public map API after mount. Filters are loaded once, before the first places request. Places reload when country, name, blockchain, or asset changes. Activity filters the places already loaded.
 - **Returns / side effects:** A section element. Fetches the place list in the browser. Downloads a CSV of the visible rows when the visitor asks and at least one row is visible. No server write.
 - **Used by:** The marketing page at `/`.
+
+## Function: FilterMenu
+
+- **Purpose:** Custom listbox for one homepage shop filter. Blockchain, Asset, and Activity use it. Country and Name stay native selects. The Map/Table control is not this component.
+- **Inputs:** A visible label, the committed value, the All label, the options, and a change handler. An option may carry a decorative swatch.
+- **Returns / side effects:** A combobox button and, while open, a listbox. Choosing an option commits that value and closes the list. No network request.
+- **Used by:** HomeShops on the marketing page at `/`.

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { PwaInstall } from '@/components/PwaInstall';
 import { HappylandSection } from '@/components/HappylandSection';
-import { HomeShops } from '@/components/HomeShops';
+import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
@@ -85,6 +85,13 @@ export default async function Home(): Promise<ReactElement> {
           idleHelp: t('homeShops.idleHelp'),
           noneHelp: t('homeShops.noneHelp'),
           hierarchy: t('homeShops.hierarchy'),
+          zoomIn: t('homeShops.zoomIn'),
+          zoomOut: t('homeShops.zoomOut'),
+          resetBearing: t('homeShops.resetBearing'),
+          toggleAttribution: t('homeShops.toggleAttribution'),
+          mapFeedback: t('homeShops.mapFeedback'),
+          closePopup: t('homeShops.closePopup'),
+          mapTitle: t('homeShops.mapTitle'),
           csv: t('homeShops.csv'),
           colUrl: t('homeShops.colUrl'),
         }}

@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type {
-  ChangeEvent,
-  KeyboardEvent as ReactKeyboardEvent,
-  MouseEvent as ReactMouseEvent,
-  ReactElement,
-} from 'react';
+import type { ChangeEvent, ReactElement } from 'react';
 import { CircleHelp } from 'lucide-react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { FilterMenu, type MenuOption } from './FilterMenu';
 
 type HomeShopsCopy = {
   title: string;
@@ -46,6 +43,13 @@ type HomeShopsCopy = {
   idleHelp: string;
   noneHelp: string;
   hierarchy: string;
+  zoomIn: string;
+  zoomOut: string;
+  resetBearing: string;
+  toggleAttribution: string;
+  mapFeedback: string;
+  closePopup: string;
+  mapTitle: string;
 };
 
 type LngLat = [number, number];
@@ -93,8 +97,6 @@ type ShopRow = {
   coverPhotoUrl: string | null;
 };
 
-type MenuOption = { value: string; label: string; swatch: string | null };
-
 type MapHandle = {
   addControl: (control: object, position: string) => void;
   resize: () => void;
@@ -122,6 +124,7 @@ type MapLibreNamespace = {
     style: string;
     center: LngLat;
     zoom: number;
+    locale?: Record<string, string>;
   }) => MapHandle;
   NavigationControl: new () => object;
   Marker: new (options: { element: HTMLElement }) => MarkerHandle;
@@ -339,7 +342,7 @@ function activityMatches(activity: string, selected: string): boolean {
   if (selected === 'within30Days') {
     return activity === 'daily' || activity === 'within7Days' || activity === 'within30Days';
   }
-  return false;
+  return activity === selected;
 }
 
 function activityOptionLabel(token: string, copy: HomeShopsCopy): string {
@@ -507,13 +510,6 @@ function activityChoices(tokens: readonly string[], copy: HomeShopsCopy): MenuOp
   return options;
 }
 
-function selectedLabel(options: readonly MenuOption[], value: string, allLabel: string): string {
-  for (const option of options) {
-    if (option.value === value) return option.label;
-  }
-  return allLabel;
-}
-
 function onTextChoice(
   event: ChangeEvent<HTMLSelectElement>,
   current: string,
@@ -606,191 +602,6 @@ function isAbortError(error: unknown): boolean {
   return isRecord(error) && error['name'] === 'AbortError';
 }
 
-function inMenu(target: EventTarget | null, menuId: string): boolean {
-  if (!(target instanceof Element)) return false;
-  return target.closest(`[data-shops-menu="${menuId}"]`) !== null;
-}
-
-function FilterMenu({
-  label,
-  value,
-  allLabel,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  allLabel: string;
-  options: readonly MenuOption[];
-  onChange: (next: string) => void;
-}): ReactElement {
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const menuId = useId();
-  const labelId = useId();
-  const listboxId = useId();
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    function onPointerDown(event: MouseEvent): void {
-      if (inMenu(event.target, menuId)) return;
-      setOpen(false);
-    }
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key !== 'Escape') return;
-      setOpen(false);
-    }
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open, menuId]);
-
-  function optionDomId(index: number): string {
-    return `${listboxId}-option-${String(index)}`;
-  }
-
-  function highlightIndex(): number {
-    let index = 0;
-    let cursor = 0;
-    for (const option of options) {
-      if (option.value === value) index = cursor;
-      cursor += 1;
-    }
-    return index;
-  }
-
-  function clampIndex(next: number): number {
-    if (next < 0) return 0;
-    const last = options.length - 1;
-    if (next > last) return last;
-    return next;
-  }
-
-  function valueAt(index: number): string {
-    let chosen = '';
-    let cursor = 0;
-    for (const option of options) {
-      if (cursor === index) chosen = option.value;
-      cursor += 1;
-    }
-    return chosen;
-  }
-
-  function focusTrigger(): void {
-    (triggerRef.current as HTMLButtonElement).focus();
-  }
-
-  function openAtCurrent(): void {
-    setActiveIndex(highlightIndex());
-    setOpen(true);
-  }
-
-  function commit(next: string): void {
-    if (next !== value) onChange(next);
-    setOpen(false);
-    focusTrigger();
-  }
-
-  function choose(event: ReactMouseEvent<HTMLButtonElement>, next: string): void {
-    event.stopPropagation();
-    commit(next);
-  }
-
-  function toggle(): void {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    openAtCurrent();
-  }
-
-  function move(delta: number): void {
-    setActiveIndex(clampIndex(activeIndex + delta));
-  }
-
-  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (!open) {
-        openAtCurrent();
-        return;
-      }
-      move(event.key === 'ArrowDown' ? 1 : -1);
-      return;
-    }
-    if (event.key === 'Home' || event.key === 'End') {
-      if (!open) return;
-      event.preventDefault();
-      setActiveIndex(event.key === 'Home' ? 0 : options.length - 1);
-      return;
-    }
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!open) {
-        openAtCurrent();
-        return;
-      }
-      commit(valueAt(activeIndex));
-      return;
-    }
-    if (event.key === 'Escape') {
-      if (!open) return;
-      setOpen(false);
-      focusTrigger();
-    }
-  }
-
-  const optionClass = 'min-h-11 min-w-11 border-0 bg-transparent p-0 text-left font-inherit';
-
-  return (
-    <div data-shops-menu={menuId}>
-      <span id={labelId}>{label}</span>
-      <button
-        ref={triggerRef}
-        type="button"
-        role="combobox"
-        className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
-        aria-controls={listboxId}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-labelledby={labelId}
-        {...(open ? { 'aria-activedescendant': optionDomId(activeIndex) } : {})}
-        onClick={toggle}
-        onKeyDown={onTriggerKeyDown}
-      >
-        {selectedLabel(options, value, allLabel)}
-      </button>
-      {open ? (
-        <div role="listbox" id={listboxId} aria-labelledby={labelId}>
-          {options.map((option, index) => (
-            <button
-              key={option.value === '' ? 'all' : option.value}
-              id={optionDomId(index)}
-              type="button"
-              role="option"
-              tabIndex={-1}
-              aria-selected={option.value === value}
-              className={index === activeIndex ? `${optionClass} is-active` : optionClass}
-              onClick={(event) => {
-                event.stopPropagation();
-                choose(event, option.value);
-              }}
-            >
-              {option.swatch === null ? null : <span className={option.swatch} />}
-              {option.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /**
  * Renders the homepage shop filters with map and table views.
  *
@@ -822,16 +633,22 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   const blockchainActive = blockchainOptions.includes(blockchain) ? blockchain : '';
   const assetOptions = assetsFor(provider, blockchainActive);
   const assetActive = assetOptions.includes(asset) ? asset : '';
+  const countries = filters === null ? [] : filters.countries;
+  const shopNames = filters === null ? [] : filters.shopNames;
+  const activities = filters === null ? [] : filters.activities;
+  const countryActive = countries.includes(country) ? country : '';
+  const shopNameActive = shopNames.includes(shopName) ? shopName : '';
+  const activityActive = activities.includes(activity) ? activity : '';
   const selection: Selection = {
-    country,
-    shopName,
+    country: countryActive,
+    shopName: shopNameActive,
     blockchain: blockchainActive,
     asset: assetActive,
-    activity,
+    activity: activityActive,
   };
   const query = placesQuery({
-    country,
-    shopName,
+    country: countryActive,
+    shopName: shopNameActive,
     blockchain: blockchainActive,
     asset: assetActive,
   });
@@ -876,10 +693,25 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   }
 
   const assetKey = assetOptions.join('\u0000');
+  const countryKey = countries.join('\u0000');
+  const shopNameKey = shopNames.join('\u0000');
+  const activityKey = activities.join('\u0000');
 
   useEffect(() => {
     if (asset !== '' && !assetKey.split('\u0000').includes(asset)) setAsset('');
   }, [asset, assetKey]);
+
+  useEffect(() => {
+    if (country !== '' && !countryKey.split('\u0000').includes(country)) setCountry('');
+  }, [country, countryKey]);
+
+  useEffect(() => {
+    if (shopName !== '' && !shopNameKey.split('\u0000').includes(shopName)) setShopName('');
+  }, [shopName, shopNameKey]);
+
+  useEffect(() => {
+    if (activity !== '' && !activityKey.split('\u0000').includes(activity)) setActivity('');
+  }, [activity, activityKey]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -996,6 +828,15 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           style: TILE_STYLE,
           center: HOME_CENTER,
           zoom: HOME_ZOOM,
+          locale: {
+            'NavigationControl.ZoomIn': copy.zoomIn,
+            'NavigationControl.ZoomOut': copy.zoomOut,
+            'NavigationControl.ResetBearing': copy.resetBearing,
+            'AttributionControl.ToggleAttribution': copy.toggleAttribution,
+            'AttributionControl.MapFeedback': copy.mapFeedback,
+            'Popup.Close': copy.closePopup,
+            'Map.Title': copy.mapTitle,
+          },
         });
         map.addControl(new lib.NavigationControl(), 'top-right');
         sessionRef.current = { map, lib };
@@ -1057,11 +898,15 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
     };
-  }, []);
-
-  const countries = filters === null ? [] : filters.countries;
-  const shopNames = filters === null ? [] : filters.shopNames;
-  const activities = filters === null ? [] : filters.activities;
+  }, [
+    copy.zoomIn,
+    copy.zoomOut,
+    copy.resetBearing,
+    copy.toggleAttribution,
+    copy.mapFeedback,
+    copy.closePopup,
+    copy.mapTitle,
+  ]);
 
   function retryFilters(): void {
     setAttempt((current) => current + 1);
@@ -1114,8 +959,8 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             {copy.country}
             <select
               className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
-              value={country}
-              onChange={(event) => onTextChoice(event, country, setCountry)}
+              value={countryActive}
+              onChange={(event) => onTextChoice(event, countryActive, setCountry)}
             >
               <option value="">{copy.all}</option>
               {countries.map((item) => (
@@ -1129,8 +974,8 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             {copy.name}
             <select
               className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
-              value={shopName}
-              onChange={(event) => onTextChoice(event, shopName, setShopName)}
+              value={shopNameActive}
+              onChange={(event) => onTextChoice(event, shopNameActive, setShopName)}
             >
               <option value="">{copy.all}</option>
               {shopNames.map((item) => (
@@ -1156,19 +1001,20 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           />
           <FilterMenu
             label={copy.activity}
-            value={activity}
+            value={activityActive}
             allLabel={copy.all}
             options={activityChoices(activities, copy)}
             onChange={setActivity}
           />
-          <button
+          <IconButton
             type="button"
             aria-label={copy.helpLabel}
             popoverTarget={helpId}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center"
+            variant="primary"
+            size="md"
           >
             <CircleHelp aria-hidden="true" className="h-4 w-4" />
-          </button>
+          </IconButton>
           <div className="basis-full">
             <div
               role="group"
@@ -1202,35 +1048,35 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           <dl>
             <div>
               <dt>
-                <span className="shop-place-marker is-daily" />
+                <span className="shop-place-marker is-daily" aria-hidden="true" />
                 {copy.daily}
               </dt>
               <dd>{copy.dailyHelp}</dd>
             </div>
             <div>
               <dt>
-                <span className="shop-place-marker is-weekly" />
+                <span className="shop-place-marker is-weekly" aria-hidden="true" />
                 {copy.weekly}
               </dt>
               <dd>{copy.weeklyHelp}</dd>
             </div>
             <div>
               <dt>
-                <span className="shop-place-marker is-monthly" />
+                <span className="shop-place-marker is-monthly" aria-hidden="true" />
                 {copy.monthly}
               </dt>
               <dd>{copy.monthlyHelp}</dd>
             </div>
             <div>
               <dt>
-                <span className="shop-place-marker is-idle" />
+                <span className="shop-place-marker is-idle" aria-hidden="true" />
                 {copy.idle}
               </dt>
               <dd>{copy.idleHelp}</dd>
             </div>
             <div>
               <dt>
-                <span className="shop-place-marker is-none" />
+                <span className="shop-place-marker is-none" aria-hidden="true" />
                 {copy.none}
               </dt>
               <dd>{copy.noneHelp}</dd>
@@ -1255,9 +1101,9 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           className="h-[28rem] min-h-[28rem] w-full"
         />
         <div hidden={view !== 'table'}>
-          <button type="button" className="min-h-11" onClick={downloadCsv}>
+          <Button type="button" onClick={downloadCsv}>
             {copy.csv}
-          </button>
+          </Button>
           <div hidden={view !== 'table'} className="w-full min-w-0 max-w-full">
             <table className="w-full table-fixed">
               <thead>

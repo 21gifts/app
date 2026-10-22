@@ -1590,6 +1590,9 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
+      timeout: 20_000,
+    });
     await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
@@ -1688,6 +1691,29 @@ test.describe('screen baselines', () => {
       page.getByText('At least 5 days with a payment within the last 7 days.'),
     ).toBeVisible();
     await shotScreen(page, 'state-root-shops-help');
+  });
+
+  test('state / shops-loading', async ({ page }) => {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/filters') {
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
+    await expect(page.getByText('The place list could not be loaded.')).toHaveCount(0);
+    await expect(page.getByText('No locations published yet.')).toHaveCount(0);
+    await expect(page.locator('#shop-places-map')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-loading', true, page.locator('#shop-places-map'));
   });
 
   test('state / shops-error', async ({ page }) => {

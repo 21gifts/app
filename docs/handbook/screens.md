@@ -65,6 +65,12 @@ Table is selected. The button What the activity words mean is open and shows At 
 
 ![21.gifts home shops help](images/root-shops-help.png)
 
+### Variant: shops-loading
+
+The filter request has not finished. Map stays selected. The place-list error is not visible. No locations published yet is not visible. The map pane is visible and masked.
+
+![21.gifts home shops loading](images/root-shops-loading.png)
+
 ### Variant: shops-error
 
 The filter response is status 500. Map stays selected. The alert says The place list could not be loaded. Try again is visible. No locations published yet is not visible. The map is masked.

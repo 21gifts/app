@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within, fireEvent, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HomeShops } from '@/components/HomeShops';
+import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { getCatalog } from '@/lib/messages';
 
 const messages = getCatalog('en');
@@ -40,6 +40,13 @@ const copy = {
   idleHelp: messages['homeShops.idleHelp'],
   noneHelp: messages['homeShops.noneHelp'],
   hierarchy: messages['homeShops.hierarchy'],
+  zoomIn: messages['homeShops.zoomIn'],
+  zoomOut: messages['homeShops.zoomOut'],
+  resetBearing: messages['homeShops.resetBearing'],
+  toggleAttribution: messages['homeShops.toggleAttribution'],
+  mapFeedback: messages['homeShops.mapFeedback'],
+  closePopup: messages['homeShops.closePopup'],
+  mapTitle: messages['homeShops.mapTitle'],
 };
 
 const PROD_PLACES = 'https://api.opencryptopay.io/map/places';
@@ -94,6 +101,7 @@ type MapOptions = {
   style: string;
   center: [number, number];
   zoom: number;
+  locale?: Record<string, string>;
 };
 
 type LibDouble = {
@@ -576,9 +584,15 @@ describe('HomeShops', () => {
     expect(menuButton(copy.blockchain).className).toBe(
       'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
     );
-    expect(screen.getByRole('button', { name: copy.csv, hidden: true }).className).toBe('min-h-11');
+    const csv = screen.getByRole('button', { name: copy.csv, hidden: true });
+    expect(csv.className).toContain('min-h-11');
+    expect(csv.getAttribute('type')).toBe('button');
     const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
-    expect(help.className).toBe('inline-flex min-h-11 min-w-11 items-center justify-center');
+    const helpPopover = help.getAttribute('popovertarget') ?? help.getAttribute('popoverTarget');
+    expect(helpPopover).not.toBeNull();
+    expect(help.className).toContain('h-11');
+    expect(help.className).toContain('w-11');
+    expect(help.className).toContain('bg-app-btn');
     expect(help.textContent).not.toContain('?');
     const viewGroup = screen.getByRole('group', { name: copy.view });
     expect(viewGroup.getAttribute('style')).toBeNull();
@@ -1211,7 +1225,7 @@ describe('HomeShops', () => {
     }
   });
 
-  it('filters activity on the client and keeps unknown choices out of the rows', async () => {
+  it('filters activity on the client and shows a place for a listed unknown token', async () => {
     const filters = basicFilters({
       activities: [
         ' daily ',
@@ -1256,13 +1270,20 @@ describe('HomeShops', () => {
     ]);
     const menu = screen.getByRole('listbox');
     const daily = within(menu).getByRole('option', { name: copy.daily });
-    expect(daily.querySelector('.shop-place-marker.is-daily')).toBeTruthy();
+    const dailySwatch = daily.querySelector('.shop-place-marker.is-daily');
+    expect(dailySwatch).toBeTruthy();
+    expect(dailySwatch?.getAttribute('aria-hidden')).toBe('true');
     expect(
       within(menu).getByRole('option', { name: copy.all }).querySelector('.shop-place-marker'),
     ).toBe(null);
     expect(
       within(menu).getByRole('option', { name: 'weird' }).querySelector('.shop-place-marker'),
     ).toBe(null);
+    const legend = document.querySelectorAll('[popover] .shop-place-marker');
+    expect(legend).toHaveLength(5);
+    for (const swatch of legend) {
+      expect(swatch.getAttribute('aria-hidden')).toBe('true');
+    }
     chooseOption(copy.idle);
     expect(bodyNames()).toEqual(['Dee']);
     openMenu(copy.activity);
@@ -1279,8 +1300,7 @@ describe('HomeShops', () => {
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia']);
     openMenu(copy.activity);
     chooseOption('weird');
-    expect(bodyNames()).toEqual([]);
-    expect(screen.getByText(copy.empty)).toBeTruthy();
+    expect(bodyNames()).toEqual(['Fay']);
     expect(screen.queryByText(copy.error)).toBeNull();
   });
 
@@ -1539,6 +1559,15 @@ describe('HomeShops', () => {
     expect(options.container).toBe(document.getElementById('shop-places-map'));
     expect(options.style).toBe(TILE_STYLE);
     expect(options.center).toEqual(HOME_CENTER);
+    expect(options.locale).toEqual({
+      'NavigationControl.ZoomIn': copy.zoomIn,
+      'NavigationControl.ZoomOut': copy.zoomOut,
+      'NavigationControl.ResetBearing': copy.resetBearing,
+      'AttributionControl.ToggleAttribution': copy.toggleAttribution,
+      'AttributionControl.MapFeedback': copy.mapFeedback,
+      'Popup.Close': copy.closePopup,
+      'Map.Title': copy.mapTitle,
+    });
     expect(options.zoom).toBe(7);
     expect(lib.navigationCalls.count).toBe(1);
     expect(map.addControl).toHaveBeenCalledWith({}, 'top-right');
@@ -2084,6 +2113,82 @@ describe('HomeShops', () => {
     const redrawn = lib.markers[previous.length];
     if (redrawn === undefined) throw new Error('missing redrawn marker');
     expect(redrawn.remove).not.toHaveBeenCalled();
+  });
+
+  it('drops country, shop name, and activity when a reloaded filter list omits them', async () => {
+    const kept = basicFilters({
+      countries: ['PH', 'DE'],
+      shopNames: ['SPAR', 'others'],
+      activities: ['daily', 'weird'],
+    });
+    const rows = placesBody([
+      giftsPlace('Ann', { activity: 'daily', country: 'PH', shopName: 'SPAR' }),
+      giftsPlace('Fay', { activity: 'weird', country: 'PH', shopName: 'SPAR' }),
+      giftsPlace('Bea', { activity: 'daily', country: 'DE', shopName: 'others' }),
+    ]);
+    renderShops();
+    await resolveLatest(kept, rows);
+    changeSelect(countrySelect(), 'PH');
+    changeSelect(nameSelect(), 'SPAR');
+    const placesUrl = latestPlaces().url;
+    openMenu(copy.activity);
+    chooseOption('weird');
+    expect(latestPlaces().url).toBe(placesUrl);
+    expect(placesUrl).not.toContain('activity');
+    expect(placesUrl).toContain('country=PH');
+    expect(placesUrl).toContain('shopName=SPAR');
+    expect(bodyNames()).toEqual(['Fay']);
+
+    const filtersBefore = callsTo('/map/filters').length;
+    const placesBefore = callsTo('/map/places').length;
+    await fireScript('error');
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 1));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(kept, 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
+    expect(countrySelect().value).toBe('PH');
+    expect(nameSelect().value).toBe('SPAR');
+    expect(latestPlaces().url).toContain('country=PH');
+    expect(latestPlaces().url).toContain('shopName=SPAR');
+    expect(latestPlaces().url).not.toContain('activity');
+    await resolvePlaces(rows);
+    expect(bodyNames()).toEqual(['Fay']);
+
+    const placesBeforeDrop = callsTo('/map/places').length;
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 2));
+    await act(async () => {
+      latestFilters().resolve(
+        jsonResponse(
+          basicFilters({
+            countries: ['DE'],
+            shopNames: ['others'],
+            activities: ['daily'],
+          }),
+          200,
+        ),
+      );
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeDrop + 1));
+    expect(countrySelect().value).toBe('');
+    expect(nameSelect().value).toBe('');
+    expect(menuButton(copy.activity).textContent).toBe(copy.all);
+    expect(latestPlaces().url).not.toContain('country=PH');
+    expect(latestPlaces().url).not.toContain('shopName=SPAR');
+    expect(latestPlaces().url).not.toContain('shopName=others');
+    await resolvePlaces(rows);
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Fay']);
+
+    changeSelect(countrySelect(), 'DE');
+    const filtersBeforeFailure = callsTo('/map/filters').length;
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBeforeFailure + 1));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse({ countries: ['DE'] }, 500));
+    });
+    await waitFor(() => expect(countrySelect().value).toBe(''));
   });
 });
 

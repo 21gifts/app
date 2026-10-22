@@ -66,6 +66,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-loading",
+    "label": "/ shops-loading",
+    "visual": "state-root-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:shops-empty-map",
     "label": "/ shops-empty-map",
     "visual": "state-root-shops-empty-map",

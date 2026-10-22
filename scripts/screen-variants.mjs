@@ -150,6 +150,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-loading',
+    image: 'root-shops-loading.png',
+    visual: 'state-root-shops-loading',
+    needle: 'state-root-shops-loading',
+  },
+  {
+    route: '/',
     id: 'shops-empty-map',
     image: 'root-shops-empty-map.png',
     visual: 'state-root-shops-empty-map',
