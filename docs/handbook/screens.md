@@ -35,6 +35,54 @@ The shops block under the hero is on the table. Filters stay above a Map/Table c
 
 ![21.gifts home shops table](images/root-shops-table.png)
 
+### Variant: shops-blockchain
+
+The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected.
+
+![21.gifts home shops blockchain](images/root-shops-blockchain.png)
+
+### Variant: shops-asset
+
+Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected.
+
+![21.gifts home shops asset](images/root-shops-asset.png)
+
+### Variant: shops-activity
+
+The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query.
+
+![21.gifts home shops activity](images/root-shops-activity.png)
+
+### Variant: shops-help
+
+Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.
+
+![21.gifts home shops help](images/root-shops-help.png)
+
+### Variant: shops-error
+
+The filter response is status 500. Map stays selected. The alert says The place list could not be loaded. Try again is visible. No locations published yet is not visible. The map is masked.
+
+![21.gifts home shops error](images/root-shops-error.png)
+
+### Variant: shops-map-failed
+
+The MapLibre script is aborted, the same way as the behavior test. Table is selected and the load error The place list could not be loaded is visible.
+
+![21.gifts home shops map failed](images/root-shops-map-failed.png)
+
+### Variant: shops-empty-map
+
+The places response is an empty array. No locations published yet is visible. The map stays visible and is masked.
+
+![21.gifts home shops empty map](images/root-shops-empty-map.png)
+
+### Variant: shops-empty-table
+
+The places response is an empty array and Table is selected. No locations published yet is visible. There is no Sample shop row.
+
+![21.gifts home shops empty table](images/root-shops-empty-table.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.

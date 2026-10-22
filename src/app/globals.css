@@ -157,3 +157,30 @@ body {
 html[data-menu-sheet='1'] [data-scroll-page] {
   display: none !important;
 }
+
+.shop-place-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #d23b3b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.shop-place-marker.is-daily {
+  background: #ff4d00;
+}
+.shop-place-marker.is-weekly {
+  background: #ff7a29;
+}
+.shop-place-marker.is-monthly {
+  background: #ffa05c;
+}
+.shop-place-marker.is-idle {
+  background: #ffc48f;
+}
+.shop-place-marker.is-none {
+  background: #ffe3cc;
+}
+[hidden] {
+  display: none !important;
+}

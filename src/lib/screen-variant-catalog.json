@@ -24,6 +24,54 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-blockchain",
+    "label": "/ shops-blockchain",
+    "visual": "state-root-shops-blockchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-asset",
+    "label": "/ shops-asset",
+    "visual": "state-root-shops-asset",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-activity",
+    "label": "/ shops-activity",
+    "visual": "state-root-shops-activity",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-help",
+    "label": "/ shops-help",
+    "visual": "state-root-shops-help",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-error",
+    "label": "/ shops-error",
+    "visual": "state-root-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-map-failed",
+    "label": "/ shops-map-failed",
+    "visual": "state-root-shops-map-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-empty-map",
+    "label": "/ shops-empty-map",
+    "visual": "state-root-shops-empty-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-empty-table",
+    "label": "/ shops-empty-table",
+    "visual": "state-root-shops-empty-table",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/legal:default",
     "label": "/legal default",
     "visual": "screen-legal",

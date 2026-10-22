@@ -1625,6 +1625,115 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-table');
   });
 
+  async function stubHomePlacesEmpty(page: Page): Promise<void> {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/places') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ places: [] }),
+          });
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+  }
+
+  test('state / shops-blockchain', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Blockchain', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-blockchain');
+  });
+
+  test('state / shops-asset', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await page.getByRole('button', { name: 'Asset', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-asset');
+  });
+
+  test('state / shops-activity', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Activity', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-activity');
+  });
+
+  test('state / shops-help', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'What the activity words mean' }).click();
+    await expect(
+      page.getByText('At least 5 days with a payment within the last 7 days.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-shops-help');
+  });
+
+  test('state / shops-error', async ({ page }) => {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/filters') {
+          await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+    await page.goto('/');
+    await expect(page.getByText('The place list could not be loaded.')).toBeVisible();
+    await expect(page.getByText('No locations published yet.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Try again', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-error', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-map-failed', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.route('https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js', (route) =>
+      route.abort(),
+    );
+    await page.goto('/');
+    await expect(page.getByText('The place list could not be loaded.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Table', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-map-failed');
+  });
+
+  test('state / shops-empty-map', async ({ page }) => {
+    await stubHomePlacesEmpty(page);
+    await page.goto('/');
+    await expect(page.getByText('No locations published yet.')).toBeVisible();
+    await expect(page.locator('#shop-places-map')).toBeVisible();
+    await shotScreen(page, 'state-root-shops-empty-map', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-empty-table', async ({ page }) => {
+    await stubHomePlacesEmpty(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByText('No locations published yet.')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-empty-table');
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();

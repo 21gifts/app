@@ -19,6 +19,7 @@ const copy = {
   all: messages['homeShops.all'],
   empty: messages['homeShops.empty'],
   error: messages['homeShops.error'],
+  retry: messages['homeShops.retry'],
   colName: messages['homeShops.colName'],
   colLocation: messages['homeShops.colLocation'],
   colCountry: messages['homeShops.colCountry'],
@@ -538,10 +539,48 @@ describe('HomeShops', () => {
     expect(document.getElementById('shops')).toBeTruthy();
     expect(screen.getByRole('heading', { name: copy.title })).toBeTruthy();
     expect(screen.getByText(copy.lead)).toBeTruthy();
+    const section = document.getElementById('shops');
+    if (section === null) throw new Error('missing shops');
+    expect(section.getAttribute('style')).toBeNull();
+    expect(section.querySelector('style')).toBeNull();
+    expect(section.className).toBe('bg-[#fff] text-[#272b38]');
+    expect(screen.getByRole('heading', { name: copy.title }).className).toBe(
+      'text-2xl font-semibold',
+    );
     const mapNode = document.getElementById('shop-places-map');
     if (mapNode === null) throw new Error('missing map');
+    expect(mapNode.getAttribute('style')).toBeNull();
+    expect(mapNode.className).toBe('h-[28rem] min-h-[28rem] w-full');
     expect(mapNode.hasAttribute('hidden')).toBe(false);
     expect(tableShell().hasAttribute('hidden')).toBe(true);
+    expect(countrySelect().className).toBe(
+      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
+    );
+    expect(nameSelect().className).toBe(
+      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
+    );
+    expect(menuButton(copy.blockchain).className).toBe(
+      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
+    );
+    expect(screen.getByRole('button', { name: copy.csv, hidden: true }).className).toBe('min-h-11');
+    const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
+    expect(help.className).toBe('inline-flex min-h-11 min-w-11 items-center justify-center');
+    expect(help.textContent).not.toContain('?');
+    const viewGroup = screen.getByRole('group', { name: copy.view });
+    expect(viewGroup.getAttribute('style')).toBeNull();
+    expect(viewGroup.className).toBe(
+      'inline-flex min-h-11 items-center rounded-full border border-[#ced1da] bg-[#fff] px-1',
+    );
+    const mapButton = screen.getByRole('button', { name: copy.map });
+    const tableButton = screen.getByRole('button', { name: copy.table });
+    expect(mapButton.getAttribute('style')).toBeNull();
+    expect(tableButton.getAttribute('style')).toBeNull();
+    expect(mapButton.className).toBe(
+      'min-h-11 rounded-full border-0 bg-[#272b38] px-3.5 text-white',
+    );
+    expect(tableButton.className).toBe(
+      'min-h-11 rounded-full border-0 bg-transparent px-3.5 text-[#272b38]',
+    );
     expect(screen.queryByText(copy.error)).toBeNull();
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(callsTo('/map/places')).toHaveLength(0);
@@ -559,6 +598,7 @@ describe('HomeShops', () => {
     expect(placesCall.url).not.toContain('activity');
     expect(placesCall.url).not.toContain('techProvider');
     expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
+    expect(mapScript().getAttribute('data-shops-map')).toBe('loading');
     expect(document.querySelectorAll(`link[href="${MAP_CSS}"]`)).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: copy.table }));
@@ -643,6 +683,40 @@ describe('HomeShops', () => {
     await waitFor(() => {
       expect(screen.getByText(copy.error)).toBeTruthy();
     });
+    expect(screen.queryByText(copy.empty)).toBeNull();
+  });
+
+  it('reloads filters from Try again and does not request places when that reload fails', async () => {
+    renderShops();
+    await act(async () => {
+      latestFilters().resolve(jsonResponse({ countries: [] }, 500));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(copy.error);
+    });
+    const alert = screen.getByRole('alert');
+    expect(alert.className).toBe('text-app-danger');
+    expect(screen.queryByText(copy.empty)).toBeNull();
+    expect(callsTo('/map/places')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: copy.map }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const retry = screen.getByRole('button', { name: copy.retry });
+    expect(retry.getAttribute('type')).toBe('button');
+    expect(retry.className).toBe('min-h-11');
+
+    fireEvent.click(retry);
+    await waitFor(() => {
+      expect(callsTo('/map/filters')).toHaveLength(2);
+    });
+    expect(callsTo('/map/places')).toHaveLength(0);
+    await act(async () => {
+      latestFilters().resolve(jsonResponse({ countries: [] }, 500));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(copy.error);
+    });
+    expect(callsTo('/map/places')).toHaveLength(0);
     expect(screen.queryByText(copy.empty)).toBeNull();
   });
 
@@ -764,6 +838,7 @@ describe('HomeShops', () => {
 
     fireEvent.click(button);
     const all = within(screen.getByRole('listbox')).getByRole('option', { name: copy.all });
+    expect(all.className).toContain('min-h-11');
     expect(all.querySelector('.shop-place-marker')).toBeNull();
     onParent.mockClear();
     const before = pending.length;
@@ -1062,9 +1137,10 @@ describe('HomeShops', () => {
       '21.gifts',
       copy.daily,
     ]);
-    expect(within(rowByName('Zed')).getByRole('link', { hidden: true }).getAttribute('href')).toBe(
-      `/${npub('z')}`,
-    );
+    const zedLink = within(rowByName('Zed')).getByRole('link', { hidden: true });
+    expect(zedLink.getAttribute('href')).toBe(`/${npub('z')}`);
+    expect(zedLink.className).toBe('font-medium underline underline-offset-2');
+    expect(zedLink.className).not.toContain('text-accent');
     expect(cellTexts('Ann')[1]).toBe('OnlyStreet');
     expect(cellTexts('Ann')[3]).toBe('');
     expect(within(rowByName('Ann')).getByRole('link', { hidden: true }).getAttribute('href')).toBe(
@@ -1340,7 +1416,10 @@ describe('HomeShops', () => {
       throw new Error('missing popup');
     }
     expect(linked.offset).toBe(16);
-    expect(linked.content.querySelector('a')?.getAttribute('href')).toBe(`/${npub('p')}`);
+    const popupLink = linked.content.querySelector('a');
+    expect(popupLink?.getAttribute('href')).toBe(`/${npub('p')}`);
+    expect(popupLink?.getAttribute('class')).toBe('font-medium underline underline-offset-2');
+    expect(popupLink?.getAttribute('class')).not.toContain('text-accent');
     expect(linked.content.textContent).toContain('Cafe');
     const image = linked.content.querySelector('img');
     expect(image?.getAttribute('src')).toBe('https://images.example/cover.jpg');
@@ -1469,6 +1548,7 @@ describe('HomeShops', () => {
     await waitFor(() => {
       expect(screen.getByText(copy.error)).toBeTruthy();
     });
+    expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(0);
     expect(tableShell().hasAttribute('hidden')).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(screen.getByText(copy.error)).toBeTruthy();
@@ -1485,6 +1565,7 @@ describe('HomeShops', () => {
       expect(screen.getByText(copy.error)).toBeTruthy();
     });
     expect(lib.maps).toHaveLength(0);
+    expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
     expect(tableShell().hasAttribute('hidden')).toBe(false);
   });
 
@@ -1499,6 +1580,7 @@ describe('HomeShops', () => {
     expect(screen.getByText(copy.error)).toBeTruthy();
     expect(tableShell().hasAttribute('hidden')).toBe(false);
     expect(screen.queryByText(copy.empty)).toBeNull();
+    expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
   });
 
   it('waits to resize and frame until a hidden map is shown', async () => {
@@ -1528,10 +1610,13 @@ describe('HomeShops', () => {
     renderShops();
     expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
     expect(document.querySelectorAll(`link[href="${MAP_CSS}"]`)).toHaveLength(1);
+    expect(screen.getByText(copy.error)).toBeTruthy();
+    expect(tableShell().hasAttribute('hidden')).toBe(false);
     await act(async () => {
       existing.dispatchEvent(new Event('load'));
     });
     expect(screen.getByText(copy.error)).toBeTruthy();
+    expect(existing.isConnected).toBe(true);
     cleanup();
     pending.length = 0;
     clearMapDom();
@@ -1544,6 +1629,33 @@ describe('HomeShops', () => {
     renderShops();
     expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
     expect(lib.maps).toHaveLength(1);
+    cleanup();
+    pending.length = 0;
+    clearMapDom();
+    addDecoys();
+
+    const loading = document.createElement('script');
+    loading.src = MAP_SCRIPT;
+    loading.setAttribute('data-shops-map', 'loading');
+    document.head.appendChild(loading);
+    const hidden = renderShops();
+    expect(screen.queryByText(copy.error)).toBeNull();
+    expect(tableShell().hasAttribute('hidden')).toBe(true);
+    expect(loading.isConnected).toBe(true);
+    hidden.unmount();
+    expect(loading.isConnected).toBe(true);
+    expect(loading.getAttribute('data-shops-map')).toBe('loading');
+    pending.length = 0;
+
+    renderShops();
+    expect(screen.queryByText(copy.error)).toBeNull();
+    expect(loading.getAttribute('data-shops-map')).toBe('loading');
+    const revived = installMapLibre();
+    await act(async () => {
+      loading.dispatchEvent(new Event('load'));
+    });
+    expect(revived.maps).toHaveLength(1);
+    expect(loading.isConnected).toBe(true);
   });
 
   it('does not build a map when load or error arrives after unmount', async () => {
@@ -1567,6 +1679,48 @@ describe('HomeShops', () => {
     });
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(tableShell().hasAttribute('hidden')).toBe(false);
+    expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(0);
+  });
+
+  it('keeps a visible table load error after a remount when the script is not loading and does not clear places', async () => {
+    const finished = document.createElement('script');
+    finished.src = MAP_SCRIPT;
+    document.head.appendChild(finished);
+    renderShops();
+    expect(finished.isConnected).toBe(true);
+    expect(finished.hasAttribute('data-shops-map')).toBe(false);
+    expect(screen.getByRole('button', { name: copy.table }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(tableShell().hasAttribute('hidden')).toBe(false);
+    expect(screen.getByText(copy.error)).toBeTruthy();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Kept', {})]));
+    expect(callsTo('/map/places')).toHaveLength(1);
+    expect(bodyNames()).toEqual(['Kept']);
+    expect(screen.getByText(copy.error)).toBeTruthy();
+    expect(screen.queryByText(copy.empty)).toBeNull();
+
+    cleanup();
+    pending.length = 0;
+    expect(finished.isConnected).toBe(true);
+
+    renderShops();
+    expect(finished.isConnected).toBe(true);
+    expect(finished.hasAttribute('data-shops-map')).toBe(false);
+    expect(screen.getByText(copy.error)).toBeTruthy();
+    expect(screen.queryByText(copy.empty)).toBeNull();
+    expect(tableShell().hasAttribute('hidden')).toBe(false);
+    expect(screen.getByRole('button', { name: copy.table }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    expect(mapNode.hasAttribute('hidden')).toBe(true);
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Kept', {})]));
+    expect(callsTo('/map/places')).toHaveLength(1);
+    expect(bodyNames()).toEqual(['Kept']);
+    expect(screen.getByText(copy.error)).toBeTruthy();
+    expect(screen.queryByText(copy.empty)).toBeNull();
   });
 });
 

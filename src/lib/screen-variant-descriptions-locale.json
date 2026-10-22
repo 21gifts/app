@@ -2254,6 +2254,46 @@
     "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La tabla lista solo tiendas cuyo proveedor técnico es exactamente 21.gifts y muestra Nombre, Lugar, País, Tienda, Proveedor técnico y Actividad.",
     "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts at nagpapakita ng Pangalan, Lugar, Bansa, Tindahan, Tech provider, at Aktibidad."
   },
+  "/:shops-blockchain": {
+    "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt.",
+    "es": "El bloque de tiendas bajo el héroe tiene abierta la lista Blockchain. La opción de cuadro de lista Bitcoin es visible. País, Nombre, Blockchain, Activo y Actividad siguen en ese orden, y Mapa sigue elegido.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay bukas ang listahan ng Blockchain. Nakikita ang opsyon sa listbox na Bitcoin. Nananatili ang Bansa, Pangalan, Blockchain, Asset, at Aktibidad sa ganitong ayos, at napili pa rin ang Mapa."
+  },
+  "/:shops-asset": {
+    "de": "Bitcoin ist bereits gewählt. Die Asset-Liste ist geöffnet und die Listbox-Option BTC ist sichtbar. Karte bleibt gewählt.",
+    "es": "Bitcoin ya está elegido. La lista Activo está abierta y la opción de cuadro de lista BTC es visible. Mapa sigue elegido.",
+    "fil": "Napili na ang Bitcoin. Bukas ang listahan ng Asset at nakikita ang opsyon sa listbox na BTC. Napili pa rin ang Mapa."
+  },
+  "/:shops-activity": {
+    "de": "Die Aktivitätsliste ist geöffnet und die Listbox-Option Täglich ist sichtbar. Karte bleibt gewählt. Aktivität wird nicht in der Places-Abfrage gesendet.",
+    "es": "La lista Actividad está abierta y la opción de cuadro de lista Diario es visible. Mapa sigue elegido. Actividad no se envía en la consulta de lugares.",
+    "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
+  },
+  "/:shops-help": {
+    "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist geöffnet und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
+    "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto y muestra Al menos 5 días con un pago en los últimos 7 días.",
+    "fil": "Napili ang Talaan. Bukas ang pindutang Kahulugan ng mga salita ng aktibidad at ipinapakita ang May bayad sa hindi bababa sa 5 araw sa loob ng huling 7 araw."
+  },
+  "/:shops-error": {
+    "de": "Die Filter-Antwort hat den Status 500. Karte bleibt gewählt. Der Hinweis lautet Die Standortliste konnte nicht geladen werden. Erneut versuchen ist sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Die Karte ist maskiert.",
+    "es": "La respuesta de filtros tiene el estado 500. Mapa sigue elegido. La alerta dice No se pudo cargar la lista de locales. Intentar de nuevo está visible. Aún no hay locales publicados. no está visible. El mapa está enmascarado.",
+    "fil": "Ang sagot ng filter ay status 500. Napili pa rin ang Mapa. Ang alerto ay Hindi ma-load ang listahan ng mga lokasyon. Nakikita ang Subukan ulit. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakamaskara ang mapa."
+  },
+  "/:shops-map-failed": {
+    "de": "Das MapLibre-Skript wird abgebrochen, wie im Verhaltenstest. Tabelle ist gewählt und der Ladefehler Die Standortliste konnte nicht geladen werden. ist sichtbar.",
+    "es": "El script de MapLibre se aborta, como en la prueba de comportamiento. Tabla está elegida y el error de carga No se pudo cargar la lista de locales. es visible.",
+    "fil": "Na-a-abort ang script ng MapLibre, tulad ng sa behavior test. Napili ang Talaan at nakikita ang error sa pag-load na Hindi ma-load ang listahan ng mga lokasyon."
+  },
+  "/:shops-empty-map": {
+    "de": "Die Places-Antwort ist ein leeres Array. Noch keine Standorte veröffentlicht. ist sichtbar. Die Karte bleibt sichtbar und ist maskiert.",
+    "es": "La respuesta de lugares es un array vacío. Aún no hay locales publicados. es visible. El mapa sigue visible y está enmascarado.",
+    "fil": "Ang sagot ng places ay isang walang lamang array. Nakikita ang Wala pang nailathalang lokasyon. Nanatiling nakikita ang mapa at ito ay nakamaskara."
+  },
+  "/:shops-empty-table": {
+    "de": "Die Places-Antwort ist ein leeres Array und Tabelle ist gewählt. Noch keine Standorte veröffentlicht. ist sichtbar. Es gibt keine Shop-Zeile Sample.",
+    "es": "La respuesta de lugares es un array vacío y Tabla está elegida. Aún no hay locales publicados. es visible. No hay una fila de tienda Sample.",
+    "fil": "Ang sagot ng places ay isang walang lamang array at napili ang Talaan. Nakikita ang Wala pang nailathalang lokasyon. Walang hanay ng tindahan na Sample."
+  },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, después de que falle Publicar. La vista previa permanece, con No se pudo publicar el mensaje debajo. Crédito sigue pulsado. El contador muestra 9 de 9.",

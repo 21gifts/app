@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type {
-  ChangeEvent,
-  CSSProperties,
-  MouseEvent as ReactMouseEvent,
-  ReactElement,
-} from 'react';
+import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 
 type HomeShopsCopy = {
@@ -23,6 +18,7 @@ type HomeShopsCopy = {
   all: string;
   empty: string;
   error: string;
+  retry: string;
   colName: string;
   colLocation: string;
   colCountry: string;
@@ -145,25 +141,12 @@ const BOUNDS_PADDING = 48;
 const BOUNDS_MAX_ZOOM = 12;
 const GIFTS = '21.gifts';
 
-const MARKER_CSS = [
-  '[hidden] { display: none !important; }',
-  '.shop-place-marker { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; background: #d23b3b; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }',
-  '.shop-place-marker.is-daily { background: #ff4d00; }',
-  '.shop-place-marker.is-weekly { background: #ff7a29; }',
-  '.shop-place-marker.is-monthly { background: #ffa05c; }',
-  '.shop-place-marker.is-idle { background: #ffc48f; }',
-  '.shop-place-marker.is-none { background: #ffe3cc; }',
-].join('\n');
-
-const PILL_GROUP_STYLE: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  height: '40px',
-  borderRadius: '20px',
-  border: '1px solid #ced1da',
-  background: '#fff',
-  padding: '0 4px',
-};
+function viewButtonClass(selected: boolean): string {
+  if (selected) {
+    return 'min-h-11 rounded-full border-0 bg-[#272b38] px-3.5 text-white';
+  }
+  return 'min-h-11 rounded-full border-0 bg-transparent px-3.5 text-[#272b38]';
+}
 
 function placesEndpoint(hostname: string): string {
   if (hostname === GIFTS || hostname === `www.${GIFTS}`) return PROD_PLACES;
@@ -517,20 +500,6 @@ function onTextChoice(
   apply(next);
 }
 
-function pillStyle(selected: boolean): CSSProperties {
-  if (selected) {
-    return {
-      background: '#272b38',
-      color: '#fff',
-      height: '32px',
-      borderRadius: '16px',
-      border: 0,
-      padding: '0 14px',
-    };
-  }
-  return { background: 'transparent', color: '#272b38', border: 0, padding: '0 14px' };
-}
-
 function findByUrl(tagName: 'script' | 'link', url: string): Element | null {
   const nodes = document.getElementsByTagName(tagName);
   for (const node of nodes) {
@@ -574,6 +543,7 @@ function popupContent(row: ShopRow): HTMLElement {
   } else {
     const name = document.createElement('a');
     name.href = row.href;
+    name.className = 'font-medium underline underline-offset-2';
     name.textContent = row.name;
     content.appendChild(name);
   }
@@ -661,6 +631,7 @@ function FilterMenu({
       <span id={labelId}>{label}</span>
       <button
         type="button"
+        className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-labelledby={labelId}
@@ -675,6 +646,7 @@ function FilterMenu({
               key={option.value === '' ? 'all' : option.value}
               role="option"
               aria-selected={option.value === value}
+              className="min-h-11"
               onClick={(event) => choose(event, option.value)}
             >
               {option.swatch === null ? null : <span className={option.swatch} />}
@@ -700,6 +672,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   const [asset, setAsset] = useState('');
   const [activity, setActivity] = useState('');
   const [view, setView] = useState<ShopView>('map');
+  const [attempt, setAttempt] = useState(0);
   const [filters, setFilters] = useState<Filters | null>(null);
   const [ready, setReady] = useState<Ready | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -799,7 +772,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       active = false;
       controller.abort();
     };
-  }, []);
+  }, [attempt]);
 
   useEffect(() => {
     if (filters === null) return undefined;
@@ -853,11 +826,17 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   useEffect(() => {
     let cancelled = false;
 
-    function onLoad(): void {
+    function onLoad(script: Element): void {
       if (cancelled) return;
       const lib = window.maplibregl;
       const container = document.getElementById('shop-places-map');
-      if (lib === undefined || !(container instanceof HTMLElement)) {
+      if (lib === undefined) {
+        script.remove();
+        setScriptFailed(true);
+        setView('table');
+        return;
+      }
+      if (!(container instanceof HTMLElement)) {
         setScriptFailed(true);
         setView('table');
         return;
@@ -879,10 +858,29 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       }
     }
 
-    function onError(): void {
+    function onError(script: Element): void {
       if (cancelled) return;
+      script.remove();
       setScriptFailed(true);
       setView('table');
+    }
+
+    function listen(script: Element): void {
+      script.addEventListener('load', () => {
+        onLoad(script);
+      });
+      script.addEventListener('error', () => {
+        onError(script);
+      });
+    }
+
+    function appendScript(): void {
+      const script = document.createElement('script');
+      script.src = MAP_SCRIPT_URL;
+      script.async = true;
+      script.setAttribute('data-shops-map', 'loading');
+      listen(script);
+      document.head.appendChild(script);
     }
 
     if (findByUrl('link', MAP_STYLE_URL) === null) {
@@ -892,18 +890,15 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       document.head.appendChild(link);
     }
     const existing = findByUrl('script', MAP_SCRIPT_URL);
-    if (existing === null) {
-      const script = document.createElement('script');
-      script.src = MAP_SCRIPT_URL;
-      script.async = true;
-      script.addEventListener('load', onLoad);
-      script.addEventListener('error', onError);
-      document.head.appendChild(script);
-    } else if (window.maplibregl === undefined) {
-      existing.addEventListener('load', onLoad);
-      existing.addEventListener('error', onError);
+    if (window.maplibregl !== undefined && existing !== null) {
+      onLoad(existing);
+    } else if (existing === null) {
+      appendScript();
+    } else if (existing.getAttribute('data-shops-map') === 'loading') {
+      listen(existing);
     } else {
-      onLoad();
+      setScriptFailed(true);
+      setView('table');
     }
 
     return () => {
@@ -919,6 +914,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   const countries = filters === null ? [] : filters.countries;
   const shopNames = filters === null ? [] : filters.shopNames;
   const activities = filters === null ? [] : filters.activities;
+
+  function retryFilters(): void {
+    setAttempt((current) => current + 1);
+  }
 
   function downloadCsv(): void {
     if (rows.length === 0) return;
@@ -955,15 +954,18 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   }
 
   return (
-    <section id="shops" style={{ background: '#fff', color: '#272b38' }}>
-      <style>{MARKER_CSS}</style>
+    <section id="shops" className="bg-[#fff] text-[#272b38]">
       <div className="mx-auto max-w-[1100px] px-5 py-20">
-        <h2>{copy.title}</h2>
+        <h2 className="text-2xl font-semibold">{copy.title}</h2>
         <p>{copy.lead}</p>
         <div className="flex flex-wrap items-end gap-4">
           <label>
             {copy.country}
-            <select value={country} onChange={(event) => onTextChoice(event, country, setCountry)}>
+            <select
+              className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
+              value={country}
+              onChange={(event) => onTextChoice(event, country, setCountry)}
+            >
               <option value="">{copy.all}</option>
               {countries.map((item) => (
                 <option key={item} value={item}>
@@ -975,6 +977,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           <label>
             {copy.name}
             <select
+              className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
               value={shopName}
               onChange={(event) => onTextChoice(event, shopName, setShopName)}
             >
@@ -1007,13 +1010,16 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             options={activityChoices(activities, copy)}
             onChange={setActivity}
           />
-          <div style={{ flexBasis: '100%' }}>
-            <div role="group" aria-label={copy.view} className="font-sans" style={PILL_GROUP_STYLE}>
+          <div className="basis-full">
+            <div
+              role="group"
+              aria-label={copy.view}
+              className="inline-flex min-h-11 items-center rounded-full border border-[#ced1da] bg-[#fff] px-1"
+            >
               <button
                 type="button"
                 aria-pressed={view === 'map'}
-                className="font-sans"
-                style={pillStyle(view === 'map')}
+                className={viewButtonClass(view === 'map')}
                 onClick={() => setView('map')}
               >
                 {copy.map}
@@ -1021,8 +1027,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
               <button
                 type="button"
                 aria-pressed={view === 'table'}
-                className="font-sans"
-                style={pillStyle(view === 'table')}
+                className={viewButtonClass(view === 'table')}
                 onClick={() => setView('table')}
               >
                 {copy.table}
@@ -1030,49 +1035,75 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             </div>
           </div>
         </div>
-        {showError ? <p>{copy.error}</p> : null}
+        {showError ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p role="alert" className="text-app-danger">
+              {copy.error}
+            </p>
+            <button type="button" className="min-h-11" onClick={retryFilters}>
+              {copy.retry}
+            </button>
+          </div>
+        ) : null}
         {showEmpty ? <p>{copy.empty}</p> : null}
         <div
           id="shop-places-map"
           hidden={view !== 'map'}
-          style={{ width: '100%', minHeight: '28rem', height: '28rem' }}
+          className="h-[28rem] min-h-[28rem] w-full"
         />
         <div hidden={view !== 'table'}>
-          <button type="button" onClick={downloadCsv}>
+          <button type="button" className="min-h-11" onClick={downloadCsv}>
             {copy.csv}
           </button>
-          <table>
-            <thead>
-              <tr>
-                <th>{copy.colName}</th>
-                <th>{copy.colLocation}</th>
-                <th>{copy.colCountry}</th>
-                <th>{copy.colShop}</th>
-                <th>{copy.colProvider}</th>
-                <th>
-                  {copy.colActivity}
-                  <button type="button" aria-label={copy.helpLabel} popoverTarget={helpId}>
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
-                      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" />
-                      <path d="M12 11v6M12 7.5v.5" stroke="currentColor" />
-                    </svg>
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.key}>
-                  <td>{row.href === null ? row.name : <a href={row.href}>{row.name}</a>}</td>
-                  <td>{row.location}</td>
-                  <td>{row.country}</td>
-                  <td>{row.shop}</td>
-                  <td>{row.provider}</td>
-                  <td>{row.activity}</td>
+          <div hidden={view !== 'table'} className="w-full min-w-0 max-w-full">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr>
+                  <th className="min-w-0 break-words align-top">{copy.colName}</th>
+                  <th className="min-w-0 break-words align-top">{copy.colLocation}</th>
+                  <th className="min-w-0 break-words align-top">{copy.colCountry}</th>
+                  <th className="min-w-0 break-words align-top">{copy.colShop}</th>
+                  <th className="min-w-0 break-words align-top">{copy.colProvider}</th>
+                  <th className="min-w-0 break-words align-top">
+                    <div className="flex flex-col items-start">
+                      {copy.colActivity}
+                      <button
+                        type="button"
+                        aria-label={copy.helpLabel}
+                        popoverTarget={helpId}
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center"
+                      >
+                        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
+                          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" />
+                          <path d="M12 11v6M12 7.5v.5" stroke="currentColor" />
+                        </svg>
+                      </button>
+                    </div>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.key}>
+                    <td className="min-w-0 break-words align-top">
+                      {row.href === null ? (
+                        row.name
+                      ) : (
+                        <a href={row.href} className="font-medium underline underline-offset-2">
+                          {row.name}
+                        </a>
+                      )}
+                    </td>
+                    <td className="min-w-0 break-words align-top">{row.location}</td>
+                    <td className="min-w-0 break-words align-top">{row.country}</td>
+                    <td className="min-w-0 break-words align-top">{row.shop}</td>
+                    <td className="min-w-0 break-words align-top">{row.provider}</td>
+                    <td className="min-w-0 break-words align-top">{row.activity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div id={helpId} popover="auto">
             <dl>
               <div>
