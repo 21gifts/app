@@ -1904,19 +1904,19 @@ A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is sti
 
 ### Variant: shop-edit-photo-preparing-place
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts welcome shop edit photo preparing place](images/welcome-shop-edit-photo-preparing-place.png)
 
 ### Variant: shop-edit-photo-preparing-text
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts welcome shop edit photo preparing text](images/welcome-shop-edit-photo-preparing-text.png)
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts welcome shop edit photo preparing user](images/welcome-shop-edit-photo-preparing-user.png)
 
@@ -2227,19 +2227,19 @@ A moderator opened **Edit shop note** on **Map** and chose a photo that is still
 
 ### Variant: map-edit-photo-preparing-place
 
-A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit photo preparing place](images/shops-map-edit-photo-preparing-place.png)
 
 ### Variant: map-edit-photo-preparing-text
 
-A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit photo preparing text](images/shops-map-edit-photo-preparing-text.png)
 
 ### Variant: map-edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit photo preparing user](images/shops-map-edit-photo-preparing-user.png)
 
@@ -2504,19 +2504,19 @@ A moderator opened **Edit shop note** on **Table** and chose a photo that is sti
 
 ### Variant: table-edit-photo-preparing-place
 
-A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit photo preparing place](images/shops-table-edit-photo-preparing-place.png)
 
 ### Variant: table-edit-photo-preparing-text
 
-A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit photo preparing text](images/shops-table-edit-photo-preparing-text.png)
 
 ### Variant: table-edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit photo preparing user](images/shops-table-edit-photo-preparing-user.png)
 
@@ -3020,19 +3020,19 @@ A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is sti
 
 ### Variant: edit-photo-preparing-place
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts shops edit photo preparing place](images/shops-edit-photo-preparing-place.png)
 
 ### Variant: edit-photo-preparing-text
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts shops edit photo preparing text](images/shops-edit-photo-preparing-text.png)
 
 ### Variant: edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts shops edit photo preparing user](images/shops-edit-photo-preparing-user.png)
 
@@ -3960,19 +3960,19 @@ A moderator viewing another member opened **Edit shop note** on Cafe Luna in Car
 
 ### Variant: shop-edit-photo-preparing-place
 
-A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts member shop edit photo preparing place](images/members-shop-edit-photo-preparing-place.png)
 
 ### Variant: shop-edit-photo-preparing-text
 
-A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts member shop edit photo preparing text](images/members-shop-edit-photo-preparing-text.png)
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts member shop edit photo preparing user](images/members-shop-edit-photo-preparing-user.png)
 
@@ -5984,19 +5984,19 @@ A moderator on the public top-level shop note Cafe Luna chose a photo that is st
 
 ### Variant: shop-edit-photo-preparing-place
 
-A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts public message shop edit photo preparing place](images/messages-id-shop-edit-photo-preparing-place.png)
 
 ### Variant: shop-edit-photo-preparing-text
 
-A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts public message shop edit photo preparing text](images/messages-id-shop-edit-photo-preparing-text.png)
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. There is no alert.
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts public message shop edit photo preparing user](images/messages-id-shop-edit-photo-preparing-user.png)
 
