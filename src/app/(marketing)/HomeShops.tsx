@@ -693,6 +693,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   }
 
   const assetKey = assetOptions.join('\u0000');
+  const blockchainKey = blockchainOptions.join('\u0000');
   const countryKey = countries.join('\u0000');
   const shopNameKey = shopNames.join('\u0000');
   const activityKey = activities.join('\u0000');
@@ -700,6 +701,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   useEffect(() => {
     if (asset !== '' && !assetKey.split('\u0000').includes(asset)) setAsset('');
   }, [asset, assetKey]);
+
+  useEffect(() => {
+    if (blockchain !== '' && !blockchainKey.split('\u0000').includes(blockchain)) setBlockchain('');
+  }, [blockchain, blockchainKey]);
 
   useEffect(() => {
     if (country !== '' && !countryKey.split('\u0000').includes(country)) setCountry('');
@@ -987,7 +992,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
           </label>
           <FilterMenu
             label={copy.blockchain}
-            value={blockchain}
+            value={blockchainActive}
             allLabel={copy.all}
             options={textChoices(blockchainOptions, copy.all)}
             onChange={setBlockchain}

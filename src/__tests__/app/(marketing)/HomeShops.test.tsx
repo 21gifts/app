@@ -2190,6 +2190,62 @@ describe('HomeShops', () => {
     });
     await waitFor(() => expect(countrySelect().value).toBe(''));
   });
+
+  it('drops a blockchain when a reloaded filter list omits it', async () => {
+    const rows = placesBody([giftsPlace('Ann', {})]);
+    renderShops();
+    await resolveLatest(basicFilters({}), rows);
+    openMenu(copy.blockchain);
+    chooseOption('Bitcoin');
+    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+
+    const filtersBefore = callsTo('/map/filters').length;
+    const placesBefore = callsTo('/map/places').length;
+    await fireScript('error');
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 1));
+    await act(async () => {
+      latestFilters().resolve(
+        jsonResponse(
+          basicFilters({
+            techProviders: [provider({ blockchains: ['Liquid'] })],
+          }),
+          200,
+        ),
+      );
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
+    expect(menuButton(copy.blockchain).textContent).toBe(copy.all);
+    expect(latestPlaces().url).not.toContain('blockchain=');
+    await resolvePlaces(rows);
+
+    const placesBeforeReturn = callsTo('/map/places').length;
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 2));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeReturn + 1));
+    expect(menuButton(copy.blockchain).textContent).toBe(copy.all);
+    expect(latestPlaces().url).not.toContain('blockchain=');
+    await resolvePlaces(rows);
+
+    openMenu(copy.blockchain);
+    chooseOption('Bitcoin');
+    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+
+    const placesBeforeKeep = callsTo('/map/places').length;
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 3));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeKeep + 1));
+    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+  });
 });
 
 function omitAddress(): Place {
