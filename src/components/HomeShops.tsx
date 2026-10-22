@@ -67,7 +67,7 @@ type Filters = {
   techProviders: unknown;
 };
 
-type Ready = { filters: Filters; places: Record<string, unknown>[] };
+type Ready = { filters: Filters; places: Record<string, unknown>[]; query: string };
 
 type Selection = {
   country: string;
@@ -110,6 +110,7 @@ type MarkerHandle = {
   setLngLat: (position: LngLat) => void;
   setPopup: (popup: PopupHandle) => MarkerHandle;
   addTo: (map: MapHandle) => void;
+  remove: () => void;
   getLngLat: () => { lng: number; lat: number };
 };
 
@@ -183,6 +184,14 @@ function placesQuery(input: {
 function withQuery(endpoint: string, query: string): string {
   if (query === '') return endpoint;
   return `${endpoint}?${query}`;
+}
+
+function queryCovers(loaded: string, current: string): boolean {
+  const currentParams = new URLSearchParams(current);
+  for (const [key, value] of new URLSearchParams(loaded)) {
+    if (currentParams.get(key) !== value) return false;
+  }
+  return true;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -802,7 +811,8 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   const [scriptFailed, setScriptFailed] = useState(false);
   const helpId = useId();
   const sessionRef = useRef<MapSession | null>(null);
-  const markersRef = useRef<HTMLElement[]>([]);
+  const markersRef = useRef<MarkerHandle[]>([]);
+  const awaitingRef = useRef(false);
   const rowsRef = useRef<ShopRow[]>([]);
   const failedRef = useRef(false);
   const viewRef = useRef<ShopView>('map');
@@ -819,24 +829,28 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     asset: assetActive,
     activity,
   };
-  const rows = ready === null ? [] : sortRows(buildRows(ready.places, provider, selection, copy));
-  rowsRef.current = rows;
-  failedRef.current = loadFailed || scriptFailed;
-  viewRef.current = view;
-  const showError = loadFailed || scriptFailed;
-  const showEmpty = !showError && ready !== null && rows.length === 0;
-  const rowsKey = `${loadFailed ? 1 : 0}${scriptFailed ? 1 : 0}:${JSON.stringify(rows)}`;
   const query = placesQuery({
     country,
     shopName,
     blockchain: blockchainActive,
     asset: assetActive,
   });
+  const covered = ready !== null && queryCovers(ready.query, query);
+  const rows =
+    ready !== null && covered ? sortRows(buildRows(ready.places, provider, selection, copy)) : [];
+  rowsRef.current = rows;
+  failedRef.current = loadFailed || scriptFailed;
+  viewRef.current = view;
+  awaitingRef.current = ready !== null && !covered;
+  const showError = loadFailed || scriptFailed;
+  const showEmpty = !showError && covered && rows.length === 0;
+  const rowsKey = `${loadFailed ? 1 : 0}${scriptFailed ? 1 : 0}${covered ? 1 : 0}:${JSON.stringify(rows)}`;
   function paintMarkers(): void {
     const session = sessionRef.current;
     if (session === null) return;
-    for (const node of markersRef.current) node.remove();
+    for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
+    if (awaitingRef.current) return;
     const positions = markerPositions(rowsRef.current, failedRef.current);
     if (!failedRef.current) {
       for (const row of rowsRef.current) {
@@ -855,7 +869,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         marker.setLngLat(row.position);
         marker.setPopup(new session.lib.Popup({ offset: 16 }).setDOMContent(popupContent(row)));
         marker.addTo(session.map);
-        markersRef.current.push(element);
+        markersRef.current.push(marker);
       }
     }
     if (viewRef.current === 'map') frameMap(session.map, session.lib, positions);
@@ -907,9 +921,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   useEffect(() => {
     if (filters === null) return undefined;
     const loadedFilters = filters;
+    const requestedQuery = query;
     const controller = new AbortController();
     let active = true;
-    const placesUrl = withQuery(placesEndpoint(window.location.hostname), query);
+    const placesUrl = withQuery(placesEndpoint(window.location.hostname), requestedQuery);
 
     async function loadPlaces(): Promise<void> {
       try {
@@ -923,7 +938,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         const nextPlaces = readPlaces(body);
         if (nextPlaces === null) throw new Error('load failed');
         if (!active) return;
-        setReady({ filters: loadedFilters, places: nextPlaces });
+        setReady({ filters: loadedFilters, places: nextPlaces, query: requestedQuery });
         setLoadFailed(false);
       } catch (error: unknown) {
         if (!active || isAbortError(error)) return;
@@ -948,7 +963,9 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     const showAgain = view === 'map' && !startedOnMap.current;
     if (showAgain && session !== null) {
       session.map.resize();
-      frameMap(session.map, session.lib, markerPositions(rowsRef.current, failedRef.current));
+      if (!awaitingRef.current) {
+        frameMap(session.map, session.lib, markerPositions(rowsRef.current, failedRef.current));
+      }
     }
     startedOnMap.current = view === 'map';
   }, [view]);
@@ -1037,7 +1054,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       const session = sessionRef.current;
       if (session !== null) session.map.remove();
       sessionRef.current = null;
-      for (const node of markersRef.current) node.remove();
+      for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
     };
   }, []);

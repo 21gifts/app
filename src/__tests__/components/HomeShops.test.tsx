@@ -77,6 +77,7 @@ type MarkerDouble = {
   setLngLat: ReturnType<typeof vi.fn>;
   setPopup: ReturnType<typeof vi.fn>;
   addTo: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
   getLngLat: ReturnType<typeof vi.fn>;
 };
 
@@ -454,6 +455,9 @@ function installMapLibre(): LibDouble {
       setPopup: vi.fn(() => marker),
       addTo: vi.fn(() => {
         document.body.appendChild(input.element);
+      }),
+      remove: vi.fn(() => {
+        if (input.element.parentNode !== null) input.element.remove();
       }),
       getLngLat: vi.fn(() => ({ lng: 0, lat: 0 })),
     };
@@ -1570,6 +1574,7 @@ describe('HomeShops', () => {
     pinClick.mockRestore();
     cleanup();
     expect(map.remove).toHaveBeenCalledTimes(1);
+    expect(marker.remove).toHaveBeenCalledTimes(1);
     expect(document.body.contains(marker.element)).toBe(false);
   });
 
@@ -2008,6 +2013,77 @@ describe('HomeShops', () => {
     expect(bodyNames()).toEqual(['Kept']);
     expect(screen.getByText(copy.error)).toBeTruthy();
     expect(screen.queryByText(copy.empty)).toBeNull();
+  });
+
+  it('hides a loaded country while the next country response is still missing', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({ countries: ['PH', 'DE'] }), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+    changeSelect(countrySelect(), 'PH');
+    expect(callsTo('/map/places')).toHaveLength(2);
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH`);
+    await resolvePlaces(placesBody([giftsPlace('Manila', { country: 'PH' })]));
+    await waitFor(() => {
+      expect(screen.getByText('Manila')).toBeTruthy();
+    });
+    await fireScript('load');
+    const map = firstMap(lib);
+    const marker = lib.markers[0];
+    if (marker === undefined) throw new Error('missing marker');
+    expect(marker.remove).not.toHaveBeenCalled();
+    const centerCalls = map.setCenter.mock.calls.length;
+    const zoomCalls = map.setZoom.mock.calls.length;
+    const boundsCalls = map.fitBounds.mock.calls.length;
+
+    changeSelect(countrySelect(), 'DE');
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=DE`);
+    expect(screen.queryByText('Manila')).toBeNull();
+    expect(bodyNames()).toEqual([]);
+    expect(screen.queryByText(copy.empty)).toBeNull();
+    expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
+    expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
+    expect(marker.remove).toHaveBeenCalledTimes(1);
+    expect(lib.markers).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: copy.table }));
+    fireEvent.click(screen.getByRole('button', { name: copy.map }));
+    expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
+    expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
+  });
+
+  it('keeps a SPAR row from an unfiltered list while the shop name is still loading', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { shopName: 'SPAR' }),
+        giftsPlace('Bea', { shopName: 'Mini' }),
+      ]),
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Ann')).toBeTruthy();
+    });
+    await fireScript('load');
+    expect(lib.markers).toHaveLength(2);
+    const previous = lib.markers.slice();
+    changeSelect(nameSelect(), 'SPAR');
+    expect(callsTo('/map/places')).toHaveLength(2);
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
+    expect(screen.getByText('Ann')).toBeTruthy();
+    expect(screen.queryByText(copy.empty)).toBeNull();
+    for (const marker of previous) {
+      expect(marker.remove).toHaveBeenCalledTimes(1);
+    }
+    expect(lib.markers).toHaveLength(previous.length + 1);
+    const redrawn = lib.markers[previous.length];
+    if (redrawn === undefined) throw new Error('missing redrawn marker');
+    expect(redrawn.remove).not.toHaveBeenCalled();
   });
 });
 
