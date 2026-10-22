@@ -536,6 +536,7 @@ function popupContent(row: ShopRow): HTMLElement {
     image.alt = '';
     image.setAttribute('loading', 'lazy');
     image.setAttribute('referrerpolicy', 'no-referrer');
+    image.className = 'block h-auto max-h-80 w-full max-w-full object-contain';
     content.appendChild(image);
   }
   if (row.href === null) {
@@ -548,6 +549,11 @@ function popupContent(row: ShopRow): HTMLElement {
     name.className = 'font-medium underline underline-offset-2';
     name.textContent = row.name;
     content.appendChild(name);
+  }
+  if (row.markerTitle !== '') {
+    const activity = document.createElement('p');
+    activity.textContent = row.markerTitle;
+    content.appendChild(activity);
   }
   if (row.category !== '') {
     const category = document.createElement('p');
@@ -1018,6 +1024,14 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             options={activityChoices(activities, copy)}
             onChange={setActivity}
           />
+          <button
+            type="button"
+            aria-label={copy.helpLabel}
+            popoverTarget={helpId}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center"
+          >
+            <CircleHelp aria-hidden="true" className="h-4 w-4" />
+          </button>
           <div className="basis-full">
             <div
               role="group"
@@ -1042,6 +1056,46 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
               </button>
             </div>
           </div>
+        </div>
+        <div id={helpId} popover="auto">
+          <dl>
+            <div>
+              <dt>
+                <span className="shop-place-marker is-daily" />
+                {copy.daily}
+              </dt>
+              <dd>{copy.dailyHelp}</dd>
+            </div>
+            <div>
+              <dt>
+                <span className="shop-place-marker is-weekly" />
+                {copy.weekly}
+              </dt>
+              <dd>{copy.weeklyHelp}</dd>
+            </div>
+            <div>
+              <dt>
+                <span className="shop-place-marker is-monthly" />
+                {copy.monthly}
+              </dt>
+              <dd>{copy.monthlyHelp}</dd>
+            </div>
+            <div>
+              <dt>
+                <span className="shop-place-marker is-idle" />
+                {copy.idle}
+              </dt>
+              <dd>{copy.idleHelp}</dd>
+            </div>
+            <div>
+              <dt>
+                <span className="shop-place-marker is-none" />
+                {copy.none}
+              </dt>
+              <dd>{copy.noneHelp}</dd>
+            </div>
+          </dl>
+          <p>{copy.hierarchy}</p>
         </div>
         {showError ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -1072,19 +1126,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
                   <th className="min-w-0 break-words align-top">{copy.colCountry}</th>
                   <th className="min-w-0 break-words align-top">{copy.colShop}</th>
                   <th className="min-w-0 break-words align-top">{copy.colProvider}</th>
-                  <th className="min-w-0 break-words align-top">
-                    <div className="flex flex-col items-start">
-                      {copy.colActivity}
-                      <button
-                        type="button"
-                        aria-label={copy.helpLabel}
-                        popoverTarget={helpId}
-                        className="inline-flex min-h-11 min-w-11 items-center justify-center"
-                      >
-                        <CircleHelp aria-hidden="true" className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </th>
+                  <th className="min-w-0 break-words align-top">{copy.colActivity}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1108,46 +1150,6 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
                 ))}
               </tbody>
             </table>
-          </div>
-          <div id={helpId} popover="auto">
-            <dl>
-              <div>
-                <dt>
-                  <span className="shop-place-marker is-daily" />
-                  {copy.daily}
-                </dt>
-                <dd>{copy.dailyHelp}</dd>
-              </div>
-              <div>
-                <dt>
-                  <span className="shop-place-marker is-weekly" />
-                  {copy.weekly}
-                </dt>
-                <dd>{copy.weeklyHelp}</dd>
-              </div>
-              <div>
-                <dt>
-                  <span className="shop-place-marker is-monthly" />
-                  {copy.monthly}
-                </dt>
-                <dd>{copy.monthlyHelp}</dd>
-              </div>
-              <div>
-                <dt>
-                  <span className="shop-place-marker is-idle" />
-                  {copy.idle}
-                </dt>
-                <dd>{copy.idleHelp}</dd>
-              </div>
-              <div>
-                <dt>
-                  <span className="shop-place-marker is-none" />
-                  {copy.none}
-                </dt>
-                <dd>{copy.noneHelp}</dd>
-              </div>
-            </dl>
-            <p>{copy.hierarchy}</p>
           </div>
         </div>
       </div>

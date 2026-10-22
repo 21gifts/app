@@ -1385,6 +1385,13 @@ describe('HomeShops', () => {
     expect(titles).toEqual(
       [copy.daily, copy.weekly, copy.monthly, copy.idle, copy.none, 'weird', ''].sort(),
     );
+    const gus = lib.popups.find(
+      (popup) => popup.content?.querySelector('a')?.textContent === 'Gus',
+    );
+    if (gus === undefined || gus.content === null) throw new Error('missing Gus popup');
+    const paragraphs = [...gus.content.querySelectorAll('p')];
+    expect(paragraphs.some((paragraph) => paragraph.textContent === copy.none)).toBe(false);
+    expect(paragraphs.some((paragraph) => paragraph.textContent === '')).toBe(false);
   });
 
   it('builds marker popups with safe photos, local links, and categories', async () => {
@@ -1422,11 +1429,15 @@ describe('HomeShops', () => {
     expect(popupLink?.getAttribute('class')).toBe('font-medium underline underline-offset-2');
     expect(popupLink?.getAttribute('class')).not.toContain('text-accent');
     expect(linked.content.textContent).toContain('Cafe');
+    expect(linked.content.textContent).toContain(copy.daily);
     const image = linked.content.querySelector('img');
     expect(image?.getAttribute('src')).toBe('https://images.example/cover.jpg');
     expect(image?.getAttribute('alt')).toBe('');
     expect(image?.getAttribute('loading')).toBe('lazy');
     expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
+    expect(image?.getAttribute('class')).toBe(
+      'block h-auto max-h-80 w-full max-w-full object-contain',
+    );
     expect(plain.content.querySelector('a')).toBeNull();
     expect(plain.content.querySelector('strong')?.textContent).toBe('Plain');
     expect(plain.content.querySelector('img')).toBeNull();

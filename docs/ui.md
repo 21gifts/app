@@ -287,6 +287,8 @@ App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-
 
 Do not add drop shadows on marketing. Do not use colored shadows.
 
+The homepage shops block is the named exception. Its surface is white `#fff` with text `#272b38` and control borders `#ced1da`. The selected Map/Table pill is `#272b38` on white. Shop pins are created outside JSX, so their paint stays in `globals.css`: red `#d23b3b`, daily `#ff4d00`, weekly `#ff7a29`, monthly `#ffa05c`, idle `#ffc48f`, none `#ffe3cc`, a 2px white border, and a 1px ring `box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25)`. That ring is the pin edge, not a card shadow. Do not move those pin classes onto app theme tokens.
+
 **Motion.**
 
 | Event            | Duration                     | Easing                | Notes                                                      |
@@ -997,6 +999,8 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 `MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → white shops block (`HomeShops` `#shops` between the hero and `#how`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, three h3+body in `sm:grid-cols-2`) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
 
 Handbook states: live marketing home, shops-table, shops-blockchain, shops-asset, shops-activity, shops-marker, shops-help, shops-error, shops-map-failed, shops-empty-map, shops-empty-table.
+
+The activity help button sits with the filters and stays available while the map is selected. Its popover is the color key. An open marker popup also prints the activity words.
 
 ### `/about`
 
