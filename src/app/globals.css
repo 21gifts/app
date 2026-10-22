@@ -159,6 +159,8 @@ html[data-menu-sheet='1'] [data-scroll-page] {
 }
 
 .shop-place-marker {
+  display: inline-block;
+  box-sizing: border-box;
   width: 14px;
   height: 14px;
   border-radius: 50%;
