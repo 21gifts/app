@@ -191,6 +191,23 @@ describe('PaySheet', () => {
     expect(screen.queryByText('$1.00')).toBeNull();
   });
 
+  it('shows an empty stored PHP amount as ₱0.00 instead of the spot', () => {
+    renderWithLocale(
+      sheet(true, vi.fn(), RATE_DAY, <Sent />, {
+        amountCurrency: 'PHP',
+        amount: '',
+        amountUsd: '1.00',
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      }),
+    );
+    expect(screen.getByText('₿500')).not.toBeNull();
+    expect(screen.getByText('₱0.00')).not.toBeNull();
+    expect(screen.queryByText('$0.50')).toBeNull();
+    expect(screen.queryByText('$1.00')).toBeNull();
+  });
+
   it('closes once on Close and slides away without a success step', () => {
     const onClose = vi.fn();
     const view = renderWithLocale(sheet(true, onClose));

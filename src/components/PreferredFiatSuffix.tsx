@@ -23,9 +23,9 @@ function fiatSuffixMarkup(
   numberFormat: NumberFormatStyle,
   exact: boolean,
 ): ReactElement {
-  const text = exact
-    ? formatDefinedGoalAmount(amount, fiat, numberFormat)
-    : formatFiatDisplay(amount, fiat, numberFormat);
+  const exactText = formatDefinedGoalAmount(amount, fiat, numberFormat);
+  const text =
+    exact && exactText !== '' ? exactText : formatFiatDisplay(amount, fiat, numberFormat);
   return (
     <>
       <span aria-hidden="true"> · </span>

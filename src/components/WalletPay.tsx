@@ -94,11 +94,12 @@ export function WalletPay({
   const bitcoin = formatBitcoin(amountSats, numberFormat);
   let amountWithFiat = bitcoin;
   if (chargeFigure !== undefined && chargeFigure !== null) {
-    amountWithFiat = `${bitcoin} · ${formatDefinedGoalAmount(
-      chargeFigure.amount,
-      chargeFigure.code,
-      numberFormat,
-    )}`;
+    const exact = formatDefinedGoalAmount(chargeFigure.amount, chargeFigure.code, numberFormat);
+    const stored =
+      exact === ''
+        ? formatFiatDisplay(chargeFigure.amount, chargeFigure.code, numberFormat)
+        : exact;
+    amountWithFiat = `${bitcoin} · ${stored}`;
   } else {
     const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
     if (amountPriced !== null) {

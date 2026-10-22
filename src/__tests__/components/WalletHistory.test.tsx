@@ -167,6 +167,24 @@ describe('WalletHistory', () => {
     expect(rows[2]?.textContent).not.toContain('₱');
   });
 
+  it('shows an empty stored shop figure as ₱0.00', () => {
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'PHP', amount: '' },
+    });
+    show({
+      payments: [
+        payment({
+          id: 'shop-empty',
+          info: { purpose: 'shop', chargeId: 'chg_empty', lnAddress: 'shop@21.gifts' },
+        }),
+      ],
+    });
+    const row = screen.getByRole('listitem');
+    expect(row.textContent).toContain('₱0.00');
+    expect(row.textContent).not.toContain('$');
+  });
+
   it('keeps a shop row bitcoin while its receipt is still out', () => {
     vi.mocked(useShopChargeFigure).mockReturnValue({ pending: true, figure: null });
     show({

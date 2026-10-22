@@ -16,6 +16,7 @@ import { getRepayment, type MyLoan, type MyLoans, type RepaymentLedger } from '@
 import { committedFiatFigure } from '@/lib/committed-fiat';
 import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { dueShares, fittingPrefix, summarizeLoans, type DueShare } from '@/lib/loan-repay';
 import {
   formatBitcoin,
@@ -27,6 +28,12 @@ import { useAuthStore } from '@/stores/auth-store';
 
 function isFiatCode(code: MyLoan['goalCurrency']): code is FiatCode {
   return code !== 'BTC';
+}
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
 }
 
 function localDay(date: Date): string {
@@ -170,8 +177,7 @@ export function LoanRepayScreen(): ReactElement {
   const wholeLoanText = (item: MyLoan): string => {
     const bitcoin = bitcoinText(item.totalSats);
     if (isFiatCode(item.goalCurrency)) {
-      const defined = formatDefinedGoalAmount(item.goalAmount, item.goalCurrency, numberFormat);
-      return defined === '' ? bitcoin : defined;
+      return exactStoredFiat(item.goalAmount, item.goalCurrency, numberFormat);
     }
     const figure = committedFiatFigure(
       {
@@ -287,7 +293,7 @@ export function LoanRepayScreen(): ReactElement {
     const loan = loans.loans[share.loanIndex]!;
     const defined =
       isFiatCode(loan.goalCurrency) && share.amount !== null
-        ? formatDefinedGoalAmount(share.amount, loan.goalCurrency, numberFormat)
+        ? exactStoredFiat(share.amount, loan.goalCurrency, numberFormat)
         : '';
     if (share.sats === null) {
       return defined === '' ? '–' : defined;
@@ -682,7 +688,7 @@ export function LoanRepayScreen(): ReactElement {
             const planTotal =
               loan.goalCurrency === 'BTC'
                 ? wholeLoanText(loan)
-                : formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat);
+                : exactStoredFiat(loan.goalAmount, loan.goalCurrency, numberFormat);
             const planSlice = (part: 'perDay' | 'last'): string =>
               loan.goalCurrency === 'BTC'
                 ? money(Number(split?.[part] ?? 0n))

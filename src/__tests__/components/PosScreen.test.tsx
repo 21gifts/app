@@ -1232,6 +1232,31 @@ describe('PosScreen', () => {
       expect(screen.queryByText('$1.00')).toBeNull();
     });
 
+    it('shows an empty stored PHP amount as ₱0.00 under a paid charge', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+      const paid = {
+        ...PAID,
+        amountCurrency: 'PHP',
+        amount: '',
+        amountUsd: '1.00',
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: paid, history: [] })),
+      );
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'USD');
+      expect(await screen.findByText('₱0.00')).toBeTruthy();
+      expect(screen.getByText('₿21')).toBeTruthy();
+      await waitFor(() => {
+        expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
+      });
+      expect(screen.queryByText('$0.02')).toBeNull();
+      expect(screen.queryByText('$1.00')).toBeNull();
+    });
+
     it('records a paid charge only for the session that read the till', async () => {
       const answers: ((value: Response) => void)[] = [];
       vi.stubGlobal(

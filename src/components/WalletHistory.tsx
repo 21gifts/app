@@ -12,11 +12,19 @@ import { useHeartContext } from '@/hooks/useHeartContext';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
+import type { FiatCode } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
 import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
 
 /**
  * Fiat beside a history amount. A shop payment shows the figure stored on its
@@ -45,7 +53,7 @@ function HistoryFiat(props: {
         <>
           <span aria-hidden="true"> · </span>
           <span className="shrink-0 tabular-nums lining-nums">
-            {formatDefinedGoalAmount(shop.figure.amount, shop.figure.code, numberFormat)}
+            {exactStoredFiat(shop.figure.amount, shop.figure.code, numberFormat)}
           </span>
         </>
       );

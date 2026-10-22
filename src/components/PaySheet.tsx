@@ -20,8 +20,9 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
-import { committedFiatFigure, type StoredFiat } from '@/lib/committed-fiat';
+import { committedFiatFigure, type FiatCode, type StoredFiat } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
@@ -29,6 +30,12 @@ import {
   satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
 
 /**
  * How long the success step shows before the sheet slides away, in ms, counted from the moment the
@@ -363,7 +370,7 @@ export function PaySheet({
   const spotAmount = satsToFiatAmount(amountSats, rateDay, fiat);
   const fiatLine =
     storedFigure !== null
-      ? formatDefinedGoalAmount(storedFigure.amount, storedFigure.code, numberFormat)
+      ? exactStoredFiat(storedFigure.amount, storedFigure.code, numberFormat)
       : spotAmount === null
         ? null
         : formatFiatDisplay(spotAmount, fiat, numberFormat);

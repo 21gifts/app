@@ -204,6 +204,25 @@ describe('WalletPay', () => {
     expect(screen.queryByText(/Fee/)).toBeNull();
   });
 
+  it('shows an empty stored PHP figure as ₱0.00 on the confirm label', () => {
+    hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        flow="reaction"
+        chargeFigure={{ code: 'PHP', amount: '' }}
+        confirmLabel={(amount) => `Lend ${amount}`}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Lend ₿21 · ₱0.00' }).textContent).toBe(
+      'Lend ₿21 · ₱0.00',
+    );
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('shows the current spot on the confirm label when the charge stored none', () => {
     hookWith('confirm', 0);
     renderWithLocale(

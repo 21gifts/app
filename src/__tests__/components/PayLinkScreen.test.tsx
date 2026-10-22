@@ -760,6 +760,41 @@ describe('PayLinkScreen', () => {
     expect(screen.queryByText(/\$/)).toBeNull();
   });
 
+  it('shows an empty stored PHP amount as ₱0.00 on a pending charge', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.includes('/fx/spot')) {
+        return Response.json({
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '100000.00' },
+        });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json({
+        ...profile,
+        charge: {
+          amountSats: 21,
+          expiresAt: new Date(fixed + 300_000).toISOString(),
+          amountCurrency: 'PHP',
+          amount: '',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('₱0.00')).toBeTruthy();
+    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+  });
+
   it('stays on bitcoin when a profile has no charge and a rate is loaded', async () => {
     mockFetch(async (input) => {
       if (String(input).includes('/fx/spot')) {

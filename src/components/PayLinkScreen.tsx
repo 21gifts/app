@@ -28,6 +28,7 @@ import {
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   SHOP_STICKER_PICTOGRAM,
   SHOP_STICKER_PICTOGRAM_VIEW_BOX,
@@ -153,6 +154,12 @@ function readCharge(value: unknown, now: number): PayCharge | null {
  */
 const INVOICE_QR_PLATE_WIDTH = 'w-[16.625rem]';
 
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
+
 /** Hand this invoice to the device's Bitcoin wallet app with a generic `lightning:` link. */
 function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
@@ -173,7 +180,7 @@ function ChargeFiat(props: {
   if (figure !== null) {
     return (
       <p className="text-center text-sm text-app-subtle">
-        {formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)}
+        {exactStoredFiat(figure.amount, figure.code, numberFormat)}
       </p>
     );
   }
@@ -986,11 +993,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 </p>
                 {shop.typedFiat !== null ? (
                   <p className="text-center text-sm text-app-subtle">
-                    {formatDefinedGoalAmount(
-                      shop.typedFiat.amount,
-                      shop.typedFiat.code,
-                      numberFormat,
-                    )}
+                    {exactStoredFiat(shop.typedFiat.amount, shop.typedFiat.code, numberFormat)}
                   </p>
                 ) : shop.till ? (
                   <ChargeFiat amountSats={shop.sats} rateDay={rateDay} stored={null} />

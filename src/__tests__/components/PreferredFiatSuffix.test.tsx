@@ -58,6 +58,15 @@ describe('preferredFiatSuffix', () => {
     expect(screen.queryByText('$10.13')).toBeNull();
   });
 
+  it('shows an empty stored amount as two-decimal zero instead of the spot', () => {
+    const { container } = render(
+      <p>{preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountUsd: '' })}</p>,
+    );
+    expect(screen.getByText('$0.00')).toBeTruthy();
+    expect(screen.queryByText('$0.02')).toBeNull();
+    expect(container.querySelector('[aria-hidden="true"]')?.textContent).toBe(' · ');
+  });
+
   it('uses the spot when the stored field is null', () => {
     const { container } = render(
       <p>{preferredFiatSuffix(21, RATE_DAY, 'USD', DEFAULT_NUMBER_FORMAT, { amountUsd: null })}</p>,

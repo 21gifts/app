@@ -6,11 +6,18 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { committedFiatFigure } from '@/lib/committed-fiat';
+import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { formatForumTime } from '@/lib/forum-time';
 import type { PosCharge } from '@/lib/pos';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
 
 /** What a past charge ended as. */
 type PastStatus = 'paid' | 'expired' | 'cancelled';
@@ -104,9 +111,7 @@ export function PosHistory({ history, openChargeId }: PosHistoryProps): ReactEle
                     ) : (
                       <>
                         <span aria-hidden="true"> · </span>
-                        <span>
-                          {formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)}
-                        </span>
+                        <span>{exactStoredFiat(figure.amount, figure.code, numberFormat)}</span>
                       </>
                     )}
                   </span>

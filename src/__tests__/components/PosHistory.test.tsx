@@ -114,6 +114,22 @@ describe('PosHistory', () => {
     expect(screen.getAllByText('Paid ✓')).toHaveLength(2);
   });
 
+  it('shows an empty stored PHP amount as ₱0.00', () => {
+    renderWithLocale(
+      <PosHistory
+        history={[row({ id: 'empty', amountCurrency: 'PHP', amount: '', amountUsd: '1.00' })]}
+        openChargeId={null}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    const item = screen.getByRole('listitem');
+    expect(within(item).getByText('₱0.00')).toBeTruthy();
+    expect(within(item).queryByText('$1.00')).toBeNull();
+    expect(item.textContent).not.toContain('$');
+  });
+
   it('shows the visitor snapshot when the charge has no typed pair', () => {
     renderWithLocale(
       <PosHistory

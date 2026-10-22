@@ -45,7 +45,8 @@ function posFiatText(
   numberFormat: NumberFormatStyle,
 ): string | null {
   if (stored !== null) {
-    return formatDefinedGoalAmount(stored.amount, stored.code, numberFormat);
+    const exact = formatDefinedGoalAmount(stored.amount, stored.code, numberFormat);
+    return exact === '' ? formatFiatDisplay(stored.amount, stored.code, numberFormat) : exact;
   }
   if (sats === null) {
     return null;
