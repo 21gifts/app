@@ -250,7 +250,8 @@ function twoDecimalStored(amount: string): string | null {
     return `${whole}.${frac.padEnd(2, '0')}`;
   }
   const keep = frac.slice(0, 2);
-  if (frac[2] < '5') {
+  const next = frac.charAt(2);
+  if (next < '5') {
     return `${whole}.${keep}`;
   }
   const bumped = (BigInt(`${whole}${keep}`) + 1n).toString().padStart(whole.length + 2, '0');
