@@ -605,8 +605,8 @@ function creditPlanText(
     visitorFiat,
     satPlan?.perDay ?? null,
   );
-  // A fiat amount can divide evenly while the bitcoin split of the same goal does not.
-  const uneven = plan.remainder !== 0n || (satPlan !== null && satPlan.remainder !== 0n);
+  // Only this plan's own remainder names a last day. A bitcoin remainder keeps the even sentence.
+  const uneven = plan.remainder !== 0n;
   if (!uneven) {
     return t('forum.creditPlanEven', { amount, days: plan.days });
   }

@@ -609,7 +609,7 @@ describe('ForumAskWizard', () => {
     expect(screen.getByRole('button', { name: 'Loan' })).toBeTruthy();
   });
 
-  it('names the last day when only the bitcoin split has a remainder', () => {
+  it('keeps an even fiat plan when only the bitcoin split has a remainder', () => {
     renderWithLocale(
       <ForumAskWizard
         step={1}
@@ -626,11 +626,8 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
     fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '4' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(
-      screen.getByText(
-        /\$1\.00 · ₿1'000 per day for 3 days, then \$1\.00 · ₿1'001 on the last day/,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(/\$1\.00 · ₿1'000 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/last day/)).toBeNull();
   });
 
   it('keeps a typed fiat credit in fiat while the rate is not loaded', () => {

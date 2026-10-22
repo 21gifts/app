@@ -2411,7 +2411,7 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByText(/\$/)).toBeNull();
   });
 
-  it("shows only bitcoin for a till's shop payment, even with a spot rate", async () => {
+  it("shows the spot under a till's shop payment that stored no figure", async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     mockPricedShop(
       [],
@@ -2423,14 +2423,33 @@ describe('PayLinkScreen shop payment', () => {
     );
     renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
-    await waitFor(() => {
-      expect(fetchedUrls().some((url) => url.includes('/fx/spot'))).toBe(true);
-    });
-    // Give the spot answer time to land: it would have priced the bitcoin if anything did.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
+    expect(await screen.findByText('$200.00')).toBeTruthy();
     expect(screen.getByText("₿238'093")).toBeTruthy();
+  });
+
+  it("shows 12.00 PHP on a till's shop payment for a viewer whose currency is USD", async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    mockPricedShop(
+      [],
+      {
+        ...profile,
+        charge: {
+          amountSats: 238093,
+          expiresAt: new Date(FIXED + 300_000).toISOString(),
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: '200.00',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: '12.00',
+        },
+      },
+      238093,
+    );
+    renderWithLocale(<PayLinkScreen lightning={ADA} />, 'en', 'ch', 'USD');
+    expect(await screen.findByText('₱12.00')).toBeTruthy();
+    expect(screen.getByText("₿238'093")).toBeTruthy();
+    expect(screen.queryByText('$200.00')).toBeNull();
     expect(screen.queryByText(/\$/)).toBeNull();
   });
 

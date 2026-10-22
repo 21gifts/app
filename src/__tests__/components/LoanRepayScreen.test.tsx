@@ -656,6 +656,22 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByRole('status').textContent).toContain(text);
   });
 
+  it('names the defined peso amount while that loan payment is sending', () => {
+    const phpLoan = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      due: { ...loan().due, payableSats: 536, payableAmount: '30.00' },
+    });
+    show({ sundayRest: false, loans: [phpLoan] }, repay({ phase: 'sending' }));
+    expect(screen.getByRole('status').textContent).toContain('Sending ₱30.00 · ₿536…');
+    cleanup();
+    const view = show({ sundayRest: false, loans: [phpLoan] });
+    fireEvent.click(screen.getByRole('button', { name: 'Send ₱30.00 · ₿536' }));
+    vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'sending' }));
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByRole('status').textContent).toContain('Sending ₱30.00 · ₿536…');
+  });
+
   it('shows setup failure and a failed run with retry controls', () => {
     show({ sundayRest: false, loans: [loan()] }, repay({ phase: 'setupFailed' }));
     expect(screen.getByRole('alert').textContent).toBe('Wallet setup failed');

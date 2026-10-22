@@ -7930,7 +7930,7 @@ test('Function: PayLinkScreen — a shop payment shows the fiat typed on the pag
   ).toHaveCount(0);
 });
 
-test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spot rate", async ({
+test("Function: PayLinkScreen — a till's shop payment with no stored figure shows the spot", async ({
   page,
 }) => {
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
@@ -7942,7 +7942,8 @@ test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spo
   await spot;
   await expect(page.getByText('Waiting for payment…')).toBeVisible();
   await expect(page.getByText("₿238'093")).toBeVisible();
-  await expect(page.getByText(/\$/)).toHaveCount(0);
+  await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(1);
 });
 
 test('Function: openShopPayment — a refused repeat waits 20 s, reads the plain pay link, and mints', async ({
@@ -15342,10 +15343,40 @@ test('Function: storedTypedFiat — the typed pair is the only stored figure', a
   await openTypedFiatConfirmation(page);
 });
 
-test('Function: addDecimalStrings — a whole figure plus a fee spot keeps both scales', async () => {
+test('Function: addDecimalStrings — a whole figure plus a fee spot keeps both scales', async ({
+  page,
+}) => {
   expect(addDecimalStrings('12', '1.00')).toBe('13.00');
   expect(addDecimalStrings('1.50', '1.25')).toBe('2.75');
   expect(addDecimalStrings('1.00', 'nope')).toBeNull();
+  await seedAdaSession(page);
+  await fulfillSpot(page, { USD: '100000.00' });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.route('**/pay/charges/shop-sum', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'shop-sum',
+        amountSats: 10_000,
+        status: 'paid',
+        createdAt: '2026-06-01T00:00:00.000Z',
+        expiresAt: '2026-06-01T00:05:00.000Z',
+        amountCurrency: 'USD',
+        amount: '12',
+      }),
+    });
+  });
+  await page.goto('/wallet/payment?id=a11ce000-1545-4000-8000-000000000013&visual=history-rows');
+  await expect(page.getByText('$13.00', { exact: true })).toBeVisible();
+  await expect(page.getByText('$2.12')).toHaveCount(0);
+  await expect(page.getByText("₿11'000")).toBeVisible();
 });
 
 async function openCreditAmount(page: Page): Promise<void> {

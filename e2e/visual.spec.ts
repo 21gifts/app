@@ -1709,8 +1709,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText('1:30 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(page.getByText('238.19 USDT')).toBeVisible();
     await expect(
@@ -1736,8 +1737,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
     await expect(page.getByText(/USDT|USDC/)).toHaveCount(0);
     await expect(page.getByText(/OpenCryptoPay/)).toHaveCount(0);
@@ -1761,8 +1763,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
@@ -1780,8 +1783,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
@@ -1889,8 +1893,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('On its way')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
@@ -1909,8 +1914,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Paid ✓')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
@@ -1929,8 +1935,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Ended', { exact: true })).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );

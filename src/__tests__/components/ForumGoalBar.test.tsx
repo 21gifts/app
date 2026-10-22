@@ -292,11 +292,8 @@ describe('ForumGoalBar', () => {
         rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
       />,
     );
-    expect(
-      screen.getByText(
-        /\$2\.50 · ₿2'500 per day for 3 days, then \$2\.50 · ₿2'501 on the last day/,
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText(/\$2\.50 · ₿2'500 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/last day/)).toBeNull();
     expect(screen.queryByText(/\$12 per day/)).toBeNull();
     rerender(
       <ForumGoalBar

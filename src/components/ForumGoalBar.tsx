@@ -401,12 +401,13 @@ function CreditPlanLines({
       goalCurrency,
       numberFormat,
     );
-    // The bar renders only for a positive goal, and `split` already validated
-    // the term, so the bitcoin split of those sats exists.
-    return `${defined} · ${formatBitcoin(Number(satSplit![part]), numberFormat)}`;
+    const satPart = satSplit === null ? null : satSplit[part];
+    return satPart === null
+      ? defined
+      : `${defined} · ${formatBitcoin(Number(satPart), numberFormat)}`;
   };
-  // A fiat amount can divide evenly while the bitcoin split of the same goal does not.
-  const uneven = split.remainder !== 0n || (satSplit !== null && satSplit.remainder !== 0n);
+  // Only the fiat split names a last day. A bitcoin remainder keeps the even sentence.
+  const uneven = split.remainder !== 0n;
   const plan = uneven
     ? t('forum.creditPlanLast', {
         amount: format(split.perDay, 'perDay'),

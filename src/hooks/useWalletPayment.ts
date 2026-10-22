@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
 import {
   HEART_VISUAL_PAYMENT,
+  SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
 } from '@/lib/wallet/payment-fixtures';
@@ -50,6 +51,9 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
   }
   if (pin !== 'history-rows') {
     return null;
+  }
+  if (id === SHOP_SUM_VISUAL_PAYMENT.id) {
+    return { status: 'ready', payment: toFixturePayment(SHOP_SUM_VISUAL_PAYMENT) };
   }
   const payment = WALLET_PAYMENT_FIXTURES.find((entry) => entry.id === id);
   return payment === undefined
