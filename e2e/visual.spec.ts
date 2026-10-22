@@ -1664,6 +1664,7 @@ test.describe('screen baselines', () => {
     await page.getByLabel('Amount').fill('100');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('The PHP exchange rate is still loading.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-pl-rate-loading');
   });
 
@@ -1719,8 +1720,8 @@ test.describe('screen baselines', () => {
     await php.click();
     await expect(php).toHaveAttribute('aria-pressed', 'true');
     await page.getByLabel('Amount').fill('100');
-    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('No PHP exchange rate yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await shotScreen(page, 'state-pl-no-rate');
   });
 
@@ -6968,8 +6969,8 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '0', exact: true }).click();
     await page.getByRole('button', { name: '0', exact: true }).click();
     await expect(php).toHaveAttribute('aria-pressed', 'true');
-    await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('No PHP exchange rate yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeDisabled();
     await shotScreen(page, 'state-pos-no-rate');
   });
 
