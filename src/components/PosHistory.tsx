@@ -7,9 +7,10 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { committedFiatFigure } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { formatForumTime } from '@/lib/forum-time';
 import type { PosCharge } from '@/lib/pos';
-import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
+import { formatBitcoin } from '@/lib/stats-money';
 
 /** What a past charge ended as. */
 type PastStatus = 'paid' | 'expired' | 'cancelled';
@@ -103,7 +104,9 @@ export function PosHistory({ history, openChargeId }: PosHistoryProps): ReactEle
                     ) : (
                       <>
                         <span aria-hidden="true"> · </span>
-                        <span>{formatFiatDisplay(figure.amount, figure.code, numberFormat)}</span>
+                        <span>
+                          {formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)}
+                        </span>
                       </>
                     )}
                   </span>

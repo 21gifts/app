@@ -12,6 +12,7 @@ import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import type { FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -93,7 +94,7 @@ export function WalletPay({
   const bitcoin = formatBitcoin(amountSats, numberFormat);
   let amountWithFiat = bitcoin;
   if (chargeFigure !== undefined && chargeFigure !== null) {
-    amountWithFiat = `${bitcoin} · ${formatFiatDisplay(
+    amountWithFiat = `${bitcoin} · ${formatDefinedGoalAmount(
       chargeFigure.amount,
       chargeFigure.code,
       numberFormat,

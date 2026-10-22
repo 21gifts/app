@@ -12,6 +12,7 @@ import {
   sendHeartTip,
   useHeartTip,
 } from '@/lib/heart-tip';
+import { shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { logInteraction } from '@/lib/interaction-log';
@@ -109,6 +110,15 @@ const BASE = {
   canUnlockWallet: true,
 };
 
+/** A loaded spot, so a heart can store the price of its 1 sat. */
+const HEART_RATE: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
 beforeEach(() => {
   window.history.replaceState({}, '', '/');
   sessionStorage.removeItem('21gifts.heart.sent');
@@ -145,6 +155,39 @@ describe('sendHeartTip', () => {
       { messageId: 'm1', amountSats: 1 },
       'sess',
     );
+  });
+
+  it('stores the spot of the 1 sat when the click has a rate', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: vi.fn(async () => ({ kind: 'paid' as const })),
+    });
+    await expect(sendHeartTip({ ...BASE, rateDay: HEART_RATE })).resolves.toEqual({ kind: 'paid' });
+    expect(postMessageInvoice).toHaveBeenCalledWith(
+      'sess',
+      'm1',
+      1,
+      undefined,
+      shownFiatForSats(1, HEART_RATE),
+      true,
+    );
+  });
+
+  it('omits the four amounts when the click has no rate', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: vi.fn(async () => ({ kind: 'paid' as const })),
+    });
+    await expect(sendHeartTip({ ...BASE, rateDay: null })).resolves.toEqual({ kind: 'paid' });
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', 'm1', 1, undefined, undefined, true);
   });
 
   it('does not send without a sparkInvoice and never pays pr', async () => {

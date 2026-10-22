@@ -21,6 +21,7 @@ import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
 import { committedFiatFigure, type StoredFiat } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
@@ -362,7 +363,7 @@ export function PaySheet({
   const spotAmount = satsToFiatAmount(amountSats, rateDay, fiat);
   const fiatLine =
     storedFigure !== null
-      ? formatFiatDisplay(storedFigure.amount, storedFigure.code, numberFormat)
+      ? formatDefinedGoalAmount(storedFigure.amount, storedFigure.code, numberFormat)
       : spotAmount === null
         ? null
         : formatFiatDisplay(spotAmount, fiat, numberFormat);

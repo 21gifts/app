@@ -170,15 +170,20 @@ function ChargeFiat(props: {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const figure = props.stored === null ? null : committedFiatFigure(props.stored, fiat);
-  const amount =
-    figure !== null ? figure.amount : satsToFiatAmount(props.amountSats, props.rateDay, fiat);
-  const code = figure !== null ? figure.code : fiat;
-  if (amount === null) {
+  if (figure !== null) {
+    return (
+      <p className="text-center text-sm text-app-subtle">
+        {formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)}
+      </p>
+    );
+  }
+  const spot = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  if (spot === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(amount, code, numberFormat)}
+      {formatFiatDisplay(spot, fiat, numberFormat)}
     </p>
   );
 }

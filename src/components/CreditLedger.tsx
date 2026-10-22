@@ -30,9 +30,10 @@ import {
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
  * Still owed there counts only unpaid shares. A month names one status only
- * when every share in that month has it. A bitcoin amount shows the current
- * spot beside it. A stored ask-currency figure stays that figure, beside
- * bitcoin. The spot is not written onto the row. A day matches
+ * when every share in that month has it. A fiat plan, share, still-owed
+ * total, and chart total stay in the ask currency, with no bitcoin. Money
+ * already given keeps that currency and bitcoin. A bitcoin amount shows the
+ * current spot beside it. The spot is not written onto the row. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
@@ -315,18 +316,7 @@ function LongRepayment({
   return (
     <div className="mt-2">
       <p className="text-xs font-medium text-app-fg">
-        {t('forum.creditChartDebt')}{' '}
-        {totalAmountText(
-          owed,
-          fiat,
-          numberFormat,
-          spot,
-          rowsSats(
-            groups
-              .filter((group) => rowsStatus(group.rows) !== 'paid')
-              .flatMap((group) => group.rows.filter((row) => row.status !== 'paid')),
-          ),
-        )}
+        {t('forum.creditChartDebt')} {totalAmountText(owed, fiat, numberFormat, spot)}
       </p>
       <p className="mt-1 text-xs text-app-muted">
         {t('forum.creditRange', {
@@ -374,7 +364,7 @@ function LongRepayment({
                   {' · '}
                   {t('forum.creditDaysCount', { count: own.length })}
                   {' · '}
-                  {totalAmountText(dayAmount(own, fiat), fiat, numberFormat, spot, rowsSats(own))}
+                  {totalAmountText(dayAmount(own, fiat), fiat, numberFormat, spot)}
                 </span>
               </li>
             );
@@ -382,23 +372,11 @@ function LongRepayment({
           <li className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5">
             <span className="text-sm font-medium text-app-fg">{t('forum.creditTogether')}</span>
             <span className="shrink-0 text-right text-sm font-medium tabular-nums text-app-fg">
-              {totalAmountText(
-                dayAmount(usual.rows, fiat),
-                fiat,
-                numberFormat,
-                spot,
-                rowsSats(usual.rows),
-              )}
+              {totalAmountText(dayAmount(usual.rows, fiat), fiat, numberFormat, spot)}
               {' · '}
               {t('forum.creditDaysCount', { count: groups.length })}
               {' · '}
-              {totalAmountText(
-                dayAmount(ledger.repayments, fiat),
-                fiat,
-                numberFormat,
-                spot,
-                rowsSats(ledger.repayments),
-              )}
+              {totalAmountText(dayAmount(ledger.repayments, fiat), fiat, numberFormat, spot)}
             </span>
           </li>
         </ul>
@@ -419,7 +397,6 @@ function LongRepayment({
                     fiat,
                     numberFormat,
                     spot,
-                    rowsSats(month.usualGroup.rows),
                   ),
                 })}
               </p>
@@ -447,18 +424,12 @@ function LongRepayment({
         <p className="mt-2 text-xs text-app-muted">
           {exceptions
             .map((group) => {
-              return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat, spot)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat, spot, rowsSats(group.rows))}.`;
+              return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat, spot)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat, spot)}.`;
             })
             .join(' ')}
           {restUsual !== null
             ? ` ${t('forum.creditUsualRest', {
-                amount: totalAmountText(
-                  dayAmount(restUsual.rows, fiat),
-                  fiat,
-                  numberFormat,
-                  spot,
-                  rowsSats(restUsual.rows),
-                ),
+                amount: totalAmountText(dayAmount(restUsual.rows, fiat), fiat, numberFormat, spot),
               })}`
             : ''}
         </p>
@@ -610,11 +581,7 @@ function lineAmountText(
   spot: SpotPair,
 ): string {
   if (fiat !== null && row.amount !== null) {
-    const priced = formatFiatDisplay(row.amount, fiat, numberFormat);
-    if (row.sats === null) {
-      return priced;
-    }
-    return `${priced} · ${formatBitcoin(row.sats, numberFormat)}`;
+    return formatFiatDisplay(row.amount, fiat, numberFormat);
   }
   if (row.sats !== null) {
     return bitcoinText(row.sats, numberFormat, spot);
@@ -627,14 +594,9 @@ function totalAmountText(
   fiat: FiatCode | null,
   numberFormat: NumberFormatStyle,
   spot: SpotPair,
-  sats: number | null = null,
 ): string {
   if (fiat !== null) {
-    const priced = formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
-    if (sats === null) {
-      return priced;
-    }
-    return `${priced} · ${formatBitcoin(sats, numberFormat)}`;
+    return formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
   }
   return bitcoinText(total, numberFormat, spot);
 }
@@ -715,17 +677,7 @@ function rowAmount(
   spot: SpotPair,
 ): ReactElement | null {
   if (fiat !== null && row.amount !== null) {
-    const priced = formatFiatDisplay(row.amount, fiat, numberFormat);
-    if (row.sats === null) {
-      return <>{priced}</>;
-    }
-    return (
-      <>
-        {priced}
-        <span aria-hidden="true"> · </span>
-        {formatBitcoin(row.sats, numberFormat)}
-      </>
-    );
+    return <>{formatFiatDisplay(row.amount, fiat, numberFormat)}</>;
   }
   if (row.sats === null) {
     return null;
@@ -805,13 +757,7 @@ function RepaymentChart({
           locale,
           first.dueOn === null || yearOf(first.dueOn) !== yearOf(last.dueOn),
         );
-  const totalText = totalAmountText(
-    total,
-    fiat,
-    numberFormat,
-    spot,
-    fiat === null ? null : rowsSats(groups.flatMap((group) => group.rows)),
-  );
+  const totalText = totalAmountText(total, fiat, numberFormat, spot);
   return <RepaymentPlanChart amounts={amounts} from={from} to={to} totalText={totalText} />;
 }
 
@@ -822,17 +768,6 @@ function useChartFormat(): {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   return { t, numberFormat };
-}
-
-function rowsSats(rows: readonly RepaymentLine[]): number | null {
-  let sum = 0;
-  for (const row of rows) {
-    if (row.sats === null) {
-      return null;
-    }
-    sum += row.sats;
-  }
-  return sum;
 }
 
 function dayAmount(rows: readonly RepaymentLine[], fiat: FiatCode | null): number {

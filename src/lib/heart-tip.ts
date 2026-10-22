@@ -2,7 +2,9 @@
 
 import { captureMessage } from '@sentry/nextjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import { shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
@@ -220,6 +222,8 @@ export type HeartTipInput = {
   needsWalletSetup: boolean;
   /** True when the account can unlock the in-app wallet. */
   canUnlockWallet: boolean;
+  /** Spot at the click, or missing when that price is not loaded. */
+  rateDay?: FiatRateDay | null;
 };
 
 /**
@@ -596,7 +600,11 @@ async function invoiceAndPayHeart(
   }
   let invoice;
   try {
-    invoice = await postMessageInvoice(sessionToken, messageId, 1, undefined, undefined, true);
+    const shown =
+      input.rateDay === undefined || input.rateDay === null
+        ? undefined
+        : shownFiatForSats(1, input.rateDay);
+    invoice = await postMessageInvoice(sessionToken, messageId, 1, undefined, shown, true);
   } catch (err) {
     return { kind: 'failed', reason: mapInvoiceError(err) };
   }
@@ -800,6 +808,7 @@ export function useHeartTip(options: {
   heartTipViews: Readonly<Record<string, HeartTipView>>;
 } {
   const { readOnly } = options;
+  const rateDay = useSpotRate();
   const heartCounts = options.heartCounts ?? {};
   const [heartTipViews, setHeartTipViews] = useState<Record<string, HeartTipView>>({});
   const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -855,6 +864,7 @@ export function useHeartTip(options: {
         balanceSats: wallet.balanceSats,
         needsWalletSetup: needsWalletSetup(account),
         canUnlockWallet: canUnlockWallet(account),
+        rateDay,
       };
       const existingTimer = timersRef.current.get(messageId);
       if (existingTimer !== undefined) {
@@ -939,7 +949,7 @@ export function useHeartTip(options: {
         }));
       });
     },
-    [readOnly],
+    [readOnly, rateDay],
   );
 
   return { onHeartTip, heartTipViews };

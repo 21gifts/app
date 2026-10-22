@@ -18,6 +18,7 @@ import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address
 import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
@@ -44,7 +45,7 @@ function posFiatText(
   numberFormat: NumberFormatStyle,
 ): string | null {
   if (stored !== null) {
-    return formatFiatDisplay(stored.amount, stored.code, numberFormat);
+    return formatDefinedGoalAmount(stored.amount, stored.code, numberFormat);
   }
   if (sats === null) {
     return null;

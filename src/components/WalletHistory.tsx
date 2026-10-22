@@ -12,8 +12,9 @@ import { useHeartContext } from '@/hooks/useHeartContext';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
+import { formatBitcoin } from '@/lib/stats-money';
 import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
@@ -44,7 +45,7 @@ function HistoryFiat(props: {
         <>
           <span aria-hidden="true"> · </span>
           <span className="shrink-0 tabular-nums lining-nums">
-            {formatFiatDisplay(shop.figure.amount, shop.figure.code, numberFormat)}
+            {formatDefinedGoalAmount(shop.figure.amount, shop.figure.code, numberFormat)}
           </span>
         </>
       );

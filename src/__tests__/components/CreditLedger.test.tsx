@@ -591,7 +591,8 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Day 1/ });
     const label = chart.getAttribute('aria-label') ?? '';
-    expect(label).toMatch(/\$1\.50 · ₿66 owed/);
+    expect(label).toMatch(/\$1\.50 owed/);
+    expect(label).not.toMatch(/₿|\$5/);
     expect(label).toContain('2026');
     expect(label).not.toMatch(/\$5/);
   });
@@ -668,7 +669,8 @@ describe('CreditLedger', () => {
     expect(await screen.findByText('Next repayment')).toBeTruthy();
     expect(document.body.textContent).toContain('Nov 1, 2026');
     expect(document.body.textContent).toContain('7 days at');
-    expect(document.body.textContent).toContain('₱40.00 · ₿4');
+    expect(document.body.textContent).toContain('₱40.00');
+    expect(document.body.textContent).not.toContain('₱40.00 · ₿');
     expect(document.body.textContent).toContain('8 days · Scheduled');
     expect(document.body.textContent).toContain('Nov 8, 2026');
     expect(document.body.textContent).not.toContain('Nov 2, 2026');

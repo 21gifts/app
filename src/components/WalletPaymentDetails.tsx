@@ -24,6 +24,7 @@ import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
 import {
@@ -158,13 +159,13 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         <>
           {formatBitcoin(sats, numberFormat)}
           <span aria-hidden="true"> · </span>
-          <span>{formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat)}</span>
+          <span>{formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat)}</span>
         </>
       );
     }
     if (role === 'sum' && shopFigure !== null) {
       const feeSpot = satsToFiatAmount(payment.feesSats, rateDay, fiat);
-      const chargeFiat = formatFiatDisplay(shopFigure.amount, shopFigure.code, numberFormat);
+      const chargeFiat = formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat);
       const combined =
         shopFigure.code === fiat && feeSpot !== null
           ? addDecimalStrings(shopFigure.amount, feeSpot)
@@ -174,7 +175,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
           <>
             {formatBitcoin(sats, numberFormat)}
             <span aria-hidden="true"> · </span>
-            <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
+            <span>{formatDefinedGoalAmount(combined, fiat, numberFormat)}</span>
           </>
         );
       }
@@ -243,7 +244,9 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         </p>
         {fiatAmount === null ? null : (
           <p className="text-sm tabular-nums lining-nums text-app-muted">
-            {formatFiatDisplay(fiatAmount.amount, fiatAmount.code, numberFormat)}
+            {shopFigure !== null
+              ? formatDefinedGoalAmount(shopFigure.amount, shopFigure.code, numberFormat)
+              : formatFiatDisplay(fiatAmount.amount, fiatAmount.code, numberFormat)}
           </p>
         )}
         <span

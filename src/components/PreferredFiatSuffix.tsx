@@ -1,5 +1,6 @@
 import { type ReactElement } from 'react';
 import { committedFiatFigure } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatFiatDisplay,
@@ -20,11 +21,15 @@ function fiatSuffixMarkup(
   amount: string,
   fiat: FiatCode,
   numberFormat: NumberFormatStyle,
+  exact: boolean,
 ): ReactElement {
+  const text = exact
+    ? formatDefinedGoalAmount(amount, fiat, numberFormat)
+    : formatFiatDisplay(amount, fiat, numberFormat);
   return (
     <>
       <span aria-hidden="true"> · </span>
-      <span>{formatFiatDisplay(amount, fiat, numberFormat)}</span>
+      <span>{text}</span>
     </>
   );
 }
@@ -71,7 +76,7 @@ export function preferredFiatSuffix(
       fiat,
     );
     if (figure !== null) {
-      return fiatSuffixMarkup(figure.amount, figure.code, numberFormat);
+      return fiatSuffixMarkup(figure.amount, figure.code, numberFormat, true);
     }
   }
   if (rateDay === null) {
@@ -81,5 +86,5 @@ export function preferredFiatSuffix(
   if (live === null) {
     return null;
   }
-  return fiatSuffixMarkup(live, fiat, numberFormat);
+  return fiatSuffixMarkup(live, fiat, numberFormat, false);
 }

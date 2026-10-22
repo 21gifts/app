@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useWalletSend';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { MessageKey } from '@/lib/messages';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
@@ -280,14 +281,14 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
           node: (
             <>
               <span aria-hidden="true"> · </span>
-              <span>{formatFiatDisplay(combined, fiat, numberFormat)}</span>
+              <span>{formatDefinedGoalAmount(combined, fiat, numberFormat)}</span>
             </>
           ),
         };
       }
     }
     const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
-    const stored = formatFiatDisplay(figure.amount, figure.code, numberFormat);
+    const stored = formatDefinedGoalAmount(figure.amount, figure.code, numberFormat);
     return {
       kind: 'parts',
       node: (
@@ -319,7 +320,7 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   ): ReactElement => {
     const live =
       figure !== undefined && figure !== null
-        ? formatFiatDisplay(figure.amount, figure.code, numberFormat)
+        ? formatDefinedGoalAmount(figure.amount, figure.code, numberFormat)
         : fiatText(sats);
     return (
       <div className="flex flex-col items-center gap-2">
