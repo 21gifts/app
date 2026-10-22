@@ -551,7 +551,9 @@ describe('HomeShops', () => {
     if (section === null) throw new Error('missing shops');
     expect(section.getAttribute('style')).toBeNull();
     expect(section.querySelector('style')).toBeNull();
-    expect(section.className).toBe('bg-[#fff] text-[#272b38]');
+    expect(section.className).toBe(
+      'bg-[#fff] text-[#272b38] [--color-app-danger:#b91c1c] [--color-app-focus:#171717] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040]',
+    );
     expect(screen.getByRole('heading', { name: copy.title }).className).toBe(
       'text-2xl font-semibold',
     );
@@ -1380,6 +1382,9 @@ describe('HomeShops', () => {
     const popover = document.getElementById(popoverTarget(help));
     if (popover === null) throw new Error('missing popover');
     expect(popover.getAttribute('popover')).toBe('auto');
+    expect(popover.className).toBe(
+      'border border-[#ced1da] bg-[#fff] text-[#272b38] [color-scheme:light]',
+    );
     expect(popover.textContent).toContain(copy.dailyHelp);
     expect(popover.textContent).toContain(copy.weeklyHelp);
     expect(popover.textContent).toContain(copy.monthlyHelp);

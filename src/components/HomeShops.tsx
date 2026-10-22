@@ -1085,7 +1085,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   }
 
   return (
-    <section id="shops" className="bg-[#fff] text-[#272b38]">
+    <section
+      id="shops"
+      className="bg-[#fff] text-[#272b38] [--color-app-danger:#b91c1c] [--color-app-focus:#171717] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040]"
+    >
       <div className="mx-auto max-w-[1100px] px-5 py-20">
         <h2 className="text-2xl font-semibold">{copy.title}</h2>
         <p>{copy.lead}</p>
@@ -1174,7 +1177,11 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
             </div>
           </div>
         </div>
-        <div id={helpId} popover="auto">
+        <div
+          id={helpId}
+          popover="auto"
+          className="border border-[#ced1da] bg-[#fff] text-[#272b38] [color-scheme:light]"
+        >
           <dl>
             <div>
               <dt>
