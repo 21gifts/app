@@ -216,6 +216,52 @@ describe('proxyApiRequest', () => {
     expect(res.headers.get('content-disposition')).toBe('inline');
   });
 
+  it('passes the client abort signal upstream only with forwardAbort', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const client = new AbortController();
+    const request = new Request('http://localhost/pay/ada/payment', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{"amountSats":21}',
+      signal: client.signal,
+    });
+    await proxyApiRequest(request, '/pay/ada/payment', { forwardAbort: true });
+    const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(init.signal).toBe(request.signal);
+    expect(init.signal?.aborted).toBe(false);
+    client.abort();
+    expect(init.signal?.aborted).toBe(true);
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"amountSats":21}');
+
+    await proxyApiRequest(new Request('http://localhost/me', { signal: client.signal }), '/me');
+    const [, plain] = fetchMock.mock.calls[1] as [URL, RequestInit];
+    expect(plain.signal).toBeUndefined();
+    await proxyApiRequest(new Request('http://localhost/me'), '/me', {});
+    expect((fetchMock.mock.calls[2] as [URL, RequestInit])[1].signal).toBeUndefined();
+  });
+
+  it('answers 502 when the client disconnects before the api answers', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_url: URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => {
+              reject(new DOMException('aborted', 'AbortError'));
+            });
+          }),
+      ),
+    );
+    const client = new AbortController();
+    const pending = proxyApiRequest(
+      new Request('http://localhost/pay/ada/payment', { method: 'POST', signal: client.signal }),
+      '/pay/ada/payment',
+      { forwardAbort: true },
+    );
+    client.abort();
+    expect((await pending).status).toBe(502);
+  });
+
   it('returns 502 JSON when the api URL is missing', async () => {
     delete process.env.NEXT_PUBLIC_API_URL;
     const res = await proxyApiRequest(new Request('http://localhost/me'), '/me');

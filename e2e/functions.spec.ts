@@ -7,6 +7,7 @@ import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
+import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -17,7 +18,7 @@ import {
 import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
-import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
+import { parseForumAskAmountInUnit, scaleDecimalTo8 } from '../src/lib/forum-goal';
 import {
   fiatDraftForSats,
   fiatToSats,
@@ -398,6 +399,10 @@ async function stubPayLinkInvoice(page: Page): Promise<void> {
   await page.route(
     (url) => new URL(url).pathname.startsWith('/pay/'),
     async (route) => {
+      if (route.request().url().endsWith('/payment')) {
+        await fulfillStablecoinUnavailable(route);
+        return;
+      }
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 200,
@@ -7700,6 +7705,291 @@ test('Endpoint: GET /pay/[username] — checker literal', async ({ request }) =>
 
 test('Endpoint: POST /pay/[username]/invoice — checker literal', async ({ request }) => {
   await request.post('/pay/[username]/invoice');
+});
+
+test('Endpoint: POST /pay/[username]/payment — proxies the shop payment opening', async ({
+  request,
+}) => {
+  // The mock api's shop has no stablecoin payment, so the route answers the fallback 503.
+  const response = await request.post('/pay/shop/payment', { data: { amountSats: 7_000 } });
+  expect(response.status()).toBe(503);
+  expect(await response.json()).toEqual({
+    error: 'Stablecoin payment is unavailable',
+    code: 'stablecoin_unavailable',
+  });
+  const bad = await request.post('/pay/shop/payment', { data: { amountSats: 1.5 } });
+  expect(bad.status()).toBe(400);
+  expect(await bad.json()).toEqual({ error: 'Enter a whole number of sats' });
+  await request.post('/pay/[username]/payment');
+});
+
+/** Records every request whose URL contains `part`. */
+function recordRequests(page: Page, part: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes(part)) {
+      urls.push(request.url());
+    }
+  });
+  return urls;
+}
+
+test('Function: fetchShopPayLink — an open till shows the shop payment of the pay link', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('238.21 USDT')).toBeVisible();
+  await expect(page.getByText('Polygon')).toHaveCount(2);
+  await expect(page.getByText('Arbitrum')).toHaveCount(1);
+  await expect(page.getByText('Lightning')).toHaveCount(0);
+  expect(opens).toEqual([]);
+});
+
+test("Function: scaleDecimalTo8 — the pay link's bitcoin amount is the till's exact sats", async ({
+  page,
+}) => {
+  expect(scaleDecimalTo8('0.00238093')).toBe(238_093n);
+  expect(scaleDecimalTo8('1e-8')).toBeNull();
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const profiles = recordRequests(page, '/pay/ada');
+  // The pay link's Lightning entry is 0.00238093 BTC, the till's charge 238'093 sats: they agree,
+  // so the page shows the payment without loading the pay profile again.
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  expect(profiles.filter((url) => new URL(url).pathname === '/pay/ada')).toHaveLength(1);
+});
+
+test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a mint", async ({
+  page,
+}) => {
+  await stubWalletLocationAssign(page);
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const minted = recordRequests(page, '/invoice');
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const detail = page.waitForRequest((request) => request.url().includes('/lnurlp/cb/ada?'));
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  expect(new URL((await detail).url()).search).toBe('?quote=q1&method=Lightning&asset=BTC');
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc2380930n1shop');
+  expect(minted).toEqual([]);
+  expect(opens).toEqual([]);
+});
+
+test('Function: jsonAmountText — 21 sats written as JSON numbers open the shop payment', async ({
+  page,
+}) => {
+  await stubWalletLocationAssign(page);
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const minted = recordRequests(page, '/invoice');
+  // Both bitcoin amounts of the pay link are the JSON number 0.00000021, which JSON.parse
+  // reads as 2.1e-7: the page still reads them as the 21 sats the payer entered.
+  await stubShopPayment(page, { lightningAsNumber: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc210n1shop');
+  expect(minted).toEqual([]);
+});
+
+test('Function: openShopPayment — Continue opens a shop payment, a repeat failure mints nothing', async ({
+  page,
+}) => {
+  await stubWalletLocationAssign(page);
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const bodies: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/pay/ada/payment')) {
+      bodies.push(`${request.method()} ${request.postData() ?? ''}`);
+    }
+  });
+  const minted = recordRequests(page, '/invoice');
+  await stubShopPayment(page, { posts: [502] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  const posted = `POST ${JSON.stringify({ amountSats: 21 })}`;
+  expect(bodies).toEqual([posted, posted]);
+  expect(minted).toEqual([]);
+  await page.unrouteAll();
+  await stubShopPayment(page, {});
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  // The pay link names the 21 sats posted: 0.021 USD at 100'000.00 USD per bitcoin.
+  await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+  // Pay opens the BOLT11 of the 21 sats the payer entered.
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc210n1shop');
+  expect(bodies).toEqual([posted, posted, posted]);
+  expect(minted).toEqual([]);
+});
+
+test('Function: openShopPayment — payment_open loads the page again and shows the open till', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/invoice');
+  await stubShopPayment(page, { posts: [409] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('5:00 left')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  await expect(page.getByLabel('Amount')).toHaveCount(0);
+  expect(opens).toHaveLength(1);
+  expect(minted).toEqual([]);
+});
+
+test('Function: PayLinkScreen — a shop payment shows the fiat typed on the page as typed, never the spot', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const bodies: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/pay/ada/payment')) {
+      bodies.push(request.postData() ?? '');
+    }
+  });
+  await fulfillSpot(page, { USD: '100000.00' });
+  await stubShopPayment(page, {});
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  const usd = page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' });
+  await expect(usd).toBeEnabled();
+  await usd.click();
+  await page.getByLabel('Amount').fill('12.5');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  // 12.50 USD at 100'000.00 USD per bitcoin.
+  expect(bodies).toEqual([JSON.stringify({ amountSats: 12_500 })]);
+  await expect(page.getByText("₿12'500")).toBeVisible();
+  await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(1);
+  // The pay link carries the posted sats, so the page shows the payment and its lines.
+  await expect(page.getByText('12.5 USDT')).toHaveCount(2);
+  await expect(
+    page.getByText('Another payer entered an amount first. Enter yours again.'),
+  ).toHaveCount(0);
+});
+
+test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spot rate", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  await fulfillSpot(page, { USD: '100000.00' });
+  const spot = page.waitForResponse((res) => new URL(res.url()).pathname === '/fx/spot');
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await spot;
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(0);
+});
+
+test('Function: openShopPayment — a refused repeat waits 20 s, reads the plain pay link, and mints', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/pay/ada/invoice');
+  const pay = recordRequests(page, '/.well-known/lnurlp/ada');
+  await stubShopPayment(page, { posts: [502, 503] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => opens.length).toBe(2);
+  await page.clock.fastForward(19_000);
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  expect(pay).toEqual([]);
+  expect(minted).toEqual([]);
+  await page.clock.fastForward(1_000);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+  await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+  await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
+  expect(opens).toHaveLength(2);
+  expect(minted).toHaveLength(1);
+  expect(pay).toHaveLength(1);
+});
+
+test('Function: openShopPayment — a lost start and a refusal show the start error while the pay link shows an open amount', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/pay/ada/invoice');
+  const pay = recordRequests(page, '/.well-known/lnurlp/ada');
+  await stubShopPayment(page, { posts: ['hang', 503], payLinks: ['payment'] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => opens.length).toBe(1);
+  // SHOP_PAYMENT_START_TIMEOUT_MS gives up on the lost answer; the repeat is refused.
+  await page.clock.fastForward(15_000);
+  await expect.poll(() => opens.length).toBe(2);
+  // SHOP_PAYMENT_RECHECK_DELAY_MS counts from the end of the lost call.
+  await page.clock.fastForward(19_000);
+  expect(pay).toEqual([]);
+  await page.clock.fastForward(1_000);
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  expect(pay).toHaveLength(1);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect.poll(() => pay.length).toBe(2);
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  expect(opens).toHaveLength(3);
+  expect(minted).toEqual([]);
+});
+
+test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const waits = recordRequests(page, '/lnurlp/wait/p1');
+  const opens = recordRequests(page, '/pay/ada/payment');
+  await stubShopPayment(page, {
+    charge: true,
+    waits: [
+      { status: 'Pending', paymentStatus: 'accepted' },
+      { status: 'Completed', paymentStatus: 'paid', at: '2026-09-24T12:00:02.000Z' },
+    ],
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('On its way')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  await page.clock.fastForward(2_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  await page.clock.fastForward(5_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  expect(waits.map((url) => new URL(url).search)).toEqual(['', '?since=accepted']);
+  expect(opens).toEqual([]);
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {

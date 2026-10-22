@@ -76,12 +76,10 @@ import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push'
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
+import { PAY_POLL_MS } from '@/lib/payment-link';
 
 /** How many times to poll `GET /messages` for payable status. */
 const PAY_POLL_ATTEMPTS = 8;
-
-/** Delay between pay / payable polls (ms). */
-const PAY_POLL_MS = 2000;
 
 /** Number of notes requested for each forum feed page. */
 const FORUM_PAGE_LIMIT = 20;

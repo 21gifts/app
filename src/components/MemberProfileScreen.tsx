@@ -65,9 +65,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Delay between pay polls (ms). */
-const PAY_POLL_MS = 2000;
+import { PAY_POLL_MS } from '@/lib/payment-link';
 
 /** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;

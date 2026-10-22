@@ -186,6 +186,84 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:shop",
+    "label": "/pl shop",
+    "visual": "state-pl-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:lightning-only",
+    "label": "/pl lightning-only",
+    "visual": "state-pl-lightning-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-invoice-failed",
+    "label": "/pl shop-invoice-failed",
+    "visual": "state-pl-shop-invoice-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-invoice-loading",
+    "label": "/pl shop-invoice-loading",
+    "visual": "state-pl-shop-invoice-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-awaiting",
+    "label": "/pl shop-awaiting",
+    "visual": "state-pl-shop-awaiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-window-passed",
+    "label": "/pl shop-window-passed",
+    "visual": "state-pl-shop-window-passed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-typed-fiat",
+    "label": "/pl shop-typed-fiat",
+    "visual": "state-pl-shop-typed-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:on-its-way",
+    "label": "/pl on-its-way",
+    "visual": "state-pl-on-its-way",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:paid",
+    "label": "/pl paid",
+    "visual": "state-pl-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:ended",
+    "label": "/pl ended",
+    "visual": "state-pl-ended",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:start-failed",
+    "label": "/pl start-failed",
+    "visual": "state-pl-start-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:start-waiting",
+    "label": "/pl start-waiting",
+    "visual": "state-pl-start-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:replaced",
+    "label": "/pl replaced",
+    "visual": "state-pl-replaced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:default",
     "label": "/wallet default",
     "visual": "screen-wallet",

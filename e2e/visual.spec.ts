@@ -13,6 +13,7 @@ import {
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
+import { fulfillStablecoinUnavailable, stubPlainPayLink, stubShopPayment } from './shop-payment';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -1440,6 +1441,10 @@ test.describe('screen baselines', () => {
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
         const url = route.request().url();
+        if (url.endsWith('/payment')) {
+          await fulfillStablecoinUnavailable(route);
+          return;
+        }
         if (url.includes('/invoice')) {
           await route.fulfill({
             status: 200,
@@ -1502,6 +1507,10 @@ test.describe('screen baselines', () => {
     await page.route(
       (url) => new URL(url).pathname.startsWith('/pay/'),
       async (route) => {
+        if (route.request().url().endsWith('/payment')) {
+          await fulfillStablecoinUnavailable(route);
+          return;
+        }
         if (route.request().url().includes('/invoice')) {
           await route.fulfill({ status: 502, contentType: 'application/json', body: '{}' });
           return;
@@ -1530,6 +1539,7 @@ test.describe('screen baselines', () => {
   });
 
   test('screen /pl charge', async ({ page }, testInfo) => {
+    await stubPlainPayLink(page);
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await fulfillRateDay(page);
     // pauseAt only moves forward, so the clock starts a minute earlier and freezes on the hour.
@@ -1573,6 +1583,7 @@ test.describe('screen baselines', () => {
   });
 
   test('screen /pl charge-failed', async ({ page }) => {
+    await stubPlainPayLink(page);
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
@@ -1604,6 +1615,317 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
     await shotScreen(page, 'state-pl-charge-failed');
+  });
+
+  test('screen /pl shop', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('1:30 left')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(page.getByText('238.19 USDT')).toBeVisible();
+    await expect(
+      page.getByText('To pay with USDT or USDC, scan the sticker with an OpenCryptoPay wallet.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-shop');
+  });
+
+  test('screen /pl lightning-only', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, lightningOnly: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    await expect(page.getByText(/USDT|USDC/)).toHaveCount(0);
+    await expect(page.getByText(/OpenCryptoPay/)).toHaveCount(0);
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(1);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-lightning-only');
+  });
+
+  test('screen /pl shop-invoice-failed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, detailFails: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-invoice-failed');
+  });
+
+  test('screen /pl shop-invoice-loading', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, detailHangs: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
+    ).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-invoice-loading');
+  });
+
+  test('screen /pl shop-awaiting', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { payLinkFails: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    // The pay link stores no fiat figure, so an amount typed in bitcoin stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
+    ).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText(/USDT|USDC/)).toHaveCount(0);
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-awaiting');
+  });
+
+  test('screen /pl shop-window-passed', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { openedWithoutWindow: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    // The pay link names the 21 sats the payer entered: 0.021 USD at 100'000.00 USD per bitcoin.
+    await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+    await expect(page.getByText('0.021 USDC')).toBeVisible();
+    await expect(page.getByText(/238\./)).toHaveCount(0);
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByText('1:30 left')).toBeVisible();
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-shop-window-passed');
+  });
+
+  test('screen /pl shop-typed-fiat', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, {});
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    const usd = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' });
+    await expect(usd).toBeEnabled();
+    await usd.click();
+    await page.getByLabel('Amount').fill('12.50');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    // 12.50 USD at 100'000.00 USD per bitcoin.
+    await expect(page.getByText("₿12'500")).toBeVisible();
+    // The payer typed fiat: that typed figure shows under the bitcoin, as typed.
+    await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
+    // The pay link names the entered 12'500 sats, so the lines carry the same 12.50 USD.
+    await expect(page.getByText('12.5 USDT')).toHaveCount(2);
+    await expect(page.getByText('12.5 USDC')).toBeVisible();
+    await expect(page.getByText(/238\./)).toHaveCount(0);
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-shop-typed-fiat');
+  });
+
+  test('screen /pl on-its-way', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, paymentStatus: 'accepted', status: 'Pending' });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('On its way')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
+    await shotScreen(page, 'state-pl-on-its-way');
+  });
+
+  test('screen /pl paid', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, paymentStatus: 'paid', status: 'Completed' });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Paid ✓')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
+    await shotScreen(page, 'state-pl-paid');
+  });
+
+  test('screen /pl ended', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, paymentStatus: 'ended', status: 'Pending' });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Ended', { exact: true })).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
+    // The till stores no fiat figure, so its amount stays bitcoin.
+    await expect(page.getByText(/\$/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
+    await shotScreen(page, 'state-pl-ended');
+  });
+
+  test('screen /pl start-failed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await stubShopPayment(page, { posts: [502] });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await shotScreen(page, 'state-pl-start-failed');
+  });
+
+  test('screen /pl start-waiting', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    const posts: string[] = [];
+    const payLinkReads: string[] = [];
+    page.on('request', (request) => {
+      const { pathname } = new URL(request.url());
+      if (pathname === '/pay/ada/payment') {
+        posts.push(pathname);
+      }
+      if (pathname === '/.well-known/lnurlp/ada') {
+        payLinkReads.push(pathname);
+      }
+    });
+    // A 502 leaves the outcome unknown; the repeat's 503 `stablecoin_unavailable` then waits.
+    await stubShopPayment(page, { posts: [502, 503] });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await motionSettled(page);
+    // The clock stops before Continue, so it stays inside the 20 s after the lost call and the
+    // wait is held; the form has settled first, so no glide waits on the stopped clock.
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect.poll(() => posts.length).toBe(2);
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    // Neither the start error nor any other line of the form shows while it waits.
+    await expect(page.getByText('This payment could not be started. Try again.')).toHaveCount(0);
+    await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+    expect(payLinkReads).toHaveLength(0);
+    await shotScreen(page, 'state-pl-start-waiting');
+    expect(posts).toHaveLength(2);
+    expect(payLinkReads).toHaveLength(0);
+  });
+
+  test('screen /pl replaced', async ({ page }) => {
+    await fulfillRateDay(page);
+    await stubShopPayment(page, { payLinkPayment: 'p2' });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByText('Another payer entered an amount first. Enter yours again.'),
+    ).toBeVisible();
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await shotScreen(page, 'state-pl-replaced');
   });
 
   test('screen /wallet', async ({ page }) => {

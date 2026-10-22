@@ -9,9 +9,9 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet. While the account has an open shop payment the api answers an OpenCryptoPay pay request instead (`quote.payment`, `transferAmounts`); the query string is forwarded.
 - **Errors:** Upstream 404/502.
-- **Used by:** Lightning wallets.
+- **Used by:** Lightning wallets; `fetchShopPayLink` for `PayLinkScreen` (an open till, the check after **Continue**, the re-read while the opened payment waits, and the quote refetch).
 - **Auth:** none.
 
 ## Endpoint: GET /pay/[username]
@@ -25,7 +25,14 @@
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
+- **Used by:** `PayLinkScreen` after **Continue** when `POST /pay/[username]/payment` answers 503 `stablecoin_unavailable` or a readable 4xx other than 409 `payment_open` on the first answer (a 409 whose body cannot be read is an unknown outcome), or, after an unknown outcome, when such an answer comes back and the pay link read 20 s after the end of the most recent unknown call is the plain Lightning request; and for an open till whose pay link is the plain Lightning request; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
+- **Auth:** none.
+
+## Endpoint: POST /pay/[username]/payment
+
+- **Purpose:** Proxies the opening of one shop payment for an amount the payer entered on `/pl`. Body `{ amountSats }`. Response `{ payment, expiresAt }`: the shop payment id, which the pay link then names as `quote.payment`, and the end of its five-minute window. A new payer amount replaces an open payer payment.
+- **Errors:** Upstream `{ error, code }` bodies: 404 when the person cannot be paid, 502 when the wallet or the mint fails, 400 for a bad amount, 409 `payment_open` while a till charge is pending, 503 `stablecoin_unavailable` when this shop has no stablecoin payment or it is switched off or rate limited. A username that is not one path segment answers 404 here without calling the api. The incoming request's abort signal is passed upstream (`proxyApiRequest` with `forwardAbort`), so a page that gives up on the call after 15 s or leaves disconnects the api request too.
+- **Used by:** `openShopPayment` from `PayLinkScreen` after **Continue**.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]

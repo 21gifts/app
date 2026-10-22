@@ -939,6 +939,25 @@ const server = http.createServer(async (req, res) => {
     });
     return;
   }
+  // The shop has no stablecoin payment here, so the payment page mints with the invoice route.
+  if (method === 'POST' && pathName === '/pay/shop/payment') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const amountSats = parsed?.amountSats;
+    if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+      json(res, 400, { error: 'Enter a whole number of sats' });
+      return;
+    }
+    json(res, 503, {
+      error: 'Stablecoin payment is unavailable',
+      code: 'stablecoin_unavailable',
+    });
+    return;
+  }
   if (method === 'POST' && pathName === '/pay/shop/invoice') {
     let parsed;
     try {
