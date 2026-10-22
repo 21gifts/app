@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
+import { Button } from '@/components/ui/Button';
 
 type HomeShopsCopy = {
   title: string;
@@ -616,7 +617,7 @@ function FilterMenu({
     };
   }, [open, menuId]);
 
-  function choose(event: ReactMouseEvent<HTMLDivElement>, next: string): void {
+  function choose(event: ReactMouseEvent<HTMLButtonElement>, next: string): void {
     event.stopPropagation();
     if (next !== value) onChange(next);
     setOpen(false);
@@ -642,16 +643,21 @@ function FilterMenu({
       {open ? (
         <div role="listbox" aria-labelledby={labelId}>
           {options.map((option) => (
-            <div
+            <button
               key={option.value === '' ? 'all' : option.value}
+              type="button"
               role="option"
+              tabIndex={-1}
               aria-selected={option.value === value}
-              className="min-h-11"
-              onClick={(event) => choose(event, option.value)}
+              className="min-h-11 border-0 bg-transparent p-0 text-left font-inherit"
+              onClick={(event) => {
+                event.stopPropagation();
+                choose(event, option.value);
+              }}
             >
               {option.swatch === null ? null : <span className={option.swatch} />}
               {option.label}
-            </div>
+            </button>
           ))}
         </div>
       ) : null}
@@ -1037,12 +1043,12 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         </div>
         {showError ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="text-app-danger">
+            <p role="alert" className="text-center text-sm text-app-danger">
               {copy.error}
             </p>
-            <button type="button" className="min-h-11" onClick={retryFilters}>
+            <Button type="button" onClick={retryFilters}>
               {copy.retry}
-            </button>
+            </Button>
           </div>
         ) : null}
         {showEmpty ? <p>{copy.empty}</p> : null}

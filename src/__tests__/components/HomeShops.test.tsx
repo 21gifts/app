@@ -695,7 +695,7 @@ describe('HomeShops', () => {
       expect(screen.getByRole('alert').textContent).toBe(copy.error);
     });
     const alert = screen.getByRole('alert');
-    expect(alert.className).toBe('text-app-danger');
+    expect(alert.className).toBe('text-center text-sm text-app-danger');
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(callsTo('/map/places')).toHaveLength(0);
     expect(screen.getByRole('button', { name: copy.map }).getAttribute('aria-pressed')).toBe(
@@ -703,7 +703,8 @@ describe('HomeShops', () => {
     );
     const retry = screen.getByRole('button', { name: copy.retry });
     expect(retry.getAttribute('type')).toBe('button');
-    expect(retry.className).toBe('min-h-11');
+    expect(retry.className).toContain('min-h-11');
+    expect(retry.className).toContain('rounded-full');
 
     fireEvent.click(retry);
     await waitFor(() => {
