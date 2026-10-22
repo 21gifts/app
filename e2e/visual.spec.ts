@@ -15230,6 +15230,38 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-about-editing');
   });
 
+  test('profile about-long', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-about-long');
+  });
+
+  test('profile about-controls', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-about-controls');
+  });
+
   test('profile about-banner-crop', async ({ page }) => {
     // state-profile-about-banner-crop
     await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
@@ -15822,6 +15854,40 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-grants-apply-about');
   });
 
+  test('state /grants/apply about-long', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima' });
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-apply-about-long');
+  });
+
+  test('state /grants/apply about-controls', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima' });
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-apply-about-controls');
+  });
+
   test('state /grants/apply sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
@@ -15843,6 +15909,42 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-profile-apply-photo');
   });
 
+  test('profile apply photo-long', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`${'a '.repeat(4000)}a`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me must be at most 8000 characters.',
+    });
+    await expect(alert).toHaveText('About me must be at most 8000 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-photo-long');
+  });
+
+  test('profile apply photo-controls', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'About me' }).fill(`Hello${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'About me cannot include control characters other than line breaks.',
+    });
+    await expect(alert).toHaveText(
+      'About me cannot include control characters other than line breaks.',
+    );
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save About me' })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-photo-controls');
+  });
+
   test('profile apply location', async ({ page }) => {
     await seedApply(page, {
       username: 'joey-rosima',
@@ -15852,6 +15954,44 @@ test.describe('profile apply screens', () => {
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add the place you live.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-location');
+  });
+
+  test('profile apply location-long', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await page.getByRole('textbox', { name: 'Location', exact: true }).fill('a'.repeat(81));
+    const alert = page.getByRole('alert').filter({
+      hasText: 'Location must be at most 80 characters.',
+    });
+    await expect(alert).toHaveText('Location must be at most 80 characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-location-long');
+  });
+
+  test('profile apply location-controls', async ({ page }) => {
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('Next, add the place you live.')).toBeVisible();
+    await page
+      .getByRole('textbox', { name: 'Location', exact: true })
+      .fill(`Manila${String.fromCharCode(1)}`);
+    const alert = page.getByRole('alert').filter({
+      hasText: 'Location cannot include control characters.',
+    });
+    await expect(alert).toHaveText('Location cannot include control characters.');
+    await alert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-profile-apply-location-controls');
   });
 
   test('profile apply question', async ({ page }) => {

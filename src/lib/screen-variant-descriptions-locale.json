@@ -4933,5 +4933,45 @@
     "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Wallet of Satoshi address konnte nicht aktualisiert werden (la.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:about-long": {
+    "de": "Der Über-mich-Editor ist offen mit mehr als 8000 Zeichen zeigt Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de Sobre mí está abierto con más de 8000 caracteres muestra Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng Tungkol sa akin na may mahigit 8000 character ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:about-controls": {
+    "de": "Der Über-mich-Editor ist offen mit einem Steuerzeichen zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de Sobre mí está abierto con un carácter de control muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng Tungkol sa akin na may control character ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/grants/apply:about-long": {
+    "de": "Der erste Bewerbungsschritt ist offen. Mehr als 8000 Zeichen in Über mich zeigen Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können. Der Hinweis liegt im Fenster.",
+    "es": "El primer paso de la solicitud está abierto. Más de 8000 caracteres en Sobre mí muestran Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Primero, escribe un breve Sobre mí para que la gente te conozca. La alerta está en la ventana.",
+    "fil": "Bukas ang unang hakbang ng pag-apply. Ang mahigit 8000 character sa About me ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Una, magsulat ng maikling About me para makilala ka ng iba. Nasa window ang alerto."
+  },
+  "/grants/apply:about-controls": {
+    "de": "Der erste Bewerbungsschritt ist offen. Ein Steuerzeichen in Über mich zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können. Der Hinweis liegt im Fenster.",
+    "es": "El primer paso de la solicitud está abierto. Un carácter de control en Sobre mí muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Primero, escribe un breve Sobre mí para que la gente te conozca. La alerta está en la ventana.",
+    "fil": "Bukas ang unang hakbang ng pag-apply. Ang control character sa About me ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Una, magsulat ng maikling About me para makilala ka ng iba. Nasa window ang alerto."
+  },
+  "/grants/apply:photo-long": {
+    "de": "Der Fotoschritt ist offen nach einem echten Über mich. Mehr als 8000 Zeichen im Editor zeigen Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes fügen Sie ein Foto zu Über mich hinzu. Der Hinweis liegt im Fenster.",
+    "es": "El paso de la foto está abierto tras un Sobre mí de verdad. Más de 8000 caracteres en el editor muestran Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade una foto a tu Sobre mí. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng litrato pagkatapos ng totoong Tungkol sa akin. Ang mahigit 8000 character sa editor ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, magdagdag ng larawan sa About me. Nasa window ang alerto."
+  },
+  "/grants/apply:photo-controls": {
+    "de": "Der Fotoschritt ist offen nach einem echten Über mich. Ein Steuerzeichen in Über mich zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes fügen Sie ein Foto zu Über mich hinzu. Der Hinweis liegt im Fenster.",
+    "es": "El paso de la foto está abierto tras un Sobre mí de verdad. Un carácter de control en Sobre mí muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade una foto a tu Sobre mí. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng litrato pagkatapos ng totoong Tungkol sa akin. Ang control character sa About me ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, magdagdag ng larawan sa About me. Nasa window ang alerto."
+  },
+  "/grants/apply:location-long": {
+    "de": "Der Ortsschritt ist offen. Mehr als 80 Zeichen zeigen Der Ort darf höchstens 80 Zeichen haben. (location.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
+    "es": "El paso del lugar está abierto. Más de 80 caracteres muestran El lugar debe tener como máximo 80 caracteres. (location.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng lugar. Ang mahigit 80 character ay nagpapakita ng Hanggang 80 character lang ang lugar. (location.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
+  },
+  "/grants/apply:location-controls": {
+    "de": "Der Ortsschritt ist offen. Ein Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
+    "es": "El paso del lugar está abierto. Un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng lugar. Ang control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
   }
 }

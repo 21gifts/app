@@ -2490,6 +2490,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:about-long",
+    "label": "/profile about-long",
+    "visual": "state-profile-about-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-controls",
+    "label": "/profile about-controls",
+    "visual": "state-profile-about-controls",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:about-banner-crop",
     "label": "/profile about-banner-crop",
     "visual": "state-profile-about-banner-crop",
@@ -2892,6 +2904,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/apply:about-long",
+    "label": "/grants/apply about-long",
+    "visual": "state-grants-apply-about-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/apply:about-controls",
+    "label": "/grants/apply about-controls",
+    "visual": "state-grants-apply-about-controls",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants/apply:sunday",
     "label": "/grants/apply sunday",
     "visual": "state-grants-apply-sunday",
@@ -2904,9 +2928,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/apply:photo-long",
+    "label": "/grants/apply photo-long",
+    "visual": "state-profile-apply-photo-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/apply:photo-controls",
+    "label": "/grants/apply photo-controls",
+    "visual": "state-profile-apply-photo-controls",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants/apply:location",
     "label": "/grants/apply location",
     "visual": "state-profile-apply-location",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/apply:location-long",
+    "label": "/grants/apply location-long",
+    "visual": "state-profile-apply-location-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/apply:location-controls",
+    "label": "/grants/apply location-controls",
+    "visual": "state-profile-apply-location-controls",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

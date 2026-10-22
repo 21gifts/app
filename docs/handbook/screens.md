@@ -4496,6 +4496,18 @@ Owner in the About me textarea editor. From the empty CTA, click **Write your Ab
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 
+### Variant: about-long
+
+The About me editor is open with more than 8000 characters shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me long](images/profile-about-long.png)
+
+### Variant: about-controls
+
+The About me editor is open with a control character shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me controls](images/profile-about-controls.png)
+
 ### Variant: about-banner-crop
 
 About me editor with the wide-image cropper in the profile header. From the empty CTA, **Write your About me**, then a square portrait on the header input `profile-banner`. The labeled **Add a wide image** is replaced by the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). **Add a profile photo** stays. The editor shows only **Add a photo**. Needle `state-profile-about-banner-crop`.
@@ -4939,6 +4951,18 @@ Verified username joey-rosima with status none or rejected sees the first apply 
 
 ![21.gifts apply about](images/grants-apply-about.png)
 
+### Variant: about-long
+
+The first apply step is open. More than 8000 characters in About me shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about long](images/grants-apply-about-long.png)
+
+### Variant: about-controls
+
+The first apply step is open. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about controls](images/grants-apply-about-controls.png)
+
 ### Variant: sunday
 
 On Sunday the About-me step shows Writing is paused on Sunday and hides Save.
@@ -4951,11 +4975,35 @@ After a real About me, the next step asks for a photo.
 
 ![21.gifts apply photo](images/profile-apply-photo.png)
 
+### Variant: photo-long
+
+The photo step is open after a real About me. More than 8000 characters in the editor shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo long](images/profile-apply-photo-long.png)
+
+### Variant: photo-controls
+
+The photo step is open after a real About me. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo controls](images/profile-apply-photo-controls.png)
+
 ### Variant: location
 
 After About me and a photo, the next step asks for the place you live.
 
 ![21.gifts apply location](images/profile-apply-location.png)
+
+### Variant: location-long
+
+The location step is open. More than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location long](images/profile-apply-location-long.png)
+
+### Variant: location-controls
+
+The location step is open. A control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location controls](images/profile-apply-location-controls.png)
 
 ### Variant: question
 
