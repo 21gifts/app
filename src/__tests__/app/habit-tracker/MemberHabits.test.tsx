@@ -3060,4 +3060,55 @@ describe('MemberHabits', () => {
       await screen.findByText('Could not load or save the tracker. Please try again.'),
     ).toBeTruthy();
   });
+
+  it('keeps only the latest habit result when a field rejection and the tracker alert follow each other', async () => {
+    const tracker = 'Could not load or save the tracker. Please try again.';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          const body = JSON.parse(String(init.body)) as {
+            action?: string;
+            name?: string;
+            text?: string;
+          };
+          if (body.action === 'add' && body.name === 'Nope') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'comment' && body.text === 'not this field') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.change(comment, { target: { value: 'not this field' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(await screen.findByText(tracker)).toBeTruthy();
+
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.change(within(addForm).getByLabelText('Name'), { target: { value: 'Nope' } });
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    expect(screen.queryByText(tracker)).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(await screen.findByText(tracker)).toBeTruthy();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+  });
 });

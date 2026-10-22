@@ -356,16 +356,20 @@ export function MemberHabits(): ReactElement {
       const action = body['action'];
       if (field !== null && action === 'add') {
         setHabitApi({ where: 'add', field });
+        setError(false);
         return false;
       }
       if (field !== null && action === 'edit' && typeof body['id'] === 'string') {
         setHabitApi({ where: 'edit', id: body['id'], field });
+        setError(false);
         return false;
       }
       if (action === 'comment' && field === 'comment' && typeof body['habitId'] === 'string') {
         setHabitApi({ where: 'comment', id: body['habitId'], field: 'comment' });
+        setError(false);
         return false;
       }
+      setHabitApi(null);
       setError(true);
       return false;
     }

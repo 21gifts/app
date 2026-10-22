@@ -1991,4 +1991,37 @@ describe('PlaceField', () => {
     expect(screen.getByRole('alert').textContent).toBe('Keep the place name to 80 characters');
     expect(screen.getByRole('button', { name: 'Use this place' })).toBeTruthy();
   });
+
+  it('drops a rejected place-label limit when the dialog opens again', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error(PLACE_LABEL_API_MESSAGE));
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Place name'), { target: { value: 'Park' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Keep the place name to 80 characters',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+    expect((within(dialog).getByLabelText('Place name') as HTMLInputElement).value).toBe(
+      'Happyland',
+    );
+    expect(
+      (within(dialog).getByRole('button', { name: 'Use this place' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+  });
 });

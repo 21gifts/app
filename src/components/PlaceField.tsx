@@ -210,6 +210,7 @@ export function PlaceField(props: {
     setSaveError(null);
     setReportedProblem(null);
     setUnknownSaveError(false);
+    setServerLabelTooLong(false);
   }, [props.place]);
 
   useEffect(() => {
