@@ -64,7 +64,7 @@ const ALICE: GiftDay = {
 describe('GiftDayTable', () => {
   it('shows the empty copy', () => {
     render(<GiftDayTable day={EMPTY} fiat="USD" numberFormat="ch" />);
-    expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
+    expect(screen.getByText('No donations recorded on this day.')).toBeTruthy();
   });
 
   it('lists gifts', () => {

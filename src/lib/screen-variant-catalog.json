@@ -18,6 +18,60 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:faq-account-open",
+    "label": "/ faq-account-open",
+    "visual": "state-root-faq-account-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-share-open",
+    "label": "/ faq-share-open",
+    "visual": "state-root-faq-share-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-password-open",
+    "label": "/ faq-password-open",
+    "visual": "state-root-faq-password-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-device-open",
+    "label": "/ faq-device-open",
+    "visual": "state-root-faq-device-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-recipient-open",
+    "label": "/ faq-recipient-open",
+    "visual": "state-root-faq-recipient-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-bitcoin-open",
+    "label": "/ faq-bitcoin-open",
+    "visual": "state-root-faq-bitcoin-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-taxes-open",
+    "label": "/ faq-taxes-open",
+    "visual": "state-root-faq-taxes-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-sat-open",
+    "label": "/ faq-sat-open",
+    "visual": "state-root-faq-sat-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:install-open",
+    "label": "/ install-open",
+    "visual": "state-root-install-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/legal:default",
     "label": "/legal default",
     "visual": "screen-legal",
@@ -231,6 +285,12 @@
     "id": "/setup/username:default",
     "label": "/setup/username default",
     "visual": "screen-setup-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/setup/username:invalid",
+    "label": "/setup/username invalid",
+    "visual": "state-setup-username-invalid",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2136,6 +2196,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:overlay-username-invalid",
+    "label": "/members/[accountId] overlay-username-invalid",
+    "visual": "state-members-overlay-username-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]/verify:default",
     "label": "/members/[accountId]/verify default",
     "visual": "screen-members-accountId-verify",
@@ -2379,6 +2445,12 @@
     "id": "/profile:push-enable-error",
     "label": "/profile push-enable-error",
     "visual": "state-profile-push-enable-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:location-edit",
+    "label": "/profile location-edit",
+    "visual": "state-profile-location-edit",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4239,6 +4311,18 @@
     "id": "/welcome:shop-edit-save-rejected",
     "label": "/welcome shop-edit-save-rejected",
     "visual": "state-welcome-shop-edit-save-rejected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:overlay-username-invalid",
+    "label": "/welcome overlay-username-invalid",
+    "visual": "state-welcome-overlay-username-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:install-open",
+    "label": "/welcome install-open",
+    "visual": "state-welcome-install-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

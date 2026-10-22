@@ -84,7 +84,9 @@ describe('UsernameForm', () => {
     vi.mocked(setUsername).mockRejectedValueOnce(new Error('username-invalid'));
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(
-      await screen.findByText('Use English letters, numbers, hyphen, underscore, or dot'),
+      await screen.findByText(
+        'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      ),
     ).toBeTruthy();
 
     vi.mocked(setUsername).mockRejectedValueOnce('boom');

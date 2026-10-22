@@ -1387,7 +1387,7 @@ async function fulfillConversationTranslatePost(
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     await shotScreen(page, 'screen-root');
   });
 
@@ -1399,9 +1399,7 @@ test.describe('screen baselines', () => {
         page.getByLabel('Primary').getByRole('link', { name: 'Handbook' }),
       ).toBeVisible();
     } else {
-      await expect(
-        page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     }
     await shotScreen(page, 'state-root-mobile-nav');
   });
@@ -1413,6 +1411,125 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-language');
   });
 
+  test('state / faq-account-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Do I need an account to see the forum?').click();
+    await expect(
+      faq.getByText(
+        'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-account-open');
+  });
+
+  test('state / faq-share-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Does 21.gifts keep any of my donation?').click();
+    await expect(
+      faq.getByText(
+        '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-share-open');
+  });
+
+  test('state / faq-password-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Does 21.gifts store my password?').click();
+    await expect(
+      faq.getByText(
+        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-password-open');
+  });
+
+  test('state / faq-device-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('What if I lose my device?').click();
+    await expect(
+      faq.getByText(
+        'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-device-open');
+  });
+
+  test('state / faq-recipient-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Who receives the Bitcoin?').click();
+    await expect(
+      faq.getByText(
+        "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-recipient-open');
+  });
+
+  test('state / faq-bitcoin-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Why Bitcoin?').click();
+    await expect(
+      faq.getByText(
+        'So you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-bitcoin-open');
+  });
+
+  test('state / faq-taxes-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Is this regulated, and how do taxes work?').click();
+    await expect(
+      faq.getByText(
+        '21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation. Check the requirements that apply to you.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-taxes-open');
+  });
+
+  test('state / faq-sat-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('What does ₿1 mean here?').click();
+    await expect(
+      faq.getByText(
+        'On 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-sat-open');
+  });
+
+  test('state / install-open', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+      Object.defineProperty(navigator, 'standalone', {
+        configurable: true,
+        get: () => false,
+      });
+    });
+    await page.goto('/');
+    const install = page.locator('main').getByRole('button', { name: 'Install app' });
+    await expect(install).toBeVisible();
+    await install.click();
+    await expect(
+      page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+    ).toBeVisible();
+    // The sheet is position:fixed. A full-page stitch would paint it into every chunk.
+    await shotScreen(page, 'state-root-install-open', false);
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -1421,7 +1538,7 @@ test.describe('screen baselines', () => {
 
   test('screen /about', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
     await shotScreen(page, 'screen-about');
   });
 
@@ -1433,7 +1550,7 @@ test.describe('screen baselines', () => {
 
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Help someone' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
   });
 
@@ -2120,7 +2237,7 @@ test.describe('login variant baselines', () => {
     await page.goto('/login');
     await expect(
       page.getByRole('alert').filter({
-        hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+        hasText: 'You signed in with a different account. Try again with the right one.',
       }),
     ).toBeVisible();
     await shotScreen(page, 'state-login-wrong-account');
@@ -2681,6 +2798,43 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/username');
     await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
     await shotScreen(page, 'screen-setup-username');
+  });
+
+  test('state /setup/username invalid', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          setup: 'username',
+          missing: ['username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await page.goto('/setup/username');
+    await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('Bad Name!');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-setup-username-invalid');
   });
 
   test('screen /setup/address', async ({ page }) => {
@@ -9194,6 +9348,133 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-overlay-username');
   });
 
+  test('state /members overlay-username-invalid', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          location: null,
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: ['username'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await page.getByLabel('Your reaction').fill('Hello');
+    await page.getByLabel('Amount').fill('1');
+    // ForumBoard re-reveals the form when the fiat line grows it; wait before the dialog locks.
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.evaluate(
+      () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+    );
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('.alice');
+    await dialog.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      dialog.getByRole('alert').filter({
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      }),
+    ).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await shotScreen(page, 'state-members-overlay-username-invalid');
+  });
+
   test('state /members staff-verify', async ({ page }) => {
     const staffId = '11111111-1111-4111-8111-111111111111';
     const memberId = '22222222-2222-4222-8222-222222222222';
@@ -14387,6 +14668,19 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-profile-push-enable-error');
   });
+
+  test('profile location-edit', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit location' }).click();
+    const field = page.getByRole('textbox', { name: 'Location' });
+    await expect(field).toBeVisible();
+    await expect(field).toHaveAttribute('placeholder', 'City or country');
+    await field.scrollIntoViewIfNeeded();
+    await expect(field).toBeInViewport();
+    await shotScreen(page, 'state-profile-location-edit');
+  });
 });
 
 test.describe('profile funding states', () => {
@@ -14901,7 +15195,7 @@ test.describe('profile apply screens', () => {
     await expect(
       page.getByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveAttribute(
       'href',
       'https://21.gifts/about',
     );
@@ -14921,7 +15215,7 @@ test.describe('profile apply screens', () => {
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-apply-truth');
   });
 
@@ -18205,6 +18499,31 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  test('welcome install-open', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+      Object.defineProperty(navigator, 'standalone', {
+        configurable: true,
+        get: () => false,
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const install = page.getByRole('button', { name: 'Install app' });
+    await expect(install).toBeVisible();
+    await install.click();
+    await expect(
+      page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-install-open', false);
+  });
+
   async function menuLayout(page: Page): Promise<'lifted' | 'sheet' | 'dropdown'> {
     const sheet = await page.locator('html').getAttribute('data-menu-sheet');
     const cls = (await page.locator('#signed-in-menu').getAttribute('class')) ?? '';
@@ -18776,6 +19095,53 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-overlay-username');
+  });
+
+  test('welcome overlay-username-invalid', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          location: null,
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: ['username'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('.alice');
+    await dialog.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      dialog.getByRole('alert').filter({
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-overlay-username-invalid');
   });
 
   test('welcome overlay-introduce', async ({ page }) => {
@@ -24749,7 +25115,7 @@ test.describe('moderate applications screens', () => {
     await expect(
       page.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveAttribute(
       'href',
       'https://21.gifts/about',
     );
@@ -24790,7 +25156,7 @@ test.describe('moderate applications screens', () => {
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-applications-accountId-truth');
   });
 
@@ -25753,7 +26119,7 @@ test.describe('stats variant baselines', () => {
       });
     });
     await page.goto('/stats');
-    await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+    await expect(page.getByText('No donations recorded yet.')).toBeVisible();
     await shotScreen(page, 'state-stats-empty');
   });
 
@@ -25775,7 +26141,7 @@ test.describe('stats variant baselines', () => {
 
   test('stats day empty', async ({ page }) => {
     await page.goto('/stats/2026-06-02');
-    await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+    await expect(page.getByText('No donations recorded on this day.')).toBeVisible();
     await shotScreen(page, 'state-stats-day-empty');
   });
 

@@ -2,16 +2,24 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { ButtonLink } from '@/components/ui';
 import { getCatalog, type MessageKey } from '@/lib/messages';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
 /**
- * Title and description for `/about` (overrides the root layout metadata).
+ * English metadata for `/about`. Canonical and hreflang follow the language URL.
+ *
+ * @returns Next.js metadata for this page.
  */
-export const metadata: Metadata = {
-  title: 'About — 21.gifts',
-  description: 'The three convictions 21.gifts stands on.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  return marketingMetadata(
+    '/about',
+    'What 21.gifts stands for | 21.gifts',
+    'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.',
+    locale,
+  );
+}
 
 /**
  * Three convictions the house stands on at `/about`, with Matthew 10:8.
@@ -30,7 +38,7 @@ export default async function AboutPage(): Promise<ReactElement> {
           <p className="text-sm font-medium tracking-widest text-accent uppercase">
             {t('about.kicker')}
           </p>
-          <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-3 text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl">
             {t('about.heading')}
           </h1>
           <p className="mt-6 text-lg text-paper/60">{t('about.lead')}</p>

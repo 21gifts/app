@@ -1,5 +1,12 @@
 # Functions
 
+## Function: marketingMetadata
+
+- **Purpose:** Title, description, and the Open Graph image stay the same English sentences on every language URL. Only the canonical URL, which is also the Open Graph URL, and the reciprocal hreflang links change with the language. Filipino pages are linked with `hreflang="tl"` because Google Search accepts only ISO 639-1 codes in hreflang and lists Filipino as `tl`. The URL prefix stays `/fil`.
+- **Inputs:** Unprefixed path, English title, English description, and an optional locale for Home, About, Donate, and Rules. `HREFLANG_BY_LOCALE` maps each UI locale to its hreflang code (`fil` → `tl`; `en`, `de`, and `es` stay themselves).
+- **Returns / side effects:** Next.js `Metadata`; no I/O. Localized Home, About, Donate, and Rules alternates use that map, so the Filipino alternate is `hreflang="tl"` with href `/fil…`, plus `x-default` on the unprefixed path.
+- **Used by:** Home, About, Donate, Rules, Stats, Legal, and Handbook pages.
+
 ## Function: PosPage
 
 - **Purpose:** App Router page for `/pos`. Wraps `PosScreen` in `AppShell` and `OnboardingGate screen="profile"`.
@@ -164,7 +171,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each donation's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. Reads `useFiatPreference`. No network.
 - **Used by:** `StatsLoader`.
@@ -185,14 +192,14 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. FiatPicker on the loaded table **only when unsigned** (`useHydrateSession().ready && session === null`). The summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, selected fiat, numberFormat)`.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. FiatPicker on the loaded table **only when unsigned** (`useHydrateSession().ready && session === null`). The summary line is `{n} donation(s) · ₿ · formatFiatDisplay(total, selected fiat, numberFormat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
 - **Returns / side effects:** React element. Calls `fetchGiftDay`. Reads `useFiatPreference` and `useNumberFormat` and passes both into `GiftDayTable`.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
 
-- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, {FiatCode}), or empty copy **No gifts recorded on this day.**
+- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, {FiatCode}), or empty copy **No donations recorded on this day.**
 - **Inputs:** `day: GiftDay`, `fiat: FiatCode`, and required `numberFormat` (`ch` / `us` / `de`) for ₿ and fiat cells.
 - **Returns / side effects:** React element. Fourth column header is the selected code; cells use `formatBitcoin` and `formatFiatDisplay` with `numberFormat`. No network.
 - **Used by:** `DayLoader`.
@@ -227,23 +234,44 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`, `/en`, `/de`, `/es`, and `/fil`. Marketing landing: pitch, how it works, discovery cards, why, the `HappylandSection` place portrait, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/{locale}/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
-- **Returns / side effects:** The home screen element.
-- **Used by:** Route `/`.
+- **Returns / side effects:** The home screen element. The donate action points at `/{locale}/donate`.
+- **Used by:** Routes `/`, `/en`, `/de`, `/es`, and `/fil`.
+
+## Function: writeLocaleCookie
+
+- **Purpose:** Write the visitor's language into the `locale` cookie for one year. Shared by the language controls, account sync, and route sync so each caller stores the same attributes.
+- **Inputs:** `locale`, one supported locale (`en`, `de`, `es`, or `fil`).
+- **Returns / side effects:** Sets `document.cookie` to `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax`, and appends `; Secure` when the page is HTTPS. Returns void. Does not navigate or refresh.
+- **Used by:** `LanguageSwitcher`, `LanguagePreferenceSwitcher`, `AccountPreferenceSync`, and `LocaleRouteSync`.
+
+## Function: readLocaleCookie
+
+- **Purpose:** Read the supported language stored in the `locale` cookie.
+- **Inputs:** None. Reads `document.cookie`.
+- **Returns / side effects:** That locale when the value is exactly `en`, `de`, `es`, or `fil`; otherwise `null` (missing or unsupported). Does not write.
+- **Used by:** `LocaleRouteSync` and `AccountPreferenceSync`.
+
+## Function: LocaleRouteSync
+
+- **Purpose:** Keep the root layout on the language of the path that is showing. Mounted once under the root provider. Renders nothing. A client navigation does not re-render the root layout, so a mismatch refreshes it. The language switcher does not do this.
+- **Inputs:** None. Reads the pathname, the provider locale, the auth account's saved language, and the locale cookie via `readLocaleCookie`.
+- **Returns / side effects:** Returns `null`. On a pathname change, when the provider locale changes, and on `pageshow` when `persisted` is true, a language URL whose cookie differs is stored with `writeLocaleCookie` when the account has no saved language. On a path without a language prefix, the saved account language is stored with `writeLocaleCookie` when the cookie differs, before refresh. The language the server should render is the URL language, otherwise the saved account language, otherwise the cookie. When that differs from the provider locale, `router.refresh()` runs once for that path and language; the guard is cleared as soon as the provider shows the expected language, including on the same path, so a later mismatch there refreshes again, as does a later return to the same language URL. A provider change onto the expected language does not refresh. A `pageshow` that is not persisted, a plain event, a cookie that already matches, a language URL when the account has a saved language, and unmounting do not write.
+- **Used by:** `RootLayout`.
 
 ## Function: LanguageSwitcher
 
-- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
+- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie, stores it on the account when signed in, and either opens the localized public URL or refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations` and an optional session token from storage. No `embedded` prop.
-- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS before `router.refresh()`, as before. Never set on first visit.
+- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels (English/Deutsch/Español/Filipino). With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not navigate, while success merges only `locale` onto the current same-id account. After that successful save, the path and the target are read again from the URL as it is then. A signed-out choice keeps the path read before the click. It then calls `writeLocaleCookie`. Public Home, About, Donate, and Rules choices fully load the corresponding `/{locale}` URL so the page, shared navigation, and footer all use the new language; other unsigned app routes call `router.refresh()`. Choosing the current language on an already localized URL is a no-op; choosing it on a legacy URL opens its stable URL. The switcher never sets the cookie on a first visit; a public language URL sets it in `middleware` when the browser opens that URL as a page. The switcher does not watch the path and does not listen for `pageshow`. `LocaleRouteSync` aligns the cookie and the rendered language for an in-app navigation and for a page restored from the back/forward cache.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, unsigned `/rules`, unsigned `/messages/[id]`, `/view/[viewKey]`.
 
 ## Function: LanguagePreferenceSwitcher
 
 - **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
 - **Inputs:** None. Reads current locale via `useTranslations` and an optional session token from storage. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
-- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes the locale cookie, including `Secure` on HTTPS, then refreshes as before.
+- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before `writeLocaleCookie` and refreshing. Without a token it does not bump or POST and calls `writeLocaleCookie`, then refreshes as before.
 - **Used by:** `ProfileScreen`.
 
 ## Function: NumberFormatSwitcher
@@ -313,7 +341,7 @@
 
 - **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
 - **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
-- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, writes a differing locale through `writeLocaleCookie` and refreshes when `readLocaleCookie()` is not that language, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
 - **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
 
 ## Function: bumpLocaleGeneration
@@ -381,11 +409,11 @@
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
+- **Purpose:** Next.js page for `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`. Guest-visible donation explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `localizedPublicPath(locale, '/')` when unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
-  - **Route `/donate`**
+  - **Route `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`**
   - **Home CTA `home.ctaSend`**
   - **LanguageSwitcher on `/donate`**
 
@@ -472,6 +500,13 @@
 - **Inputs:** `screen` (`login` / `wallet` / `name` / `username` / `address` / `rules` / `welcome` / `profile`), `children`, and optional `allowGuest`. Members use `screen="profile"`. `/wallet` uses `screen="wallet"`. `/welcome` passes `allowGuest`.
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. Follows `nextOnboardingPath`. The recovery phrase is not a setup step and does not replace the opened page; `nextOnboardingPath` never returns `/wallet`. `/wallet` itself stays on screen when `setup` is `'wallet'` or the next step is `/welcome`. `allowGuest` on `/welcome` renders the children with no session instead of `/login`. Profile and members stay only when the next step is `/welcome`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/grants`, `/grants/apply`, `/grants/applications`, `/grants/applications/[accountId]`, `/trust-chain`, `/shops`, `/statistics`.
+
+## Function: WelcomeLayout
+
+- **Purpose:** Segment layout for `/welcome`. Publishes noindex metadata so the signed-in living room is not public search content.
+- **Inputs:** `children`, the nested page.
+- **Returns / side effects:** Renders `children` unchanged. `metadata.robots` is `{ index: false, follow: false }`.
+- **Used by:** Route `/welcome`.
 
 ## Function: SignedInChrome
 
@@ -1032,10 +1067,10 @@
 
 ## Function: HomeWordmark
 
-- **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
-- **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Uses `useHydrateSession` and `useAuthStore`.
+- **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `publicHref`. When `publicHref` is omitted, the unsigned target is `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
+- **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Optional `publicHref`: the target without a session; with a session the link is still `/welcome`. Uses `useHydrateSession` and `useAuthStore`.
 - **Returns / side effects:** A client `Wordmark` link. Hydrates the session; no other network of its own.
-- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`, `PayLinkScreen`.
+- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `RulesPageChrome`, `ViewProfilePage`, `PayLinkScreen`.
 
 ## Function: PublicMessageChrome
 
@@ -1088,10 +1123,10 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`. Both use `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms) and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
-- **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
-- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
-- **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
+- **Purpose:** Next.js App Router metadata for six pages. On `/messages/[id]`, loads the public note via `loadPublicMessageForOg` and maps it through `publicMessageOgMetadata` so crawlers see the author, text, and photo without running JS. Missing or failed fetches inherit the root layout preview. On `/`, `/about`, `/donate`, and `/rules`, each implementation reads the language with `getRequestLocale()` and calls `marketingMetadata` with that locale, an English title, and an English description that stay the same on every language URL. Home title `Help people with Bitcoin | 21.gifts`, description `Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.` About title `What 21.gifts stands for | 21.gifts`, description `In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.` Donate title `Donate Bitcoin and help someone | 21.gifts`, description `Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.` Rules title `Living room rules | 21.gifts`, description `You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.` A shop on `/{npub}` loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`, uses `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms), inherits root metadata on missing, invalid, timed-out, or unusable responses, and builds description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
+- **Inputs:** `/messages/[id]` takes `{ params: Promise<{ id: string }> }` from the dynamic route. The four public pages take no route params. Each of them calls `getRequestLocale()` and passes that locale into `marketingMetadata` with path `/`, `/about`, `/donate`, or `/rules`. `/{npub}` takes `{ npub }` from the dynamic route.
+- **Returns / side effects:** `Promise<Metadata>`. `/messages/[id]` returns per-note Open Graph / Twitter tags when the note is found, or `{}` so the site-wide layout preview is inherited, and does not render the visible page. Each public page returns the English title and description above, a canonical URL for the language of the request (`/en`, `/de`, `/es`, `/fil`, and the same prefix on `/about`, `/donate`, and `/rules`), reciprocal `hreflang` links for `en`, `de`, `es`, and `tl` (Filipino pages; the URL prefix stays `/fil`) plus `x-default` to the unprefixed path, and Open Graph / Twitter image `/og.png`. Those four do not render the visible page. `/{npub}` returns the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), the first photo (or `/og.png`), and the relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`, and does not render the visible page.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Routes `/`, `/en`, `/de`, `/es`, and `/fil` (`Home`). Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about` (`AboutPage`). Routes `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate` (`DonatePage`). Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` (`RulesPage`). Route `/[npub]` (`ShopPage`).
 
 ## Function: loadPublicMessageForOg
 
@@ -1203,7 +1238,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, `WelcomeTopRight` (the member menu when a session exists, otherwise a link to `/login`), and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
+- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, the member menu when a session exists, otherwise a link to `/login`, and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -1409,10 +1444,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: middleware
 
-- **Purpose:** Send an old `/map` address to the shops map. There is no map page.
-- **Inputs:** The incoming request whose path is `/map`.
-- **Returns / side effects:** Redirect to `/shops#map`. A query string such as `?pin=` is kept (`/shops?pin=#map`).
-- **Used by:** Route `/map`.
+- **Purpose:** Serve the stable language URLs of the public pages and send an old `/map` address to the shops map. There is no map page.
+- **Inputs:** The incoming request. Language URLs are `/en`, `/de`, `/es`, and `/fil`, alone or followed by `/about`, `/donate`, or `/rules`. Every other path under a language prefix, such as `/de/login`, is not one of them.
+- **Returns / side effects:** A language URL is rewritten onto the existing page. The language goes down as the `x-21gifts-public-locale` request header, so the page renders in it even against another cookie. The response sets the `locale` cookie to that language (`Path=/`, `Max-Age=31536000`, `SameSite=Lax`, `Secure` when the request URL or the first `x-forwarded-proto` value is https) when the browser opens the language URL as a page (`sec-fetch-dest` is `document`, or that header is absent), including a prerender (`purpose` or `sec-purpose` contains `prerender`, any case). A prefetch that is not a prerender does not set it (`purpose` or `sec-purpose` contains `prefetch` and not `prerender`, any case), and neither do in-app navigations (`sec-fetch-dest` is present and is not `document`). The rewrite and `x-21gifts-public-locale` stay the same in every case. Later pages without a language prefix, including `/login`, `/stats`, `/handbook`, and `/legal`, therefore stay in that language for a signed-out visitor; for a signed-in account with a stored language, `AccountPreferenceSync` writes that language back after hydration. `/map` redirects to `/shops#map` and keeps a query string such as `?pin=` (`/shops?pin=#map`). Other paths continue to normal routing and set no cookie.
+- **Used by:** Routes `/map`, `/{locale}`, and `/{locale}/{about,donate,rules}`.
 
 ## Function: PlacesMapScreen
 
@@ -1703,17 +1738,17 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RulesPageChrome
 
-- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with wordmark href `/` plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
-- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. No network beyond session hydration.
+- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with `HomeWordmark` (`publicHref` is `homeHref`, the language home) plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The signed-in wordmark stays `/welcome`.
+- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`) and `homeHref` (unsigned language home). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. The unsigned wordmark opens `homeHref`. No network beyond session hydration.
 - **Used by:** `RulesPage`.
 
 ## Function: RulesPage
 
-- **Purpose:** Next.js page for `/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
-- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language).
-- **Used by:** Route `/rules`.
+- **Purpose:** Next.js page for `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
+- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog, and passes `homeHref={localizedPublicPath(locale, '/')}` to `RulesPageChrome`.
+- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language). The unsigned wordmark opens that language home.
+- **Used by:** Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules`.
 
 ## Function: ForumLoader
 
@@ -1922,7 +1957,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync` and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `LocaleRouteSync`, and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -2716,10 +2751,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: getRequestLocale
 
-- **Purpose:** Resolve the UI locale for the current request without writing cookies.
-- **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
-- **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Purpose:** Resolve the UI locale for the current request without writing cookies. Order: header `x-21gifts-public-locale` (set by middleware for language URLs), then cookie `locale`, then Accept-Language.
+- **Inputs:** Reads `x-21gifts-public-locale`, the `locale` cookie, and the `Accept-Language` header via `next/headers` (async in Next 15).
+- **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). A valid public-locale header wins; otherwise a valid cookie; otherwise `parseAcceptLanguage`; unmatched → `en`.
+- **Used by:** `RootLayout`, `MarketingLayout`, `Home`, `AboutPage`, `DonatePage`, `NotFound`, `MarketingFooter`, `HandbookPage`, `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: getRequestNumberFormat
 
@@ -3059,10 +3094,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: AboutPage
 
-- **Purpose:** Next.js page for `/about`. Three convictions, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
+- **Purpose:** Next.js page for `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`. What 21.gifts stands for, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
 - **Inputs:** None. Calls `getRequestLocale()` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** The about screen with a link to `/welcome`.
-- **Used by:** Route `/about`.
+- **Used by:** Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`.
 
 ## Function: LegalPage
 
@@ -3080,7 +3115,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with one top-left arrow (`ProfileChromeLeft` `tone="dark"`) beside `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated). The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The wordmark is not that control. Section nav (How / Happyland / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/#happyland` photo essay from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with one top-left arrow (`ProfileChromeLeft` `tone="dark"`) beside `HomeWordmark` (`tone="dark"`; `publicHref` is the language home when unsigned, `/welcome` when a session is hydrated). The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The wordmark is not that control. Section nav (How / Happyland / Why / FAQ / About 21.gifts / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/{locale}#happyland` place portrait from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
@@ -4957,15 +4992,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HappylandSection
 
-- **Purpose:** Presents Father Severin's account of Happyland after How it works on the public homepage.
-- **Input:** Receives the marketing page locale and reads all paragraphs, headings and image descriptions from the shared English, German, Spanish or Filipino catalog.
-- **Output:** Renders an accessible section with eight full-proportion photographs in a lead image, alternating text and image groups, and a portrait row that stacks on small screens.
-
-## Function: HappylandPhoto
-
-- **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
-- **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
-- **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
+- **Purpose:** Presents Father Severin's account of Happyland after Why on the public homepage.
+- **Input:** Receives the marketing page locale and reads the place portrait and observations from the shared English, German, Spanish or Filipino catalog.
+- **Output:** Renders four photographs from the existing 21.gifts Happyland page, one place portrait and three photographs in equal frames, an unlinked source paragraph, and three observations.
 
 ## Function: fiatDraftForSats
 
@@ -5092,3 +5121,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `sessionToken` — bearer token; `body` — JSON action; `timeZone` — when true, also sends the device `Time-Zone` header.
 - **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
 - **Used by:** `MemberHabits`.
+
+## Function: localizedPublicPath
+
+- **Purpose:** Builds a stable public URL for one supported language and one of Home, About, Donate, or Rules.
+- **Inputs:** A supported locale and one localized public path.
+- **Returns:** A language-prefixed path such as `/de/about`; used by metadata, links, and the language switcher.
+
+## Function: parseLocalizedPublicPath
+
+- **Purpose:** Recognizes only the sixteen supported language and public-page combinations.
+- **Inputs:** A request pathname.
+- **Returns:** Its locale and public path, or `null` for app routes, unsupported languages, or extra path segments.
+
+## Function: publicPathFromUrl
+
+- **Purpose:** Keeps the visitor on the same public page when they choose another language.
+- **Inputs:** A legacy or language-prefixed pathname.
+- **Returns:** The public page path, or `null` when the pathname belongs to the app.
