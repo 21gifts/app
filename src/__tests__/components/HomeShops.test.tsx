@@ -1028,7 +1028,7 @@ describe('HomeShops', () => {
     renderShops();
     await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
     openMenu(copy.blockchain);
-    const base = 'min-h-11 border-0 bg-transparent p-0 text-left font-inherit';
+    const base = 'min-h-11 min-w-11 border-0 bg-transparent p-0 text-left font-inherit';
     const options = within(screen.getByRole('listbox')).getAllByRole('option');
     const highlighted = options.filter((option) => option.className.includes('is-active'));
     expect(highlighted).toHaveLength(1);

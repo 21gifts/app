@@ -745,7 +745,7 @@ function FilterMenu({
     }
   }
 
-  const optionClass = 'min-h-11 border-0 bg-transparent p-0 text-left font-inherit';
+  const optionClass = 'min-h-11 min-w-11 border-0 bg-transparent p-0 text-left font-inherit';
 
   return (
     <div data-shops-menu={menuId}>
