@@ -3,7 +3,7 @@ import { fulfillSpot } from './fx-spot';
 
 const LOAN_ID = '5b1e7c2a-3f4d-4e8a-9c6b-2d7f8a1e4c30';
 
-/** A loan that still collects: half of ₿21'000 lent, 30 daily payments. */
+/** A loan that still collects: half of ₿21'000 · $21.00 lent, 30 daily payments. */
 const COLLECTING = {
   id: LOAN_ID,
   accountId: 'acc-mira',
@@ -91,7 +91,7 @@ test('Function: LoanBlock — a feed loan shows what is lent and reads no repaym
   const blocks = page.getByRole('region', { name: 'Loan request' });
   await expect(blocks).toHaveCount(2);
   await expect(blocks.first()).toHaveAttribute('data-loan-block', 'collecting');
-  await expect(blocks.first().getByText(/of ₿21'000 · \$\d.* lent$/)).toBeVisible();
+  await expect(blocks.first().getByText(/of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
   await expect(blocks.first().getByRole('button', { name: 'Lend' })).toBeVisible();
   await expect(blocks.nth(1)).toHaveAttribute('data-loan-block', 'funded');
   await expect(blocks.nth(1).getByText('Fully funded', { exact: true })).toBeVisible();

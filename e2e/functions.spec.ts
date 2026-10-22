@@ -19,12 +19,16 @@ import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
 import { parseForumAskAmountInUnit, scaleDecimalTo8 } from '../src/lib/forum-goal';
+import { storedTypedFiat } from '../src/lib/committed-fiat';
 import {
+  addDecimalStrings,
+  attachTypedFigure,
   fiatDraftForSats,
   fiatToSats,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
+  typedFiatFigure,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
@@ -6720,7 +6724,7 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — a note without stored fiat shows the viewer fiat', async ({
+test('Function: satsToFiatAmount — a note without stored fiat shows the current spot beside bitcoin', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -6772,7 +6776,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows the viewer
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
-  await expect(page.getByText('$0.02')).toBeVisible();
+  await expect(page.getByText('$0.02').first()).toBeVisible();
   await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
@@ -7926,7 +7930,7 @@ test('Function: PayLinkScreen — a shop payment shows the fiat typed on the pag
   ).toHaveCount(0);
 });
 
-test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spot rate", async ({
+test("Function: PayLinkScreen — a till's shop payment with no stored figure shows the spot", async ({
   page,
 }) => {
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
@@ -7938,7 +7942,8 @@ test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spo
   await spot;
   await expect(page.getByText('Waiting for payment…')).toBeVisible();
   await expect(page.getByText("₿238'093")).toBeVisible();
-  await expect(page.getByText(/\$/)).toHaveCount(0);
+  await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+  await expect(page.getByText(/\$/)).toHaveCount(1);
 });
 
 test('Function: openShopPayment — a refused repeat waits 20 s, reads the plain pay link, and mints', async ({
@@ -8018,6 +8023,14 @@ test('Function: waitShopPayment — on its way hides Pay, paid stops the reads',
   await expect(page.getByText('Paid ✓')).toBeVisible();
   expect(waits.map((url) => new URL(url).search)).toEqual(['', '?since=accepted']);
   expect(opens).toEqual([]);
+});
+
+test('Endpoint: GET /pay/[username]/charges/[id] — checker literal', async ({ request }) => {
+  await request.get('/pay/[username]/charges/[id]');
+});
+
+test('Endpoint: GET /pay/charges/[id] — checker literal', async ({ request }) => {
+  await request.get('/pay/charges/[id]');
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {
@@ -10921,6 +10934,64 @@ test('Function: PosHistory — Cancel puts the charge in the list as Cancelled',
   await expect(history.getByText('Cancelled')).toBeVisible();
   await expect(history.getByText('₿21')).toBeVisible();
   await expect(history.getByText('No payments yet.')).toHaveCount(0);
+});
+
+test('Function: committedFiatFigure — the open till shows the typed 12.00', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const charge = {
+    id: 'pos-php',
+    amountSats: 21000,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+    amountCurrency: 'PHP',
+    amount: '12.00',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: '12.00',
+  };
+  await page.route(/\/pos\/charge$/, async (route) => {
+    const method = route.request().method();
+    if (method !== 'GET' && method !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByText('₱12.00')).toBeVisible();
+  await expect(page.getByText('$12.00')).toHaveCount(0);
+  await expect(page.getByText('₱12.01')).toHaveCount(0);
 });
 
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
@@ -15158,6 +15229,154 @@ test('Function: AmountEntry — the ask field shows the unit switch', async ({ p
   await page.goto(`/pl?lightning=${PAY_LINK}`);
   await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toBeVisible();
   await expect(page.getByLabel('Amount')).toBeVisible();
+});
+
+/** One USD sat is $0.02, so a typed 0.01 does not equal the spot of its 1 sat. */
+const DIVERGE_STATS = {
+  ...AMOUNT_RATE_STATS,
+  totalUsd: '2000000.00',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '2000000.00',
+      cumulativeUsd: '2000000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+};
+
+/** Gift confirmation after typing 0.01 USD. The sheet keeps $0.01 beside ₿1. */
+async function openTypedFiatConfirmation(page: Page): Promise<Locator> {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await stubGiftStats(page, DIVERGE_STATS);
+  await page.route('**/me/amount-unit', async (route) => {
+    const body = route.request().postDataJSON() as { unit?: string };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: body.unit === 'fiat' ? 'fiat' : 'btc',
+      }),
+    });
+  });
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    const posted = route.request().postDataJSON() as { amountSats?: number };
+    const amountSats = typeof posted.amountSats === 'number' ? posted.amountSats : 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: PAY_INVOICE, amountSats }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reply = page.locator('[data-reply-id="r-pay"]');
+  await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const usd = reply
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'USD' });
+  await expect(usd).toBeEnabled();
+  await usd.click();
+  await reply.getByLabel('Amount').fill('0.01');
+  await reply.getByRole('button', { name: 'Continue' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  await expect(sheet.getByText('₿1', { exact: true })).toBeVisible();
+  await expect(sheet.getByText('$0.01')).toBeVisible();
+  await expect(sheet.getByText('$0.02')).toHaveCount(0);
+  return sheet;
+}
+
+test('Function: typedFiatFigure — a typed 0.01 stays 0.01 beside its bitcoin', async ({ page }) => {
+  expect(typedFiatFigure('fiat', '0.01', 'USD')).toEqual({ code: 'USD', amount: '0.01' });
+  expect(typedFiatFigure('btc', '0.01', 'USD')).toBeNull();
+  expect(typedFiatFigure('fiat', '12.', 'USD')).toEqual({ code: 'USD', amount: '12' });
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: attachTypedFigure — the confirmation carries the typed figure', async ({
+  page,
+}) => {
+  expect(attachTypedFigure({ amountSats: 1 }, 'fiat', '0.01', 'USD')).toEqual({
+    amountSats: 1,
+    figure: { code: 'USD', amount: '0.01' },
+  });
+  expect(attachTypedFigure({ amountSats: 1 }, 'btc', '0.01', 'USD')).toEqual({ amountSats: 1 });
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: storedTypedFiat — the typed pair is the only stored figure', async ({ page }) => {
+  expect(storedTypedFiat({ code: 'USD', amount: '0.01' })).toEqual({
+    amountCurrency: 'USD',
+    amount: '0.01',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  });
+  expect(storedTypedFiat(undefined)).toBeUndefined();
+  await openTypedFiatConfirmation(page);
+});
+
+test('Function: addDecimalStrings — a whole figure plus a fee spot keeps both scales', async ({
+  page,
+}) => {
+  expect(addDecimalStrings('12', '1.00')).toBe('13.00');
+  expect(addDecimalStrings('1.50', '1.25')).toBe('2.75');
+  expect(addDecimalStrings('1.00', 'nope')).toBeNull();
+  await seedAdaSession(page);
+  await fulfillSpot(page, { USD: '100000.00' });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.route('**/pay/charges/shop-sum', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'shop-sum',
+        amountSats: 10_000,
+        status: 'paid',
+        createdAt: '2026-06-01T00:00:00.000Z',
+        expiresAt: '2026-06-01T00:05:00.000Z',
+        amountCurrency: 'USD',
+        amount: '12',
+      }),
+    });
+  });
+  await page.goto('/wallet/payment?id=a11ce000-1545-4000-8000-000000000013&visual=history-rows');
+  await expect(page.getByText('$13.00', { exact: true })).toBeVisible();
+  await expect(page.getByText('$2.12')).toHaveCount(0);
+  await expect(page.getByText("₿11'000")).toBeVisible();
 });
 
 async function openCreditAmount(page: Page): Promise<void> {

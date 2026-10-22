@@ -29,8 +29,8 @@ const HEADER_BALANCE_BUMP_MS = 2400;
  * it. Nothing is rendered without a
  * wallet, or after a failure that is not retried. When a received payment completes while the app
  * is open, the block turns the success colour for 2.4 s and shows the
- * amount with its fiat
- * (`+₿500 · $0.50`) under it. Carries `data-wallet-tour="balance"` for the
+ * amount with its fiat (`+₿500 · $0.50`) under it.
+ * Carries `data-wallet-tour="balance"` for the
  * wallet tour.
  *
  * @returns The balance link, its skeleton while the balance is on its way, or `null`.

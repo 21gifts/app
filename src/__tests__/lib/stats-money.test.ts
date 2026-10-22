@@ -10,12 +10,15 @@ import {
   formatUsdTick,
   fiatDraftForSats,
   fiatToSats,
+  addDecimalStrings,
+  attachTypedFigure,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
   satsToFiatAmount,
   shownFiatForSats,
   spotRateDay,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -154,6 +157,31 @@ describe('shownFiatForSats', () => {
       amountEur: null,
       amountPhp: null,
     });
+    expect(shownFiatForSats(21, RATE_DAY, null)).toEqual(shownFiatForSats(21, RATE_DAY));
+  });
+
+  it('stores a typed figure in that currency and leaves the other three at the spot', () => {
+    const spot = shownFiatForSats(12_000, RATE_DAY);
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12' })).toEqual({
+      ...spot,
+      amountUsd: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'CHF', amount: '11.5' })).toEqual({
+      ...spot,
+      amountChf: '11.50',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'EUR', amount: '12.00' })).toEqual({
+      ...spot,
+      amountEur: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'PHP', amount: '12.125' })).toEqual({
+      ...spot,
+      amountPhp: '12.13',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12.124' }).amountUsd).toBe(
+      '12.12',
+    );
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: 'nope' })).toEqual(spot);
   });
 });
 
@@ -253,6 +281,43 @@ describe('parseAmountDraft', () => {
     expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: 'nope' }, 'PHP')).toEqual({
       kind: 'no-rate',
     });
+  });
+});
+
+describe('typedFiatFigure', () => {
+  it('keeps a typed fiat decimal and drops a trailing separator', () => {
+    expect(typedFiatFigure('btc', '12', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', 'nope', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '1.123456789', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '12', 'USD')).toEqual({ code: 'USD', amount: '12' });
+    expect(typedFiatFigure('fiat', '12.', 'USD')).toEqual({ code: 'USD', amount: '12' });
+    expect(typedFiatFigure('fiat', '1,50', 'CHF')).toEqual({ code: 'CHF', amount: '1.50' });
+  });
+});
+
+describe('attachTypedFigure', () => {
+  it('returns the same value for bitcoin and adds the figure for fiat', () => {
+    const value = { pr: 'lnbc', amountSats: 21 };
+    expect(attachTypedFigure(value, 'btc', '12', 'USD')).toBe(value);
+    expect(attachTypedFigure(value, 'fiat', 'nope', 'USD')).toBe(value);
+    expect(attachTypedFigure(value, 'fiat', '12', 'USD')).toEqual({
+      pr: 'lnbc',
+      amountSats: 21,
+      figure: { code: 'USD', amount: '12' },
+    });
+  });
+});
+
+describe('addDecimalStrings', () => {
+  it('adds a whole stored figure to a two-decimal spot and refuses a non-decimal', () => {
+    expect(addDecimalStrings('12', '1.00')).toBe('13.00');
+    expect(addDecimalStrings('1.50', '1.25')).toBe('2.75');
+    expect(addDecimalStrings('2', '3')).toBe('5.0');
+    expect(addDecimalStrings('0', '0')).toBe('0.0');
+    expect(addDecimalStrings('0.50', '0.25')).toBe('0.75');
+    expect(addDecimalStrings('', '1.00')).toBeNull();
+    expect(addDecimalStrings('1.00', 'nope')).toBeNull();
   });
 });
 

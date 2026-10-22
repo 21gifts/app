@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useWallet, type WalletViewStatus } from '@/hooks/useWallet';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
+import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
 import { visualPin } from '@/lib/visual-pin';
 import { lnurlRelayTarget, ownShop, type OwnShop } from '@/lib/wallet/lnurl-relay';
@@ -127,6 +129,9 @@ export interface WalletSendOnchain extends WalletOnchainFees {
   renewed?: true;
 }
 
+/** Stored fiat of a till charge on the quote, confirm, or sent step. `null` means the charge stored no fiat figure. */
+type ChargeFigure = { code: FiatCode; amount: string } | null;
+
 /** Step of the `/wallet` send flow. */
 export type WalletSendState =
   | { step: 'input'; error: WalletSendError | null }
@@ -145,6 +150,8 @@ export type WalletSendState =
       step: 'quote';
       recipient: string;
       amountSats: number;
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
+      chargeFigure?: ChargeFigure;
     }
   | {
       step: 'confirm';
@@ -153,8 +160,16 @@ export type WalletSendState =
       feeSats: number;
       /** Speed choice when the payment goes to a base-chain address. */
       onchain?: WalletSendOnchain;
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
+      chargeFigure?: ChargeFigure;
     }
-  | { step: 'sent'; amountSats: number; recipient: string };
+  | {
+      step: 'sent';
+      amountSats: number;
+      recipient: string;
+      /** Typed fiat, or a till figure. Absent for a bitcoin amount. */
+      chargeFigure?: ChargeFigure;
+    };
 
 /** State and actions of the `/wallet` send flow. */
 export interface UseWalletSendResult {
@@ -192,8 +207,10 @@ export interface UseWalletSendResult {
    * Prepares the payment for the entered amount.
    *
    * @param sats - Whole sats from the amount field, or `null` when it cannot be read.
+   * @param figure - Fiat the member typed. A bitcoin field omits it, and the
+   *   confirm step then shows the spot.
    */
-  submitAmount: (sats: number | null) => void;
+  submitAmount: (sats: number | null, figure?: ChargeFigure) => void;
   /**
    * Chooses the speed of a payment to a base-chain address on the confirm
    * step. A speed whose fee the balance does not cover is ignored.
@@ -262,6 +279,11 @@ interface PrepareOptions {
   renewSpeed?: OnchainSpeed;
   /** Feature that started the payment, for the failure report; absent means `send`. */
   flow?: PayFlow;
+  /**
+   * Stored figure of a till charge. Omit it for a payment that is still being
+   * typed. `null` means the charge stored no fiat.
+   */
+  chargeFigure?: ChargeFigure;
 }
 
 /** The last prepare that opened the confirm step, kept to renew an expired quote. */
@@ -385,6 +407,7 @@ function visualState(name: string | null): WalletSendState | null {
         recipient: recipientOf(fixture.fixedLink, fixture.recipient),
         amountSats: fixture.fixedAmountSats,
         feeSats: name === 'send-confirm-shop' ? fixture.feeSats : fixture.fixedFeeSats,
+        chargeFigure: { code: 'USD', amount: '7.00' },
       };
     case 'send-confirm-member':
       return {
@@ -617,6 +640,7 @@ export function useWalletSend(): UseWalletSendResult {
   const ready = status === 'ready' && canUnlockWallet(account) && !needsWalletSetup(account);
   const wallet = useWallet();
   const setup = useWalletSetup();
+  const { fiat } = useFiatPreference();
   const walletStatus = useRef<WalletViewStatus>(wallet.status);
   /**
    * Counts every time the wallet store leaves `ready`, also between two
@@ -756,13 +780,15 @@ export function useWalletSend(): UseWalletSendResult {
       options: PrepareOptions = {},
     ): void {
       const { expectedSats, fallback, onchainTarget, renewSpeed, flow = 'send' } = options;
+      const figureFields =
+        options.chargeFigure === undefined ? {} : { chargeFigure: options.chargeFigure };
       const run = generation.current;
       const again = (): void => {
         prepareSend(request, recipient, amountSats, options);
       };
       const wait = holdForWallet(run, again);
       if (wait === 'held') {
-        setState({ step: 'quote', recipient, amountSats });
+        setState({ step: 'quote', recipient, amountSats, ...figureFields });
       }
       if (wait !== 'ready') {
         return;
@@ -795,6 +821,7 @@ export function useWalletSend(): UseWalletSendResult {
                 recipient,
                 amountSats: result.amountSats,
                 feeSats: result.feeSats,
+                ...figureFields,
               });
               return;
             }
@@ -807,6 +834,7 @@ export function useWalletSend(): UseWalletSendResult {
               recipient,
               amountSats: result.amountSats,
               feeSats: fees.fees[speed],
+              ...figureFields,
               onchain: {
                 ...fees,
                 speed,
@@ -901,7 +929,14 @@ export function useWalletSend(): UseWalletSendResult {
    * Failures are reported under `flow` (default `send`).
    */
   const payAmount = useCallback(
-    (target: WalletSendAmountTarget, sats: number, note: string, flow: PayFlow = 'send'): void => {
+    (
+      target: WalletSendAmountTarget,
+      sats: number,
+      note: string,
+      flow: PayFlow = 'send',
+      figure?: ChargeFigure,
+    ): void => {
+      const carried = figure === undefined ? {} : { chargeFigure: figure };
       if (target.type === 'relay') {
         const trimmed = note.trim().slice(0, target.commentMaxLength);
         const run = generation.current;
@@ -918,6 +953,7 @@ export function useWalletSend(): UseWalletSendResult {
             prepare({ type: 'input', input: invoice.pr }, target.recipient, sats, {
               expectedSats: sats,
               flow,
+              ...carried,
             });
           },
           (error: unknown) => {
@@ -968,7 +1004,7 @@ export function useWalletSend(): UseWalletSendResult {
             },
             target.recipient,
             sats,
-            { flow },
+            { flow, ...carried },
           );
         };
         if (target.member === undefined) {
@@ -989,6 +1025,7 @@ export function useWalletSend(): UseWalletSendResult {
             expectedSats: sats,
             fallback: lightning,
             flow,
+            ...carried,
           });
         });
         return;
@@ -998,12 +1035,13 @@ export function useWalletSend(): UseWalletSendResult {
           { type: 'input', input: target.address, amountSats: sats },
           target.recipient,
           sats,
-          { onchainTarget: target, flow },
+          { onchainTarget: target, flow, ...carried },
         );
         return;
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient, sats, {
         flow,
+        ...carried,
       });
     },
     [session, prepare],
@@ -1192,15 +1230,28 @@ export function useWalletSend(): UseWalletSendResult {
             readWithWallet(null, 'pos');
           },
           flow: 'pos',
+          chargeFigure: committedFiatFigure(charge, fiat),
         });
       })
       .catch(() => {
         failRun(run, 'unreadable');
       });
-  }, [pin, inert, busy, state.step, text, session, prepare, askAmount, failRun, holdForWallet]);
+  }, [
+    pin,
+    inert,
+    busy,
+    state.step,
+    text,
+    session,
+    prepare,
+    askAmount,
+    failRun,
+    holdForWallet,
+    fiat,
+  ]);
 
   const submitAmount = useCallback(
-    (sats: number | null): void => {
+    (sats: number | null, figure?: ChargeFigure): void => {
       if (inert) {
         setPinBusy(pin === 'send-amount-busy');
         return;
@@ -1214,7 +1265,7 @@ export function useWalletSend(): UseWalletSendResult {
         setState({ step: 'amount', target, amountError: true });
         return;
       }
-      payAmount(target, sats, comment);
+      payAmount(target, sats, comment, 'send', figure);
     },
     [pin, inert, busy, state, comment, payAmount],
   );
@@ -1232,7 +1283,7 @@ export function useWalletSend(): UseWalletSendResult {
       prepare(prepared.request, prepared.recipient, state.amountSats, prepared.options);
       return;
     }
-    const { amountSats, recipient } = state;
+    const { amountSats, recipient, chargeFigure } = state;
     const speed = state.onchain?.speed;
     const run = generation.current;
     const flow = sendFlowRef.current;
@@ -1271,7 +1322,11 @@ export function useWalletSend(): UseWalletSendResult {
       if (result.kind === 'paid') {
         setTextState('');
         setComment('');
-        setState({ step: 'sent', amountSats, recipient });
+        setState(
+          chargeFigure === undefined
+            ? { step: 'sent', amountSats, recipient }
+            : { step: 'sent', amountSats, recipient, chargeFigure },
+        );
         return;
       }
       setState({

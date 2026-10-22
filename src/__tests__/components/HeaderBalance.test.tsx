@@ -132,7 +132,7 @@ describe('HeaderBalance', () => {
     expect(screen.getByRole('link', { name: "Balance ₿21'000" })).toBeTruthy();
   });
 
-  it('turns the success colour and shows the arrived amount with its fiat', () => {
+  it('turns the success colour and shows the arrived amount in bitcoin and fiat', () => {
     vi.mocked(useIncomingPayment).mockReturnValue({ payment: PAYMENT, dismiss: vi.fn() });
     wallet('ready', 21_500);
     renderWithLocale(<HeaderBalance />);

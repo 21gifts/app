@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletHistory } from '@/components/WalletHistory';
+import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory, type UseWalletHistoryResult } from '@/hooks/useWalletHistory';
 import type { FiatRateDay } from '@/lib/stats-money';
@@ -10,6 +11,9 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 vi.mock('@/hooks/useWalletHistory', () => ({ useWalletHistory: vi.fn() }));
+vi.mock('@/hooks/useShopChargeFigure', () => ({
+  useShopChargeFigure: vi.fn(() => ({ pending: false, figure: null })),
+}));
 
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -55,6 +59,8 @@ const observers: Array<{ callback: ObserverCallback; disconnect: ReturnType<type
 beforeEach(() => {
   loadMore.mockReset();
   retry.mockReset();
+  vi.mocked(useShopChargeFigure).mockReset();
+  vi.mocked(useShopChargeFigure).mockReturnValue({ pending: false, figure: null });
   vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
   useAuthStore.setState({ session: null, account: null });
   observers.length = 0;
@@ -97,7 +103,7 @@ describe('WalletHistory', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it('links each row to its payment screen with a title, a signed amount with fiat, the date and status, and the message', () => {
+  it('links each row to its payment screen with a title, a signed bitcoin amount, the date and status, and the message', () => {
     show({
       payments: [
         payment({ id: 'a', senderComment: 'Thanks for the coffee' }),
@@ -129,6 +135,70 @@ describe('WalletHistory', () => {
     expect(rows[3]?.textContent).toContain('Sent');
     expect(screen.getByText('· Failed', { exact: false }).className).toContain('text-app-danger');
     expect(screen.getByText('−₿7', { exact: false }).className).toContain('line-through');
+  });
+
+  it('shows the stored PHP figure on a shop row and bitcoin when the receipt has none', () => {
+    vi.mocked(useShopChargeFigure).mockImplementation((info) => {
+      if (info !== null && info.chargeId === 'chg_php') {
+        return { pending: false, figure: { code: 'PHP', amount: '12.00' } };
+      }
+      return { pending: false, figure: null };
+    });
+    show({
+      payments: [
+        payment({
+          id: 'shop-php',
+          info: { purpose: 'shop', chargeId: 'chg_php', lnAddress: 'shop@21.gifts' },
+        }),
+        payment({ id: 'gift', info: { purpose: 'gift' } }),
+        payment({
+          id: 'shop-miss',
+          info: { purpose: 'shop', chargeId: 'chg_miss', lnAddress: 'shop@21.gifts' },
+        }),
+      ],
+    });
+    const rows = screen.getAllByRole('link');
+    expect(rows[0]?.textContent).toContain('Shop payment');
+    expect(rows[0]?.textContent).toContain('₱12.00');
+    expect(rows[0]?.textContent).not.toContain('$');
+    expect(rows[1]?.textContent).toContain('$21.00');
+    expect(rows[1]?.textContent).not.toContain('₱');
+    expect(rows[2]?.textContent).toContain('$21.00');
+    expect(rows[2]?.textContent).not.toContain('₱');
+  });
+
+  it('shows an empty stored shop figure as ₱0.00', () => {
+    vi.mocked(useShopChargeFigure).mockReturnValue({
+      pending: false,
+      figure: { code: 'PHP', amount: '' },
+    });
+    show({
+      payments: [
+        payment({
+          id: 'shop-empty',
+          info: { purpose: 'shop', chargeId: 'chg_empty', lnAddress: 'shop@21.gifts' },
+        }),
+      ],
+    });
+    const row = screen.getByRole('listitem');
+    expect(row.textContent).toContain('₱0.00');
+    expect(row.textContent).not.toContain('$');
+  });
+
+  it('keeps a shop row bitcoin while its receipt is still out', () => {
+    vi.mocked(useShopChargeFigure).mockReturnValue({ pending: true, figure: null });
+    show({
+      payments: [
+        payment({
+          id: 'shop-wait',
+          info: { purpose: 'shop', chargeId: 'chg_wait', lnAddress: 'shop@21.gifts' },
+        }),
+      ],
+    });
+    const row = screen.getByRole('listitem');
+    expect(row.textContent).toContain("₿21'000");
+    expect(row.textContent).not.toContain('$');
+    expect(row.textContent).not.toContain('₱');
   });
 
   it('keeps the bitcoin amount when no rate is loaded', () => {

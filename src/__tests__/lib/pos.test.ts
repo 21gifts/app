@@ -8,6 +8,7 @@ import {
   fetchMemberSparkInvoice,
   fetchPosState,
   fetchShopChargeInvoice,
+  fetchShopChargeReceipt,
 } from '@/lib/pos';
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
@@ -18,6 +19,15 @@ const CHARGE = {
   status: 'pending',
   createdAt: '2026-09-22T00:00:00.000Z',
   expiresAt: '2026-09-22T00:05:00.000Z',
+};
+
+const NO_FIAT = {
+  amountCurrency: null,
+  amount: null,
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
 };
 
 function json(body: unknown, status = 200): Response {
@@ -43,7 +53,7 @@ describe('pos client', () => {
       return json({ charge: CHARGE, history: [CHARGE] });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const read = { ...CHARGE, paidAt: null };
+    const read = { ...CHARGE, paidAt: null, ...NO_FIAT };
     await expect(fetchPosState('tok')).resolves.toEqual({ charge: read, history: [read] });
     await expect(createPosCharge('tok', 21)).resolves.toEqual(read);
     expect(logInteraction).toHaveBeenCalledWith(
@@ -102,9 +112,28 @@ describe('pos client', () => {
   });
 
   it('reads a paid charge with its paid time', async () => {
-    const paid = { ...CHARGE, status: 'paid', paidAt: '2026-09-22T00:01:00.000Z' };
+    const paid = {
+      ...CHARGE,
+      status: 'paid',
+      paidAt: '2026-09-22T00:01:00.000Z',
+      ...NO_FIAT,
+    };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ charge: paid, history: [paid] })));
     await expect(fetchPosState('tok')).resolves.toEqual({ charge: paid, history: [paid] });
+  });
+
+  it('sends the typed fiat pair and, for bitcoin, only the sats', async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockImplementation(() => json({ charge: CHARGE }, 201));
+    vi.stubGlobal('fetch', fetchMock);
+    await createPosCharge('tok', 85_000, { amountCurrency: 'CHF', amount: '68.50' });
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      amountSats: 85_000,
+      amountCurrency: 'CHF',
+      amount: '68.50',
+    });
+    await createPosCharge('tok', 21);
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({ amountSats: 21 });
   });
 });
 
@@ -142,6 +171,7 @@ describe('fetchShopChargeInvoice', () => {
       kind: 'invoice',
       amountSats: 7_000,
       sparkInvoice: 'spark1',
+      ...NO_FIAT,
     });
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/pay/my%20shop');
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/pay/my%20shop/invoice', {
@@ -161,6 +191,23 @@ describe('fetchShopChargeInvoice', () => {
       kind: 'invoice',
       amountSats: 7_000,
       sparkInvoice: 'spark1',
+      ...NO_FIAT,
+    });
+  });
+
+  it('keeps the typed fiat pair on the invoice', async () => {
+    shop(
+      { ...OPEN, amountCurrency: 'PHP', amount: '12.00', amountUsd: '1.00' },
+      json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' }),
+    );
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({
+      kind: 'invoice',
+      amountSats: 7_000,
+      sparkInvoice: 'spark1',
+      ...NO_FIAT,
+      amountCurrency: 'PHP',
+      amount: '12.00',
+      amountUsd: '1.00',
     });
   });
 
@@ -267,5 +314,61 @@ describe('fetchMemberSparkInvoice', () => {
   it('gives null when the request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(fetchMemberSparkInvoice('alice', 21, '')).resolves.toBeNull();
+  });
+});
+
+describe('fetchShopChargeReceipt', () => {
+  const RECEIPT = {
+    id: 'chg_abc',
+    amountSats: 2_100,
+    status: 'paid',
+    createdAt: '2026-09-22T00:00:00.000Z',
+    expiresAt: '2026-09-22T00:05:00.000Z',
+    paidAt: '2026-09-22T00:01:00.000Z',
+    amountCurrency: 'PHP',
+    amount: '12.00',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  };
+
+  it('reads a named shop and an unnamed charge', async () => {
+    const fetchMock = vi.fn().mockImplementation(() => json(RECEIPT));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchShopChargeReceipt('chg abc', 'my shop')).resolves.toEqual(RECEIPT);
+    expect(fetchMock).toHaveBeenCalledWith('/pay/my%20shop/charges/chg%20abc');
+    await expect(fetchShopChargeReceipt('chg_abc', null)).resolves.toEqual(RECEIPT);
+    expect(fetchMock).toHaveBeenLastCalledWith('/pay/charges/chg_abc');
+  });
+
+  it('keeps a stored figure when the receipt omits null fields', async () => {
+    const body = {
+      id: 'chg_abc',
+      amountSats: 2_100,
+      status: 'paid',
+      createdAt: '2026-09-22T00:00:00.000Z',
+      expiresAt: '2026-09-22T00:05:00.000Z',
+      amountCurrency: 'USD',
+      amount: '12',
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(body)));
+    await expect(fetchShopChargeReceipt('chg_abc', 'shop')).resolves.toEqual({
+      ...body,
+      paidAt: null,
+      amountUsd: null,
+      amountChf: null,
+      amountEur: null,
+      amountPhp: null,
+    });
+  });
+
+  it('returns null for a missing, failed, or unreadable receipt', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'missing' }, 404)));
+    await expect(fetchShopChargeReceipt('gone', 'shop')).resolves.toBeNull();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 200 })));
+    await expect(fetchShopChargeReceipt('gone', null)).resolves.toBeNull();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await expect(fetchShopChargeReceipt('gone', 'shop')).resolves.toBeNull();
   });
 });

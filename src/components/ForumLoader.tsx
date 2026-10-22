@@ -22,9 +22,11 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
+  attachTypedFigure,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
+  typedFiatFigure,
 } from '@/lib/stats-money';
 import {
   CannotReceiveError,
@@ -2096,17 +2098,22 @@ export function ForumLoader({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, payRate),
+            shownFiatForSats(sats, payRate, typedFiatFigure(payShownUnit, payDraft, fiat)),
           );
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          minted = {
-            messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice,
-          };
+          minted = attachTypedFigure(
+            {
+              messageId,
+              pr: invoice.pr,
+              amountSats: invoice.amountSats,
+              sparkInvoice: invoice.sparkInvoice,
+            },
+            payShownUnit,
+            payDraft,
+            fiat,
+          );
           setPayInvoice(minted);
           setPayBusy(false);
           if (listed.parentId) {
@@ -2355,26 +2362,41 @@ export function ForumLoader({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             )
           : await postMessageInvoice(
               session,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             );
       if (generation !== payPollGeneration.current) {
         return;
       }
       setPayMessageId(parentId);
       setPayError(null);
-      setPayInvoice({
-        messageId: parentId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: parentId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('card');
       setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
@@ -2443,6 +2465,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        // The 1-sat posting fee is not the typed reply. Store only the spot.
         shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */

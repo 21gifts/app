@@ -13,8 +13,10 @@ import { useLoanRepay } from '@/hooks/useLoanRepay';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { getRepayment, type MyLoan, type MyLoans, type RepaymentLedger } from '@/lib/api';
+import { committedFiatFigure } from '@/lib/committed-fiat';
 import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { dueShares, fittingPrefix, summarizeLoans, type DueShare } from '@/lib/loan-repay';
 import {
   formatBitcoin,
@@ -26,6 +28,12 @@ import { useAuthStore } from '@/stores/auth-store';
 
 function isFiatCode(code: MyLoan['goalCurrency']): code is FiatCode {
   return code !== 'BTC';
+}
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
 }
 
 function localDay(date: Date): string {
@@ -155,14 +163,37 @@ export function LoanRepayScreen(): ReactElement {
     );
   }
 
+  const bitcoinText = (sats: number): string => formatBitcoin(sats, numberFormat);
   const fiatOnly = (sats: number): string | null => {
     const amount = satsToFiatAmount(sats, rateDay, fiat);
     return amount === null ? null : formatFiatDisplay(amount, fiat, numberFormat);
   };
   const money = (sats: number): string => {
     const converted = fiatOnly(sats);
-    const bitcoin = formatBitcoin(sats, numberFormat);
+    const bitcoin = bitcoinText(sats);
     return converted === null ? bitcoin : `${bitcoin} · ${converted}`;
+  };
+  const holding = money;
+  const wholeLoanText = (item: MyLoan): string => {
+    const bitcoin = bitcoinText(item.totalSats);
+    if (isFiatCode(item.goalCurrency)) {
+      return exactStoredFiat(item.goalAmount, item.goalCurrency, numberFormat);
+    }
+    const figure = committedFiatFigure(
+      {
+        amountCurrency: null,
+        amount: null,
+        amountUsd: item.goalAmountUsd,
+        amountChf: item.goalAmountChf,
+        amountEur: item.goalAmountEur,
+        amountPhp: item.goalAmountPhp,
+      },
+      fiat,
+    );
+    if (figure === null) {
+      return money(item.totalSats);
+    }
+    return `${bitcoin} · ${formatFiatDisplay(figure.amount, figure.code, numberFormat)}`;
   };
   const repaidWithEmptyList =
     loans.loans.length === 0 &&
@@ -248,21 +279,21 @@ export function LoanRepayScreen(): ReactElement {
       )
     : null;
   const shownSats = payable === 0 ? waiting : payable;
-  const bigAmount =
+  const definedDueLabel =
     definedPayable !== null && definedCode !== undefined && isFiatCode(definedCode)
-      ? `${formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)} · ${formatBitcoin(
-          payable,
-          numberFormat,
-        )}`
-      : formatBitcoin(shownSats, numberFormat);
-  const smallAmount = definedPayable !== null && definedCode === fiat ? null : fiatOnly(shownSats);
+      ? formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)
+      : null;
+  const bigAmount = definedDueLabel ?? formatBitcoin(shownSats, numberFormat);
+  const payLabel =
+    definedDueLabel !== null ? `${definedDueLabel} · ${bitcoinText(payable)}` : money(payable);
+  const smallAmount = definedPayable !== null ? null : fiatOnly(shownSats);
 
   const rowAmount = (share: DueShare): string => {
     // `dueShares` creates every share from this exact loan array and preserves its index.
     const loan = loans.loans[share.loanIndex]!;
     const defined =
       isFiatCode(loan.goalCurrency) && share.amount !== null
-        ? formatDefinedGoalAmount(share.amount, loan.goalCurrency, numberFormat)
+        ? exactStoredFiat(share.amount, loan.goalCurrency, numberFormat)
         : '';
     if (share.sats === null) {
       return defined === '' ? '–' : defined;
@@ -270,10 +301,7 @@ export function LoanRepayScreen(): ReactElement {
     if (defined === '') {
       return money(share.sats);
     }
-    const preferred = loan.goalCurrency === fiat ? null : fiatOnly(share.sats);
-    return `${defined} · ${formatBitcoin(share.sats, numberFormat)}${
-      preferred === null ? '' : ` · ${preferred}`
-    }`;
+    return defined;
   };
 
   const partial =
@@ -296,7 +324,7 @@ export function LoanRepayScreen(): ReactElement {
             {t('loans.lastTitle')}
           </p>
           <p className="mt-2 text-sm text-app-fg">
-            {t('loans.lastBody', { amount: money(lastLoan.totalSats) })}
+            {t('loans.lastBody', { amount: wholeLoanText(lastLoan) })}
           </p>
         </>
       ) : lastLoan !== undefined ? (
@@ -308,7 +336,7 @@ export function LoanRepayScreen(): ReactElement {
           <p className="mt-2 text-sm text-app-fg">
             {t('loans.lastFor', {
               text: shortLoanText(lastLoan.text),
-              amount: money(lastLoan.totalSats),
+              amount: wholeLoanText(lastLoan),
             })}
           </p>
         </>
@@ -320,7 +348,7 @@ export function LoanRepayScreen(): ReactElement {
           </p>
           {repay.feeSats > 0 ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
-              {t('wallet.payFee', { amount: money(repay.feeSats) })}
+              {t('wallet.payFee', { amount: holding(repay.feeSats) })}
             </p>
           ) : null}
         </>
@@ -363,10 +391,10 @@ export function LoanRepayScreen(): ReactElement {
     balanceSats === null ? null : balanceSats >= payable && !hasMissingSats ? (
       <>
         <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
-          {t('loans.fromWallet', { amount: money(balanceSats) })}
+          {t('loans.fromWallet', { amount: holding(balanceSats) })}
         </p>
         <Button variant="primary" size="lg" onClick={() => rememberAndPay()}>
-          {t('loans.sendAmount', { amount: money(payable) })}
+          {t('loans.sendAmount', { amount: payLabel })}
         </Button>
       </>
     ) : (
@@ -375,8 +403,8 @@ export function LoanRepayScreen(): ReactElement {
           <p className="font-semibold text-app-fg">{t('loans.short')}</p>
           <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.shortDetail', {
-              balance: money(balanceSats),
-              missing: money(repay.missingSats ?? Math.max(0, payable - balanceSats)),
+              balance: holding(balanceSats),
+              missing: holding(repay.missingSats ?? Math.max(0, payable - balanceSats)),
             })}
           </p>
           {!repay.topUpOpen ? (
@@ -436,7 +464,12 @@ export function LoanRepayScreen(): ReactElement {
       payArea = (
         <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          {t('loans.sending', { amount: money(sendingSats ?? payable) })}
+          {t('loans.sending', {
+            amount:
+              definedDueLabel !== null && (sendingSats === null || sendingSats === payable)
+                ? payLabel
+                : money(sendingSats ?? payable),
+          })}
         </p>
       );
       break;
@@ -492,6 +525,7 @@ export function LoanRepayScreen(): ReactElement {
       {smallAmount === null ? null : (
         <p className="text-sm tabular-nums lining-nums text-app-muted">{smallAmount}</p>
       )}
+
       <p className="mt-2 text-sm text-app-muted">
         {t(payablePeople === 1 ? 'loans.toOne' : 'loans.toMany', { count: payablePeople })}
         {summary.payableLoans > 1
@@ -602,7 +636,10 @@ export function LoanRepayScreen(): ReactElement {
       {partial ? (
         <p className="mt-3 flex items-center gap-2 text-sm text-app-success">
           <Check aria-hidden="true" className="h-4 w-4" />
-          {t('loans.sent', { amount: money(repay.sentSats), names: repay.sentNames.join(', ') })}
+          {t('loans.sent', {
+            amount: money(repay.sentSats),
+            names: repay.sentNames.join(', '),
+          })}
         </p>
       ) : null}
       {payable > 0 ? <div className="mt-4 flex flex-col gap-3">{payArea}</div> : null}
@@ -650,19 +687,21 @@ export function LoanRepayScreen(): ReactElement {
                 : splitCreditPlan(creditSmallestUnits(loan.goalAmount, false) ?? 0n, loan.termDays);
             const planTotal =
               loan.goalCurrency === 'BTC'
-                ? money(loan.totalSats)
-                : formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat);
-            const planPerDay =
+                ? wholeLoanText(loan)
+                : exactStoredFiat(loan.goalAmount, loan.goalCurrency, numberFormat);
+            const planSlice = (part: 'perDay' | 'last'): string =>
               loan.goalCurrency === 'BTC'
-                ? money(Number(split?.perDay ?? 0n))
+                ? money(Number(split?.[part] ?? 0n))
                 : formatDefinedGoalAmount(
-                    centsString(split?.perDay ?? 0n),
+                    centsString(split?.[part] ?? 0n),
                     loan.goalCurrency,
                     numberFormat,
                   );
+            const planPerDay = planSlice('perDay');
+            const uneven = (split?.remainder ?? 0n) !== 0n;
             const repaidText = t('loans.repaidOf', {
               repaid: money(loan.repaidSats),
-              total: money(loan.totalSats),
+              total: wholeLoanText(loan),
             });
             const repaidPercent =
               loan.totalSats === 0 ? 0 : Math.min(100, (loan.repaidSats / loan.totalSats) * 100);
@@ -673,11 +712,17 @@ export function LoanRepayScreen(): ReactElement {
               >
                 <p className="line-clamp-2 font-medium text-app-fg">{loan.text}</p>
                 <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
-                  {t('loans.plan', {
-                    total: planTotal,
-                    days: loan.termDays,
-                    perDay: planPerDay,
-                  })}
+                  {uneven
+                    ? `${planTotal} · ${t('forum.creditPlanLast', {
+                        amount: planPerDay,
+                        earlier: loan.termDays - 1,
+                        last: planSlice('last'),
+                      })}`
+                    : t('loans.plan', {
+                        total: planTotal,
+                        days: loan.termDays,
+                        perDay: planPerDay,
+                      })}
                 </p>
                 {loan.fundedAt === null ? (
                   <p className="mt-2 text-sm text-app-muted">{t('welcome.loanCollecting')}</p>

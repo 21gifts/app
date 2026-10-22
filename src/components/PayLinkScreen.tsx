@@ -12,16 +12,23 @@ import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
+import {
+  committedFiatFigure,
+  storedTypedFiat,
+  type FiatCode,
+  type StoredFiat,
+} from '@/lib/committed-fiat';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
-  type FiatCode,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   SHOP_STICKER_PICTOGRAM,
   SHOP_STICKER_PICTOGRAM_VIEW_BOX,
@@ -59,7 +66,8 @@ function PayLinkAmount(props: {
   );
 }
 
-interface PayCharge {
+interface PayCharge extends StoredFiat {
+  id: string | null;
   amountSats: number;
   expiresAt: string;
 }
@@ -87,12 +95,36 @@ function formatLeft(ms: number): string {
  * @param now - Clock in epoch milliseconds.
  * @returns The charge the page should show.
  */
+/** A stored decimal, or `null` when the field is absent or not a string. */
+function readDecimal(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+/** A stored fiat code, or `null` when the field is absent or not one of the four. */
+function readFiatCode(value: unknown): FiatCode | null {
+  if (value === 'USD' || value === 'CHF' || value === 'EUR' || value === 'PHP') {
+    return value;
+  }
+  return null;
+}
+
 function readCharge(value: unknown, now: number): PayCharge | null {
   if (value === null || typeof value !== 'object') {
     return null;
   }
-  const amountSats = (value as { amountSats?: unknown }).amountSats;
-  const expiresAt = (value as { expiresAt?: unknown }).expiresAt;
+  const record = value as {
+    id?: unknown;
+    amountSats?: unknown;
+    expiresAt?: unknown;
+    amountCurrency?: unknown;
+    amount?: unknown;
+    amountUsd?: unknown;
+    amountChf?: unknown;
+    amountEur?: unknown;
+    amountPhp?: unknown;
+  };
+  const amountSats = record.amountSats;
+  const expiresAt = record.expiresAt;
   if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
     return null;
   }
@@ -103,7 +135,17 @@ function readCharge(value: unknown, now: number): PayCharge | null {
   if (!Number.isFinite(expiresMs) || expiresMs <= now) {
     return null;
   }
-  return { amountSats, expiresAt };
+  return {
+    id: typeof record.id === 'string' ? record.id : null,
+    amountSats,
+    expiresAt,
+    amountCurrency: readFiatCode(record.amountCurrency),
+    amount: readDecimal(record.amount),
+    amountUsd: readDecimal(record.amountUsd),
+    amountChf: readDecimal(record.amountChf),
+    amountEur: readDecimal(record.amountEur),
+    amountPhp: readDecimal(record.amountPhp),
+  };
 }
 
 /**
@@ -112,25 +154,43 @@ function readCharge(value: unknown, now: number): PayCharge | null {
  */
 const INVOICE_QR_PLATE_WIDTH = 'w-[16.625rem]';
 
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
+
 /** Hand this invoice to the device's Bitcoin wallet app with a generic `lightning:` link. */
 function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
 }
 
-/** Viewer's fiat for a till amount, or nothing when no spot rate is ready. */
+/**
+ * Fiat under a pay-link amount. A stored figure is shown as-is. With none,
+ * the current spot stands beside the bitcoin and is not written back.
+ */
 function ChargeFiat(props: {
   amountSats: number;
   rateDay: FiatRateDay | null;
+  stored: StoredFiat | null;
 }): ReactElement | null {
-  const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
-  const amount = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
-  if (amount === null) {
+  const { fiat } = useFiatPreference();
+  const figure = props.stored === null ? null : committedFiatFigure(props.stored, fiat);
+  if (figure !== null) {
+    return (
+      <p className="text-center text-sm text-app-subtle">
+        {exactStoredFiat(figure.amount, figure.code, numberFormat)}
+      </p>
+    );
+  }
+  const spot = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  if (spot === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(amount, fiat, numberFormat)}
+      {formatFiatDisplay(spot, fiat, numberFormat)}
     </p>
   );
 }
@@ -208,9 +268,11 @@ interface ShopPaymentView {
    */
   till: boolean;
   /**
-   * The fiat amount exactly as the payer typed it on this page, with its
-   * currency; `null` for a till charge or an amount typed in bitcoin. The pay
-   * link stores no fiat figure, so nothing else shows beside the bitcoin.
+   * Fiat under the bitcoin. For a till charge this is the stored figure
+   * (`committedFiatFigure`: a typed pair wins over the visitor snapshot), or
+   * `null` when none was stored (the current spot shows and is not written
+   * back). For an amount this payer entered, it is the typed fiat pair, or
+   * `null` when the amount was typed in bitcoin (bitcoin only).
    */
   typedFiat: { amount: string; code: FiatCode } | null;
   /**
@@ -275,7 +337,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; when the wait route first answers that the api does not know the payment, the page reads the pay link once: the same payment for the same sats stays shown and its status is followed from the start, while anything else loads the pay profile again for a payment the page showed for the till's charge, or asks the payer for the amount again for a payment the payer opened (also after a till charge ran out on the page); otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (a till charge shows the stored figure from `committedFiatFigure`, typed pair over the visitor snapshot, and the current spot when none was stored, not written back; an amount typed in fiat shows that typed figure; an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; when the wait route first answers that the api does not know the payment, the page reads the pay link once: the same payment for the same sats stays shown and its status is followed from the start, while anything else loads the pay profile again for a payment the page showed for the till's charge, or asks the payer for the amount again for a payment the payer opened (also after a till charge ran out on the page); otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -294,6 +356,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
+  const [mintedFigure, setMintedFigure] = useState<{ code: FiatCode; amount: string } | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -333,6 +396,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setMintedSats(null);
     setMintedExpiresAt(null);
     setShop(null);
+    setMintedFigure(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -424,6 +488,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setMintedFigure(null);
     setFormError(null);
     postingRef.current = false;
     setPosting(false);
@@ -540,7 +605,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             link.request.payment,
             charge.amountSats,
             true,
-            null,
+            committedFiatFigure(charge, fiat),
             charge.expiresAt,
             link.request,
             generation,
@@ -584,7 +649,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setPosting(false);
       }
     };
-  }, [charge, chargeLive, mintNonce, profile, showShopPayment]);
+  }, [charge, chargeLive, fiat, mintNonce, profile, showShopPayment]);
 
   useEffect(() => {
     if (shopId === null || !awaitingRequest || profile === null) {
@@ -871,6 +936,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setMintedSats(result.amountSats);
       setNow(Date.now());
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
+      setMintedFigure(typedFiatFigure(unit, amount, fiat));
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -927,12 +993,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 </p>
                 {shop.typedFiat !== null ? (
                   <p className="text-center text-sm text-app-subtle">
-                    {formatDefinedGoalAmount(
-                      shop.typedFiat.amount,
-                      shop.typedFiat.code,
-                      numberFormat,
-                    )}
+                    {exactStoredFiat(shop.typedFiat.amount, shop.typedFiat.code, numberFormat)}
                   </p>
+                ) : shop.till ? (
+                  <ChargeFiat amountSats={shop.sats} rateDay={rateDay} stored={null} />
                 ) : null}
                 <p role="status" className="text-center text-xs text-app-subtle">
                   {t(shopStatusKey(shop.paymentStatus))}
@@ -1010,7 +1074,15 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={activeSats} rateDay={rateDay} />
+                <ChargeFiat
+                  amountSats={activeSats}
+                  rateDay={rateDay}
+                  stored={
+                    chargeLive && charge !== null
+                      ? charge
+                      : (storedTypedFiat(mintedFigure ?? undefined) ?? null)
+                  }
+                />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}

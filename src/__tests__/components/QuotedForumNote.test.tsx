@@ -499,7 +499,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('$0.04')).toBeNull();
   });
 
-  it('shows the live viewer fiat on a nested post that stored no fiat', async () => {
+  it('shows the spot beside bitcoin on a nested post that stored no fiat', async () => {
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}

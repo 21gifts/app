@@ -34,6 +34,32 @@ export function toFixturePayment(payment: Payment): WalletPayment {
   return { ...mapped, info: { ...mapped.info, ...recipient } };
 }
 
+/**
+ * A sent shop payment whose receipt stores a whole `12` and whose fee is
+ * ₿1'000. Not one of {@link WALLET_PAYMENT_FIXTURES}, so the history list and
+ * its balance stay as they are. The payment screen shows it under
+ * `?visual=history-rows` when the address names this id. At the suite rate
+ * the fee spot is `1.00`, and the total line is the stored `12` plus that
+ * spot.
+ */
+export const SHOP_SUM_VISUAL_PAYMENT: Payment = {
+  id: 'a11ce000-1545-4000-8000-000000000013',
+  paymentType: 'send',
+  status: 'completed',
+  amount: BigInt(10_000),
+  fees: BigInt(1_000),
+  timestamp: 1767200000,
+  method: 'spark',
+  details: {
+    type: 'spark',
+    invoiceDetails: {
+      description: 'pos:shop-sum',
+      invoice:
+        'spark17zr6df6dpngv4hdddaxh59ss4kh57drfldvnpxh58axjdj8esv30ppax5axse5x2mkkk7nt6zcg2mt60x35lkkfsnt6r7nfxerucxghss7n2wngv6r9dmtt0f4apvy9d4a8ng60mtycf4aplf5nv37vrygfyzfdv',
+    },
+  },
+};
+
 /** Payment hash of the Playwright-only heart fixture. */
 export const HEART_VISUAL_HASH = 'c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeaaaa';
 /** Forum post id shown for that heart. */

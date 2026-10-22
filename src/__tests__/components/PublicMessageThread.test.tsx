@@ -866,6 +866,25 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
   });
 
+  it('stores the spot of the 1 sat fee, not a typed fiat reply, when the author cannot receive', async () => {
+    signIn({ role: 'basis', id: 'acc_dave', amountUnit: 'fiat' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
   it('posts a verified reply without a gift when the author cannot receive', async () => {
     signIn({ role: 'verified' });
     renderThread({ root: { ...root, authorCanReceive: false } });

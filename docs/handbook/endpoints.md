@@ -21,6 +21,20 @@
 - **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
+## Endpoint: GET /pay/[username]/charges/[id]
+
+- **Purpose:** Proxies the public shop-charge receipt. The body is the charge id, status, times, and the stored currency figures. It does not include the account id or a Spark invoice.
+- **Errors:** Upstream 404 when the charge is missing, 502 when the api cannot be reached.
+- **Used by:** `fetchShopChargeReceipt` when the paid Lightning address has a local part.
+- **Auth:** none.
+
+## Endpoint: GET /pay/charges/[id]
+
+- **Purpose:** Proxies the same public shop-charge receipt when the payment has no Lightning address. The body is the charge id, status, times, and the stored currency figures. It does not include the account id or a Spark invoice.
+- **Errors:** Upstream 404 when the charge is missing, 502 when the api cannot be reached.
+- **Used by:** `fetchShopChargeReceipt` when the username is null.
+- **Auth:** none.
+
 ## Endpoint: POST /pay/[username]/invoice
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.

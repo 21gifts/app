@@ -23,13 +23,17 @@ import {
   type WalletSendError,
 } from '@/hooks/useWalletSend';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import type { FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { MessageKey } from '@/lib/messages';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
+  addDecimalStrings,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  typedFiatFigure,
 } from '@/lib/stats-money';
 import type { AmountUnit } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
@@ -250,19 +254,78 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     takeText(value);
   };
 
+  const storedFiatText = (amount: string, code: FiatCode): string => {
+    const exact = formatDefinedGoalAmount(amount, code, numberFormat);
+    return exact === '' ? formatFiatDisplay(amount, code, numberFormat) : exact;
+  };
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
   const fiatText = (sats: number): string | null => {
     const live = satsToFiatAmount(sats, rateDay, fiat);
     return live === null ? null : formatFiatDisplay(live, fiat, numberFormat);
   };
+  /**
+   * Fiat of a total that already has a typed or stored figure. The same
+   * currency is one suffix after the bitcoin sum. A different currency, or a
+   * missing fee spot, is the stored figure, then the charge in bitcoin, then
+   * the fee in bitcoin with only its own spot. The bitcoin sum does not stand
+   * in front of that stored figure. No spot of the sat sum.
+   */
+  const totalFigure = (
+    figure: { code: FiatCode; amount: string },
+    feeSats: number,
+    chargeSats: number,
+  ): { kind: 'suffix' | 'parts'; node: ReactElement } => {
+    const feeSpot = satsToFiatAmount(feeSats, rateDay, fiat);
+    if (figure.code === fiat && feeSpot !== null) {
+      const combined = addDecimalStrings(figure.amount, feeSpot);
+      if (combined !== null) {
+        return {
+          kind: 'suffix',
+          node: (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{storedFiatText(combined, fiat)}</span>
+            </>
+          ),
+        };
+      }
+    }
+    const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
+    const stored = storedFiatText(figure.amount, figure.code);
+    return {
+      kind: 'parts',
+      node: (
+        <>
+          {`${t('wallet.sendTotal', { amount: '' }).trimEnd()} ${stored}`}
+          <span aria-hidden="true"> · </span>
+          <span>{formatBitcoin(chargeSats, numberFormat)}</span>
+          <span aria-hidden="true"> + </span>
+          <span>{formatBitcoin(feeSats, numberFormat)}</span>
+          {feeFiat === null ? null : (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{feeFiat}</span>
+            </>
+          )}
+        </>
+      ),
+    };
+  };
   const boundText = (sats: number): string => {
     const live = fiatText(sats);
     const bitcoin = formatBitcoin(sats, numberFormat);
     return live === null ? bitcoin : `${bitcoin} · ${live}`;
   };
-  const largeAmount = (sats: number, amount: string): ReactElement => {
-    const live = fiatText(sats);
+  const largeAmount = (
+    sats: number,
+    amount: string,
+    figure?: { code: FiatCode; amount: string } | null,
+  ): ReactElement => {
+    const live =
+      figure !== undefined && figure !== null
+        ? storedFiatText(figure.amount, figure.code)
+        : fiatText(sats);
     return (
       <div className="flex flex-col items-center gap-2">
         <p className={LARGE_AMOUNT_CLASS}>{amount}</p>
@@ -437,7 +500,13 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
     const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
       event.preventDefault();
       const parsed = parseAmountDraft(amountUnit, amountDraft, rateDay, fiat);
-      send.submitAmount(parsed.kind === 'sats' ? parsed.sats : null);
+      const sats = parsed.kind === 'sats' ? parsed.sats : null;
+      const figure = typedFiatFigure(amountUnit, amountDraft, fiat);
+      if (figure === null) {
+        send.submitAmount(sats);
+      } else {
+        send.submitAmount(sats, figure);
+      }
     };
     const anyAmount = target.type === 'request' || target.type === 'onchain';
     const commentMax = anyAmount ? 0 : target.commentMaxLength;
@@ -498,9 +567,17 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'confirm' && state.onchain !== undefined) {
     const onchain = state.onchain;
     const totalSats = state.amountSats + state.feeSats;
+    const figured =
+      state.chargeFigure === undefined || state.chargeFigure === null
+        ? null
+        : totalFigure(state.chargeFigure, state.feeSats, state.amountSats);
     body = (
       <div className="flex w-full flex-col items-center gap-3 py-2">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -515,8 +592,16 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
             {fiatOf(state.feeSats)}
           </p>
           <p>
-            {t('wallet.sendTotal', { amount: formatBitcoin(totalSats, numberFormat) })}
-            {fiatOf(totalSats)}
+            {figured !== null && figured.kind === 'parts' ? (
+              figured.node
+            ) : (
+              <>
+                {t('wallet.sendTotal', {
+                  amount: formatBitcoin(totalSats, numberFormat),
+                })}
+                {figured === null ? fiatOf(totalSats) : figured.node}
+              </>
+            )}
           </p>
         </div>
         <div
@@ -571,7 +656,11 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'confirm') {
     body = (
       <div className="flex w-full flex-col items-center gap-4 py-6">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -585,7 +674,11 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   } else if (state.step === 'quote') {
     body = (
       <div className="flex w-full flex-col items-center gap-4 py-6">
-        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        {largeAmount(
+          state.amountSats,
+          formatBitcoin(state.amountSats, numberFormat),
+          state.chargeFigure,
+        )}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
@@ -617,6 +710,7 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
           {largeAmount(
             state.amountSats,
             t('wallet.sendSent', { amount: formatBitcoin(state.amountSats, numberFormat) }),
+            state.chargeFigure,
           )}
         </div>
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">

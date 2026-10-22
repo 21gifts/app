@@ -7918,6 +7918,37 @@ describe('ForumLoader', () => {
     expect(invoiceMock.mock.calls[0]?.[2]).toBe(1);
   });
 
+  it('stores the spot of the 1 sat fee, not a typed fiat reply, when the author cannot receive', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', amountUnit: 'fiat' },
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, authorCanReceive: false }]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '12' } });
+    const form = screen.getByLabelText('Your reaction').closest('form');
+    if (form === null) {
+      throw new Error('reply form missing');
+    }
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(1);
+    });
+    expect(invoiceMock.mock.calls[0]?.[2]).toBe(1);
+    expect(invoiceMock.mock.calls[0]?.[4]).toEqual(NO_RATE_SHOWN);
+  });
+
   it('posts a verified reply without a gift when the author cannot receive', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, authorCanReceive: false }]));

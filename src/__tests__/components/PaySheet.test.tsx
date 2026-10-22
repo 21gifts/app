@@ -13,6 +13,7 @@ import {
 } from '@/components/PaySheet';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
 import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import type { StoredFiat } from '@/lib/committed-fiat';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -30,6 +31,7 @@ function sheet(
   onClose: () => void,
   rateDay: FiatRateDay | null = RATE_DAY,
   slot: ReactElement = <Sent />,
+  stored?: StoredFiat,
 ): ReactElement {
   return (
     <Collapse show={open} holdMs={PAY_SHEET_HOLD_MS}>
@@ -38,6 +40,7 @@ function sheet(
           title="Send to Ana"
           amountSats={500}
           rateDay={rateDay}
+          {...(stored === undefined ? {} : { stored })}
           successTitle="Sent to Ana"
           onClose={onClose}
         >
@@ -153,6 +156,56 @@ describe('PaySheet', () => {
     renderWithLocale(sheet(true, vi.fn(), null));
     expect(screen.getByText('₿500')).not.toBeNull();
     expect(screen.queryByText('$0.50')).toBeNull();
+  });
+
+  it('shows the current spot when the stored figure is absent', () => {
+    renderWithLocale(
+      sheet(true, vi.fn(), RATE_DAY, <Sent />, {
+        amountCurrency: null,
+        amount: null,
+        amountUsd: null,
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      }),
+    );
+    expect(screen.getByText('₿500')).not.toBeNull();
+    expect(screen.getByText('$0.50')).not.toBeNull();
+    expect(screen.queryByText('₱12.00')).toBeNull();
+  });
+
+  it('shows the stored PHP amount instead of the spot', () => {
+    renderWithLocale(
+      sheet(true, vi.fn(), RATE_DAY, <Sent />, {
+        amountCurrency: 'PHP',
+        amount: '12.00',
+        amountUsd: '1.00',
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      }),
+    );
+    expect(screen.getByText('₿500')).not.toBeNull();
+    expect(screen.getByText('₱12.00')).not.toBeNull();
+    expect(screen.queryByText('$0.50')).toBeNull();
+    expect(screen.queryByText('$1.00')).toBeNull();
+  });
+
+  it('shows an empty stored PHP amount as ₱0.00 instead of the spot', () => {
+    renderWithLocale(
+      sheet(true, vi.fn(), RATE_DAY, <Sent />, {
+        amountCurrency: 'PHP',
+        amount: '',
+        amountUsd: '1.00',
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      }),
+    );
+    expect(screen.getByText('₿500')).not.toBeNull();
+    expect(screen.getByText('₱0.00')).not.toBeNull();
+    expect(screen.queryByText('$0.50')).toBeNull();
+    expect(screen.queryByText('$1.00')).toBeNull();
   });
 
   it('closes once on Close and slides away without a success step', () => {

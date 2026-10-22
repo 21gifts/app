@@ -17,10 +17,14 @@ import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
+import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { returnToView } from '@/lib/view-history';
 import type { AmountUnit } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -28,7 +32,37 @@ import {
   satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
-import { useAuthStore } from '@/stores/auth-store';
+
+/**
+ * Fiat under a till amount. A stored figure is shown as-is. With none, the
+ * current spot stands beside the bitcoin and is not written onto the charge.
+ */
+function posFiatText(
+  stored: { code: FiatCode; amount: string } | null,
+  sats: number | null,
+  rateDay: FiatRateDay | null,
+  fiat: FiatCode,
+  numberFormat: NumberFormatStyle,
+): string | null {
+  if (stored !== null) {
+    const exact = formatDefinedGoalAmount(stored.amount, stored.code, numberFormat);
+    return exact === '' ? formatFiatDisplay(stored.amount, stored.code, numberFormat) : exact;
+  }
+  if (sats === null) {
+    return null;
+  }
+  const spot = satsToFiatAmount(sats, rateDay, fiat);
+  return spot === null ? null : formatFiatDisplay(spot, fiat, numberFormat);
+}
+
+/** Draft the till stores: trim, one comma to a dot, fraction digits kept, no trailing dot. */
+function typedFiatDraft(draft: string): string {
+  const dotted = draft.trim().replace(',', '.');
+  if (dotted.endsWith('.')) {
+    return dotted.slice(0, -1);
+  }
+  return dotted;
+}
 
 /** Remaining time as m:ss. */
 function formatLeft(ms: number): string {
@@ -113,8 +147,8 @@ type PosTillState = {
   charge: PosState['charge'];
   paid: PosState['charge'];
   remaining: number;
-  chargeFiat: string | null;
-  paidFiat: string | null;
+  chargeFiat: { code: FiatCode; amount: string } | null;
+  paidFiat: { code: FiatCode; amount: string } | null;
   amount: string;
   setAmount: (value: string) => void;
   shownUnit: AmountUnit;
@@ -211,8 +245,8 @@ function usePosTillState(): PosTillState {
   const charge = shown !== null && shown.status === 'pending' ? shown : null;
   const paid = shown !== null && shown.status === 'paid' ? shown : null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
-  const paidFiat = paid === null ? null : satsToFiatAmount(paid.amountSats, rateDay, fiat);
+  const chargeFiat = charge === null ? null : committedFiatFigure(charge, fiat);
+  const paidFiat = paid === null ? null : committedFiatFigure(paid, fiat);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
     account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
@@ -338,7 +372,16 @@ function usePosTillState(): PosTillState {
     setError(null);
     const work = (async (): Promise<void> => {
       try {
-        const created = await createPosCharge(session, amountSats);
+        const created = await createPosCharge(
+          session,
+          amountSats,
+          shownUnit === 'fiat'
+            ? {
+                amountCurrency: fiat,
+                amount: typedFiatDraft(amount),
+              }
+            : undefined,
+        );
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
@@ -468,6 +511,20 @@ export function PosTill(): ReactElement {
       logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
     }
   }, [paidId, paidSats, paidFor]);
+  const chargeText = posFiatText(
+    till.chargeFiat,
+    till.charge?.amountSats ?? null,
+    till.rateDay,
+    fiat,
+    numberFormat,
+  );
+  const paidText = posFiatText(
+    till.paidFiat,
+    till.paid?.amountSats ?? null,
+    till.rateDay,
+    fiat,
+    numberFormat,
+  );
 
   return (
     <Card surface={false}>
@@ -515,10 +572,8 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.charge.amountSats, numberFormat)}
           </p>
-          {till.chargeFiat === null ? null : (
-            <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(till.chargeFiat, fiat, numberFormat)}
-            </p>
+          {chargeText === null ? null : (
+            <p className="text-center text-sm text-app-subtle">{chargeText}</p>
           )}
           <Button
             type="button"
@@ -538,10 +593,8 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.paid.amountSats, numberFormat)}
           </p>
-          {till.paidFiat === null ? null : (
-            <p className="text-center text-sm text-app-subtle">
-              {formatFiatDisplay(till.paidFiat, fiat, numberFormat)}
-            </p>
+          {paidText === null ? null : (
+            <p className="text-center text-sm text-app-subtle">{paidText}</p>
           )}
           <ButtonLink href="/pos/amount">{t('pos.newPayment')}</ButtonLink>
         </div>
@@ -555,11 +608,7 @@ export function PosTill(): ReactElement {
         </p>
       ) : null}
       {till.state !== null ? (
-        <PosHistory
-          history={till.state.history}
-          openChargeId={till.charge?.id ?? null}
-          rateDay={till.rateDay}
-        />
+        <PosHistory history={till.state.history} openChargeId={till.charge?.id ?? null} />
       ) : null}
     </Card>
   );

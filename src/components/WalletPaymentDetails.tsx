@@ -20,16 +20,19 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
-import { useSpotRateState } from '@/hooks/useSpotRate';
+import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
+import type { FiatCode } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
 import {
+  addDecimalStrings,
   formatBitcoin,
   formatFiatDisplay,
   satsToFiatAmount,
-  type FiatRateDay,
 } from '@/lib/stats-money';
 import { paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
@@ -118,12 +121,14 @@ const STATUS: Record<WalletPayment['status'], { key: MessageKey; className: stri
   failed: { key: 'wallet.failed', className: 'bg-app-danger/10 text-app-danger' },
 };
 
-/** The loaded payment, shown once the rate read has settled. */
-function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | null }): ReactElement {
-  const { payment, rateDay } = props;
+/** The loaded payment. A shop charge shows its stored figure once the receipt returns. */
+function PaymentView(props: { payment: WalletPayment }): ReactElement {
+  const { payment } = props;
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const rateDay = useSpotRate();
+  const shop = useShopChargeFigure(payment.info.purpose === 'shop' ? payment.info : null);
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
@@ -137,14 +142,84 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
       : null;
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
-  /** A ₿ amount with the default fiat after it. */
-  const amount = (sats: number): ReactElement => (
-    <>
-      {formatBitcoin(sats, numberFormat)}
-      {preferredFiatSuffix(sats, rateDay, fiat, numberFormat)}
-    </>
-  );
-  const fiatAmount = satsToFiatAmount(payment.amountSats, rateDay, fiat);
+  const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
+  const storedFiatText = (amount: string, code: FiatCode): string => {
+    const exact = formatDefinedGoalAmount(amount, code, numberFormat);
+    return exact === '' ? formatFiatDisplay(amount, code, numberFormat) : exact;
+  };
+  /**
+   * Bitcoin plus one fiat figure. A shop charge amount, and its total, stay
+   * bitcoin until the receipt returns. The charge amount then shows the stored
+   * figure. The total keeps that figure and adds the spot of the fee sats
+   * only. The fee row is its own spot, even when its sats equal the charge.
+   * A fee of ₿0 stays the fee-free label.
+   */
+  const amount = (sats: number, role: 'charge' | 'sum' | 'other'): ReactElement => {
+    const shopPayment = payment.info.purpose === 'shop';
+    if (shopPayment && shop.pending && (role === 'charge' || role === 'sum')) {
+      return <>{formatBitcoin(sats, numberFormat)}</>;
+    }
+    if (role === 'charge' && shopFigure !== null) {
+      return (
+        <>
+          {formatBitcoin(sats, numberFormat)}
+          <span aria-hidden="true"> · </span>
+          <span>{storedFiatText(shopFigure.amount, shopFigure.code)}</span>
+        </>
+      );
+    }
+    if (role === 'sum' && shopFigure !== null) {
+      const feeSpot = satsToFiatAmount(payment.feesSats, rateDay, fiat);
+      const chargeFiat = storedFiatText(shopFigure.amount, shopFigure.code);
+      const combined =
+        shopFigure.code === fiat && feeSpot !== null
+          ? addDecimalStrings(shopFigure.amount, feeSpot)
+          : null;
+      if (combined !== null) {
+        return (
+          <>
+            {formatBitcoin(sats, numberFormat)}
+            <span aria-hidden="true"> · </span>
+            <span>{storedFiatText(combined, fiat)}</span>
+          </>
+        );
+      }
+      const feeFiat = feeSpot === null ? null : formatFiatDisplay(feeSpot, fiat, numberFormat);
+      return (
+        <>
+          <span>{chargeFiat}</span>
+          <span aria-hidden="true"> · </span>
+          <span>{formatBitcoin(payment.amountSats, numberFormat)}</span>
+          <span aria-hidden="true"> + </span>
+          <span>{formatBitcoin(payment.feesSats, numberFormat)}</span>
+          {feeFiat === null ? null : (
+            <>
+              <span aria-hidden="true"> · </span>
+              <span>{feeFiat}</span>
+            </>
+          )}
+        </>
+      );
+    }
+    return (
+      <>
+        {formatBitcoin(sats, numberFormat)}
+        {preferredFiatSuffix(sats, rateDay, fiat, numberFormat)}
+      </>
+    );
+  };
+  const spotAmount =
+    payment.info.purpose === 'shop'
+      ? shop.pending || shopFigure !== null
+        ? null
+        : satsToFiatAmount(payment.amountSats, rateDay, fiat)
+      : satsToFiatAmount(payment.amountSats, rateDay, fiat);
+  const fiatAmount =
+    shopFigure !== null
+      ? shopFigure
+      : spotAmount === null
+        ? null
+        : { code: fiat, amount: spotAmount };
   const date = new Intl.DateTimeFormat(locale, { dateStyle: 'long', timeStyle: 'short' }).format(
     payment.timestamp,
   );
@@ -174,7 +249,9 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
         </p>
         {fiatAmount === null ? null : (
           <p className="text-sm tabular-nums lining-nums text-app-muted">
-            {formatFiatDisplay(fiatAmount, fiat, numberFormat)}
+            {shopFigure !== null
+              ? storedFiatText(shopFigure.amount, shopFigure.code)
+              : formatFiatDisplay(fiatAmount.amount, fiatAmount.code, numberFormat)}
           </p>
         )}
         <span
@@ -238,20 +315,24 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
         ('text' in title && title.text === info.description) ? null : (
           <Row label={t('wallet.payment.description')}>{info.description}</Row>
         )}
-        <Row label={t('wallet.payment.amount')}>{amount(payment.amountSats)}</Row>
+        <Row label={t('wallet.payment.amount')}>{amount(payment.amountSats, 'charge')}</Row>
         {(received && payment.feesSats === 0) || failed ? null : (
           <Row label={t('wallet.payment.fee')}>
-            {payment.feesSats === 0 ? t('wallet.payment.feeFree') : amount(payment.feesSats)}
+            {payment.feesSats === 0
+              ? t('wallet.payment.feeFree')
+              : amount(payment.feesSats, 'other')}
           </Row>
         )}
         {!received && !failed && payment.feesSats > 0 ? (
           <Row label={t('wallet.payment.total')}>
-            <span className="font-medium">{amount(payment.amountSats + payment.feesSats)}</span>
+            <span className="font-medium">
+              {amount(payment.amountSats + payment.feesSats, 'sum')}
+            </span>
           </Row>
         ) : null}
         {payment.method === 'deposit' && payment.feesSats > 0 ? (
           <Row label={t('wallet.payment.depositOnchain')}>
-            {amount(payment.amountSats + payment.feesSats)}
+            {amount(payment.amountSats + payment.feesSats, 'sum')}
           </Row>
         ) : null}
       </dl>
@@ -325,9 +406,12 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * counterparty, description, amount, fee, total, what arrived on-chain), and
  * a Details button with aria-expanded, closed until pressed, whose open list is those technical values with
  * Copy (transaction and output, payment request, payment hash, proof of
- * payment, payment id). Nothing shows until the rate
- * read has settled, so no amount appears without its fiat while the rate is
- * still loading. While the wallet is still connecting, could not be opened,
+ * payment, payment id). The payment shows as soon as it is loaded. A shop
+ * charge shows the currency figure stored on its receipt once that read
+ * returns. While that read is out the amount stays bitcoin, so a stored
+ * figure is not flashed as a spot price. After the read, a missing figure
+ * shows the current spot, as does every payment that is not a shop charge.
+ * That spot is not written onto the payment. While the wallet is still connecting, could not be opened,
  * or its one-time setup gave up, it shows that state (`WalletBalance`) and
  * loads the payment once the wallet is ready (a session whose wallet is not
  * open sees the login card in place, from `OnboardingGate`); without a wallet here it says the payment
@@ -342,15 +426,14 @@ export function WalletPaymentDetails(): ReactElement {
   const { t } = useTranslations();
   const id = useSearchParams().get('id');
   const state = useWalletPayment(id);
-  const rate = useSpotRateState();
   const wallet = useWallet();
   const waiting = state.status === 'loading';
   const missing = state.status === 'missing' || (waiting && wallet.status === 'disabled');
   return (
     <Card surface={false}>
       <h1 className="sr-only">{t('wallet.payment.heading')}</h1>
-      {state.status === 'ready' && wallet.status === 'ready' && !rate.loading ? (
-        <PaymentView payment={state.payment} rateDay={rate.rateDay} />
+      {state.status === 'ready' && wallet.status === 'ready' ? (
+        <PaymentView payment={state.payment} />
       ) : null}
       {missing ? (
         <p role="alert" className="text-center text-sm text-app-muted">

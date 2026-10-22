@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import {
   HEART_VISUAL_PAYMENT,
+  SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
 } from '@/lib/wallet/payment-fixtures';
@@ -137,6 +138,10 @@ describe('useWalletPayment', () => {
     expect(renderHook(() => useWalletPayment(fixture.id)).result.current).toEqual({
       status: 'ready',
       payment: toFixturePayment(fixture),
+    });
+    expect(renderHook(() => useWalletPayment(SHOP_SUM_VISUAL_PAYMENT.id)).result.current).toEqual({
+      status: 'ready',
+      payment: toFixturePayment(SHOP_SUM_VISUAL_PAYMENT),
     });
     expect(renderHook(() => useWalletPayment('nope')).result.current).toEqual({
       status: 'missing',

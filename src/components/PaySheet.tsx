@@ -20,6 +20,9 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
+import { committedFiatFigure, type FiatCode, type StoredFiat } from '@/lib/committed-fiat';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
@@ -27,6 +30,12 @@ import {
   satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
 
 /**
  * How long the success step shows before the sheet slides away, in ms, counted from the moment the
@@ -192,6 +201,12 @@ export interface PaySheetProps {
   amountSats: number;
   /** Current spot rate for the fiat line, or `null` while there is none. */
   rateDay: FiatRateDay | null;
+  /**
+   * Fiat stored with an existing amount. A stored figure is shown as-is.
+   * When it is missing, or while the amount is still being typed, the sheet
+   * shows the current spot beside the bitcoin.
+   */
+  stored?: StoredFiat;
   /** Heading of the success step, e.g. **Sent to Ana**, **Lent to Ana**, **Paid and posted**, or **Sent**. */
   successTitle: string;
   /**
@@ -230,6 +245,7 @@ export function PaySheet({
   title,
   amountSats,
   rateDay,
+  stored,
   successTitle,
   onClose,
   onSentChange,
@@ -350,16 +366,21 @@ export function PaySheet({
   }, [leaving, close]);
 
   const shown = entered && !leaving;
-  const fiatAmount = satsToFiatAmount(amountSats, rateDay, fiat);
+  const storedFigure = stored === undefined ? null : committedFiatFigure(stored, fiat);
+  const spotAmount = satsToFiatAmount(amountSats, rateDay, fiat);
+  const fiatLine =
+    storedFigure !== null
+      ? exactStoredFiat(storedFigure.amount, storedFigure.code, numberFormat)
+      : spotAmount === null
+        ? null
+        : formatFiatDisplay(spotAmount, fiat, numberFormat);
   const amount = (
     <div className="flex flex-col items-center gap-0.5">
       <p className="text-4xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg">
         {formatBitcoin(amountSats, numberFormat)}
       </p>
-      {fiatAmount === null ? null : (
-        <p className="text-sm tabular-nums lining-nums text-app-muted">
-          {formatFiatDisplay(fiatAmount, fiat, numberFormat)}
-        </p>
+      {fiatLine === null ? null : (
+        <p className="text-sm tabular-nums lining-nums text-app-muted">{fiatLine}</p>
       )}
     </div>
   );

@@ -1565,7 +1565,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21')).toBeVisible();
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     } else {
@@ -1651,7 +1651,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     if (isMobileProject(testInfo)) {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
@@ -1690,7 +1690,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto(`/pl?lightning=${lnurl}`);
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText("₿238'093")).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
@@ -1709,8 +1709,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText('1:30 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(page.getByText('238.19 USDT')).toBeVisible();
     await expect(
@@ -1736,8 +1737,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
     await expect(page.getByText(/USDT|USDC/)).toHaveCount(0);
     await expect(page.getByText(/OpenCryptoPay/)).toHaveCount(0);
@@ -1761,8 +1763,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
@@ -1780,8 +1783,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByText('238.21 USDT')).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
@@ -1889,8 +1893,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('On its way')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
@@ -1909,8 +1914,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Paid ✓')).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
@@ -1929,8 +1935,9 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Ended', { exact: true })).toBeVisible();
     await expect(page.getByText("₿238'093")).toBeVisible();
-    // The till stores no fiat figure, so its amount stays bitcoin.
-    await expect(page.getByText(/\$/)).toHaveCount(0);
+    // The till stored no figure, so the amount shows the current spot.
+    await expect(page.getByText('$238.09', { exact: true })).toBeVisible();
+    await expect(page.getByText(/\$/)).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
@@ -2090,7 +2097,7 @@ test.describe('screen baselines', () => {
     await seedLoanData(page, [waitingAllLoan], { 'loan-a': waitingAllLedger });
     await page.goto('/wallet?visual=balance-ready');
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await expect(page.getByText(/waits · 3 lenders have no wallet yet/i)).toBeVisible();
     await shotScreen(page, 'state-wallet-loans-waiting-all');
   });
@@ -3069,11 +3076,13 @@ test.describe('screen baselines', () => {
 
   test('state-wallet-payment-loading', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
-    // The rate read never answers, so the screen stays in its loading state.
+    // The spot never answers. This payment is not a shop charge, so the
+    // bitcoin amount shows at once and no fiat line is derived from the spot.
     await page.route('**/fx/spot', () => undefined);
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
-    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    await expect(page.getByText("+₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-payment-loading');
   });
 
@@ -3429,7 +3438,7 @@ test.describe('screen baselines', () => {
     await page.clock.pauseAt(now + 1_000);
     await page.goto('/wallet?visual=wallet-received');
     const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
-    await expect(banner).toContainText('$0.50');
+    await expect(banner).toContainText('₿500');
     // The banner slides in; shoot it where it rests.
     await expect
       .poll(() =>
@@ -3445,7 +3454,7 @@ test.describe('screen baselines', () => {
 
   test('wallet received', async ({ page }) => {
     await openReceived(page);
-    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500');
     await shotScreen(page, 'state-wallet-received');
   });
 
@@ -3461,7 +3470,7 @@ test.describe('screen baselines', () => {
     const banner = await openReceived(page);
     await banner.getByRole('button', { name: 'Close' }).click();
     await expect(banner).toHaveCount(0);
-    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500');
     await shotScreen(page, 'state-wallet-received-bump');
   });
 
@@ -5274,7 +5283,7 @@ test.describe('loans repay screens', () => {
       loans: [paidLoan],
       ledgers: { 'loan-a': paidLedger },
       visual: 'repay-repaid',
-      text: "Repaid ₿1'000 · $1.00",
+      text: "Repaid ₿1'000",
     });
     await shotScreen(page, 'state-loans-repay-repaid');
   });
@@ -5316,7 +5325,7 @@ test.describe('loans repay screens', () => {
       loans: [repaidLastLoan, repaidLoanB],
       ledgers: { 'loan-a': repaidLastLedger, 'loan-b': repaidLedgerB },
       visual: 'repay-repaid-multi',
-      text: "Repaid ₿2'200 · $2.20",
+      text: "Repaid ₿2'200",
     });
     await shotScreen(page, 'state-loans-repay-last-multi');
   });
@@ -10219,7 +10228,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
@@ -10270,7 +10279,8 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
-    await expect(page.getByText('$0.02')).toHaveCount(2);
+    await expect(page.getByText('₿21', { exact: true })).toHaveCount(2);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
       '/pos/amount',
@@ -10347,6 +10357,7 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
+    await expect(history.getByText("₿2'100")).toBeVisible();
     await expect(history.getByText('$2.10')).toBeVisible();
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
@@ -10951,7 +10962,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -11014,7 +11025,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });
@@ -17394,7 +17405,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Next repayment')).toBeVisible();
     await expect(page.getByText(/7 days at/)).toBeVisible();
     await expect(page.getByText('All other days are')).toBeVisible();
-    await expect(page.getByText('₿10 · $0.01').first()).toBeVisible();
+    await expect(page.getByText('₿10').first()).toBeVisible();
+    await expect(page.getByText('$0.01').first()).toBeVisible();
+    await expect(page.getByText('$0.08').first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
     const month = page.getByRole('heading', { name: 'November 2026' });
     const footnote = page.getByText('All other days are');
@@ -18544,6 +18557,10 @@ test.describe('onboarding screens', () => {
     await page
       .getByText("The author's wallet cannot receive this Bitcoin payment")
       .scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Send ₿1' }).locator('svg')).toHaveAttribute(
+      'fill',
+      'none',
+    );
     await shotScreen(page, 'state-messages-id-heart-cannot-receive');
   });
 
@@ -24070,7 +24087,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([paid]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-nothing-due');
   });
 
@@ -24081,7 +24098,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([paid]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-nothing-due-open');
@@ -24093,7 +24110,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([waitingAllLoan]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-waiting-all');
   });
 
@@ -24103,7 +24120,7 @@ test.describe('welcome forum variants', () => {
     });
     await openWelcomeLoans(page, myLoans([waitingAllLoan]));
     await expect(page.getByText('Nothing due today')).toBeVisible();
-    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000")).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-waiting-all-open');
@@ -24474,6 +24491,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-plan-fiat');
   });
 
@@ -24539,7 +24557,7 @@ test.describe('welcome forum variants', () => {
     }
     await page.getByRole('button', { name: 'I want to take this credit.' }).click();
     await expect(page.getByText(/I can repay the amount owed on this plan/)).toBeVisible();
-    await expect(page.getByText(/\$\d/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await expect(page.getByRole('checkbox')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-credit-confirm-can-fiat');
   });
@@ -24561,6 +24579,8 @@ test.describe('welcome forum variants', () => {
       await page.getByRole('button', { name: 'Continue' }).click();
     }
     await expect(page.getByText('5 of 9')).toBeVisible();
+    await expect(page.getByText(/Amount owed: \$1'000\.00 · ₿1'000'000/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await expect(page.getByText(/fixed in US dollars/)).toBeVisible();
     await expect(page.getByText(/price falls/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
@@ -24717,7 +24737,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('9 of 9')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
-    await expect(page.getByText(/\$33\.33 per day for 29 days/)).toBeVisible();
+    await expect(page.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-preview-fiat');
   });
 

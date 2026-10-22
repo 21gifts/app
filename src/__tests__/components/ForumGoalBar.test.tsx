@@ -69,7 +69,7 @@ describe('ForumGoalBar', () => {
     expect(container.querySelector('[class*="fill-app-success"]')).toBeNull();
   });
 
-  it('shows the visitor fiat beside a legacy bitcoin ask', () => {
+  it('shows the spot fiat on a legacy ask when no USD snapshot is stored', () => {
     renderWithLocale(<ForumGoalBar sats={23100} goalSats={21000} rateDay={RATE_DAY} />);
     expect(screen.getByText('Ask')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
@@ -127,7 +127,7 @@ describe('ForumGoalBar', () => {
     expect(screen.getByText('$1.00')).toBeTruthy();
   });
 
-  it('uses the live viewer rate when the USD snapshot is missing on a PHP ask', () => {
+  it('leaves a missing USD snapshot off a posted PHP ask', () => {
     renderWithLocale(
       <ForumGoalBar
         sats={0}
@@ -140,7 +140,7 @@ describe('ForumGoalBar', () => {
     );
     expect(screen.getByText('₱10.125')).toBeTruthy();
     expect(screen.getByText("₿21'000")).toBeTruthy();
-    expect(screen.getByText('$21.00')).toBeTruthy();
+    expect(screen.queryByText('$21.00')).toBeNull();
   });
 
   it('shows 0% when the defined amount is zero', () => {
@@ -242,6 +242,17 @@ describe('ForumGoalBar', () => {
         goalSats={3000}
         goalRepayable
         goalTermDays={30}
+        preview
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    expect(screen.getByText(/₿100 · \$0\.10 per day for 30 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={3000}
+        goalRepayable
+        goalTermDays={30}
         goalCurrency="BTC"
         goalAmount="3000"
       />,
@@ -250,14 +261,53 @@ describe('ForumGoalBar', () => {
     rerender(
       <ForumGoalBar
         sats={0}
-        goalSats={1}
+        goalSats={1_000_000}
         goalRepayable
         goalTermDays={30}
         goalCurrency="USD"
         goalAmount="1000"
       />,
     );
-    expect(screen.getByText(/\$33\.33 per day for 29 days/)).toBeTruthy();
+    expect(screen.getByText(/\$33\.33 · ₿33'333 per day for 29 days/)).toBeTruthy();
+    expect(screen.getByText(/\$33\.43 · ₿33'343/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={12_000}
+        goalRepayable
+        goalTermDays={1}
+        goalCurrency="USD"
+        goalAmount="12.00"
+      />,
+    );
+    expect(screen.getByText(/\$12\.00 · ₿12'000 per day for 1 days/)).toBeTruthy();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={10_001}
+        goalRepayable
+        goalTermDays={4}
+        goalCurrency="USD"
+        goalAmount="10.00"
+        rateDay={{ sats: 100000000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    expect(screen.getByText(/\$2\.50 · ₿2'500 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/last day/)).toBeNull();
+    expect(screen.queryByText(/\$12 per day/)).toBeNull();
+    rerender(
+      <ForumGoalBar
+        sats={0}
+        goalSats={1.5}
+        goalRepayable
+        goalTermDays={4}
+        goalCurrency="USD"
+        goalAmount="10.00"
+      />,
+    );
+    expect(screen.getByText(/\$2\.50 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/\$2\.50 ·/)).toBeNull();
+    expect(screen.queryByText(/last day/)).toBeNull();
     rerender(
       <ForumGoalBar
         sats={0}
@@ -283,7 +333,7 @@ describe('ForumGoalBar on a posted loan', () => {
     return fetchMock;
   }
 
-  it('shows the loan block with bitcoin and fiat, and loads no ledger in a feed card', () => {
+  it('shows the loan block with bitcoin, and loads no ledger in a feed card', () => {
     const fetchMock = noFetch();
     const onLend = vi.fn();
     renderWithLocale(
@@ -351,9 +401,34 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText("CHF 10.00 · ₿5'000 · $5.00")).toBeTruthy();
-    expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
+    expect(screen.getByText("CHF 10.00 · ₿5'000")).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 lent")).toBeTruthy();
+    expect(screen.queryByText('$5.00')).toBeNull();
+    expect(screen.queryByText('$25.00')).toBeNull();
     expect(screen.getByText('50%')).toBeTruthy();
+  });
+
+  it('appends the stored viewer snapshot on a fiat loan whose currency is not the visitor currency', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={5_000}
+        goalSats={25_000}
+        rateDay={RATE_DAY}
+        goalCurrency="CHF"
+        goalAmount="20"
+        goalAmountUsd="22.00"
+        amountChf="10.00"
+        amountUsd="11.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+      />,
+    );
+    expect(screen.getByText("CHF 10.00 · ₿5'000 · $11.00")).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 · $22.00 lent")).toBeTruthy();
+    expect(screen.queryByText('$5.00')).toBeNull();
+    expect(screen.queryByText('$25.00')).toBeNull();
   });
 
   it('leaves out a second copy of the fiat when the visitor uses the loan currency', () => {
@@ -392,8 +467,10 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText('CHF 0.00 · ₿0 · $0.00')).toBeTruthy();
-    expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
+    expect(screen.getByText('CHF 0.00 · ₿0')).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 lent")).toBeTruthy();
+    expect(screen.queryByText('$0.00')).toBeNull();
+    expect(screen.queryByText('$25.00')).toBeNull();
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.queryByText(/₿12'500/)).toBeNull();
   });

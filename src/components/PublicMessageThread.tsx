@@ -27,7 +27,13 @@ import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-req
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import {
+  attachTypedFigure,
+  paySatsFromDraft,
+  replySatsFromDraft,
+  shownFiatForSats,
+  typedFiatFigure,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { PAY_POLL_MS } from '@/lib/payment-link';
 
@@ -642,6 +648,7 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
+        // The 1-sat posting fee is not the typed reply. Store only the spot.
         shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
@@ -717,14 +724,22 @@ export function PublicMessageThread(props: {
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, replyRateRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyShownUnit, replyAmountDraft, fiat),
+              ),
             );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -732,12 +747,19 @@ export function PublicMessageThread(props: {
       }
       setPayMessageId(parentId);
       setPayError(null);
-      setPayInvoice({
-        messageId: parentId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: parentId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+          },
+          replyShownUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('card');
       setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
@@ -844,17 +866,22 @@ export function PublicMessageThread(props: {
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, payRate),
+            shownFiatForSats(sats, payRate, typedFiatFigure(payShownUnit, payDraft, fiat)),
           );
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          minted = {
-            messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice,
-          };
+          minted = attachTypedFigure(
+            {
+              messageId,
+              pr: invoice.pr,
+              amountSats: invoice.amountSats,
+              sparkInvoice: invoice.sparkInvoice,
+            },
+            payShownUnit,
+            payDraft,
+            fiat,
+          );
           setPayInvoice(minted);
           setPayBusy(false);
           if (listed.parentId) {
