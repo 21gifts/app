@@ -171,7 +171,7 @@ export function LoanRepayScreen(): ReactElement {
     const bitcoin = bitcoinText(item.totalSats);
     if (isFiatCode(item.goalCurrency)) {
       const defined = formatDefinedGoalAmount(item.goalAmount, item.goalCurrency, numberFormat);
-      return defined === '' ? bitcoin : `${defined} · ${bitcoin}`;
+      return defined === '' ? bitcoin : defined;
     }
     const figure = committedFiatFigure(
       {
@@ -273,13 +273,13 @@ export function LoanRepayScreen(): ReactElement {
       )
     : null;
   const shownSats = payable === 0 ? waiting : payable;
-  const bigAmount =
+  const definedDueLabel =
     definedPayable !== null && definedCode !== undefined && isFiatCode(definedCode)
-      ? `${formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)} · ${formatBitcoin(
-          payable,
-          numberFormat,
-        )}`
-      : formatBitcoin(shownSats, numberFormat);
+      ? formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)
+      : null;
+  const bigAmount = definedDueLabel ?? formatBitcoin(shownSats, numberFormat);
+  const payLabel =
+    definedDueLabel !== null ? `${definedDueLabel} · ${bitcoinText(payable)}` : money(payable);
   const smallAmount = definedPayable !== null ? null : fiatOnly(shownSats);
 
   const rowAmount = (share: DueShare): string => {
@@ -295,7 +295,7 @@ export function LoanRepayScreen(): ReactElement {
     if (defined === '') {
       return money(share.sats);
     }
-    return `${defined} · ${bitcoinText(share.sats)}`;
+    return defined;
   };
 
   const partial =
@@ -388,9 +388,7 @@ export function LoanRepayScreen(): ReactElement {
           {t('loans.fromWallet', { amount: holding(balanceSats) })}
         </p>
         <Button variant="primary" size="lg" onClick={() => rememberAndPay()}>
-          {t('loans.sendAmount', {
-            amount: definedPayable !== null ? bigAmount : money(payable),
-          })}
+          {t('loans.sendAmount', { amount: payLabel })}
         </Button>
       </>
     ) : (
@@ -460,7 +458,12 @@ export function LoanRepayScreen(): ReactElement {
       payArea = (
         <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          {t('loans.sending', { amount: money(sendingSats ?? payable) })}
+          {t('loans.sending', {
+            amount:
+              definedDueLabel !== null && (sendingSats === null || sendingSats === payable)
+                ? payLabel
+                : money(sendingSats ?? payable),
+          })}
         </p>
       );
       break;
@@ -676,20 +679,20 @@ export function LoanRepayScreen(): ReactElement {
               loan.goalCurrency === 'BTC'
                 ? splitCreditPlan(BigInt(loan.totalSats), loan.termDays)
                 : splitCreditPlan(creditSmallestUnits(loan.goalAmount, false) ?? 0n, loan.termDays);
-            const satSplit =
-              loan.goalCurrency === 'BTC'
-                ? null
-                : splitCreditPlan(BigInt(loan.totalSats), loan.termDays);
             const planTotal =
               loan.goalCurrency === 'BTC'
                 ? wholeLoanText(loan)
-                : `${formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat)} · ${formatBitcoin(loan.totalSats, numberFormat)}`;
+                : formatDefinedGoalAmount(loan.goalAmount, loan.goalCurrency, numberFormat);
             const planSlice = (part: 'perDay' | 'last'): string =>
               loan.goalCurrency === 'BTC'
                 ? money(Number(split?.[part] ?? 0n))
-                : `${formatDefinedGoalAmount(centsString(split?.[part] ?? 0n), loan.goalCurrency, numberFormat)} · ${formatBitcoin(Number(satSplit?.[part] ?? 0n), numberFormat)}`;
+                : formatDefinedGoalAmount(
+                    centsString(split?.[part] ?? 0n),
+                    loan.goalCurrency,
+                    numberFormat,
+                  );
             const planPerDay = planSlice('perDay');
-            const uneven = (split?.remainder ?? 0n) !== 0n || (satSplit?.remainder ?? 0n) !== 0n;
+            const uneven = (split?.remainder ?? 0n) !== 0n;
             const repaidText = t('loans.repaidOf', {
               repaid: money(loan.repaidSats),
               total: wholeLoanText(loan),

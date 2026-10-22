@@ -288,10 +288,11 @@ describe('LoanRepayScreen', () => {
       }),
     );
     show({ sundayRest: false, loans: [usdLoan] });
-    expect(screen.getByText("$30.00 · ₿30'000 · 30 days · $1.00 · ₿1'000 per day")).toBeTruthy();
+    expect(screen.getByText('$30.00 · 30 days · $1.00 per day')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send $1.00 · ₿1'000" })).toBeTruthy();
   });
 
-  it('names the last day when the fiat or the bitcoin does not divide evenly', () => {
+  it('names the last day when the loan currency does not divide evenly', () => {
     show({
       sundayRest: false,
       loans: [
@@ -318,7 +319,7 @@ describe('LoanRepayScreen', () => {
     });
     expect(
       screen.getByText(
-        "$10.00 · ₿10'001 · $2.50 · ₿2'500 per day for 3 days, then $2.50 · ₿2'501 on the last day",
+        '$10.00 · 4 days · $2.50 per day',
       ),
     ).toBeTruthy();
     expect(
@@ -339,7 +340,8 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(screen.getByText("EUR 0.00 · ₿1'000")).toBeTruthy();
+    expect(screen.getByText('EUR 0.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send EUR 0.00 · ₿1'000" })).toBeTruthy();
     expect(screen.queryByText('$1.00')).toBeNull();
   });
 
@@ -370,7 +372,8 @@ describe('LoanRepayScreen', () => {
       }),
     );
     show({ sundayRest: false, loans: [phpLoan] });
-    expect(screen.getByText('₱30.00 · ₿536')).toBeTruthy();
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send ₱30.00 · ₿536" })).toBeTruthy();
     expect(screen.queryByText('$0.54')).toBeNull();
     const waitingNotice = screen.getByText(/waits for a lender/).parentElement;
     expect(waitingNotice?.querySelector('svg')?.getAttribute('class')).toContain(
@@ -379,7 +382,7 @@ describe('LoanRepayScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
     const waitingRow = (await screen.findByText('No wallet yet · waits')).closest('li');
     expect(waitingRow?.querySelector('svg')?.getAttribute('class')).toContain('text-app-notice-fg');
-    expect(screen.getByText('₱10.00 · ₿200')).toBeTruthy();
+    expect(screen.getByText('₱10.00')).toBeTruthy();
     expect(screen.queryByText('$0.20')).toBeNull();
   });
 
@@ -955,7 +958,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getAllByText('School books for my daughter')).toHaveLength(2);
     const list = screen.getByRole('region', { name: 'Your loans' });
     expect(
-      within(list).getByText("EUR 12.00 · ₿12'000 · 10 days · EUR 1.20 · ₿1'200 per day"),
+      within(list).getByText('EUR 12.00 · 10 days · EUR 1.20 per day'),
     ).toBeTruthy();
     expect(
       within(list).getAllByRole('link', { name: 'Repayment list' })[0]?.getAttribute('href'),
