@@ -565,6 +565,9 @@ describe('LoginCard', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
     );
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     expect(submitNameSpy).not.toHaveBeenCalled();
   });
 
