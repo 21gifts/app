@@ -1669,6 +1669,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity');
   });
 
+  test('state / shops-marker', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    const marker = page.locator('#shop-places-map .shop-place-marker');
+    await expect(marker).toBeVisible({ timeout: 20_000 });
+    await marker.click();
+    await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+  });
+
   test('state / shops-help', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');

@@ -53,6 +53,12 @@ The Activity list is open and the listbox option Daily is visible. Map stays sel
 
 ![21.gifts home shops activity](images/root-shops-activity.png)
 
+### Variant: shops-marker
+
+Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
+
+![21.gifts home shops marker](images/root-shops-marker.png)
+
 ### Variant: shops-help
 
 Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.

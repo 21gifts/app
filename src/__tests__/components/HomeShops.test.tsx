@@ -1672,6 +1672,29 @@ describe('HomeShops', () => {
     expect(lib.maps).toHaveLength(0);
   });
 
+  it('removes a script that fails after unmount and shows the table when the next load fails', async () => {
+    const first = renderShops();
+    const script = mapScript();
+    expect(script.getAttribute('data-shops-map')).toBe('loading');
+    expect(screen.queryByText(copy.error)).toBeNull();
+    first.unmount();
+    await act(async () => {
+      script.dispatchEvent(new Event('load'));
+    });
+    expect(script.isConnected).toBe(false);
+    const second = renderShops();
+    const next = mapScript();
+    expect(next).not.toBe(script);
+    expect(next.getAttribute('data-shops-map')).toBe('loading');
+    expect(screen.queryByText(copy.error)).toBeNull();
+    await act(async () => {
+      next.dispatchEvent(new Event('error'));
+    });
+    expect(second.container.contains(screen.getByText(copy.error))).toBe(true);
+    expect(tableShell().hasAttribute('hidden')).toBe(false);
+    expect(next.isConnected).toBe(false);
+  });
+
   it('reports a script error before the map exists', async () => {
     renderShops();
     await fireScript('error');

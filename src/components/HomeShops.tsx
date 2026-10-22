@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ChangeEvent, MouseEvent as ReactMouseEvent, ReactElement } from 'react';
+import { CircleHelp } from 'lucide-react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { Button } from '@/components/ui/Button';
 
@@ -833,15 +834,16 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     let cancelled = false;
 
     function onLoad(script: Element): void {
-      if (cancelled) return;
       const lib = window.maplibregl;
-      const container = document.getElementById('shop-places-map');
       if (lib === undefined) {
         script.remove();
+        if (cancelled) return;
         setScriptFailed(true);
         setView('table');
         return;
       }
+      if (cancelled) return;
+      const container = document.getElementById('shop-places-map');
       if (!(container instanceof HTMLElement)) {
         setScriptFailed(true);
         setView('table');
@@ -865,8 +867,8 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     }
 
     function onError(script: Element): void {
-      if (cancelled) return;
       script.remove();
+      if (cancelled) return;
       setScriptFailed(true);
       setView('table');
     }
@@ -1079,10 +1081,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
                         popoverTarget={helpId}
                         className="inline-flex min-h-11 min-w-11 items-center justify-center"
                       >
-                        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16">
-                          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" />
-                          <path d="M12 11v6M12 7.5v.5" stroke="currentColor" />
-                        </svg>
+                        <CircleHelp aria-hidden="true" className="h-4 w-4" />
                       </button>
                     </div>
                   </th>

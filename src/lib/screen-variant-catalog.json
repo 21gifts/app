@@ -42,6 +42,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-marker",
+    "label": "/ shops-marker",
+    "visual": "state-root-shops-marker",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:shops-help",
     "label": "/ shops-help",
     "visual": "state-root-shops-help",

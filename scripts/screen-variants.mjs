@@ -122,6 +122,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-marker',
+    image: 'root-shops-marker.png',
+    visual: 'state-root-shops-marker',
+    needle: "getByRole('link', { name: 'Sample' })",
+  },
+  {
+    route: '/',
     id: 'shops-help',
     image: 'root-shops-help.png',
     visual: 'state-root-shops-help',

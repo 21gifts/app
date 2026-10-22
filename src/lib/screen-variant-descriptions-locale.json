@@ -2269,6 +2269,11 @@
     "es": "La lista Actividad está abierta y la opción de cuadro de lista Diario es visible. Mapa sigue elegido. Actividad no se envía en la consulta de lugares.",
     "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
   },
+  "/:shops-marker": {
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind maskiert.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están enmascaradas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakamaskara ang mga tile ng mapa."
+  },
   "/:shops-help": {
     "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist geöffnet und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
     "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto y muestra Al menos 5 días con un pago en los últimos 7 días.",
