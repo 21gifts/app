@@ -508,7 +508,10 @@ export function ShopNoteEditControl({
         }
       }
       let latest = message;
-      const stored = openedPlace;
+      // The open snapshot decides whether this editor changed the place.
+      // Write order uses the place still on the message: a parent rename can
+      // make the new text invalid until that place is written.
+      const stored = message.place ?? null;
       const placeFirst =
         textChanged &&
         placeChanged &&
