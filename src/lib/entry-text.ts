@@ -120,25 +120,26 @@ export function shownEntryProblem<T extends string>(problem: T | null, touched: 
 }
 
 /**
- * True when a reply, including the `inReplyTo:` line the api stores, is over 8000.
- * An exempt viewer is checked on the typed text only.
+ * True when a reply is over 8000 characters.
+ * The `inReplyTo:` line is counted only when this submit stores it.
+ * An explicit amount, and an exempt viewer, are checked on the typed text only.
  *
  * @param draft - Reply text.
  * @param parentId - Note the reply answers, or `null` when there is none.
  * @param exempt - True when this viewer may reply without the payment prefix.
+ * @param countPrefix - True when this submit stores the `inReplyTo:` line.
  * @returns Whether the reply is too long.
  */
 export function replyTextIsTooLong(
   draft: string,
   parentId: string | null,
   exempt: boolean,
+  countPrefix: boolean,
 ): boolean {
   const trimmed = draft.trim();
-  const overhead = parentId === null ? 0 : `inReplyTo:${parentId}\n`.length;
-  return (
-    trimmed.length > FORUM_MESSAGE_MAX_LENGTH ||
-    (!exempt && trimmed.length + overhead > FORUM_MESSAGE_MAX_LENGTH)
-  );
+  const overhead =
+    parentId === null || exempt || !countPrefix ? 0 : `inReplyTo:${parentId}\n`.length;
+  return trimmed.length + overhead > FORUM_MESSAGE_MAX_LENGTH;
 }
 
 /**

@@ -193,6 +193,7 @@ export type InboxFormError =
   | 'request'
   | 'amount'
   | 'noRate'
+  | 'loading'
   | 'rateLimit'
   | 'authorWallet'
   | 'unsupported'
@@ -242,11 +243,6 @@ export interface InboxScreenProps {
   posting: boolean;
   /** Client-side composer validation or request failure. */
   formError: InboxFormError;
-  /**
-   * True while a fiat amount is waiting for the rate. Send stays off and
-   * the amount field stays quiet. Default false.
-   */
-  amountUnsettled?: boolean;
   /** True for a moderator: show Direct/Contact/Damus. Members see the full inbound list. */
   showFilter: boolean;
   /** Amount draft for the composer sats field. */
@@ -573,7 +569,6 @@ export function InboxScreen({
   onPost,
   posting,
   formError,
-  amountUnsettled = false,
   showFilter,
   amountDraft = '',
   onAmountDraftChange = () => undefined,
@@ -1230,7 +1225,7 @@ export function InboxScreen({
                 textAlert !== null ||
                 formError === 'amount' ||
                 formError === 'noRate' ||
-                amountUnsettled
+                formError === 'loading'
               }
               aria-label={t('inbox.send')}
             >
@@ -1241,6 +1236,11 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
+          {formError === 'loading' ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('pos.rateLoading', { code: fiat })}
+            </p>
+          ) : null}
           {textAlert === 'empty' ? (
             <p
               id="inbox-composer-error"

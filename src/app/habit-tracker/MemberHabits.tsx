@@ -21,7 +21,12 @@ import {
 } from '@/lib/entry-text';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
-import { payDraftProblem, paySatsFromDraft, shownDraftPayError } from '@/lib/stats-money';
+import {
+  payDraftProblem,
+  paySatsFromDraft,
+  shownDraftPayError,
+  shownPaySheetError,
+} from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import type { MessageKey } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
@@ -379,6 +384,20 @@ export function MemberHabits(): ReactElement {
     return useAuthStore.getState().session !== actor || sessionVisit.current !== visit;
   }
 
+  function clearEditRejection(habitId: string): void {
+    setHabitApi((current) =>
+      current?.where === 'edit' && current.id === habitId ? null : current,
+    );
+    setEditNameTouched((current) => {
+      if (current[habitId] !== true) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[habitId];
+      return next;
+    });
+  }
+
   function startEdit(habit: MemberHabit): void {
     setEditingHabitId(habit.id);
     setEditByHabitId((current) => ({
@@ -389,6 +408,7 @@ export function MemberHabits(): ReactElement {
         notes: habit.notes === undefined ? '' : habit.notes,
       },
     }));
+    clearEditRejection(habit.id);
   }
 
   function cancelEdit(habitId: string): void {
@@ -398,6 +418,7 @@ export function MemberHabits(): ReactElement {
       delete next[habitId];
       return next;
     });
+    clearEditRejection(habitId);
   }
 
   function clearArchiveConfirm(habitId: string): void {
@@ -438,8 +459,8 @@ export function MemberHabits(): ReactElement {
     }
     /* v8 ignore stop */
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-    /* v8 ignore next 3 -- the sheet returns while this same draft is still waiting on the rate */
     if (payProblem === 'quiet') {
+      setPayError('loading');
       return;
     }
     if (payProblem === 'no-rate') {
@@ -523,9 +544,11 @@ export function MemberHabits(): ReactElement {
   // The api uses the same code as a bad draft. A draft the form already
   // accepted keeps that message until the amount changes.
   const shownHabitPayError =
-    habitPayProblem === null && payError === 'habitAmount'
-      ? payError
-      : shownDraftPayError(payError, habitPayProblem, 'habitAmount', 'noRate');
+    payError === 'loading'
+      ? shownPaySheetError(payError, habitPayProblem, 'habitAmount', 'noRate')
+      : habitPayProblem === null && payError === 'habitAmount'
+        ? payError
+        : shownDraftPayError(payError, habitPayProblem, 'habitAmount', 'noRate');
 
   let body: ReactElement;
   if (loading && data === null) {
@@ -853,7 +876,6 @@ export function MemberHabits(): ReactElement {
                     payError={shownHabitPayError}
                     payInvoice={payInvoice}
                     rateDay={rateDay}
-                    ratePending={livePayProblem === 'quiet'}
                     showPaymentQr={showPaymentQr}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {

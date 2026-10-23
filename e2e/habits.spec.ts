@@ -410,7 +410,7 @@ test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   const cont = page.getByRole('button', { name: 'Continue' });
   await expect(cont).toBeEnabled();
   await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeDisabled();
+  await expect(cont).toBeEnabled();
   await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
   await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
   await cont.scrollIntoViewIfNeeded();
@@ -1099,10 +1099,15 @@ test('Function: useLatestRateDayState — a fiat Gift stays quiet until the rate
   const cont = page.getByRole('button', { name: 'Continue' });
   await expect(cont).toBeEnabled();
   await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeDisabled();
+  await expect(cont).toBeEnabled();
   await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await cont.click();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
   release();
   await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
   await expect(cont).toBeDisabled();
 });
 

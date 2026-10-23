@@ -124,7 +124,7 @@ function isShopElsewhereFormError(error: ForumFormError): boolean {
 }
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'loading';
 
 /** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
 function editStillUrls(
@@ -275,11 +275,6 @@ export interface ForumBoardProps {
   replyPayPreview?: string | null;
   /** True while polling for an updated sats total after pay. */
   payWaiting: boolean;
-  /**
-   * True while a fiat amount is waiting for the rate. Continue stays off
-   * and the field stays quiet. Default false.
-   */
-  payRatePending?: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
   /** Signed-in account id, used to show repayment only on the author's credit. */
@@ -362,17 +357,13 @@ export interface ForumBoardProps {
   /** Reply composer validation or request failure. */
   replyFormError: ForumReplyFormError;
   /**
-   * True when the reply text, including the `inReplyTo:` prefix, is over 8000
-   * characters. Shown with an invalid amount, not instead of it.
+   * True when the reply text is over 8000 characters. The `inReplyTo:` prefix
+   * counts only when this reply stores it. Shown with an invalid amount, not
+   * instead of it.
    */
   replyTextTooLong?: boolean;
   /** True when the reply amount is not a payable number. A blank amount stays valid. */
   replyAmountInvalid?: boolean;
-  /**
-   * True while a positive fiat reply amount is still waiting for the rate.
-   * Send stays off and the payment message stays hidden.
-   */
-  replyAmountQuiet?: boolean;
   /** True when a fiat reply amount has no rate after that request has settled. */
   replyAmountNoRate?: boolean;
   /** When true, hide the new-note composer (profile note card). */
@@ -595,7 +586,6 @@ export function ForumBoard({
   payInvoice,
   replyPayPreview = null,
   payWaiting,
-  payRatePending = false,
   onPayOpen,
   viewerAccountId = null,
   onRepay,
@@ -635,7 +625,6 @@ export function ForumBoard({
   replyFormError,
   replyTextTooLong = false,
   replyAmountInvalid = false,
-  replyAmountQuiet = false,
   replyAmountNoRate = false,
   composerHidden = false,
   readOnly = false,
@@ -1423,7 +1412,6 @@ export function ForumBoard({
                     onPaySubmit={onPaySubmit}
                     onPayCancel={onPayCancel}
                     rateDay={rateDay}
-                    ratePending={payRatePending}
                     showPaymentQr={showPaymentQr}
                     onInteract={stopCardToggle}
                   />
@@ -1666,7 +1654,6 @@ export function ForumBoard({
                                   onPaySubmit={onPaySubmit}
                                   onPayCancel={onPayCancel}
                                   rateDay={rateDay}
-                                  ratePending={payRatePending}
                                   showPaymentQr={showPaymentQr}
                                   onInteract={stopCardToggle}
                                 />
@@ -1753,11 +1740,11 @@ export function ForumBoard({
                                 repliesError ||
                                 replies === null ||
                                 replyTextTooLong ||
-                                replyAmountQuiet ||
                                 replyAmountNoRate ||
                                 replyAmountInvalid ||
                                 replyFormError === 'tooLong' ||
-                                replyFormError === 'amount'
+                                replyFormError === 'amount' ||
+                                replyFormError === 'loading'
                               }
                               aria-label={t('forum.post')}
                             >
@@ -1798,6 +1785,11 @@ export function ForumBoard({
                           {replyFormError === 'deleted' ? (
                             <p role="alert" className="text-center text-sm text-app-danger">
                               {t('forum.errorNoteDeleted')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'loading' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('pos.rateLoading', { code: fiat })}
                             </p>
                           ) : null}
                         </form>
@@ -2182,7 +2174,6 @@ export function ForumBoard({
             onPaySubmit={onPaySubmit}
             onPayCancel={onPayCancel}
             rateDay={rateDay}
-            ratePending={payRatePending}
             showPaymentQr={showPaymentQr}
             onInteract={(event) => {
               event.stopPropagation();

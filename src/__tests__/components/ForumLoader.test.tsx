@@ -6327,9 +6327,12 @@ describe('ForumLoader', () => {
     const pending = within(replyCard).getByRole('button', {
       name: 'Continue',
     }) as HTMLButtonElement;
-    expect(pending.disabled).toBe(true);
+    expect(pending.disabled).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
     fireEvent.submit(pending.closest('form')!);
     expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(pending.disabled).toBe(true);
 
     await act(async () => {
       releaseStats(EMPTY_STATS);
@@ -6372,7 +6375,8 @@ describe('ForumLoader', () => {
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '1.00' } });
     expect(
       (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    ).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
     await act(async () => {
       releaseStats({
         ...EMPTY_STATS,
@@ -7682,6 +7686,37 @@ describe('ForumLoader', () => {
     expect(composeTargetMock).not.toHaveBeenCalled();
   });
 
+  it('accepts a paid reply of exactly 8000 characters', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    const form = screen.getByLabelText('Your reaction').closest('form');
+    if (form === null) {
+      throw new Error('missing reply form');
+    }
+    const post = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
+    expect(post.disabled).toBe(false);
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, text, expect.anything());
+    });
+    expect(composeTargetMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(/8000/)).toBeNull();
+  });
+
   it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -8758,9 +8793,12 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
     const form = screen.getByLabelText('Your reaction').closest('form')!;
     const pending = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
-    expect(pending.disabled).toBe(true);
+    expect(pending.disabled).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
     fireEvent.submit(form);
     expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(pending.disabled).toBe(true);
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
 
     await act(async () => {

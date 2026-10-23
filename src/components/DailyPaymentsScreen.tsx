@@ -64,7 +64,7 @@ function parseUsd(raw: string): number | null {
     return null;
   }
   const value = Number(trimmed);
-  if (value <= 0) {
+  if (!Number.isFinite(value) || value <= 0) {
     return null;
   }
   return value;

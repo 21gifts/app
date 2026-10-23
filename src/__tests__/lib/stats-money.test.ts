@@ -18,6 +18,7 @@ import {
   replyDraftProblem,
   replySatsFromDraft,
   shownDraftPayError,
+  shownPaySheetError,
   satsToFiatAmount,
   shownFiatForSats,
   type FiatRateDay,
@@ -318,5 +319,14 @@ describe('payDraftProblem and replyDraftProblem', () => {
     expect(shownDraftPayError('request', 'invalid', 'amount', 'noRate')).toBe('amount');
     expect(shownDraftPayError(null, 'no-rate', 'amount', 'noRate')).toBe('noRate');
     expect(shownDraftPayError<string>(null, null, 'amount', 'noRate')).toBeNull();
+  });
+
+  it('keeps a loading submit only while the rate is still quiet', () => {
+    expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate')).toBe('loading');
+    expect(shownPaySheetError('loading', null, 'amount', 'noRate')).toBeNull();
+    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate')).toBe('noRate');
+    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate')).toBe('amount');
+    expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate')).toBe('request');
+    expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate')).toBeNull();
   });
 });

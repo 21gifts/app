@@ -8,7 +8,7 @@ import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import {
   replyDraftProblem,
   replySatsFromDraft,
-  shownDraftPayError,
+  shownPaySheetError,
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
@@ -677,6 +677,7 @@ export function InboxLoader(): ReactElement | null {
     const trimmed = draft.trim();
     const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
     if (amountProblem === 'quiet') {
+      setFormError('loading');
       return;
     }
     if (amountProblem === 'no-rate') {
@@ -890,7 +891,7 @@ export function InboxLoader(): ReactElement | null {
   const threadId = threadAllowed ? openId : null;
   const showFilter = staff;
   const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
-  const shownFormError = shownDraftPayError(formError, amountProblem, 'amount', 'noRate');
+  const shownFormError = shownPaySheetError(formError, amountProblem, 'amount', 'noRate');
   return (
     <InboxScreen
       conversations={waitingStaffRoom ? null : conversations}
@@ -938,7 +939,6 @@ export function InboxLoader(): ReactElement | null {
       onPost={onPost}
       posting={posting || preparing}
       formError={shownFormError}
-      amountUnsettled={amountProblem === 'quiet'}
       showFilter={showFilter}
       invoice={invoice}
       onPayCancel={() => {

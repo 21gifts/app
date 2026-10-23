@@ -25,6 +25,7 @@ import {
   replyDraftProblem,
   replySatsFromDraft,
   shownDraftPayError,
+  shownPaySheetError,
 } from '../src/lib/stats-money';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
@@ -13370,10 +13371,11 @@ test('Function: habitTextProblem — an empty habit name stays off the request',
 test('Function: replyTextIsTooLong — a reaction over 8000 stays under the field', async ({
   page,
 }) => {
-  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', false)).toBe(true);
-  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', true)).toBe(false);
-  expect(replyTextIsTooLong('a'.repeat(8001), null, true)).toBe(true);
-  expect(replyTextIsTooLong('hello', 'r-pay', false)).toBe(false);
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', false, true)).toBe(true);
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', false, false)).toBe(false);
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', true, true)).toBe(false);
+  expect(replyTextIsTooLong('a'.repeat(8001), null, true, false)).toBe(true);
+  expect(replyTextIsTooLong('hello', 'r-pay', false, true)).toBe(false);
   await seedAdaSession(page);
   await stubPayableNote(page);
   await page.goto('/welcome');
@@ -13448,4 +13450,13 @@ test('Function: shownDraftPayError — a fixed pay amount clears the field messa
   await amount.fill('21');
   await expect(reply.getByText('Enter a whole number greater than zero')).toHaveCount(0);
   await expect(reply.getByRole('button', { name: 'Continue' })).toBeEnabled();
+});
+
+test('Function: shownPaySheetError — a loading submit stays only while the rate is quiet', async () => {
+  expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate')).toBe('loading');
+  expect(shownPaySheetError('loading', null, 'amount', 'noRate')).toBeNull();
+  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate')).toBe('noRate');
+  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate')).toBe('amount');
+  expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate')).toBe('request');
+  expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate')).toBeNull();
 });

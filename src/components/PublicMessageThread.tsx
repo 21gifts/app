@@ -31,8 +31,8 @@ import {
   paySatsFromDraft,
   replyDraftProblem,
   replySatsFromDraft,
-  shownDraftPayError,
   shownFiatForSats,
+  shownPaySheetError,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -808,8 +808,8 @@ export function PublicMessageThread(props: {
       return;
     }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
-    /* v8 ignore next 3 -- the sheet returns while this same draft is still waiting on the rate */
     if (payProblem === 'quiet') {
+      setPayError('loading');
       return;
     }
     if (payProblem === 'no-rate') {
@@ -975,7 +975,12 @@ export function PublicMessageThread(props: {
       return;
     }
     const trimmed = replyDraft.trim();
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    const token = session;
+    const parentId = expandedId;
+    const exempt = isReplyPaymentExempt(account, note.accountId);
+    const authorUnknown = note.accountId === undefined;
+    if (replyTextIsTooLong(replyDraft, parentId, exempt, parsed === 'empty' && !exempt)) {
       setReplyFormError('tooLong');
       return;
     }
@@ -987,14 +992,13 @@ export function PublicMessageThread(props: {
       rateSeries !== null,
     );
     // A fiat amount with no settled rate is not "at least 1 sat".
-    if (replyProblem === 'quiet' || replyProblem === 'no-rate') {
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
       return;
     }
-    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
-    const token = session;
-    const parentId = expandedId;
-    const exempt = isReplyPaymentExempt(account, note.accountId);
-    const authorUnknown = note.accountId === undefined;
+    if (replyProblem === 'no-rate') {
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -1085,7 +1089,10 @@ export function PublicMessageThread(props: {
     rateSettled,
   );
   const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-  const shownPayError = shownDraftPayError(payError, livePayProblem, 'amount', 'noRate');
+  const shownPayError = shownPaySheetError(payError, livePayProblem, 'amount', 'noRate');
+  const replyExempt = isReplyPaymentExempt(account, note.accountId);
+  const shownReplyFormError =
+    replyFormError === 'loading' && replyAmountProblem !== 'quiet' ? null : replyFormError;
 
   return (
     <>
@@ -1156,7 +1163,6 @@ export function PublicMessageThread(props: {
         payDraft={payDraft}
         payBusy={payBusy}
         payError={shownPayError}
-        payRatePending={livePayProblem === 'quiet'}
         payInvoice={payInvoice}
         payWaiting={payWaiting}
         onPayOpen={handlePayOpen}
@@ -1184,13 +1190,14 @@ export function PublicMessageThread(props: {
           setReplyFormError(null);
         }}
         replyPosting={replyPosting}
-        replyFormError={replyFormError}
+        replyFormError={shownReplyFormError}
         replyTextTooLong={replyTextIsTooLong(
           replyDraft,
           expandedId,
-          isReplyPaymentExempt(account, note.accountId),
+          replyExempt,
+          replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+            !replyExempt,
         )}
-        replyAmountQuiet={replyAmountProblem === 'quiet'}
         replyAmountNoRate={replyAmountProblem === 'no-rate'}
         replyAmountInvalid={replyAmountProblem === 'invalid'}
         onReplyPost={handleReplyPost}

@@ -57,8 +57,8 @@ import {
   paySatsFromDraft,
   replyDraftProblem,
   replySatsFromDraft,
-  shownDraftPayError,
   shownFiatForSats,
+  shownPaySheetError,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -1062,8 +1062,8 @@ export function MemberProfileScreen({
       return;
     }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
-    /* v8 ignore next 3 -- the sheet returns while this same draft is still waiting on the rate */
     if (payProblem === 'quiet') {
+      setPayError('loading');
       return;
     }
     if (payProblem === 'no-rate') {
@@ -1210,7 +1210,14 @@ export function MemberProfileScreen({
       return;
     }
     const trimmed = replyDraft.trim();
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
+    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    const token = session;
+    const parentId = expandedId;
+    const parentRow = posts?.find((message) => message.id === parentId);
+    const parentAccountId = parentRow?.accountId;
+    const exempt = isReplyPaymentExempt(account, parentAccountId);
+    const authorUnknown = parentAccountId === undefined;
+    if (replyTextIsTooLong(replyDraft, parentId, exempt, parsed === 'empty' && !exempt)) {
       setReplyFormError('tooLong');
       return;
     }
@@ -1222,16 +1229,13 @@ export function MemberProfileScreen({
       rateSeries !== null,
     );
     // A fiat amount with no settled rate is not "at least 1 sat".
-    if (replyProblem === 'quiet' || replyProblem === 'no-rate') {
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
       return;
     }
-    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
-    const token = session;
-    const parentId = expandedId;
-    const parentRow = posts?.find((message) => message.id === parentId);
-    const parentAccountId = parentRow?.accountId;
-    const exempt = isReplyPaymentExempt(account, parentAccountId);
-    const authorUnknown = parentAccountId === undefined;
+    if (replyProblem === 'no-rate') {
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -1300,7 +1304,9 @@ export function MemberProfileScreen({
     rateSettled,
   );
   const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-  const shownPayError = shownDraftPayError(payError, livePayProblem, 'amount', 'noRate');
+  const shownPayError = shownPaySheetError(payError, livePayProblem, 'amount', 'noRate');
+  const shownReplyFormError =
+    replyFormError === 'loading' && replyAmountProblem !== 'quiet' ? null : replyFormError;
   const replyParentInPosts =
     expandedId === null ? undefined : posts?.find((message) => message.id === expandedId);
   let replyParentAccountId = replyParentInPosts?.accountId;
@@ -1316,7 +1322,6 @@ export function MemberProfileScreen({
     payDraft,
     payBusy,
     payError: shownPayError,
-    payRatePending: livePayProblem === 'quiet',
     repayNotice,
     payInvoice,
     payWaiting,
@@ -1353,13 +1358,14 @@ export function MemberProfileScreen({
       setReplyFormError(null);
     },
     replyPosting,
-    replyFormError,
+    replyFormError: shownReplyFormError,
     replyTextTooLong: replyTextIsTooLong(
       replyDraft,
       expandedId,
       isReplyPaymentExempt(account, replyParentAccountId),
+      replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+        !isReplyPaymentExempt(account, replyParentAccountId),
     ),
-    replyAmountQuiet: replyAmountProblem === 'quiet',
     replyAmountNoRate: replyAmountProblem === 'no-rate',
     replyAmountInvalid: replyAmountProblem === 'invalid',
     onReplyPost: handleReplyPost,

@@ -2993,6 +2993,49 @@ describe('MemberHabits', () => {
     expect(screen.getByText('Expected a JSON body with an integer "amountSats"')).toBeTruthy();
   });
 
+  it('clears an edit rejection when cancel closes the draft', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          return json({ error: 'Invalid name' }, 400);
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.change(within(saveForm).getByLabelText('Name'), { target: { value: 'Still fine' } });
+    fireEvent.submit(saveForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
   it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
     let releaseStats: ((body: unknown) => void) | undefined;
     vi.stubGlobal(
@@ -3021,9 +3064,12 @@ describe('MemberHabits', () => {
     fireEvent.change(amount, { target: { value: '1.00' } });
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
     expect(screen.queryByText('Expected a JSON body with an integer "amountSats"')).toBeNull();
-    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    const pending = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
+    fireEvent.submit(pending.closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(pending.disabled).toBe(true);
     await act(async () => {
       releaseStats?.({ spendOverTime: [] });
     });

@@ -41,18 +41,30 @@ describe('composerTextProblem', () => {
 });
 
 describe('replyTextIsTooLong', () => {
-  it('counts the reply prefix unless the viewer is exempt', () => {
+  it('counts the reply prefix only when this submit stores it', () => {
     const parentId = 'p';
     const overhead = `inReplyTo:${parentId}\n`.length;
-    expect(replyTextIsTooLong('hello', null, false)).toBe(false);
-    expect(replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1), null, true)).toBe(true);
+    expect(replyTextIsTooLong('hello', null, false, true)).toBe(false);
+    expect(replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1), null, true, false)).toBe(
+      true,
+    );
     expect(
-      replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH - overhead + 1), parentId, false),
+      replyTextIsTooLong(
+        'a'.repeat(FORUM_MESSAGE_MAX_LENGTH - overhead + 1),
+        parentId,
+        false,
+        true,
+      ),
     ).toBe(true);
     expect(
-      replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH - overhead + 1), parentId, true),
+      replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH - overhead + 1), parentId, true, true),
     ).toBe(false);
-    expect(replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH), parentId, false)).toBe(true);
+    expect(replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH), parentId, false, true)).toBe(
+      true,
+    );
+    expect(replyTextIsTooLong('a'.repeat(FORUM_MESSAGE_MAX_LENGTH), parentId, false, false)).toBe(
+      false,
+    );
   });
 });
 

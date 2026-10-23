@@ -1555,9 +1555,14 @@ describe('MemberProfileScreen', () => {
     const pending = within(replyCard).getByRole('button', {
       name: 'Continue',
     }) as HTMLButtonElement;
-    expect(pending.disabled).toBe(true);
+    expect(pending.disabled).toBe(false);
+    expect(within(replyCard).queryByText('The USD exchange rate is still loading.')).toBeNull();
     fireEvent.submit(pending.closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(within(replyCard).getByRole('alert').textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    expect(pending.disabled).toBe(true);
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
@@ -2566,6 +2571,28 @@ describe('MemberProfileScreen', () => {
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
+  it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalled();
+      expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    });
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
   it('maps a compose-pay rate-limit onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     renderWithLocale(
@@ -2773,9 +2800,12 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
     const form = screen.getByLabelText('Your reaction').closest('form')!;
     const pending = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;
-    expect(pending.disabled).toBe(true);
+    expect(pending.disabled).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
     fireEvent.submit(form);
     expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(pending.disabled).toBe(true);
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
 
     await act(async () => {

@@ -385,6 +385,11 @@ describe('daily payment subpages', () => {
     fireEvent.change(usd, { target: { value: '0.0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter an amount greater than zero');
+    fireEvent.change(usd, { target: { value: '9'.repeat(400) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount greater than zero');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
     fireEvent.change(usd, { target: { value: ' 1.5 ' } });
     addMock.mockResolvedValueOnce({
       ...ROSTER,

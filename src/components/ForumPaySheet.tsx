@@ -19,7 +19,15 @@ import {
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
-  'amount' | 'habitAmount' | 'noRate' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
+  | 'amount'
+  | 'habitAmount'
+  | 'noRate'
+  | 'loading'
+  | 'request'
+  | 'rateLimit'
+  | 'authorWallet'
+  | 'deleted'
+  | null;
 
 /** Active pay invoice shown under a forum card or a habit comment. */
 export interface ForumPayInvoice {
@@ -49,7 +57,6 @@ export function ForumPaySheet({
   onPaySubmit,
   onPayCancel,
   rateDay,
-  ratePending = false,
   showPaymentQr,
   onInteract,
 }: {
@@ -64,8 +71,6 @@ export function ForumPaySheet({
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
-  /** When true, Continue does not submit. The rate request is still loading. */
-  ratePending?: boolean;
   showPaymentQr: boolean;
   onInteract: (event: MouseEvent) => void;
 }): ReactElement {
@@ -87,7 +92,7 @@ export function ForumPaySheet({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (payBusy || ratePending) {
+    if (payBusy || payError === 'loading') {
       return;
     }
     void Promise.resolve(onPaySubmit());
@@ -176,7 +181,7 @@ export function ForumPaySheet({
           type="submit"
           disabled={
             payBusy ||
-            ratePending ||
+            payError === 'loading' ||
             payError === 'amount' ||
             payError === 'habitAmount' ||
             payError === 'noRate'
@@ -187,6 +192,11 @@ export function ForumPaySheet({
         >
           {t('forum.payContinue')}
         </Button>
+        {payError === 'loading' ? (
+          <p role="alert" className="text-sm text-app-danger">
+            {t('pos.rateLoading', { code: fiat })}
+          </p>
+        ) : null}
       </form>
     );
   }

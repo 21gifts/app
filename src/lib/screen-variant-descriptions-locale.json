@@ -3900,9 +3900,9 @@
     "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin. Nakikita ang Halaga at Magpatuloy."
   },
   "/habit-tracker:donate-rate-pending": {
-    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Der Betrag ist 1.00 in USD. Unter dem Betrag steht No exchange rate yet. Weiter bleibt deaktiviert. Die Zahlungsfehlermeldung zum fehlenden Kurs und eine Bitcoin-Zeile fehlen.",
-    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. El importe es 1.00 en USD. Debajo del importe está No exchange rate yet. Continuar permanece desactivado. No se muestra el error de pago por el tipo que falta, y no hay una línea de bitcoin.",
-    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Ang halaga ay 1.00 sa USD. Nasa ilalim ng halaga ang No exchange rate yet. Nanatiling naka-disable ang Magpatuloy. Hindi ipinapakita ang error sa bayad para sa nawawalang rate, at walang linyang bitcoin."
+    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Der Betrag ist 1.00 in USD. Unter dem Betrag steht No exchange rate yet. Weiter bleibt verfügbar. Die Zahlungsfehlermeldung zum fehlenden Kurs und eine Bitcoin-Zeile fehlen.",
+    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. El importe es 1.00 en USD. Debajo del importe está No exchange rate yet. Continuar permanece disponible. No se muestra el error de pago por el tipo que falta, y no hay una línea de bitcoin.",
+    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Ang halaga ay 1.00 sa USD. Nasa ilalim ng halaga ang No exchange rate yet. Nanatiling available ang Magpatuloy. Hindi ipinapakita ang error sa bayad para sa nawawalang rate, at walang linyang bitcoin."
   },
   "/habit-tracker:donate-fiat": {
     "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen und der Betragsschalter steht auf USD. Das Feld zeigt den Fiat-Betrag, und das Bitcoin-Äquivalent steht darunter.",

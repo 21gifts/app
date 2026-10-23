@@ -577,9 +577,12 @@ describe('InboxLoader', () => {
     expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
     const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
-    expect(send.disabled).toBe(true);
+    expect(send.disabled).toBe(false);
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
     fireEvent.submit(send.closest('form')!);
     expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(send.disabled).toBe(true);
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
