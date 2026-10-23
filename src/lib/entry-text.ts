@@ -5,8 +5,9 @@ import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
  *
  * Forum and contact text use UTF-16 length after trim, the same count as the
  * message API. Habit text uses Unicode code points, the same count as
- * PostgreSQL `char_length`. A place label uses UTF-16 length after trim and
- * rejects controls with the same API sentence as an over-long name.
+ * PostgreSQL `char_length`. A place label uses UTF-16 length after trim.
+ * A control in a name that fits is its own problem. The API still uses one
+ * sentence for both.
  */
 
 /** Living-room place name limit, matching the place API. */
@@ -159,18 +160,24 @@ function hasControl(value: string): boolean {
 }
 
 /**
- * Living-room place name. Empty is a valid clear. Length and controls share one API sentence.
+ * Living-room place name. Empty is a valid clear. Length is checked first.
+ * A control in a name that fits is `'controls'`. A name that breaks both stays
+ * `'tooLong'`.
  *
  * @param raw - Typed place name.
- * @returns `'tooLong'` over 80 characters or when a control is present, otherwise `null`.
+ * @returns `'tooLong'` over 80 characters, `'controls'` for a C0 control or DEL
+ * in a shorter name, otherwise `null`.
  */
-export function placeLabelProblem(raw: string): 'tooLong' | null {
+export function placeLabelProblem(raw: string): 'tooLong' | 'controls' | null {
   const trimmed = raw.trim();
   if (trimmed === '') {
     return null;
   }
-  if (optionalTextProblem(trimmed, PLACE_LABEL_MAX_LENGTH) === 'tooLong' || hasControl(trimmed)) {
+  if (optionalTextProblem(trimmed, PLACE_LABEL_MAX_LENGTH) === 'tooLong') {
     return 'tooLong';
+  }
+  if (hasControl(trimmed)) {
+    return 'controls';
   }
   return null;
 }

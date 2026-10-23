@@ -1974,6 +1974,21 @@ describe('PlaceField', () => {
     ).toBe(true);
   });
 
+  it('names a control in a short place name and keeps Use this place off', async () => {
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Place name'), {
+      target: { value: `Cafe${String.fromCharCode(127)}` },
+    });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The place name cannot include control characters.',
+    );
+    expect(screen.queryByText('Keep the place name to 80 characters')).toBeNull();
+    expect(
+      (screen.getByRole('button', { name: 'Use this place' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
   it('keeps a rejected place-label limit on a name the form already accepted', async () => {
     const onCommit = vi.fn().mockRejectedValue(new Error(PLACE_LABEL_API_MESSAGE));
     const listeners = stubMaps();

@@ -1675,9 +1675,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: placeLabelProblem
 
-- **Purpose:** Living-room place name. Empty is a valid clear. Length and controls share one API sentence.
+- **Purpose:** Living-room place name. Empty is a valid clear. Length is checked before controls. A name that is both too long and has a control stays the length problem. The server still answers both with one sentence, so a name the form already accepted keeps the 80-character sentence.
 - **Inputs:** Raw place name.
-- **Returns / side effects:** `'tooLong'` over 80 characters or when a control is present, otherwise `null`. No network.
+- **Returns / side effects:** `'tooLong'` over 80 characters, `'controls'` for a character below 32 or DEL in a name that fits, otherwise `null`. No network.
 - **Used by:** `PlaceField` when the dialog is not a shop.
 
 ## Function: habitTextProblem

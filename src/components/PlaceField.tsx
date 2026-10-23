@@ -547,15 +547,19 @@ export function PlaceField(props: {
     }
   }
   const invalidFields = Object.keys(addressProblems) as ShopAddressField[];
-  const livingLabelTooLong =
-    !shopDetails && (placeLabelProblem(labelDraft) !== null || serverLabelTooLong);
-  const livingLabelError = livingLabelTooLong ? t('forum.placeLabelTooLong') : undefined;
+  const labelProblem = shopDetails ? null : placeLabelProblem(labelDraft);
+  const livingLabelTooLong = labelProblem === 'tooLong' || (!shopDetails && serverLabelTooLong);
+  const livingLabelError = livingLabelTooLong
+    ? t('forum.placeLabelTooLong')
+    : labelProblem === 'controls'
+      ? t('forum.placeLabelControls')
+      : undefined;
   const blocked =
     markerPos === null ||
     unavailable ||
     saveError !== null ||
     reportedProblem !== null ||
-    livingLabelTooLong ||
+    livingLabelError !== undefined ||
     (shopDetails &&
       (nameProblem !== null || shopTextNameError !== undefined || invalidFields.length > 0));
   const fieldLabel: Record<ShopAddressField, string> = {

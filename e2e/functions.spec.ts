@@ -13309,7 +13309,7 @@ test('Function: optionalTextProblem — a long place name shows the limit', asyn
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
 });
 
-test('Function: placeLabelProblem — the place name limit sits under the field', async ({
+test('Function: placeLabelProblem — a control in a short place name names the control', async ({
   page,
 }) => {
   await seedSignedInAda(page);
@@ -13326,9 +13326,12 @@ test('Function: placeLabelProblem — the place name limit sits under the field'
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
   await name.fill('Happyland');
   await expect(page.getByText('Keep the place name to 80 characters')).toHaveCount(0);
+  await expect(page.getByText('The place name cannot include control characters.')).toHaveCount(0);
   await name.fill(`Cafe${String.fromCharCode(127)}`);
-  await expect(page.getByText('Keep the place name to 80 characters')).toBeVisible();
+  await expect(page.getByText('The place name cannot include control characters.')).toBeVisible();
+  await expect(page.getByText('Keep the place name to 80 characters')).toHaveCount(0);
   await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
 });
 
 test('Function: habitTextProblem — an empty habit name stays off the request', async ({ page }) => {

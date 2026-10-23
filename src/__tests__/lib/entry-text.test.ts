@@ -78,13 +78,14 @@ describe('shownEntryProblem', () => {
 });
 
 describe('placeLabelProblem', () => {
-  it('allows a blank name and rejects 81 characters or a control', () => {
+  it('allows a blank name, rejects 81 characters, and names a control in a shorter name', () => {
     expect(placeLabelProblem('')).toBeNull();
     expect(placeLabelProblem('  ')).toBeNull();
     expect(placeLabelProblem('a'.repeat(PLACE_LABEL_MAX_LENGTH))).toBeNull();
     expect(placeLabelProblem('a'.repeat(PLACE_LABEL_MAX_LENGTH + 1))).toBe('tooLong');
-    expect(placeLabelProblem('Cafe\nLuna')).toBe('tooLong');
-    expect(placeLabelProblem('Cafe\u007f')).toBe('tooLong');
+    expect(placeLabelProblem(`${'a'.repeat(PLACE_LABEL_MAX_LENGTH + 1)}\u007f`)).toBe('tooLong');
+    expect(placeLabelProblem('Cafe\nLuna')).toBe('controls');
+    expect(placeLabelProblem('Cafe\u007f')).toBe('controls');
   });
 });
 
