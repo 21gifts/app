@@ -1739,6 +1739,43 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
   });
 
+  test('state / shops-attribution', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    const attribution = page.locator('#shop-places-map .maplibregl-ctrl-attrib');
+    await expect(attribution).toBeVisible({ timeout: 20_000 });
+    // MapLibre renders the toggle as an empty summary. Playwright does not
+    // resolve that summary as a button, so the test clicks the summary itself.
+    const toggleAttribution = attribution.locator('summary');
+    await expect(toggleAttribution).toHaveAttribute('aria-label', 'Toggle attribution');
+    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible();
+    const mapLibre = attribution.getByRole('link', { name: 'MapLibre', exact: true });
+    // A pointer click on the summary is a drag on the map and moves the pin.
+    // The DOM click still runs MapLibre's toggle listener.
+    const pressToggle = () => toggleAttribution.evaluate((node: HTMLElement) => node.click());
+    // The compact control starts open. One press hides the attribution, and the
+    // next press reveals it. The shot is that revealed result.
+    if (await mapLibre.isVisible()) {
+      await pressToggle();
+      await expect(mapLibre).toBeHidden();
+    }
+    await pressToggle();
+    await expect(mapLibre).toBeVisible();
+    await expect(attribution).toHaveClass(/maplibregl-compact-show/);
+    await page.locator('#shop-places-map canvas').evaluate((node: HTMLCanvasElement) => {
+      node.style.visibility = 'hidden';
+    });
+    // The empty style leaves the projected pin a few pixels off between runs.
+    await page.locator('#shop-places-map .shop-place-marker').evaluateAll((nodes) => {
+      for (const node of nodes) {
+        if (node instanceof HTMLElement) {
+          node.style.visibility = 'hidden';
+        }
+      }
+    });
+    await shotScreen(page, 'state-root-shops-attribution');
+  });
+
   test('state / shops-help', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');

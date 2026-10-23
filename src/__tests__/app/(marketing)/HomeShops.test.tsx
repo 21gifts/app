@@ -19,7 +19,7 @@ const copy = {
   all: messages['homeShops.all'],
   empty: messages['homeShops.empty'],
   error: messages['map.error'],
-  retry: messages['homeShops.retry'],
+  retry: messages['forum.retry'],
   colName: messages['homeShops.colName'],
   colLocation: messages['homeShops.colLocation'],
   colCountry: messages['homeShops.colCountry'],

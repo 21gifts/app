@@ -66,7 +66,7 @@ export default async function Home(): Promise<ReactElement> {
           all: t('homeShops.all'),
           empty: t('homeShops.empty'),
           error: t('map.error'),
-          retry: t('homeShops.retry'),
+          retry: t('forum.retry'),
           colName: t('homeShops.colName'),
           colLocation: t('homeShops.colLocation'),
           colCountry: t('homeShops.colCountry'),

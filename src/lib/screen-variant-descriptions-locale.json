@@ -2299,6 +2299,11 @@
     "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están enmascaradas.",
     "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakamaskara ang mga tile ng mapa."
   },
+  "/:shops-attribution": {
+    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln und der Shop-Pin sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa y el pin de la tienda están ocultos.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa at ang pin ng shop."
+  },
   "/:shops-help": {
     "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist geöffnet und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
     "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto y muestra Al menos 5 días con un pago en los últimos 7 días.",

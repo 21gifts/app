@@ -89,6 +89,12 @@ Map stays selected. The shop marker is open and shows the name Sample as a link.
 
 ![21.gifts home shops marker](images/root-shops-marker.png)
 
+### Variant: shops-attribution
+
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles and the shop pin are hidden.
+
+![21.gifts home shops attribution](images/root-shops-attribution.png)
+
 ### Variant: shops-help
 
 Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.

@@ -164,6 +164,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-attribution',
+    image: 'root-shops-attribution.png',
+    visual: 'state-root-shops-attribution',
+    needle: "toHaveAttribute('aria-label', 'Toggle attribution')",
+  },
+  {
+    route: '/',
     id: 'shops-help',
     image: 'root-shops-help.png',
     visual: 'state-root-shops-help',
