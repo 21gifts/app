@@ -980,7 +980,14 @@ export function PublicMessageThread(props: {
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
-    if (replyTextIsTooLong(replyDraft, parentId, exempt, parsed === 'empty' && !exempt)) {
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
       setReplyFormError('tooLong');
       return;
     }
@@ -1182,12 +1189,12 @@ export function PublicMessageThread(props: {
         replyDraft={replyDraft}
         onReplyDraftChange={(value: string): void => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value: string): void => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyPosting={replyPosting}
         replyFormError={shownReplyFormError}
@@ -1196,7 +1203,8 @@ export function PublicMessageThread(props: {
           expandedId,
           replyExempt,
           replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
-            !replyExempt,
+            !replyExempt &&
+            note.accountId !== undefined,
         )}
         replyAmountNoRate={replyAmountProblem === 'no-rate'}
         replyAmountInvalid={replyAmountProblem === 'invalid'}

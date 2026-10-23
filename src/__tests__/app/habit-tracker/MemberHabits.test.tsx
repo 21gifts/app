@@ -3070,6 +3070,11 @@ describe('MemberHabits', () => {
     fireEvent.submit(pending.closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     await act(async () => {
       releaseStats?.({ spendOverTime: [] });
     });

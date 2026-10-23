@@ -358,6 +358,11 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
+    fireEvent.change(payAmountInput(), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
@@ -945,6 +950,38 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('posts 8000 characters unpaid when the public note omits accountId', async () => {
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    signIn();
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text, inReplyTo: MESSAGE_ID });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+  });
+
+  it('rejects 8001 characters when the public note omits accountId', async () => {
+    signIn();
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('invoices 1 sat when an unpaid reply on a note without accountId is 403', async () => {
     signIn();
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
@@ -1070,6 +1107,16 @@ describe('PublicMessageThread', () => {
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'still waiting' },
+    });
+    fireEvent.change(replyAmountInput(), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessage).not.toHaveBeenCalled();
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

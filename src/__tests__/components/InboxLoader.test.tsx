@@ -583,6 +583,21 @@ describe('InboxLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(send.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'still waiting' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '2.00' } });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(await screen.findByAltText('Selected photo')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByAltText('Selected photo')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(invoiceMock).not.toHaveBeenCalled();
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

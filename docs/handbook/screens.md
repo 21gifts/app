@@ -1774,6 +1774,18 @@ Payable reply after **Show reactions**, Gift opened, amount filled, not submitte
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
 
+### Variant: pay-rate-loading
+
+Payable reply after **Show reactions**. **Gift** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The filled amount before that press does not cover this.
+
+![21.gifts welcome pay rate loading](images/welcome-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+**Show reactions** is open. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts welcome reply rate loading](images/welcome-reply-rate-loading.png)
+
 ### Variant: pay-qr
 
 Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a Close (`X`) control, not Back, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a Close (`X`) control, not Back. The invoice step shows the sat amount and the default fiat from the latest gift-day rate.
@@ -3435,6 +3447,12 @@ Ada's session on someone else's comment. **Send Bitcoin** is open while the gift
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
 
+### Variant: donate-rate-loading
+
+Ada's session on someone else's comment. **Send Bitcoin** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The sheet from before that press does not cover this.
+
+![21.gifts habit tracker donate rate loading](images/habit-tracker-donate-rate-loading.png)
+
 ### Variant: donate-fiat
 
 Ada's session on someone else's comment. **Send Bitcoin** is open and the amount switch is on **USD**. The field shows the fiat figure, and the bitcoin equivalent sits under it.
@@ -3642,6 +3660,18 @@ Basis member identity card. Beside the name, a static Software Developer label (
 Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: pay-rate-loading
+
+Posts are open. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts member pay rate loading](images/members-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Posts are open and Carol's note is expanded. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts member reply rate loading](images/members-reply-rate-loading.png)
 
 ### Variant: mention-suggest-reply
 
@@ -4921,7 +4951,7 @@ Founder types `@` and presses **@cara**. The Person field shows `@cara`. The lis
 
 ### Variant: pick-person
 
-Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`
+Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** **Add** stays disabled until a person is chosen. Needle `Choose a person.`
 
 ![21.gifts daily payment amounts pick person](images/grants-payments-amounts-pick-person.png)
 
@@ -5252,6 +5282,12 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
+
+### Variant: thread-rate-loading
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Send** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts inbox thread rate loading](images/messages-thread-rate-loading.png)
 
 ### Variant: thread-quoted-note
 
@@ -6066,6 +6102,18 @@ Same public note after **Play**. The play button is gone. The fullscreen button 
 Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
+
+### Variant: pay-rate-loading
+
+Signed-in thread. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts public message pay rate loading](images/messages-id-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Signed-in thread. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts public message reply rate loading](images/messages-id-reply-rate-loading.png)
 
 ### Variant: shop-edit
 

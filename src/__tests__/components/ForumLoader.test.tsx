@@ -6333,6 +6333,11 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(
+      (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     await act(async () => {
       releaseStats(EMPTY_STATS);
@@ -8667,6 +8672,78 @@ describe('ForumLoader', () => {
     expect(postMock).toHaveBeenCalled();
   });
 
+  it('posts 8000 characters unpaid when the parent omits accountId', async () => {
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    postMock.mockResolvedValue({
+      id: 'r-long',
+      name: 'Ada',
+      text,
+      createdAt: '2026-08-28T12:45:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, accountId: undefined }]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+    const form = screen.getByLabelText('Your reaction').closest('form');
+    if (form === null) {
+      throw new Error('missing reply form');
+    }
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text, inReplyTo: 'm-bob' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+  });
+
+  it('rejects 8001 characters when the parent omits accountId', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, accountId: undefined }]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    const form = screen.getByLabelText('Your reaction').closest('form');
+    if (form === null) {
+      throw new Error('missing reply form');
+    }
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(form);
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('rejects a non-numeric reply amount', async () => {
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
@@ -8800,6 +8877,15 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'still waiting' },
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(invoiceMock).not.toHaveBeenCalled();
 
     await act(async () => {
       releaseStats(EMPTY_STATS);

@@ -651,7 +651,7 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(nextError);
+        setFormError((current) => nextError ?? (current === 'loading' ? current : null));
       } finally {
         /* v8 ignore next 3 -- a newer pick replaced this generation */
         if (generation === pickGeneration.current) {
@@ -663,7 +663,7 @@ export function InboxLoader(): ReactElement | null {
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError(null);
+    setFormError((current) => (current === 'loading' ? current : null));
   };
 
   const onPost = (): void => {
@@ -928,7 +928,7 @@ export function InboxLoader(): ReactElement | null {
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);
-        setFormError((current) => (current === 'amount' ? current : null));
+        setFormError((current) => (current === 'amount' || current === 'loading' ? current : null));
       }}
       amountDraft={amountDraft}
       onAmountDraftChange={(value) => {

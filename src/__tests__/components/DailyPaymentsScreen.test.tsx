@@ -412,6 +412,12 @@ describe('daily payment subpages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(addMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('Choose a person.');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    await pickPerson();
+    expect(screen.queryByText('Choose a person.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('keeps an open amount editor open when a recipient is added', async () => {

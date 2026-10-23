@@ -1214,6 +1214,16 @@
     "es": "Tarjeta de identidad con recuentos; botón Publicaciones pulsado; tarjeta de publicación «Second post from Carol.» en el flujo.",
     "fil": "Talaan ng pagkakakilanlan na may mga bilang; naka-pindot ang pindutang Mga tala; talaan ng tala na «Second post from Carol.» sa listahan."
   },
+  "/members/[accountId]:pay-rate-loading": {
+    "de": "Beiträge sind offen. Eine zahlbare Antwort hat Geschenk offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert.",
+    "es": "Las publicaciones están abiertas. Una respuesta pagable tiene Regalo abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado.",
+    "fil": "Bukas ang mga tala. May bukas na Regalo ang isang sagot na pwedeng bayaran, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy."
+  },
+  "/members/[accountId]:reply-rate-loading": {
+    "de": "Beiträge sind offen und Carols Notiz ist aufgeklappt. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
+    "es": "Las publicaciones están abiertas y la nota de Carol está desplegada. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado.",
+    "fil": "Bukas ang mga tala at naka-expand ang tala ni Carol. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post."
+  },
   "/messages:translate": {
     "de": "Angemeldete /messages-Liste mit einer deutschen Gesprächsvorschau. Die Liste bietet Übersetzen nicht an.",
     "es": "Lista /messages con sesión iniciada y una vista previa de conversación en alemán. La lista no ofrece Traducir.",
@@ -3384,6 +3394,16 @@
     "es": "Respuesta pagable después de mostrar las reacciones, regalo abierto, importe rellenado, no enviado. La llamada a la acción del importe es Continuar (forum.payContinue) en cada agente de usuario. Equivalente actual en la moneda fiduciaria preferida (sin selector). Sin error, sin código QR de pago, aún no hay botón para pagar con la cartera. La publicación misma no muestra Enviar Bitcoin.",
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
+  "/welcome:pay-rate-loading": {
+    "de": "Zahlbare Antwort nach dem Anzeigen der Reaktionen. Geschenk ist offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert. Der ausgefüllte Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Respuesta pagable después de mostrar las reacciones. Regalo está abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado. El importe rellenado antes de ese toque no cubre esto.",
+    "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon. Bukas ang Regalo, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy. Hindi tinatakpan ng napunang halaga bago ang pindot na ito ang resultang ito."
+  },
+  "/welcome:reply-rate-loading": {
+    "de": "Reaktionen sind angezeigt. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert. Der stille Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Se muestran las reacciones. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado. El importe en silencio antes de ese toque no cubre esto.",
+    "fil": "Ipinapakita ang mga reaksyon. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post. Hindi tinatakpan ng tahimik na halaga bago ang pindot na ito ang resultang ito."
+  },
   "/shops:table-edit-open": {
     "de": "Ein Moderator hat neben Happyland auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
     "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Happyland. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna se mantienen.",
@@ -3463,6 +3483,16 @@
     "de": "Hydrierte Ada-Sitzung: ein Pfeil oben links (vorherige In-App-Ansicht, oder /welcome, wenn dieser Tab keine hat) + Wortmarke → /welcome. Die Wortmarke ist nicht dieses Steuerelement. Menü oben rechts (Start zuerst). Thread-Karte Hello from Ada, Reagieren, Link kopieren und Reaktion schreiben (automatisch aufgeklappt). Beiträge zeigen weder Geschenk noch einen Umschlag.",
     "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hello from Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Regalo ni un sobre.",
     "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Hello from Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Regalo o sobre."
+  },
+  "/messages/[id]:pay-rate-loading": {
+    "de": "Angemeldeter Verlauf. Eine zahlbare Antwort hat Geschenk offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert.",
+    "es": "Hilo con sesión iniciada. Una respuesta pagable tiene Regalo abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado.",
+    "fil": "Thread na naka-sign in. May bukas na Regalo ang isang sagot na pwedeng bayaran, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy."
+  },
+  "/messages/[id]:reply-rate-loading": {
+    "de": "Angemeldeter Verlauf. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
+    "es": "Hilo con sesión iniciada. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado.",
+    "fil": "Thread na naka-sign in. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post."
   },
   "/members/[accountId]:overlay-address": {
     "de": "Benannter Besucher mit akzeptierten Wohnzimmerregeln und ohne Wallet of Satoshi address. Beitrag-Feed offen, gelistete Notiz aufgeklappt, Antwort mit sichtbarem Feld Betrag gefüllt, Senden angeklickt. Dialog RequirementsOverlay Wallet of Satoshi address hinterlegen mit dem Profilfeld Lightning Address. Kein Überspringen. Schließen (X) ist vorhanden.",
@@ -3685,9 +3715,9 @@
     "fil": "Nag-type ang tagapagtatag ng @ at pinindot ang @cara. Ipinapakita ng patlang na Tao ang @cara. Nanatiling bukas ang listahan at napili ang hilera na iyon. Walang alerto. Karayom state-grants-payments-amounts-chosen."
   },
   "/grants/payments/amounts:pick-person": {
-    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Nadel Wähle eine Person.",
-    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Aguja Elige una persona.",
-    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Karayom Pumili ng tao."
+    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Hinzufügen bleibt gesperrt, bis eine Person gewählt ist. Nadel Wähle eine Person.",
+    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Añadir permanece desactivado hasta que se elige una persona. Aguja Elige una persona.",
+    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Nanatiling naka-disable ang Idagdag hanggang pumili ng tao. Karayom Pumili ng tao."
   },
   "/grants/payments/amounts:invalid-person": {
     "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
@@ -3804,6 +3834,11 @@
     "es": "Hilo abierto, Importe 21 enviado. Hoja de pago abierta, Pagar con Wallet of Satoshi. Cerrar (X) cierra la hoja y se queda en este hilo. No es la flecha atrás de arriba a la izquierda. La fila de importe del cuadro de redacción está oculta; la hoja indica ese importe una vez, como el importe en sats más el fiat predeterminado del tipo del día de regalo más reciente. El cuadro de redacción detrás de la hoja incluye adjuntar ImagePlus. Capturado en ordenador y en teléfono (misma variante, cuatro combinaciones). El ordenador muestra el QR de pago Bitcoin más el botón Pagar del monedero. Un teléfono muestra la misma hoja sin un QrCode montado; Pagar abre Wallet of Satoshi. Esperando el pago… es aceptable mientras la consulta de pago queda colgada.",
     "fil": "Bukas ang usapan, naisumite ang Halaga 21. Bukas ang panel ng bayad, Magbayad gamit ang Wallet of Satoshi. Ang Isara (X) ay nagsasara ng panel at nananatili sa usapang ito. Hindi ito ang palaso pabalik sa itaas-kaliwa. Nakatago ang hilera ng halaga ng kahon ng pagsulat; sinasabi ng panel ang halagang iyon minsan, bilang halaga sa sat plus ang default na fiat mula sa pinakabagong rate ng araw ng regalo. Ang kahon ng pagsulat sa likod ng panel ay may ImagePlus para maglakip. Kinuha sa kompyuter at sa telepono (parehong variant, apat na kombinasyon). Ipinapakita ng kompyuter ang QR ng bayad sa Bitcoin plus ang pindutang Magbayad ng pitaka. Ang isang smartphone ay nagpapakita ng parehong panel nang walang naka-mount na QrCode; ang Magbayad ay nagbubukas ng Wallet of Satoshi. Katanggap-tanggap ang Naghihintay ng bayad… habang nakabinbin ang pag-poll ng bayad."
   },
+  "/messages:thread-rate-loading": {
+    "de": "Verlauf geöffnet. Der Betrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert. Der stille Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Hilo abierto. El importe es 1.00 USD, y se pulsó Enviar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Enviar está desactivado. El importe en silencio antes de ese toque no cubre esto.",
+    "fil": "Bukas ang usapan. 1.00 USD ang halaga, at pinindot ang Ipadala habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Ipadala. Hindi tinatakpan ng tahimik na halaga bago ang pindot na ito ang resultang ito."
+  },
   "/view/[viewKey]:default": {
     "de": "Gültiger bekannter Schlüssel. Überschrift Profil, FiatPicker nur solange nicht angemeldet; leere Serie zeigt FiatPicker + profile.chartEmpty wenn nicht angemeldet (Noch keine Gaben., keine Legende/SVG / keine ₿|Fiat-Skala; nie Wird geladen… am Diagramm) und nur profile.chartEmpty wenn angemeldet (ein fehlgeschlagener Aktivitätsabruf ist profile.chartError), Über mich in der Karte wenn aboutMe eine Zeichenkette ist (kein Forum-Post), nur-Icon Link zu diesem Profil kopieren, Name, Ort und Beschriftungen des Felds Wallet of Satoshi address, gelbes Aktion erforderlich, der Account muss aktiviert werden / Banner Aktivieren unter der Karte wenn nicht beansprucht (auch wenn angemeldet), keine sichtbare view-key-URL/Text. Die Karte hat keine Zurück-Steuerung; der Seitenkopf hat den einen Pfeil oben links.",
     "es": "Clave conocida válida. Encabezado Perfil, FiatPicker solo mientras no hay sesión; la serie vacía muestra FiatPicker + profile.chartEmpty sin sesión (Aún no hay regalos., sin leyenda/SVG / sin escala ₿|fiat; nunca Cargando… en el gráfico) y solo profile.chartEmpty con sesión (una carga de actividad fallida es profile.chartError), Sobre mí dentro de la tarjeta cuando aboutMe es una cadena (no un post del foro), solo icono Copiar enlace a este perfil, etiquetas de los campos nombre, ubicación y Wallet of Satoshi address, banner amarillo Acción requerida, la cuenta debe activarse / Activar bajo la tarjeta cuando no está reclamada (incluso con sesión), sin URL/texto visible de view-key. La tarjeta no tiene control atrás; el encabezado de la página tiene la única flecha arriba a la izquierda.",
@@ -3903,6 +3938,11 @@
     "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Der Betrag ist 1.00 in USD. Unter dem Betrag steht No exchange rate yet. Weiter bleibt verfügbar. Die Zahlungsfehlermeldung zum fehlenden Kurs und eine Bitcoin-Zeile fehlen.",
     "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. El importe es 1.00 en USD. Debajo del importe está No exchange rate yet. Continuar permanece disponible. No se muestra el error de pago por el tipo que falta, y no hay una línea de bitcoin.",
     "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Ang halaga ay 1.00 sa USD. Nasa ilalim ng halaga ang No exchange rate yet. Nanatiling available ang Magpatuloy. Hindi ipinapakita ang error sa bayad para sa nawawalang rate, at walang linyang bitcoin."
+  },
+  "/habit-tracker:donate-rate-loading": {
+    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert. Das Blatt vor diesem Druck deckt das nicht ab.",
+    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado. La hoja de antes de ese toque no cubre esto.",
+    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy. Hindi tinatakpan ng sheet bago ang pindot na ito ang resultang ito."
   },
   "/habit-tracker:donate-fiat": {
     "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen und der Betragsschalter steht auf USD. Das Feld zeigt den Fiat-Betrag, und das Bitcoin-Äquivalent steht darunter.",

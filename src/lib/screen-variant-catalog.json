@@ -1362,6 +1362,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:pay-rate-loading",
+    "label": "/welcome pay-rate-loading",
+    "visual": "state-welcome-pay-rate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reply-rate-loading",
+    "label": "/welcome reply-rate-loading",
+    "visual": "state-welcome-reply-rate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-qr",
     "label": "/welcome pay-qr",
     "visual": "state-welcome-pay-qr",
@@ -1497,6 +1509,12 @@
     "id": "/habit-tracker:donate-rate-pending",
     "label": "/habit-tracker donate-rate-pending",
     "visual": "state-habit-tracker-donate-rate-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donate-rate-loading",
+    "label": "/habit-tracker donate-rate-loading",
+    "visual": "state-habit-tracker-donate-rate-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1857,6 +1875,18 @@
     "id": "/members/[accountId]:posts-open",
     "label": "/members/[accountId] posts-open",
     "visual": "state-members-posts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:pay-rate-loading",
+    "label": "/members/[accountId] pay-rate-loading",
+    "visual": "state-members-pay-rate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:reply-rate-loading",
+    "label": "/members/[accountId] reply-rate-loading",
+    "visual": "state-members-reply-rate-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3366,6 +3396,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-rate-loading",
+    "label": "/messages thread-rate-loading",
+    "visual": "state-messages-thread-rate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-quoted-note",
     "label": "/messages thread-quoted-note",
     "visual": "state-messages-thread-quoted-note",
@@ -4077,6 +4113,18 @@
     "id": "/messages/[id]:signed-in",
     "label": "/messages/[id] signed-in",
     "visual": "state-messages-id-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:pay-rate-loading",
+    "label": "/messages/[id] pay-rate-loading",
+    "visual": "state-messages-id-pay-rate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-rate-loading",
+    "label": "/messages/[id] reply-rate-loading",
+    "visual": "state-messages-id-reply-rate-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -1664,6 +1664,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-rate-loading',
+    image: 'welcome-pay-rate-loading.png',
+    visual: 'state-welcome-pay-rate-loading',
+    needle: 'welcome pay-rate-loading',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-rate-loading',
+    image: 'welcome-reply-rate-loading.png',
+    visual: 'state-welcome-reply-rate-loading',
+    needle: 'welcome reply-rate-loading',
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
@@ -1822,6 +1836,13 @@ export const SCREEN_VARIANTS = [
     image: 'habit-tracker-donate-rate-pending.png',
     visual: 'state-habit-tracker-donate-rate-pending',
     needle: 'screen /habit-tracker donate-rate-pending',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'donate-rate-loading',
+    image: 'habit-tracker-donate-rate-loading.png',
+    visual: 'state-habit-tracker-donate-rate-loading',
+    needle: 'screen /habit-tracker donate-rate-loading',
   },
   {
     route: '/habit-tracker',
@@ -2242,6 +2263,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open.png',
     visual: 'state-members-posts-open',
     needle: 'Second post from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'pay-rate-loading',
+    image: 'members-pay-rate-loading.png',
+    visual: 'state-members-pay-rate-loading',
+    needle: 'state /members pay-rate-loading',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'reply-rate-loading',
+    image: 'members-reply-rate-loading.png',
+    visual: 'state-members-reply-rate-loading',
+    needle: 'state /members reply-rate-loading',
   },
   {
     route: '/members/[accountId]',
@@ -4004,6 +4039,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-rate-loading',
+    image: 'messages-thread-rate-loading.png',
+    visual: 'state-messages-thread-rate-loading',
+    needle: 'messages thread-rate-loading',
+  },
+  {
+    route: '/messages',
     id: 'thread-quoted-note',
     image: 'messages-thread-quoted-note.png',
     visual: 'state-messages-thread-quoted-note',
@@ -4834,6 +4876,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
     needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'pay-rate-loading',
+    image: 'messages-id-pay-rate-loading.png',
+    visual: 'state-messages-id-pay-rate-loading',
+    needle: 'state /messages/[id] pay-rate-loading',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply-rate-loading',
+    image: 'messages-id-reply-rate-loading.png',
+    visual: 'state-messages-id-reply-rate-loading',
+    needle: 'state /messages/[id] reply-rate-loading',
   },
   {
     route: '/messages/[id]',

@@ -1563,6 +1563,13 @@ describe('MemberProfileScreen', () => {
       'The USD exchange rate is still loading.',
     );
     expect(pending.disabled).toBe(true);
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '2.00' } });
+    expect(within(replyCard).getByRole('alert').textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    expect(
+      (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
@@ -2733,6 +2740,42 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('posts 8000 characters unpaid when someone else’s note omits accountId', async () => {
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await expandNote(noteWithoutAccount);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text, inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+  });
+
+  it('rejects 8001 characters when someone else’s note omits accountId', async () => {
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await expandNote(noteWithoutAccount);
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('lets the profile owner reply unpaid when the note omits accountId', async () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
     vi.mocked(postMessage).mockResolvedValue({
@@ -2807,6 +2850,15 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pending.disabled).toBe(true);
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'still waiting' },
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '2.00' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(postMessageInvoice).not.toHaveBeenCalled();
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

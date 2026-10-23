@@ -797,10 +797,16 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                     event.preventDefault();
                     setAddPerson(account);
                     setAddQuery(`@${account.username}`);
+                    if (saveError === 'funding.daily.pickPerson' && saveErrorPlace === 'add') {
+                      load.setSaveError(null);
+                    }
                   }}
                   onClick={() => {
                     setAddPerson(account);
                     setAddQuery(`@${account.username}`);
+                    if (saveError === 'funding.daily.pickPerson' && saveErrorPlace === 'add') {
+                      load.setSaveError(null);
+                    }
                   }}
                 >
                   <span className="font-medium">@{account.username}</span>
@@ -825,7 +831,16 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
               setAddUsd(event.target.value);
             }}
           />
-          <Button type="submit" disabled={pending || addUsdShown !== null}>
+          <Button
+            type="submit"
+            disabled={
+              pending ||
+              addUsdShown !== null ||
+              (saveError === 'funding.daily.pickPerson' &&
+                saveErrorPlace === 'add' &&
+                addPerson === null)
+            }
+          >
             {t('funding.daily.add')}
           </Button>
         </form>

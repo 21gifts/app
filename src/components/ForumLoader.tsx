@@ -2615,7 +2615,14 @@ export function ForumLoader({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
-    if (replyTextIsTooLong(replyDraft, parentId, exempt, parsed === 'empty' && !exempt)) {
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
       setReplyFormError('tooLong');
       return;
     }
@@ -2689,7 +2696,7 @@ export function ForumLoader({
     replyDraft,
     expandedId,
     replyExempt,
-    replyParsed === 'empty' && !replyExempt,
+    replyParsed === 'empty' && !replyExempt && replyParentAccountId !== undefined,
   );
   const replyAmountProblem = replyDraftProblem(
     replyShownUnit,
@@ -3019,12 +3026,12 @@ export function ForumLoader({
         replyDraft={replyDraft}
         onReplyDraftChange={(value) => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value) => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         onReplyPost={onReplyPost}
         replyPosting={replyPosting}

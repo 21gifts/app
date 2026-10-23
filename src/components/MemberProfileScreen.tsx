@@ -1217,7 +1217,14 @@ export function MemberProfileScreen({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
-    if (replyTextIsTooLong(replyDraft, parentId, exempt, parsed === 'empty' && !exempt)) {
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
       setReplyFormError('tooLong');
       return;
     }
@@ -1350,12 +1357,12 @@ export function MemberProfileScreen({
     replyDraft,
     onReplyDraftChange: (value: string): void => {
       setReplyDraft(value);
-      setReplyFormError(null);
+      setReplyFormError((current) => (current === 'loading' ? current : null));
     },
     replyAmountDraft,
     onReplyAmountDraftChange: (value: string): void => {
       setReplyAmountDraft(value);
-      setReplyFormError(null);
+      setReplyFormError((current) => (current === 'loading' ? current : null));
     },
     replyPosting,
     replyFormError: shownReplyFormError,
@@ -1364,7 +1371,8 @@ export function MemberProfileScreen({
       expandedId,
       isReplyPaymentExempt(account, replyParentAccountId),
       replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
-        !isReplyPaymentExempt(account, replyParentAccountId),
+        !isReplyPaymentExempt(account, replyParentAccountId) &&
+        replyParentAccountId !== undefined,
     ),
     replyAmountNoRate: replyAmountProblem === 'no-rate',
     replyAmountInvalid: replyAmountProblem === 'invalid',
