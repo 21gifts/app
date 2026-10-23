@@ -514,6 +514,11 @@
     "es": "Persona moderadora. El grupo existe, cero mensajes. Cuadro de redacción Tu mensaje visible.",
     "fil": "Moderator. May grupo, serong mensahe. Nakikita ang pambuo ng mensahe na Iyong mensahe."
   },
+  "/moderate/group:send-empty": {
+    "de": "Moderatorin oder Moderator. Leerer Faden nach Senden ohne Nachricht und ohne Foto. Bitte schreiben Sie eine Nachricht steht unter dem Eingabebereich, verknüpft mit aria-describedby und aria-invalid. Senden ist deaktiviert. Der unberührte leere Faden deckt das nicht ab.",
+    "es": "Persona moderadora. Hilo vacío tras Enviar sin mensaje y sin foto. Escribe un mensaje queda bajo el compositor, enlazado con aria-describedby y aria-invalid. Enviar está deshabilitado. El hilo vacío sin tocar no cubre esto.",
+    "fil": "Moderator. Walang-lamang talakayan pagkatapos ng Ipadala na walang mensahe at walang litrato. Maglagay ng mensahe ay nasa ilalim ng kompositor, naka-link sa aria-describedby at aria-invalid. Hindi gumagana ang Ipadala. Hindi sakop nito ang hindi pa ginagalaw na walang-lamang talakayan."
+  },
   "/moderate/group:loading": {
     "de": "Moderatorin oder Moderator wartet auf GET /conversations/moderator-group. Text Wird geladen…",
     "es": "Persona moderadora esperando GET /conversations/moderator-group. Texto Cargando…",
@@ -1333,6 +1338,11 @@
     "de": "Anfragen, Schritt 3 von 4, mit Need help with a train ticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
     "es": "Pedir, paso 3 de 4, con Need help with a train ticket escrito en el campo de mensaje. Continuar sigue habilitado.",
     "fil": "Hiling, hakbang 3 sa 4, na may Need help with a train ticket na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
+  },
+  "/welcome:ask-text-empty": {
+    "de": "Anfragen, Schritt 3 von 4, nach Weiter mit leerer Nachricht und ohne Foto. Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu steht unter dem Feld, verknüpft mit aria-describedby und markiert mit aria-invalid. Weiter ist deaktiviert. Der leere Schritt vor diesem Druck deckt das nicht ab.",
+    "es": "Pedir, paso 3 de 4, tras Continuar con un mensaje vacío y sin foto. Escribe un mensaje o añade una foto o un vídeo queda bajo el campo, enlazado con aria-describedby y marcado aria-invalid. Continuar está deshabilitado. El paso vacío antes de esa pulsación no cubre esto.",
+    "fil": "Hiling, hakbang 3 sa 4, pagkatapos ng Magpatuloy na walang mensahe at walang litrato. Maglagay ng mensahe o magdagdag ng litrato o bidyo ay nasa ilalim ng patlang, naka-link sa aria-describedby at minarkahang aria-invalid. Hindi gumagana ang Magpatuloy. Hindi sakop nito ang walang-lamang hakbang bago ang pindot na iyon."
   },
   "/welcome:ask-shop-elsewhere": {
     "de": "Anfragen, Schritt 3 von 4, mit #21GiftsShop im Nachrichtenfeld. Der Live-Hinweis zum Erstellen des Ladeneintrags unter Shops steht direkt unter dem Feld; Weiter ist deaktiviert.",
@@ -3658,6 +3668,11 @@
     "de": "Offizieller Faden geöffnet. Überschrift 21.gifts (eine Profilsteuerung, wenn die api accountId gesendet hat), Herkunft Kontakt unter der Überschrift, eingehend Hello team als gedämpfte Notizkarte über die volle Breite und rechts eine gesendete gefüllte app-btn-Sprechblase mit der Beschriftung Du, Eingabebereich sichtbar: ImagePlus, die Nachricht und Senden in einer Zeile; das Feld Betrag (₿ | Fiat, andere Einheit darunter) in der nächsten Zeile. Auswahl fehlt.",
     "es": "Hilo oficial abierto. Encabezado 21.gifts (un control de perfil cuando la api envió accountId), origen Contacto bajo el encabezado, entrante Hello team como tarjeta de nota atenuada de ancho completo y a la derecha una burbuja enviada rellena app-btn con la etiqueta Tú, compositor visible: ImagePlus, el mensaje y enviar en una fila; el campo Importe (₿ | fiat, la otra unidad debajo) en la fila siguiente. Sin selector.",
     "fil": "Bukas ang opisyal na talakayan. Pamagat 21.gifts (isang kontrol sa profile kapag nagpadala ang api ng accountId), pinagmulan Contact sa ilalim ng pamagat, papasok na Hello team bilang kard ng tala na naka-mute sa buong lapad at isang napunong app-btn na bula sa kanan na may etiketa na Ikaw, nakikita ang kompositor: ImagePlus, ang mensahe, at ipadala sa isang hilera; ang patlang na Halaga (₿ | fiat, kabilang yunit sa ilalim) sa susunod na hilera. Walang tagapili."
+  },
+  "/messages:thread-send-empty": {
+    "de": "Offener Faden. Senden wurde mit leerer Nachricht, ohne Foto und ohne Betrag gedrückt. Bitte schreiben Sie eine Nachricht steht unter dem Eingabebereich, verknüpft mit aria-describedby und aria-invalid. Senden ist deaktiviert. Der ruhende leere Eingabebereich deckt das nicht ab.",
+    "es": "Hilo abierto. Se pulsó Enviar con un mensaje vacío, sin foto y sin importe. Escribe un mensaje queda bajo el compositor, enlazado con aria-describedby y aria-invalid. Enviar está deshabilitado. El compositor vacío en reposo no cubre esto.",
+    "fil": "Bukas na talakayan. Pinindot ang Ipadala na walang mensahe, walang litrato, at walang halaga. Maglagay ng mensahe ay nasa ilalim ng kompositor, naka-link sa aria-describedby at aria-invalid. Hindi gumagana ang Ipadala. Hindi sakop nito ang nakapahingang walang-lamang kompositor."
   },
   "/setup/address:default": {
     "de": "Angemeldet mit einem Namen (oder einem übersprungenen Namen) und ohne Adresse. Ihre Wallet of Satoshi address und das Adressfeld oben, Weiter und beschriftetes Überspringen am unteren Bildschirmrand angeheftet. Ein Menü oben rechts; darin Start, Shops, Kasse, Profil, Förderprogramm, Wallet, Wohnzimmerregeln, Habit-Tracker, Trust-Kette, Statistiken, Benachrichtigungen, Posteingang, Kontakt, optional App installieren und Abmelden.",
