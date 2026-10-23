@@ -599,6 +599,12 @@ export function InboxScreen({
   const { fiat } = useFiatPreference();
   const amountUnitChange = onAmountUnitChange ?? ((): void => undefined);
   const [composerTouched, setComposerTouched] = useState(false);
+  // A thread change is a new composer. The empty error from the previous one does not travel.
+  const [seenOpenId, setSeenOpenId] = useState(openId);
+  if (openId !== seenOpenId) {
+    setSeenOpenId(openId);
+    setComposerTouched(false);
+  }
   const composerBusy = posting || payWaiting;
   const [seenComposerBusy, setSeenComposerBusy] = useState(composerBusy);
   if (composerBusy !== seenComposerBusy) {

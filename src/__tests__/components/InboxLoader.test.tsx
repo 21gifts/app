@@ -537,6 +537,23 @@ describe('InboxLoader', () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 
+  it('drops the empty-message error when another thread opens', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    expect(screen.queryByText('Enter a message')).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+  });
+
   it('rejects invalid and unsafe amount drafts', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
