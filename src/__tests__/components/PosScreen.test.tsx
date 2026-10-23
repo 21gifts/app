@@ -241,6 +241,9 @@ describe('PosScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'The PHP exchange rate is still loading.',
     );
+    expect(screen.getByRole('button', { name: 'Create payment' }).hasAttribute('disabled')).toBe(
+      true,
+    );
     expect(screen.queryByText('No PHP exchange rate yet.')).toBeNull();
     expect(
       fetchMock.mock.calls.some(

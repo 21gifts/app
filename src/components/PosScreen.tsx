@@ -78,6 +78,7 @@ type PosTillState = {
   rateDay: FiatRateDay | null;
   canCharge: boolean;
   amountError: string | null;
+  loadingAlert: boolean;
   needsUsername: boolean;
   needsAddress: boolean;
   onCreate: (event: FormEvent) => Promise<void>;
@@ -340,6 +341,7 @@ function usePosTillState(): PosTillState {
     rateDay,
     canCharge,
     amountError,
+    loadingAlert,
     needsUsername,
     needsAddress,
     onCreate,
@@ -479,7 +481,10 @@ export function PosAmount(): ReactElement {
             rateDay={till.rateDay}
             {...(till.amountError === null ? {} : { error: till.amountError })}
           />
-          <Button type="submit" disabled={till.busy || till.amountError !== null}>
+          <Button
+            type="submit"
+            disabled={till.busy || till.amountError !== null || till.loadingAlert}
+          >
             {t('pos.create')}
           </Button>
         </form>

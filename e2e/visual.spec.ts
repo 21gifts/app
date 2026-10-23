@@ -6937,6 +6937,7 @@ test.describe('onboarding screens', () => {
     await expect(php).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('The PHP exchange rate is still loading.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeDisabled();
     await shotScreen(page, 'state-pos-rate-loading');
   });
 

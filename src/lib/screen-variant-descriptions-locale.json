@@ -1810,9 +1810,9 @@
     "fil": "Gumawa ng bayad habang walang laman pa ang halaga. Alerto Maglagay ng buong bilang. Nanatili ang keypad at walang decimal na key. Walang QR."
   },
   "/pos/amount:rate-loading": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Zahlung anlegen, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. Crear pago mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang keypad. Walang QR."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Zahlung anlegen, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Zahlung anlegen bleibt aus. Die Tastatur bleibt. Kein QR.",
+    "es": "PHP está pulsado y el importe es 100. Crear pago mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. Crear pago permanece desactivado. El teclado permanece. Sin QR.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatiling naka-disable ang Gumawa ng bayad. Nanatili ang keypad. Walang QR."
   },
   "/pos/amount:no-rate": {
     "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Für PHP gibt es noch keinen Wechselkurs steht unter dem Betrag, und Zahlung anlegen ist schon aus. Die Tastatur bleibt. Kein QR.",

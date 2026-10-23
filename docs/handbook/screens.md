@@ -4300,7 +4300,7 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ### Variant: rate-loading
 
-PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** **Create payment** stays disabled. The keypad stays. No QR.
 
 ![21.gifts point of sale rate loading](images/pos-rate-loading.png)
 
