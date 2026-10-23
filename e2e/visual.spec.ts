@@ -25184,6 +25184,67 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-rate-loading');
   });
 
+  test('messages thread-rate-loading-too-many', async ({ page }) => {
+    await seedAda(page);
+    await hangGiftRate(page);
+    await routeAdaFiat(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
+    await page.goto('/messages?c=conv-21');
+    await meDone;
+    await expect(page.getByText('Hello team')).toBeVisible();
+    await page.getByLabel('Amount').fill('1.00');
+    const send = page.getByRole('button', { name: 'Send' });
+    await send.click();
+    const sentence = page.getByText('The USD exchange rate is still loading.');
+    await expect(sentence).toBeVisible();
+    await expect(send).toBeDisabled();
+    await page
+      .locator('input[type="file"]')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    await expect(page.getByText('You can add up to 10 photos')).toBeVisible();
+    await expect(sentence).toBeVisible();
+    await expect(send).toBeDisabled();
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-rate-loading-too-many');
+  });
+
   test('messages thread-quoted-note', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {

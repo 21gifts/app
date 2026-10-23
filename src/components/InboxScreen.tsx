@@ -186,6 +186,9 @@ function threadEndInView(column: HTMLElement, scroller: HTMLElement): boolean {
   return columnRect.bottom <= scrollerRect.bottom + 1 && columnRect.bottom > scrollerRect.top;
 }
 
+/** Photo rejection that can sit beside a loading exchange rate. */
+export type InboxPhotoAlert = 'unsupported' | 'tooLarge' | 'tooMany';
+
 /** Client-side composer validation or request failure. */
 export type InboxFormError =
   | 'empty'
@@ -243,6 +246,11 @@ export interface InboxScreenProps {
   posting: boolean;
   /** Client-side composer validation or request failure. */
   formError: InboxFormError;
+  /**
+   * Photo rejection shown with the loading-rate sentence. Null when that
+   * rejection is already `formError`.
+   */
+  photoAlert?: InboxPhotoAlert | null;
   /** True for a moderator: show Direct/Contact/Damus. Members see the full inbound list. */
   showFilter: boolean;
   /** Amount draft for the composer sats field. */
@@ -569,6 +577,7 @@ export function InboxScreen({
   onPost,
   posting,
   formError,
+  photoAlert = null,
   showFilter,
   amountDraft = '',
   onAmountDraftChange = () => undefined,
@@ -608,6 +617,11 @@ export function InboxScreen({
     textProblem,
     composerTouched || formError === 'empty' || formError === 'tooLong',
   );
+  const photoNotice: InboxPhotoAlert | null =
+    photoAlert ??
+    (formError === 'unsupported' || formError === 'tooLarge' || formError === 'tooMany'
+      ? formError
+      : null);
   const textAlert: 'empty' | 'tooLong' | null =
     textShown === 'tooLong' || (formError === 'tooLong' && textProblem !== null)
       ? 'tooLong'
@@ -1340,17 +1354,17 @@ export function InboxScreen({
             {t('inbox.errorAuthorWallet')}
           </p>
         ) : null}
-        {formError === 'unsupported' ? (
+        {photoNotice === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorUnsupported')}
           </p>
         ) : null}
-        {formError === 'tooLarge' ? (
+        {photoNotice === 'tooLarge' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooLarge')}
           </p>
         ) : null}
-        {formError === 'tooMany' ? (
+        {photoNotice === 'tooMany' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooMany')}
           </p>

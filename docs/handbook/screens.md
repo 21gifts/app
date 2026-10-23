@@ -5289,6 +5289,12 @@ Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift
 
 ![21.gifts inbox thread rate loading](images/messages-thread-rate-loading.png)
 
+### Variant: thread-rate-loading-too-many
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. Eleven JPEGs are then chosen. The composer still shows **The USD exchange rate is still loading.** and **Send** stays disabled. A second alert says **You can add up to 10 photos.** Ten selected photos stay. An unsupported or oversized photo uses that same second alert and does not clear the loading sentence.
+
+![21.gifts inbox thread rate loading too many](images/messages-thread-rate-loading-too-many.png)
+
 ### Variant: thread-quoted-note
 
 Open Direct thread. Incoming bubble text includes a public forum note URL; the nested quoted-note card shows **A Quick Technical Note** and hides the raw `https://21.gifts/messages/<uuid>` URL.

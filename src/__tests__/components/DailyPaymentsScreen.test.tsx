@@ -647,6 +647,25 @@ describe('daily payment subpages', () => {
     expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
   });
 
+  it('clears the choose-a-person alert on mouse down', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('alert').textContent).toBe('Choose a person.');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    fireEvent.mouseDown(option);
+    expect(screen.queryByText('Choose a person.')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', '@ada');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
+  });
+
   it('clears the selection on another edit and searches again', async () => {
     fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
     renderWithLocale(<DailyPaymentAmountsScreen />);

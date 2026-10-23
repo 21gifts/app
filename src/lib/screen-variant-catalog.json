@@ -3402,6 +3402,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-rate-loading-too-many",
+    "label": "/messages thread-rate-loading-too-many",
+    "visual": "state-messages-thread-rate-loading-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-quoted-note",
     "label": "/messages thread-quoted-note",
     "visual": "state-messages-thread-quoted-note",

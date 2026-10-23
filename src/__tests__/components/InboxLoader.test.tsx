@@ -611,6 +611,87 @@ describe('InboxLoader', () => {
   });
 
   it.each([
+    {
+      label: 'too many',
+      alert: 'You can add up to 10 photos',
+      files: 11,
+      prepare: undefined,
+      reject: false,
+    },
+    {
+      label: 'too large',
+      alert: 'Keep photos under 1 MB',
+      files: 1,
+      prepare: { ok: false, error: 'tooLarge' } as const,
+      reject: false,
+    },
+    {
+      label: 'unsupported',
+      alert: 'Use a JPEG, PNG, or WebP photo',
+      files: 1,
+      prepare: undefined,
+      reject: true,
+    },
+  ])(
+    'keeps the loading sentence when a photo is $label',
+    async ({ alert, files, prepare, reject }) => {
+      let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+      giftStatsMock.mockReturnValue(
+        new Promise((resolve) => {
+          releaseStats = resolve;
+        }) as never,
+      );
+      if (prepare !== undefined) {
+        prepareMock.mockResolvedValueOnce(prepare);
+      }
+      if (reject === true) {
+        prepareMock.mockRejectedValueOnce(new Error('decode'));
+      }
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat' },
+      });
+      searchParams.set('c', 'conv-1');
+      listMock.mockResolvedValue([THREAD]);
+      threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+      renderWithLocale(<InboxLoader />);
+      expect(await screen.findByLabelText('Amount')).toBeTruthy();
+      expect(await screen.findByText('Hello')).toBeTruthy();
+      fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+      const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+      fireEvent.submit(send.closest('form')!);
+      expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+      expect(send.disabled).toBe(true);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const picked = Array.from(
+        { length: files },
+        (_, index) =>
+          new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${index}.jpg`, { type: 'image/jpeg' }),
+      );
+      await act(async () => {
+        fireEvent.change(input, { target: { files: picked } });
+      });
+      expect(screen.getByText(alert)).toBeTruthy();
+      expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+      expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+      expect(invoiceMock).not.toHaveBeenCalled();
+      fireEvent.change(screen.getByLabelText('Your message'), {
+        target: { value: 'still waiting' },
+      });
+      expect(screen.queryByText(alert)).toBeNull();
+      expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+      expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+      await act(async () => {
+        releaseStats({ spendOverTime: [] });
+      });
+    },
+  );
+
+  it.each([
     ['Too many payments', 'Too many payments. Please wait a moment and try again.'],
     [
       "Author's wallet cannot receive this Bitcoin payment",

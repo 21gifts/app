@@ -4046,6 +4046,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-rate-loading-too-many',
+    image: 'messages-thread-rate-loading-too-many.png',
+    visual: 'state-messages-thread-rate-loading-too-many',
+    needle: 'messages thread-rate-loading-too-many',
+  },
+  {
+    route: '/messages',
     id: 'thread-quoted-note',
     image: 'messages-thread-quoted-note.png',
     visual: 'state-messages-thread-quoted-note',
