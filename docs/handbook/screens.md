@@ -7,9 +7,9 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection. Under the hero and before How it works, a white block lists only shops whose tech provider is exactly 21.gifts, with country, name, blockchain, asset, and activity filters, a Map/Table control, then the map or the table; a matching shop id links to /{npub} on this site.
 - **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `HomeShops`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
 
 ### Variant: default
 
@@ -28,6 +28,108 @@ Captured at desktop and mobile. Below 1024px the header shows the Menu button; o
 Open the language switcher in the marketing header. Custom listbox (rounded panel, endonym rows with a check on the current locale) — not OS chrome.
 
 ![21.gifts home language](images/root-language.png)
+
+### Variant: shops-table
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The table lists only shops whose tech provider is exactly 21.gifts and shows Name, Location, Country, Shop, Tech provider, and Activity.
+
+![21.gifts home shops table](images/root-shops-table.png)
+
+### Variant: shops-blockchain
+
+The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected. The map is masked.
+
+![21.gifts home shops blockchain](images/root-shops-blockchain.png)
+
+### Variant: shops-asset
+
+Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected. The map is masked.
+
+![21.gifts home shops asset](images/root-shops-asset.png)
+
+### Variant: shops-activity
+
+The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query. The map is masked.
+
+![21.gifts home shops activity](images/root-shops-activity.png)
+
+### Variant: shops-country-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country select value is PH.
+
+![21.gifts home shops country selected](images/root-shops-country-selected.png)
+
+### Variant: shops-name-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name select value is SPAR.
+
+![21.gifts home shops name selected](images/root-shops-name-selected.png)
+
+### Variant: shops-blockchain-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Blockchain combobox is closed and its text includes Bitcoin. The listbox is not open.
+
+![21.gifts home shops blockchain selected](images/root-shops-blockchain-selected.png)
+
+### Variant: shops-asset-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. Blockchain Bitcoin is chosen. The Asset list is closed and the Asset combobox text includes BTC.
+
+![21.gifts home shops asset selected](images/root-shops-asset-selected.png)
+
+### Variant: shops-activity-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Activity list is closed and its text includes Daily. Activity is not sent on the places query.
+
+![21.gifts home shops activity selected](images/root-shops-activity-selected.png)
+
+### Variant: shops-marker
+
+Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
+
+![21.gifts home shops marker](images/root-shops-marker.png)
+
+### Variant: shops-attribution
+
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles and the shop pin are hidden.
+
+![21.gifts home shops attribution](images/root-shops-attribution.png)
+
+### Variant: shops-help
+
+Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.
+
+![21.gifts home shops help](images/root-shops-help.png)
+
+### Variant: shops-loading
+
+The filter request has not finished. Map stays selected. The place-list error is not visible. No locations published yet is not visible. The map pane is visible and masked.
+
+![21.gifts home shops loading](images/root-shops-loading.png)
+
+### Variant: shops-error
+
+The filter response is status 500. Map stays selected. The alert says Could not load places. Please try again. Try again is visible. No locations published yet is not visible. The map is masked.
+
+![21.gifts home shops error](images/root-shops-error.png)
+
+### Variant: shops-map-failed
+
+The MapLibre script is aborted, the same way as the behavior test. Table is selected and the load error Could not load places. Please try again. is visible.
+
+![21.gifts home shops map failed](images/root-shops-map-failed.png)
+
+### Variant: shops-empty-map
+
+The places response is an empty array. No locations published yet is visible. The map stays visible and is masked.
+
+![21.gifts home shops empty map](images/root-shops-empty-map.png)
+
+### Variant: shops-empty-table
+
+The places response is an empty array and Table is selected. No locations published yet is visible. There is no Sample shop row.
+
+![21.gifts home shops empty table](images/root-shops-empty-table.png)
 
 ## Screen: /legal
 

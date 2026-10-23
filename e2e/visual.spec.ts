@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
@@ -685,7 +685,7 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   });
 }
 
-async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+async function shotScreen(page: Page, arg: string, fullPage = true, mask?: Locator): Promise<void> {
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
@@ -701,6 +701,7 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
     ...SHOT,
+    ...(mask === undefined ? {} : { mask: [mask] }),
   });
 }
 
@@ -1514,14 +1515,89 @@ async function fulfillConversationTranslatePost(
   });
 }
 
+function isHomeMapRequest(url: URL): boolean {
+  if (url.hostname.includes('openfreemap.org')) {
+    return true;
+  }
+  const api =
+    url.hostname === 'api.opencryptopay.io' || url.hostname === 'dev-api.opencryptopay.io';
+  return api && (url.pathname === '/map/filters' || url.pathname === '/map/places');
+}
+
+async function fulfillHomeMap(route: Route): Promise<void> {
+  const url = new URL(route.request().url());
+  if (url.hostname.includes('openfreemap.org')) {
+    await route.fulfill({ status: 200, body: '' });
+    return;
+  }
+  const body =
+    url.pathname === '/map/filters'
+      ? {
+          activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
+          countries: ['PH'],
+          shopNames: ['SPAR'],
+          techProviders: [
+            {
+              name: '21.gifts',
+              blockchains: ['Bitcoin'],
+              assets: ['BTC'],
+              pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+            },
+            {
+              name: 'DFX.swiss',
+              blockchains: ['Liquid'],
+              assets: ['L-BTC'],
+              pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+            },
+          ],
+        }
+      : {
+          places: [
+            {
+              id: `npub1${'q'.repeat(58)}`,
+              name: 'Sample',
+              shopName: 'SPAR',
+              country: 'PH',
+              activity: 'daily',
+              lat: 14.6,
+              lon: 121.0,
+              techProvider: '21.gifts',
+            },
+            {
+              name: 'Other desk',
+              techProvider: 'DFX.swiss',
+              id: 'dfx-hidden',
+              country: 'PH',
+              activity: 'daily',
+              lat: 14.7,
+              lon: 121.1,
+            },
+          ],
+        };
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(body),
+  });
+}
+
+async function stubHomeMap(page: Page): Promise<void> {
+  await page.route((url) => isHomeMapRequest(url), fulfillHomeMap);
+}
+
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
+    await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
-    await shotScreen(page, 'screen-root');
+    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
+      timeout: 20_000,
+    });
+    await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
   test('state / mobile-nav', async ({ page }, testInfo) => {
+    await stubHomeMap(page);
     await page.goto('/');
     if (isMobileProject(testInfo)) {
       await page.getByRole('button', { name: 'Menu' }).click();
@@ -1533,14 +1609,259 @@ test.describe('screen baselines', () => {
         page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
       ).toBeVisible();
     }
-    await shotScreen(page, 'state-root-mobile-nav');
+    await shotScreen(page, 'state-root-mobile-nav', true, page.locator('#shop-places-map'));
   });
 
   test('state / language-open', async ({ page }) => {
+    await stubHomeMap(page);
     await page.goto('/');
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Español' })).toBeVisible();
-    await shotScreen(page, 'state-root-language');
+    await shotScreen(page, 'state-root-language', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-table', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-table');
+  });
+
+  async function stubHomePlacesEmpty(page: Page): Promise<void> {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/places') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ places: [] }),
+          });
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+  }
+
+  test('state / shops-blockchain', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-blockchain', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-asset', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-activity', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-country-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByLabel('Country').selectOption('PH');
+    await expect(page.getByLabel('Country')).toHaveValue('PH');
+    await shotScreen(page, 'state-root-shops-country-selected');
+  });
+
+  test('state / shops-name-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByLabel('Name').selectOption('SPAR');
+    await expect(page.getByLabel('Name')).toHaveValue('SPAR');
+    await shotScreen(page, 'state-root-shops-name-selected');
+  });
+
+  test('state / shops-blockchain-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await expect(page.getByRole('combobox', { name: 'Blockchain', exact: true })).toContainText(
+      'Bitcoin',
+    );
+    await expect(page.getByRole('listbox', { name: 'Blockchain' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-blockchain-selected');
+  });
+
+  test('state / shops-asset-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    await page.getByRole('option', { name: 'BTC' }).click();
+    await expect(page.getByRole('combobox', { name: 'Asset', exact: true })).toContainText('BTC');
+    await expect(page.getByRole('listbox', { name: 'Asset' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-asset-selected');
+  });
+
+  test('state / shops-activity-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
+    await page.getByRole('option', { name: 'Daily' }).click();
+    await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toContainText(
+      'Daily',
+    );
+    await expect(page.getByRole('listbox', { name: 'Activity' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-activity-selected');
+  });
+
+  test('state / shops-marker', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    const marker = page.locator('#shop-places-map .shop-place-marker');
+    await expect(marker).toBeVisible({ timeout: 20_000 });
+    await marker.click();
+    await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+  });
+
+  test('state / shops-attribution', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    const attribution = page.locator('#shop-places-map .maplibregl-ctrl-attrib');
+    await expect(attribution).toBeVisible({ timeout: 20_000 });
+    // MapLibre renders the toggle as an empty summary. Playwright does not
+    // resolve that summary as a button, so the test clicks the summary itself.
+    const toggleAttribution = attribution.locator('summary');
+    await expect(toggleAttribution).toHaveAttribute('aria-label', 'Toggle attribution');
+    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible();
+    const mapLibre = attribution.getByRole('link', { name: 'MapLibre', exact: true });
+    // A pointer click on the summary is a drag on the map and moves the pin.
+    // The DOM click still runs MapLibre's toggle listener.
+    const pressToggle = () => toggleAttribution.evaluate((node: HTMLElement) => node.click());
+    // The compact control starts open. One press hides the attribution, and the
+    // next press reveals it. The shot is that revealed result.
+    if (await mapLibre.isVisible()) {
+      await pressToggle();
+      await expect(mapLibre).toBeHidden();
+    }
+    await pressToggle();
+    await expect(mapLibre).toBeVisible();
+    await expect(attribution).toHaveClass(/maplibregl-compact-show/);
+    await page.locator('#shop-places-map canvas').evaluate((node: HTMLCanvasElement) => {
+      node.style.visibility = 'hidden';
+    });
+    // The empty style leaves the projected pin a few pixels off between runs.
+    await page.locator('#shop-places-map .shop-place-marker').evaluateAll((nodes) => {
+      for (const node of nodes) {
+        if (node instanceof HTMLElement) {
+          node.style.visibility = 'hidden';
+        }
+      }
+    });
+    await shotScreen(page, 'state-root-shops-attribution');
+  });
+
+  test('state / shops-help', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'What the activity words mean' }).click();
+    await expect(
+      page.getByText('At least 5 days with a payment within the last 7 days.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-shops-help');
+  });
+
+  test('state / shops-loading', async ({ page }) => {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/filters') {
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
+    await expect(page.getByText('Could not load places. Please try again.')).toHaveCount(0);
+    await expect(page.getByText('No locations published yet.')).toHaveCount(0);
+    await expect(page.locator('#shop-places-map')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-loading', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-error', async ({ page }) => {
+    await page.route(
+      (url) => isHomeMapRequest(url),
+      async (route) => {
+        const requestUrl = new URL(route.request().url());
+        if (requestUrl.pathname === '/map/filters') {
+          await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        await fulfillHomeMap(route);
+      },
+    );
+    await page.goto('/');
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await expect(page.getByText('No locations published yet.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Try again', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-error', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-map-failed', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.route('https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js', (route) =>
+      route.abort(),
+    );
+    await page.goto('/');
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Table', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-root-shops-map-failed');
+  });
+
+  test('state / shops-empty-map', async ({ page }) => {
+    await stubHomePlacesEmpty(page);
+    await page.goto('/');
+    await expect(page.getByText('No locations published yet.')).toBeVisible();
+    await expect(page.locator('#shop-places-map')).toBeVisible();
+    await shotScreen(page, 'state-root-shops-empty-map', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-empty-table', async ({ page }) => {
+    await stubHomePlacesEmpty(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByText('No locations published yet.')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-empty-table');
   });
 
   test('screen /legal', async ({ page }) => {
