@@ -154,6 +154,33 @@ describe('PayLinkScreen', () => {
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
   });
 
+  it('does not mint an invoice when bitcoin is chosen while the rate is still loading', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/gifts/stats')) {
+        return new Promise(() => undefined);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(postedInvoice()).toBe(false);
+  });
+
   it('replaces the loading alert with no rate when the gift day settles', async () => {
     let resolveStats: (response: Response) => void = () => undefined;
     mockFetch(async (input) => {

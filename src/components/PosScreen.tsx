@@ -239,6 +239,9 @@ function usePosTillState(): PosTillState {
     if (session === null || busyRef.current) {
       return;
     }
+    if (loadingAlert && !rateSettled) {
+      return;
+    }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
     setAmountTouched(true);
     if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {

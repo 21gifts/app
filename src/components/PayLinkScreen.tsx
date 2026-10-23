@@ -407,6 +407,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (postingRef.current || invoice !== null) {
       return;
     }
+    if (formError === 'loading' && !rateSettled) {
+      return;
+    }
     setAmountTouched(true);
     const generation = generationRef.current;
     const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
