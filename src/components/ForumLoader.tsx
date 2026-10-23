@@ -2201,6 +2201,7 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
     if (payError === 'loading' && !rateSettled) {
       return;
     }

@@ -8904,11 +8904,16 @@ describe('ForumLoader', () => {
     );
     fireEvent.submit(form);
     expect(invoiceMock).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: 'x' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
 
     await act(async () => {
       releaseStats(EMPTY_STATS);
     });
+    expect(screen.getByText('Send at least ₿1 with your reaction')).toBeTruthy();
+    expect(screen.queryByText('The USD exchange rate is still loading.')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
     expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
     expect(screen.queryByText('Send at least ₿1 with your reaction')).toBeNull();
     const settled = within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement;

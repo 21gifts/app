@@ -458,6 +458,7 @@ export function MemberHabits(): ReactElement {
       return;
     }
     /* v8 ignore stop */
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
     if (payError === 'loading' && !rateSettled) {
       return;
     }

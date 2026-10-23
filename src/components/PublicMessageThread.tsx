@@ -807,6 +807,7 @@ export function PublicMessageThread(props: {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
     if (payError === 'loading' && rateSeries === null) {
       return;
     }
