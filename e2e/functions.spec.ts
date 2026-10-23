@@ -13452,11 +13452,109 @@ test('Function: shownDraftPayError — a fixed pay amount clears the field messa
   await expect(reply.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
-test('Function: shownPaySheetError — a loading submit stays only while the rate is quiet', async () => {
+test('Function: shownPaySheetError — a loading submit stays only while the rate is quiet', async ({
+  page,
+}) => {
   expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate')).toBe('loading');
   expect(shownPaySheetError('loading', null, 'amount', 'noRate')).toBeNull();
   expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate')).toBe('noRate');
   expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate')).toBe('amount');
   expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate')).toBe('request');
   expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate')).toBeNull();
+  await seedSignedInAda(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await pending;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: { start: '2026-09-28' },
+        habits: [
+          {
+            id: 'h-ada',
+            accountId: 'acc-ada',
+            ownerName: 'Ada',
+            role: 'initiator',
+            name: 'Walk',
+            description: 'Outside',
+            cadence: 'daily',
+            timeZone: 'Asia/Manila',
+            firstPeriod: '2026-10-01',
+            lastPeriod: null,
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: false,
+                status: null,
+              },
+            ],
+            comments: [
+              {
+                id: 'c-bea',
+                habitId: 'h-ada',
+                accountId: 'acc-bea',
+                name: 'Bea',
+                text: 'hello',
+                week: '2026-09-28',
+                createdAt: 1,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
+  await page.goto('/habit-tracker');
+  await meDone;
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeEnabled();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await cont.click();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
+  release();
+  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await expect(cont).toBeDisabled();
 });
