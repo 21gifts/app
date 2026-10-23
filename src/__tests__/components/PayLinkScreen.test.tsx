@@ -127,10 +127,11 @@ describe('PayLinkScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '101' } });
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
@@ -264,7 +265,7 @@ describe('PayLinkScreen', () => {
     );
     resolveStats(Response.json(giftStatsBody([GIFT_DAY])));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+      expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     });
     expect(postedInvoice()).toBe(false);
   });
@@ -299,7 +300,7 @@ describe('PayLinkScreen', () => {
       ),
     );
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+      expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿50 to ₿100.');
     });
     expect(postedInvoice()).toBe(false);
   });

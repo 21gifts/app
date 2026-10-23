@@ -157,6 +157,20 @@ export function MemberHabits(): ReactElement {
   const postedForSession = useRef<string | null>(null);
   const sessionVisit = useRef(0);
   const inFlightKeys = useRef(new Set<string>());
+  const liveDrafts = useRef({
+    addName: '',
+    addDescription: '',
+    addNotes: '',
+    editByHabitId: {} as Record<string, { name: string; description: string; notes: string }>,
+    commentByHabitId: {} as Record<string, string>,
+  });
+  liveDrafts.current = {
+    addName,
+    addDescription,
+    addNotes,
+    editByHabitId,
+    commentByHabitId,
+  };
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
@@ -359,17 +373,43 @@ export function MemberHabits(): ReactElement {
                 ? 'comment'
                 : null;
       const action = body['action'];
+      const drafts = liveDrafts.current;
       if (field !== null && action === 'add') {
+        const shown =
+          field === 'description'
+            ? drafts.addDescription
+            : field === 'notes'
+              ? drafts.addNotes
+              : drafts.addName;
+        // The answer belongs to the draft that was sent. A newer value stays clean.
+        if (body[field] !== shown) {
+          return false;
+        }
         setHabitApi({ where: 'add', field });
         setError(false);
         return false;
       }
       if (field !== null && action === 'edit' && typeof body['id'] === 'string') {
+        const draft = drafts.editByHabitId[body['id']];
+        const shown =
+          draft === undefined
+            ? undefined
+            : field === 'description'
+              ? draft.description
+              : field === 'notes'
+                ? draft.notes
+                : draft.name;
+        if (body[field] !== shown) {
+          return false;
+        }
         setHabitApi({ where: 'edit', id: body['id'], field });
         setError(false);
         return false;
       }
       if (action === 'comment' && field === 'comment' && typeof body['habitId'] === 'string') {
+        if (drafts.commentByHabitId[body['habitId']] !== body['text']) {
+          return false;
+        }
         setHabitApi({ where: 'comment', id: body['habitId'], field: 'comment' });
         setError(false);
         return false;

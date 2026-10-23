@@ -477,13 +477,13 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (!(unit === 'fiat' && !rateSettled)) {
           payFieldError = t('pos.noRate', { code: fiat });
         }
-      } else if (
-        payParsed.kind !== 'sats' ||
-        !Number.isSafeInteger(payParsed.sats) ||
-        payParsed.sats < profile.minSats ||
-        payParsed.sats > profile.maxSats
-      ) {
+      } else if (payParsed.kind !== 'sats' || !Number.isSafeInteger(payParsed.sats)) {
         payFieldError = t('pay.amountInvalid');
+      } else if (payParsed.sats < profile.minSats || payParsed.sats > profile.maxSats) {
+        payFieldError = t('pay.amountRange', {
+          min: formatBitcoin(profile.minSats, numberFormat),
+          max: formatBitcoin(profile.maxSats, numberFormat),
+        });
       }
     }
   }

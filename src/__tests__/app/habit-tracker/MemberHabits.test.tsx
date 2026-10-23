@@ -3036,6 +3036,108 @@ describe('MemberHabits', () => {
     ).toBe(false);
   });
 
+  it('drops a habit rejection when the draft changed before the answer', async () => {
+    const pending: Array<(value: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    const add = within(addForm);
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Nope' } });
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(1);
+    });
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Yep' } });
+    await act(async () => {
+      pending[0]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('Could not load or save the tracker. Please try again.')).toBeNull();
+    expect((add.getByRole('button', { name: 'Add habit' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    const edit = within(saveForm);
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Walk' } });
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(2);
+    });
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Ran' } });
+    await act(async () => {
+      pending[1]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect((edit.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false);
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.change(comment, { target: { value: 'hello' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(pending).toHaveLength(3);
+    });
+    fireEvent.change(comment, { target: { value: 'hello!' } });
+    await act(async () => {
+      pending[2]?.(json({ error: 'Invalid comment' }, 400));
+    });
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
+    expect((screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Later' } });
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(4);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      pending[3]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
   it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
     let releaseStats: ((body: unknown) => void) | undefined;
     vi.stubGlobal(
