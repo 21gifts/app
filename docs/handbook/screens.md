@@ -53,6 +53,36 @@ The Activity list is open and the listbox option Daily is visible. Map stays sel
 
 ![21.gifts home shops activity](images/root-shops-activity.png)
 
+### Variant: shops-country-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country select value is PH.
+
+![21.gifts home shops country selected](images/root-shops-country-selected.png)
+
+### Variant: shops-name-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name select value is SPAR.
+
+![21.gifts home shops name selected](images/root-shops-name-selected.png)
+
+### Variant: shops-blockchain-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Blockchain combobox is closed and its text includes Bitcoin. The listbox is not open.
+
+![21.gifts home shops blockchain selected](images/root-shops-blockchain-selected.png)
+
+### Variant: shops-asset-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. Blockchain Bitcoin is chosen. The Asset list is closed and the Asset combobox text includes BTC.
+
+![21.gifts home shops asset selected](images/root-shops-asset-selected.png)
+
+### Variant: shops-activity-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Activity list is closed and its text includes Daily. Activity is not sent on the places query.
+
+![21.gifts home shops activity selected](images/root-shops-activity-selected.png)
+
 ### Variant: shops-marker
 
 Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
@@ -73,13 +103,13 @@ The filter request has not finished. Map stays selected. The place-list error is
 
 ### Variant: shops-error
 
-The filter response is status 500. Map stays selected. The alert says The place list could not be loaded. Try again is visible. No locations published yet is not visible. The map is masked.
+The filter response is status 500. Map stays selected. The alert says Could not load places. Please try again. Try again is visible. No locations published yet is not visible. The map is masked.
 
 ![21.gifts home shops error](images/root-shops-error.png)
 
 ### Variant: shops-map-failed
 
-The MapLibre script is aborted, the same way as the behavior test. Table is selected and the load error The place list could not be loaded is visible.
+The MapLibre script is aborted, the same way as the behavior test. Table is selected and the load error Could not load places. Please try again. is visible.
 
 ![21.gifts home shops map failed](images/root-shops-map-failed.png)
 

@@ -18,7 +18,7 @@ const copy = {
   activity: messages['homeShops.activity'],
   all: messages['homeShops.all'],
   empty: messages['homeShops.empty'],
-  error: messages['homeShops.error'],
+  error: messages['map.error'],
   retry: messages['homeShops.retry'],
   colName: messages['homeShops.colName'],
   colLocation: messages['homeShops.colLocation'],
@@ -1816,6 +1816,27 @@ describe('HomeShops', () => {
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(lib.markers).toHaveLength(0);
     expect(map.resize).not.toHaveBeenCalled();
+  });
+
+  it('does not frame the map when the places response is not ok', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    await resolvePlaces({ places: [] }, 500);
+    await waitFor(() => {
+      expect(screen.getByText(copy.error)).toBeTruthy();
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.fitBounds).not.toHaveBeenCalled();
   });
 
   it('keeps the session on a later error without framing the hidden map', async () => {

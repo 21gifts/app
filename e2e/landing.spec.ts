@@ -140,7 +140,7 @@ test('Function: HomeShops stops after a filters HTTP error', async ({ page }) =>
     },
   );
   await page.goto('/');
-  await expect(page.getByText(getCatalog('en')['homeShops.error'])).toBeVisible();
+  await expect(page.getByText(getCatalog('en')['map.error'])).toBeVisible();
   expect(placesRequests).toBe(0);
 });
 
@@ -150,7 +150,7 @@ test('Function: HomeShops opens the table when the map script fails', async ({ p
     route.abort(),
   );
   await page.goto('/');
-  await expect(page.getByText(getCatalog('en')['homeShops.error'])).toBeVisible();
+  await expect(page.getByText(getCatalog('en')['map.error'])).toBeVisible();
   await expect(page.getByRole('button', { name: 'Table' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toBeVisible();
 });
@@ -168,7 +168,7 @@ test('Function: HomeShops rejects an array places body without showing empty', a
     },
   );
   await page.goto('/');
-  await expect(page.getByText(getCatalog('en')['homeShops.error'])).toBeVisible();
+  await expect(page.getByText(getCatalog('en')['map.error'])).toBeVisible();
   await expect(page.getByText(getCatalog('en')['homeShops.empty'])).toHaveCount(0);
 });
 

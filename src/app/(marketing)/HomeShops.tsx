@@ -658,7 +658,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   rowsRef.current = rows;
   failedRef.current = loadFailed || scriptFailed;
   viewRef.current = view;
-  awaitingRef.current = ready !== null && !covered;
+  awaitingRef.current = !covered;
   const showError = loadFailed || scriptFailed;
   const showEmpty = !showError && covered && rows.length === 0;
   const rowsKey = `${loadFailed ? 1 : 0}${scriptFailed ? 1 : 0}${covered ? 1 : 0}:${JSON.stringify(rows)}`;

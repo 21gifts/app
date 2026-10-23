@@ -998,7 +998,7 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 
 `MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → white shops block (`HomeShops` `#shops` between the hero and `#how`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, three h3+body in `sm:grid-cols-2`) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
 
-Handbook states: live marketing home, shops-table, shops-blockchain, shops-asset, shops-activity, shops-marker, shops-help, shops-loading, shops-error, shops-map-failed, shops-empty-map, shops-empty-table.
+Handbook states: live marketing home, shops-table, shops-blockchain, shops-asset, shops-activity, shops-country-selected, shops-name-selected, shops-blockchain-selected, shops-asset-selected, shops-activity-selected, shops-marker, shops-help, shops-loading, shops-error, shops-map-failed, shops-empty-map, shops-empty-table.
 
 The activity help button sits with the filters and stays available while the map is selected. Its popover is the color key. An open marker popup also prints the activity words.
 

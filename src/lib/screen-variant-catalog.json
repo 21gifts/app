@@ -42,6 +42,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-country-selected",
+    "label": "/ shops-country-selected",
+    "visual": "state-root-shops-country-selected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-name-selected",
+    "label": "/ shops-name-selected",
+    "visual": "state-root-shops-name-selected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-blockchain-selected",
+    "label": "/ shops-blockchain-selected",
+    "visual": "state-root-shops-blockchain-selected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-asset-selected",
+    "label": "/ shops-asset-selected",
+    "visual": "state-root-shops-asset-selected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-activity-selected",
+    "label": "/ shops-activity-selected",
+    "visual": "state-root-shops-activity-selected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:shops-marker",
     "label": "/ shops-marker",
     "visual": "state-root-shops-marker",

@@ -1672,6 +1672,63 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
   });
 
+  test('state / shops-country-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByLabel('Country').selectOption('PH');
+    await expect(page.getByLabel('Country')).toHaveValue('PH');
+    await shotScreen(page, 'state-root-shops-country-selected');
+  });
+
+  test('state / shops-name-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByLabel('Name').selectOption('SPAR');
+    await expect(page.getByLabel('Name')).toHaveValue('SPAR');
+    await shotScreen(page, 'state-root-shops-name-selected');
+  });
+
+  test('state / shops-blockchain-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await expect(page.getByRole('combobox', { name: 'Blockchain', exact: true })).toContainText(
+      'Bitcoin',
+    );
+    await expect(page.getByRole('listbox', { name: 'Blockchain' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-blockchain-selected');
+  });
+
+  test('state / shops-asset-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+    await page.getByRole('option', { name: 'Bitcoin' }).click();
+    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    await page.getByRole('option', { name: 'BTC' }).click();
+    await expect(page.getByRole('combobox', { name: 'Asset', exact: true })).toContainText('BTC');
+    await expect(page.getByRole('listbox', { name: 'Asset' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-asset-selected');
+  });
+
+  test('state / shops-activity-selected', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
+    await page.getByRole('option', { name: 'Daily' }).click();
+    await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toContainText(
+      'Daily',
+    );
+    await expect(page.getByRole('listbox', { name: 'Activity' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-activity-selected');
+  });
+
   test('state / shops-marker', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
@@ -1706,7 +1763,7 @@ test.describe('screen baselines', () => {
     );
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
-    await expect(page.getByText('The place list could not be loaded.')).toHaveCount(0);
+    await expect(page.getByText('Could not load places. Please try again.')).toHaveCount(0);
     await expect(page.getByText('No locations published yet.')).toHaveCount(0);
     await expect(page.locator('#shop-places-map')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
@@ -1729,7 +1786,7 @@ test.describe('screen baselines', () => {
       },
     );
     await page.goto('/');
-    await expect(page.getByText('The place list could not be loaded.')).toBeVisible();
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
     await expect(page.getByText('No locations published yet.')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Try again', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Map', exact: true })).toHaveAttribute(
@@ -1745,7 +1802,7 @@ test.describe('screen baselines', () => {
       route.abort(),
     );
     await page.goto('/');
-    await expect(page.getByText('The place list could not be loaded.')).toBeVisible();
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Table', exact: true })).toHaveAttribute(
       'aria-pressed',
       'true',
