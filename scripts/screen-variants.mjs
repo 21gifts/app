@@ -1433,6 +1433,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-controls',
+    image: 'welcome-composer-place-controls.png',
+    visual: 'state-welcome-composer-place-controls',
+    needle: 'The place name cannot include control characters',
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-map',
     image: 'welcome-composer-place-map.png',
     visual: 'state-welcome-composer-place-map',

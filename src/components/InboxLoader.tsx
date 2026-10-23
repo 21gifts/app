@@ -95,6 +95,19 @@ function appendUnseenMessages(
 }
 
 /**
+ * A photo rejection is the extra sentence only while the rate is still loading.
+ *
+ * @param error - The stored inbox form error.
+ * @returns The photo code, or `null` when the error is not a photo rejection.
+ */
+function inboxPhotoAlert(error: InboxFormError): InboxPhotoAlert | null {
+  if (error === 'unsupported' || error === 'tooLarge' || error === 'tooMany') {
+    return error;
+  }
+  return null;
+}
+
+/**
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
@@ -129,13 +142,6 @@ function appendUnseenMessages(
  *
  * @returns The inbox screen, or `null` without a session.
  */
-function inboxPhotoAlert(error: InboxFormError): InboxPhotoAlert | null {
-  if (error === 'unsupported' || error === 'tooLarge' || error === 'tooMany') {
-    return error;
-  }
-  return null;
-}
-
 export function InboxLoader(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);

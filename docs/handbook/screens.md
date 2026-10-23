@@ -1566,6 +1566,12 @@ One unpaid note on **All** whose place has no label. The card shows a MapPin lin
 
 ![21.gifts welcome composer place too long](images/welcome-composer-place-too-long.png)
 
+### Variant: composer-place-controls
+
+**Add a place** is open and the map key is empty. The place name is short and contains a control character. **The place name cannot include control characters** sits under the field, and **Use this place** stays off. Needle `The place name cannot include control characters`.
+
+![21.gifts welcome composer place controls](images/welcome-composer-place-controls.png)
+
 ### Variant: composer-place-map
 
 **Add a place** is open as a dialog with a map key. The map frame is visible; **Use this place** is

@@ -1164,6 +1164,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:composer-place-controls",
+    "label": "/welcome composer-place-controls",
+    "visual": "state-welcome-composer-place-controls",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-place-map",
     "label": "/welcome composer-place-map",
     "visual": "state-welcome-composer-place-map",

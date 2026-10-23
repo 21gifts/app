@@ -19229,6 +19229,18 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place-too-long');
   });
 
+  test('welcome composer-place-controls', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.getByRole('textbox', { name: 'Place name' }).fill('Cafe\u007f');
+    await expect(page.getByText('The place name cannot include control characters')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-composer-place-controls');
+  });
+
   test('welcome composer-place-map', async ({ page }) => {
     await installBaselineMap(page);
     await seedAda(page);

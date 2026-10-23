@@ -959,6 +959,11 @@
     "es": "Añadir un lugar está abierto y la clave del mapa está vacía. El nombre del lugar supera los 80 caracteres. Máximo 80 caracteres para el nombre del lugar aparece bajo el campo, y Usar este lugar permanece desactivado. Aguja Máximo 80 caracteres para el nombre del lugar.",
     "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa. Mahigit 80 character ang pangalan ng lugar. Nasa ilalim ng field ang Hanggang 80 character ang pangalan ng lugar, at nananatiling naka-off ang Gamitin ang lugar na ito. Karayom Hanggang 80 character ang pangalan ng lugar."
   },
+  "/welcome:composer-place-controls": {
+    "de": "Ort hinzufügen ist offen und der Kartenschlüssel ist leer. Der Ortsname ist kurz und enthält ein Steuerzeichen. Der Ortsname darf keine Steuerzeichen enthalten steht unter dem Feld, und Diesen Ort verwenden bleibt aus. Nadel Der Ortsname darf keine Steuerzeichen enthalten.",
+    "es": "Añadir un lugar está abierto y la clave del mapa está vacía. El nombre del lugar es corto y contiene un carácter de control. El nombre del lugar no puede incluir caracteres de control aparece bajo el campo, y Usar este lugar permanece desactivado. Aguja El nombre del lugar no puede incluir caracteres de control.",
+    "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa. Maikli ang pangalan ng lugar at may control character. Nasa ilalim ng field ang Hindi puwedeng may control character ang pangalan ng lugar, at nananatiling naka-off ang Gamitin ang lugar na ito. Karayom Hindi puwedeng may control character ang pangalan ng lugar."
+  },
   "/profile:posts-open": {
     "de": "14 Beiträge ist gedrückt und der Feed zeigt Second post from Ada. Nadel Second post from Ada.",
     "es": "14 publicaciones está pulsado y el listado muestra Second post from Ada. Aguja Second post from Ada.",
