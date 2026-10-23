@@ -1093,6 +1093,12 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
 
+### Variant: ask-text-empty
+
+Ask step 3 of 4 after **Continue** with an empty message and no photo. **Enter a message or add a photo or video** sits under the field, which is linked to it with `aria-describedby` and marked `aria-invalid`. **Continue** is disabled. The empty step before that press does not cover this.
+
+![21.gifts welcome ask text empty](images/welcome-ask-text-empty.png)
+
 ### Variant: ask-shop-elsewhere
 
 Ask step 3 of 4 with **Need help at #21GiftsShop** in the message field. The live shop guidance sits directly below the field, which is linked to it with `aria-describedby` and marked `aria-invalid`; **Continue** stays disabled. The same visible reason disables **Post** on the preview step.
@@ -5229,6 +5235,12 @@ Open official thread. Heading **21.gifts** (a profile control when the api sent 
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
+### Variant: thread-send-empty
+
+Open thread. **Send** was pressed with an empty message, no photo, and no amount. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The resting empty composer does not cover this.
+
+![21.gifts inbox thread send empty](images/messages-thread-send-empty.png)
+
 ### Variant: thread-translate
 
 Open thread with a German incoming message. **Translate** is visible under the body.
@@ -5881,6 +5893,12 @@ Signed-in non-staff visitor (verified or basis). Heading **Moderators chat group
 Moderator. Group exists, zero messages. Composer **Your message** visible.
 
 ![21.gifts moderator group empty](images/moderate-group-empty.png)
+
+### Variant: send-empty
+
+Moderator. Empty thread after **Send** with no message and no photo. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The untouched empty thread does not cover this.
+
+![21.gifts moderator group send empty](images/moderate-group-send-empty.png)
 
 ### Variant: loading
 

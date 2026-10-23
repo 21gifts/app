@@ -597,7 +597,12 @@ describe('InboxLoader', () => {
     expect(screen.queryByAltText('Selected photo')).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByLabelText('Amount').closest('form')!);
     expect(invoiceMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

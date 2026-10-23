@@ -2201,6 +2201,9 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
     if (payProblem === 'quiet') {
       setPayError('loading');
@@ -2605,6 +2608,9 @@ export function ForumLoader({
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
+    if (replyFormError === 'loading' && !rateSettled) {
+      return;
+    }
     const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
@@ -2705,10 +2711,24 @@ export function ForumLoader({
     fiat,
     rateSettled,
   );
-  const shownReplyFormError =
-    replyFormError === 'loading' && replyAmountProblem !== 'quiet' ? null : replyFormError;
+  // A stored loading submit stays until the rate request finishes. A settled
+  // missing rate is the amount flag, not a reply-form code.
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
   const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-  const shownPayError = shownPaySheetError(payError, livePayProblem, 'amount', 'noRate');
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -3037,8 +3057,8 @@ export function ForumLoader({
         replyPosting={replyPosting}
         replyFormError={shownReplyFormError}
         replyTextTooLong={replyTextTooLong}
-        replyAmountNoRate={replyAmountProblem === 'no-rate'}
-        replyAmountInvalid={replyAmountProblem === 'invalid'}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
       />
     </>
   );

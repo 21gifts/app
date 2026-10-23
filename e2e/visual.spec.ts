@@ -18057,6 +18057,26 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-text');
   });
 
+  test('state /welcome ask-text-empty', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Write a message', { exact: true })).toBeVisible();
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await expect(cont).toBeEnabled();
+    await cont.click();
+    const alert = page.getByText('Enter a message or add a photo or video');
+    await expect(alert).toBeVisible();
+    await expect(cont).toBeDisabled();
+    await expect(page.getByLabel('Your message')).toHaveAttribute('aria-invalid', 'true');
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-ask-text-empty');
+  });
+
   test('state /welcome ask-preview', async ({ page }) => {
     await seedAda(page);
     await fulfillRateDay(page);
@@ -24540,6 +24560,58 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread');
   });
 
+  test('messages thread-send-empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('Hello team')).toBeVisible();
+    const send = page.getByRole('button', { name: 'Send' });
+    await expect(send).toBeEnabled();
+    await send.click();
+    const alert = page.getByText('Enter a message');
+    await expect(alert).toBeVisible();
+    await expect(send).toBeDisabled();
+    await expect(page.getByLabel('Your message')).toHaveAttribute('aria-invalid', 'true');
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-thread-send-empty');
+  });
+
   test('state /messages thread-mention-suggest', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -27335,6 +27407,23 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-empty');
+  });
+
+  test('moderate group send-empty', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, []);
+    await page.goto('/moderate/group');
+    await expect(page.getByLabel('Your message')).toBeVisible();
+    const send = page.getByRole('button', { name: 'Send' });
+    await expect(send).toBeEnabled();
+    await send.click();
+    const alert = page.getByText('Enter a message');
+    await expect(alert).toBeVisible();
+    await expect(send).toBeDisabled();
+    await expect(page.getByLabel('Your message')).toHaveAttribute('aria-invalid', 'true');
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-group-send-empty');
   });
 
   test('moderate group loading', async ({ page }) => {

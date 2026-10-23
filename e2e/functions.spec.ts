@@ -13452,15 +13452,18 @@ test('Function: shownDraftPayError — a fixed pay amount clears the field messa
   await expect(reply.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
-test('Function: shownPaySheetError — a loading submit stays only while the rate is quiet', async ({
+test('Function: shownPaySheetError — a loading submit stays until the rate request settles', async ({
   page,
 }) => {
-  expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate')).toBe('loading');
-  expect(shownPaySheetError('loading', null, 'amount', 'noRate')).toBeNull();
-  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate')).toBe('noRate');
-  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate')).toBe('amount');
-  expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate')).toBe('request');
-  expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate')).toBeNull();
+  expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', null, 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', null, 'amount', 'noRate', true)).toBeNull();
+  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', true)).toBe('noRate');
+  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', true)).toBe('amount');
+  expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate', false)).toBe('request');
+  expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate', false)).toBeNull();
   await seedSignedInAda(page);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -13552,6 +13555,13 @@ test('Function: shownPaySheetError — a loading submit stays only while the rat
   await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
   await cont.click();
   await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
+  await page.getByLabel('Amount').fill('');
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
+  await cont.click({ force: true });
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await page.getByLabel('Amount').fill('1.00');
   await expect(cont).toBeDisabled();
   release();
   await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();

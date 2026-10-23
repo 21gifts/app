@@ -888,6 +888,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:ask-text-empty",
+    "label": "/welcome ask-text-empty",
+    "visual": "state-welcome-ask-text-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-shop-elsewhere",
     "label": "/welcome ask-shop-elsewhere",
     "visual": "state-welcome-ask-shop-elsewhere",
@@ -3342,6 +3348,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-send-empty",
+    "label": "/messages thread-send-empty",
+    "visual": "state-messages-thread-send-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-translate",
     "label": "/messages thread-translate",
     "visual": "state-messages-thread-translate",
@@ -3903,6 +3915,12 @@
     "id": "/moderate/group:empty",
     "label": "/moderate/group empty",
     "visual": "state-moderate-group-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:send-empty",
+    "label": "/moderate/group send-empty",
+    "visual": "state-moderate-group-send-empty",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

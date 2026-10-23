@@ -807,6 +807,9 @@ export function PublicMessageThread(props: {
     if (session === null || payMessageId === null || payBusy) {
       return;
     }
+    if (payError === 'loading' && rateSeries === null) {
+      return;
+    }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
     if (payProblem === 'quiet') {
       setPayError('loading');
@@ -974,6 +977,9 @@ export function PublicMessageThread(props: {
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
+    if (replyFormError === 'loading' && rateSeries === null) {
+      return;
+    }
     const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const token = session;
@@ -1096,10 +1102,22 @@ export function PublicMessageThread(props: {
     rateSettled,
   );
   const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-  const shownPayError = shownPaySheetError(payError, livePayProblem, 'amount', 'noRate');
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   const replyExempt = isReplyPaymentExempt(account, note.accountId);
-  const shownReplyFormError =
-    replyFormError === 'loading' && replyAmountProblem !== 'quiet' ? null : replyFormError;
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
 
   return (
     <>
@@ -1206,8 +1224,8 @@ export function PublicMessageThread(props: {
             !replyExempt &&
             note.accountId !== undefined,
         )}
-        replyAmountNoRate={replyAmountProblem === 'no-rate'}
-        replyAmountInvalid={replyAmountProblem === 'invalid'}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
         onReplyPost={handleReplyPost}
         onRetryReplies={handleRetryReplies}
         onDeleted={handleDeleted}

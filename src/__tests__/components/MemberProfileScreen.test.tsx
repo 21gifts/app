@@ -1570,6 +1570,20 @@ describe('MemberProfileScreen', () => {
     expect(
       (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
     ).toBe(true);
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '' } });
+    expect(within(replyCard).getByRole('alert').textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    expect(
+      (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    fireEvent.submit(
+      (within(replyCard).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).closest(
+        'form',
+      )!,
+    );
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '1.00' } });
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
@@ -2858,7 +2872,14 @@ describe('MemberProfileScreen', () => {
     expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(form);
     expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

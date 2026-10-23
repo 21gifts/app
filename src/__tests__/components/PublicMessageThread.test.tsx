@@ -363,6 +363,14 @@ describe('PublicMessageThread', () => {
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    fireEvent.change(payAmountInput(), { target: { value: '' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    fireEvent.change(payAmountInput(), { target: { value: '1.00' } });
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });
@@ -1115,8 +1123,15 @@ describe('PublicMessageThread', () => {
     expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    fireEvent.change(replyAmountInput(), { target: { value: '' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(form);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(postMessage).not.toHaveBeenCalled();
+    fireEvent.change(replyAmountInput(), { target: { value: '1.00' } });
 
     await act(async () => {
       releaseStats({ spendOverTime: [] });

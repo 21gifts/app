@@ -5116,8 +5116,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: shownPaySheetError
 
-- **Purpose:** Pay-sheet or inbox error to render, including a submit that is waiting on the rate. `loading` stays only while the draft is still quiet. Once the rate request is no longer quiet, that stored code is dropped and the live draft problem decides.
-- **Inputs:** Stored request error, or `loading`, or `null`; the live draft problem; the invalid code; and the no-rate code.
+- **Purpose:** Pay-sheet or inbox error to render, including a submit that is waiting on the rate. `loading` stays until that request has settled, even when the draft is cleared, switched to bitcoin, or no longer quiet. After it settles, the live draft decides: no-rate, invalid, or nothing.
+- **Inputs:** Stored request error, or `loading`, or `null`; the live draft problem; the invalid code; the no-rate code; and whether the rate request has settled.
 - **Returns / side effects:** The error code to show, or `null`. No network.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`, `InboxLoader`, `MemberHabits`.
 

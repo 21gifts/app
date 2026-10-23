@@ -321,12 +321,15 @@ describe('payDraftProblem and replyDraftProblem', () => {
     expect(shownDraftPayError<string>(null, null, 'amount', 'noRate')).toBeNull();
   });
 
-  it('keeps a loading submit only while the rate is still quiet', () => {
-    expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate')).toBe('loading');
-    expect(shownPaySheetError('loading', null, 'amount', 'noRate')).toBeNull();
-    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate')).toBe('noRate');
-    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate')).toBe('amount');
-    expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate')).toBe('request');
-    expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate')).toBeNull();
+  it('keeps a loading submit until the rate request settles', () => {
+    expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', null, 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', null, 'amount', 'noRate', true)).toBeNull();
+    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', true)).toBe('noRate');
+    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', true)).toBe('amount');
+    expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate', false)).toBe('request');
+    expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate', false)).toBeNull();
   });
 });

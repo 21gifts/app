@@ -698,6 +698,9 @@ export function InboxLoader(): ReactElement | null {
     if (posting || preparing || payWaiting || invoice !== null) {
       return;
     }
+    if (formError === 'loading' && !rateSettled) {
+      return;
+    }
     const trimmed = draft.trim();
     const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
     if (amountProblem === 'quiet') {
@@ -916,7 +919,13 @@ export function InboxLoader(): ReactElement | null {
   const threadId = threadAllowed ? openId : null;
   const showFilter = staff;
   const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
-  const shownFormError = shownPaySheetError(formError, amountProblem, 'amount', 'noRate');
+  const shownFormError = shownPaySheetError(
+    formError,
+    amountProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   return (
     <InboxScreen
       conversations={waitingStaffRoom ? null : conversations}

@@ -1111,6 +1111,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-text-empty',
+    image: 'welcome-ask-text-empty.png',
+    visual: 'state-welcome-ask-text-empty',
+    needle: 'state /welcome ask-text-empty',
+  },
+  {
+    route: '/welcome',
     id: 'ask-shop-elsewhere',
     image: 'welcome-ask-shop-elsewhere.png',
     visual: 'state-welcome-ask-shop-elsewhere',
@@ -3976,6 +3983,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-send-empty',
+    image: 'messages-thread-send-empty.png',
+    visual: 'state-messages-thread-send-empty',
+    needle: 'messages thread-send-empty',
+  },
+  {
+    route: '/messages',
     id: 'thread-translate',
     image: 'messages-thread-translate.png',
     visual: 'state-messages-thread-translate',
@@ -4631,6 +4645,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-empty.png',
     visual: 'state-moderate-group-empty',
     needle: 'Your message',
+  },
+  {
+    route: '/moderate/group',
+    id: 'send-empty',
+    image: 'moderate-group-send-empty.png',
+    visual: 'state-moderate-group-send-empty',
+    needle: 'moderate group send-empty',
   },
   {
     route: '/moderate/group',

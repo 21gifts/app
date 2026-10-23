@@ -458,6 +458,9 @@ export function MemberHabits(): ReactElement {
       return;
     }
     /* v8 ignore stop */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
     if (payProblem === 'quiet') {
       setPayError('loading');
@@ -545,7 +548,7 @@ export function MemberHabits(): ReactElement {
   // accepted keeps that message until the amount changes.
   const shownHabitPayError =
     payError === 'loading'
-      ? shownPaySheetError(payError, habitPayProblem, 'habitAmount', 'noRate')
+      ? shownPaySheetError(payError, habitPayProblem, 'habitAmount', 'noRate', rateSettled)
       : habitPayProblem === null && payError === 'habitAmount'
         ? payError
         : shownDraftPayError(payError, habitPayProblem, 'habitAmount', 'noRate');

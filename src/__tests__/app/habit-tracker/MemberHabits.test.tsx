@@ -3075,6 +3075,14 @@ describe('MemberHabits', () => {
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
     await act(async () => {
       releaseStats?.({ spendOverTime: [] });
     });

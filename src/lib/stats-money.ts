@@ -594,14 +594,15 @@ export function shownDraftPayError<T extends string>(
 /**
  * Pay-sheet or inbox error to render, including a submit that is waiting
  * on the rate.
- * `loading` stays only while the draft is still quiet. Once the rate
- * request is no longer quiet, that stored code is dropped and the live
- * draft problem decides.
+ * `loading` stays until that rate request has settled, even when the draft
+ * is cleared, switched to bitcoin, or no longer quiet. After it settles,
+ * the live draft decides: no-rate, invalid, or nothing.
  *
  * @param stored - Error kept after submit, or `null`.
  * @param problem - Live draft problem.
  * @param invalidCode - Code for a draft that is not a payable amount.
  * @param noRateCode - Code for a settled missing rate.
+ * @param settled - True once the rate request has finished.
  * @returns The error to show.
  */
 export function shownPaySheetError<T extends string>(
@@ -609,12 +610,10 @@ export function shownPaySheetError<T extends string>(
   problem: DraftRateProblem,
   invalidCode: T,
   noRateCode: T,
+  settled: boolean,
 ): T | 'loading' | null {
-  if (stored === 'loading') {
-    if (problem === 'quiet') {
-      return 'loading';
-    }
-    return shownDraftPayError(null, problem, invalidCode, noRateCode);
+  if (stored === 'loading' && !settled) {
+    return 'loading';
   }
-  return shownDraftPayError(stored, problem, invalidCode, noRateCode);
+  return shownDraftPayError(stored === 'loading' ? null : stored, problem, invalidCode, noRateCode);
 }
