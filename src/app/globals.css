@@ -230,10 +230,6 @@ button.shop-place-marker.is-idle::before {
 button.shop-place-marker.is-none::before {
   background: #ffe3cc;
 }
-[role='option'].is-active {
-  outline: 1px solid #272b38;
-  outline-offset: -1px;
-}
 [hidden] {
   display: none !important;
 }

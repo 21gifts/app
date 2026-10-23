@@ -192,7 +192,11 @@ export function FilterMenu({
               role="option"
               tabIndex={-1}
               aria-selected={option.value === value}
-              className={index === activeIndex ? `${optionClass} is-active` : optionClass}
+              className={
+                index === activeIndex
+                  ? `${optionClass} is-active outline outline-1 -outline-offset-1 outline-[#272b38]`
+                  : optionClass
+              }
               onClick={(event) => {
                 event.stopPropagation();
                 choose(event, option.value);
