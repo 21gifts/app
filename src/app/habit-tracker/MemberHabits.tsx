@@ -157,6 +157,8 @@ export function MemberHabits(): ReactElement {
   const postedForSession = useRef<string | null>(null);
   const sessionVisit = useRef(0);
   const inFlightKeys = useRef(new Set<string>());
+  // Bumped when an edit is cancelled, so a late answer cannot mark the next open draft.
+  const editGeneration = useRef<Record<string, number>>({});
   const liveDrafts = useRef({
     addName: '',
     addDescription: '',
@@ -324,6 +326,8 @@ export function MemberHabits(): ReactElement {
     }
     const actor = session;
     const visit = sessionVisit.current;
+    const editId = body['action'] === 'edit' && typeof body['id'] === 'string' ? body['id'] : null;
+    const editGen = editId === null ? 0 : (editGeneration.current[editId] ?? 0);
     const key = JSON.stringify(body);
     // The request already waiting owns the reload. Do not start a second one.
     if (inFlightKeys.current.has(key)) {
@@ -390,15 +394,20 @@ export function MemberHabits(): ReactElement {
         return false;
       }
       if (field !== null && action === 'edit' && typeof body['id'] === 'string') {
+        if ((editGeneration.current[body['id']] ?? 0) !== editGen) {
+          return false;
+        }
         const draft = drafts.editByHabitId[body['id']];
+        /* v8 ignore next 3 -- cancel bumps the generation before it drops the draft, and a session change returns earlier */
+        if (draft === undefined) {
+          return false;
+        }
         const shown =
-          draft === undefined
-            ? undefined
-            : field === 'description'
-              ? draft.description
-              : field === 'notes'
-                ? draft.notes
-                : draft.name;
+          field === 'description'
+            ? draft.description
+            : field === 'notes'
+              ? draft.notes
+              : draft.name;
         if (body[field] !== shown) {
           return false;
         }
@@ -452,6 +461,7 @@ export function MemberHabits(): ReactElement {
   }
 
   function cancelEdit(habitId: string): void {
+    editGeneration.current[habitId] = (editGeneration.current[habitId] ?? 0) + 1;
     setEditingHabitId((current) => (current === habitId ? null : current));
     setEditByHabitId((current) => {
       const next = { ...current };

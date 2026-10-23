@@ -8247,12 +8247,13 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('maps a too-long paid-reply invoice error', async () => {
+  it('keeps the generic post error when a paid reply the form accepted is rejected as too long', async () => {
     invoiceMock.mockRejectedValue(new Error('text must be 1–8000 characters'));
     await expandForeignAndPayReply('Hi Bob', '21');
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('maps a rate-limited paid-reply invoice error', async () => {

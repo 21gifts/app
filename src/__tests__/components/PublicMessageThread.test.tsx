@@ -782,7 +782,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps an explicit-amount length error onto the reply error', async () => {
+  it('keeps the generic post error when a paid reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
@@ -791,8 +791,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(replyAmountInput(), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('maps an explicit-amount failure onto the reply error', async () => {
@@ -834,7 +835,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps a compose-pay length error onto the reply error', async () => {
+  it('keeps the generic post error when a compose reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
@@ -842,8 +843,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
@@ -1870,7 +1872,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps an over-long invoice comment onto the reply length error', async () => {
+  it('keeps the generic post error when a short invoice comment is rejected as too long', async () => {
     signIn();
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderThread();
@@ -1878,8 +1880,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('does not post a second reply while posting', async () => {

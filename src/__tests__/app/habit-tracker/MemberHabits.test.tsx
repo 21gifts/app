@@ -3138,6 +3138,55 @@ describe('MemberHabits', () => {
     ).toBe(false);
   });
 
+  it('drops a cancelled edit when that habit is open again with the same name', async () => {
+    const pending: Array<(value: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    await act(async () => {
+      pending[0]?.(json({ error: 'Invalid name' }, 400));
+    });
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('Could not load or save the tracker. Please try again.')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
   it('keeps a fiat Gift quiet until the rate settles, then names the missing rate', async () => {
     let releaseStats: ((body: unknown) => void) | undefined;
     vi.stubGlobal(

@@ -2523,13 +2523,8 @@ export function ForumLoader({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-            ? 'tooLong'
-            : isRateLimitError(err)
-              ? 'rateLimit'
-              : 'request',
-        );
+        // This invoice was sent only after the draft fit the stored limit.
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       setReplyPosting(false);

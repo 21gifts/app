@@ -165,7 +165,16 @@ export function InboxLoader(): ReactElement | null {
   // after `await`, when the setState updater has not run yet.
   const formErrorRef = useRef(formError);
   formErrorRef.current = formError;
+  const rateSettledRef = useRef(rateSettled);
+  rateSettledRef.current = rateSettled;
   const [photoAlert, setPhotoAlert] = useState<InboxPhotoAlert | null>(null);
+  // A photo picked while the rate is loading is only the extra sentence.
+  // Once that request has settled, the rejection is the stored error. A live
+  // invalid amount or a missing rate then wins until the draft is acceptable.
+  if (rateSettled && photoAlert !== null && formError === 'loading') {
+    setFormError(photoAlert);
+    setPhotoAlert(null);
+  }
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
@@ -670,7 +679,7 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setPhotoDrafts(nextPhotos);
-        const heldLoading = formErrorRef.current === 'loading';
+        const heldLoading = formErrorRef.current === 'loading' && !rateSettledRef.current;
         if (!heldLoading) {
           setFormError(nextError);
         }

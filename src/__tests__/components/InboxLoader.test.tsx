@@ -696,6 +696,89 @@ describe('InboxLoader', () => {
     },
   );
 
+  it('keeps a photo rejection off the amount once the rate settles', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    giftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    fireEvent.submit(send.closest('form')!);
+    expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const picked = Array.from(
+      { length: 11 },
+      (_, index) =>
+        new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    await act(async () => {
+      fireEvent.change(input, { target: { files: picked } });
+    });
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
+    expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    expect(screen.queryByText('You can add up to 10 photos')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+  });
+
+  it('keeps a photo picked after the rate settles off the amount error', async () => {
+    let releaseStats: (stats: { spendOverTime: never[] }) => void = () => undefined;
+    giftStatsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseStats = resolve;
+      }) as never,
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+    });
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.submit(screen.getByRole('button', { name: 'Send' }).closest('form')!);
+    expect(screen.getByText('The USD exchange rate is still loading.')).toBeTruthy();
+    await act(async () => {
+      releaseStats({ spendOverTime: [] });
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const picked = Array.from(
+      { length: 11 },
+      (_, index) =>
+        new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    await act(async () => {
+      fireEvent.change(input, { target: { files: picked } });
+    });
+    expect(screen.getByText('No USD exchange rate yet.')).toBeTruthy();
+    expect(screen.queryByText('You can add up to 10 photos')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+  });
+
   it.each([
     ['Too many payments', 'Too many payments. Please wait a moment and try again.'],
     [

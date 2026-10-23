@@ -2537,8 +2537,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('keeps the generic request copy when the compose-target invoice is gone', async () => {
@@ -2558,7 +2559,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('maps a compose-pay length error onto the reply error', async () => {
+  it('keeps the generic post error when a compose reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
@@ -2571,8 +2572,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
@@ -3092,7 +3094,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('maps an over-long invoice comment onto the reply length error', async () => {
+  it('keeps the generic post error when a paid reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
@@ -3105,8 +3107,9 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('shows a request error when an unpaid staff reply fails', async () => {
