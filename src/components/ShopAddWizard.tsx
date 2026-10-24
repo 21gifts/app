@@ -23,7 +23,7 @@ import {
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
-import { lookupAccountByUsername } from '@/lib/mention-search';
+import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** One step of the shop submission, after the closed button. */
@@ -45,6 +45,65 @@ function retreatShopStep(current: ShopAddStep | 'closed'): ShopAddStep | 'closed
   }
   /* v8 ignore stop */
   return (current - 1) as ShopAddStep;
+}
+
+const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
+
+/** First rows only. A longer list would be a second scroller, which the page forbids. */
+const SUGGESTION_LIMIT = 8;
+
+/** One account the shop field can attach. */
+interface ShopAccountSuggestion {
+  id: string;
+  username: string;
+  name: string;
+}
+
+/**
+ * Username prefix after a leading `@`, or `null` when the field is not a mention.
+ *
+ * Empty string means the field is exactly `@` and the first suggestion page applies.
+ * Any space, including a trailing one, is not a username and closes the list.
+ *
+ * @param draft - Current field value.
+ * @returns The lowercase prefix, `""`, or `null`.
+ */
+function mentionQuery(draft: string): string | null {
+  if (draft === '@') {
+    return '';
+  }
+  if (!draft.startsWith('@') || draft.includes(' ')) {
+    return null;
+  }
+  const query = draft.slice(1).toLowerCase();
+  if (!USERNAME_PREFIX.test(query)) {
+    return null;
+  }
+  return query;
+}
+
+/**
+ * Shop-account field value.
+ *
+ * Blank and a lone `@` stay `@`. A value that already starts with `@` is kept,
+ * including a space after it. Any other value gets one leading `@`.
+ *
+ * @param value - Parent username.
+ * @returns The value shown in the field.
+ */
+function accountFieldValue(value: string): string {
+  if (value === '' || value === '@') {
+    return '@';
+  }
+  if (value.startsWith('@')) {
+    return value;
+  }
+  return `@${value}`;
+}
+
+/** Username without a leading `@`, trimmed and lowercased. */
+function strippedHandle(value: string): string {
+  return value.trim().replace(/^@/, '').trim().toLowerCase();
 }
 
 /** A still or video already stored on the shop note. */
@@ -94,9 +153,9 @@ export interface ShopAddWizardProps {
   place: ForumPlacePin | null;
   /** Replace the map pin. */
   onPlaceChange: (place: ForumPlacePin | null) => void;
-  /** Optional 21.gifts username, without a required \@. */
+  /** 21.gifts username. The account step shows it with a leading \@. */
   username: string;
-  /** Replace the optional username. */
+  /** Replace the username. The account step always sends a value that starts with \@. */
   onUsernameChange: (username: string) => void;
   /** Send the shop from the summary. */
   onSubmit: () => void;
@@ -151,11 +210,13 @@ function photoErrorKey(
 
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
- * are photos, place, text, an optional 21.gifts username, then a summary
+ * are photos, place, text, a required 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
- * soon as `@` is typed. A failed optional-account lookup does not block the
- * API-validated submit. Adding a shop shows Next on the photo step.
- * Edit mode shows an icon-only Close (X) there. Its accessible name is Cancel.
+ * soon as `@` is typed. The account step starts at `@` and lists people
+ * whose username starts with what was typed. A failed account lookup does
+ * not block the API-validated submit. An empty handle does. Adding a shop
+ * shows Next on the photo step. Edit mode shows an icon-only Close (X)
+ * there. Its accessible name is Cancel.
  *
  * @param props - Draft fields and the send callback.
  * @returns The button, or the current step.
@@ -207,13 +268,18 @@ export function ShopAddWizard({
   // Skip the mount run. useState already opened on the right step, and
   // repeating it undoes a Next click from the same turn the editor opened.
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
-  const initialUsername = useRef(username);
+  const initialHandle = useRef(strippedHandle(username));
   const lastAutoOpenedPlaceProblem = useRef<ShopApiProblem | null>(null);
   const rejectionFocusStep = useRef<1 | 3 | 4 | null>(null);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
     'idle' | 'checking' | 'found' | 'missing' | 'failed'
   >('idle');
+  const [seed, setSeed] = useState<readonly ShopAccountSuggestion[]>([]);
+  const [remote, setRemote] = useState<{
+    query: string;
+    rows: readonly ShopAccountSuggestion[];
+  } | null>(null);
 
   useEffect(() => {
     const key = `${mode}:${String(resetToken)}`;
@@ -280,8 +346,19 @@ export function ShopAddWizard({
     control!.focus();
   }, [accountUsernameId, photoAddButtonId, step]);
 
-  const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
+  const normalizedUsername = strippedHandle(username);
+  const accountValue = accountFieldValue(username);
+  const mentionPrefix = session !== null && step === 4 ? mentionQuery(accountValue) : null;
   const usernameFormatProblem = shopUsernameProblem(username);
+  useEffect(() => {
+    if (step !== 4) {
+      return;
+    }
+    const next = accountFieldValue(username);
+    if (next !== username) {
+      onUsernameChange(next);
+    }
+  }, [onUsernameChange, step, username]);
   useEffect(() => {
     if (normalizedUsername === '') {
       setUsernameLookup('idle');
@@ -291,7 +368,12 @@ export function ShopAddWizard({
       setUsernameLookup('idle');
       return;
     }
-    if (session === null || (mode === 'edit' && username === initialUsername.current)) {
+    if (
+      session === null ||
+      (mode === 'edit' &&
+        initialHandle.current !== '' &&
+        normalizedUsername === initialHandle.current)
+    ) {
       setUsernameLookup('found');
       return;
     }
@@ -313,6 +395,43 @@ export function ShopAddWizard({
       window.clearTimeout(timer);
     };
   }, [mode, normalizedUsername, session, username, usernameFormatProblem]);
+  useEffect(() => {
+    if (session === null || mentionPrefix === null) {
+      setSeed([]);
+      setRemote(null);
+      return;
+    }
+    const current = session;
+    const requested = mentionPrefix;
+    let cancelled = false;
+    if (requested !== '') {
+      setRemote(null);
+    }
+    void searchMentionAccounts(current, requested)
+      .then((rows) => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed(rows);
+          return;
+        }
+        setRemote({ query: requested, rows });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed([]);
+          return;
+        }
+        setRemote({ query: requested, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mentionPrefix, session]);
 
   useLayoutEffect(() => {
     if (step === 'closed' || step === 1) {
@@ -359,6 +478,7 @@ export function ShopAddWizard({
       : normalizedUsername !== '' && usernameLookup === 'missing'
         ? 'missing'
         : null;
+  const usernameEmpty = normalizedUsername === '';
   const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
   const descriptionServerProblem = serverProblemField === 'text';
   const usernameServerProblem = serverProblemField === 'username';
@@ -374,7 +494,8 @@ export function ShopAddWizard({
     (step === 1 && photoRejected) ||
     (step === 2 && (!placeComplete || placeServerProblem)) ||
     (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
-    (step === 4 && (usernameProblem !== null || usernamePending || usernameServerProblem));
+    (step === 4 &&
+      (usernameEmpty || usernameProblem !== null || usernamePending || usernameServerProblem));
   const submitDisabled =
     posting ||
     !summaryArmed ||
@@ -382,6 +503,7 @@ export function ShopAddWizard({
     placeServerProblem ||
     descriptionProblem !== null ||
     descriptionServerProblem ||
+    usernameEmpty ||
     usernameProblem !== null ||
     usernamePending ||
     usernameServerProblem;
@@ -405,7 +527,7 @@ export function ShopAddWizard({
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
           : undefined;
-  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
+  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountRequired');
   // While a send is in flight (for example the fee sheet), the parent may clear the draft.
   const summaryProblem =
     step !== 5 || posting
@@ -423,6 +545,15 @@ export function ShopAddWizard({
               : usernamePending
                 ? t('shops.usernameChecking')
                 : null;
+  const accountSuggestions = (
+    mentionPrefix === null
+      ? []
+      : mentionPrefix === ''
+        ? seed
+        : remote !== null && remote.query === mentionPrefix
+          ? remote.rows
+          : seed.filter((row) => row.username.toLowerCase().startsWith(mentionPrefix))
+  ).slice(0, SUGGESTION_LIMIT);
 
   return (
     <form
@@ -646,14 +777,56 @@ export function ShopAddWizard({
           <Field
             id={accountUsernameId}
             label={t('shops.accountLabel')}
-            value={username}
-            disabled={posting}
+            value={accountValue}
+            disabled={stepsLocked}
             hint={usernameHint}
+            autoComplete="off"
+            aria-autocomplete="list"
+            {...(accountSuggestions.length > 0
+              ? { 'aria-controls': `${idPrefix}-account-suggest` }
+              : {})}
             {...(usernameError === undefined
               ? {}
               : { error: usernameError, errorAnnounce: usernameServerProblem })}
-            onChange={(event) => onUsernameChange(event.target.value)}
+            onChange={(event) => {
+              onUsernameChange(accountFieldValue(event.target.value));
+            }}
           />
+          {accountSuggestions.length > 0 ? (
+            <ul
+              id={`${idPrefix}-account-suggest`}
+              role="listbox"
+              aria-label={t('forum.mentionSuggest')}
+              className="rounded-xl border border-app-border bg-app-card p-2"
+            >
+              {accountSuggestions.map((row) => (
+                <li key={row.id} role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={
+                      accountValue.trim().toLowerCase() === `@${row.username.toLowerCase()}`
+                    }
+                    aria-label={`@${row.username}`}
+                    disabled={stepsLocked}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      onUsernameChange(`@${row.username}`);
+                    }}
+                    onClick={() => {
+                      onUsernameChange(`@${row.username}`);
+                    }}
+                  >
+                    <span className="font-medium">@{row.username}</span>
+                    {row.name !== row.username ? (
+                      <span className="text-app-muted">{row.name}</span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       ) : null}
       {step === 5 ? (

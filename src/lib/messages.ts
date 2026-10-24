@@ -865,7 +865,7 @@ const en = {
   'shops.next': 'Next',
   'shops.back': 'Back',
   'shops.cancel': 'Cancel',
-  'shops.accountOptional': 'Optional. Leave blank to skip.',
+  'shops.accountRequired': 'Type or pick the 21.gifts username to continue.',
   'shops.accountLabel': '21.gifts username',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -948,6 +948,7 @@ const en = {
     'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
   'shops.problemUsernameMissing':
     'No account with that username. Check the spelling of the 21.gifts username.',
+  'shops.problemUsernameRequired': 'Choose a 21.gifts user to continue.',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -2121,7 +2122,7 @@ const de = {
   'shops.next': 'Weiter',
   'shops.back': 'Zurück',
   'shops.cancel': 'Abbrechen',
-  'shops.accountOptional': 'Optional. Leer lassen, um zu überspringen.',
+  'shops.accountRequired': 'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus.',
   'shops.accountLabel': '21.gifts-Benutzername',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -2206,6 +2207,7 @@ const de = {
     'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
   'shops.problemUsernameMissing':
     'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
+  'shops.problemUsernameRequired': 'Wählen Sie einen 21.gifts-Nutzer, um fortzufahren.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -3383,7 +3385,7 @@ const es = {
   'shops.next': 'Siguiente',
   'shops.back': 'Atrás',
   'shops.cancel': 'Cancelar',
-  'shops.accountOptional': 'Opcional. Déjalo en blanco para saltarlo.',
+  'shops.accountRequired': 'Escribe o elige el usuario de 21.gifts para continuar.',
   'shops.accountLabel': 'Usuario de 21.gifts',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -3468,6 +3470,7 @@ const es = {
     'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
   'shops.problemUsernameMissing':
     'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
+  'shops.problemUsernameRequired': 'Elige un usuario de 21.gifts para continuar.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -4642,7 +4645,7 @@ const fil = {
   'shops.next': 'Susunod',
   'shops.back': 'Bumalik',
   'shops.cancel': 'Kanselahin',
-  'shops.accountOptional': 'Opsyonal. Iwanang blangko para laktawan.',
+  'shops.accountRequired': 'I-type o piliin ang username sa 21.gifts para magpatuloy.',
   'shops.accountLabel': 'Username sa 21.gifts',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -4727,6 +4730,7 @@ const fil = {
     'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
   'shops.problemUsernameMissing':
     'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
+  'shops.problemUsernameRequired': 'Pumili ng user sa 21.gifts para magpatuloy.',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',

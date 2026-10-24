@@ -207,23 +207,18 @@ describe('ShopAccountControl', () => {
     expect(screen.getByRole('alert').textContent).toContain('Use 1–32 characters');
   });
 
-  it('removes the account with a null username', async () => {
+  it('does not offer to remove the shop account', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    vi.mocked(setMessageShopAccount).mockResolvedValue(shopMessage);
-    const onUpdated = vi.fn();
     renderWithLocale(
       <ShopAccountControl
         message={{ ...shopMessage, shopAccount: lunaAccount }}
-        onUpdated={onUpdated}
+        onUpdated={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit account' }));
     expect((screen.getByLabelText('Username') as HTMLInputElement).value).toBe('@luna');
-    fireEvent.click(screen.getByRole('button', { name: 'Remove account' }));
-    await waitFor(() => {
-      expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
-    });
-    expect(onUpdated).toHaveBeenCalledWith('shop1', null);
+    expect(screen.queryByRole('button', { name: 'Remove account' })).toBeNull();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
   it('strips one leading @ before save', async () => {
@@ -432,25 +427,6 @@ describe('ShopAccountControl', () => {
       rejectAda?.(new Error('late'));
     });
     expect(save).toHaveProperty('disabled', false);
-  });
-
-  it('shows the save-failed alert when remove throws', async () => {
-    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('Could not save account'));
-    const onUpdated = vi.fn();
-    renderWithLocale(
-      <ShopAccountControl
-        message={{ ...shopMessage, shopAccount: lunaAccount }}
-        onUpdated={onUpdated}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit account' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove account' }));
-    expect(
-      await screen.findByText('The account could not be saved. Please try again.'),
-    ).toBeTruthy();
-    expect(onUpdated).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Remove account' })).toBeTruthy();
   });
 
   it('passes null when the saved message omits shopAccount', async () => {

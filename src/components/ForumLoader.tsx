@@ -357,7 +357,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
   });
 }
 
-/** Optional shop handle for a shops-feed post, or null when unset. */
+/** Shop handle for a shops-feed post, or null when the field has no username. */
 function composeShopUsername(feed: 'living-room' | 'shops', username: string): string | null {
   if (feed !== 'shops') {
     return null;
@@ -369,7 +369,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
 /**
  * Client loader for the public forum on `/welcome`. Also used on `/shops` with
  * `feed="shops"` (hashtag filter, no laws hint, **Add a shop** instead of the
- * living-room composer, compose appends `#21GiftsShop`, optional shop username
+ * living-room composer, compose appends `#21GiftsShop`, a required shop username
  * on create, staff place editor and staff account editor on listed shop notes).
  *
  * Reads the session and account from the auth store, fetches the first page of
@@ -466,7 +466,7 @@ export function ForumLoader({
     ]);
   };
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
-  const [shopUsername, setShopUsername] = useState('');
+  const [shopUsername, setShopUsername] = useState('@');
   const [shopResetToken, setShopResetToken] = useState(0);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [photoEpoch, setPhotoEpoch] = useState(0);
@@ -1928,7 +1928,7 @@ export function ForumLoader({
     setAskCadence('once');
     setAskObligation('donation');
     setPlaceDraft(null);
-    setShopUsername('');
+    setShopUsername('@');
     pendingComposeShopUsernameRef.current = null;
     setShopResetToken((token) => token + 1);
     setPhotoDrafts([]);
@@ -1986,18 +1986,22 @@ export function ForumLoader({
         return;
       }
       const handle = composeShopUsername(feed, shopUsername);
-      if (handle !== null) {
-        try {
-          const verdict = await lookupAccountByUsername(session, handle);
-          if (verdict === 'missing') {
-            setFormError('usernameMissing');
-            notePostInFlightRef.current = false;
-            setPosting(false);
-            return;
-          }
-        } catch {
-          // A failed optional lookup does not block; the posting API validates it.
+      if (handle === null) {
+        setFormError('usernameRequired');
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      try {
+        const verdict = await lookupAccountByUsername(session, handle);
+        if (verdict === 'missing') {
+          setFormError('usernameMissing');
+          notePostInFlightRef.current = false;
+          setPosting(false);
+          return;
         }
+      } catch {
+        // A failed lookup does not block; the posting API validates it.
       }
     }
     let awaitingPay = false;

@@ -179,6 +179,7 @@ const shopMessage: ForumMessage = {
   role: 'basis',
   replyCount: 0,
   place: COMPLETE_PLACE,
+  shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
 };
 
 beforeEach(() => {
@@ -521,6 +522,7 @@ describe('ShopNoteEditControl', () => {
       'No account with that username. Check the spelling of the 21.gifts username.',
       4,
     ],
+    ['A shop note needs a shop account', 'Choose a 21.gifts user to continue.', 4],
     [
       'Text must be 1–8000 characters',
       'The shop text must be 20 to 1000 characters and longer than the shop name.',
@@ -1480,10 +1482,9 @@ describe('ShopNoteEditControl', () => {
     expect(setMessageShopText).not.toHaveBeenCalled();
   });
 
-  it('clears a shop user without sending stills', async () => {
+  it('keeps Next disabled when the shop user is cleared', () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
     renderWithLocale(
       <ShopNoteEditControl
         message={{
@@ -1498,11 +1499,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    await waitFor(() => {
-      expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
-    });
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
   });
 
@@ -1907,7 +1906,12 @@ describe('ShopNoteEditControl', () => {
     vi.mocked(setMessageShopText).mockResolvedValue(textResult);
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('no'));
     const onUpdated = vi.fn();
-    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, shopAccount: undefined }}
+        onUpdated={onUpdated}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));

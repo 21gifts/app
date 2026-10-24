@@ -795,6 +795,39 @@ async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<v
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 }
 
+/**
+ * Accept a shop username so the required step can continue.
+ * A 404 would show “no account” and keep Next disabled.
+ */
+async function acceptShopUsername(page: Page, username = 'ada'): Promise<void> {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+    const asked = decodeURIComponent(
+      new URL(route.request().url()).pathname.split('/').pop() ?? '',
+    );
+    const handle = asked === '' ? username : asked;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: `acc-${handle}`, username: handle, name: 'Ada' }),
+    });
+  });
+  const lookup = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+  );
+  await page.getByLabel('21.gifts username').fill(username);
+  await lookup;
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+}
+
+/** Leave the shop username step. A stored account is left as it is. */
+async function continueFromShopUsername(page: Page): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  if (await next.isDisabled()) {
+    await acceptShopUsername(page);
+  }
+  await next.click();
+}
+
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 async function fulfillPublicThreadReplies(
   page: Page,
@@ -883,7 +916,7 @@ async function saveChangedShopText(page: Page): Promise<void> {
     .getByLabel('Shop text')
     .fill('Cafe Luna is open every morning and on Sunday afternoons.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await continueFromShopUsername(page);
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await page.getByRole('button', { name: 'Save changes' }).click();
 }
@@ -1132,7 +1165,11 @@ async function showPreparingShopPhoto(
     '5 / 5 · Summary',
   ];
   for (let click = 0; click < nextClicks; click += 1) {
-    await page.getByRole('button', { name: 'Next' }).click();
+    if (click === 3) {
+      await continueFromShopUsername(page);
+    } else {
+      await page.getByRole('button', { name: 'Next' }).click();
+    }
   }
   if (nextClicks > 0) {
     await expect(page.getByText(titles[nextClicks] ?? '')).toBeVisible();
@@ -1178,14 +1215,53 @@ async function pickShopPhotoError(
   );
 }
 
-/** Submit a newly picked edit photo and wait for the API rejection to return to Photos. */
-async function submitRejectedShopPhotoEdit(page: Page): Promise<void> {
+/**
+ * Submit a newly picked edit photo and wait for the API rejection to return to Photos.
+ * The map drops a pin whose save omits `place`, which unmounts the editor before the
+ * photo rejection can return to Photos. Callers whose note already has a pin pass it.
+ */
+async function submitRejectedShopPhotoEdit(
+  page: Page,
+  place?: {
+    lat: number;
+    lng: number;
+    label?: string | null;
+    address?: {
+      street: string;
+      houseNumber: string;
+      postalCode: string;
+      city: string;
+      country: string;
+    } | null;
+  },
+): Promise<void> {
+  await page.route(/\/forum\/messages\/[^/]+\/shop-account$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-shop',
+        name: 'Ada',
+        text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        shopAccount: { id: 'acc-ada', username: 'ada', name: 'Ada' },
+        ...(place === undefined ? {} : { place }),
+      }),
+    });
+  });
   await page
     .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
     .setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({ timeout: 10_000 });
   for (let step = 1; step < 5; step += 1) {
-    await page.getByRole('button', { name: 'Next' }).click();
+    if (step === 4) {
+      await continueFromShopUsername(page);
+    } else {
+      await page.getByRole('button', { name: 'Next' }).click();
+    }
   }
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -4593,7 +4669,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -8344,7 +8420,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -13399,7 +13475,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -21652,7 +21728,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -21947,7 +22023,13 @@ test.describe('shops screens', () => {
 
   test('shops map-edit-photos-format-or-size', async ({ page }) => {
     await openShopsEditor(page, 'map', false, true);
-    await submitRejectedShopPhotoEdit(page);
+    // The places list shows Happyland. Echo that pin so the save does not
+    // rename the row to the note's postal address and shift the editor.
+    await submitRejectedShopPhotoEdit(page, {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Happyland',
+    });
     const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
     await expect(error).toBeVisible();
     await error.scrollIntoViewIfNeeded();
@@ -22303,7 +22385,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -23135,7 +23217,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -23322,7 +23404,7 @@ test.describe('shops screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
     const alert = page.getByText('Could not save this shop note');
@@ -24432,8 +24514,7 @@ test.describe('shops screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-user-invalid');
-    await page.getByLabel('21.gifts username').fill('');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByText("Kiki's Bakery")).toBeVisible();
     await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
@@ -24501,7 +24582,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const error = page.getByText(
@@ -24685,7 +24766,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
     await expect(post).toBeEnabled();

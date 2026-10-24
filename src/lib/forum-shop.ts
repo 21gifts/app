@@ -53,7 +53,8 @@ export type ShopApiProblem =
   | 'shopDescriptionControls'
   | 'placeAddress'
   | 'usernameInvalid'
-  | 'usernameMissing';
+  | 'usernameMissing'
+  | 'usernameRequired';
 
 /** Visitor-facing catalog key for each {@link ShopApiProblem}, from the API or the pre-fee guard. */
 export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
@@ -67,6 +68,7 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   placeAddress: 'shops.problemAddressInvalid',
   usernameInvalid: 'login.nameInvalid',
   usernameMissing: 'shops.problemUsernameMissing',
+  usernameRequired: 'shops.problemUsernameRequired',
 };
 
 /**
@@ -89,7 +91,11 @@ export function shopProblemField(problem: ShopApiProblem): 'place' | 'text' | 'u
   if (problem === 'shopDescription' || problem === 'shopDescriptionControls') {
     return 'text';
   }
-  if (problem === 'usernameInvalid' || problem === 'usernameMissing') {
+  if (
+    problem === 'usernameInvalid' ||
+    problem === 'usernameMissing' ||
+    problem === 'usernameRequired'
+  ) {
     return 'username';
   }
   return 'place';
@@ -109,6 +115,7 @@ const PLACE_ADDRESS_INVALID = 'Place address is invalid';
 const PLACE_LABEL_LONG = 'Place label must be at most 80 characters';
 const USERNAME_INVALID = 'Username is not valid';
 const USERNAME_MISSING = 'No account with that username';
+const SHOP_ACCOUNT_REQUIRED = 'A shop note needs a shop account';
 const TEXT_RANGE = new Set([
   'Text must be 1–8000 characters',
   'Text must be 1–8000 characters or include a photo',
@@ -418,9 +425,12 @@ export function shopDescriptionProblem(
 }
 
 /**
- * Optional shop-account username format problem, mirroring the API regex.
+ * Shop-account username format problem, mirroring the API regex.
  *
- * @param raw - Optional username with or without one leading `@`.
+ * An empty handle is not a format error. The shop composer treats that as
+ * required on its own, and the API rejects a top-level shop that has none.
+ *
+ * @param raw - Username with or without one leading `@`.
  * @returns `'format'` when non-empty input is invalid, otherwise `null`. A bare
  * `@` counts as empty, like in the API.
  */
@@ -524,6 +534,9 @@ export function shopApiProblem(message: string, shop: boolean): ShopApiProblem |
   }
   if (message === USERNAME_MISSING) {
     return 'usernameMissing';
+  }
+  if (message === SHOP_ACCOUNT_REQUIRED) {
+    return 'usernameRequired';
   }
   return null;
 }

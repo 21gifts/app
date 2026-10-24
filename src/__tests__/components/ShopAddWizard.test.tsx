@@ -222,8 +222,10 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByText('Describe the shop in at least 20 more characters.')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@luna');
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
-    expect(onUsernameChange).toHaveBeenCalledWith('luna');
+    expect(onUsernameChange).toHaveBeenCalledWith('@luna');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
     expect(screen.getByText('2')).toBeTruthy();
@@ -261,6 +263,7 @@ describe('ShopAddWizard', () => {
             submitLabel: 'Save changes',
             draft: SHOP_DESCRIPTION,
             place: COMPLETE_PLACE,
+            username: '@luna',
             serverProblem,
             onSubmit: () => setServerProblem('shopDescription'),
           })}
@@ -319,6 +322,7 @@ describe('ShopAddWizard', () => {
           {...props({
             draft: SHOP_DESCRIPTION,
             place: COMPLETE_PLACE,
+            username: '@luna',
             photoError,
             onSubmit: () => setPhotoError('tooLarge'),
           })}
@@ -418,6 +422,7 @@ describe('ShopAddWizard', () => {
             {...props({
               draft: paying ? '' : SHOP_DESCRIPTION,
               place: COMPLETE_PLACE,
+              username: '@luna',
               posting: paying,
             })}
           />
@@ -540,6 +545,7 @@ describe('ShopAddWizard', () => {
         {...props({
           place: COMPLETE_PLACE,
           draft: SHOP_DESCRIPTION,
+          username: '@luna',
           photoDrafts: [photo],
         })}
       />,
@@ -641,6 +647,7 @@ describe('ShopAddWizard', () => {
               place,
               onPlaceChange: setPlace,
               draft: SHOP_DESCRIPTION,
+              username: '@luna',
             })}
           />
         </>
@@ -696,7 +703,14 @@ describe('ShopAddWizard', () => {
           >
             Drop pin name
           </button>
-          <ShopAddWizard {...props({ place, onPlaceChange: setPlace, draft: SHOP_DESCRIPTION })} />
+          <ShopAddWizard
+            {...props({
+              place,
+              onPlaceChange: setPlace,
+              draft: SHOP_DESCRIPTION,
+              username: '@luna',
+            })}
+          />
         </>
       );
     }
@@ -718,12 +732,18 @@ describe('ShopAddWizard', () => {
 
   it('shows a pending username check when the account changes on the summary', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    lookupAccount.mockImplementation(() => new Promise<never>(() => undefined));
+    lookupAccount.mockResolvedValue('found');
     function SummaryHost(): ReactElement {
-      const [username, setUsername] = useState('');
+      const [username, setUsername] = useState('@ada');
       return (
         <>
-          <button type="button" onClick={() => setUsername('luna')}>
+          <button
+            type="button"
+            onClick={() => {
+              lookupAccount.mockImplementation(() => new Promise<never>(() => undefined));
+              setUsername('luna');
+            }}
+          >
             Set summary username
           </button>
           <ShopAddWizard
@@ -742,7 +762,11 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set summary username' }));
     expect(await screen.findByText('Checking that account…')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
@@ -803,6 +827,7 @@ describe('ShopAddWizard', () => {
           keptMedia: [{ url: 'blob:still', kind: 'photo' }],
           place: COMPLETE_PLACE,
           draft: SHOP_DESCRIPTION,
+          username: '@luna',
         })}
       />,
     );
@@ -852,6 +877,58 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
   });
 
+  it('lists people whose username starts with the typed letter', async () => {
+    searchPeople.mockImplementation(async (_session, query) => {
+      if (query === '') {
+        return [
+          { id: 'acc-ada', username: 'ada', name: 'Ada' },
+          { id: 'acc-adam', username: 'adam', name: 'Adam' },
+        ];
+      }
+      if (query === 'c') {
+        return [
+          { id: 'acc-cafe', username: 'cafe', name: 'Cafe' },
+          { id: 'acc-coco', username: 'coco', name: 'Coco' },
+        ];
+      }
+      return [];
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    function UsernameHost(): ReactElement {
+      const [username, setUsername] = useState('@');
+      const [draft, setDraft] = useState('');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft,
+            onDraftChange: setDraft,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<UsernameHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username') as HTMLInputElement;
+    expect(field.value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@adam' })).toBeTruthy();
+    fireEvent.change(field, { target: { value: 'C' } });
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@C');
+    expect(await screen.findByRole('option', { name: '@cafe' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@coco' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: '@cafe' }));
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@cafe');
+  });
+
   it.each([
     ['tooMany' as const, 'You can add up to 10 photos'],
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
@@ -893,6 +970,7 @@ describe('ShopAddWizard', () => {
             {...props({
               draft: SHOP_DESCRIPTION,
               place: COMPLETE_PLACE,
+              username: '@luna',
               photoError,
             })}
           />
@@ -1117,6 +1195,11 @@ describe('ShopAddWizard', () => {
       '4 / 5 · 21.gifts user',
       'No account with that username. Check the spelling of the 21.gifts username.',
     ],
+    [
+      'usernameRequired' as const,
+      '4 / 5 · 21.gifts user',
+      'Choose a 21.gifts user to continue.',
+    ],
   ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
     renderWizard(
       <ShopAddWizard
@@ -1139,7 +1222,11 @@ describe('ShopAddWizard', () => {
       expect(screen.getByText(message)).toBeTruthy();
       const alert = screen.getByRole('alert');
       expect(alert.textContent).toBe(message);
-      if (serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing') {
+      if (
+        serverProblem === 'usernameInvalid' ||
+        serverProblem === 'usernameMissing' ||
+        serverProblem === 'usernameRequired'
+      ) {
         const username = screen.getByLabelText('21.gifts username');
         expect(alert.tagName).toBe('SPAN');
         expect(alert.id).toBe(`${username.id}-error`);

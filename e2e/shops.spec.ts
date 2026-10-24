@@ -421,7 +421,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Cafe Luna is open every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
   await expect(post).toBeEnabled();
   await post.evaluate((element) => {
@@ -593,6 +593,19 @@ async function fillShopAddress(
   await address.getByLabel('Country', { exact: true }).selectOption('CH');
 }
 
+/** Leave the required shop-user step. An empty @ keeps Next off until a handle is entered. */
+async function passRequiredShopUser(
+  page: import('@playwright/test').Page,
+  username = 'ada',
+): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  if (await next.isDisabled()) {
+    await page.getByLabel('21.gifts username').fill(username);
+    await expect(next).toBeEnabled();
+  }
+  await next.click();
+}
+
 test('Function: ShopNoteEditControl — moderator sees the pencil; basis does not', async ({
   page,
 }) => {
@@ -654,7 +667,12 @@ test('Function: fetchShopNoteEdits — opening the pencil shows who edited the n
 test('Function: setMessageShopPhotos — moderator save replaces stills', async ({ page }) => {
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [
-    { ...STAFF_SHOP_NOTE_COMPLETE, hasPhoto: true, photoCount: 1 },
+    {
+      ...STAFF_SHOP_NOTE_COMPLETE,
+      hasPhoto: true,
+      photoCount: 1,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
   ]);
   await page.route('**/messages/m-staff/photo*', async (route) => {
     await route.fulfill({
@@ -712,7 +730,12 @@ test('Function: setMessageShopPhotos — moderator save replaces stills', async 
 
 test('Function: setMessageShopText — moderator save updates the shop note', async ({ page }) => {
   await seedAda(page, 'moderator');
-  await fulfillForumMessages(page, [STAFF_SHOP_NOTE_COMPLETE]);
+  await fulfillForumMessages(page, [
+    {
+      ...STAFF_SHOP_NOTE_COMPLETE,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
+  ]);
   await page.route(
     (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
     async (route) => {
@@ -974,7 +997,7 @@ test('Function: countryDisplayName — confirmed pin shows Switzerland', async (
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
 });
 
@@ -1060,7 +1083,7 @@ test('shop summary keeps Post disabled with an off-screen reason', async ({ page
   await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await expect(page.getByText(/Describe the shop in at least 20 more characters/)).toBeVisible();
   await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
-  await page.getByRole('button', { name: 'Next' }).click();
+  await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
   await expect(page.locator('form').getByRole('button', { name: 'Post' })).toBeDisabled();
@@ -1287,7 +1310,7 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
 
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -1428,7 +1451,7 @@ test('Function: formatShopAddressLine — summary shows the address line', async
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
 });
 

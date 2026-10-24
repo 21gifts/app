@@ -1,6 +1,6 @@
 'use client';
 
-import { User, X } from 'lucide-react';
+import { User } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
@@ -133,7 +133,7 @@ function clampIntoBand(
 export interface ShopAccountControlProps {
   /** Top-level shop note to attach an account to. */
   message: ForumMessage;
-  /** Apply the saved account (or `null` when cleared) to the listed row. */
+  /** Apply the saved account to the listed row. */
   onUpdated: (
     messageId: string,
     shopAccount: { id: string; username: string; name: string } | null,
@@ -386,21 +386,6 @@ export function ShopAccountControl({
     }
   };
 
-  const removeAccount = async (): Promise<void> => {
-    setSaving(true);
-    setErrorKey(null);
-    try {
-      await setMessageShopAccount(token, message.id, null);
-      onUpdated(message.id, null);
-      setOpen(false);
-      setErrorKey(null);
-    } catch {
-      setErrorKey('failed');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div
       ref={anchorRef}
@@ -531,21 +516,6 @@ export function ShopAccountControl({
           >
             {t('forum.shopAccountSave')}
           </Button>
-          {hasAccount ? (
-            <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="mt-3"
-              aria-label={t('forum.shopAccountRemove')}
-              disabled={saving}
-              onClick={() => {
-                void removeAccount();
-              }}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          ) : null}
         </div>
       ) : null}
     </div>
