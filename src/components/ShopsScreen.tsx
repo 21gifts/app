@@ -3,37 +3,38 @@
 import { Suspense, useLayoutEffect, useState, type ReactElement } from 'react';
 import { ForumLoader } from '@/components/ForumLoader';
 import { PlacesMapScreen } from '@/components/PlacesMapScreen';
+import { ShopList } from '@/components/ShopList';
 import { ShopTable } from '@/components/ShopTable';
 import { ShopsViewSwitch, type ShopsView } from '@/components/ShopsViewSwitch';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card } from '@/components/ui';
 
 /**
- * View named by `/shops#map`, `/shops#table`, or `/shops#post`.
+ * View named by `/shops#list`, `/shops#post`, `/shops#map`, or `/shops#table`.
  *
- * @param hash - `location.hash`, with or without `#`.
+ * @param hash - `location.hash`, with or without one leading `#`.
  * @returns The view, or null when the hash is empty or unknown.
  */
 function shopsViewFromHash(hash: string): ShopsView | null {
   const name = hash.replace(/^#/, '').trim().toLowerCase();
-  if (name === 'post' || name === 'map' || name === 'table') {
+  if (name === 'list' || name === 'post' || name === 'map' || name === 'table') {
     return name;
   }
   return null;
 }
 
-/** Write the shops view into the URL without adding a history entry. Post clears the hash. */
+/** Write the shops view into the URL without adding a history entry. List clears the hash. */
 function writeShopsHash(view: ShopsView): void {
-  const hash = view === 'post' ? '' : `#${view}`;
+  const hash = view === 'list' ? '' : `#${view}`;
   const next = `${window.location.pathname}${window.location.search}${hash}`;
   window.history.replaceState(window.history.state, '', next);
 }
 
 /**
- * Shops page body: heading, lead, and a Post / Map / Table pill.
+ * Shops page body: heading, lead, and a List / Map / Table / Post pill.
  *
- * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
- * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
+ * `/shops#post`, `/shops#map`, and `/shops#table` open that view. A missing or unknown hash opens List.
+ * The view stays unset until the hash is read, so the list, post feed, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
  */
@@ -43,7 +44,7 @@ export function ShopsScreen(): ReactElement {
 
   useLayoutEffect(() => {
     const apply = (): void => {
-      setView(shopsViewFromHash(window.location.hash) ?? 'post');
+      setView(shopsViewFromHash(window.location.hash) ?? 'list');
     };
     apply();
     window.addEventListener('hashchange', apply);
@@ -64,6 +65,7 @@ export function ShopsScreen(): ReactElement {
       </h1>
       <p className="text-center text-sm text-app-fg">{t('shops.lead')}</p>
       {view !== null ? <ShopsViewSwitch value={view} onChange={selectView} /> : null}
+      {view === 'list' ? <ShopList /> : null}
       {view === 'post' ? <ForumLoader feed="shops" /> : null}
       {view === 'map' ? (
         <Suspense>

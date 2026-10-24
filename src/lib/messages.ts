@@ -849,7 +849,7 @@ const en = {
 
   'shops.heading': 'Shops',
   'shops.lead':
-    'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
+    'Each row is a shop page, not a forum note.',
   'map.heading': 'Map',
   'map.empty': 'No places yet.',
   'map.error': 'Could not load places. Please try again.',
@@ -876,6 +876,7 @@ const en = {
   'shops.photoPreparing': 'Wait until this photo is ready.',
   'shops.saving': 'Saving this shop note.',
   'shops.viewLabel': 'Shop view',
+  'shops.viewList': 'List',
   'shops.viewPost': 'Post',
   'shops.viewMap': 'Map',
   'shops.viewTable': 'Table',
@@ -2104,7 +2105,7 @@ const de = {
 
   'shops.heading': 'Shops',
   'shops.lead':
-    'Fügen Sie einen Shop mit Bildern, einem Ort, einem Text und optional einem 21.gifts-Nutzer hinzu. Er erscheint hier und im Forum mit einem #Shop-Tag.',
+    'Jede Zeile ist eine Shop-Seite, keine Foren-Notiz.',
   'map.heading': 'Karte',
   'map.empty': 'Noch keine Orte.',
   'map.error': 'Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
@@ -2131,6 +2132,7 @@ const de = {
   'shops.photoPreparing': 'Warten Sie, bis dieses Foto bereit ist.',
   'shops.saving': 'Dieser Shop-Eintrag wird gespeichert.',
   'shops.viewLabel': 'Shop-Ansicht',
+  'shops.viewList': 'Liste',
   'shops.viewPost': 'Post',
   'shops.viewMap': 'Karte',
   'shops.viewTable': 'Tabelle',
@@ -3365,7 +3367,7 @@ const es = {
 
   'shops.heading': 'Tiendas',
   'shops.lead':
-    'Añade una tienda con fotos, un lugar, un texto y un usuario opcional de 21.gifts. Aparece aquí y en el foro con una etiqueta #Shop.',
+    'Cada fila es una página de tienda, no una nota del foro.',
   'map.heading': 'Mapa',
   'map.empty': 'Aún no hay lugares.',
   'map.error': 'No se pudieron cargar los lugares. Inténtalo de nuevo.',
@@ -3392,6 +3394,7 @@ const es = {
   'shops.photoPreparing': 'Espera a que esta foto esté lista.',
   'shops.saving': 'Guardando esta nota de la tienda.',
   'shops.viewLabel': 'Vista de tiendas',
+  'shops.viewList': 'Lista',
   'shops.viewPost': 'Publicación',
   'shops.viewMap': 'Mapa',
   'shops.viewTable': 'Tabla',
@@ -4623,7 +4626,7 @@ const fil = {
 
   'shops.heading': 'Mga Tindahan',
   'shops.lead':
-    'Magdagdag ng shop na may mga larawan, lugar, teksto, at opsyonal na user ng 21.gifts. Lilitaw ito rito at sa forum na may #Shop na tag.',
+    'Bawat hanay ay isang pahina ng shop, hindi isang tala sa forum.',
   'map.heading': 'Mapa',
   'map.empty': 'Wala pang mga lugar.',
   'map.error': 'Hindi ma-load ang mga lugar. Subukan ulit.',
@@ -4650,6 +4653,7 @@ const fil = {
   'shops.photoPreparing': 'Hintayin munang maging handa ang larawang ito.',
   'shops.saving': 'Sine-save ang note ng shop na ito.',
   'shops.viewLabel': 'View ng shop',
+  'shops.viewList': 'Listahan',
   'shops.viewPost': 'Post',
   'shops.viewMap': 'Mapa',
   'shops.viewTable': 'Talahanayan',
