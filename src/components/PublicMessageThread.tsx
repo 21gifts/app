@@ -21,14 +21,18 @@ import {
   postMessageInvoice,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
   latestRateDayFor,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
+  shownPaySheetError,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -675,13 +679,8 @@ export function PublicMessageThread(props: {
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-            ? 'tooLong'
-            : isRateLimitError(err)
-              ? 'rateLimit'
-              : 'request',
-        );
+        // This invoice was sent only after the draft fit the stored limit.
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       if (!awaitingPay) {
@@ -754,13 +753,8 @@ export function PublicMessageThread(props: {
         setReplyFormError('deleted');
         return;
       }
-      setReplyFormError(
-        err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-          ? 'tooLong'
-          : isRateLimitError(err)
-            ? 'rateLimit'
-            : 'request',
-      );
+      // This invoice was sent only after the draft fit the stored limit.
+      setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       setReplyPosting(false);
     }
@@ -801,6 +795,19 @@ export function PublicMessageThread(props: {
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     /* v8 ignore next 3 -- Continue unmounts without a session; busy clicks are ignored */
     if (session === null || payMessageId === null || payBusy) {
+      return;
+    }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && rateSeries === null) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
@@ -961,16 +968,41 @@ export function PublicMessageThread(props: {
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
-    const trimmed = replyDraft.trim();
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
-      setReplyFormError('tooLong');
+    if (replyFormError === 'loading' && rateSeries === null) {
       return;
     }
+    const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const token = session;
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSeries !== null,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
+      return;
+    }
+    if (replyProblem === 'no-rate') {
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -1052,6 +1084,32 @@ export function PublicMessageThread(props: {
     }));
   };
 
+  const rateSettled = rateSeries !== null;
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
+  const replyExempt = isReplyPaymentExempt(account, note.accountId);
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
+
   return (
     <>
       {overlayRequirement !== null ? (
@@ -1120,13 +1178,13 @@ export function PublicMessageThread(props: {
         payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
-        payError={payError}
+        payError={shownPayError}
         payInvoice={payInvoice}
         payWaiting={payWaiting}
         onPayOpen={handlePayOpen}
         onPayDraftChange={(value: string): void => {
           setPayDraft(value);
-          setPayError(null);
+          setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
         }}
         onPayUnitChange={setPayShownUnit}
         onReplyUnitChange={setReplyShownUnit}
@@ -1140,15 +1198,25 @@ export function PublicMessageThread(props: {
         replyDraft={replyDraft}
         onReplyDraftChange={(value: string): void => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value: string): void => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyPosting={replyPosting}
-        replyFormError={replyFormError}
+        replyFormError={shownReplyFormError}
+        replyTextTooLong={replyTextIsTooLong(
+          replyDraft,
+          expandedId,
+          replyExempt,
+          replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+            !replyExempt &&
+            note.accountId !== undefined,
+        )}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
         onReplyPost={handleReplyPost}
         onRetryReplies={handleRetryReplies}
         onDeleted={handleDeleted}

@@ -1591,4 +1591,139 @@ describe('AboutMeSection', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Remove wide image' }));
     expect(screen.getByAltText('Wide profile image')).toBeTruthy();
   });
+
+  it('omits empty portrait and banner add buttons when omitEmptySlotAdds is set', () => {
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+  });
+
+  it('keeps replace icons for stored portrait and banner when omitEmptySlotAdds is set', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        omitEmptySlotAdds
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a profile photo')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.queryByText('Add a wide image')).toBeNull();
+  });
+
+  it('reloads stored portrait and wide image when imageEpoch changes while editing', async () => {
+    const jpeg = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const { rerender } = renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        startEditing
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+        imageEpoch={0}
+        loadPicture={() => Promise.reject(new Error('none'))}
+        loadBanner={() => Promise.reject(new Error('none'))}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    rerender(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        startEditing
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+        imageEpoch={1}
+        loadPicture={() => Promise.resolve(jpeg)}
+        loadBanner={() => Promise.resolve(jpeg)}
+      />,
+    );
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove wide image' })).toBeTruthy();
+  });
+
+  it('shows length and control rules under the text and disables save', () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const field = screen.getByLabelText('About me');
+    const save = screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    expect(field.getAttribute('aria-invalid')).not.toBe('true');
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.blur(field);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(save.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'Hello\u0001' } });
+    const controls = screen.getByRole('alert');
+    expect(controls.textContent).toBe(
+      'About me cannot include control characters other than line breaks.',
+    );
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(controls.id);
+    expect(save.disabled).toBe(true);
+    fireEvent.click(save);
+    expect(onSave).not.toHaveBeenCalled();
+
+    fireEvent.change(field, { target: { value: 'a'.repeat(8001) } });
+    expect(screen.getByRole('alert').textContent).toBe('About me must be at most 8000 characters.');
+    expect(save.disabled).toBe(true);
+
+    fireEvent.change(field, { target: { value: 'Hello\nthere' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(save.disabled).toBe(false);
+  });
+
+  it('maps the api about-me length sentence under the text', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('About me must be at most 8000 characters'));
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('About me must be at most 8000 characters.');
+    expect(screen.getByLabelText('About me').getAttribute('aria-describedby')).toBe(alert.id);
+    expect(
+      (screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(screen.queryByText('Could not save. Please try again.')).toBeNull();
+  });
+
+  it('keeps an unknown about-me failure on the generic save error', async () => {
+    const onSave = vi.fn().mockRejectedValue('boom');
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
 });

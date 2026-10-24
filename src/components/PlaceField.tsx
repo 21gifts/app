@@ -1,41 +1,48 @@
 'use client';
 
-import { MapPin, X } from 'lucide-react';
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactElement,
-} from 'react';
+import { MapPin, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, IconButton } from '@/components/ui';
-import type { ForumPlacePin } from '@/lib/api-types';
-import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
+import { ShopAddressFields, type ForumPlaceAddressDraft } from '@/components/ShopAddressFields';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
+import { Button, Field, IconButton } from '@/components/ui';
+import { Scrollport } from '@/components/ui/Scrollport';
+import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
+import {
+  SHOP_API_MESSAGE,
+  shopAddressProblems,
+  shopApiProblem,
+  shopDescriptionProblem,
+  shopNameProblem,
+  type ShopAddressField,
+  type ShopAddressFieldProblem,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
+import { fetchMapsKey } from '@/lib/maps-key';
+import { PLACE_LABEL_API_MESSAGE, placeLabelProblem } from '@/lib/entry-text';
+import type { MessageKey } from '@/lib/messages';
 
-type GoogleLatLng = {
-  lat: () => number;
-  lng: () => number;
+const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
+  street: '',
+  houseNumber: '',
+  postalCode: '',
+  city: '',
+  country: '',
 };
 
-type GoogleMapMouseEvent = {
-  latLng: GoogleLatLng | null;
-};
-
+type GoogleLatLng = { lat: () => number; lng: () => number };
+type GoogleMapMouseEvent = { latLng: GoogleLatLng | null };
 type GoogleMap = {
   setCenter: (center: { lat: number; lng: number }) => void;
   addListener: (event: string, handler: (event: GoogleMapMouseEvent) => void) => void;
 };
-
 type GoogleMarker = {
   setPosition: (pos: { lat: number; lng: number }) => void;
   getPosition: () => GoogleLatLng | null;
   addListener: (event: string, handler: () => void) => void;
 };
-
 type GoogleMapsNamespace = {
   Map: new (
     el: HTMLElement,
@@ -48,55 +55,97 @@ type GoogleMapsNamespace = {
   }) => GoogleMarker;
   event?: { trigger: (map: GoogleMap, name: string) => void };
 };
-
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
-  gm_authFailure?: () => void;
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
+const SHOP_NAME_PROBLEMS: readonly ShopApiProblem[] = [
+  'shopName',
+  'shopNameAddress',
+  'shopNameLong',
+  'shopNameControls',
+];
+const SHOP_PLACE_PROBLEMS: readonly ShopApiProblem[] = [
+  ...SHOP_NAME_PROBLEMS,
+  'shopAddress',
+  'placeAddress',
+];
+const DIALOG_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
-const PLACED_BOX_FIELDS = ['left', 'width', 'maxHeight', 'top', 'bottom'] as const;
-
-function samePlacedBox(a: PlacedFrameBox | null, b: PlacedFrameBox | null): boolean {
-  if (a === null || b === null) {
-    return a === b;
-  }
-  for (const field of PLACED_BOX_FIELDS) {
-    if (a[field] !== b[field]) {
-      return false;
-    }
-  }
-  return true;
+function addressFromDraft(draft: ForumPlaceAddressDraft): ForumPlaceAddress | null {
+  if (Object.values(draft).every((value) => value === '')) return null;
+  return { ...draft };
 }
 
-function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
-  const style: CSSProperties = {
-    left: box.left,
-    width: box.width,
-  };
-  if (box.top !== null) {
-    style.top = box.top;
-  } else {
-    style.bottom = box.bottom!;
-  }
-  if (fill) {
-    const viewportHeight = window.innerHeight;
-    if (box.top !== null) {
-      style.bottom = viewportHeight - box.top - box.maxHeight;
-    } else {
-      style.top = viewportHeight - box.bottom! - box.maxHeight;
-    }
-  }
-  return style;
+function draftFromAddress(address: ForumPlaceAddress | null | undefined): ForumPlaceAddressDraft {
+  return address === null || address === undefined ? { ...EMPTY_ADDRESS } : { ...address };
 }
+
+const ADDRESS_ERROR_KEY: Record<ShopAddressField, Record<ShopAddressFieldProblem, MessageKey>> = {
+  street: {
+    required: 'shops.problemStreetRequired',
+    length: 'shops.problemStreetLength',
+    controls: 'shops.problemStreetControls',
+    format: 'shops.problemStreetLength',
+    formatChLi: 'shops.problemStreetLength',
+    formatOther: 'shops.problemStreetLength',
+    letter: 'shops.problemStreetLength',
+    characters: 'shops.problemStreetLength',
+    invalid: 'shops.problemStreetLength',
+  },
+  houseNumber: {
+    required: 'shops.problemHouseNumberRequired',
+    length: 'shops.problemHouseNumberLength',
+    controls: 'shops.problemHouseNumberControls',
+    format: 'shops.problemHouseNumberFormat',
+    formatChLi: 'shops.problemHouseNumberFormat',
+    formatOther: 'shops.problemHouseNumberFormat',
+    letter: 'shops.problemHouseNumberFormat',
+    characters: 'shops.problemHouseNumberCharacters',
+    invalid: 'shops.problemHouseNumberFormat',
+  },
+  postalCode: {
+    required: 'shops.problemPostalCodeRequired',
+    length: 'shops.problemPostalCodeOther',
+    controls: 'shops.problemPostalCodeControls',
+    format: 'shops.problemPostalCodeOther',
+    formatChLi: 'shops.problemPostalCodeChLi',
+    formatOther: 'shops.problemPostalCodeOther',
+    letter: 'shops.problemPostalCodeOther',
+    characters: 'shops.problemPostalCodeOther',
+    invalid: 'shops.problemPostalCodeOther',
+  },
+  city: {
+    required: 'shops.problemCityRequired',
+    length: 'shops.problemCityLength',
+    controls: 'shops.problemCityControls',
+    format: 'shops.problemCityLetter',
+    formatChLi: 'shops.problemCityLetter',
+    formatOther: 'shops.problemCityLetter',
+    letter: 'shops.problemCityLetter',
+    characters: 'shops.problemCityLetter',
+    invalid: 'shops.problemCityLetter',
+  },
+  country: {
+    required: 'shops.problemCountryRequired',
+    length: 'shops.problemCountryInvalid',
+    controls: 'shops.problemCountryInvalid',
+    format: 'shops.problemCountryInvalid',
+    formatChLi: 'shops.problemCountryInvalid',
+    formatOther: 'shops.problemCountryInvalid',
+    letter: 'shops.problemCountryInvalid',
+    characters: 'shops.problemCountryInvalid',
+    invalid: 'shops.problemCountryInvalid',
+  },
+};
 
 /**
- * Optional place pin control for a top-level forum composer or staff editor.
+ * Optional place pin control for a forum composer or staff editor.
  *
- * @param props - Current pin, disabled flag, change handler, and optional
- * staff-commit overrides (size, variant, preview, label, `onCommit`).
- * @returns Attach button, optional preview, and map panel.
+ * @param props - Current pin, change handler, optional staff commit, and shop validation state.
+ * @returns Attach button and the place dialog.
  */
 export function PlaceField(props: {
   place: ForumPlacePin | null;
@@ -104,31 +153,65 @@ export function PlaceField(props: {
   onChange: (place: ForumPlacePin | null) => void;
   buttonSize?: 'lg' | 'sm';
   buttonVariant?: 'secondary' | 'ghost';
-  showPreview?: boolean;
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
+  shopDetails?: boolean;
+  /** Stored shop note text used to validate a changed shop name live. */
+  shopText?: string;
+  problem?: ShopApiProblem | null;
+  /** Whether this mounted field may open and announce its current server problem. Default true. */
+  autoOpenProblem?: boolean;
+  onAvailabilityChange?: (unavailable: boolean) => void;
 }): ReactElement {
   const { t } = useTranslations();
   const sunday = useLocalSunday();
+  const titleId = `${useId()}-title`;
+  const shopNameId = `${useId()}-shop-name`;
+  const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
-  const showPreview = props.showPreview ?? true;
   const ariaLabel = props.ariaLabel ?? t('forum.addPlace');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saveError, setSaveError] = useState<MessageKey | null>(null);
+  const [reportedProblem, setReportedProblem] = useState<ShopApiProblem | null>(null);
+  const [unknownSaveError, setUnknownSaveError] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
+  const [addressDraft, setAddressDraft] = useState<ForumPlaceAddressDraft>({ ...EMPTY_ADDRESS });
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [serverLabelTooLong, setServerLabelTooLong] = useState(false);
+  const [addressTouched, setAddressTouched] = useState<ReadonlySet<ShopAddressField>>(
+    () => new Set(),
+  );
   const mapElRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerWrapRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
-  const anchorRef = useRef<HTMLDivElement | null>(null);
-  const [placedBox, setPlacedBox] = useState<PlacedFrameBox | null>(null);
-  const placedBoxRef = useRef<PlacedFrameBox | null>(null);
-  const mapPlaced = placedBox !== null;
+  /** Reaction of the open panel to a rejected key; null while closed. */
+  const rejectKeyRef = useRef<(() => void) | null>(null);
+  const savingRef = useRef(false);
+  const failedSaveActionRef = useRef<'commit' | 'remove' | null>(null);
+  // A server problem that opened the dialog owes focus to the field it names.
+  const problemFocusRef = useRef<'name' | 'address' | null>(null);
+  savingRef.current = saving;
+  const fieldsDisabled = props.disabled || saving;
+
+  const resetDraft = useCallback((): void => {
+    setLabelDraft(props.place?.label ?? '');
+    setAddressDraft(draftFromAddress(props.place?.address));
+    setMarkerPos(props.place === null ? null : { lat: props.place.lat, lng: props.place.lng });
+    setNameTouched(false);
+    setAddressTouched(new Set());
+    setSaveError(null);
+    setReportedProblem(null);
+    setUnknownSaveError(false);
+    setServerLabelTooLong(false);
+  }, [props.place]);
 
   useEffect(() => {
     if (props.disabled) {
@@ -136,177 +219,254 @@ export function PlaceField(props: {
     }
   }, [props.disabled]);
 
+  // A rejected key stays rejected, also after the panel closes.
+  useEffect(
+    () =>
+      onGoogleMapsAuthFailure(() => {
+        authFailedRef.current = true;
+        rejectKeyRef.current?.();
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    const problem = props.problem;
+    if (
+      !shopDetails ||
+      problem === undefined ||
+      problem === null ||
+      !SHOP_PLACE_PROBLEMS.includes(problem)
+    ) {
+      setReportedProblem(null);
+      return;
+    }
+    if (props.autoOpenProblem === false) {
+      setReportedProblem((current) => (current === problem ? current : null));
+      return;
+    }
+    resetDraft();
+    setOpen(true);
+    const nameProblem = SHOP_NAME_PROBLEMS.includes(problem);
+    if (nameProblem) {
+      setNameTouched(true);
+    }
+    problemFocusRef.current = nameProblem ? 'name' : 'address';
+    setReportedProblem(problem);
+  }, [props.autoOpenProblem, props.problem, resetDraft, shopDetails]);
+
+  // A fresh mount starts as available before anything was checked; report only
+  // checked results so a parent does not forget an unavailable map.
+  const availabilityReported = useRef(false);
+  const onAvailabilityChangeRef = useRef(props.onAvailabilityChange);
+  onAvailabilityChangeRef.current = props.onAvailabilityChange;
+  useEffect(() => {
+    if (!unavailable && !availabilityReported.current) {
+      return;
+    }
+    availabilityReported.current = true;
+    onAvailabilityChangeRef.current?.(unavailable);
+  }, [unavailable]);
+
   useEffect(() => {
     if (!open) {
       return;
     }
     let cancelled = false;
     const load = async (): Promise<void> => {
-      try {
-        const response = await fetch('/maps/key');
-        const body: unknown = await response.json();
+      const nextKey = await fetchMapsKey();
+      if (cancelled) {
+        return;
+      }
+      if (nextKey === null) {
+        setMapsKey(null);
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      setMapsKey(nextKey);
+      const googleWindow = window as GoogleWindow;
+      // A rejected key stays rejected. Google still defines `google.maps`.
+      // Cleanup clears the ref, so this only runs for the open panel.
+      const rejectKey = (): void => {
+        setUnavailable(true);
+        setScriptReady(false);
+      };
+      const acceptKey = (): void => {
+        if (!cancelled && !authFailedRef.current) {
+          setUnavailable(false);
+          setScriptReady(true);
+          onAvailabilityChangeRef.current?.(false);
+        }
+      };
+      rejectKeyRef.current = rejectKey;
+      if (authFailedRef.current) {
+        setUnavailable(true);
+        setScriptReady(false);
+        return;
+      }
+      if (googleWindow.google?.maps !== undefined) {
+        acceptKey();
+        return;
+      }
+      // One shared script for this field and every GoogleMapCanvas on the page.
+      loadGoogleMaps(nextKey).then(acceptKey, () => {
         if (cancelled) {
           return;
         }
-        let nextKey: string | null = null;
-        if (typeof body === 'object' && body !== null && 'key' in body) {
-          const raw = body.key;
-          if (typeof raw === 'string') {
-            const trimmed = raw.trim();
-            if (trimmed !== '') {
-              nextKey = trimmed;
-            }
-          }
-        }
-        if (nextKey === null) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        setMapsKey(nextKey);
-        const googleWindow = window as GoogleWindow;
-        // A rejected key stays rejected. Google still defines `google.maps`.
-        const rejectKey = (): void => {
-          authFailedRef.current = true;
-          if (cancelled) {
-            return;
-          }
-          setUnavailable(true);
-          setScriptReady(false);
-        };
-        const acceptKey = (): void => {
-          if (cancelled || authFailedRef.current) {
-            if (!cancelled && authFailedRef.current) {
-              setUnavailable(true);
-              setScriptReady(false);
-            }
-            return;
-          }
-          setUnavailable(false);
-          setScriptReady(true);
-        };
-        googleWindow.gm_authFailure = rejectKey;
-        if (googleWindow.google?.maps !== undefined) {
-          acceptKey();
-          return;
-        }
-        const existing = document.querySelector('script[data-gmaps="weekly"]');
-        const onLoad = (): void => {
-          if (cancelled) {
-            return;
-          }
-          if (googleWindow.google?.maps === undefined || authFailedRef.current) {
-            if (existing instanceof HTMLScriptElement) {
-              existing.dataset['gmapsState'] = 'error';
-            }
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          acceptKey();
-        };
-        const onError = (): void => {
-          if (cancelled) {
-            return;
-          }
-          if (existing instanceof HTMLScriptElement) {
-            existing.dataset['gmapsState'] = 'error';
-          }
-          setUnavailable(true);
-          setScriptReady(false);
-        };
-        if (existing instanceof HTMLScriptElement) {
-          if (existing.dataset['gmapsState'] === 'error' || authFailedRef.current) {
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          setUnavailable(false);
-          existing.addEventListener('load', onLoad);
-          existing.addEventListener('error', onError);
-          return;
-        }
-        if (authFailedRef.current) {
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        setUnavailable(false);
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(nextKey)}&v=weekly`;
-        script.dataset['gmaps'] = 'weekly';
-        script.addEventListener('load', () => {
-          if (googleWindow.google?.maps === undefined) {
-            script.dataset['gmapsState'] = 'error';
-          }
-          onLoad();
-        });
-        script.addEventListener('error', () => {
-          script.dataset['gmapsState'] = 'error';
-          onError();
-        });
-        document.head.appendChild(script);
-      } catch {
-        if (!cancelled) {
-          setMapsKey(null);
-          setUnavailable(true);
-          setScriptReady(false);
-        }
-      }
+        setUnavailable(true);
+        setScriptReady(false);
+      });
     };
     void load();
     return () => {
       cancelled = true;
-      // Keep the rejection if Google calls back after the panel closes.
-      (window as GoogleWindow).gm_authFailure = () => {
-        authFailedRef.current = true;
-      };
+      rejectKeyRef.current = null;
     };
   }, [open]);
 
   useEffect(() => {
-    if (authFailedRef.current) {
+    if (!open) {
       return;
     }
+    const opener = document.activeElement as HTMLElement | null;
+    const triggerWrap = triggerWrapRef.current;
+    const handleDialogKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && !savingRef.current) {
+        setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const dialog = dialogRef.current;
+      /* v8 ignore next 3 -- the listener is removed with the open dialog */
+      if (dialog === null) {
+        return;
+      }
+      const focusable = dialog.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable.item(0);
+      const last = focusable.item(focusable.length - 1);
+      const active = document.activeElement;
+      if (active === dialog || !dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const owedFocus = problemFocusRef.current;
+    problemFocusRef.current = null;
+    // The API accepted no field the client checked, so an address problem starts at Street.
+    const owedTarget =
+      owedFocus === 'name'
+        ? dialogRef.current?.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
+        : owedFocus === 'address'
+          ? dialogRef.current?.querySelector<HTMLElement>(
+              '[data-testid="shop-address-fields"] input',
+            )
+          : null;
+    (owedTarget ?? dialogRef.current)?.focus();
+    document.addEventListener('keydown', handleDialogKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleDialogKeyDown, true);
+      // A dialog opened by a server problem has no live opener; return to the place button.
+      if (opener !== null && opener !== document.body && opener.isConnected) {
+        opener.focus();
+      } else {
+        triggerWrap?.querySelector('button')?.focus();
+      }
+    };
+  }, [open, shopNameId]);
+
+  useEffect(() => {
+    const failedAction = failedSaveActionRef.current;
+    if (saving || failedAction === null) {
+      return;
+    }
+    failedSaveActionRef.current = null;
+    const dialog = dialogRef.current;
+    /* v8 ignore next 3 -- a failed commit keeps the open dialog mounted */
+    if (dialog === null) {
+      return;
+    }
+    const removeButton =
+      failedAction === 'remove'
+        ? dialog.querySelector<HTMLElement>('[data-place-remove]:not([disabled])')
+        : null;
+    const nameInput =
+      saveError?.startsWith('shops.problemName') === true
+        ? dialog.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
+        : null;
+    // An address the client accepted but the API rejected marks no field; start at Street.
+    const addressRejected =
+      saveError === SHOP_API_MESSAGE.shopAddress || saveError === SHOP_API_MESSAGE.placeAddress;
+    const invalidAddress =
+      saveError !== null && nameInput === null
+        ? (dialog.querySelector<HTMLElement>('[aria-invalid="true"]') ??
+          (addressRejected
+            ? dialog.querySelector<HTMLElement>(
+                '[data-testid="shop-address-fields"] input:not([disabled])',
+              )
+            : null))
+        : null;
+    const commitButton = dialog.querySelector<HTMLElement>('[data-place-commit]:not([disabled])');
+    const firstFocusable = dialog.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+    const focusTarget =
+      removeButton ?? nameInput ?? invalidAddress ?? commitButton ?? firstFocusable;
+    /* v8 ignore next 4 -- Close is enabled again after every failed save */
+    if (focusTarget === null) {
+      dialog.focus();
+      return;
+    }
+    focusTarget.focus();
+  });
+
+  useEffect(() => {
     if (!open || unavailable || mapsKey === null || !scriptReady) {
       return;
     }
     const el = mapElRef.current;
-    /* v8 ignore next 3 -- the map node is committed before this effect */
-    if (el === null) {
-      return;
-    }
     const maps = (window as GoogleWindow).google?.maps;
-    if (maps === undefined) {
+    if (el === null || maps === undefined) {
       return;
     }
     const saved = props.place;
-    const map = new maps.Map(el, { center: saved ?? START_CENTER, zoom: 2 });
+    const savedPosition = saved === null ? null : { lat: saved.lat, lng: saved.lng };
+    const map = new maps.Map(el, { center: savedPosition ?? START_CENTER, zoom: 2 });
     if (authFailedRef.current) {
       el.replaceChildren();
       return;
     }
     markerRef.current = null;
-    setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
-    setLabelDraft(saved?.label ?? '');
+    const updateFromMarker = (marker: GoogleMarker): void => {
+      if (savingRef.current) {
+        return;
+      }
+      const next = marker.getPosition();
+      if (next !== null) {
+        setMarkerPos({ lat: next.lat(), lng: next.lng() });
+      }
+    };
     if (saved !== null) {
-      const savedMarker = new maps.Marker({
+      const marker = new maps.Marker({
         position: { lat: saved.lat, lng: saved.lng },
         map,
         draggable: true,
       });
-      savedMarker.addListener('dragend', () => {
-        const next = savedMarker.getPosition();
-        if (next === null) {
-          return;
-        }
-        setMarkerPos({ lat: next.lat(), lng: next.lng() });
-      });
-      markerRef.current = savedMarker;
+      marker.addListener('dragend', () => updateFromMarker(marker));
+      markerRef.current = marker;
     }
-    map.addListener('click', (event: GoogleMapMouseEvent) => {
-      if (event.latLng === null) {
+    map.addListener('click', (event) => {
+      if (savingRef.current || event.latLng === null) {
         return;
       }
       const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
@@ -314,115 +474,146 @@ export function PlaceField(props: {
         markerRef.current.setPosition(pos);
       } else {
         const marker = new maps.Marker({ position: pos, map, draggable: true });
-        marker.addListener('dragend', () => {
-          const next = marker.getPosition();
-          if (next === null) {
-            return;
-          }
-          setMarkerPos({ lat: next.lat(), lng: next.lng() });
-        });
+        marker.addListener('dragend', () => updateFromMarker(marker));
         markerRef.current = marker;
       }
       setMarkerPos(pos);
     });
     if (saved === null && navigator.geolocation !== undefined) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
-        },
-        () => {
-          map.setCenter(START_CENTER);
-        },
+        (position) =>
+          map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => map.setCenter(START_CENTER),
       );
     }
-    let observer: ResizeObserver | undefined;
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(() => {
-        maps.event?.trigger(map, 'resize');
-      });
-      observer.observe(el);
-    }
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => maps.event?.trigger(map, 'resize'));
+    observer?.observe(el);
     return () => {
       observer?.disconnect();
       el.replaceChildren();
     };
-  }, [
-    open,
-    unavailable,
-    mapsKey,
-    scriptReady,
-    props.place?.lat,
-    props.place?.lng,
-    props.place?.label,
-    mapPlaced,
-    sunday,
-  ]);
+  }, [open, unavailable, mapsKey, scriptReady, props.place, sunday]);
 
-  useLayoutEffect(() => {
-    const showPreviewBox = !sunday && showPreview && props.place !== null && !open;
-    const showPanelBox = !sunday && open && !props.disabled && (unavailable || mapsKey !== null);
-    const commitPlacedBox = (next: PlacedFrameBox | null): void => {
-      if (samePlacedBox(placedBoxRef.current, next)) {
-        return;
+  const addressValue = addressFromDraft(addressDraft);
+  const addressProblems = shopDetails ? shopAddressProblems(addressValue) : {};
+  const nameProblem = shopDetails ? shopNameProblem(labelDraft, addressValue) : null;
+  const shopTextProblem =
+    shopDetails && props.shopText !== undefined
+      ? shopDescriptionProblem(props.shopText, labelDraft.trim())
+      : null;
+  const shopTextNameError =
+    shopTextProblem === 'notLonger'
+      ? t('shops.problemNameLongerThanText')
+      : shopTextProblem === 'short' || shopTextProblem === 'long'
+        ? t('shops.problemShopTextLengthForName')
+        : undefined;
+  const nameCommitError =
+    shopDetails &&
+    saveError !== null &&
+    ['shops.problemName', 'shops.problemNameAddress', 'shops.problemNameLong'].includes(saveError)
+      ? t(saveError)
+      : undefined;
+  const reportedNameError =
+    reportedProblem !== null && SHOP_NAME_PROBLEMS.includes(reportedProblem)
+      ? t(SHOP_API_MESSAGE[reportedProblem])
+      : undefined;
+  const nameSaveError = nameCommitError ?? reportedNameError;
+  const liveNameError = !shopDetails
+    ? undefined
+    : !nameTouched && labelDraft.trim() === '' && saveError === null
+      ? undefined
+      : nameProblem === 'name'
+        ? t('shops.problemName')
+        : nameProblem === 'nameAddress'
+          ? t('shops.problemNameAddress')
+          : nameProblem === 'nameLong'
+            ? t('shops.problemNameLong')
+            : nameProblem === 'nameControls'
+              ? t('shops.problemNameControls')
+              : shopTextNameError !== undefined
+                ? shopTextNameError
+                : undefined;
+  const nameError = liveNameError ?? nameSaveError;
+  const shownAddressErrors: Partial<Record<ShopAddressField, string>> = {};
+  for (const field of Object.keys(addressProblems) as ShopAddressField[]) {
+    if (addressTouched.has(field) || addressDraft[field].trim() !== '') {
+      const problem = addressProblems[field];
+      if (problem !== undefined) {
+        shownAddressErrors[field] = t(ADDRESS_ERROR_KEY[field][problem]);
       }
-      placedBoxRef.current = next;
-      setPlacedBox(next);
-    };
-    if (!showPreviewBox && !showPanelBox) {
-      commitPlacedBox(null);
-      return;
     }
-    const preferredWidth = showPanelBox ? 384 : 256;
-    const measure = (): void => {
-      const anchor = anchorRef.current;
-      /* v8 ignore next 4 -- the anchor div stays mounted for the whole effect */
-      if (anchor === null) {
-        setPlacedBox(null);
-        return;
-      }
-      const anchorRect = anchor.getBoundingClientRect();
-      const frameEl = anchor.closest('[data-app-frame]');
-      const raw =
-        frameEl !== null
-          ? frameEl.getBoundingClientRect()
-          : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
-      const band = window.visualViewport;
-      const viewTop = band?.offsetTop ?? 0;
-      const viewBottom = viewTop + (band?.height ?? window.innerHeight);
-      commitPlacedBox(
-        fitBoxInFrame({
-          frameLeft: Math.max(raw.left, 0),
-          frameRight: Math.min(raw.right, window.innerWidth),
-          frameTop: Math.max(raw.top, viewTop),
-          frameBottom: Math.min(raw.bottom, viewBottom),
-          anchorLeft: anchorRect.left,
-          anchorTop: anchorRect.top,
-          anchorBottom: anchorRect.bottom,
-          gap: 8,
-          preferredWidth,
-          inset: 16,
-          viewportHeight: window.innerHeight,
-        }),
-      );
-    };
-    measure();
-    const viewport = window.visualViewport;
-    window.addEventListener('resize', measure);
-    document.addEventListener('scroll', measure, true);
-    viewport?.addEventListener('resize', measure);
-    viewport?.addEventListener('scroll', measure);
-    return () => {
-      window.removeEventListener('resize', measure);
-      document.removeEventListener('scroll', measure, true);
-      viewport?.removeEventListener('resize', measure);
-      viewport?.removeEventListener('scroll', measure);
-    };
-  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
-
-  const previewText =
-    props.place === null
-      ? ''
-      : (props.place.label ?? `${props.place.lat.toFixed(5)}, ${props.place.lng.toFixed(5)}`);
+  }
+  const invalidFields = Object.keys(addressProblems) as ShopAddressField[];
+  const labelProblem = shopDetails ? null : placeLabelProblem(labelDraft);
+  const livingLabelTooLong = labelProblem === 'tooLong' || (!shopDetails && serverLabelTooLong);
+  const livingLabelError = livingLabelTooLong
+    ? t('forum.placeLabelTooLong')
+    : labelProblem === 'controls'
+      ? t('forum.placeLabelControls')
+      : undefined;
+  const blocked =
+    markerPos === null ||
+    unavailable ||
+    saveError !== null ||
+    reportedProblem !== null ||
+    livingLabelError !== undefined ||
+    (shopDetails &&
+      (nameProblem !== null || shopTextNameError !== undefined || invalidFields.length > 0));
+  const fieldLabel: Record<ShopAddressField, string> = {
+    street: t('shops.addressStreet'),
+    houseNumber: t('shops.addressHouseNumber'),
+    postalCode: t('shops.addressPostalCode'),
+    city: t('shops.addressCity'),
+    country: t('shops.addressCountry'),
+  };
+  const missingFields = [
+    ...(shopDetails && labelDraft.trim() === '' ? [t('shops.placeName')] : []),
+    ...invalidFields
+      .filter((field) => addressDraft[field].trim() === '')
+      .map((field) => fieldLabel[field]),
+  ];
+  // A shop text of the wrong length blocks the name; the name itself is fine.
+  const nameBlockedByTextLength =
+    (shopTextProblem === 'short' || shopTextProblem === 'long') && nameError === shopTextNameError;
+  const fieldsToFix = [
+    ...(shopDetails &&
+    labelDraft.trim() !== '' &&
+    nameError !== undefined &&
+    !nameBlockedByTextLength
+      ? [t('shops.placeName')]
+      : []),
+    ...invalidFields
+      .filter((field) => addressDraft[field].trim() !== '')
+      .map((field) => fieldLabel[field]),
+  ];
+  const reportedAddressError =
+    reportedProblem === 'shopAddress' || reportedProblem === 'placeAddress'
+      ? t(SHOP_API_MESSAGE[reportedProblem])
+      : null;
+  // Reasons from a save or from the server are announced; live reasons are not.
+  const actionReason =
+    saveError !== null && nameCommitError === undefined ? t(saveError) : reportedAddressError;
+  // The unavailable map is already explained where the map would be.
+  const liveFooterReasons = [
+    // The place-name message sits under the field. The footer only summarises the rest.
+    ...(markerPos === null ? [t('shops.setPinAbove')] : []),
+    ...(nameBlockedByTextLength ? [t('shops.editShopTextFirst')] : []),
+    ...(missingFields.length > 0 ? [t('shops.fillIn', { fields: missingFields.join(', ') })] : []),
+    ...(fieldsToFix.length > 0
+      ? [t('shops.fixFieldsNamed', { fields: fieldsToFix.join(', ') })]
+      : []),
+  ];
+  const footerReason =
+    actionReason !== null
+      ? actionReason
+      : unavailable
+        ? null
+        : liveFooterReasons.length > 0
+          ? liveFooterReasons.join(' ')
+          : null;
 
   async function commit(next: ForumPlacePin | null): Promise<void> {
     if (props.onCommit === undefined) {
@@ -430,119 +621,229 @@ export function PlaceField(props: {
       setOpen(false);
       return;
     }
+    dialogRef.current!.focus();
+    failedSaveActionRef.current = null;
     setSaving(true);
-    setSaveError(false);
+    setSaveError(null);
+    setUnknownSaveError(false);
     try {
       await props.onCommit(next);
       setOpen(false);
-    } catch {
-      setSaveError(true);
+    } catch (error) {
+      failedSaveActionRef.current = next === null ? 'remove' : 'commit';
+      if (!shopDetails && error instanceof Error && error.message === PLACE_LABEL_API_MESSAGE) {
+        setServerLabelTooLong(true);
+        return;
+      }
+      const problem = error instanceof Error ? shopApiProblem(error.message, shopDetails) : null;
+      if (problem === null) {
+        setUnknownSaveError(true);
+      } else {
+        // The place route checks the stored shop text, which this dialog cannot edit.
+        setSaveError(
+          shopDetails && problem === 'shopDescription'
+            ? 'shops.problemNameLongerThanText'
+            : SHOP_API_MESSAGE[problem],
+        );
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  const previewBody = (
-    <>
-      <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-      <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
-      <IconButton
-        type="button"
-        size="sm"
-        variant="secondary"
-        aria-label={t('forum.placeRemove')}
-        disabled={props.disabled || saving}
-        onClick={() => {
-          void commit(null);
-        }}
-      >
-        <X aria-hidden="true" className="h-4 w-4" />
-      </IconButton>
-    </>
-  );
-
-  const panelBody = unavailable ? (
-    <>
-      <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
-      {saveError ? (
-        <p role="alert" className="mt-3 text-sm text-app-danger">
-          {t('forum.placeSaveFailed')}
-        </p>
-      ) : null}
-      {!showPreview && props.place !== null ? (
-        <IconButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          aria-label={t('forum.placeRemove')}
-          disabled={props.disabled || saving}
-          onClick={() => {
-            void commit(null);
-          }}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      ) : null}
-    </>
-  ) : (
-    <>
-      <div ref={mapElRef} className="h-64 min-h-0 w-full shrink rounded-xl" />
-      <input
-        type="text"
-        maxLength={80}
-        aria-label={t('forum.placeLabel')}
-        value={labelDraft}
-        disabled={props.disabled}
-        onChange={(event) => {
-          setLabelDraft(event.target.value);
-        }}
-        className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
-      />
-      {saveError ? (
-        <p role="alert" className="mt-3 text-sm text-app-danger">
-          {t('forum.placeSaveFailed')}
-        </p>
-      ) : null}
-      {markerPos !== null ? (
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          disabled={props.disabled || saving}
-          onClick={() => {
-            const trimmed = labelDraft.trim();
-            void commit({
-              lat: markerPos.lat,
-              lng: markerPos.lng,
-              label: trimmed === '' ? null : trimmed,
-            });
-          }}
-        >
-          {t('forum.placeDone')}
-        </Button>
-      ) : null}
-      {!showPreview && props.place !== null ? (
-        <IconButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          aria-label={t('forum.placeRemove')}
-          disabled={props.disabled || saving}
-          onClick={() => {
-            void commit(null);
-          }}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      ) : null}
-    </>
-  );
+  const dialog =
+    !sunday && open && !props.disabled
+      ? createPortal(
+          <div
+            ref={dialogRef}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-app-overlay outline-none sm:items-center sm:p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+          >
+            <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(var(--app-height)-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
+              <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">
+                <h2 id={titleId} className="text-base font-medium text-app-fg">
+                  {shopDetails ? t('shops.placeDialogTitle') : t('forum.addPlace')}
+                </h2>
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  aria-label={t('forum.payClose')}
+                  disabled={saving}
+                  onClick={() => setOpen(false)}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+              <Scrollport className="min-h-0 flex-1">
+                <div className="flex flex-col gap-3 p-4">
+                  {unavailable ? (
+                    <p className="text-sm text-app-danger">{t('forum.placeUnavailable')}</p>
+                  ) : scriptReady ? (
+                    <>
+                      <div ref={mapElRef} className="h-64 min-h-64 w-full rounded-xl" />
+                      {markerPos === null ? (
+                        <p className="text-sm text-app-muted">{t('shops.placeMapHint')}</p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="text-sm text-app-muted">{t('shops.placeMapLoading')}</p>
+                  )}
+                  {shopDetails ? (
+                    <>
+                      <Field
+                        id={shopNameId}
+                        label={t('shops.placeName')}
+                        required
+                        autoComplete="off"
+                        value={labelDraft}
+                        disabled={fieldsDisabled}
+                        hint={t('shops.placeNameHint')}
+                        {...(nameError === undefined
+                          ? {}
+                          : {
+                              error: nameError,
+                              // A reported error is announced until the name is edited;
+                              // the text is the current live problem when there is one.
+                              errorAnnounce: nameSaveError !== undefined,
+                            })}
+                        onBlur={() => setNameTouched(true)}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setLabelDraft(value);
+                          if (value !== '') {
+                            setNameTouched(true);
+                          }
+                          setSaveError(null);
+                          setReportedProblem(null);
+                          setUnknownSaveError(false);
+                        }}
+                      />
+                      <ShopAddressFields
+                        value={addressValue}
+                        disabled={fieldsDisabled}
+                        errors={shownAddressErrors}
+                        onBlur={(field) =>
+                          setAddressTouched((current) => new Set(current).add(field))
+                        }
+                        onChange={(next) => {
+                          setAddressDraft(next);
+                          const changed = (Object.keys(next) as ShopAddressField[]).find(
+                            (field) => next[field] !== addressDraft[field],
+                          );
+                          if (changed !== undefined && next[changed] !== '') {
+                            setAddressTouched((current) => new Set(current).add(changed));
+                          }
+                          setSaveError(null);
+                          setReportedProblem(null);
+                          setUnknownSaveError(false);
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        id="living-place-label"
+                        type="text"
+                        aria-label={t('forum.placeLabel')}
+                        value={labelDraft}
+                        disabled={fieldsDisabled}
+                        aria-invalid={livingLabelError !== undefined || undefined}
+                        aria-describedby={
+                          livingLabelError !== undefined ? 'living-place-label-error' : undefined
+                        }
+                        onChange={(event) => {
+                          setLabelDraft(event.target.value);
+                          setServerLabelTooLong(false);
+                          setSaveError(null);
+                          setReportedProblem(null);
+                          setUnknownSaveError(false);
+                        }}
+                        className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+                      />
+                      {livingLabelError === undefined ? null : (
+                        <p
+                          id="living-place-label-error"
+                          role="alert"
+                          className="text-sm text-app-danger"
+                        >
+                          {livingLabelError}
+                        </p>
+                      )}
+                    </>
+                  )}
+                  {unknownSaveError ? (
+                    <p role="alert" className="text-sm text-app-danger">
+                      {t('forum.placeSaveFailed')}
+                    </p>
+                  ) : null}
+                </div>
+              </Scrollport>
+              <div className="shrink-0 border-t border-app-border bg-app-card px-4 py-3">
+                {footerReason === null ? null : (
+                  <p
+                    role={actionReason === null ? undefined : 'alert'}
+                    className="mb-2 text-sm text-app-danger"
+                  >
+                    {footerReason}
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    data-place-commit=""
+                    disabled={fieldsDisabled || blocked}
+                    onClick={() => {
+                      const label = labelDraft.trim();
+                      void commit({
+                        ...markerPos!,
+                        label: label === '' ? null : label,
+                        ...(shopDetails
+                          ? {
+                              label,
+                              address: {
+                                street: addressDraft.street.trim(),
+                                houseNumber: addressDraft.houseNumber.trim(),
+                                postalCode: addressDraft.postalCode.trim(),
+                                city: addressDraft.city.trim(),
+                                country: addressDraft.country.trim().toUpperCase(),
+                              },
+                            }
+                          : {}),
+                      });
+                    }}
+                  >
+                    {t('forum.placeDone')}
+                  </Button>
+                  {/* A shop wizard needs a complete place, so only a saving owner offers Remove. */}
+                  {props.place !== null && (!shopDetails || props.onCommit !== undefined) ? (
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      data-place-remove=""
+                      aria-label={t('forum.placeRemove')}
+                      disabled={fieldsDisabled}
+                      onClick={() => void commit(null)}
+                    >
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <SundayWritingGate>
-      <div ref={anchorRef} className="relative shrink-0">
+      <div ref={triggerWrapRef} className="shrink-0">
         <IconButton
           type="button"
           size={buttonSize}
@@ -550,56 +851,23 @@ export function PlaceField(props: {
           aria-label={ariaLabel}
           title={ariaLabel}
           aria-expanded={open}
-          disabled={props.disabled}
+          disabled={fieldsDisabled}
           onClick={() => {
+            if (!open) {
+              resetDraft();
+              // A server reason stays until its field changes, also when the visitor reopens.
+              const problem = props.problem ?? null;
+              if (shopDetails && problem !== null && SHOP_PLACE_PROBLEMS.includes(problem)) {
+                setNameTouched(SHOP_NAME_PROBLEMS.includes(problem));
+                setReportedProblem(problem);
+              }
+            }
             setOpen((current) => !current);
           }}
         >
-          <MapPin
-            aria-hidden="true"
-            className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
-          />
+          <MapPin aria-hidden="true" className={buttonSize === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
         </IconButton>
-        {!sunday && showPreview && props.place !== null && !open ? (
-          placedBox !== null ? (
-            createPortal(
-              <div
-                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
-                style={placedBoxStyle(placedBox, false)}
-              >
-                {previewBody}
-              </div>,
-              document.body,
-            )
-          ) : (
-            <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {previewBody}
-            </div>
-          )
-        ) : null}
-        {!sunday && open && !props.disabled && (unavailable || mapsKey !== null) ? (
-          placedBox !== null ? (
-            createPortal(
-              <div
-                className={
-                  placedBox.top !== null
-                    ? 'pointer-events-none fixed z-30 flex flex-col justify-start overflow-clip'
-                    : 'pointer-events-none fixed z-30 flex flex-col justify-end overflow-clip'
-                }
-                style={placedBoxStyle(placedBox, true)}
-              >
-                <div className="pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3">
-                  {panelBody}
-                </div>
-              </div>,
-              document.body,
-            )
-          ) : (
-            <div className="absolute left-0 top-full z-30 mt-2 w-full max-w-sm rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {panelBody}
-            </div>
-          )
-        ) : null}
+        {dialog}
       </div>
     </SundayWritingGate>
   );

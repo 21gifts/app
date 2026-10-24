@@ -1229,6 +1229,11 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('name');
     expect(result.current.nameError).toBe('taken');
     expect(result.current.status).not.toBe('error');
+    act(() => {
+      result.current.clearNameError();
+    });
+    expect(result.current.nameError).toBeNull();
+    expect(result.current.status).toBe('name');
   });
 
   it('invalid username from begin stays on name', async () => {

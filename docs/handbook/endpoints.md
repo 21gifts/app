@@ -405,7 +405,7 @@
 
 - **Purpose:** Returns `{ key }` for the browser map, or `{ key: null }` when `GOOGLE_MAPS_API_KEY` is unset or blank. An empty value does not fail container boot. The key is not logged.
 - **Errors:** None. Always 200.
-- **Used by:** `PlaceField`, `PlacesMapScreen`.
+- **Used by:** `fetchMapsKey` (`PlacesMapScreen`, `ShopScreen`, `PlaceField`).
 - **Auth:** None.
 
 ## Endpoint: GET /forum/messages/hidden
@@ -630,6 +630,13 @@
 - **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. The forum composer uses it while `@` is being typed. The Person field on `/grants/payments/amounts` uses the same search and opens that first page when the field is exactly `@`.
 - **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
 - **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, from `ShopAccountControl`, and from `DailyPaymentAmountsScreen` for the Person field on `/grants/payments/amounts`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/accounts/by-username/[username]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/accounts/by-username/:username`. Exact account lookup by username. The stored spelling is returned; the client does not compare the name again.
+- **Errors:** Upstream 401/400/404/409, or 502 if the api is unreachable.
+- **Used by:** `lookupAccountByUsername` from `ShopAddWizard`, `ShopAccountControl`, and `ForumLoader`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications

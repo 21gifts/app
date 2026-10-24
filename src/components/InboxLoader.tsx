@@ -3,9 +3,19 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import {
+  InboxScreen,
+  type InboxFormError,
+  type InboxInvoice,
+  type InboxPhotoAlert,
+} from '@/components/InboxScreen';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import {
+  replyDraftProblem,
+  replySatsFromDraft,
+  shownPaySheetError,
+  shownFiatForSats,
+} from '@/lib/stats-money';
 import {
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
@@ -85,6 +95,19 @@ function appendUnseenMessages(
 }
 
 /**
+ * A photo rejection is the extra sentence only while the rate is still loading.
+ *
+ * @param error - The stored inbox form error.
+ * @returns The photo code, or `null` when the error is not a photo rejection.
+ */
+function inboxPhotoAlert(error: InboxFormError): InboxPhotoAlert | null {
+  if (error === 'unsupported' || error === 'tooLarge' || error === 'tooMany') {
+    return error;
+  }
+  return null;
+}
+
+/**
  * Client loader for the signed-in inbox on `/messages`.
  *
  * Reads the session from the auth store, fetches the conversation list, and
@@ -125,7 +148,7 @@ export function InboxLoader(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled: rateSettled } = useLatestRateDayState();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);
@@ -144,6 +167,20 @@ export function InboxLoader(): ReactElement | null {
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [posting, setPosting] = useState(false);
   const [formError, setFormError] = useState<InboxFormError>(null);
+  // The shown error, assigned during render. A pick decides the side alert
+  // after `await`, when the setState updater has not run yet.
+  const formErrorRef = useRef(formError);
+  formErrorRef.current = formError;
+  const rateSettledRef = useRef(rateSettled);
+  rateSettledRef.current = rateSettled;
+  const [photoAlert, setPhotoAlert] = useState<InboxPhotoAlert | null>(null);
+  // A photo picked while the rate is loading is only the extra sentence.
+  // Once that request has settled, the rejection is the stored error. A live
+  // invalid amount or a missing rate then wins until the draft is acceptable.
+  if (rateSettled && photoAlert !== null && formError === 'loading') {
+    setFormError(photoAlert);
+    setPhotoAlert(null);
+  }
   const [invoice, setInvoice] = useState<InboxInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [staffRoomId, setStaffRoomId] = useState<string | null>(null);
@@ -167,6 +204,7 @@ export function InboxLoader(): ReactElement | null {
     setDraft('');
     setAmountDraft('');
     setFormError(null);
+    setPhotoAlert(null);
     setInvoice(null);
     setPayWaiting(false);
     setStaffRoomId(null);
@@ -400,6 +438,7 @@ export function InboxLoader(): ReactElement | null {
       setPreparing(false);
       setPhotoDrafts([]);
       setFormError(null);
+      setPhotoAlert(null);
       const urls = photoUrlsRef.current;
       for (const url of Object.values(urls)) {
         revokeIfBlob(url);
@@ -646,7 +685,11 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(nextError);
+        const heldLoading = formErrorRef.current === 'loading' && !rateSettledRef.current;
+        if (!heldLoading) {
+          setFormError(nextError);
+        }
+        setPhotoAlert(heldLoading ? inboxPhotoAlert(nextError) : null);
       } finally {
         /* v8 ignore next 3 -- a newer pick replaced this generation */
         if (generation === pickGeneration.current) {
@@ -658,7 +701,8 @@ export function InboxLoader(): ReactElement | null {
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError(null);
+    setFormError((current) => (current === 'loading' ? current : null));
+    setPhotoAlert(null);
   };
 
   const onPost = (): void => {
@@ -669,7 +713,19 @@ export function InboxLoader(): ReactElement | null {
     if (posting || preparing || payWaiting || invoice !== null) {
       return;
     }
+    if (formError === 'loading' && !rateSettled) {
+      return;
+    }
     const trimmed = draft.trim();
+    const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
+    if (amountProblem === 'quiet') {
+      setFormError('loading');
+      return;
+    }
+    if (amountProblem === 'no-rate') {
+      setFormError('noRate');
+      return;
+    }
     const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
@@ -686,6 +742,7 @@ export function InboxLoader(): ReactElement | null {
     const conversationId = openId;
     setPosting(true);
     setFormError(null);
+    setPhotoAlert(null);
     if (sats !== 'empty') {
       pickGeneration.current += 1;
       setPhotoDrafts([]);
@@ -876,6 +933,14 @@ export function InboxLoader(): ReactElement | null {
   /* v8 ignore next -- empty ?c= is the same as no thread */
   const threadId = threadAllowed ? openId : null;
   const showFilter = staff;
+  const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
+  const shownFormError = shownPaySheetError(
+    formError,
+    amountProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   return (
     <InboxScreen
       conversations={waitingStaffRoom ? null : conversations}
@@ -893,6 +958,7 @@ export function InboxLoader(): ReactElement | null {
         setDraft('');
         setAmountDraft('');
         setFormError(null);
+        setPhotoAlert(null);
         setInvoice(null);
         setPayWaiting(false);
         pickGeneration.current += 1;
@@ -912,17 +978,19 @@ export function InboxLoader(): ReactElement | null {
       draft={draft}
       onDraftChange={(value) => {
         setDraft(value);
-        setFormError(null);
+        setFormError((current) => (current === 'amount' || current === 'loading' ? current : null));
+        setPhotoAlert(null);
       }}
       amountDraft={amountDraft}
       onAmountDraftChange={(value) => {
         setAmountDraft(value);
-        setFormError(null);
+        setFormError((current) => (current === 'amount' || current === 'noRate' ? null : current));
       }}
       onAmountUnitChange={setAmountUnit}
       onPost={onPost}
       posting={posting || preparing}
-      formError={formError}
+      formError={shownFormError}
+      photoAlert={photoAlert}
       showFilter={showFilter}
       invoice={invoice}
       onPayCancel={() => {

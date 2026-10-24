@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { PwaInstall } from '@/components/PwaInstall';
 import { HappylandSection } from '@/components/HappylandSection';
+import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
@@ -49,6 +50,52 @@ export default async function Home(): Promise<ReactElement> {
           </div>
         </div>
       </section>
+
+      <HomeShops
+        copy={{
+          title: t('homeShops.title'),
+          lead: t('homeShops.lead'),
+          view: t('homeShops.view'),
+          map: t('homeShops.map'),
+          table: t('homeShops.table'),
+          country: t('homeShops.country'),
+          name: t('homeShops.name'),
+          blockchain: t('homeShops.blockchain'),
+          asset: t('homeShops.asset'),
+          activity: t('homeShops.activity'),
+          all: t('homeShops.all'),
+          empty: t('homeShops.empty'),
+          error: t('map.error'),
+          retry: t('forum.retry'),
+          colName: t('homeShops.colName'),
+          colLocation: t('homeShops.colLocation'),
+          colCountry: t('homeShops.colCountry'),
+          colShop: t('homeShops.colShop'),
+          colProvider: t('homeShops.colProvider'),
+          colActivity: t('homeShops.colActivity'),
+          helpLabel: t('homeShops.helpLabel'),
+          daily: t('homeShops.daily'),
+          weekly: t('homeShops.weekly'),
+          monthly: t('homeShops.monthly'),
+          idle: t('homeShops.idle'),
+          none: t('homeShops.none'),
+          dailyHelp: t('homeShops.dailyHelp'),
+          weeklyHelp: t('homeShops.weeklyHelp'),
+          monthlyHelp: t('homeShops.monthlyHelp'),
+          idleHelp: t('homeShops.idleHelp'),
+          noneHelp: t('homeShops.noneHelp'),
+          hierarchy: t('homeShops.hierarchy'),
+          zoomIn: t('homeShops.zoomIn'),
+          zoomOut: t('homeShops.zoomOut'),
+          resetBearing: t('homeShops.resetBearing'),
+          toggleAttribution: t('homeShops.toggleAttribution'),
+          mapFeedback: t('homeShops.mapFeedback'),
+          closePopup: t('homeShops.closePopup'),
+          mapTitle: t('homeShops.mapTitle'),
+          csv: t('homeShops.csv'),
+          colUrl: t('homeShops.colUrl'),
+        }}
+      />
 
       <section id="how" className="mx-auto max-w-[1100px] px-5 py-20">
         <h2 className="text-sm font-medium tracking-widest text-accent uppercase">

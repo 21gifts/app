@@ -16,13 +16,16 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import {
   fiatDraftForSats,
   parseAmountDraft,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
+  shownPaySheetError,
 } from '@/lib/stats-money';
 import {
   dismissForumLaws,
@@ -65,11 +68,27 @@ import {
 } from '@/lib/forum-feed';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
+import {
+  SHOP_HASHTAG,
+  apiMediaProblem,
+  ensureShopHashtag,
+  isShopApiProblem,
+  isShopNote,
+  shopApiProblem,
+  shopDescriptionProblem,
+  shopNameProblem,
+  shopPlaceComplete,
+  shopProblemField,
+  shopUsernameProblem,
+  stripShopHashtag,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
+import { lookupAccountByUsername } from '@/lib/mention-search';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -98,6 +117,38 @@ function isRateLimitError(err: unknown): boolean {
   }
   return /too many (messages|payments)/i.test(err.message);
 }
+
+/**
+ * Composer error for an API 400: the shop problem, or `shopElsewhere` when a
+ * non-shop composer cannot fix shop-only name or address details.
+ *
+ * @param err - Rejection from posting.
+ * @param shop - Whether the composer is the shop composer.
+ * @returns The composer error, or `null` when the text is not a shop 400.
+ */
+function composerShopError(err: unknown, shop: boolean): ShopApiProblem | 'shopElsewhere' | null {
+  const problem = err instanceof Error ? shopApiProblem(err.message, shop) : null;
+  return !shop && problem !== null && shopProblemField(problem) === 'place'
+    ? 'shopElsewhere'
+    : problem;
+}
+
+/** Whether media changes should preserve the current shop-related composer error. */
+function isShopComposerError(error: ForumFormError): error is ShopApiProblem | 'shopElsewhere' {
+  return error === 'shopElsewhere' || isShopApiProblem(error);
+}
+
+/** Photo reasons that stay until the photos change, because the rejected files are still attached. */
+function isAttachedPhotoError(error: ForumFormError): boolean {
+  return error === 'tooMany' || error === 'formatOrSize';
+}
+
+const SHOP_NAME_FORM_ERROR = {
+  name: 'shopName',
+  nameAddress: 'shopNameAddress',
+  nameLong: 'shopNameLong',
+  nameControls: 'shopNameControls',
+} as const satisfies Record<NonNullable<ReturnType<typeof shopNameProblem>>, ShopApiProblem>;
 
 /** Revokes a blob object URL when present; no-op for undefined or empty. */
 function revokeObjectUrlIfPresent(url: string | undefined): void {
@@ -311,7 +362,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
   if (feed !== 'shops') {
     return null;
   }
-  const handle = username.trim().replace(/^@/, '');
+  const handle = username.trim().replace(/^@/, '').trim().toLowerCase();
   return handle === '' ? null : handle;
 }
 
@@ -406,6 +457,14 @@ export function ForumLoader({
   const [videoDraft, setVideoDraft] = useState<ForumVideoPayload | null>(null);
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
+  // Media the API rejected for format or size; they block the shop wizard while still attached.
+  const [rejectedMedia, setRejectedMedia] = useState<readonly object[]>([]);
+  const rememberRejectedMedia = (): void => {
+    setRejectedMedia([
+      ...photoDraftsRef.current,
+      ...(videoDraftRef.current === null ? [] : [videoDraftRef.current]),
+    ]);
+  };
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
@@ -447,7 +506,7 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled: rateSettled } = useLatestRateDayState();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   useEffect(() => {
@@ -1419,6 +1478,14 @@ export function ForumLoader({
       .catch(() => undefined);
   };
 
+  // The kept caption carries the shop tag on Shops; the wizard edits the text without it.
+  const restoreComposeCaption = (): void => {
+    const keptCaption = pendingComposeTextRef.current;
+    if (keptCaption !== null && keptCaption !== '') {
+      setDraft(feed === 'shops' ? stripShopHashtag(keptCaption) : keptCaption);
+    }
+  };
+
   const clearPaySheet = (): void => {
     bumpPayPollGeneration();
     setPayMessageId(null);
@@ -1432,10 +1499,7 @@ export function ForumLoader({
     notePostInFlightRef.current = false;
     setPayHost(null);
     setReplyPayPreview(null);
-    const keptCaption = pendingComposeTextRef.current;
-    if (keptCaption !== null && keptCaption !== '') {
-      setDraft(keptCaption);
-    }
+    restoreComposeCaption();
   };
 
   const startPayPoll = (
@@ -1563,13 +1627,20 @@ export function ForumLoader({
                   pendingComposeGoalRef.current = undefined;
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
-                } catch {
-                  setFormError('request');
-                  composeFeePaidRef.current = true;
-                  const keptCaption = pendingComposeTextRef.current;
-                  if (keptCaption !== null && keptCaption !== '') {
-                    setDraft(keptCaption);
+                } catch (err) {
+                  const mediaProblem =
+                    err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
+                  const shopProblem = composerShopError(err, feed === 'shops');
+                  if (mediaProblem === 'formatOrSize') {
+                    rememberRejectedMedia();
                   }
+                  setFormError(
+                    mediaProblem ??
+                      shopProblem ??
+                      (isRateLimitError(err) ? 'rateLimit' : 'request'),
+                  );
+                  composeFeePaidRef.current = true;
+                  restoreComposeCaption();
                   setPayWaiting(false);
                   setPayInvoice(null);
                   setPayMessageId(null);
@@ -1700,6 +1771,15 @@ export function ForumLoader({
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setFormError((current) =>
+      current === 'unsupported' ||
+      current === 'tooLarge' ||
+      current === 'tooMany' ||
+      current === 'formatOrSize'
+        ? null
+        : current,
+    );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);
       try {
@@ -1720,7 +1800,9 @@ export function ForumLoader({
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           setPhotoDrafts([]);
           setVideoDraft(result.video);
-          setFormError(null);
+          // A successful pick keeps a shop error; a failed pick's reason replaces it
+          // in the single error slot, and the next post shows it again.
+          setFormError((current) => (isShopComposerError(current) ? current : null));
           return;
         }
 
@@ -1757,7 +1839,7 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(nextError);
+        setFormError((current) => nextError ?? (isShopComposerError(current) ? current : null));
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');
@@ -1772,7 +1854,7 @@ export function ForumLoader({
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError(null);
+    setFormError((current) => (isShopComposerError(current) ? current : null));
   };
 
   const applyCreatedNote = (
@@ -1873,6 +1955,51 @@ export function ForumLoader({
     if (session === null) return;
     setPosting(true);
     setFormError(null);
+    if (feed !== 'shops' && isShopNote(trimmed)) {
+      setFormError('shopElsewhere');
+      notePostInFlightRef.current = false;
+      setPosting(false);
+      return;
+    }
+    if (feed === 'shops') {
+      const nameProblem =
+        pendingPlace === null ? null : shopNameProblem(pendingPlace.label, pendingPlace.address);
+      if (!shopPlaceComplete(pendingPlace)) {
+        setFormError(nameProblem === null ? 'shopAddress' : SHOP_NAME_FORM_ERROR[nameProblem]);
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      const descriptionProblem = shopDescriptionProblem(trimmed, pendingPlace.label);
+      if (descriptionProblem !== null) {
+        setFormError(
+          descriptionProblem === 'controls' ? 'shopDescriptionControls' : 'shopDescription',
+        );
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      if (shopUsernameProblem(shopUsername) !== null) {
+        setFormError('usernameInvalid');
+        notePostInFlightRef.current = false;
+        setPosting(false);
+        return;
+      }
+      const handle = composeShopUsername(feed, shopUsername);
+      if (handle !== null) {
+        try {
+          const verdict = await lookupAccountByUsername(session, handle);
+          if (verdict === 'missing') {
+            setFormError('usernameMissing');
+            notePostInFlightRef.current = false;
+            setPosting(false);
+            return;
+          }
+        } catch {
+          // A failed optional lookup does not block; the posting API validates it.
+        }
+      }
+    }
     let awaitingPay = false;
     try {
       if (
@@ -1965,6 +2092,20 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
+      const mediaProblem =
+        err instanceof Error && feed === 'shops' ? apiMediaProblem(err.message) : null;
+      if (mediaProblem !== null) {
+        if (mediaProblem === 'formatOrSize') {
+          rememberRejectedMedia();
+        }
+        setFormError(mediaProblem);
+        return;
+      }
+      const shopProblem = composerShopError(err, feed === 'shops');
+      if (shopProblem !== null) {
+        setFormError(shopProblem);
+        return;
+      }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
@@ -2058,6 +2199,19 @@ export function ForumLoader({
       replies?.find((message) => message.id === payMessageId);
     /* v8 ignore next 3 -- sheet only opens on a payable row */
     if (listed === undefined || listed.payable !== true) {
+      return;
+    }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
@@ -2369,13 +2523,8 @@ export function ForumLoader({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-            ? 'tooLong'
-            : isRateLimitError(err)
-              ? 'rateLimit'
-              : 'request',
-        );
+        // This invoice was sent only after the draft fit the stored limit.
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       setReplyPosting(false);
@@ -2455,12 +2604,10 @@ export function ForumLoader({
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
-    const trimmed = replyDraft.trim();
-    /* v8 ignore next 4 -- textarea maxLength */
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
-      setReplyFormError('tooLong');
+    if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
+    const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
@@ -2470,9 +2617,30 @@ export function ForumLoader({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
-    const composeOverhead = `inReplyTo:${parentId}\n`.length;
-    if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
       setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSettled,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
+      return;
+    }
+    if (replyProblem === 'no-rate') {
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
@@ -2520,6 +2688,43 @@ export function ForumLoader({
     void pending();
   };
 
+  const replyParentAccountId =
+    expandedId === null
+      ? undefined
+      : messages?.find((message) => message.id === expandedId)?.accountId;
+  const replyExempt = isReplyPaymentExempt(account, replyParentAccountId);
+  const replyParsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+  const replyTextTooLong = replyTextIsTooLong(
+    replyDraft,
+    expandedId,
+    replyExempt,
+    replyParsed === 'empty' && !replyExempt && replyParentAccountId !== undefined,
+  );
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  // A stored loading submit stays until the rate request finishes. A settled
+  // missing rate is the amount flag, not a reply-form code.
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -2552,9 +2757,13 @@ export function ForumLoader({
               shopUsername,
               onShopUsernameChange: (value: string) => {
                 setShopUsername(value);
-                setFormError(null);
+                // The username step is reachable only once the place and text are valid, so an
+                // error left here belongs to the username or the last request, unless it is about
+                // photos that are still attached.
+                setFormError((current) => (isAttachedPhotoError(current) ? current : null));
               },
               shopResetToken,
+              shopRejectedMedia: rejectedMedia,
             }
           : {})}
         {...(feed === 'shops'
@@ -2710,10 +2919,29 @@ export function ForumLoader({
         posting={posting || preparing}
         draft={draft}
         placeDraft={placeDraft}
-        onPlaceDraftChange={setPlaceDraft}
+        onPlaceDraftChange={(next) => {
+          // The shop text must be longer than the name, so a new name may fix a text rejection.
+          const nameChanged = (next?.label ?? '') !== (placeDraft?.label ?? '');
+          setPlaceDraft(next);
+          setFormError((current) =>
+            current !== null &&
+            isShopApiProblem(current) &&
+            (shopProblemField(current) === 'place' ||
+              (current === 'shopDescription' && nameChanged))
+              ? null
+              : current,
+          );
+        }}
         onDraftChange={(value) => {
           setDraft(value);
-          setFormError(null);
+          setFormError((current) =>
+            (current !== null &&
+              isShopApiProblem(current) &&
+              shopProblemField(current) !== 'text') ||
+            isAttachedPhotoError(current)
+              ? current
+              : null,
+          );
         }}
         askDraft={askDraft}
         askDraftUnit={askDraftUnit}
@@ -2756,7 +2984,7 @@ export function ForumLoader({
           pickGeneration.current += 1;
           setPhotoDrafts([]);
           setVideoDraft(null);
-          setFormError(null);
+          setFormError((current) => (isShopComposerError(current) ? current : null));
         }}
         photoUrls={photoUrls}
         videoUrls={videoUrls}
@@ -2764,7 +2992,7 @@ export function ForumLoader({
         payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
-        payError={payError}
+        payError={shownPayError}
         repayNotice={repayNotice}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
@@ -2788,7 +3016,7 @@ export function ForumLoader({
         onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
-          setPayError(null);
+          setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
         }}
         onPaySubmit={onPaySubmit}
         onPayCancel={clearPaySheet}
@@ -2814,16 +3042,19 @@ export function ForumLoader({
         replyDraft={replyDraft}
         onReplyDraftChange={(value) => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value) => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         onReplyPost={onReplyPost}
         replyPosting={replyPosting}
-        replyFormError={replyFormError}
+        replyFormError={shownReplyFormError}
+        replyTextTooLong={replyTextTooLong}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
       />
     </>
   );

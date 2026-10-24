@@ -15,7 +15,7 @@ const DAY: FiatRateDay = {
 function sheet(
   error: ForumPayError,
   invoice: boolean,
-  extra?: { payBusy?: boolean; ratePending?: boolean },
+  extra?: { payBusy?: boolean },
 ): {
   onPaySubmit: ReturnType<typeof vi.fn>;
   onPayCancel: ReturnType<typeof vi.fn>;
@@ -37,7 +37,6 @@ function sheet(
       onPaySubmit={onPaySubmit}
       onPayCancel={onPayCancel}
       rateDay={DAY}
-      {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
       showPaymentQr={false}
       onInteract={vi.fn()}
     />,
@@ -60,6 +59,15 @@ describe('ForumPaySheet', () => {
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a missing fiat rate and does not submit', () => {
+    const { onPaySubmit } = sheet('noRate', false);
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.submit(button.closest('form') as HTMLFormElement);
+    expect(onPaySubmit).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the habit amount sentence, not the forum amount sentence', () => {
     sheet('habitAmount', false);
     expect(screen.getByRole('alert').textContent).toBe(
@@ -76,8 +84,9 @@ describe('ForumPaySheet', () => {
     expect(busy.onPaySubmit).not.toHaveBeenCalled();
     cleanup();
 
-    const pending = sheet(null, false, { ratePending: true });
+    const pending = sheet('loading', false);
     const pendingButton = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
     expect(pendingButton.disabled).toBe(true);
     fireEvent.submit(pendingButton.closest('form') as HTMLFormElement);
     expect(pending.onPaySubmit).not.toHaveBeenCalled();

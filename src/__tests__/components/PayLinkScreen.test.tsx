@@ -102,6 +102,21 @@ describe('PayLinkScreen', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('shows an empty amount after the field is left', async () => {
+    mockFetch(async () => Response.json(profile));
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.blur(screen.getByLabelText('Amount'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
   it('shows the name and rejects an amount outside the window', async () => {
     mockFetch(async () => Response.json(profile));
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
@@ -112,10 +127,11 @@ describe('PayLinkScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '101' } });
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
@@ -137,6 +153,33 @@ describe('PayLinkScreen', () => {
       'The USD exchange rate is still loading.',
     );
     expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+  });
+
+  it('does not mint an invoice when bitcoin is chosen while the rate is still loading', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/gifts/stats')) {
+        return new Promise(() => undefined);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    expect(postedInvoice()).toBe(false);
   });
 
   it('replaces the loading alert with no rate when the gift day settles', async () => {
@@ -222,7 +265,7 @@ describe('PayLinkScreen', () => {
     );
     resolveStats(Response.json(giftStatsBody([GIFT_DAY])));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+      expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     });
     expect(postedInvoice()).toBe(false);
   });
@@ -257,7 +300,7 @@ describe('PayLinkScreen', () => {
       ),
     );
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+      expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿50 to ₿100.');
     });
     expect(postedInvoice()).toBe(false);
   });
@@ -296,6 +339,9 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect((await screen.findByRole('alert')).textContent).toBe('No USD exchange rate yet.');
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+    expect(postedInvoice()).toBe(false);
   });
 
   it('shows the invoice QR after a successful mint', async () => {

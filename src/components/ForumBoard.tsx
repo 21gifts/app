@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -47,6 +48,7 @@ import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
+import { PlacePinChip } from '@/components/PlacePinChip';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -60,6 +62,7 @@ import {
   type ForumMessage,
   type ForumPlacePin,
 } from '@/lib/api-types';
+import { composerTextProblem, shownEntryProblem } from '@/lib/entry-text';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopAddWizard } from '@/components/ShopAddWizard';
@@ -74,7 +77,15 @@ import {
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
-import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  SHOP_API_MESSAGE,
+  formatPlacePinText,
+  isShopApiProblem,
+  isShopNote,
+  shopProblemField,
+  stripShopHashtag,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -100,11 +111,20 @@ export type ForumFormError =
   | 'unsupported'
   | 'tooLarge'
   | 'tooMany'
+  | 'formatOrSize'
   | 'ask'
+  | 'shopElsewhere'
+  | ShopApiProblem
   | null;
 
+function isShopElsewhereFormError(error: ForumFormError): boolean {
+  return (
+    error === 'shopElsewhere' || (isShopApiProblem(error) && shopProblemField(error) === 'place')
+  );
+}
+
 /** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'loading';
 
 /** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
 function editStillUrls(
@@ -229,6 +249,8 @@ export interface ForumBoardProps {
   onShopUsernameChange?: (username: string) => void;
   /** Bumps after a shop is sent so the wizard closes. */
   shopResetToken?: number;
+  /** Media the API rejected for format or size, passed to the shop wizard. */
+  shopRejectedMedia?: readonly object[];
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
   /**
@@ -334,6 +356,16 @@ export interface ForumBoardProps {
   replyPosting: boolean;
   /** Reply composer validation or request failure. */
   replyFormError: ForumReplyFormError;
+  /**
+   * True when the reply text is over 8000 characters. The `inReplyTo:` prefix
+   * counts only when this reply stores it. Shown with an invalid amount, not
+   * instead of it.
+   */
+  replyTextTooLong?: boolean;
+  /** True when the reply amount is not a payable number. A blank amount stays valid. */
+  replyAmountInvalid?: boolean;
+  /** True when a fiat reply amount has no rate after that request has settled. */
+  replyAmountNoRate?: boolean;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
   /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
@@ -545,6 +577,7 @@ export function ForumBoard({
   shopUsername = '',
   onShopUsernameChange,
   shopResetToken = 0,
+  shopRejectedMedia = [],
   payMessageId,
   payHost = null,
   payDraft,
@@ -590,6 +623,9 @@ export function ForumBoard({
   onReplyPost,
   replyPosting,
   replyFormError,
+  replyTextTooLong = false,
+  replyAmountInvalid = false,
+  replyAmountNoRate = false,
   composerHidden = false,
   readOnly = false,
   onDeleted,
@@ -608,6 +644,14 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const shopElsewhereLive = !shopComposer && isShopNote(draft);
+  const shopElsewhereHintVisible =
+    !hideCompose &&
+    shopElsewhereLive &&
+    (!allowAsk ||
+      composeIntent === 'post' ||
+      (allowAsk && composeIntent === 'ask' && (askStep === 3 || askStep === 4)));
+  const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const router = useRouter();
   const scroller = useAppShellScroller();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -672,6 +716,34 @@ export function ForumBoard({
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [composerTouched, setComposerTouched] = useState(false);
+  const composerBusy = posting || payWaiting;
+  const [seenComposerBusy, setSeenComposerBusy] = useState(composerBusy);
+  // The compose fee clears the draft while the pay sheet is still open.
+  // Drop the touched flag then, so the emptied field stays quiet.
+  if (composerBusy && draft.trim() === '' && composerTouched) {
+    setComposerTouched(false);
+  }
+  if (composerBusy !== seenComposerBusy) {
+    setSeenComposerBusy(composerBusy);
+    if (seenComposerBusy && !composerBusy && draft.trim() === '') {
+      setComposerTouched(false);
+    }
+  }
+  const ordinaryComposer = !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
+  const postProblem = ordinaryComposer
+    ? composerTextProblem(draft, composerMaxLength, photoDrafts.length > 0 || videoDraft !== null)
+    : null;
+  const postShown = shownEntryProblem(
+    postProblem,
+    composerTouched || formError === 'empty' || formError === 'tooLong',
+  );
+  const postAlert: 'empty' | 'tooLong' | null =
+    postShown === 'tooLong' || formError === 'tooLong'
+      ? 'tooLong'
+      : postShown === 'empty' || formError === 'empty'
+        ? 'empty'
+        : null;
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -819,6 +891,7 @@ export function ForumBoard({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    setComposerTouched(true);
     onPost();
   };
 
@@ -1134,8 +1207,7 @@ export function ForumBoard({
                     onClick={stopCardToggle}
                   >
                     <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {message.place.label ??
-                      `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
+                    {formatPlacePinText(message.place, locale)}
                   </Link>
                 ) : null}
                 {message.parentId === undefined && message.shopAccount !== undefined ? (
@@ -1627,6 +1699,11 @@ export function ForumBoard({
                             {...(onReplyUnitChange === undefined
                               ? {}
                               : { onUnitChange: onReplyUnitChange })}
+                            {...(replyAmountNoRate
+                              ? { error: t('pos.noRate', { code: fiat }) }
+                              : replyAmountInvalid || replyFormError === 'amount'
+                                ? { error: t('forum.errorReplyPayment') }
+                                : {})}
                           />
                           <div className="flex items-center gap-2">
                             <MentionTextarea
@@ -1635,7 +1712,6 @@ export function ForumBoard({
                               placeholder={t('forum.replyPlaceholder')}
                               value={replyDraft}
                               onChange={onReplyDraftChange}
-                              maxLength={FORUM_MESSAGE_MAX_LENGTH}
                               rows={1}
                               disabled={
                                 replyPayLocked ||
@@ -1644,6 +1720,12 @@ export function ForumBoard({
                                 repliesError ||
                                 replies === null
                               }
+                              {...(replyTextTooLong || replyFormError === 'tooLong'
+                                ? {
+                                    ariaDescribedBy: 'forum-reply-text-error',
+                                    ariaInvalid: true,
+                                  }
+                                : {})}
                               wrapperClassName="relative min-w-0 flex-1"
                               className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
                             />
@@ -1656,7 +1738,13 @@ export function ForumBoard({
                                 replyPosting ||
                                 repliesLoading ||
                                 repliesError ||
-                                replies === null
+                                replies === null ||
+                                replyTextTooLong ||
+                                replyAmountNoRate ||
+                                replyAmountInvalid ||
+                                replyFormError === 'tooLong' ||
+                                replyFormError === 'amount' ||
+                                replyFormError === 'loading'
                               }
                               aria-label={t('forum.post')}
                             >
@@ -1675,13 +1763,12 @@ export function ForumBoard({
                               {t('forum.errorEmpty')}
                             </p>
                           ) : null}
-                          {replyFormError === 'amount' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorReplyPayment')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'tooLong' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
+                          {replyTextTooLong || replyFormError === 'tooLong' ? (
+                            <p
+                              id="forum-reply-text-error"
+                              role="alert"
+                              className="text-center text-sm text-app-danger"
+                            >
                               {t('forum.errorTooLong')}
                             </p>
                           ) : null}
@@ -1698,6 +1785,11 @@ export function ForumBoard({
                           {replyFormError === 'deleted' ? (
                             <p role="alert" className="text-center text-sm text-app-danger">
                               {t('forum.errorNoteDeleted')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'loading' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('pos.rateLoading', { code: fiat })}
                             </p>
                           ) : null}
                         </form>
@@ -1845,6 +1937,7 @@ export function ForumBoard({
             onAskDraftChange={onAskDraftChange}
             draft={draft}
             onDraftChange={onDraftChange}
+            shopElsewhere={shopElsewhereLive}
             posting={posting}
             photoDrafts={photoDrafts}
             videoDraft={videoDraft}
@@ -1877,6 +1970,16 @@ export function ForumBoard({
             onSubmit={onPost}
             resetToken={shopResetToken}
             maxLength={composerMaxLength}
+            photoError={
+              formError === 'unsupported' ||
+              formError === 'tooLarge' ||
+              formError === 'tooMany' ||
+              formError === 'formatOrSize'
+                ? formError
+                : null
+            }
+            serverProblem={isShopApiProblem(formError) ? formError : null}
+            rejectedMedia={shopRejectedMedia}
           />
         </SundayWritingGate>
       ) : null}
@@ -1914,9 +2017,22 @@ export function ForumBoard({
                 placeholder={t('forum.placeholder')}
                 value={draft}
                 onChange={onDraftChange}
-                maxLength={composerMaxLength}
+                onBlur={() => {
+                  setComposerTouched(true);
+                }}
                 rows={2}
                 disabled={posting}
+                {...(shopElsewhereLive || postAlert !== null
+                  ? {
+                      ariaDescribedBy: [
+                        shopElsewhereLive ? shopElsewhereFeedbackId : null,
+                        postAlert !== null ? 'forum-composer-error' : null,
+                      ]
+                        .filter((id) => id !== null)
+                        .join(' '),
+                      ariaInvalid: true,
+                    }
+                  : {})}
                 wrapperClassName="relative min-w-0 flex-1"
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
@@ -1924,7 +2040,7 @@ export function ForumBoard({
                 type="submit"
                 size="lg"
                 variant="primary"
-                disabled={posting}
+                disabled={posting || shopElsewhereLive || postAlert !== null}
                 aria-label={t('forum.post')}
               >
                 {posting ? (
@@ -1934,6 +2050,39 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {ordinaryComposer && postAlert === 'empty' ? (
+              <p
+                id="forum-composer-error"
+                role="alert"
+                className="text-center text-sm text-app-danger"
+              >
+                {t('forum.errorEmpty')}
+              </p>
+            ) : null}
+            {ordinaryComposer && postAlert === 'tooLong' ? (
+              <p
+                id="forum-composer-error"
+                role="alert"
+                className="text-center text-sm text-app-danger"
+              >
+                {t('forum.errorTooLong')}
+              </p>
+            ) : null}
+            {shopElsewhereLive ? (
+              <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+                {t('forum.shopPostUseShops')}
+              </p>
+            ) : null}
+            {placeDraft !== null && onPlaceDraftChange !== undefined ? (
+              <PlacePinChip
+                place={placeDraft}
+                disabled={posting}
+                onRemove={() => {
+                  onPlaceDraftChange(null);
+                  composerRef.current!.focus();
+                }}
+              />
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
@@ -2034,12 +2183,18 @@ export function ForumBoard({
       ) : null}
 
       <div className="sunday-write-field">
-        {!hideCompose && formError === 'empty' ? (
+        {!ordinaryComposer &&
+        !hideCompose &&
+        !(allowAsk && composeIntent === 'ask') &&
+        formError === 'empty' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorEmpty')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooLong' ? (
+        {!ordinaryComposer &&
+        !hideCompose &&
+        !(allowAsk && composeIntent === 'ask') &&
+        formError === 'tooLong' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooLong')}
           </p>
@@ -2054,17 +2209,17 @@ export function ForumBoard({
             {t('forum.errorRateLimit')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'unsupported' ? (
+        {!hideCompose && !shopComposer && formError === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorUnsupported')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooLarge' ? (
+        {!hideCompose && !shopComposer && formError === 'tooLarge' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooLarge')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooMany' ? (
+        {!hideCompose && !shopComposer && formError === 'tooMany' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooMany')}
           </p>
@@ -2072,6 +2227,22 @@ export function ForumBoard({
         {!hideCompose && formError === 'ask' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorAskAmount')}
+          </p>
+        ) : null}
+        {!hideCompose &&
+        !shopComposer &&
+        !shopElsewhereHintVisible &&
+        isShopElsewhereFormError(formError) ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('forum.shopPostUseShops')}
+          </p>
+        ) : null}
+        {!hideCompose &&
+        !shopComposer &&
+        isShopApiProblem(formError) &&
+        !isShopElsewhereFormError(formError) ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t(SHOP_API_MESSAGE[formError])}
           </p>
         ) : null}
       </div>

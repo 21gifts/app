@@ -19,7 +19,8 @@ export interface ShopPlaceControlProps {
 
 /**
  * Moderator-only place editor on a shop note. Absent on replies, hidden
- * notes, non-shop text, and ranks below moderator.
+ * notes, non-shop text, and ranks below moderator. The stored note text is
+ * passed into the place editor so name/description rules are checked live.
  *
  * @param props - Note and successful-save callback.
  * @returns The compact place control, or null when it must not edit.
@@ -53,9 +54,10 @@ export function ShopPlaceControl({
       <PlaceField
         place={message.place ?? null}
         disabled={false}
-        showPreview={false}
         buttonSize="sm"
         buttonVariant="ghost"
+        shopDetails
+        shopText={message.text}
         ariaLabel={hasPlace ? t('forum.editPlace') : t('forum.addPlace')}
         onChange={
           /* v8 ignore next -- PlaceField calls onChange only when onCommit is omitted; this control always commits */

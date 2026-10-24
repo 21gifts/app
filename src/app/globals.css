@@ -157,3 +157,79 @@ body {
 html[data-menu-sheet='1'] [data-scroll-page] {
   display: none !important;
 }
+
+.shop-place-marker {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #d23b3b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.shop-place-marker.is-daily {
+  background: #ff4d00;
+}
+.shop-place-marker.is-weekly {
+  background: #ff7a29;
+}
+.shop-place-marker.is-monthly {
+  background: #ffa05c;
+}
+.shop-place-marker.is-idle {
+  background: #ffc48f;
+}
+.shop-place-marker.is-none {
+  background: #ffe3cc;
+}
+button.shop-place-marker,
+button.shop-place-marker.is-daily,
+button.shop-place-marker.is-weekly,
+button.shop-place-marker.is-monthly,
+button.shop-place-marker.is-idle,
+button.shop-place-marker.is-none {
+  appearance: none;
+  margin: 0;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  display: block;
+  cursor: pointer;
+  line-height: 0;
+  box-sizing: border-box;
+}
+button.shop-place-marker::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #d23b3b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+button.shop-place-marker.is-daily::before {
+  background: #ff4d00;
+}
+button.shop-place-marker.is-weekly::before {
+  background: #ff7a29;
+}
+button.shop-place-marker.is-monthly::before {
+  background: #ffa05c;
+}
+button.shop-place-marker.is-idle::before {
+  background: #ffc48f;
+}
+button.shop-place-marker.is-none::before {
+  background: #ffe3cc;
+}
+[hidden] {
+  display: none !important;
+}

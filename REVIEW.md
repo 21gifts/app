@@ -26,7 +26,7 @@ The pull request lists what it reused and what it added, each with the file and 
 
 ## What the review reports
 
-Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files. Do not change any files.`
+Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files and against the linked issue. Do not change any files.`
 
 Quality judges the diff against these files, read at the base revision, and against the pull request. Logic judges whether the diff is sound and complete for that pull request, and whether it adds a second mechanism for a job these files say to reuse.
 
@@ -57,6 +57,16 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Input feedback
+
+Reject a pull request when an API-enforced input rule appears only after submit
+or Next, when a known API reason is replaced with generic copy, or when a step
+or submit button is disabled without a visible reason. Check that field-level
+messages are live, adjacent (under the field, or under its row with the field
+named when two fields share a row), and linked through `aria-invalid` and
+`aria-describedby`. A pull request that touches one of these forms must meet
+the rule in full.
+
 ## Shown amounts
 
 Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
@@ -84,7 +94,10 @@ These must be green on the PR. A missing or red gate is rejected:
 - `npm run build`
 - `npm run e2e` locally (behavior + four visual combos). CI splits that
   into `E2E (behavior)` plus `Visual (desktop-light|desktop-dark|mobile-light|mobile-dark)`;
-  all must be green.
+  all must be green. `E2E (behavior)` is green only when its three shard jobs
+  `E2E (behavior, shard 1/3)` to `3/3` are green. Each `Visual (<combo>)` is green
+  only when all eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`)
+  are green.
 
 ## Other CONTRIBUTING rules
 

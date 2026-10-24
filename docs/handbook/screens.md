@@ -7,9 +7,9 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection. Under the hero and before How it works, a white block lists only shops whose tech provider is exactly 21.gifts, with country, name, blockchain, asset, and activity filters, a Map/Table control, then the map or the table; a matching shop id links to /{npub} on this site.
 - **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `HomeShops`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
 
 ### Variant: default
 
@@ -28,6 +28,108 @@ Captured at desktop and mobile. Below 1024px the header shows the Menu button; o
 Open the language switcher in the marketing header. Custom listbox (rounded panel, endonym rows with a check on the current locale) — not OS chrome.
 
 ![21.gifts home language](images/root-language.png)
+
+### Variant: shops-table
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The table lists only shops whose tech provider is exactly 21.gifts and shows Name, Location, Country, Shop, Tech provider, and Activity.
+
+![21.gifts home shops table](images/root-shops-table.png)
+
+### Variant: shops-blockchain
+
+The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected. The map is masked.
+
+![21.gifts home shops blockchain](images/root-shops-blockchain.png)
+
+### Variant: shops-asset
+
+Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected. The map is masked.
+
+![21.gifts home shops asset](images/root-shops-asset.png)
+
+### Variant: shops-activity
+
+The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query. The map is masked.
+
+![21.gifts home shops activity](images/root-shops-activity.png)
+
+### Variant: shops-country-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country select value is PH.
+
+![21.gifts home shops country selected](images/root-shops-country-selected.png)
+
+### Variant: shops-name-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name select value is SPAR.
+
+![21.gifts home shops name selected](images/root-shops-name-selected.png)
+
+### Variant: shops-blockchain-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Blockchain combobox is closed and its text includes Bitcoin. The listbox is not open.
+
+![21.gifts home shops blockchain selected](images/root-shops-blockchain-selected.png)
+
+### Variant: shops-asset-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. Blockchain Bitcoin is chosen. The Asset list is closed and the Asset combobox text includes BTC.
+
+![21.gifts home shops asset selected](images/root-shops-asset-selected.png)
+
+### Variant: shops-activity-selected
+
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Activity list is closed and its text includes Daily. Activity is not sent on the places query.
+
+![21.gifts home shops activity selected](images/root-shops-activity-selected.png)
+
+### Variant: shops-marker
+
+Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
+
+![21.gifts home shops marker](images/root-shops-marker.png)
+
+### Variant: shops-attribution
+
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles and the shop pin are hidden.
+
+![21.gifts home shops attribution](images/root-shops-attribution.png)
+
+### Variant: shops-help
+
+Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.
+
+![21.gifts home shops help](images/root-shops-help.png)
+
+### Variant: shops-loading
+
+The filter request has not finished. Map stays selected. The place-list error is not visible. No locations published yet is not visible. The map pane is visible and masked.
+
+![21.gifts home shops loading](images/root-shops-loading.png)
+
+### Variant: shops-error
+
+The filter response is status 500. Map stays selected. The alert says Could not load places. Please try again. Try again is visible. No locations published yet is not visible. The map is masked.
+
+![21.gifts home shops error](images/root-shops-error.png)
+
+### Variant: shops-map-failed
+
+The MapLibre script is aborted, the same way as the behavior test. Table is selected and the load error Could not load places. Please try again. is visible.
+
+![21.gifts home shops map failed](images/root-shops-map-failed.png)
+
+### Variant: shops-empty-map
+
+The places response is an empty array. No locations published yet is visible. The map stays visible and is masked.
+
+![21.gifts home shops empty map](images/root-shops-empty-map.png)
+
+### Variant: shops-empty-table
+
+The places response is an empty array and Table is selected. No locations published yet is visible. There is no Sample shop row.
+
+![21.gifts home shops empty table](images/root-shops-empty-table.png)
 
 ## Screen: /legal
 
@@ -294,19 +396,19 @@ After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey
 
 ### Variant: name
 
-Heading **Choose your name**. This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase. Label **Name**, Button **Continue**. The muted iOS or Android line is not shown.
+Heading **Choose your name**. This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot, starting with a letter or digit. It is stored in lowercase. Label **Name**, Button **Continue**. The muted iOS or Android line is not shown.
 
 ![21.gifts login name](images/login-name.png)
 
 ### Variant: name-invalid
 
-Pressing Continue with an empty name, or a name that after trim and lowercase does not match `/^[a-z0-9][a-z0-9._-]{0,31}$/` (a lone underscore and a leading dot are rejected), stays on this form. Alert: Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot. (`login.nameInvalid`). The passkey dialog does not open. The muted iOS or Android line is not shown.
+Pressing Continue with an empty name, or a name that after trim and lowercase does not match `/^[a-z0-9][a-z0-9._-]{0,31}$/` (a lone underscore and a leading dot are rejected), stays on this form. Alert: Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit. (`login.nameInvalid`). The passkey dialog does not open. The muted iOS or Android line is not shown.
 
 ![21.gifts login name invalid](images/login-name-invalid.png)
 
 ### Variant: name-taken
 
-A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
+A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). **Continue** stays disabled until the name changes. When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS or Android line is not shown.
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
@@ -339,7 +441,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
 - **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; when the request then settles, that loading alert changes in place without another press and without creating the payment: **No PHP exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count inside the bounds that button already uses, and the alert goes away when it is; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A whole amount outside the profile window shows **Enter an amount from {min} to {max}.**, with those bounds formatted as bitcoin amounts, and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; when the request then settles, that loading alert changes in place without another press and without creating the payment: **No PHP exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count, **Enter an amount from {min} to {max}.** when that count sits outside the profile window, and the alert goes away when it is inside the window; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -368,7 +470,7 @@ PHP is pressed and the amount is 100. **Continue** while the gift-day request ha
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Continue** shows **No PHP exchange rate yet.** The form stays. No **Pay**.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Continue** is already off. The form stays. No **Pay**.
 
 ![21.gifts pay link no rate](images/pl-no-rate.png)
 
@@ -408,6 +510,30 @@ Open till, mint failed. The shop sticker, time left, the sat amount, the viewer'
 Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts name setup](images/setup-name.png)
 
+### Variant: empty
+
+Blur or Continue on an empty name shows **Enter your name** (`name.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup empty](images/setup-name-empty.png)
+
+### Variant: long
+
+A name longer than 80 characters after trim shows **Name must be 1–80 characters.** (`name.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup long](images/setup-name-long.png)
+
+### Variant: controls
+
+A name that includes a control character shows **Name cannot include control characters.** (`name.errorControls`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts name setup controls](images/setup-name-controls.png)
+
+### Variant: request
+
+When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts name setup request](images/setup-name-request.png)
+
 ## Screen: /setup/username
 
 - **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
@@ -420,6 +546,30 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
 
+### Variant: empty
+
+Blur or Continue on an empty username shows **Enter a username** (`setup.usernameEmpty`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup empty](images/setup-username-empty.png)
+
+### Variant: invalid
+
+A username outside the handle rule, including the same sentence from the server shows **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** (`setup.usernameInvalid`). **Continue** stays disabled until the draft changes.
+
+![21.gifts username setup invalid](images/setup-username-invalid.png)
+
+### Variant: taken
+
+When POST /me/username answers 409 Username is already in use, the form shows **That username is already taken** (`setup.usernameTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again.
+
+![21.gifts username setup taken](images/setup-username-taken.png)
+
+### Variant: request
+
+When POST /me/username answers 500, the form shows **Could not save your username** (`setup.usernameRequest`). **Continue** stays available.
+
+![21.gifts username setup request](images/setup-username-request.png)
+
 ## Screen: /setup/address
 
 - **URL:** `/setup/address` — after username (`account.setup === 'address'`). Name may already be saved or skipped; username is required.
@@ -431,6 +581,48 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts address setup](images/setup-address.png)
+
+### Variant: empty
+
+Blur or Continue on an empty Wallet of Satoshi address shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup empty](images/setup-address-empty.png)
+
+### Variant: long
+
+An address longer than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup long](images/setup-address-long.png)
+
+### Variant: format
+
+An address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Continue** stays disabled until the draft changes. **Skip** stays available.
+
+![21.gifts address setup format](images/setup-address-format.png)
+
+### Variant: taken
+
+When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup taken](images/setup-address-taken.png)
+
+### Variant: not-found
+
+When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Continue** stays disabled until the draft changes. Restoring that value does not lock again. **Skip** stays available.
+
+![21.gifts address setup not found](images/setup-address-not-found.png)
+
+### Variant: not-zap
+
+When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Continue** stays disabled until the draft changes. Restoring the blocked address locks again. **Skip** stays available.
+
+![21.gifts address setup not zap](images/setup-address-not-zap.png)
+
+### Variant: request
+
+When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Continue** stays available. **Skip** stays available.
+
+![21.gifts address setup request](images/setup-address-request.png)
 
 ## Screen: /setup/rules
 
@@ -508,7 +700,7 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — when `account.setup` is null (name and address may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, address, and rules. The phrase is not on that path.
-- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
+- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the name and address line from `formatPlacePinText`, or coordinates when there is neither) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
 
@@ -1003,6 +1195,18 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
 
+### Variant: ask-text-empty
+
+Ask step 3 of 4 after **Continue** with an empty message and no photo. **Enter a message or add a photo or video** sits under the field, which is linked to it with `aria-describedby` and marked `aria-invalid`. **Continue** is disabled. The empty step before that press does not cover this.
+
+![21.gifts welcome ask text empty](images/welcome-ask-text-empty.png)
+
+### Variant: ask-shop-elsewhere
+
+Ask step 3 of 4 with **Need help at #21GiftsShop** in the message field. The live shop guidance sits directly below the field, which is linked to it with `aria-describedby` and marked `aria-invalid`; **Continue** stays disabled. The same visible reason disables **Post** on the preview step.
+
+![21.gifts welcome ask shop elsewhere](images/welcome-ask-shop-elsewhere.png)
+
 ### Variant: ask-preview
 
 Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, a **Donation** tag, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.
@@ -1185,7 +1389,7 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 8000 characters (same as `POST /forum/messages`); over-length drafts show **Keep it to 8000 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**, and **Post** stays off. The composer does not cut the draft.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
@@ -1453,43 +1657,70 @@ One unpaid note on **All** whose place has no label. The card shows a MapPin lin
 
 ### Variant: composer-place
 
-**Add a place** is open and the map key is empty, so the panel says **The map is not available.**
+**Add a place** is open as a dialog and the map key is empty, so it says
+**The map is not available.** The pinned **Use this place** control is visible and disabled.
 
 ![21.gifts welcome composer place](images/welcome-composer-place.png)
 
+### Variant: composer-place-too-long
+
+**Add a place** is open and the map key is empty. The place name is longer than 80 characters. **Keep the place name to 80 characters** sits under the field, and **Use this place** stays off. Needle `Keep the place name to 80 characters`.
+
+![21.gifts welcome composer place too long](images/welcome-composer-place-too-long.png)
+
+### Variant: composer-place-controls
+
+**Add a place** is open and the map key is empty. The place name is short and contains a control character. **The place name cannot include control characters** sits under the field, and **Use this place** stays off. Needle `The place name cannot include control characters`.
+
+![21.gifts welcome composer place controls](images/welcome-composer-place-controls.png)
+
 ### Variant: composer-place-map
 
-**Add a place** is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+**Add a place** is open as a dialog with a map key. The map frame is visible; **Use this place** is
+pinned below it and disabled until the map is clicked.
 
 ![21.gifts welcome composer place map](images/welcome-composer-place-map.png)
 
 ### Variant: composer-place-confirm
 
-**Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
+**Add a place** is open as a dialog with a map. A click has set a pin, **Place name** is **Stall**,
+and **Use this place** is visible and enabled. The pin is not confirmed yet.
 
 ![21.gifts welcome composer place confirm](images/welcome-composer-place-confirm.png)
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed.
+A confirmed pin **Stall** sits in a normal-flow chip below the composer row, before media previews and
+request feedback, with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
 
+### Variant: composer-place-reopen
+
+After **Stall** was confirmed and the dialog closed, **Add a place** was pressed again. The
+**Add a place** dialog is open with that pin and the icon-only **Remove place** button in its footer.
+
+![21.gifts welcome composer place reopen](images/welcome-composer-place-reopen.png)
+
 ### Variant: composer-place-pending
 
-**Add a place** is open, the key has arrived, and the map script has not loaded. The place name field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
+**Add a place** is open as a dialog, the key has arrived, and the map script has not loaded.
+**Loading the map.** is where the map would be. The place name field and disabled **Use this
+place** control are visible. **The map is not available.** is not shown.
 
 ![21.gifts welcome composer place pending](images/welcome-composer-place-pending.png)
 
 ### Variant: composer-place-unlabeled
 
-**Add a place** is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+**Add a place** is open as a dialog with a map. A click has set a pin and the place name is still
+empty. **Use this place** is visible and enabled.
 
 ![21.gifts welcome composer place unlabeled](images/welcome-composer-place-unlabeled.png)
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed.
+A confirmed pin with no name sits in a normal-flow chip below the composer row, before media previews
+and request feedback, as **14.50000, 120.90000** with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set coordinates](images/welcome-composer-place-set-coords.png)
 
@@ -1595,6 +1826,15 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ![21.gifts welcome error request photo and text](images/welcome-error-request-photo-and-text.png)
 
+### Variant: error-shop-elsewhere
+
+A verified member types **Cafe Luna is open every day. #21GiftsShop** in the living-room composer.
+The live hint **Shop notes need the shop name and full address. Post this shop from Shops.** appears
+directly under the composer without an alert role, the textarea is marked invalid and described by
+the hint, and **Post** is disabled. No POST request is sent.
+
+![21.gifts welcome shop elsewhere error](images/welcome-error-shop-elsewhere.png)
+
 ### Variant: menu-open
 
 Open **Menu** top-right → Menu includes **Home** first (Home, Shops, Point of sale, Profile, Grants, Wallet, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
@@ -1647,6 +1887,18 @@ Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stay
 Payable reply after **Show reactions**, Gift opened, amount filled, not submitted. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet. The post itself does not show Send Bitcoin.
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
+
+### Variant: pay-rate-loading
+
+Payable reply after **Show reactions**. **Gift** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The filled amount before that press does not cover this.
+
+![21.gifts welcome pay rate loading](images/welcome-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+**Show reactions** is open. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts welcome reply rate loading](images/welcome-reply-rate-loading.png)
 
 ### Variant: pay-qr
 
@@ -1724,11 +1976,72 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ![21.gifts welcome shop edit open](images/welcome-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts welcome shop edit photos unsupported](images/welcome-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts welcome shop edit photos too large](images/welcome-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts welcome shop edit photos too many](images/welcome-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts welcome shop edit photos format or size](images/welcome-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
 
 ![21.gifts welcome shop edit place](images/welcome-shop-edit-place.png)
+
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts welcome shop edit place open](images/welcome-shop-edit-place-open.png)
+
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts welcome shop edit place unavailable open](images/welcome-shop-edit-place-unavailable-open.png)
+
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts welcome shop edit place name address](images/welcome-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts welcome shop edit place field invalid](images/welcome-shop-edit-place-field-invalid.png)
 
 ### Variant: shop-edit-text
 
@@ -1736,23 +2049,195 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts welcome shop edit text](images/welcome-shop-edit-text.png)
 
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts welcome shop edit text error](images/welcome-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts welcome shop edit text not longer](images/welcome-shop-edit-text-not-longer.png)
+
 ### Variant: shop-edit-user
 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
 
 ![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
 
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts welcome shop edit user checking](images/welcome-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user missing](images/welcome-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user invalid](images/welcome-shop-edit-user-invalid.png)
+
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
+
+![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts welcome shop edit saving](images/welcome-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing](images/welcome-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing place](images/welcome-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing text](images/welcome-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing user](images/welcome-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts welcome shop edit photo preparing summary](images/welcome-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts welcome shop edit history loading](images/welcome-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts welcome shop edit save error](images/welcome-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts welcome shop edit history error](images/welcome-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts welcome shop edit place map loading](images/welcome-shop-edit-place-map-loading.png)
+
+## Screen: /[npub]
+
+- **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
+- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, postal address as text, optional one-marker Google map, link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and, when `payUsername` is not null, a payment block like the profile cards: heading **21.gifts address**, the `username@domain` address line, then the Open CryptoPay QR with the 21.gifts logo. Without a Google Maps key there is no map frame; the address remains. A map script that fails to load, or a key Google rejects, removes the map frame too, so the page looks the same as without a key. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. Only an exact answer shows the shop: status 200 for an npub whose `shop.npub` is that same npub, or a 301 to a valid npub for a hex key. API 503, any other status (including another 2xx such as 201), a 200 for a hex key, a 200 for a different npub, or an unusable response shows `shop.error` (**Could not load this shop. Please try again.**) plus **Try again**.
+- **Inputs / metadata:** Server `GET /shops/:npub` without a session, limited to 2.5 seconds (`API_FETCH_TIMEOUT_MS`); a timeout shows the retryable error. A relative photo path resolves against the api base URL and a photo that is not http(s) is dropped (`resolveShopPhotoUrl`), for the gallery and for `og:image`. `generateMetadata` and the page share one request-cached api call, so both see the same answer. Metadata uses the same 2.5-second abort as a public note, with shop name, description cut like a public note (`ogDescriptionText`: trimmed, name fallback, 300 code units), first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. The client asks same-origin `GET /maps/key` through `fetchMapsKey`; a non-empty key draws only this shop at zoom 14. The payment heading is server-rendered; the address line `giftsLightningAddress(payUsername, window.location.hostname)` and the QR `openCryptoPayQrValue(payUsername, window.location.hostname)` appear only after mount, so the server and the browser render the same HTML on every host.
+- **Actions / calls:** Open `/messages/{messageId}`, copy the npub (`NpubCopyButton`), scan the `QrCode`, change language or use the signed-in Menu, retry via `router.refresh`, and use the one header back arrow. Calls `ShopPage`, `ShopScreen`, `PublicMessageChrome`, `ForumPhotoGallery`, `GoogleMapCanvas`, `fetchMapsKey`, `NpubCopyButton`, `QrCode`, `giftsLightningAddress`, and `openCryptoPayQrValue`.
+
+### Variant: default
+
+Listed **Cafe Luna** with description, one photo, full address, forum-note link, NIP-05, npub copy control, and the payment block (`luna@21.gifts` plus Open CryptoPay QR with logo). No maps key, so no map frame. The address remains visible.
+
+![21.gifts public shop](images/npub.png)
+
+### Variant: signed-in
+
+Same listed **Cafe Luna** as the default, with the **Menu** control instead of the language switcher. Description, one photo, full address, forum-note link, NIP-05, npub copy control, and the payment block (`luna@21.gifts` plus Open CryptoPay QR with logo). No maps key, so no map frame.
+
+![21.gifts public shop signed in](images/npub-signed-in.png)
+
+### Variant: map
+
+The same listed shop with a browser maps key. A deterministic map frame draws exactly one marker for the shop; it never loads the full places list.
+
+![21.gifts public shop map](images/npub-map.png)
+
+### Variant: copied
+
+After pressing the icon-only **Copy** control, its check icon has the accessible name **Copied**. The npub remains visible.
+
+![21.gifts public shop copied](images/npub-copied.png)
+
+### Variant: photos
+
+Listed **Twin Gallery** with two different photos. The gallery shows the first photo with the second peeking in on the right, the position badge **1/2**, and two dot controls below; the first dot (**Photo 1 of 2**) is current.
+
+![21.gifts public shop with two photos](images/npub-photos.png)
+
+### Variant: photo-2
+
+After pressing the second dot (**Photo 2 of 2**), the gallery shows the second photo at full width, the badge reads **2/2**, and the second dot is current.
+
+![21.gifts public shop second photo](images/npub-photo-2.png)
+
+### Variant: no-payment
+
+Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum link, and npub remain; the verified-address section and the whole payment block (heading, address, QR) are absent.
+
+![21.gifts public shop without payment](images/npub-no-payment.png)
+
+### Variant: gone
+
+API 410. The page says **This shop is no longer listed.** and shows no shop name or other hidden shop data.
+
+![21.gifts unlisted shop](images/npub-gone.png)
+
+### Variant: error
+
+API 503. Alert **Could not load this shop. Please try again.** and labeled **Try again** button; never a blank page.
+
+![21.gifts shop unavailable](images/npub-error.png)
 
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Post a shop (photos or video optional; shop text of 20–1000 characters, longer than the shop name) with its required place (name and address). Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
 
 ### Variant: default
@@ -1809,11 +2294,74 @@ A moderator clicked **Edit shop note** beside **Ada · Happyland**. Step **1 / 5
 
 ![21.gifts shops map edit open](images/shops-map-edit-open.png)
 
+### Variant: map-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open on **Map** after an unsupported file was selected. The picker
+shows **Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops map edit photos unsupported](images/shops-map-edit-photos-unsupported.png)
+
+### Variant: map-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open on **Map** after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops map edit photos too large](images/shops-map-edit-photos-too-large.png)
+
+### Variant: map-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open on **Map** after 11 photos were selected. Ten previews remain and
+the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops map edit photos too many](images/shops-map-edit-photos-too-many.png)
+
+### Variant: map-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** on **Map** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts shops map edit photos format or size](images/shops-map-edit-photos-format-or-size.png)
+
 ### Variant: map-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map. **History** still says there are no edits yet. The photo step's Close (X) is gone. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
 
 ![21.gifts shops map edit place](images/shops-map-edit-place.png)
+
+### Variant: map-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+**Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit place open](images/shops-map-edit-place-open.png)
+
+### Variant: map-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, **Use this place** is disabled,
+and **Map** stays selected.
+
+![21.gifts shops map edit place unavailable open](images/shops-map-edit-place-unavailable-open.png)
+
+### Variant: map-edit-place-name-address
+
+The place form is open on **Map** with **Bahnhofstrasse Bakery** as **Shop name** and
+**Bahnhofstrasse 12, 8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops map edit place name address](images/shops-map-edit-place-name-address.png)
+
+### Variant: map-edit-place-field-invalid
+
+The place form is open on **Map** with house number **abc**, postal code **80**, and city **1234**.
+The live house-number, postal-code, and city errors are visible together, and
+**Use this place** is disabled.
+
+![21.gifts shops map edit place field invalid](images/shops-map-edit-place-field-invalid.png)
 
 ### Variant: map-edit-text
 
@@ -1821,17 +2369,131 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ![21.gifts shops map edit text](images/shops-map-edit-text.png)
 
+### Variant: map-edit-text-error
+
+Step **3 / 5 · Text** is open on **Map** and contains **Fresh bread every morning.** with a
+rejected control character. The live error
+**The shop text must not contain control characters other than line breaks.** is visible and
+**Next** is disabled.
+
+![21.gifts shops map edit text error](images/shops-map-edit-text-error.png)
+
+### Variant: map-edit-text-not-longer
+
+Step **3 / 5 · Text** is open on **Map** with a place named
+**Kiki's Bakery and Coffee House Zurich** and text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops map edit text not longer](images/shops-map-edit-text-not-longer.png)
+
 ### Variant: map-edit-user
 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit user](images/shops-map-edit-user.png)
 
+### Variant: map-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet. **Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit user checking](images/shops-map-edit-user-checking.png)
+
+### Variant: map-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+**Map** stays selected, with no second **Map** heading.
+
+![21.gifts shops map edit user missing](images/shops-map-edit-user-missing.png)
+
+### Variant: map-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open on **Map** with **\_** in the username field. **Use 1–32
+characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible
+and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops map edit user invalid](images/shops-map-edit-user-invalid.png)
+
 ### Variant: map-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **Kiki's
+Bakery** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
+
+### Variant: map-edit-save-rejected
+
+A moderator opened **Edit shop note** on **Map**, changed **Shop text**, entered **luna** on step
+**4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was inconclusive, then
+the API rejected the account update. The editor returns to step **4 / 5 · 21.gifts user** and
+shows **No account with that username. Check the spelling of the 21.gifts username.** **Map**
+stays selected.
+
+![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
+
+### Variant: map-edit-saving
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit saving](images/shops-map-edit-saving.png)
+
+### Variant: map-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing](images/shops-map-edit-photo-preparing.png)
+
+### Variant: map-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing place](images/shops-map-edit-photo-preparing-place.png)
+
+### Variant: map-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing text](images/shops-map-edit-photo-preparing-text.png)
+
+### Variant: map-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing user](images/shops-map-edit-photo-preparing-user.png)
+
+### Variant: map-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit photo preparing summary](images/shops-map-edit-photo-preparing-summary.png)
+
+### Variant: map-edit-history-loading
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history loading](images/shops-map-edit-history-loading.png)
+
+### Variant: map-edit-save-error
+
+A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit save error](images/shops-map-edit-save-error.png)
+
+### Variant: map-edit-history-error
+
+A moderator opened **Edit shop note** beside **Ada · Happyland**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit history error](images/shops-map-edit-history-error.png)
+
+### Variant: map-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Map** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit place map loading](images/shops-map-edit-place-map-loading.png)
 
 ### Variant: map-edit-load-failed
 
@@ -1883,45 +2545,232 @@ A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did
 
 ### Variant: table
 
-The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
+The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row
+**Happyland**, place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland**, operator
+**@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
 
 ### Variant: table-staff
 
-A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland** and operator **@luna** stay.
+A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Happyland**.
+Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table staff](images/shops-table-staff.png)
 
 ### Variant: table-edit-open
 
-A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland** and operator **@luna** stay.
+A moderator clicked **Edit shop note** beside **Happyland**. Step **1 / 5 · Photos** is open in the
+table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close
+(X). Its accessible name is Cancel. There is no visible Cancel word. Place
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit open](images/shops-table-edit-open.png)
 
+### Variant: table-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open on **Table** after an unsupported file was selected. The picker
+shows **Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops table edit photos unsupported](images/shops-table-edit-photos-unsupported.png)
+
+### Variant: table-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open on **Table** after an oversized photo was selected. The picker
+shows **Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops table edit photos too large](images/shops-table-edit-photos-too-large.png)
+
+### Variant: table-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open on **Table** after 11 photos were selected. Ten previews remain and
+the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops table edit photos too many](images/shops-table-edit-photos-too-many.png)
+
+### Variant: table-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** on **Table** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts shops table edit photos format or size](images/shops-table-edit-photos-format-or-size.png)
+
 ### Variant: table-edit-place
 
-The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still says there are no edits yet. The photo step's Close (X) is gone. Place **Happyland** and operator **@luna** stay.
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still
+says there are no edits yet. The photo step's Close (X) is gone. Place
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit place](images/shops-table-edit-place.png)
 
+### Variant: table-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+**Table** stays selected.
+
+![21.gifts shops table edit place open](images/shops-table-edit-place-open.png)
+
+### Variant: table-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, **Use this place** is disabled,
+and **Table** stays selected.
+
+![21.gifts shops table edit place unavailable open](images/shops-table-edit-place-unavailable-open.png)
+
+### Variant: table-edit-place-name-address
+
+The place form is open on **Table** with **Bahnhofstrasse Bakery** as **Shop name** and
+**Bahnhofstrasse 12, 8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops table edit place name address](images/shops-table-edit-place-name-address.png)
+
+### Variant: table-edit-place-field-invalid
+
+The place form is open on **Table** with house number **abc**, postal code **80**, and city
+**1234**. The live house-number, postal-code, and city errors are visible together, and
+**Use this place** is disabled.
+
+![21.gifts shops table edit place field invalid](images/shops-table-edit-place-field-invalid.png)
+
 ### Variant: table-edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit text](images/shops-table-edit-text.png)
 
+### Variant: table-edit-text-error
+
+Step **3 / 5 · Text** is open on **Table** and contains **Fresh bread every morning.** with a
+rejected control character. The live error
+**The shop text must not contain control characters other than line breaks.** is visible and
+**Next** is disabled.
+
+![21.gifts shops table edit text error](images/shops-table-edit-text-error.png)
+
+### Variant: table-edit-text-not-longer
+
+Step **3 / 5 · Text** is open on **Table** with a place named
+**Kiki's Bakery and Coffee House Zurich** and text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops table edit text not longer](images/shops-table-edit-text-not-longer.png)
+
 ### Variant: table-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna.
+**History** still says there are no edits yet. Place
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
 
+### Variant: table-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
+**missing**. The live lookup is still running, so **Checking that account…** is visible and
+**Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user checking](images/shops-table-edit-user-checking.png)
+
+### Variant: table-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
+**missing**. The live lookup returned no account. **No account with that username. Check the
+spelling of the 21.gifts username.** is visible and **Next** is disabled. **History** still says
+there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user missing](images/shops-table-edit-user-missing.png)
+
+### Variant: table-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open on **Table** after the username was changed from **luna**
+to **\_**. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or
+digit.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops table edit user invalid](images/shops-table-edit-user-invalid.png)
+
 ### Variant: table-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
+
+### Variant: table-edit-save-rejected
+
+A moderator opened **Edit shop note** on **Table**, changed **Shop text**, changed **luna** to
+**luna-new** on step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was
+inconclusive, then the API rejected the account update. The editor returns to step
+**4 / 5 · 21.gifts user** and shows **No account with that username. Check the spelling of the
+21.gifts username.** **Table** stays selected.
+
+![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
+
+### Variant: table-edit-saving
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit saving](images/shops-table-edit-saving.png)
+
+### Variant: table-edit-photo-preparing
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing](images/shops-table-edit-photo-preparing.png)
+
+### Variant: table-edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing place](images/shops-table-edit-photo-preparing-place.png)
+
+### Variant: table-edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing text](images/shops-table-edit-photo-preparing-text.png)
+
+### Variant: table-edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing user](images/shops-table-edit-photo-preparing-user.png)
+
+### Variant: table-edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on **Table** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit photo preparing summary](images/shops-table-edit-photo-preparing-summary.png)
+
+### Variant: table-edit-history-loading
+
+A moderator opened **Edit shop note** on **Table**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history loading](images/shops-table-edit-history-loading.png)
+
+### Variant: table-edit-save-error
+
+A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit save error](images/shops-table-edit-save-error.png)
+
+### Variant: table-edit-history-error
+
+A moderator opened **Edit shop note** on **Table**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit history error](images/shops-table-edit-history-error.png)
+
+### Variant: table-edit-place-map-loading
+
+A moderator opened **Edit shop note** on **Table** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit place map loading](images/shops-table-edit-place-map-loading.png)
 
 ### Variant: add-photos
 
@@ -1929,33 +2778,176 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ![21.gifts shops add photos](images/shops-add-photos.png)
 
+### Variant: add-photos-unsupported
+
+**Add a shop** is open on step **1 / 5 · Photos** after an unsupported file was selected. The
+picker shows **Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video** and no preview.
+
+![21.gifts shops add photos unsupported](images/shops-add-photos-unsupported.png)
+
+### Variant: add-photos-too-large
+
+**Add a shop** is open on step **1 / 5 · Photos** after an oversized photo was selected. The
+picker shows **Keep photos under 1 MB and videos under 32 MB** and no preview.
+
+![21.gifts shops add photos too large](images/shops-add-photos-too-large.png)
+
+### Variant: add-photos-too-many
+
+**Add a shop** is open on step **1 / 5 · Photos** after 11 photos were selected. Ten previews
+remain and the picker shows **You can add up to 10 photos**.
+
+![21.gifts shops add photos too many](images/shops-add-photos-too-many.png)
+
+### Variant: add-photos-format-or-size
+
+A complete shop with a photo was submitted, but the post API rejected the media format or size.
+**Add a shop** returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts shops add photos format or size](images/shops-add-photos-format-or-size.png)
+
 ### Variant: add-place
 
-**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. **Next** is the only button on the card. The shop list is empty.
+**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. The visible reason
+**Add the shop's place and address.** explains why **Next** is disabled. The shop list is empty.
 
 ![21.gifts shops add place](images/shops-add-place.png)
 
+### Variant: add-place-unavailable
+
+**Add a shop** is open on step **2 / 5 · Place** after the place form was opened and closed
+without an available map. **The map is unavailable, so a shop place cannot be added.** remains
+visible and **Next** is disabled.
+
+![21.gifts shops add place unavailable](images/shops-add-place-unavailable.png)
+
+### Variant: add-place-unavailable-open
+
+From **Add a shop** step **2 / 5 · Place**, the **Shop place and address** form is open without an
+available map. **The map is not available.** is visible where the map would be, and
+**Use this place** is disabled.
+
+![21.gifts shops add place unavailable open](images/shops-add-place-unavailable-open.png)
+
+### Variant: add-place-empty
+
+**Shop place and address** is open as a modal dialog with a map. No field has been touched, so
+required-field errors are quiet. The footer says which fields must be filled, and **Use this place**
+is visible and disabled.
+
+![21.gifts shops add place empty](images/shops-add-place-empty.png)
+
+### Variant: add-place-hint
+
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+The address fields are still empty. The footer lists the fields to fill, and **Use this place**
+stays disabled.
+
+![21.gifts shops add place hint](images/shops-add-place-hint.png)
+
+### Variant: add-place-name-address
+
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Bahnhofstrasse
+Bakery**. Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and
+country **Switzerland** are filled. The field error
+**The shop name must not contain the street or the postal code.** is visible. **Use this place**
+stays disabled.
+
+![21.gifts shops add place name address](images/shops-add-place-name-address.png)
+
+### Variant: add-place-field-invalid
+
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+Street **Bahnhofstrasse**, house number **abc**, postal code **80**, city **1234**, and country
+**Switzerland** are filled. Concrete messages for house number, postal code, and city are visible
+together. **Use this place** stays disabled.
+
+![21.gifts shops add place field invalid](images/shops-add-place-field-invalid.png)
+
+### Variant: add-place-complete
+
+**Shop place and address** is open as a modal dialog with a map. **Shop name** is **Kiki's Bakery**.
+Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country
+**Switzerland** are filled. **Use this place** is enabled. The pin is not confirmed yet.
+
+![21.gifts shops add place complete](images/shops-add-place-complete.png)
+
 ### Variant: add-text
 
-**Add a shop** is open on step **3 / 5 · Text**. Place was skipped. **Next** is the only button on the card.
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin **Kiki's Bakery** is already set.
+The shop text is empty. The concrete minimum-length message and live **0 / 1000** counter are
+visible. **Next** is disabled.
 
 ![21.gifts shops add text](images/shops-add-text.png)
 
+### Variant: add-description-error
+
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin **Kiki's Bakery** is already set.
+The shop text contains a rejected control character. The concrete error is visible under the text
+field before submission. **Next** is disabled.
+
+![21.gifts shops add description error](images/shops-add-description-error.png)
+
+### Variant: add-text-not-longer
+
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin
+**Kiki's Bakery and Coffee House Zurich** is already set. The shop text is
+**Fresh bread every morning.** The field error
+**The shop text must be longer than the shop name.** and live counter are visible. **Next** is
+disabled.
+
+![21.gifts shops add text not longer](images/shops-add-text-not-longer.png)
+
 ### Variant: add-user
 
-**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is empty. **Next** is the only button on the card.
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is empty and the optional
+hint is directly under the field. **Next** is enabled.
 
 ![21.gifts shops add user](images/shops-add-user.png)
 
+### Variant: add-user-checking
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+The live lookup is still running, so **Checking that account…** is visible and **Next** is
+disabled.
+
+![21.gifts shops add user checking](images/shops-add-user-checking.png)
+
+### Variant: add-user-missing
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+The live lookup returned no account. **No account with that username. Check the spelling of the
+21.gifts username.** is visible and **Next** is disabled.
+
+![21.gifts shops add user missing](images/shops-add-user-missing.png)
+
+### Variant: add-user-invalid
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is **\_**, the format error
+is visible under the field, and **Next** is disabled.
+
+![21.gifts shops add user invalid](images/shops-add-user-invalid.png)
+
 ### Variant: add-summary
 
-**Add a shop** is open on step **5 / 5 · Summary**. Photos, place, text, and the user were skipped. **Post** is the only button on the card.
+**Add a shop** is open on step **5 / 5 · Summary**. Photos and the user were skipped. The summary
+shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The shop text is
+**Fresh bread every morning.** **Post** is the only button on the card, and it is enabled.
 
 ![21.gifts shops add summary](images/shops-add-summary.png)
 
+### Variant: add-post-rejected
+
+**Add a shop** is open on step **5 / 5 · Summary**. **Post** was pressed and rejected because the
+server was unavailable. The summary stays open and the generic post error is visible.
+
+![21.gifts shops add post rejected](images/shops-add-post-rejected.png)
+
 ### Variant: table-more
 
-**Table** is selected. The same row is shown, and **Show more** is under the table. The composer is gone.
+**Table** is selected. One row **Cafe Luna** is shown, and **Show more** is under the table. The
+composer is gone.
 
 ![21.gifts shops table more](images/shops-table-more.png)
 
@@ -2033,7 +3025,9 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 
 ### Variant: place
 
-One shop note with a place. The card shows a MapPin link **Happyland** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+One shop note with a place. The card shows a MapPin link
+**Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** to `/map?pin=m-place`. The raw
+`#21GiftsShop` token stays hidden.
 
 ![21.gifts shops place](images/shops-place.png)
 
@@ -2045,45 +3039,51 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place
 
-**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.** The shop list is still empty.
+**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Shop place and address** is open as a
+dialog on an empty shop list and the map key is empty, so it says **The map is not available.** The
+pinned confirm control is disabled.
 
 ![21.gifts shops composer place](images/shops-composer-place.png)
 
 ### Variant: composer-place-map
 
-**Add a place** is open on an empty shop list with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+**Shop place and address** is open as a dialog on an empty shop list with a map key. The map frame
+is visible and **Use this place** is pinned and disabled because the map has not been clicked yet.
 
 ![21.gifts shops composer place map](images/shops-composer-place-map.png)
 
 ### Variant: composer-place-confirm
 
-**Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
+**Shop place and address** is open as a dialog with a map. A click has set a pin, **Shop name** is
+**Stall**, and the full address is filled. **Use this place** is visible and enabled. The pin is not
+confirmed yet.
 
 ![21.gifts shops composer place confirm](images/shops-composer-place-confirm.png)
 
 ### Variant: composer-place-set
 
-A pin named **Stall** was confirmed, then **Add a place** closed. That name is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
+A pin named **Stall** with a complete address was confirmed, then the **Shop place and address**
+dialog closed. That name is not shown. The shop dialog has no **Remove place**; reopening it shows
+the pin and **Use this place**. **Next** stays enabled. The shop list is still empty.
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 
 ### Variant: composer-place-pending
 
-**Add a place** is open on an empty shop list, the key has arrived, and the map script has not loaded. The place name field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
+**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and
+the map script has not loaded. **Loading the map.** is where the map would be. The **Shop name**
+field and disabled **Use this place** control are visible. **The map is not available.** is not
+shown. The shop list is still empty.
 
 ![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
 
 ### Variant: composer-place-unlabeled
 
-**Add a place** is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible. The shop list is still empty.
+**Shop place and address** is open as a dialog with a map. A click has set a pin and **Shop name**
+is still empty. The footer lists the fields that remain to fill. **Use this place** is visible and
+disabled. The shop list is still empty.
 
 ![21.gifts shops composer place unlabeled](images/shops-composer-place-unlabeled.png)
-
-### Variant: composer-place-set-coords
-
-A pin with no name was confirmed, then **Add a place** closed. **14.50000, 120.90000** is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
-
-![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
 ### Variant: staff-place
 
@@ -2097,11 +3097,72 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ![21.gifts shops edit open](images/shops-edit-open.png)
 
+### Variant: edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts shops edit photos unsupported](images/shops-edit-photos-unsupported.png)
+
+### Variant: edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts shops edit photos too large](images/shops-edit-photos-too-large.png)
+
+### Variant: edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts shops edit photos too many](images/shops-edit-photos-too-many.png)
+
+### Variant: edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts shops edit photos format or size](images/shops-edit-photos-format-or-size.png)
+
 ### Variant: edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
 
 ![21.gifts shops edit place](images/shops-edit-place.png)
+
+### Variant: edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed the place button. The **Shop place and
+address** form sheet is open with the existing pin, shop name, and full address. Its inner body is
+the active scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts shops edit place open](images/shops-edit-place-open.png)
+
+### Variant: edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts shops edit place unavailable open](images/shops-edit-place-unavailable-open.png)
+
+### Variant: edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts shops edit place name address](images/shops-edit-place-name-address.png)
+
+### Variant: edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts shops edit place field invalid](images/shops-edit-place-field-invalid.png)
 
 ### Variant: edit-text
 
@@ -2109,11 +3170,51 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo 
 
 ![21.gifts shops edit text](images/shops-edit-text.png)
 
+### Variant: edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts shops edit text error](images/shops-edit-text-error.png)
+
+### Variant: edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts shops edit text not longer](images/shops-edit-text-not-longer.png)
+
 ### Variant: edit-user
 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user](images/shops-edit-user.png)
+
+### Variant: edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts shops edit user checking](images/shops-edit-user-checking.png)
+
+### Variant: edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user missing](images/shops-edit-user-missing.png)
+
+### Variant: edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user invalid](images/shops-edit-user-invalid.png)
 
 ### Variant: edit-summary
 
@@ -2127,6 +3228,63 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ![21.gifts shops edit save error](images/shops-edit-save-error.png)
 
+### Variant: edit-saving
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts shops edit saving](images/shops-edit-saving.png)
+
+### Variant: edit-photo-preparing
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts shops edit photo preparing](images/shops-edit-photo-preparing.png)
+
+### Variant: edit-photo-preparing-place
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing place](images/shops-edit-photo-preparing-place.png)
+
+### Variant: edit-photo-preparing-text
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing text](images/shops-edit-photo-preparing-text.png)
+
+### Variant: edit-photo-preparing-user
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts shops edit photo preparing user](images/shops-edit-photo-preparing-user.png)
+
+### Variant: edit-photo-preparing-summary
+
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts shops edit photo preparing summary](images/shops-edit-photo-preparing-summary.png)
+
+### Variant: edit-history-loading
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts shops edit history loading](images/shops-edit-history-loading.png)
+
+### Variant: edit-place-map-loading
+
+A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts shops edit place map loading](images/shops-edit-place-map-loading.png)
+
+### Variant: edit-save-rejected
+
+A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was inconclusive,
+then the API rejected the account update. The editor returns to step **4 / 5 · 21.gifts user** and
+shows **No account with that username. Check the spelling of the 21.gifts username.**
+
+![21.gifts shops edit save rejected](images/shops-edit-save-rejected.png)
+
 ### Variant: edit-history-error
 
 A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. The photo step stays open and still dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
@@ -2135,7 +3293,9 @@ A moderator opened **Edit shop note** on Cafe Luna. The history request failed. 
 
 ### Variant: staff-place-unavailable
 
-A moderator session. **Add a place** on the Cafe Luna note is open and the map key is missing. The panel says **The map is not available.** There is no map frame and no **Use this place**.
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog and the map key is
+missing. It says **The map is not available.** There is no map frame; **Use this place** remains
+visible and disabled.
 
 ![21.gifts shops staff place unavailable](images/shops-staff-place-unavailable.png)
 
@@ -2147,7 +3307,8 @@ A moderator session. The Cafe Luna note has place **Happyland**. The card shows 
 
 ### Variant: staff-place-edit
 
-A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open. The map frame is visible and **Remove place** is visible. The pin is not changed yet.
+A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
+dialog. The map frame and **Remove place** are visible. The pin is not changed yet.
 
 ![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
 
@@ -2157,9 +3318,20 @@ A moderator session. **Edit place** is open on the Cafe Luna note, the map is vi
 
 ![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
 
+### Variant: staff-place-edit-rejected
+
+A moderator session. **Edit place** is open on a shop note (text **Fresh bread every morning.**).
+**Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The
+stored shop text changed on the server, so the alert **The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.** is visible in the dialog footer. The dialog stays open
+with **Use this place**.
+
+![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)
+
 ### Variant: staff-place-edit-unavailable
 
-A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open and the map key is missing. The panel says **The map is not available.** and shows **Remove place**. There is no map frame and no **Use this place**.
+A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
+dialog and the map key is missing. It says **The map is not available.** and shows
+**Remove place**. There is no map frame; **Use this place** is visible and disabled.
 
 ![21.gifts shops staff place edit unavailable](images/shops-staff-place-edit-unavailable.png)
 
@@ -2171,21 +3343,60 @@ A moderator session. **Edit place** is open without a map key, and **Remove plac
 
 ### Variant: staff-place-map
 
-A moderator session. **Add a place** on the Cafe Luna note is open with a map key. The map frame is visible and **Use this place** is not, because the map has not been clicked yet.
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog with a map key. The
+map frame is visible and **Use this place** is pinned and disabled because the map has not been
+clicked yet.
 
 ![21.gifts shops staff place map](images/shops-staff-place-map.png)
 
+### Variant: staff-place-map-loading
+
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog. The map key has not returned. **Loading the map.** is where the map frame would be. **The map is not available.** is not shown. **Tap the map to set the pin.** is not shown. **Use this place** is disabled.
+
+![21.gifts shops staff place map loading](images/shops-staff-place-map-loading.png)
+
 ### Variant: staff-place-confirm
 
-A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin, **Place name** is **Happyland**, and **Use this place** is still visible. The pin is not saved yet.
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog with a map. A click
+has set a pin, **Shop name** is **Happyland**, and the full address is filled. **Use this place** is
+visible and enabled. The pin is not saved yet.
 
 ![21.gifts shops staff place confirm](images/shops-staff-place-confirm.png)
 
 ### Variant: staff-place-unlabeled
 
-A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog with a map. A click
+has set a pin and **Shop name** is still empty. The footer lists the fields that remain to fill.
+**Use this place** is visible and disabled.
 
 ![21.gifts shops staff place unlabeled](images/shops-staff-place-unlabeled.png)
+
+### Variant: staff-place-hint
+
+A moderator session. **Add a place** on the Cafe Luna note is open as a dialog with a map. A click
+has set a pin and **Shop name** is **Happyland**, but the address is still empty. The footer lists
+the address fields that remain to fill. **Use this place** is visible and disabled.
+
+![21.gifts shops staff place hint](images/shops-staff-place-hint.png)
+
+### Variant: staff-place-name-address
+
+A moderator opened **Edit place** on the Cafe Luna note. **Shop place and address** is open with
+**Bahnhofstrasse Bakery** in **Shop name** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland** as
+the address. The live error **The shop name must not contain the street or the postal code.** is
+visible, and **Use this place** is disabled.
+
+![21.gifts shops staff place name address](images/shops-staff-place-name-address.png)
+
+### Variant: staff-place-field-invalid
+
+A moderator opened **Edit place** on the Cafe Luna note. **House number** contains **abc**,
+**Postal code** contains **80**, and **City** contains **1234**. The live errors **The house number
+must start with a digit, for example 12 or 12a.**, **The postal code must have 4 digits for
+Switzerland and Liechtenstein.**, and **The city must contain a letter.** are visible together;
+**Use this place** is disabled.
+
+![21.gifts shops staff place field invalid](images/shops-staff-place-field-invalid.png)
 
 ### Variant: staff-place-set-coords
 
@@ -2195,13 +3406,16 @@ A moderator session. The Cafe Luna note has a saved pin with no name. The card s
 
 ### Variant: staff-place-error
 
-A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
+A moderator session. **Add a place** on the Cafe Luna note is open. A pin, **Shop name**
+**Happyland**, and the full address are set, and **Use this place** was pressed. The save failed,
+so the alert **The place could not be saved. Please try again.** is visible and **Use this place**
+stays.
 
 ![21.gifts shops staff place error](images/shops-staff-place-error.png)
 
 ### Variant: staff-account
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible. There is no alert.
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to save.** is shown under the field. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
 
@@ -2211,6 +3425,30 @@ A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosi
 
 ![21.gifts shops staff account chosen](images/shops-staff-account-chosen.png)
 
+### Variant: staff-account-checking
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+username field. The live lookup is still running, so **Checking that account…** is visible and
+**Save account** is disabled.
+
+![21.gifts shops staff account checking](images/shops-staff-account-checking.png)
+
+### Variant: staff-account-missing
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+username field. The live lookup returned no account. **No account with that username. Check the
+spelling of the 21.gifts username.** is visible and **Save account** is disabled.
+
+![21.gifts shops staff account missing](images/shops-staff-account-missing.png)
+
+### Variant: staff-account-invalid
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **\_** in the
+username field. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a
+letter or digit.** is visible and **Save account** is disabled.
+
+![21.gifts shops staff account invalid](images/shops-staff-account-invalid.png)
+
 ### Variant: staff-account-set
 
 A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' }`. The card shows the `@luna` link to `/members/acc-luna` and footer **Edit account**. The account panel is closed.
@@ -2219,7 +3457,7 @@ A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna',
 
 ### Variant: staff-account-error
 
-A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username.** is visible. **Save account** stays.
+A moderator session. **Add an account** is open on the Cafe Luna note. The live lookup found the account **@missing**, but it was removed before Save. The save returned 404, so the fallback alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays disabled, matching the live missing-account state.
 
 ![21.gifts shops staff account error](images/shops-staff-account-error.png)
 
@@ -2319,9 +3557,15 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ### Variant: donate-rate-pending
 
-Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
+Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The amount is **1.00** in USD. Under the amount is **No exchange rate yet**. **Continue** stays available. The payment error for a settled missing rate is not shown, and no bitcoin equivalent line is shown.
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
+
+### Variant: donate-rate-loading
+
+Ada's session on someone else's comment. **Send Bitcoin** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The sheet from before that press does not cover this.
+
+![21.gifts habit tracker donate rate loading](images/habit-tracker-donate-rate-loading.png)
 
 ### Variant: donate-fiat
 
@@ -2337,7 +3581,7 @@ Ada's session after **Continue** on someone else's comment. The card shows **Pay
 
 ### Variant: donate-habit-amount
 
-Ada's session. **Send Bitcoin** is open. **Continue** was pressed with an amount that is not a whole number of sats from 1 through 10,000,000. The sheet shows **Expected a JSON body with an integer "amountSats"**.
+Ada's session. **Send Bitcoin** is open and the amount is 0. **Expected a JSON body with an integer "amountSats"** sits under the amount, and **Continue** is already off. No payment starts.
 
 ![21.gifts habit tracker donate habit amount](images/habit-tracker-donate-habit-amount.png)
 
@@ -2431,11 +3675,29 @@ Ada's session. **Add habit** was pressed with Name **Stretch** and the save fail
 
 ![21.gifts habit tracker add error](images/habit-tracker-add-error.png)
 
+### Variant: add-name-empty
+
+Ada's session. **Add habit** was pressed with an empty Name. **Enter a habit name** sits under the field and **Add habit** stays off. No habit was stored. Needle `Enter a habit name`.
+
+![21.gifts habit tracker add name empty](images/habit-tracker-add-name-empty.png)
+
+### Variant: add-name-too-long
+
+Ada's session. The add Name is longer than 80 characters. **Keep the habit name to 80 characters** shows under the field before **Add habit** is pressed, and **Add habit** stays off. Needle `Keep the habit name to 80 characters`.
+
+![21.gifts habit tracker add name too long](images/habit-tracker-add-name-too-long.png)
+
 ### Variant: comment-error
 
 Ada's session. **Post** was pressed with the draft **still here** and the save failed. The same alert and **Try again** stay. **Write a comment** still shows **still here**. The edit form and the archive confirmation are not open.
 
 ![21.gifts habit tracker comment error](images/habit-tracker-comment-error.png)
+
+### Variant: comment-empty
+
+Ada's session. **Post** was pressed with an empty comment on her open habit. **Enter a comment** sits under **Write a comment** and **Post** stays off. Needle `Enter a comment`.
+
+![21.gifts habit tracker comment empty](images/habit-tracker-comment-empty.png)
 
 ### Variant: add-saved
 
@@ -2477,7 +3739,7 @@ Idle composer with lead and rules link.
 
 ### Variant: validation-error
 
-Click **Send** with an empty composer → **Enter a message**.
+Click **Send** with an empty composer → **Enter a message**. **Send** stays off.
 
 ![21.gifts contact validation error](images/contact-validation-error.png)
 
@@ -2512,6 +3774,18 @@ Basis member identity card. Beside the name, a static Software Developer label (
 Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: pay-rate-loading
+
+Posts are open. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts member pay rate loading](images/members-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Posts are open and Carol's note is expanded. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts member reply rate loading](images/members-reply-rate-loading.png)
 
 ### Variant: mention-suggest-reply
 
@@ -2795,11 +4069,72 @@ The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open.
 
 ![21.gifts member shop edit open](images/members-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts member shop edit photos unsupported](images/members-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts member shop edit photos too large](images/members-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts member shop edit photos too many](images/members-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts member shop edit photos format or size](images/members-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
 
 ![21.gifts member shop edit place](images/members-shop-edit-place.png)
+
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts member shop edit place open](images/members-shop-edit-place-open.png)
+
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts member shop edit place unavailable open](images/members-shop-edit-place-unavailable-open.png)
+
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts member shop edit place name address](images/members-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts member shop edit place field invalid](images/members-shop-edit-place-field-invalid.png)
 
 ### Variant: shop-edit-text
 
@@ -2807,17 +4142,127 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts member shop edit text](images/members-shop-edit-text.png)
 
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts member shop edit text error](images/members-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts member shop edit text not longer](images/members-shop-edit-text-not-longer.png)
+
 ### Variant: shop-edit-user
 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
 
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled.
+
+![21.gifts member shop edit user checking](images/members-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled.
+
+![21.gifts member shop edit user missing](images/members-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled.
+
+![21.gifts member shop edit user invalid](images/members-shop-edit-user-invalid.png)
+
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
+
+![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts member shop edit saving](images/members-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts member shop edit photo preparing](images/members-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing place](images/members-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing text](images/members-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts member shop edit photo preparing user](images/members-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts member shop edit photo preparing summary](images/members-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts member shop edit history loading](images/members-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts member shop edit save error](images/members-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts member shop edit history error](images/members-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts member shop edit place map loading](images/members-shop-edit-place-map-loading.png)
 
 ## Screen: /members/[accountId]/verify
 
@@ -2969,13 +4414,13 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ### Variant: rate-loading
 
-PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** **Create payment** stays disabled. The keypad stays. No QR.
 
 ![21.gifts point of sale rate loading](images/pos-rate-loading.png)
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Create payment** shows **No PHP exchange rate yet.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Create payment** is already off. The keypad stays. No QR.
 
 ![21.gifts point of sale no rate](images/pos-no-rate.png)
 
@@ -3001,7 +4446,7 @@ PHP is pressed and the amount is 100. The gift-day request has settled and no da
 
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is the button **Add a wide image** or **Add a profile photo**), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; the Profile row shows no given or received amounts. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`).
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile (current), **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me, and from that editor attach or remove each of the three pictures (About me photo, profile photo, and wide image); copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
+- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile (current), **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me; empty profile-photo and wide-image adds use the labeled header buttons, and the editor does not repeat those adds while the slot is empty; the editor keeps **Add a photo**, and a stored profile photo or wide image keeps its replace icon and remove control; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
@@ -3215,31 +4660,43 @@ Owner editor opened from variant **images**. The same three stubs are loaded (sq
 
 ### Variant: about-editing
 
-Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor still shows three icon-only attaches: **Add a photo** (`profile.about.attach`), **Add a profile photo** (`profile.about.portrait`), and **Add a wide image** (`profile.about.banner`). No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
+Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor shows one icon-only attach: **Add a photo** (`profile.about.attach`). The header already shows the labeled buttons **Add a wide image** and **Add a profile photo**, so the editor does not repeat them while those slots are empty. No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
 
+### Variant: about-long
+
+The About me editor is open with more than 8000 characters shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me long](images/profile-about-long.png)
+
+### Variant: about-controls
+
+The About me editor is open with a control character shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile About me controls](images/profile-about-controls.png)
+
 ### Variant: about-banner-crop
 
-About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** stays, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+About me editor with the wide-image cropper in the profile header. From the empty CTA, **Write your About me**, then a square portrait on the header input `profile-banner`. The labeled **Add a wide image** is replaced by the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). **Add a profile photo** stays. The editor shows only **Add a photo**. Needle `state-profile-about-banner-crop`.
 
 ![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
 
 ### Variant: about-banner-crop-saving
 
-Same editor cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** is disabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
+Same header cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** stays enabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
 
 ![21.gifts profile About me banner crop saving](images/profile-about-banner-crop-saving.png)
 
 ### Variant: about-banner-crop-save-error
 
-Same editor cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
+Same header cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
 
 ![21.gifts profile About me banner crop save error](images/profile-about-banner-crop-save-error.png)
 
 ### Variant: about-banner-crop-too-large
 
-Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
+Same header cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
 
 ![21.gifts profile About me banner crop too large](images/profile-about-banner-crop-too-large.png)
 
@@ -3260,6 +4717,90 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 Notifications section with `role="alert"` after clicking On on the This device pill when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
+### Variant: name-empty
+
+The name editor is open and the field is cleared shows **Enter your name** (`name.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name empty](images/profile-name-empty.png)
+
+### Variant: name-long
+
+The name editor is open with a name longer than 80 characters shows **Name must be 1–80 characters.** (`name.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name long](images/profile-name-long.png)
+
+### Variant: name-controls
+
+The name editor is open with a control character in the name shows **Name cannot include control characters.** (`name.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile name controls](images/profile-name-controls.png)
+
+### Variant: name-request
+
+The name editor is open. When POST /me/name answers 500, the form shows **Could not save your name** (`name.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile name request](images/profile-name-request.png)
+
+### Variant: location-long
+
+The location editor is open with more than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location long](images/profile-location-long.png)
+
+### Variant: location-controls
+
+The location editor is open with a control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile location controls](images/profile-location-controls.png)
+
+### Variant: location-request
+
+The location editor is open. When POST /me/location answers 500, the form shows **Could not save your location** (`location.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile location request](images/profile-location-request.png)
+
+### Variant: address-empty
+
+The address editor is open and the field is cleared shows **Enter your Wallet of Satoshi address** (`la.errorEmpty`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address empty](images/profile-address-empty.png)
+
+### Variant: address-long
+
+The address editor is open with more than 255 characters shows **Use at most 255 characters.** (`la.errorLength`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address long](images/profile-address-long.png)
+
+### Variant: address-format
+
+The address editor is open with an address that is not name@domain.tld shows **Use an address like name@domain.tld, at most 255 characters.** (`la.errorFormat`). **Save** stays disabled until the draft changes. The alert is in the window.
+
+![21.gifts profile address format](images/profile-address-format.png)
+
+### Variant: address-taken
+
+The address editor is open. When POST /me/lightning-address answers 409 Lightning Address is already in use, the form shows **That Wallet of Satoshi address is already in use.** (`la.errorTaken`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address taken](images/profile-address-taken.png)
+
+### Variant: address-not-found
+
+The address editor is open. When POST /me/lightning-address answers 400 Lightning Address could not be resolved, the form shows **That Wallet of Satoshi address could not be found** (`la.errorNotFound`). **Save** stays disabled until the draft changes. Restoring that value does not lock again. The alert is in the window.
+
+![21.gifts profile address not found](images/profile-address-not-found.png)
+
+### Variant: address-not-zap
+
+The address editor is open. When POST /me/lightning-address answers 400 with the non-receiving sentence, the form shows **This Wallet of Satoshi address cannot receive these Bitcoin payments** (`la.errorNotZap`). **Save** stays disabled until the draft changes. Restoring the blocked address locks again. The alert is in the window.
+
+![21.gifts profile address not zap](images/profile-address-not-zap.png)
+
+### Variant: address-request
+
+The address editor is open. When POST /me/lightning-address answers 500, the form shows **Could not update your Wallet of Satoshi address** (`la.errorRequest`). **Save** stays available. The alert is in the window.
+
+![21.gifts profile address request](images/profile-address-request.png)
 
 ## Screen: /grants
 
@@ -3464,7 +5005,7 @@ Moderator on the direct URL. Heading **Daily payment amounts** and **You cannot 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `The amount is not valid.`
+Founder, type 0 in the add amount. **Enter an amount greater than zero** shows under the field and **Add** stays off. The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `Enter an amount greater than zero`.
 
 ![21.gifts daily payment amounts invalid](images/grants-payments-amounts-invalid.png)
 
@@ -3524,7 +5065,7 @@ Founder types `@` and presses **@cara**. The Person field shows `@cara`. The lis
 
 ### Variant: pick-person
 
-Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`
+Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** **Add** stays disabled until a person is chosen. Needle `Choose a person.`
 
 ![21.gifts daily payment amounts pick person](images/grants-payments-amounts-pick-person.png)
 
@@ -3578,6 +5119,18 @@ Verified username joey-rosima with status none or rejected sees the first apply 
 
 ![21.gifts apply about](images/grants-apply-about.png)
 
+### Variant: about-long
+
+The first apply step is open. More than 8000 characters in About me shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about long](images/grants-apply-about-long.png)
+
+### Variant: about-controls
+
+The first apply step is open. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says First, write a short About me so people can get to know you. The alert is in the window.
+
+![21.gifts apply about controls](images/grants-apply-about-controls.png)
+
 ### Variant: sunday
 
 On Sunday the About-me step shows Writing is paused on Sunday and hides Save.
@@ -3590,11 +5143,35 @@ After a real About me, the next step asks for a photo.
 
 ![21.gifts apply photo](images/profile-apply-photo.png)
 
+### Variant: photo-long
+
+The photo step is open after a real About me. More than 8000 characters in the editor shows **About me must be at most 8000 characters.** (`profile.about.errorLength`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo long](images/profile-apply-photo-long.png)
+
+### Variant: photo-controls
+
+The photo step is open after a real About me. A control character in About me shows **About me cannot include control characters other than line breaks.** (`profile.about.errorControls`). **Save About me** stays disabled until the draft changes. The step still says Next, add a photo to your About me. The alert is in the window.
+
+![21.gifts apply photo controls](images/profile-apply-photo-controls.png)
+
 ### Variant: location
 
 After About me and a photo, the next step asks for the place you live.
 
 ![21.gifts apply location](images/profile-apply-location.png)
+
+### Variant: location-long
+
+The location step is open. More than 80 characters shows **Location must be at most 80 characters.** (`location.errorLength`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location long](images/profile-apply-location-long.png)
+
+### Variant: location-controls
+
+The location step is open. A control character shows **Location cannot include control characters.** (`location.errorControls`). **Save** stays disabled until the draft changes. The step still says Next, add the place you live. The alert is in the window.
+
+![21.gifts apply location controls](images/profile-apply-location-controls.png)
 
 ### Variant: question
 
@@ -3702,7 +5279,7 @@ No on the first question says When your posts match, you can apply again.
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Wordmark → `/welcome`. A thread opened from the list returns to the list; it does not always go to `/messages`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 8000-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. The conversation list does not offer Translate. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via the top-left arrow scrolls the conversation list to the top once when that previous view is the list. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is; the gift-day rate when that field is null or missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
-- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
+- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread. A blank message with a typed amount (0 is billed as 1 sat) or with a photo sends; a blank message with a blank amount and no photo asks for a message and leaves Send off. After the send finishes, the cleared composer stays quiet until the next blur or send. Return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
 - **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -3766,6 +5343,12 @@ Open official thread. Heading **21.gifts** (a profile control when the api sent 
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
+### Variant: thread-send-empty
+
+Open thread. **Send** was pressed with an empty message, no photo, and no amount. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The resting empty composer does not cover this.
+
+![21.gifts inbox thread send empty](images/messages-thread-send-empty.png)
+
 ### Variant: thread-translate
 
 Open thread with a German incoming message. **Translate** is visible under the body.
@@ -3819,6 +5402,18 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
+
+### Variant: thread-rate-loading
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Send** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts inbox thread rate loading](images/messages-thread-rate-loading.png)
+
+### Variant: thread-rate-loading-too-many
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. Eleven JPEGs are then chosen. The composer still shows **The USD exchange rate is still loading.** and **Send** stays disabled. A second alert says **You can add up to 10 photos.** Ten selected photos stay. An unsupported or oversized photo uses that same second alert and does not clear the loading sentence.
+
+![21.gifts inbox thread rate loading too many](images/messages-thread-rate-loading-too-many.png)
 
 ### Variant: thread-quoted-note
 
@@ -4407,6 +6002,12 @@ Moderator. Group exists, zero messages. Composer **Your message** visible.
 
 ![21.gifts moderator group empty](images/moderate-group-empty.png)
 
+### Variant: send-empty
+
+Moderator. Empty thread after **Send** with no message and no photo. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The untouched empty thread does not cover this.
+
+![21.gifts moderator group send empty](images/moderate-group-send-empty.png)
+
 ### Variant: loading
 
 Moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
@@ -4634,6 +6235,18 @@ Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` wh
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
 
+### Variant: pay-rate-loading
+
+Signed-in thread. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts public message pay rate loading](images/messages-id-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Signed-in thread. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts public message reply rate loading](images/messages-id-reply-rate-loading.png)
+
 ### Variant: shop-edit
 
 A moderator session on a top-level shop note **Cafe Luna**. The footer shows **Edit shop note**. The editor is closed.
@@ -4646,11 +6259,72 @@ The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open.
 
 ![21.gifts public message shop edit open](images/messages-id-shop-edit-open.png)
 
+### Variant: shop-edit-photos-unsupported
+
+Step **1 / 5 · Photos** is open after an unsupported file was selected. The picker shows
+**Use a JPEG, PNG, or WebP photo** and no new preview.
+
+![21.gifts public message shop edit photos unsupported](images/messages-id-shop-edit-photos-unsupported.png)
+
+### Variant: shop-edit-photos-too-large
+
+Step **1 / 5 · Photos** is open after an oversized photo was selected. The picker shows
+**Keep photos under 1 MB** and no new preview.
+
+![21.gifts public message shop edit photos too large](images/messages-id-shop-edit-photos-too-large.png)
+
+### Variant: shop-edit-photos-too-many
+
+Step **1 / 5 · Photos** is open after 11 photos were selected. Ten previews remain and the picker
+shows **You can add up to 10 photos**.
+
+![21.gifts public message shop edit photos too many](images/messages-id-shop-edit-photos-too-many.png)
+
+### Variant: shop-edit-photos-format-or-size
+
+The moderator added a photo and pressed **Save changes**, but the photo API rejected its format or
+size. The editor returned to step **1 / 5 · Photos** and shows
+**Use a JPEG, PNG, or WebP photo under 1 MB.** on its own line, then **Remove or replace the marked files to continue.** The rejected photo has a red outline, and **Next** stays disabled.
+
+![21.gifts public message shop edit photos format or size](images/messages-id-shop-edit-photos-format-or-size.png)
+
 ### Variant: shop-edit-place
 
 The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
 
 ![21.gifts public message shop edit place](images/messages-id-shop-edit-place.png)
+
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts public message shop edit place open](images/messages-id-shop-edit-place-open.png)
+
+### Variant: shop-edit-place-unavailable-open
+
+The **Shop place and address** form is open from step **2 / 5 · Place** without an available map.
+**The map is not available.** is visible where the map would be, and **Use this place** is
+disabled.
+
+![21.gifts public message shop edit place unavailable open](images/messages-id-shop-edit-place-unavailable-open.png)
+
+### Variant: shop-edit-place-name-address
+
+The place form is open with **Bahnhofstrasse Bakery** as **Shop name** and **Bahnhofstrasse 12,
+8001 Zürich, Switzerland** as the address. The live field error
+**The shop name must not contain the street or the postal code.** is visible and
+**Use this place** is disabled.
+
+![21.gifts public message shop edit place name address](images/messages-id-shop-edit-place-name-address.png)
+
+### Variant: shop-edit-place-field-invalid
+
+The place form is open with house number **abc**, postal code **80**, and city **1234**. The live
+house-number, postal-code, and city errors are visible together, and **Use this place** is disabled.
+
+![21.gifts public message shop edit place field invalid](images/messages-id-shop-edit-place-field-invalid.png)
 
 ### Variant: shop-edit-text
 
@@ -4658,17 +6332,129 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts public message shop edit text](images/messages-id-shop-edit-text.png)
 
+### Variant: shop-edit-text-error
+
+Step **3 / 5 · Text** contains **Fresh bread every morning.** with a rejected control character.
+The live error **The shop text must not contain control characters other than line breaks.** is
+visible and **Next** is disabled.
+
+![21.gifts public message shop edit text error](images/messages-id-shop-edit-text-error.png)
+
+### Variant: shop-edit-text-not-longer
+
+Step **3 / 5 · Text** has a complete place named **Kiki's Bakery and Coffee House Zurich** and
+text **Fresh bread every morning.** The live error
+**The shop text must be longer than the shop name.** is visible and **Next** is disabled.
+
+![21.gifts public message shop edit text not longer](images/messages-id-shop-edit-text-not-longer.png)
+
 ### Variant: shop-edit-user
 
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
 
+### Variant: shop-edit-user-checking
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
+says there are no edits yet.
+
+![21.gifts public message shop edit user checking](images/messages-id-shop-edit-user-checking.png)
+
+### Variant: shop-edit-user-missing
+
+Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+returned no account. **No account with that username. Check the spelling of the 21.gifts
+username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user missing](images/messages-id-shop-edit-user-missing.png)
+
+### Variant: shop-edit-user-invalid
+
+Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
+is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user invalid](images/messages-id-shop-edit-user-invalid.png)
+
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
+**Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
+morning.**, and 21.gifts user **None**. **Save changes** is the button on the card. **History** still
+says there are no edits yet.
 
 ![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
+
+![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-saving
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
+
+![21.gifts public message shop edit saving](images/messages-id-shop-edit-saving.png)
+
+### Variant: shop-edit-photo-preparing
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. The editor stays on **1 / 5 · Photos**. **Wait until this photo is ready.** is visible. **Next** and **Cancel** stay enabled. **Add a photo or video** is disabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing](images/messages-id-shop-edit-photo-preparing.png)
+
+### Variant: shop-edit-photo-preparing-place
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **2 / 5 · Place**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing place](images/messages-id-shop-edit-photo-preparing-place.png)
+
+### Variant: shop-edit-photo-preparing-text
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **3 / 5 · Text**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing text](images/messages-id-shop-edit-photo-preparing-text.png)
+
+### Variant: shop-edit-photo-preparing-user
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing user](images/messages-id-shop-edit-photo-preparing-user.png)
+
+### Variant: shop-edit-photo-preparing-summary
+
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+
+![21.gifts public message shop edit photo preparing summary](images/messages-id-shop-edit-photo-preparing-summary.png)
+
+### Variant: shop-edit-history-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request has not returned. **Loading the history.** is under **History**. There is no alert. The photo step stays open.
+
+![21.gifts public message shop edit history loading](images/messages-id-shop-edit-history-loading.png)
+
+### Variant: shop-edit-save-error
+
+A moderator on the public top-level shop note Cafe Luna changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts public message shop edit save error](images/messages-id-shop-edit-save-error.png)
+
+### Variant: shop-edit-history-error
+
+A moderator on the public top-level shop note Cafe Luna opened **Edit shop note**. The history request failed. The alert **Could not load the history** is visible. **Loading the history.** is not shown. The photo step stays open.
+
+![21.gifts public message shop edit history error](images/messages-id-shop-edit-history-error.png)
+
+### Variant: shop-edit-place-map-loading
+
+A moderator on the public top-level shop note Cafe Luna opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
+
+![21.gifts public message shop edit place map loading](images/messages-id-shop-edit-place-map-loading.png)
 
 ### Variant: sunday
 

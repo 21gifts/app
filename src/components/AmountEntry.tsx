@@ -65,6 +65,15 @@ export interface AmountEntryProps {
    * Till keypad. No text field. Other screens omit this and keep the input.
    */
   keypad?: boolean;
+  /**
+   * Validation copy under the amount. Omitted when the draft is acceptable.
+   * Announced, because these amount errors are the reason a payment stays off.
+   */
+  error?: string;
+  /**
+   * Called when the text field is left. The keypad has no text field.
+   */
+  onBlur?: () => void;
 }
 
 /**
@@ -226,6 +235,8 @@ export function AmountEntry({
   onUnitChange,
   layout = 'field',
   keypad = false,
+  error,
+  onBlur,
 }: AmountEntryProps): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -255,6 +266,15 @@ export function AmountEntry({
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')}`;
+  const errorId = error === undefined || error === '' ? null : `${fieldId}-error`;
+  const errorNode =
+    errorId === null ? null : (
+      <p id={errorId} role="alert" className="text-sm text-app-danger">
+        {error}
+      </p>
+    );
+  const invalidProps =
+    errorId === null ? {} : { 'aria-invalid': true as const, 'aria-describedby': errorId };
 
   const draftForUnit = (
     from: AmountUnit,
@@ -495,12 +515,18 @@ export function AmountEntry({
     return (
       <div className={`flex flex-col gap-2${extra}`}>
         <div className="flex items-center justify-end gap-2">{unitSwitch}</div>
-        <p id={fieldId} aria-label={label} className={`${amountClass} text-center`}>
+        <p
+          id={fieldId}
+          aria-label={label}
+          className={`${amountClass} text-center`}
+          {...invalidProps}
+        >
           {shown === '' ? (placeholder ?? '') : shown}
         </p>
         {counter !== null ? (
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
+        {errorNode}
         <div className="grid w-full grid-cols-3 gap-2">
           {digits.map((digit, index) =>
             digit === null ? (
@@ -557,7 +583,9 @@ export function AmountEntry({
           onValueChange(event.target.value);
         }
       }}
+      {...(onBlur === undefined ? {} : { onBlur })}
       className={amountClass}
+      {...invalidProps}
     />
   );
   if (layout === 'composer') {
@@ -573,6 +601,7 @@ export function AmountEntry({
         {counter !== null ? (
           <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
+        {errorNode}
       </div>
     );
   }
@@ -590,6 +619,7 @@ export function AmountEntry({
         {counter !== null ? (
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
         ) : null}
+        {errorNode}
       </div>
     );
   }
@@ -606,6 +636,7 @@ export function AmountEntry({
       {counter !== null ? (
         <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
       ) : null}
+      {errorNode}
     </div>
   );
 }

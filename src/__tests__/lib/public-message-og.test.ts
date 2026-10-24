@@ -1,11 +1,16 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import type { ForumMessage } from '@/lib/api-types';
-import { loadPublicMessageForOg, publicMessageOgMetadata } from '@/lib/public-message-og';
+import {
+  DEFAULT_OG_ALT,
+  loadPublicMessageForOg,
+  ogDescriptionText,
+  publicMessageOgMetadata,
+} from '@/lib/public-message-og';
 
 const API = 'https://api.test';
 const MESSAGE_ID = '11111111-1111-4111-8111-111111111111';
-const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
 
 const sample: ForumMessage = {
   id: MESSAGE_ID,
@@ -39,6 +44,19 @@ function stubFetch(response: Response): Mock {
   return fetchMock;
 }
 
+describe('ogDescriptionText', () => {
+  it('exports the default preview alt text', () => {
+    expect(DEFAULT_OG_ALT).toBe('21.gifts — peer-to-peer Bitcoin gifts');
+  });
+
+  it('trims text, falls back to the name, and cuts above 300 code units', () => {
+    expect(ogDescriptionText('  Coffee  ', 'Cafe Luna')).toBe('Coffee');
+    expect(ogDescriptionText(' \n ', 'Cafe Luna')).toBe('Cafe Luna on 21.gifts');
+    expect(ogDescriptionText('y'.repeat(300), 'Cafe Luna')).toBe('y'.repeat(300));
+    expect(ogDescriptionText('y'.repeat(301), 'Cafe Luna')).toBe(`${'y'.repeat(299)}…`);
+  });
+});
+
 describe('loadPublicMessageForOg', () => {
   it('returns null without fetching when the id is not a UUID', async () => {
     const fetchMock = vi.fn();
@@ -71,7 +89,7 @@ describe('loadPublicMessageForOg', () => {
     );
 
     await expect(loadPublicMessageForOg(MESSAGE_ID)).resolves.toBeNull();
-    expect(timeoutSpy).toHaveBeenCalledWith(2500);
+    expect(timeoutSpy).toHaveBeenCalledWith(API_FETCH_TIMEOUT_MS);
     timeoutSpy.mockRestore();
   });
 

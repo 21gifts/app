@@ -93,7 +93,6 @@ describe('ShopTable', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getAllByText('—')).toHaveLength(2);
     expect(screen.getByRole('link', { name: '1.00000, 2.00000' })).toBeTruthy();
-    expect(screen.queryByText('Hello')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     await waitFor(() => {
       expect(fetchMessagesMock).toHaveBeenCalledWith(
@@ -101,6 +100,142 @@ describe('ShopTable', () => {
         expect.objectContaining({ cursor: 'c2', hashtag: '21GiftsShop' }),
       );
     });
+  });
+
+  it('lists a structured address on the place link', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({
+      messages: [
+        {
+          ...SHOP,
+          id: 'm-address',
+          place: {
+            lat: 47.3769,
+            lng: 8.5417,
+            label: "Kiki's Bakery",
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        },
+      ],
+      nextCursor: null,
+    });
+    renderWithLocale(<ShopTable />);
+    expect(
+      await screen.findByRole('link', {
+        name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole('link', {
+          name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+        })
+        .getAttribute('href'),
+    ).toBe('/map?pin=m-address');
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Luna')).toBeNull();
+  });
+
+  it('keeps the place label as the name after a text-only edit', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    const structured = {
+      ...SHOP,
+      id: 'm-address',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "  Kiki's Bakery  ",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+    };
+    fetchMessagesMock.mockResolvedValue({
+      messages: [structured, { ...SHOP, id: 'm-old', text: 'Old stall\n\n#21GiftsShop' }],
+      nextCursor: null,
+    });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...structured,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Old stall')).toBeTruthy();
+    expect(screen.queryByText('Cafe Luna is open every morning.')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit shop note' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Sol is open every morning.')).toBeNull();
+    expect(screen.getByText('Old stall')).toBeTruthy();
+  });
+
+  it('uses the first note line when a pin has no address or only a blank name', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({
+      messages: [
+        SHOP,
+        {
+          ...SHOP,
+          id: 'm-blank',
+          text: 'Blank name stall\n\n#21GiftsShop',
+          place: {
+            lat: 47.3769,
+            lng: 8.5417,
+            label: '   ',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        },
+      ],
+      nextCursor: null,
+    });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByText('Cafe Luna')).toBeTruthy();
+    expect(screen.getByText('Blank name stall')).toBeTruthy();
   });
 
   it('retries a failed show more', async () => {
@@ -211,14 +346,30 @@ describe('ShopTable', () => {
       missing: [],
     } as Account;
     useAuthStore.setState({ session: 'tok', account: moderator });
+    const editable = {
+      ...SHOP,
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+    };
     fetchMessagesMock.mockResolvedValue({
-      messages: [SHOP, { ...SHOP, id: 'm-2', text: 'Other stall\n\n#21GiftsShop' }],
+      messages: [editable, { ...SHOP, id: 'm-2', text: 'Other stall\n\n#21GiftsShop' }],
       nextCursor: null,
     });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
-      ...SHOP,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      ...editable,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     renderWithLocale(<ShopTable />);
     const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
@@ -227,12 +378,16 @@ describe('ShopTable', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findByText('Cafe Sol')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Sol is open every morning.')).toBeNull();
     expect(screen.getByText('Other stall')).toBeTruthy();
   });
 });
