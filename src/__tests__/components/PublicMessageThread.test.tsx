@@ -2076,6 +2076,7 @@ describe('PublicMessageThread', () => {
       sats: 0,
       payable: false,
       place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     renderThread({ root: shopRoot });
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
@@ -2129,6 +2130,7 @@ describe('PublicMessageThread', () => {
       sats: 0,
       payable: false,
       place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     const withoutPlace: ForumMessage = {
       ...shopRoot,
@@ -2178,6 +2180,7 @@ describe('PublicMessageThread', () => {
           country: 'CH',
         },
       },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     signIn({ role: 'moderator' });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

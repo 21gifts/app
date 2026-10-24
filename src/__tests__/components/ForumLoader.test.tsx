@@ -2349,7 +2349,7 @@ describe('ForumLoader', () => {
     delete (window as { google?: unknown }).google;
   });
 
-  it('feed="shops" clears the listed pin when the save returns no place', async () => {
+  it('feed="shops" drops the listed pin when a saved place comes back without one', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'moderator', forumLawsDismissed: true },
@@ -2359,7 +2359,7 @@ describe('ForumLoader', () => {
         {
           ...SAMPLE,
           id: 'shop1',
-          text: 'Cafe Luna\n\n#21GiftsShop',
+          text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
           sats: 5,
           place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
         },
@@ -2368,7 +2368,7 @@ describe('ForumLoader', () => {
     vi.mocked(setMessagePlace).mockResolvedValue({
       ...SAMPLE,
       id: 'shop1',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 5,
     });
     const map = {
@@ -2396,8 +2396,10 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit place' }));
-    expect(await screen.findByRole('button', { name: 'Remove place' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByLabelText('Shop name')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    fillShopAddressFields('Happyland');
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
     });

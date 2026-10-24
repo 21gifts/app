@@ -4311,6 +4311,7 @@ describe('MemberProfileScreen', () => {
       sats: 0,
       payable: false,
       place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(
@@ -4392,6 +4393,7 @@ describe('MemberProfileScreen', () => {
       sats: 0,
       payable: false,
       place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     const withoutPlace: ForumMessage = {
       ...shopPost,
@@ -4443,6 +4445,7 @@ describe('MemberProfileScreen', () => {
           country: 'CH',
         },
       },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
