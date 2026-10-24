@@ -41,8 +41,11 @@ describe('ShopsScreen', () => {
   });
 
   it('switches to the map, the table, post, and back to the list', () => {
+    window.location.hash = '#post';
+    window.history.replaceState({ idx: 1 }, '', `${window.location.pathname}#post`);
     renderWithLocale(<ShopsScreen />);
-    window.history.replaceState({ idx: 1 }, '', window.location.pathname);
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+    expect(screen.getByTestId('forum-loader').getAttribute('data-feed')).toBe('shops');
     fireEvent.click(screen.getByRole('button', { name: 'Map' }));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(window.history.state).toEqual({ idx: 1 });
