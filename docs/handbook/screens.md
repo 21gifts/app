@@ -2071,7 +2071,6 @@ text **Fresh bread every morning.** The live error
 
 ![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
 
-
 ### Variant: shop-edit-user-suggest
 
 Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
@@ -2405,7 +2404,6 @@ Step **3 / 5 · Text** is open on **Map** with a place named
 
 ![21.gifts shops map edit user](images/shops-map-edit-user.png)
 
-
 ### Variant: map-edit-user-suggest
 
 Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
@@ -2696,7 +2694,6 @@ Step **3 / 5 · Text** is open on **Table** with a place named
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
 
-
 ### Variant: table-edit-user-suggest
 
 Step **4 / 5 · 21.gifts user** is open on **Table** after the stored username is cleared. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
@@ -2943,7 +2940,6 @@ disabled.
 **Add a shop** is open on step **4 / 5 · 21.gifts user**. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts shops add user](images/shops-add-user.png)
-
 
 ### Variant: add-user-suggest
 
@@ -3284,7 +3280,6 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user](images/shops-edit-user.png)
-
 
 ### Variant: edit-user-suggest
 
@@ -4263,7 +4258,6 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
-
 
 ### Variant: shop-edit-user-suggest
 
@@ -6466,7 +6460,6 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
-
 
 ### Variant: shop-edit-user-suggest
 

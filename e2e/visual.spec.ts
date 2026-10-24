@@ -837,13 +837,8 @@ async function continueFromShopUsername(page: Page): Promise<void> {
   await next.click();
 }
 
-/** Open the People list at @, then keep the chosen row @ada. */
-async function shotShopUsernameSuggestions(
-  page: Page,
-  suggest: string,
-  chosen: string,
-  clearToAt = false,
-): Promise<void> {
+/** Open the People list at @ and leave it ready to capture. */
+async function showShopUsernameList(page: Page, clearToAt = false): Promise<void> {
   const field = page.getByLabel('21.gifts username');
   const step = page.getByText('4 / 5 · 21.gifts user');
   await expect(step).toBeVisible();
@@ -854,10 +849,14 @@ async function shotShopUsernameSuggestions(
   await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
   await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
   await expect(page.getByText('Ada Lovelace')).toBeVisible();
-  const next = page.getByRole('button', { name: 'Next' });
-  await expect(next).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
   await step.scrollIntoViewIfNeeded();
-  await shotScreen(page, suggest);
+}
+
+/** Choose the row @ada and leave that account ready to capture. */
+async function chooseShopUsernameAda(page: Page): Promise<void> {
+  const field = page.getByLabel('21.gifts username');
+  const step = page.getByText('4 / 5 · 21.gifts user');
   await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
     await route.fulfill({
       status: 200,
@@ -875,9 +874,8 @@ async function shotShopUsernameSuggestions(
   await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
   await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
   await expect(step.locator('xpath=ancestor::form[1]').getByRole('alert')).toHaveCount(0);
-  await expect(next).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
   await step.scrollIntoViewIfNeeded();
-  await shotScreen(page, chosen);
 }
 
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
@@ -24799,78 +24797,70 @@ test.describe('shops screens', () => {
   test('shops add-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openCreateShopUsernameStep(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-shops-add-user-suggest',
-      'state-shops-add-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-add-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-add-user-chosen');
   });
 
   test('shops edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openShopsEditor(page, 'post');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-shops-edit-user-suggest',
-      'state-shops-edit-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-edit-user-chosen');
   });
 
   test('shops map-edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openShopsEditor(page, 'map');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-shops-map-edit-user-suggest',
-      'state-shops-map-edit-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-map-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-map-edit-user-chosen');
   });
 
   test('shops table-edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openShopsEditor(page, 'table');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-shops-table-edit-user-suggest',
-      'state-shops-table-edit-user-chosen',
-      true,
-    );
+    await showShopUsernameList(page, true);
+    await shotScreen(page, 'state-shops-table-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-table-edit-user-chosen');
   });
 
   test('welcome shop-edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openHostedShopEditor(page, 'welcome');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-welcome-shop-edit-user-suggest',
-      'state-welcome-shop-edit-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-chosen');
   });
 
   test('members shop-edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openHostedShopEditor(page, 'members');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-members-shop-edit-user-suggest',
-      'state-members-shop-edit-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-members-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-members-shop-edit-user-chosen');
   });
 
   test('messages shop-edit-user-suggest', async ({ page }) => {
     await fulfillMentionPeople(page);
     await openHostedShopEditor(page, 'messages');
     await advanceShopEditorToUsername(page);
-    await shotShopUsernameSuggestions(
-      page,
-      'state-messages-id-shop-edit-user-suggest',
-      'state-messages-id-shop-edit-user-chosen',
-    );
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-chosen');
   });
 });
 
