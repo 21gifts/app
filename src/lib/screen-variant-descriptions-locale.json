@@ -170,9 +170,9 @@
     "fil": "Naghihintay sa pagkuha ng pampublikong mensahe. Naglo-load…"
   },
   "/contact:validation-error": {
-    "de": "Klick auf Senden bei leerem Eingabefeld → Bitte schreiben Sie eine Nachricht.",
-    "es": "Clic en Enviar con el redactor vacío → Escribe un mensaje.",
-    "fil": "I-click ang Ipadala nang walang laman ang pambuo ng mensahe → Maglagay ng mensahe."
+    "de": "Klick auf Senden bei leerem Eingabefeld → Bitte schreiben Sie eine Nachricht. Senden bleibt aus.",
+    "es": "Clic en Enviar con el redactor vacío → Escribe un mensaje. Enviar permanece desactivado.",
+    "fil": "I-click ang Ipadala nang walang laman ang pambuo ng mensahe → Maglagay ng mensahe. Nananatiling naka-off ang Ipadala."
   },
   "/messages:error": {
     "de": "Abrufen der Liste fehlgeschlagen. Schaltfläche Erneut versuchen. Auswahl fehlt.",
@@ -513,6 +513,11 @@
     "de": "Moderatorin oder Moderator. Die Gruppe existiert, null Nachrichten. Eingabefeld Ihre Nachricht sichtbar.",
     "es": "Persona moderadora. El grupo existe, cero mensajes. Cuadro de redacción Tu mensaje visible.",
     "fil": "Moderator. May grupo, serong mensahe. Nakikita ang pambuo ng mensahe na Iyong mensahe."
+  },
+  "/moderate/group:send-empty": {
+    "de": "Moderatorin oder Moderator. Leerer Faden nach Senden ohne Nachricht und ohne Foto. Bitte schreiben Sie eine Nachricht steht unter dem Eingabebereich, verknüpft mit aria-describedby und aria-invalid. Senden ist deaktiviert. Der unberührte leere Faden deckt das nicht ab.",
+    "es": "Persona moderadora. Hilo vacío tras Enviar sin mensaje y sin foto. Escribe un mensaje queda bajo el compositor, enlazado con aria-describedby y aria-invalid. Enviar está deshabilitado. El hilo vacío sin tocar no cubre esto.",
+    "fil": "Moderator. Walang-lamang talakayan pagkatapos ng Ipadala na walang mensahe at walang litrato. Maglagay ng mensahe ay nasa ilalim ng kompositor, naka-link sa aria-describedby at aria-invalid. Hindi gumagana ang Ipadala. Hindi sakop nito ang hindi pa ginagalaw na walang-lamang talakayan."
   },
   "/moderate/group:loading": {
     "de": "Moderatorin oder Moderator wartet auf GET /conversations/moderator-group. Text Wird geladen…",
@@ -949,6 +954,16 @@
     "es": "Añadir un lugar está abierto como diálogo y la clave del mapa está vacía. El mapa no está disponible y Usar este lugar está visible y desactivado.",
     "fil": "Bukas bilang dialog ang Magdagdag ng lugar at walang laman ang susi ng mapa. Hindi available ang mapa at nakikita ngunit naka-disable ang Gamitin ang lugar na ito."
   },
+  "/welcome:composer-place-too-long": {
+    "de": "Ort hinzufügen ist offen und der Kartenschlüssel ist leer. Der Ortsname ist länger als 80 Zeichen. Maximal 80 Zeichen für den Ortsnamen steht unter dem Feld, und Diesen Ort verwenden bleibt aus. Nadel Maximal 80 Zeichen für den Ortsnamen.",
+    "es": "Añadir un lugar está abierto y la clave del mapa está vacía. El nombre del lugar supera los 80 caracteres. Máximo 80 caracteres para el nombre del lugar aparece bajo el campo, y Usar este lugar permanece desactivado. Aguja Máximo 80 caracteres para el nombre del lugar.",
+    "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa. Mahigit 80 character ang pangalan ng lugar. Nasa ilalim ng field ang Hanggang 80 character ang pangalan ng lugar, at nananatiling naka-off ang Gamitin ang lugar na ito. Karayom Hanggang 80 character ang pangalan ng lugar."
+  },
+  "/welcome:composer-place-controls": {
+    "de": "Ort hinzufügen ist offen und der Kartenschlüssel ist leer. Der Ortsname ist kurz und enthält ein Steuerzeichen. Der Ortsname darf keine Steuerzeichen enthalten steht unter dem Feld, und Diesen Ort verwenden bleibt aus. Nadel Der Ortsname darf keine Steuerzeichen enthalten.",
+    "es": "Añadir un lugar está abierto y la clave del mapa está vacía. El nombre del lugar es corto y contiene un carácter de control. El nombre del lugar no puede incluir caracteres de control aparece bajo el campo, y Usar este lugar permanece desactivado. Aguja El nombre del lugar no puede incluir caracteres de control.",
+    "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa. Maikli ang pangalan ng lugar at may control character. Nasa ilalim ng field ang Hindi puwedeng may control character ang pangalan ng lugar, at nananatiling naka-off ang Gamitin ang lugar na ito. Karayom Hindi puwedeng may control character ang pangalan ng lugar."
+  },
   "/profile:posts-open": {
     "de": "14 Beiträge ist gedrückt und der Feed zeigt Second post from Ada. Nadel Second post from Ada.",
     "es": "14 publicaciones está pulsado y el listado muestra Second post from Ada. Aguja Second post from Ada.",
@@ -1090,9 +1105,9 @@
     "fil": "Pinindot ang PHP at ang halaga ay 100. Magpatuloy habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
   },
   "/pl:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Weiter zeigt Für PHP gibt es noch keinen Wechselkurs. Das Formular bleibt. Kein Bezahlen.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Continuar muestra Aún no hay tipo de cambio para PHP. El formulario permanece. Sin Pagar.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Magpatuloy ang Wala pang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Für PHP gibt es noch keinen Wechselkurs steht unter dem Betrag, und Weiter ist schon aus. Das Formular bleibt. Kein Bezahlen.",
+    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Aún no hay tipo de cambio para PHP queda bajo el importe, y Continuar ya está desactivado. El formulario permanece. Sin Pagar.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Nasa ilalim ng halaga ang Wala pang palitan para sa PHP, at naka-off na ang Magpatuloy. Nanatili ang pormularyo. Walang Magbayad."
   },
   "/welcome:ask-preparing": {
     "de": "Schritt 2 von 4 von Um Geld bitten, während das Foto noch vorbereitet wird. Noch kein Vorschaubild. Weiter bleibt deaktiviert.",
@@ -1209,6 +1224,16 @@
     "es": "Tarjeta de identidad con recuentos; botón Publicaciones pulsado; tarjeta de publicación «Second post from Carol.» en el flujo.",
     "fil": "Talaan ng pagkakakilanlan na may mga bilang; naka-pindot ang pindutang Mga tala; talaan ng tala na «Second post from Carol.» sa listahan."
   },
+  "/members/[accountId]:pay-rate-loading": {
+    "de": "Beiträge sind offen. Eine zahlbare Antwort hat Geschenk offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert.",
+    "es": "Las publicaciones están abiertas. Una respuesta pagable tiene Regalo abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado.",
+    "fil": "Bukas ang mga tala. May bukas na Regalo ang isang sagot na pwedeng bayaran, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy."
+  },
+  "/members/[accountId]:reply-rate-loading": {
+    "de": "Beiträge sind offen und Carols Notiz ist aufgeklappt. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
+    "es": "Las publicaciones están abiertas y la nota de Carol está desplegada. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado.",
+    "fil": "Bukas ang mga tala at naka-expand ang tala ni Carol. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post."
+  },
   "/messages:translate": {
     "de": "Angemeldete /messages-Liste mit einer deutschen Gesprächsvorschau. Die Liste bietet Übersetzen nicht an.",
     "es": "Lista /messages con sesión iniciada y una vista previa de conversación en alemán. La lista no ofrece Traducir.",
@@ -1318,6 +1343,11 @@
     "de": "Anfragen, Schritt 3 von 4, mit Need help with a train ticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
     "es": "Pedir, paso 3 de 4, con Need help with a train ticket escrito en el campo de mensaje. Continuar sigue habilitado.",
     "fil": "Hiling, hakbang 3 sa 4, na may Need help with a train ticket na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
+  },
+  "/welcome:ask-text-empty": {
+    "de": "Anfragen, Schritt 3 von 4, nach Weiter mit leerer Nachricht und ohne Foto. Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu steht unter dem Feld, verknüpft mit aria-describedby und markiert mit aria-invalid. Weiter ist deaktiviert. Der leere Schritt vor diesem Druck deckt das nicht ab.",
+    "es": "Pedir, paso 3 de 4, tras Continuar con un mensaje vacío y sin foto. Escribe un mensaje o añade una foto o un vídeo queda bajo el campo, enlazado con aria-describedby y marcado aria-invalid. Continuar está deshabilitado. El paso vacío antes de esa pulsación no cubre esto.",
+    "fil": "Hiling, hakbang 3 sa 4, pagkatapos ng Magpatuloy na walang mensahe at walang litrato. Maglagay ng mensahe o magdagdag ng litrato o bidyo ay nasa ilalim ng patlang, naka-link sa aria-describedby at minarkahang aria-invalid. Hindi gumagana ang Magpatuloy. Hindi sakop nito ang walang-lamang hakbang bago ang pindot na iyon."
   },
   "/welcome:ask-shop-elsewhere": {
     "de": "Anfragen, Schritt 3 von 4, mit #21GiftsShop im Nachrichtenfeld. Der Live-Hinweis zum Erstellen des Ladeneintrags unter Shops steht direkt unter dem Feld; Weiter ist deaktiviert.",
@@ -1795,14 +1825,14 @@
     "fil": "Gumawa ng bayad habang walang laman pa ang halaga. Alerto Maglagay ng buong bilang. Nanatili ang keypad at walang decimal na key. Walang QR."
   },
   "/pos/amount:rate-loading": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Zahlung anlegen, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. Crear pago mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang keypad. Walang QR."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Zahlung anlegen, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Zahlung anlegen bleibt aus. Die Tastatur bleibt. Kein QR.",
+    "es": "PHP está pulsado y el importe es 100. Crear pago mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. Crear pago permanece desactivado. El teclado permanece. Sin QR.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatiling naka-disable ang Gumawa ng bayad. Nanatili ang keypad. Walang QR."
   },
   "/pos/amount:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Zahlung anlegen zeigt Für PHP gibt es noch keinen Wechselkurs. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Crear pago muestra Aún no hay tipo de cambio para PHP. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Gumawa ng bayad ang Wala pang palitan para sa PHP. Nanatili ang keypad. Walang QR."
+    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Für PHP gibt es noch keinen Wechselkurs steht unter dem Betrag, und Zahlung anlegen ist schon aus. Die Tastatur bleibt. Kein QR.",
+    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Aún no hay tipo de cambio para PHP queda bajo el importe, y Crear pago ya está desactivado. El teclado permanece. Sin QR.",
+    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Nasa ilalim ng halaga ang Wala pang palitan para sa PHP, at naka-off na ang Gumawa ng bayad. Nanatili ang keypad. Walang QR."
   },
   "/shops:table-error": {
     "de": "Tabelle ist ausgewählt und die erste Seite ist fehlgeschlagen. Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen. Der Verfasser ist weg.",
@@ -3215,9 +3245,9 @@
     "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa Cafe Luna. Bukas ang Hakbang 1 sa 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:validation-error": {
-    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu. Das Verfassen ist auf 8000 Zeichen begrenzt (wie POST /forum/messages); zu lange Entwürfe zeigen Maximal 8000 Zeichen und werden nicht gesendet.",
-    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo. El redactor tiene tope de 8000 caracteres (igual que POST /forum/messages); los borradores demasiado largos muestran Máximo 8000 caracteres y no se envían.",
-    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo. Limitado ang pambuo sa 8000 na karakter (tulad ng POST /forum/messages); ang masyadong mahahabang burador ay nagpapakita ng Hanggang 8000 na karakter at hindi ipinapadala."
+    "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu, und Senden bleibt aus. Das Verfassen schneidet den Entwurf nicht ab.",
+    "es": "Pulsar Publicar con el redactor vacío y sin foto ni vídeo → Escribe un mensaje o añade una foto o un vídeo, y Publicar permanece desactivado. El redactor no corta el borrador.",
+    "fil": "I-click ang I-post na walang laman ang pambuo at walang litrato o bidyo → Maglagay ng mensahe o magdagdag ng litrato o bidyo, at nananatiling naka-off ang I-post. Hindi pinuputol ng pambuo ang burador."
   },
   "/messages/[id]:goal-fiat": {
     "de": "Nicht angemeldeter Permalink einer englischen Notiz, definiert als $1.50 mit eingefrorenem ₿1'000 und Beschriftung 0%. Kein zweiter Dollarbetrag. Die Notiz entspricht der Sprache der Oberfläche, daher bietet die Karte kein Übersetzen. Der empfangene Betrag ist ₿0 · $0.00. Kein Anfragen im Verfassen.",
@@ -3355,9 +3385,9 @@
     "fil": "Utang, hakbang 9 sa 9, pagkatapos ng isang hiling na 1000 dolyar ng US at ng parehong mensahe. Naka-pindot ang Utang. Ipinapakita ng preview ang isang etiketa ng Pautang, ang halaga sa dolyar, at ang araw-araw na plano sa dolyar ($33.33 sa loob ng 29 araw, pagkatapos $33.43 sa huling araw). Ang I-post ang tanging pagsusumite. Binabasa ng pamilang ang 9 sa 9."
   },
   "/grants/payments/amounts:invalid": {
-    "de": "Gründerin, Betrag 0 hinzufügen, Hinweis Der Betrag ist ungültig. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Der Betrag ist ungültig.",
-    "es": "Fundador, añadir importe 0, aviso El importe no es válido. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja El importe no es válido.",
-    "fil": "Tagapagtatag, magdagdag ng halagang 0, alerto Hindi wasto ang amount. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Hindi wasto ang amount."
+    "de": "Gründerin, Betrag 0 im Hinzufügen-Feld. Bitte geben Sie einen Betrag grösser als null ein steht unter dem Feld und Hinzufügen bleibt aus. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Bitte geben Sie einen Betrag grösser als null ein.",
+    "es": "Fundador, importe 0 en el campo de añadir. Introduce un importe mayor que cero aparece bajo el campo y Añadir permanece desactivado. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja Introduce un importe mayor que cero.",
+    "fil": "Tagapagtatag, halagang 0 sa field ng pagdagdag. Maglagay ng halagang higit sa zero ang nasa ilalim ng field at nananatiling naka-off ang Magdagdag. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Maglagay ng halagang higit sa zero."
   },
   "/login:error": {
     "de": "Beginn oder Abschluss der Anmeldung ist fehlgeschlagen. Text Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut. (login.error) und Erneut versuchen. Handybilder zeigen auch die gedämpfte Zeile für installiertes iOS. Eine alte-iOS-Registrierung, die nicht abschliessen kann, ist die Variante ios-version, nicht dieses Bild. Dort wird kein Konto angelegt.",
@@ -3464,6 +3494,16 @@
     "es": "Respuesta pagable después de mostrar las reacciones, regalo abierto, importe rellenado, no enviado. La llamada a la acción del importe es Continuar (forum.payContinue) en cada agente de usuario. Equivalente actual en la moneda fiduciaria preferida (sin selector). Sin error, sin código QR de pago, aún no hay botón para pagar con la cartera. La publicación misma no muestra Enviar Bitcoin.",
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
+  "/welcome:pay-rate-loading": {
+    "de": "Zahlbare Antwort nach dem Anzeigen der Reaktionen. Geschenk ist offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert. Der ausgefüllte Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Respuesta pagable después de mostrar las reacciones. Regalo está abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado. El importe rellenado antes de ese toque no cubre esto.",
+    "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon. Bukas ang Regalo, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy. Hindi tinatakpan ng napunang halaga bago ang pindot na ito ang resultang ito."
+  },
+  "/welcome:reply-rate-loading": {
+    "de": "Reaktionen sind angezeigt. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert. Der stille Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Se muestran las reacciones. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado. El importe en silencio antes de ese toque no cubre esto.",
+    "fil": "Ipinapakita ang mga reaksyon. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post. Hindi tinatakpan ng tahimik na halaga bago ang pindot na ito ang resultang ito."
+  },
   "/shops:table-edit-open": {
     "de": "Ein Moderator hat neben Happyland auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
     "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Happyland. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna se mantienen.",
@@ -3543,6 +3583,16 @@
     "de": "Hydrierte Ada-Sitzung: ein Pfeil oben links (vorherige In-App-Ansicht, oder /welcome, wenn dieser Tab keine hat) + Wortmarke → /welcome. Die Wortmarke ist nicht dieses Steuerelement. Menü oben rechts (Start zuerst). Thread-Karte Hello from Ada, Reagieren, Link kopieren und Reaktion schreiben (automatisch aufgeklappt). Beiträge zeigen weder Geschenk noch einen Umschlag.",
     "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hello from Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Regalo ni un sobre.",
     "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Hello from Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Regalo o sobre."
+  },
+  "/messages/[id]:pay-rate-loading": {
+    "de": "Angemeldeter Verlauf. Eine zahlbare Antwort hat Geschenk offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert.",
+    "es": "Hilo con sesión iniciada. Una respuesta pagable tiene Regalo abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado.",
+    "fil": "Thread na naka-sign in. May bukas na Regalo ang isang sagot na pwedeng bayaran, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy."
+  },
+  "/messages/[id]:reply-rate-loading": {
+    "de": "Angemeldeter Verlauf. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
+    "es": "Hilo con sesión iniciada. El importe de la reacción es 1.00 USD, y se pulsó Publicar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Publicar está desactivado.",
+    "fil": "Thread na naka-sign in. 1.00 USD ang halaga ng reaksyon, at pinindot ang I-post habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang I-post."
   },
   "/members/[accountId]:overlay-address": {
     "de": "Benannter Besucher mit akzeptierten Wohnzimmerregeln und ohne Wallet of Satoshi address. Beitrag-Feed offen, gelistete Notiz aufgeklappt, Antwort mit sichtbarem Feld Betrag gefüllt, Senden angeklickt. Dialog RequirementsOverlay Wallet of Satoshi address hinterlegen mit dem Profilfeld Lightning Address. Kein Überspringen. Schließen (X) ist vorhanden.",
@@ -3709,6 +3759,11 @@
     "es": "Hilo oficial abierto. Encabezado 21.gifts (un control de perfil cuando la api envió accountId), origen Contacto bajo el encabezado, entrante Hello team como tarjeta de nota atenuada de ancho completo y a la derecha una burbuja enviada rellena app-btn con la etiqueta Tú, compositor visible: ImagePlus, el mensaje y enviar en una fila; el campo Importe (₿ | fiat, la otra unidad debajo) en la fila siguiente. Sin selector.",
     "fil": "Bukas ang opisyal na talakayan. Pamagat 21.gifts (isang kontrol sa profile kapag nagpadala ang api ng accountId), pinagmulan Contact sa ilalim ng pamagat, papasok na Hello team bilang kard ng tala na naka-mute sa buong lapad at isang napunong app-btn na bula sa kanan na may etiketa na Ikaw, nakikita ang kompositor: ImagePlus, ang mensahe, at ipadala sa isang hilera; ang patlang na Halaga (₿ | fiat, kabilang yunit sa ilalim) sa susunod na hilera. Walang tagapili."
   },
+  "/messages:thread-send-empty": {
+    "de": "Offener Faden. Senden wurde mit leerer Nachricht, ohne Foto und ohne Betrag gedrückt. Bitte schreiben Sie eine Nachricht steht unter dem Eingabebereich, verknüpft mit aria-describedby und aria-invalid. Senden ist deaktiviert. Der ruhende leere Eingabebereich deckt das nicht ab.",
+    "es": "Hilo abierto. Se pulsó Enviar con un mensaje vacío, sin foto y sin importe. Escribe un mensaje queda bajo el compositor, enlazado con aria-describedby y aria-invalid. Enviar está deshabilitado. El compositor vacío en reposo no cubre esto.",
+    "fil": "Bukas na talakayan. Pinindot ang Ipadala na walang mensahe, walang litrato, at walang halaga. Maglagay ng mensahe ay nasa ilalim ng kompositor, naka-link sa aria-describedby at aria-invalid. Hindi gumagana ang Ipadala. Hindi sakop nito ang nakapahingang walang-lamang kompositor."
+  },
   "/setup/address:default": {
     "de": "Angemeldet mit einem Namen (oder einem übersprungenen Namen) und ohne Adresse. Ihre Wallet of Satoshi address und das Adressfeld oben, Weiter und beschriftetes Überspringen am unteren Bildschirmrand angeheftet. Ein Menü oben rechts; darin Start, Shops, Kasse, Profil, Förderprogramm, Wallet, Wohnzimmerregeln, Habit-Tracker, Trust-Kette, Statistiken, Benachrichtigungen, Posteingang, Kontakt, optional App installieren und Abmelden.",
     "es": "Sesión iniciada con un nombre (o un nombre omitido) y sin dirección. Tu Wallet of Satoshi address y el campo de dirección arriba, Continuar y Omitir rotulado fijados al fondo de la pantalla. Un menú arriba a la derecha; en él Inicio, Tiendas, Caja, Perfil, Beca, Wallet, Reglas del salón, Habit-Tracker, Cadena de confianza, Estadísticas, Notificaciones, Bandeja, Contacto, Instalar app opcional y Cerrar sesión.",
@@ -3765,9 +3820,9 @@
     "fil": "Nag-type ang tagapagtatag ng @ at pinindot ang @cara. Ipinapakita ng patlang na Tao ang @cara. Nanatiling bukas ang listahan at napili ang hilera na iyon. Walang alerto. Karayom state-grants-payments-amounts-chosen."
   },
   "/grants/payments/amounts:pick-person": {
-    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Nadel Wähle eine Person.",
-    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Aguja Elige una persona.",
-    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Karayom Pumili ng tao."
+    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Hinzufügen bleibt gesperrt, bis eine Person gewählt ist. Nadel Wähle eine Person.",
+    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Añadir permanece desactivado hasta que se elige una persona. Aguja Elige una persona.",
+    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Nanatiling naka-disable ang Idagdag hanggang pumili ng tao. Karayom Pumili ng tao."
   },
   "/grants/payments/amounts:invalid-person": {
     "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
@@ -3884,6 +3939,16 @@
     "es": "Hilo abierto, Importe 21 enviado. Hoja de pago abierta, Pagar con Wallet of Satoshi. Cerrar (X) cierra la hoja y se queda en este hilo. No es la flecha atrás de arriba a la izquierda. La fila de importe del cuadro de redacción está oculta; la hoja indica ese importe una vez, como el importe en sats más el fiat predeterminado del tipo del día de regalo más reciente. El cuadro de redacción detrás de la hoja incluye adjuntar ImagePlus. Capturado en ordenador y en teléfono (misma variante, cuatro combinaciones). El ordenador muestra el QR de pago Bitcoin más el botón Pagar del monedero. Un teléfono muestra la misma hoja sin un QrCode montado; Pagar abre Wallet of Satoshi. Esperando el pago… es aceptable mientras la consulta de pago queda colgada.",
     "fil": "Bukas ang usapan, naisumite ang Halaga 21. Bukas ang panel ng bayad, Magbayad gamit ang Wallet of Satoshi. Ang Isara (X) ay nagsasara ng panel at nananatili sa usapang ito. Hindi ito ang palaso pabalik sa itaas-kaliwa. Nakatago ang hilera ng halaga ng kahon ng pagsulat; sinasabi ng panel ang halagang iyon minsan, bilang halaga sa sat plus ang default na fiat mula sa pinakabagong rate ng araw ng regalo. Ang kahon ng pagsulat sa likod ng panel ay may ImagePlus para maglakip. Kinuha sa kompyuter at sa telepono (parehong variant, apat na kombinasyon). Ipinapakita ng kompyuter ang QR ng bayad sa Bitcoin plus ang pindutang Magbayad ng pitaka. Ang isang smartphone ay nagpapakita ng parehong panel nang walang naka-mount na QrCode; ang Magbayad ay nagbubukas ng Wallet of Satoshi. Katanggap-tanggap ang Naghihintay ng bayad… habang nakabinbin ang pag-poll ng bayad."
   },
+  "/messages:thread-rate-loading": {
+    "de": "Verlauf geöffnet. Der Betrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert. Der stille Betrag vor diesem Druck deckt das nicht ab.",
+    "es": "Hilo abierto. El importe es 1.00 USD, y se pulsó Enviar mientras el tipo del día del regalo aún se carga. El cuadro muestra El tipo de cambio de USD todavía se está cargando. Enviar está desactivado. El importe en silencio antes de ese toque no cubre esto.",
+    "fil": "Bukas ang usapan. 1.00 USD ang halaga, at pinindot ang Ipadala habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng kahon ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Ipadala. Hindi tinatakpan ng tahimik na halaga bago ang pindot na ito ang resultang ito."
+  },
+  "/messages:thread-rate-loading-too-many": {
+    "de": "Verlauf geöffnet. Der Betrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Danach werden elf JPEG gewählt. Der Eingabebereich zeigt weiter Der Wechselkurs für USD wird noch geladen. und Senden bleibt deaktiviert. Ein zweiter Hinweis sagt Sie können bis zu 10 Fotos hinzufügen. Zehn ausgewählte Fotos bleiben. Ein nicht unterstütztes oder zu grosses Foto benutzt denselben zweiten Hinweis und löscht den Ladesatz nicht.",
+    "es": "Hilo abierto. El importe es 1.00 USD, y se pulsó Enviar mientras el tipo del día del regalo aún se carga. Después se eligen once JPEG. El cuadro sigue mostrando El tipo de cambio de USD todavía se está cargando. y Enviar permanece desactivado. Una segunda alerta dice Puedes añadir hasta 10 fotos. Quedan diez fotos elegidas. Una foto no admitida o demasiado grande usa esa misma segunda alerta y no borra la frase de carga.",
+    "fil": "Bukas ang usapan. 1.00 USD ang halaga, at pinindot ang Ipadala habang naglo-load pa ang rate ng araw ng regalo. Pagkatapos ay pinipili ang labing-isang JPEG. Ipinapakita pa rin ng kahon ang Naglo-load pa ang palitan para sa USD. at nananatiling naka-disable ang Ipadala. May pangalawang alerto na nagsasabing Pwede kang magdagdag ng hanggang 10 litrato. Nanatili ang sampung napiling litrato. Ang hindi suportado o masyadong malaking litrato ay gumagamit ng parehong pangalawang alerto at hindi binubura ang pangungusap ng pag-load."
+  },
   "/view/[viewKey]:default": {
     "de": "Gültiger bekannter Schlüssel. Überschrift Profil, FiatPicker nur solange nicht angemeldet; leere Serie zeigt FiatPicker + profile.chartEmpty wenn nicht angemeldet (Noch keine Gaben., keine Legende/SVG / keine ₿|Fiat-Skala; nie Wird geladen… am Diagramm) und nur profile.chartEmpty wenn angemeldet (ein fehlgeschlagener Aktivitätsabruf ist profile.chartError), Über mich in der Karte wenn aboutMe eine Zeichenkette ist (kein Forum-Post), nur-Icon Link zu diesem Profil kopieren, Name, Ort und Beschriftungen des Felds Wallet of Satoshi address, gelbes Aktion erforderlich, der Account muss aktiviert werden / Banner Aktivieren unter der Karte wenn nicht beansprucht (auch wenn angemeldet), keine sichtbare view-key-URL/Text. Die Karte hat keine Zurück-Steuerung; der Seitenkopf hat den einen Pfeil oben links.",
     "es": "Clave conocida válida. Encabezado Perfil, FiatPicker solo mientras no hay sesión; la serie vacía muestra FiatPicker + profile.chartEmpty sin sesión (Aún no hay regalos., sin leyenda/SVG / sin escala ₿|fiat; nunca Cargando… en el gráfico) y solo profile.chartEmpty con sesión (una carga de actividad fallida es profile.chartError), Sobre mí dentro de la tarjeta cuando aboutMe es una cadena (no un post del foro), solo icono Copiar enlace a este perfil, etiquetas de los campos nombre, ubicación y Wallet of Satoshi address, banner amarillo Acción requerida, la cuenta debe activarse / Activar bajo la tarjeta cuando no está reclamada (incluso con sesión), sin URL/texto visible de view-key. La tarjeta no tiene control atrás; el encabezado de la página tiene la única flecha arriba a la izquierda.",
@@ -3980,9 +4045,14 @@
     "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin. Nakikita ang Halaga at Magpatuloy."
   },
   "/habit-tracker:donate-rate-pending": {
-    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Das Blatt ist gescrollt, sodass Weiter auf dem Bildschirm ist und deaktiviert bleibt, und es gibt keine Fiat-Zeile.",
-    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. La hoja está desplazada para que Continuar esté en pantalla y permanezca desactivado, y no se muestra ninguna línea fiat.",
-    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Naka-scroll ang sheet kaya nasa screen ang Magpatuloy at nananatiling naka-disable, at walang linyang fiat."
+    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, während der Kurs des Geschenktags noch lädt. Der Betrag ist 1.00 in USD. Unter dem Betrag steht No exchange rate yet. Weiter bleibt verfügbar. Die Zahlungsfehlermeldung zum fehlenden Kurs und eine Bitcoin-Zeile fehlen.",
+    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto mientras el tipo del día del regalo aún se carga. El importe es 1.00 en USD. Debajo del importe está No exchange rate yet. Continuar permanece disponible. No se muestra el error de pago por el tipo que falta, y no hay una línea de bitcoin.",
+    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin habang naglo-load pa ang rate ng araw ng regalo. Ang halaga ay 1.00 sa USD. Nasa ilalim ng halaga ang No exchange rate yet. Nanatiling available ang Magpatuloy. Hindi ipinapakita ang error sa bayad para sa nawawalang rate, at walang linyang bitcoin."
+  },
+  "/habit-tracker:donate-rate-loading": {
+    "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen, der Betrag ist 1.00 USD, und Weiter wurde gedrückt, während der Kurs des Geschenktags noch lädt. Das Blatt zeigt Der Wechselkurs für USD wird noch geladen. Weiter ist deaktiviert. Das Blatt vor diesem Druck deckt das nicht ab.",
+    "es": "Sesión de Ada en el comentario de otra persona. Enviar Bitcoin está abierto, el importe es 1.00 USD, y se pulsó Continuar mientras el tipo del día del regalo aún se carga. La hoja muestra El tipo de cambio de USD todavía se está cargando. Continuar está desactivado. La hoja de antes de ese toque no cubre esto.",
+    "fil": "Sesyon ni Ada sa komento ng iba. Bukas ang Magpadala ng Bitcoin, 1.00 USD ang halaga, at pinindot ang Magpatuloy habang naglo-load pa ang rate ng araw ng regalo. Ipinapakita ng sheet ang Naglo-load pa ang palitan para sa USD. Naka-disable ang Magpatuloy. Hindi tinatakpan ng sheet bago ang pindot na ito ang resultang ito."
   },
   "/habit-tracker:donate-fiat": {
     "de": "Adas Sitzung auf dem Kommentar einer anderen Person. Bitcoin senden ist offen und der Betragsschalter steht auf USD. Das Feld zeigt den Fiat-Betrag, und das Bitcoin-Äquivalent steht darunter.",
@@ -3995,9 +4065,9 @@
     "fil": "Sesyon ni Ada pagkatapos ng Magpatuloy sa komento ng iba. Ipinapakita ng kard ang Magbayad ng ₿21, ang QR code ng bayad sa Bitcoin sa desktop, at Magbayad gamit ang Wallet of Satoshi. Hindi ipinapakita ang hilaw na invoice."
   },
   "/habit-tracker:donate-habit-amount": {
-    "de": "Adas Sitzung. Bitcoin senden ist offen. Weiter wurde mit einem Betrag gedrückt, der keine ganze Zahl Sats von 1 bis 10.000.000 ist. Das Blatt zeigt Expected a JSON body with an integer \"amountSats\".",
-    "es": "Sesión de Ada. Enviar Bitcoin está abierto. Se pulsó Continuar con un importe que no es un número entero de sats de 1 a 10.000.000. La hoja muestra Expected a JSON body with an integer \"amountSats\".",
-    "fil": "Sesyon ni Ada. Bukas ang Magpadala ng Bitcoin. Pinindot ang Magpatuloy na may halagang hindi buong bilang ng sats mula 1 hanggang 10,000,000. Ipinapakita ng sheet ang Expected a JSON body with an integer \"amountSats\"."
+    "de": "Adas Sitzung. Bitcoin senden ist offen und der Betrag ist 0. Expected a JSON body with an integer \"amountSats\" steht unter dem Betrag, und Weiter ist schon aus. Es startet keine Zahlung.",
+    "es": "Sesión de Ada. Enviar Bitcoin está abierto y el importe es 0. Expected a JSON body with an integer \"amountSats\" queda bajo el importe, y Continuar ya está desactivado. No empieza ningún pago.",
+    "fil": "Sesyon ni Ada. Bukas ang Magpadala ng Bitcoin at 0 ang halaga. Nasa ilalim ng halaga ang Expected a JSON body with an integer \"amountSats\", at naka-off na ang Magpatuloy. Walang bayad na nagsisimula."
   },
   "/habit-tracker:donate-request": {
     "de": "Adas Sitzung. Bitcoin senden ist offen. Weiter wurde gedrückt, und die Zahlung konnte nicht gestartet werden. Das Blatt zeigt Die Bitcoin-Zahlung konnte nicht gestartet werden.",
@@ -4069,10 +4139,25 @@
     "es": "Sesión de Ada. Se pulsó Confirmar archivado y el guardado falló. La misma alerta No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo. y Reintentar están sobre la lista. ¿Archivar este hábito? Su historial seguirá visible. permanece, con Confirmar archivado y Cancelar archivado. El formulario de edición no está abierto.",
     "fil": "Sesyon ni Ada. Pinindot ang Kumpirmahin ang pag-archive at nabigo ang pag-save. Ang parehong alerto Hindi ma-load o ma-save ang tracker. Pakisubukan muli. at Subukan muli ay nasa itaas ng listahan. Nanatili ang I-archive ang gawi na ito? Mananatili ang kasaysayan nito., kasama ang Kumpirmahin ang pag-archive at Kanselahin ang pag-archive. Hindi bukas ang form ng pag-edit."
   },
+  "/habit-tracker:add-name-empty": {
+    "de": "Adas Sitzung. Gewohnheit hinzufügen wurde mit leerem Namen gedrückt. Bitte geben Sie einen Namen ein steht unter dem Feld und Gewohnheit hinzufügen bleibt aus. Es wurde keine Gewohnheit gespeichert. Nadel Bitte geben Sie einen Namen ein.",
+    "es": "Sesión de Ada. Se pulsó Añadir hábito con el Nombre vacío. Escribe un nombre aparece bajo el campo y Añadir hábito permanece desactivado. No se guardó ningún hábito. Aguja Escribe un nombre.",
+    "fil": "Sesyon ni Ada. Pinindot ang Magdagdag ng gawi na walang laman ang Pangalan. Nasa ilalim ng field ang Maglagay ng pangalan at nananatiling naka-off ang Magdagdag ng gawi. Walang gawing naitago. Karayom Maglagay ng pangalan."
+  },
+  "/habit-tracker:add-name-too-long": {
+    "de": "Adas Sitzung. Der Name zum Hinzufügen ist länger als 80 Zeichen. Maximal 80 Zeichen für den Namen steht unter dem Feld, bevor Gewohnheit hinzufügen gedrückt wird, und Gewohnheit hinzufügen bleibt aus. Nadel Maximal 80 Zeichen für den Namen.",
+    "es": "Sesión de Ada. El Nombre para añadir supera los 80 caracteres. Máximo 80 caracteres para el nombre aparece bajo el campo antes de pulsar Añadir hábito, y Añadir hábito permanece desactivado. Aguja Máximo 80 caracteres para el nombre.",
+    "fil": "Sesyon ni Ada. Mahigit 80 character ang Pangalan para idagdag. Nasa ilalim ng field ang Hanggang 80 character ang pangalan bago pindutin ang Magdagdag ng gawi, at nananatiling naka-off ang Magdagdag ng gawi. Karayom Hanggang 80 character ang pangalan."
+  },
   "/habit-tracker:add-error": {
     "de": "Adas Sitzung. Gewohnheit hinzufügen wurde mit Name Stretch gedrückt, und das Speichern ist fehlgeschlagen. Es wurde keine Gewohnheit gespeichert. Der Hinweis Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen. und Erneut versuchen bleiben über Noch keine Gewohnheiten. Das Feld Name zeigt weiterhin Stretch. Das Bearbeitungsformular und die Archivierungsbestätigung sind nicht offen.",
     "es": "Sesión de Ada. Se pulsó Añadir hábito con Nombre Stretch y el guardado falló. No se guardó ningún hábito. La alerta No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo. y Reintentar permanecen sobre Todavía no hay hábitos. El campo Nombre sigue mostrando Stretch. El formulario de edición y la confirmación de archivo no están abiertos.",
     "fil": "Sesyon ni Ada. Pinindot ang Magdagdag ng gawi na may Pangalan Stretch at nabigo ang pag-save. Walang gawing naitago. Ang alerto Hindi ma-load o ma-save ang tracker. Pakisubukan muli. at Subukan muli ay nananatili sa itaas ng Wala pang gawi. Ipinapakita pa ng field na Pangalan ang Stretch. Hindi bukas ang form ng pag-edit at ang kumpirmasyon ng pag-archive."
+  },
+  "/habit-tracker:comment-empty": {
+    "de": "Adas Sitzung. Posten wurde mit leerem Kommentar auf ihrer offenen Gewohnheit gedrückt. Bitte schreiben Sie einen Kommentar steht unter Kommentar schreiben und Posten bleibt aus. Nadel Bitte schreiben Sie einen Kommentar.",
+    "es": "Sesión de Ada. Se pulsó Publicar con un comentario vacío en su hábito abierto. Escribe un comentario aparece bajo Escribe un comentario y Publicar permanece desactivado. Aguja Escribe un comentario.",
+    "fil": "Sesyon ni Ada. Pinindot ang I-post na may walang lamang komento sa bukas niyang gawi. Nasa ilalim ng Sumulat ng komento ang Maglagay ng komento at nananatiling naka-off ang I-post. Karayom Maglagay ng komento."
   },
   "/habit-tracker:comment-error": {
     "de": "Adas Sitzung. Posten wurde mit dem Entwurf still here gedrückt, und das Speichern ist fehlgeschlagen. Derselbe Hinweis Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen. und Erneut versuchen bleiben. Kommentar schreiben zeigt weiterhin still here. Das Bearbeitungsformular und die Archivierungsbestätigung sind nicht offen.",

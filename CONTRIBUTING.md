@@ -489,12 +489,11 @@ show that reason there; never replace a known reason with generic **Could not
 save** copy. Client rules live in shared API-mirroring helpers such as
 `src/lib/forum-shop.ts`, with unit tests that pin the same limits.
 
-So far the shop forms (and shop notes typed in the living-room composer) and
-the profile and account forms (including the username in `UsernameForm` and
-`LoginCard`) follow this rule. Not yet migrated, and moved to it in follow-up
-pull requests: ordinary living-room posts and the Ask wizard text (empty or too
-long), the living-room place name, replies, the pay sheet, contact,
-inbox, POS, pay link, daily payments, and habits.
+The shop forms (and shop notes typed in the living-room composer), the profile
+and account forms (including the username in `UsernameForm` and `LoginCard`),
+ordinary living-room posts and the Ask wizard text, the living-room place name,
+replies, the pay sheet, contact, inbox, POS, the pay link, daily payments, and
+habits follow this rule.
 
 Forms must not hide fields with errors inside a small inner scroll area. A form
 that needs more room uses a dialog or sheet and still follows **One scroll

@@ -342,6 +342,18 @@ describe('daily payment subpages', () => {
     );
   });
 
+  it('shows a page alert when saving an amount fails', async () => {
+    await renderAmounts();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada' }), { target: { value: '3' } });
+    updateMock.mockRejectedValueOnce(new Error('nope'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not save. Please try again.',
+    );
+    expect(updateMock).toHaveBeenCalledWith('sess', 'ada@walletofsatoshi.com', 3);
+  });
+
   it('turns payments off and on', async () => {
     await renderAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'On' }));
@@ -361,14 +373,23 @@ describe('daily payment subpages', () => {
     expect(screen.getByText('No recipients')).toBeTruthy();
     await pickPerson();
     const usd = screen.getByRole('textbox', { name: 'USD' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    fireEvent.blur(usd);
     fireEvent.change(usd, { target: { value: 'abc' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(addMock).not.toHaveBeenCalled();
     fireEvent.change(usd, { target: { value: '0' } });
+    fireEvent.submit(usd.closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.change(usd, { target: { value: '0.0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    expect(screen.getByRole('alert').textContent).toBe('The amount is not valid.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount greater than zero');
+    fireEvent.change(usd, { target: { value: '9'.repeat(400) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount greater than zero');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
     fireEvent.change(usd, { target: { value: ' 1.5 ' } });
     addMock.mockResolvedValueOnce({
       ...ROSTER,
@@ -391,6 +412,12 @@ describe('daily payment subpages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(addMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('Choose a person.');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    await pickPerson();
+    expect(screen.queryByText('Choose a person.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('keeps an open amount editor open when a recipient is added', async () => {
@@ -420,10 +447,12 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Cancel')).toBeNull();
     const amount = screen.getByRole('textbox', { name: 'USD Ada' });
+    fireEvent.blur(amount);
     fireEvent.change(amount, { target: { value: '0' } });
+    fireEvent.submit(amount.closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(updateMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert').textContent).toBe('The amount is not valid.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount greater than zero');
     fireEvent.change(amount, { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(updateMock).toHaveBeenCalledWith('sess', 'ada@walletofsatoshi.com', 2);
@@ -616,6 +645,25 @@ describe('daily payment subpages', () => {
     fireEvent.mouseDown(option);
     expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', '@ada');
     expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('clears the choose-a-person alert on mouse down', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('alert').textContent).toBe('Choose a person.');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    fireEvent.mouseDown(option);
+    expect(screen.queryByText('Choose a person.')).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', '@ada');
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('clears the selection on another edit and searches again', async () => {

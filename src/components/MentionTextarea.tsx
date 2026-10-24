@@ -55,6 +55,8 @@ export interface MentionTextareaProps {
   ariaDescribedBy?: string;
   /** Whether the current value breaks a validation rule. */
   ariaInvalid?: boolean;
+  /** Called when the field loses focus. Empty checks wait for this. */
+  onBlur?: () => void;
   /** Existing composer ref, when the caller focuses the field. */
   textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }
@@ -117,6 +119,7 @@ export function MentionTextarea({
   rows,
   ariaDescribedBy,
   ariaInvalid = false,
+  onBlur,
   textareaRef,
 }: MentionTextareaProps): ReactElement {
   const session = useAuthStore((state) => state.session);
@@ -391,6 +394,7 @@ export function MentionTextarea({
       onClick={(event) => {
         sync(event.currentTarget);
       }}
+      {...(onBlur === undefined ? {} : { onBlur })}
       {...(maxLength === undefined ? {} : { maxLength })}
       {...(rows === undefined ? {} : { rows })}
       disabled={disabled}

@@ -15,12 +15,17 @@ import { encodeLnurl } from '../src/lib/lnurl';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
 import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
+import { replyTextIsTooLong } from '../src/lib/entry-text';
 import {
   fiatDraftForSats,
   fiatToSats,
   parseAmountDraft,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
+  shownDraftPayError,
+  shownPaySheetError,
 } from '../src/lib/stats-money';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
@@ -13206,4 +13211,363 @@ test('Function: verifiedChipHiddenByStaffTag — a verified author with the staf
   await expect(page.getByText('Software Developer')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
+});
+
+async function seedSignedInAda(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test('Function: entryTextProblem — contact shows the limit while typing', async ({ page }) => {
+  await seedSignedInAda(page);
+  await page.goto('/contact');
+  const message = page.getByRole('textbox', { name: 'Your message' });
+  const send = page.getByRole('button', { name: 'Send' });
+  await message.fill('a'.repeat(8001));
+  await expect(page.getByText('Keep it to 8000 characters')).toBeVisible();
+  await expect(message).toHaveAttribute('aria-invalid', 'true');
+  await expect(send).toBeDisabled();
+});
+
+test('Function: shownEntryProblem — an empty contact message stays quiet until send', async ({
+  page,
+}) => {
+  await seedSignedInAda(page);
+  await page.goto('/contact');
+  const send = page.getByRole('button', { name: 'Send' });
+  await expect(send).toBeEnabled();
+  await expect(page.getByText('Enter a message')).toHaveCount(0);
+  await send.click();
+  await expect(page.getByText('Enter a message')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Your message' })).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+  await expect(send).toBeDisabled();
+});
+
+test('Function: composerTextProblem — a living-room draft over 8000 keeps Post off', async ({
+  page,
+}) => {
+  await seedSignedInAda(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  const draft = page.getByRole('textbox', { name: 'Your message' });
+  const post = page.getByRole('button', { name: 'Post', exact: true });
+  await expect(post).toBeEnabled();
+  await draft.fill('a'.repeat(8001));
+  await expect(page.getByText('Keep it to 8000 characters')).toBeVisible();
+  await expect(draft).toHaveAttribute('aria-invalid', 'true');
+  await expect(post).toBeDisabled();
+});
+
+test('Function: optionalTextProblem — a long place name shows the limit', async ({ page }) => {
+  await seedSignedInAda(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  const name = page.getByRole('textbox', { name: 'Place name' });
+  await name.fill('a'.repeat(81));
+  await expect(page.getByText('Keep the place name to 80 characters')).toBeVisible();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+});
+
+test('Function: placeLabelProblem — a control in a short place name names the control', async ({
+  page,
+}) => {
+  await seedSignedInAda(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  const name = page.getByRole('textbox', { name: 'Place name' });
+  await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+  await name.fill('Happyland');
+  await expect(page.getByText('Keep the place name to 80 characters')).toHaveCount(0);
+  await expect(page.getByText('The place name cannot include control characters.')).toHaveCount(0);
+  await name.fill(`Cafe${String.fromCharCode(127)}`);
+  await expect(page.getByText('The place name cannot include control characters.')).toBeVisible();
+  await expect(page.getByText('Keep the place name to 80 characters')).toHaveCount(0);
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+});
+
+test('Function: habitTextProblem — an empty habit name stays off the request', async ({ page }) => {
+  await seedSignedInAda(page);
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: '{"error":"posted"}',
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ reviewWeek: { start: '2026-09-28' }, habits: [] }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('No habits yet.')).toBeVisible();
+  const add = page.getByRole('button', { name: 'Add habit' });
+  await expect(add).toBeEnabled();
+  await add.click();
+  await expect(page.getByText('Enter a habit name')).toBeVisible();
+  await expect(page.getByLabel('Name')).toHaveAttribute('aria-invalid', 'true');
+  await expect(add).toBeDisabled();
+  await expect(page.getByText('Could not load or save the tracker. Please try again.')).toHaveCount(
+    0,
+  );
+});
+
+test('Function: replyTextIsTooLong — a reaction over 8000 stays under the field', async ({
+  page,
+}) => {
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', false, true)).toBe(true);
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', false, false)).toBe(false);
+  expect(replyTextIsTooLong('a'.repeat(8000), 'r-pay', true, true)).toBe(false);
+  expect(replyTextIsTooLong('a'.repeat(8001), null, true, false)).toBe(true);
+  expect(replyTextIsTooLong('hello', 'r-pay', false, true)).toBe(false);
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reaction = page.getByLabel('Your reaction');
+  await reaction.fill('a'.repeat(8001));
+  const replyForm = page.locator('form').filter({ has: reaction });
+  await expect(replyForm.getByText('Keep it to 8000 characters')).toBeVisible();
+  await expect(reaction).toHaveAttribute('aria-invalid', 'true');
+  await expect(replyForm.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
+});
+
+test('Function: payDraftProblem — zero on the pay sheet is invalid at once', async ({ page }) => {
+  expect(payDraftProblem('btc', '', AMOUNT_DAY, 'USD', true)).toBeNull();
+  expect(payDraftProblem('btc', '0', AMOUNT_DAY, 'USD', true)).toBe('invalid');
+  expect(payDraftProblem('btc', '21', AMOUNT_DAY, 'USD', true)).toBeNull();
+  expect(payDraftProblem('fiat', '1', AMOUNT_DAY, 'CHF', false)).toBe('quiet');
+  expect(payDraftProblem('fiat', '1', AMOUNT_DAY, 'CHF', true)).toBe('no-rate');
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reply = page.locator('[data-reply-id="r-pay"]');
+  await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const amount = reply.getByLabel('Amount');
+  await amount.fill('0');
+  await expect(reply.getByText('Enter a whole number greater than zero')).toBeVisible();
+  await expect(amount).toHaveAttribute('aria-invalid', 'true');
+  await expect(reply.getByRole('button', { name: 'Continue' })).toBeDisabled();
+});
+
+test('Function: replyDraftProblem — a zero reply amount can still be sent', async ({ page }) => {
+  expect(replyDraftProblem('btc', '', AMOUNT_DAY, 'USD', true)).toBeNull();
+  expect(replyDraftProblem('btc', '0', AMOUNT_DAY, 'USD', true)).toBeNull();
+  expect(replyDraftProblem('btc', 'x', AMOUNT_DAY, 'USD', true)).toBe('invalid');
+  expect(replyDraftProblem('fiat', '1', AMOUNT_DAY, 'CHF', false)).toBe('quiet');
+  expect(replyDraftProblem('fiat', '1', AMOUNT_DAY, 'CHF', true)).toBe('no-rate');
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyForm = page.locator('form').filter({ has: page.getByLabel('Your reaction') });
+  const amount = replyForm.getByLabel('Amount');
+  await amount.fill('0');
+  await expect(replyForm.getByText('Send at least ₿1 with your reaction')).toHaveCount(0);
+  await amount.fill('x');
+  await expect(replyForm.getByText('Send at least ₿1 with your reaction')).toBeVisible();
+  await expect(amount).toHaveAttribute('aria-invalid', 'true');
+});
+
+test('Function: shownDraftPayError — a fixed pay amount clears the field message', async ({
+  page,
+}) => {
+  expect(shownDraftPayError('amount', null, 'amount', 'noRate')).toBeNull();
+  expect(shownDraftPayError('request', null, 'amount', 'noRate')).toBe('request');
+  expect(shownDraftPayError(null, 'invalid', 'amount', 'noRate')).toBe('amount');
+  expect(shownDraftPayError(null, 'no-rate', 'amount', 'noRate')).toBe('noRate');
+  expect(shownDraftPayError('amount', 'quiet', 'amount', 'noRate')).toBeNull();
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const reply = page.locator('[data-reply-id="r-pay"]');
+  await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const amount = reply.getByLabel('Amount');
+  await amount.fill('0');
+  await expect(reply.getByText('Enter a whole number greater than zero')).toBeVisible();
+  await amount.fill('21');
+  await expect(reply.getByText('Enter a whole number greater than zero')).toHaveCount(0);
+  await expect(reply.getByRole('button', { name: 'Continue' })).toBeEnabled();
+});
+
+test('Function: shownPaySheetError — a loading submit stays until the rate request settles', async ({
+  page,
+}) => {
+  expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', null, 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', false)).toBe('loading');
+  expect(shownPaySheetError('loading', null, 'amount', 'noRate', true)).toBeNull();
+  expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', true)).toBe('noRate');
+  expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', true)).toBe('amount');
+  expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate', false)).toBe('request');
+  expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate', false)).toBeNull();
+  await seedSignedInAda(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await pending;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: { start: '2026-09-28' },
+        habits: [
+          {
+            id: 'h-ada',
+            accountId: 'acc-ada',
+            ownerName: 'Ada',
+            role: 'initiator',
+            name: 'Walk',
+            description: 'Outside',
+            cadence: 'daily',
+            timeZone: 'Asia/Manila',
+            firstPeriod: '2026-10-01',
+            lastPeriod: null,
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: false,
+                status: null,
+              },
+            ],
+            comments: [
+              {
+                id: 'c-bea',
+                habitId: 'h-ada',
+                accountId: 'acc-bea',
+                name: 'Bea',
+                text: 'hello',
+                week: '2026-09-28',
+                createdAt: 1,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
+  await page.goto('/habit-tracker');
+  await meDone;
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeEnabled();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await cont.click();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
+  await page.getByLabel('Amount').fill('');
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await expect(cont).toBeDisabled();
+  await cont.click({ force: true });
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeDisabled();
+  release();
+  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await expect(cont).toBeDisabled();
 });

@@ -10,10 +10,25 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
+import {
+  HABIT_COMMENT_API_MESSAGE,
+  HABIT_DESCRIPTION_API_MESSAGE,
+  HABIT_NAME_API_MESSAGE,
+  HABIT_NOTES_API_MESSAGE,
+  habitTextProblem,
+  shownEntryProblem,
+  type RequiredTextProblem,
+} from '@/lib/entry-text';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
-import { paySatsFromDraft } from '@/lib/stats-money';
+import {
+  payDraftProblem,
+  paySatsFromDraft,
+  shownDraftPayError,
+  shownPaySheetError,
+} from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
+import type { MessageKey } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 
 type MemberHabit = MemberHabitList['habits'][number];
@@ -27,6 +42,55 @@ type HabitGroup = {
 
 const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
 
+type HabitFieldKind = 'name' | 'description' | 'notes' | 'comment';
+
+function habitFieldCopy(
+  t: (key: MessageKey) => string,
+  kind: HabitFieldKind,
+  problem: RequiredTextProblem,
+): string {
+  if (problem === 'empty') {
+    return kind === 'comment' ? t('habit.commentEmpty') : t('habit.nameEmpty');
+  }
+  if (kind === 'name') {
+    return t('habit.nameTooLong');
+  }
+  if (kind === 'comment') {
+    return t('habit.commentTooLong');
+  }
+  return t('habit.textTooLong');
+}
+
+function habitRejectedCopy(t: (key: MessageKey) => string, kind: HabitFieldKind): string {
+  if (kind === 'comment') {
+    return t('habit.commentRejected');
+  }
+  if (kind === 'name') {
+    return t('habit.nameRejected');
+  }
+  if (kind === 'description') {
+    return t('habit.descriptionRejected');
+  }
+  return t('habit.notesRejected');
+}
+
+function habitFieldError(
+  t: (key: MessageKey) => string,
+  kind: HabitFieldKind,
+  raw: string,
+  touched: boolean,
+  apiHere: boolean,
+): string | undefined {
+  const shown = shownEntryProblem(habitTextProblem(kind, raw), touched || apiHere);
+  if (shown !== null) {
+    return habitFieldCopy(t, kind, shown);
+  }
+  if (!apiHere) {
+    return undefined;
+  }
+  return habitRejectedCopy(t, kind);
+}
+
 /**
  * Public habit tracker: every member's habits, comments, and owner actions.
  *
@@ -37,6 +101,10 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * deletion confirm, and the new-habit draft and unsent comments before paint.
  * The same gift body is not posted again while that request is still waiting.
  * A confirmed add may be sent again. It is not reserved for the whole session.
+ * An API rejection of a name, description, or notes the form already accepted
+ * sits under that field and does not claim a length the text does not break.
+ * A comment post does that only for `Invalid comment`. Any other comment
+ * rejection stays the tracker alert.
  * A reload releases only actions that had already reached the server when
  * that reload started, and a request is ignored when the visit changed,
  * including when the same account comes back.
@@ -71,6 +139,14 @@ export function MemberHabits(): ReactElement {
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
+  const [addNameTouched, setAddNameTouched] = useState(false);
+  const [editNameTouched, setEditNameTouched] = useState<Record<string, boolean>>({});
+  const [commentTouchedById, setCommentTouchedById] = useState<Record<string, boolean>>({});
+  const [habitApi, setHabitApi] = useState<{
+    where: 'add' | 'edit' | 'comment';
+    id?: string;
+    field: HabitFieldKind;
+  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const payGeneration = useRef(0);
@@ -81,6 +157,22 @@ export function MemberHabits(): ReactElement {
   const postedForSession = useRef<string | null>(null);
   const sessionVisit = useRef(0);
   const inFlightKeys = useRef(new Set<string>());
+  // Bumped when an edit is cancelled, so a late answer cannot mark the next open draft.
+  const editGeneration = useRef<Record<string, number>>({});
+  const liveDrafts = useRef({
+    addName: '',
+    addDescription: '',
+    addNotes: '',
+    editByHabitId: {} as Record<string, { name: string; description: string; notes: string }>,
+    commentByHabitId: {} as Record<string, string>,
+  });
+  liveDrafts.current = {
+    addName,
+    addDescription,
+    addNotes,
+    editByHabitId,
+    commentByHabitId,
+  };
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
@@ -120,6 +212,10 @@ export function MemberHabits(): ReactElement {
       setAddNotes('');
       setAddCadence('daily');
       setCommentByHabitId({});
+      setAddNameTouched(false);
+      setEditNameTouched({});
+      setCommentTouchedById({});
+      setHabitApi(null);
     }
     setLoading(true);
     setError(false);
@@ -175,6 +271,10 @@ export function MemberHabits(): ReactElement {
     setPayBusy(false);
     setPayError(null);
     setPayInvoice(null);
+    setAddNameTouched(false);
+    setEditNameTouched({});
+    setCommentTouchedById({});
+    setHabitApi(null);
   }
 
   async function refresh(): Promise<boolean> {
@@ -226,6 +326,8 @@ export function MemberHabits(): ReactElement {
     }
     const actor = session;
     const visit = sessionVisit.current;
+    const editId = body['action'] === 'edit' && typeof body['id'] === 'string' ? body['id'] : null;
+    const editGen = editId === null ? 0 : (editGeneration.current[editId] ?? 0);
     const key = JSON.stringify(body);
     // The request already waiting owns the reload. Do not start a second one.
     if (inFlightKeys.current.has(key)) {
@@ -259,10 +361,69 @@ export function MemberHabits(): ReactElement {
         cancelEdit(closeEdit);
       }
       return true;
-    } catch {
+    } catch (err) {
       if (requestVisitChanged(visit, actor)) {
         return false;
       }
+      const message = err instanceof Error ? err.message : '';
+      const field: HabitFieldKind | null =
+        message === HABIT_NAME_API_MESSAGE
+          ? 'name'
+          : message === HABIT_DESCRIPTION_API_MESSAGE
+            ? 'description'
+            : message === HABIT_NOTES_API_MESSAGE
+              ? 'notes'
+              : message === HABIT_COMMENT_API_MESSAGE
+                ? 'comment'
+                : null;
+      const action = body['action'];
+      const drafts = liveDrafts.current;
+      if (field !== null && action === 'add') {
+        const shown =
+          field === 'description'
+            ? drafts.addDescription
+            : field === 'notes'
+              ? drafts.addNotes
+              : drafts.addName;
+        // The answer belongs to the draft that was sent. A newer value stays clean.
+        if (body[field] !== shown) {
+          return false;
+        }
+        setHabitApi({ where: 'add', field });
+        setError(false);
+        return false;
+      }
+      if (field !== null && action === 'edit' && typeof body['id'] === 'string') {
+        if ((editGeneration.current[body['id']] ?? 0) !== editGen) {
+          return false;
+        }
+        const draft = drafts.editByHabitId[body['id']];
+        /* v8 ignore next 3 -- cancel bumps the generation before it drops the draft, and a session change returns earlier */
+        if (draft === undefined) {
+          return false;
+        }
+        const shown =
+          field === 'description'
+            ? draft.description
+            : field === 'notes'
+              ? draft.notes
+              : draft.name;
+        if (body[field] !== shown) {
+          return false;
+        }
+        setHabitApi({ where: 'edit', id: body['id'], field });
+        setError(false);
+        return false;
+      }
+      if (action === 'comment' && field === 'comment' && typeof body['habitId'] === 'string') {
+        if (drafts.commentByHabitId[body['habitId']] !== body['text']) {
+          return false;
+        }
+        setHabitApi({ where: 'comment', id: body['habitId'], field: 'comment' });
+        setError(false);
+        return false;
+      }
+      setHabitApi(null);
       setError(true);
       return false;
     }
@@ -270,6 +431,20 @@ export function MemberHabits(): ReactElement {
 
   function requestVisitChanged(visit: number, actor: string | null): boolean {
     return useAuthStore.getState().session !== actor || sessionVisit.current !== visit;
+  }
+
+  function clearEditRejection(habitId: string): void {
+    setHabitApi((current) =>
+      current?.where === 'edit' && current.id === habitId ? null : current,
+    );
+    setEditNameTouched((current) => {
+      if (current[habitId] !== true) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[habitId];
+      return next;
+    });
   }
 
   function startEdit(habit: MemberHabit): void {
@@ -282,15 +457,18 @@ export function MemberHabits(): ReactElement {
         notes: habit.notes === undefined ? '' : habit.notes,
       },
     }));
+    clearEditRejection(habit.id);
   }
 
   function cancelEdit(habitId: string): void {
+    editGeneration.current[habitId] = (editGeneration.current[habitId] ?? 0) + 1;
     setEditingHabitId((current) => (current === habitId ? null : current));
     setEditByHabitId((current) => {
       const next = { ...current };
       delete next[habitId];
       return next;
     });
+    clearEditRejection(habitId);
   }
 
   function clearArchiveConfirm(habitId: string): void {
@@ -325,11 +503,24 @@ export function MemberHabits(): ReactElement {
   }
 
   function onPaySubmit(): void {
-    /* v8 ignore start -- the sheet is not mounted without a session and comment, and Continue is disabled while busy or while the rate has not settled */
-    if (session === null || session === '' || payCommentId === null || payBusy || !rateSettled) {
+    /* v8 ignore start -- the sheet is not mounted without a session and comment, and Continue is disabled while busy */
+    if (session === null || session === '' || payCommentId === null || payBusy) {
       return;
     }
     /* v8 ignore stop */
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
+      return;
+    }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid' || sats > FORUM_GOAL_SATS_MAX) {
       setPayError('habitAmount');
@@ -397,6 +588,22 @@ export function MemberHabits(): ReactElement {
       });
   }
 
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const livePaySats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+  const habitPayProblem =
+    livePayProblem === 'invalid' ||
+    (typeof livePaySats === 'number' && livePaySats > FORUM_GOAL_SATS_MAX)
+      ? 'invalid'
+      : livePayProblem;
+  // The api uses the same code as a bad draft. A draft the form already
+  // accepted keeps that message until the amount changes.
+  const shownHabitPayError =
+    payError === 'loading'
+      ? shownPaySheetError(payError, habitPayProblem, 'habitAmount', 'noRate', rateSettled)
+      : habitPayProblem === null && payError === 'habitAmount'
+        ? payError
+        : shownDraftPayError(payError, habitPayProblem, 'habitAmount', 'noRate');
+
   let body: ReactElement;
   if (loading && data === null) {
     body = <p className="text-center text-sm text-app-muted">{t('habit.loading')}</p>;
@@ -451,6 +658,36 @@ export function MemberHabits(): ReactElement {
                 description: habit.description,
                 notes: habit.notes === undefined ? '' : habit.notes,
               };
+              const editApi = habitApi?.where === 'edit' && habitApi.id === habit.id;
+              const editNameError = habitFieldError(
+                t,
+                'name',
+                draft.name,
+                editNameTouched[habit.id] === true,
+                editApi && habitApi?.field === 'name',
+              );
+              const editDescriptionError = habitFieldError(
+                t,
+                'description',
+                draft.description,
+                false,
+                editApi && habitApi?.field === 'description',
+              );
+              const editNotesError = habitFieldError(
+                t,
+                'notes',
+                draft.notes,
+                false,
+                editApi && habitApi?.field === 'notes',
+              );
+              const commentText = commentByHabitId[habit.id] ?? '';
+              const commentError = habitFieldError(
+                t,
+                'comment',
+                commentText,
+                commentTouchedById[habit.id] === true,
+                habitApi?.where === 'comment' && habitApi.id === habit.id,
+              );
               const openHabit = owns && habit.lastPeriod === null;
               return (
                 <article
@@ -568,6 +805,14 @@ export function MemberHabits(): ReactElement {
                       className="flex flex-col gap-3"
                       onSubmit={(event) => {
                         event.preventDefault();
+                        setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
+                        if (
+                          habitTextProblem('name', draft.name) !== null ||
+                          habitTextProblem('description', draft.description) !== null ||
+                          habitTextProblem('notes', draft.notes) !== null
+                        ) {
+                          return;
+                        }
                         void submit(
                           {
                             action: 'edit',
@@ -584,33 +829,66 @@ export function MemberHabits(): ReactElement {
                         id={`habit-${habit.id}-name`}
                         label={t('habit.name')}
                         value={draft.name}
+                        {...(editNameError === undefined
+                          ? {}
+                          : { error: editNameError, errorAnnounce: true })}
+                        onBlur={() => {
+                          setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
+                        }}
                         onChange={(event) => {
                           setEditByHabitId((current) => ({
                             ...current,
                             [habit.id]: { ...draft, name: event.target.value },
                           }));
+                          if (
+                            habitApi?.where === 'edit' &&
+                            habitApi.id === habit.id &&
+                            habitApi.field === 'name'
+                          ) {
+                            setHabitApi(null);
+                          }
                         }}
                       />
                       <Field
                         id={`habit-${habit.id}-description`}
                         label={t('habit.description')}
                         value={draft.description}
+                        {...(editDescriptionError === undefined
+                          ? {}
+                          : { error: editDescriptionError, errorAnnounce: true })}
                         onChange={(event) => {
                           setEditByHabitId((current) => ({
                             ...current,
                             [habit.id]: { ...draft, description: event.target.value },
                           }));
+                          if (
+                            habitApi?.where === 'edit' &&
+                            habitApi.id === habit.id &&
+                            habitApi.field === 'description'
+                          ) {
+                            setHabitApi(null);
+                          }
                         }}
                       />
                       <Field
                         id={`habit-${habit.id}-notes`}
                         label={t('habit.notes')}
                         value={draft.notes}
+                        {...(editNotesError === undefined
+                          ? {}
+                          : { error: editNotesError, errorAnnounce: true })}
                         onChange={(event) => {
                           setEditByHabitId((current) => ({
                             ...current,
                             [habit.id]: { ...draft, notes: event.target.value },
                           }));
+                          if (
+                            habitApi?.where === 'edit' &&
+                            habitApi.id === habit.id &&
+                            habitApi.field === 'notes'
+                          ) {
+                            setHabitApi(null);
+                          }
                         }}
                       />
                       <div className="flex items-center gap-2">
@@ -619,6 +897,11 @@ export function MemberHabits(): ReactElement {
                           variant="secondary"
                           size="md"
                           aria-label={t('habit.save')}
+                          disabled={
+                            editNameError !== undefined ||
+                            editDescriptionError !== undefined ||
+                            editNotesError !== undefined
+                          }
                         >
                           <Check aria-hidden="true" className="h-4 w-4" />
                         </IconButton>
@@ -640,34 +923,48 @@ export function MemberHabits(): ReactElement {
                     habit={habit}
                     account={account}
                     session={session}
-                    commentText={commentByHabitId[habit.id] ?? ''}
+                    commentText={commentText}
                     payCommentId={payCommentId}
                     payDraft={payDraft}
                     payBusy={payBusy}
-                    payError={payError}
+                    payError={shownHabitPayError}
                     payInvoice={payInvoice}
                     rateDay={rateDay}
-                    ratePending={!rateSettled}
                     showPaymentQr={showPaymentQr}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {
                       setPayDraft(value);
-                      setPayError(null);
+                      setPayError((current) =>
+                        current === 'habitAmount' || current === 'noRate' ? null : current,
+                      );
                     }}
                     onPayUnitChange={setPayShownUnit}
                     onPaySubmit={onPaySubmit}
                     onPayCancel={closePay}
                     onCommentText={(value) => {
                       setCommentByHabitId((current) => ({ ...current, [habit.id]: value }));
+                      if (habitApi?.where === 'comment' && habitApi.id === habit.id) {
+                        setHabitApi(null);
+                      }
                     }}
+                    onCommentBlur={() => {
+                      setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
+                    }}
+                    {...(commentError === undefined ? {} : { commentError })}
+                    commentBlocked={commentError !== undefined}
                     onPostComment={() => {
                       const text = commentByHabitId[habit.id] ?? '';
+                      setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
+                      if (habitTextProblem('comment', text) !== null) {
+                        return;
+                      }
                       void submit({ action: 'comment', habitId: habit.id, text }, true).then(
                         (saved) => {
                           if (!saved) {
                             return;
                           }
                           setCommentByHabitId((current) => ({ ...current, [habit.id]: '' }));
+                          setCommentTouchedById((current) => ({ ...current, [habit.id]: false }));
                         },
                       );
                     }}
@@ -684,6 +981,27 @@ export function MemberHabits(): ReactElement {
     );
   }
 
+  const addNameError = habitFieldError(
+    t,
+    'name',
+    addName,
+    addNameTouched,
+    habitApi?.where === 'add' && habitApi.field === 'name',
+  );
+  const addDescriptionError = habitFieldError(
+    t,
+    'description',
+    addDescription,
+    false,
+    habitApi?.where === 'add' && habitApi.field === 'description',
+  );
+  const addNotesError = habitFieldError(
+    t,
+    'notes',
+    addNotes,
+    false,
+    habitApi?.where === 'add' && habitApi.field === 'notes',
+  );
   return (
     <Card maxWidth="xl" surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
@@ -696,6 +1014,14 @@ export function MemberHabits(): ReactElement {
           className="flex w-full flex-col gap-3"
           onSubmit={(event) => {
             event.preventDefault();
+            setAddNameTouched(true);
+            if (
+              habitTextProblem('name', addName) !== null ||
+              habitTextProblem('description', addDescription) !== null ||
+              habitTextProblem('notes', addNotes) !== null
+            ) {
+              return;
+            }
             void submit(
               {
                 action: 'add',
@@ -713,6 +1039,8 @@ export function MemberHabits(): ReactElement {
               setAddDescription('');
               setAddNotes('');
               setAddCadence('daily');
+              setAddNameTouched(false);
+              setHabitApi(null);
             });
           }}
         >
@@ -720,24 +1048,41 @@ export function MemberHabits(): ReactElement {
             id="habit-add-name"
             label={t('habit.name')}
             value={addName}
+            {...(addNameError === undefined ? {} : { error: addNameError, errorAnnounce: true })}
+            onBlur={() => {
+              setAddNameTouched(true);
+            }}
             onChange={(event) => {
               setAddName(event.target.value);
+              if (habitApi?.where === 'add' && habitApi.field === 'name') {
+                setHabitApi(null);
+              }
             }}
           />
           <Field
             id="habit-add-description"
             label={t('habit.description')}
             value={addDescription}
+            {...(addDescriptionError === undefined
+              ? {}
+              : { error: addDescriptionError, errorAnnounce: true })}
             onChange={(event) => {
               setAddDescription(event.target.value);
+              if (habitApi?.where === 'add' && habitApi.field === 'description') {
+                setHabitApi(null);
+              }
             }}
           />
           <Field
             id="habit-add-notes"
             label={t('habit.notes')}
             value={addNotes}
+            {...(addNotesError === undefined ? {} : { error: addNotesError, errorAnnounce: true })}
             onChange={(event) => {
               setAddNotes(event.target.value);
+              if (habitApi?.where === 'add' && habitApi.field === 'notes') {
+                setHabitApi(null);
+              }
             }}
           />
           <SegmentedControl
@@ -750,7 +1095,16 @@ export function MemberHabits(): ReactElement {
             ]}
             onChange={setAddCadence}
           />
-          <Button type="submit">{t('habit.add')}</Button>
+          <Button
+            type="submit"
+            disabled={
+              addNameError !== undefined ||
+              addDescriptionError !== undefined ||
+              addNotesError !== undefined
+            }
+          >
+            {t('habit.add')}
+          </Button>
         </form>
       ) : null}
     </Card>

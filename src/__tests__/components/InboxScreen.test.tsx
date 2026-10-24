@@ -873,7 +873,7 @@ describe('InboxScreen', () => {
     expect(incoming.className).toContain('bg-app-card-muted');
     expect(incoming.className).not.toContain('bg-app-btn');
     expect(incoming.className).not.toContain('self-end');
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.queryByText('Enter a message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Next' } });
     expect(onDraftChange).toHaveBeenCalledWith('Next');

@@ -241,7 +241,54 @@ describe('PosScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'The PHP exchange rate is still loading.',
     );
+    expect(screen.getByRole('button', { name: 'Create payment' }).hasAttribute('disabled')).toBe(
+      true,
+    );
     expect(screen.queryByText('No PHP exchange rate yet.')).toBeNull();
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('does not create a payment when bitcoin is chosen while the rate is still loading', async () => {
+    vi.mocked(fetchGiftStats).mockReturnValue(new Promise(() => undefined));
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        const body = JSON.parse(String(init?.body ?? '{}')) as { unit?: 'btc' | 'fiat' };
+        return jsonResponse({ ...ACCOUNT, amountUnit: body.unit ?? 'btc' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('100');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('21');
+    expect(screen.getByRole('alert').textContent).toBe('The PHP exchange rate is still loading.');
+    expect(screen.getByRole('button', { name: 'Create payment' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    fireEvent.submit(screen.getByRole('button', { name: 'Create payment' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('The PHP exchange rate is still loading.');
     expect(
       fetchMock.mock.calls.some(
         (call) =>
@@ -283,6 +330,8 @@ describe('PosScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('No PHP exchange rate yet.');
     });
+    fireEvent.submit(screen.getByRole('button', { name: 'Create payment' }).closest('form')!);
+    expect(screen.getByRole('alert').textContent).toBe('No PHP exchange rate yet.');
     expect(
       fetchMock.mock.calls.some(
         (call) =>

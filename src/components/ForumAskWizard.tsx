@@ -28,6 +28,7 @@ import {
   splitCreditPlan,
   type CreditTermPreset,
 } from '@/lib/credit-plan';
+import { composerTextProblem, shownEntryProblem } from '@/lib/entry-text';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import {
   formatBitcoin,
@@ -124,6 +125,19 @@ export function ForumAskWizard({
   const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const parsedAsk = parseForumAskAmountInUnit(askDraft, draftUnit, rateDay, fiat);
   const { numberFormat } = useNumberFormat();
+  const [textTouched, setTextTouched] = useState(false);
+  const askTextProblem = composerTextProblem(
+    draft,
+    composerMaxLength,
+    photoDrafts.length > 0 || videoDraft !== null,
+  );
+  const askTextShown = shownEntryProblem(askTextProblem, textTouched);
+  const askTextMessage =
+    askTextShown === 'empty'
+      ? t('forum.errorEmpty')
+      : askTextShown === 'tooLong'
+        ? t('forum.errorTooLong')
+        : null;
   const [creditPhase, setCreditPhase] = useState<CreditAskPhase>('amount');
   const [termPreset, setTermPreset] = useState<CreditTermPreset>(30);
   const [customDays, setCustomDays] = useState('');
@@ -414,11 +428,21 @@ export function ForumAskWizard({
             placeholder={t('forum.placeholder')}
             value={draft}
             onChange={onDraftChange}
-            maxLength={composerMaxLength}
+            onBlur={() => {
+              setTextTouched(true);
+            }}
             rows={4}
             disabled={posting}
-            {...(shopElsewhere
-              ? { ariaDescribedBy: shopElsewhereFeedbackId, ariaInvalid: true }
+            {...(shopElsewhere || askTextMessage !== null
+              ? {
+                  ariaDescribedBy: [
+                    shopElsewhere ? shopElsewhereFeedbackId : null,
+                    askTextMessage !== null ? 'ask-composer-error' : null,
+                  ]
+                    .filter((id) => id !== null)
+                    .join(' '),
+                  ariaInvalid: true,
+                }
               : {})}
             wrapperClassName="relative w-full"
             className="min-h-11 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
@@ -428,11 +452,20 @@ export function ForumAskWizard({
               {t('forum.shopPostUseShops')}
             </p>
           ) : null}
+          {askTextMessage !== null ? (
+            <p id="ask-composer-error" role="alert" className="text-center text-sm text-app-danger">
+              {askTextMessage}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
-            disabled={posting || shopElsewhere}
+            disabled={posting || shopElsewhere || askTextShown !== null}
             onClick={() => {
+              setTextTouched(true);
+              if (askTextProblem !== null) {
+                return;
+              }
               onStepChange(4);
             }}
           >
@@ -504,15 +537,16 @@ export function ForumAskWizard({
               {t('forum.shopPostUseShops')}
             </p>
           ) : null}
+          {askTextProblem === 'tooLong' ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('forum.errorTooLong')}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
             size="lg"
-            disabled={
-              posting ||
-              shopElsewhere ||
-              (draft.trim() === '' && photoDrafts.length === 0 && videoDraft === null)
-            }
+            disabled={posting || shopElsewhere || askTextProblem !== null}
             onClick={onPost}
           >
             {posting ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : null}
