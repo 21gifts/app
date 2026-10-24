@@ -23705,10 +23705,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops#post');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
 
@@ -23753,18 +23753,18 @@ test.describe('shops screens', () => {
     await page.goto('/shops#post');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await page.getByRole('button', { name: 'Remove place' }).click();
-    const alert = page.getByRole('alert').filter({
+    await fillShopAddress(page, 'Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+    const alert = dialog.getByRole('alert').filter({
       hasText: 'The place could not be saved. Please try again.',
     });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
-    await page.locator('main [data-scrollport]').evaluate((node) => {
-      node.scrollTop += 160;
-    });
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-error');
   });
 
@@ -23853,63 +23853,12 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
     const unavailable = page.getByText('The map is not available.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
+    const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(unavailable).toBeVisible();
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await remove.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeDisabled();
+    await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
-  });
-
-  test('shops staff-place-edit-unavailable-error', async ({ page }) => {
-    await seedAda(page, 'moderator');
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-staff',
-              name: 'Ada',
-              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 0,
-              payable: false,
-              hasPhoto: false,
-              role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
-            },
-          ],
-        }),
-      });
-    });
-    await page.route(
-      (url) => new URL(url).pathname.endsWith('/place'),
-      async (route) => {
-        if (route.request().method() !== 'PATCH') {
-          await route.continue();
-          return;
-        }
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Unavailable' }),
-        });
-      },
-    );
-    await page.goto('/shops#post');
-    const note = page.locator('[data-message-id="m-staff"]');
-    await note.getByRole('button', { name: 'Edit place' }).click();
-    await page.getByRole('button', { name: 'Remove place' }).click();
-    const alert = page.getByRole('alert').filter({
-      hasText: 'The place could not be saved. Please try again.',
-    });
-    await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
   });
 
   test('shops staff-place-map', async ({ page }) => {

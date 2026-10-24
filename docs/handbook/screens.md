@@ -3349,13 +3349,13 @@ A moderator session. The Cafe Luna note has place **Happyland**. The card shows 
 ### Variant: staff-place-edit
 
 A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
-dialog. The map frame and **Remove place** are visible. The pin is not changed yet.
+dialog. The map frame is visible. There is no **Remove place**. The pin is not changed yet.
 
 ![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
 
 ### Variant: staff-place-edit-error
 
-A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. **Remove place** and **Use this place** stay.
+A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, **Shop name** is **Happyland**, and the full address is filled. **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. There is no **Remove place**. **Use this place** stays.
 
 ![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
 
@@ -3371,16 +3371,10 @@ with **Use this place**.
 ### Variant: staff-place-edit-unavailable
 
 A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
-dialog and the map key is missing. It says **The map is not available.** and shows
-**Remove place**. There is no map frame; **Use this place** is visible and disabled.
+dialog and the map key is missing. It says **The map is not available.** There is no **Remove place**
+and no map frame. **Use this place** is visible and disabled.
 
 ![21.gifts shops staff place edit unavailable](images/shops-staff-place-edit-unavailable.png)
-
-### Variant: staff-place-edit-unavailable-error
-
-A moderator session. **Edit place** is open without a map key, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Remove place** stays.
-
-![21.gifts shops staff place edit unavailable error](images/shops-staff-place-edit-unavailable-error.png)
 
 ### Variant: staff-place-map
 

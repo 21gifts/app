@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface ShopPlaceControlProps {
   /** Top-level shop note to pin. */
   message: ForumMessage;
-  /** Apply the saved pin (or `null` when cleared) to the listed row. */
+  /** Apply the saved pin to the listed row. A shop place is not cleared. */
   onUpdated: (messageId: string, place: ForumPlacePin | null) => void;
 }
 

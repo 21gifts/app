@@ -1450,7 +1450,7 @@ describe('PlaceField', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('offers Remove place in a shop dialog only when it saves the place itself', async () => {
+  it('never offers Remove place in a shop dialog', async () => {
     stubMaps();
     const place = {
       lat: 47.3769,
@@ -1482,7 +1482,7 @@ describe('PlaceField', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await screen.findByRole('dialog');
-    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
   });
 
   it('returns focus to the place button after a dialog opened by a server problem', async () => {

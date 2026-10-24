@@ -2585,9 +2585,9 @@
     "fil": "Humingi ng pera ang napili. Hakbang 1 sa 4 na naka-pindot ang Araw-araw sa pildoras sa itaas ng halaga at 1000 ang nai-type sa bitcoin kaya $1.00 ang lumalabas sa ilalim ng patlang. Naka-enable ang Magpatuloy."
   },
   "/shops:staff-place-edit": {
-    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist als Dialog geöffnet. Der Kartenrahmen und Ort entfernen sind sichtbar. Die Stecknadel ist noch nicht geändert.",
-    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar el lugar está abierto como diálogo. El mapa y Quitar el lugar están visibles. El pin aún no se ha cambiado.",
-    "fil": "Isang session ng moderator. May lugar na Happyland ang tala ng Cafe Luna. Bukas bilang dialog ang Baguhin ang lugar. Nakikita ang mapa at Alisin ang lugar. Hindi pa nababago ang pin."
+    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist als Dialog geöffnet. Der Kartenrahmen ist sichtbar. Ort entfernen gibt es nicht. Die Stecknadel ist noch nicht geändert.",
+    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar el lugar está abierto como diálogo. El mapa está visible. No hay Quitar el lugar. El pin aún no se ha cambiado.",
+    "fil": "Isang session ng moderator. May lugar na Happyland ang tala ng Cafe Luna. Bukas bilang dialog ang Baguhin ang lugar. Nakikita ang mapa. Walang Alisin ang lugar. Hindi pa nababago ang pin."
   },
   "/messages:thread-gift": {
     "de": "Offiziellen Thread geöffnet. fromMe-Blase nur mit Geschenk senden ₿21. Verfasser weiterhin sichtbar: ImagePlus in der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht. Auswähler fehlt.",
@@ -3054,11 +3054,6 @@
     "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
     "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
   },
-  "/shops:staff-place-edit-unavailable-error": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten ist ohne Kartenschlüssel geöffnet, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar und Ort entfernen bleibt.",
-    "es": "Una sesión de moderador. Editar lugar está abierto sin clave de mapa, y se pulsó Quitar lugar. El guardado falló, así que la alerta No se pudo guardar el lugar. Inténtalo de nuevo. es visible y Quitar lugar permanece.",
-    "fil": "Isang sesyon ng moderator. Bukas ang I-edit ang lugar nang walang susi ng mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Alisin ang lugar."
-  },
   "/welcome:repay-today-error": {
     "de": "Dieselbe finanzierte Kredit-Notiz wie repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Der POST ist fehlgeschlagen, und der Hinweis Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen ist sichtbar. Es gibt keinen Rechnungs-QR.",
     "es": "La misma nota de crédito financiado que repay-today, después de pulsar Pagar la cuota de hoy. El POST falló, y la alerta La wallet del autor no puede recibir este pago en Bitcoin es visible. No hay código QR de factura.",
@@ -3150,9 +3145,9 @@
     "fil": "Bukas ang menu na may dalawang hindi pa nababasang hilera ng pasukan ng mensahe na naka-stub sa GET /conversations → Ipinapakita ng Mga mensahe ang 2 sa kanan (nav.inboxUnread, pangalang pangkasali Mga mensahe, 2 hindi pa nababasa). Nanatili sa bilang 0 ang Mga abiso. Ang ibang mga hilera ng menu ay tumutugma sa menu-open."
   },
   "/shops:staff-place-edit-unavailable": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten für Happyland ist als Dialog ohne Kartenschlüssel geöffnet. Ort entfernen bleibt sichtbar; Diesen Ort verwenden ist sichtbar und deaktiviert.",
-    "es": "Una sesión de moderador. Editar lugar para Happyland está abierto como diálogo sin clave de mapa. Quitar lugar sigue visible; Usar este lugar está visible y desactivado.",
-    "fil": "Isang moderator session. Bukas bilang dialog ang I-edit ang lugar para sa Happyland nang walang susi ng mapa. Nakikita ang Alisin ang lugar; nakikita at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort bearbeiten für Happyland ist als Dialog ohne Kartenschlüssel geöffnet. Ort entfernen gibt es nicht. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "es": "Una sesión de moderador. Editar lugar para Happyland está abierto como diálogo sin clave de mapa. No hay Quitar lugar. Usar este lugar está visible y desactivado.",
+    "fil": "Isang moderator session. Bukas bilang dialog ang I-edit ang lugar para sa Happyland nang walang susi ng mapa. Walang Alisin ang lugar. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:expanded-donated": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort hat keinen Text. Sie zeigt senden ₿21'000 · $18.14 und keine Empfangen-Zeile. Die Notizfußzeile ist ₿21'000 · $18.14, dasselbe Geschenk, keine zweite Zahlung. Nichts an dieser Antwort wird in ₿21'100 eingerechnet.",
@@ -3320,9 +3315,9 @@
     "fil": "Na-verify na miyembro, walang pondo. Heading na 21 gifts grant. Ang pangungusap ng paghinto. Link https://21.gifts/statistics. Walang kontrol na Mag-apply. Hindi nagbabago ang pampublikong naka-pause na mga screenshot dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
   },
   "/shops:staff-place-edit-error": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet, die Karte ist sichtbar, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar. Ort entfernen und Diesen Ort verwenden bleiben.",
-    "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna, el mapa es visible y se pulsó Quitar lugar. El guardado falló, así que el aviso No se pudo guardar el lugar. Inténtalo de nuevo. está visible. Quitar lugar y Usar este lugar permanecen.",
-    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Nanatili ang Alisin ang lugar at Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet, die Karte ist sichtbar, der Shop-Name ist Happyland und die Adresse ist ausgefüllt. Diesen Ort verwenden wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar. Ort entfernen gibt es nicht. Diesen Ort verwenden bleibt.",
+    "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna, el mapa es visible, el nombre de la tienda es Happyland y la dirección está rellenada. Se pulsó Usar este lugar. El guardado falló, así que el aviso No se pudo guardar el lugar. Inténtalo de nuevo. está visible. No hay Quitar lugar. Usar este lugar permanece.",
+    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, Happyland ang pangalan ng shop, at puno ang address. Pinindot ang Gamitin ang lugar na ito. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Walang Alisin ang lugar. Nanatili ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-edit-rejected": {
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf einer Shop-Notiz geöffnet (Text Fresh bread every morning.). Shop-Name ist Happyland, die vollständige Adresse ist ausgefüllt, und Diesen Ort verwenden wurde gedrückt. Der gespeicherte Shop-Text wurde auf dem Server geändert, deshalb ist die Meldung Der Shop-Name muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text. in der Dialogfusszeile sichtbar. Der Dialog bleibt mit Diesen Ort verwenden offen.",
