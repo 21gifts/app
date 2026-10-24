@@ -1507,16 +1507,23 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopsScreen
 
-- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`.
-- **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
+- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **List** / **Map** / **Table** / **Post** pill, then the selected body. **List** is `ShopList`. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`.
+- **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view. `#post` opens **Post**. A missing or unknown hash opens **List**. Choosing an option writes the same hash. **List** clears it.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The list, post feed, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
 - **Used by:** `ShopsPage`.
 
 ## Function: ShopsViewSwitch
 
-- **Purpose:** Neutral `SegmentedControl` labelled **Shop view** that switches the shops page between post, map, and table.
-- **Inputs:** `value` (`post`, `map`, or `table`) and `onChange`.
-- **Returns / side effects:** A `SegmentedControl` `tone="neutral"`. The pressed option uses the app button fill. No network.
+- **Purpose:** Neutral `SegmentedControl` labelled **Shop view** that switches the shops page between **List**, **Map**, **Table**, and **Post**. A missing or unknown hash opens **List**. Choosing **List** clears the hash. `#post` opens **Post**.
+- **Inputs:** `value` (`list`, `map`, `table`, or `post`) and `onChange`.
+- **Returns / side effects:** A `SegmentedControl` `tone="neutral"` in the order **List**, **Map**, **Table**, **Post**. The pressed option uses the app button fill. No network.
+- **Used by:** `ShopsScreen`.
+
+## Function: ShopList
+
+- **Purpose:** List of shop pages. A row is a shop name linking to `/{npub}`. A forum note without a listed `shopNpub` is not a row.
+- **Inputs:** Session from `useAuthStore`. Catalog and locale via `useTranslations`.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Keeps notes that pass `isShopNote`, then only rows whose `shopNpub` matches `SHOP_NPUB_RE`. The link text is the place label when the pin has a structured address, otherwise the first real line of the note, otherwise the stored name. The place line under the link is `formatPlacePinText` and is not a link. **Show more** loads the next page. If a page has no listed shops and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the list with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session. Does not render the note body, `#Shop`, `/map?pin=`, `/members/`, or **Edit shop note**.
 - **Used by:** `ShopsScreen`.
 
 ## Function: ShopTable
