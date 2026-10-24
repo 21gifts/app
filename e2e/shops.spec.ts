@@ -103,6 +103,7 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
   await page.goto('/shops');
   await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add a shop' })).toHaveCount(0);
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
@@ -183,7 +184,7 @@ test('Function: ShopTable — name, place, and operator', async ({ page }) => {
       shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
     },
   ]);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
     'href',
