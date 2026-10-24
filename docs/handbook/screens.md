@@ -2071,6 +2071,19 @@ text **Fresh bread every morning.** The live error
 
 ![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
 
+
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user suggest](images/welcome-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user chosen](images/welcome-shop-edit-user-chosen.png)
+
 ### Variant: shop-edit-user-checking
 
 Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
@@ -2392,6 +2405,19 @@ Step **3 / 5 · Text** is open on **Map** with a place named
 
 ![21.gifts shops map edit user](images/shops-map-edit-user.png)
 
+
+### Variant: map-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user suggest](images/shops-map-edit-user-suggest.png)
+
+### Variant: map-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user chosen](images/shops-map-edit-user-chosen.png)
+
 ### Variant: map-edit-user-checking
 
 Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
@@ -2670,6 +2696,19 @@ Step **3 / 5 · Text** is open on **Table** with a place named
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
 
+
+### Variant: table-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open on **Table** after the stored username is cleared. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user suggest](images/shops-table-edit-user-suggest.png)
+
+### Variant: table-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open on **Table**. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user chosen](images/shops-table-edit-user-chosen.png)
+
 ### Variant: table-edit-user-checking
 
 Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
@@ -2904,6 +2943,19 @@ disabled.
 **Add a shop** is open on step **4 / 5 · 21.gifts user**. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts shops add user](images/shops-add-user.png)
+
+
+### Variant: add-user-suggest
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled.
+
+![21.gifts shops add user suggest](images/shops-add-user-suggest.png)
+
+### Variant: add-user-chosen
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert.
+
+![21.gifts shops add user chosen](images/shops-add-user-chosen.png)
 
 ### Variant: add-user-checking
 
@@ -3232,6 +3284,19 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user](images/shops-edit-user.png)
+
+
+### Variant: edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user suggest](images/shops-edit-user-suggest.png)
+
+### Variant: edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts shops edit user chosen](images/shops-edit-user-chosen.png)
 
 ### Variant: edit-user-checking
 
@@ -4198,6 +4263,19 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
+
+
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled.
+
+![21.gifts member shop edit user suggest](images/members-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert.
+
+![21.gifts member shop edit user chosen](images/members-shop-edit-user-chosen.png)
 
 ### Variant: shop-edit-user-checking
 
@@ -6388,6 +6466,19 @@ text **Fresh bread every morning.** The live error
 **Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
+
+
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user suggest](images/messages-id-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user chosen](images/messages-id-shop-edit-user-chosen.png)
 
 ### Variant: shop-edit-user-checking
 

@@ -5173,5 +5173,75 @@
     "de": "Der Ortsschritt ist offen. Ein Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
     "es": "El paso del lugar está abierto. Un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
     "fil": "Bukas ang hakbang ng lugar. Ang control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
+  },
+  "/shops:add-user-suggest": {
+    "de": "Shop hinzufügen ist geöffnet. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod."
+  },
+  "/shops:add-user-chosen": {
+    "de": "Shop hinzufügen ist geöffnet. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm.",
+    "es": "Añadir una tienda está abierto. El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta.",
+    "fil": "Bukas ang Magdagdag ng shop. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto."
+  },
+  "/shops:edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/shops:edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/shops:map-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:table-edit-user-suggest": {
+    "de": "Auf Tabelle wird der gespeicherte Name geleert. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Tabelle bleibt ausgewählt.",
+    "es": "En Tabla se borra el nombre guardado. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones. Tabla permanece seleccionada.",
+    "fil": "Sa Talahanayan binura ang naka-save na pangalan. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones. Tabla permanece seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Talahanayan."
+  },
+  "/welcome:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/welcome:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/members/[accountId]:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod."
+  },
+  "/members/[accountId]:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/messages/[id]:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
   }
 }

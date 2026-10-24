@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -927,6 +927,76 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
     fireEvent.click(screen.getByRole('option', { name: '@cafe' }));
     expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@cafe');
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@' } });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('option', { name: '@ada' }));
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@ada');
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@.ada' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+    });
+  });
+
+  it('drops account suggestions when the search fails', async () => {
+    const pending: Array<{ query: string; reject: (error: Error) => void }> = [];
+    searchPeople.mockImplementation(
+      (_session, query) =>
+        new Promise((_resolve, reject) => {
+          pending.push({ query, reject });
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account: null });
+    function UsernameHost(): ReactElement {
+      const [username, setUsername] = useState('@');
+      const [draft, setDraft] = useState('');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft,
+            onDraftChange: setDraft,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<UsernameHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
+    const beforeAccountStep = pending.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(pending.slice(beforeAccountStep).some((row) => row.query === '')).toBe(true);
+    });
+    const empty = pending.slice(beforeAccountStep).find((row) => row.query === '');
+    await act(async () => {
+      empty?.reject(new Error('offline'));
+    });
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@c' } });
+    await waitFor(() => {
+      expect(pending.filter((row) => row.query === 'c')).toHaveLength(1);
+    });
+    const cancelled = pending.find((row) => row.query === 'c');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    await act(async () => {
+      cancelled?.reject(new Error('offline'));
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(pending.filter((row) => row.query === 'c')).toHaveLength(2);
+    });
+    const live = pending.filter((row) => row.query === 'c')[1];
+    await act(async () => {
+      live?.reject(new Error('offline'));
+    });
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
   });
 
   it.each([

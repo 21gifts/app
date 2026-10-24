@@ -2111,7 +2111,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('drops the shop pin when a saved note omits place', async () => {
+  it('drops the shop pin and account when a saved note omits them', async () => {
     const shopPlace = {
       lat: 47.3769,
       lng: 8.5417,
@@ -2137,12 +2137,14 @@ describe('PublicMessageThread', () => {
       text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     };
     delete withoutPlace.place;
+    delete withoutPlace.shopAccount;
     signIn({ role: 'moderator' });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
     renderThread({ root: shopRoot });
     const pinName = "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland";
     expect(screen.getByRole('link', { name: pinName })).toBeTruthy();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -2157,6 +2159,7 @@ describe('PublicMessageThread', () => {
       expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
     expect(screen.queryByRole('link', { name: pinName })).toBeNull();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).toBeNull();
   });
 
   it('drops the public note’s photo address after a shop edit', async () => {

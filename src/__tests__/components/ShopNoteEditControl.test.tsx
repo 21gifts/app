@@ -424,6 +424,26 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByRole('textbox', { name: 'Shop text' })).toBeNull();
   });
 
+  it('keeps a stored username that already starts with @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'shop-acc', username: '@luna', name: 'Luna' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@luna');
+  });
+
   it('does not patch an unchanged account with whitespace after the at sign', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1906,12 +1926,7 @@ describe('ShopNoteEditControl', () => {
     vi.mocked(setMessageShopText).mockResolvedValue(textResult);
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('no'));
     const onUpdated = vi.fn();
-    renderEdit(
-      <ShopNoteEditControl
-        message={{ ...shopMessage, shopAccount: undefined }}
-        onUpdated={onUpdated}
-      />,
-    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -1919,7 +1934,7 @@ describe('ShopNoteEditControl', () => {
       target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@ada' } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });

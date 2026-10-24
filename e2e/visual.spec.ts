@@ -819,13 +819,65 @@ async function acceptShopUsername(page: Page, username = 'ada'): Promise<void> {
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 }
 
-/** Leave the shop username step. A stored account is left as it is. */
-async function continueFromShopUsername(page: Page): Promise<void> {
+/**
+ * Give an empty shop username step the account @ada.
+ * A stored account leaves Next enabled, so this does not replace it.
+ */
+async function supplyShopUsername(page: Page): Promise<void> {
   const next = page.getByRole('button', { name: 'Next' });
   if (await next.isDisabled()) {
     await acceptShopUsername(page);
   }
+}
+
+/** Leave the shop username step. The account is already stored or accepted. */
+async function continueFromShopUsername(page: Page): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  await expect(next).toBeEnabled();
   await next.click();
+}
+
+/** Open the People list at @, then keep the chosen row @ada. */
+async function shotShopUsernameSuggestions(
+  page: Page,
+  suggest: string,
+  chosen: string,
+  clearToAt = false,
+): Promise<void> {
+  const field = page.getByLabel('21.gifts username');
+  const step = page.getByText('4 / 5 · 21.gifts user');
+  await expect(step).toBeVisible();
+  if (clearToAt) {
+    await field.fill('@');
+  }
+  await expect(field).toHaveValue('@');
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+  await expect(page.getByText('Ada Lovelace')).toBeVisible();
+  const next = page.getByRole('button', { name: 'Next' });
+  await expect(next).toBeDisabled();
+  await step.scrollIntoViewIfNeeded();
+  await shotScreen(page, suggest);
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' }),
+    });
+  });
+  const lookup = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+  );
+  await page.getByRole('option', { name: '@ada', exact: true }).click();
+  await lookup;
+  await expect(field).toHaveValue('@ada');
+  await expect(page.getByText('Checking that account…')).toHaveCount(0);
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+  await expect(step.locator('xpath=ancestor::form[1]').getByRole('alert')).toHaveCount(0);
+  await expect(next).toBeEnabled();
+  await step.scrollIntoViewIfNeeded();
+  await shotScreen(page, chosen);
 }
 
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
@@ -916,6 +968,7 @@ async function saveChangedShopText(page: Page): Promise<void> {
     .getByLabel('Shop text')
     .fill('Cafe Luna is open every morning and on Sunday afternoons.');
   await page.getByRole('button', { name: 'Next' }).click();
+  await supplyShopUsername(page);
   await continueFromShopUsername(page);
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await page.getByRole('button', { name: 'Save changes' }).click();
@@ -1166,6 +1219,7 @@ async function showPreparingShopPhoto(
   ];
   for (let click = 0; click < nextClicks; click += 1) {
     if (click === 3) {
+      await supplyShopUsername(page);
       await continueFromShopUsername(page);
     } else {
       await page.getByRole('button', { name: 'Next' }).click();
@@ -1258,6 +1312,7 @@ async function submitRejectedShopPhotoEdit(
   await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({ timeout: 10_000 });
   for (let step = 1; step < 5; step += 1) {
     if (step === 4) {
+      await supplyShopUsername(page);
       await continueFromShopUsername(page);
     } else {
       await page.getByRole('button', { name: 'Next' }).click();
@@ -4669,6 +4724,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -8420,6 +8476,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -13475,6 +13532,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -21728,6 +21786,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -22385,6 +22444,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -23217,6 +23277,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-user');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
@@ -23404,6 +23465,7 @@ test.describe('shops screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
@@ -24463,6 +24525,7 @@ test.describe('shops screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-user-invalid');
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByText("Kiki's Bakery")).toBeVisible();
@@ -24531,6 +24594,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -24715,6 +24779,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
     await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
@@ -24729,6 +24794,83 @@ test.describe('shops screens', () => {
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-post-rejected');
+  });
+
+  test('shops add-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openCreateShopUsernameStep(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-shops-add-user-suggest',
+      'state-shops-add-user-chosen',
+    );
+  });
+
+  test('shops edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-shops-edit-user-suggest',
+      'state-shops-edit-user-chosen',
+    );
+  });
+
+  test('shops map-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-shops-map-edit-user-suggest',
+      'state-shops-map-edit-user-chosen',
+    );
+  });
+
+  test('shops table-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-shops-table-edit-user-suggest',
+      'state-shops-table-edit-user-chosen',
+      true,
+    );
+  });
+
+  test('welcome shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-welcome-shop-edit-user-suggest',
+      'state-welcome-shop-edit-user-chosen',
+    );
+  });
+
+  test('members shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-members-shop-edit-user-suggest',
+      'state-members-shop-edit-user-chosen',
+    );
+  });
+
+  test('messages shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await shotShopUsernameSuggestions(
+      page,
+      'state-messages-id-shop-edit-user-suggest',
+      'state-messages-id-shop-edit-user-chosen',
+    );
   });
 });
 
