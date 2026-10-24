@@ -1521,9 +1521,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopList
 
-- **Purpose:** List of shop pages. A row is a shop name linking to `/{npub}`. A forum note without a listed `shopNpub` is not a row.
-- **Inputs:** Session from `useAuthStore`. Catalog and locale via `useTranslations`.
-- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Keeps notes that pass `isShopNote`, then only rows whose `shopNpub` matches `SHOP_NPUB_RE`. The link text is the place label when the pin has a structured address, otherwise the first real line of the note, otherwise the stored name. The place line under the link is `formatPlacePinText` and is not a link. **Show more** loads the next page. If a page has no listed shops and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the list with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session. Does not render the note body, `#Shop`, `/map?pin=`, `/members/`, or **Edit shop note**.
+- **Purpose:** List of shop pages. A row is the shop name linking to `/{npub}`. Forum notes without a shop page stay on Post.
+- **Inputs:** Catalog and locale via `useTranslations`. An account is not required.
+- **Returns / side effects:** Calls `fetchListedShops`. The page size stays inside that function. The link text is the shop name trimmed, `className` `underline`, and `href` is `/{npub}`. The place line under the link is `formatPlacePinText` and is not a link. Rows are keyed by `npub`. **Show more** loads the next page. An empty page with a next cursor keeps **Show more** and does not show `shops.empty`. A failed later page keeps the rows, shows `shops.loadError`, and **Try again** reloads that same cursor. A failed first page replaces the list with `shops.loadError`, and **Try again** loads the first page again. Until the first page arrives, the line is `map.loading`. Does not call `fetchMessages`, does not open `/setup/rules`, and does not render `/map`, `/members/`, or **Edit shop note**.
 - **Used by:** `ShopsScreen`.
 
 ## Function: ShopTable
@@ -4455,6 +4455,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
+
+## Function: fetchListedShops
+
+- **Purpose:** Loads one page of the public shop directory from same-origin `GET /shops/list?limit=20` with no Authorization. ShopList calls it whether or not an account is signed in. An optional cursor is sent as `&cursor=`. A missing `nextCursor` is the end of the list. `nextCursor: null` is rejected. A shop npub that fails `SHOP_NPUB_RE` is rejected. `address` is required. Otherwise this throws and the list shows `shops.loadError`.
+- **Inputs:** Optional `cursor` string. Omit it for the first page. `fetch('/shops/list?limit=20')` sends no Authorization header.
+- **Returns / side effects:** `{ shops: ShopListItem[]; nextCursor: string | null }`. Network via `fetch`. Throws `Could not load shops. Please try again.` when the response is not ok or the body fails `shopListResponseSchema`.
+- **Used by:** `ShopList`.
+
+## Function: proxyShopListGet
+
+- **Purpose:** Same-origin proxy for api `GET /shops`. App route is `export const GET = proxyShopListGet` on `/shops/list`. No bearer is required. Forwards the incoming request unchanged, including `limit` and `cursor`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops')`.
+- **Used by:** `src/app/shops/list/route.ts`.
 
 ## Function: fetchGrantContinuation
 

@@ -156,6 +156,13 @@
 - **Used by:** `fetchShopActivity` on `/statistics`.
 - **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
+## Endpoint: GET /shops/list
+
+- **Purpose:** Same-origin proxy of api `GET /shops` (public shop directory). Forwards `limit` and `cursor`.
+- **Errors:** The proxy forwards the upstream status (400 invalid limit or cursor, 503 shops unavailable) or 502 when the api cannot be reached.
+- **Used by:** `fetchListedShops` on `/shops`.
+- **Auth:** No bearer.
+
 ## Endpoint: GET /funding/goal
 
 - **Purpose:** Same-origin proxy of api `GET /funding/goal` (7 UTC days of shop till-charge counts, plus how many shops had a charge on 5 of those days). Not the public 30-day shop series.

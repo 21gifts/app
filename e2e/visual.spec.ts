@@ -21128,28 +21128,35 @@ test.describe('shops screens', () => {
 
   test('shops default', async ({ page }) => {
     await seedAda(page);
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-shop',
-              name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 5,
-              payable: true,
-              hasPhoto: false,
-              role: 'basis',
-              shopNpub: `npub1${'2'.repeat(58)}`,
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
-            },
-          ],
-        }),
-      });
-    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            shops: [
+              {
+                npub: `npub1${'2'.repeat(58)}`,
+                name: 'Cafe Luna',
+                place: {
+                  lat: 14.6,
+                  lng: 120.98,
+                  label: 'Cafe Luna',
+                  address: {
+                    street: 'Bahnhofstrasse',
+                    houseNumber: '12',
+                    postalCode: '8001',
+                    city: 'Zürich',
+                    country: 'CH',
+                  },
+                },
+              },
+            ],
+          }),
+        });
+      },
+    );
     await page.goto('/shops');
     await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
@@ -21157,7 +21164,10 @@ test.describe('shops screens', () => {
       'href',
       `/npub1${'2'.repeat(58)}`,
     );
-    await expect(page.getByText('Happyland')).toBeVisible();
+    await expect(
+      page.getByText('Cafe Luna · Bahnhofstrasse 12, 8001 Zürich, Switzerland', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('Happyland')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a shop' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: '#Shop' })).toHaveCount(0);
     await expect(page.getByText('#21GiftsShop')).toHaveCount(0);

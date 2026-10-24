@@ -433,6 +433,19 @@ export async function proxyShopActivityGet(request: Request): Promise<Response> 
 }
 
 /**
+ * Proxies GET /shops to the 21.gifts api.
+ *
+ * No bearer is required. The incoming query string is forwarded as received.
+ * The app route is `/shops/list` because `/shops` is the HTML page.
+ *
+ * @param request - Incoming App Router request (`limit` and `cursor`).
+ * @returns The upstream response.
+ */
+export async function proxyShopListGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/shops');
+}
+
+/**
  * Proxies GET /funding/goal to the 21.gifts api.
  *
  * Forwards the incoming Authorization header. Does not add one.

@@ -858,6 +858,30 @@ export const shopResponseSchema = z.object({ shop: shopSchema });
 /** Public listed shop returned by `GET /shops/:npub`. */
 export type Shop = z.infer<typeof shopSchema>;
 
+/** One directory row from `GET /shops`. `address` is required. */
+export const shopListItemSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  name: z.string(),
+  place: z.object({
+    lat: z.number(),
+    lng: z.number(),
+    label: z.string(),
+    address: forumPlaceAddressSchema,
+  }),
+});
+
+/** One public shop in the directory. */
+export type ShopListItem = z.infer<typeof shopListItemSchema>;
+
+/**
+ * Runtime schema for `GET /shops`.
+ * `nextCursor` is omitted on the last page. Null is not accepted.
+ */
+export const shopListResponseSchema = z.object({
+  shops: z.array(shopListItemSchema),
+  nextCursor: z.string().optional(),
+});
+
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
  * `postCount` and `replyCount` are optional nonnegative integers so today's

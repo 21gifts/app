@@ -2,213 +2,174 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopList } from '@/components/ShopList';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import type { ForumMessage } from '@/lib/api-types';
-import { MissingRequirementsError } from '@/lib/missing-requirements';
+import type { ShopListItem } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
-const replace = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof replace; replace: typeof replace } => ({
-    push: replace,
-    replace,
-  }),
-}));
-
 vi.mock('@/lib/api', () => ({
-  fetchMessages: vi.fn(),
-  fetchShopNoteEdits: vi.fn(),
-  fetchMessagePhoto: vi.fn(),
-  setMessagePlace: vi.fn(),
-  setMessageShopAccount: vi.fn(),
-  setMessageShopPhotos: vi.fn(),
-  setMessageShopText: vi.fn(),
+  fetchListedShops: vi.fn(),
 }));
 
-import { fetchMessages } from '@/lib/api';
+import { fetchListedShops } from '@/lib/api';
 
-const fetchMessagesMock = vi.mocked(fetchMessages);
+const fetchListedShopsMock = vi.mocked(fetchListedShops);
 
 const NPUB = `npub1${'2'.repeat(58)}`;
+const NPUB_2 = `npub1${'3'.repeat(58)}`;
 
-const SHOP: ForumMessage = {
-  id: 'm-shop',
-  name: 'Ada',
-  text: 'Cafe Luna\n\n#21GiftsShop',
-  createdAt: '2026-08-28T12:00:00.000Z',
-  sats: 5,
-  payable: true,
-  hasPhoto: false,
-  photoCount: 0,
-  hasVideo: false,
-  videoContentType: null,
-  role: 'basis',
-  replyCount: 0,
-  place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
-  shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
-  shopNpub: NPUB,
+const ADDRESS = {
+  street: 'Bahnhofstrasse',
+  houseNumber: '12',
+  postalCode: '8001',
+  city: 'Zürich',
+  country: 'CH',
 };
+
+const SHOP: ShopListItem = {
+  npub: NPUB,
+  name: '  Cafe Luna  ',
+  place: { lat: 14.6, lng: 120.98, label: 'Cafe Luna', address: ADDRESS },
+};
+
+const SHOP_2: ShopListItem = {
+  npub: NPUB_2,
+  name: 'North Stall',
+  place: { lat: 14.61, lng: 120.99, label: 'North Stall', address: ADDRESS },
+};
+
+const PLACE_LINE = 'Cafe Luna · Bahnhofstrasse 12, 8001 Zürich, Switzerland';
 
 afterEach(() => {
   cleanup();
-  replace.mockClear();
-  fetchMessagesMock.mockReset();
+  fetchListedShopsMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
 });
 
 describe('ShopList', () => {
-  it('opens setup when the account is not allowed to load the list', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
-    renderWithLocale(<ShopList />);
-    await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/setup/rules');
-    });
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
-
-  it('returns nothing without a session', () => {
-    const { container } = renderWithLocale(<ShopList />);
-    expect(container.textContent).toBe('');
-    expect(fetchMessagesMock).not.toHaveBeenCalled();
-  });
-
-  it('links a listed shop by the first note line and hides a note without shopNpub', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockResolvedValue({
-      messages: [
-        SHOP,
-        {
-          ...SHOP,
-          id: 'm-quiet',
-          text: 'Quiet stall\n\n#21GiftsShop',
-          shopNpub: null,
-        },
-      ],
-      nextCursor: null,
-    });
+  it('links a shop by its trimmed name and shows the place line as text', async () => {
+    fetchListedShopsMock.mockResolvedValue({ shops: [SHOP], nextCursor: null });
     renderWithLocale(<ShopList />);
     const link = await screen.findByRole('link', { name: 'Cafe Luna' });
     expect(link.getAttribute('href')).toBe(`/${NPUB}`);
+    expect(link.className).toContain('underline');
+    const place = screen.getByText(PLACE_LINE, { selector: 'p' });
+    expect(place.closest('a')).toBeNull();
+    expect(screen.queryByRole('link', { name: PLACE_LINE })).toBeNull();
     expect(screen.getAllByRole('link')).toHaveLength(1);
-    expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
-    expect(screen.getByText('Happyland')).toBeTruthy();
-    expect(screen.queryByText('Quiet stall')).toBeNull();
-    expect(screen.queryByRole('link', { name: /\/map/ })).toBeNull();
-    expect(screen.queryByRole('link', { name: /\/members/ })).toBeNull();
     for (const item of screen.getAllByRole('link')) {
       const href = item.getAttribute('href') ?? '';
       expect(href.startsWith('/map')).toBe(false);
       expect(href.includes('/members/')).toBe(false);
     }
-    expect(fetchMessagesMock).toHaveBeenCalledWith('tok', {
-      mode: 'all',
-      limit: 20,
-      hashtag: '21GiftsShop',
-    });
   });
 
-  it('names the link with the place label when the pin has a structured address', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockResolvedValue({
-      messages: [
-        {
-          ...SHOP,
-          id: 'm-address',
-          place: {
-            lat: 47.3769,
-            lng: 8.5417,
-            label: "  Kiki's Bakery  ",
-            address: {
-              street: 'Bahnhofstrasse',
-              houseNumber: '12',
-              postalCode: '8001',
-              city: 'Zürich',
-              country: 'CH',
-            },
-          },
-        },
-      ],
-      nextCursor: null,
-    });
+  it('fetches and renders a shop when no account is signed in', async () => {
+    expect(useAuthStore.getState().session).toBeNull();
+    fetchListedShopsMock.mockResolvedValue({ shops: [SHOP], nextCursor: null });
     renderWithLocale(<ShopList />);
-    const link = await screen.findByRole('link', { name: "Kiki's Bakery" });
-    expect(link.getAttribute('href')).toBe(`/${NPUB}`);
-    expect(screen.queryByRole('link', { name: 'Cafe Luna' })).toBeNull();
-    expect(
-      screen.getByText("Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland"),
-    ).toBeTruthy();
-    expect(
-      screen.queryByRole('link', {
-        name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+    expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(fetchListedShopsMock).toHaveBeenCalledTimes(1);
+    expect(fetchListedShopsMock).toHaveBeenCalledWith();
+  });
+
+  it('shows the loading line until the first page arrives', async () => {
+    let resolvePage: (page: { shops: ShopListItem[]; nextCursor: null }) => void = () => {};
+    fetchListedShopsMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePage = resolve;
       }),
-    ).toBeNull();
-  });
-
-  it('keeps show more when a page of unlisted notes still has a cursor', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockResolvedValue({
-      messages: [
-        { ...SHOP, id: 'm-quiet', text: 'Quiet stall\n\n#21GiftsShop', shopNpub: null },
-        { ...SHOP, id: 'm-room', text: 'Hello', shopNpub: null },
-      ],
-      nextCursor: 'c2',
-    });
+    );
     renderWithLocale(<ShopList />);
-    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
-    expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
-    expect(screen.queryByText('Quiet stall')).toBeNull();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    resolvePage({ shops: [SHOP], nextCursor: null });
+    expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
   });
 
   it('shows the empty copy when the page is empty and has no next page', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockResolvedValue({ messages: [], nextCursor: null });
+    fetchListedShopsMock.mockResolvedValue({ shops: [], nextCursor: null });
     renderWithLocale(<ShopList />);
     expect(await screen.findByText('No shops yet — add the first one.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
-  it('shows the forum error and try again when the first page fails', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockRejectedValueOnce(new Error('nope'));
+  it('keeps show more when an empty page still has a cursor', async () => {
+    fetchListedShopsMock.mockResolvedValue({ shops: [], nextCursor: 'c2' });
     renderWithLocale(<ShopList />);
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
+    expect(screen.queryByText('No shops yet — add the first one.')).toBeNull();
   });
 
-  it('keeps the link and try again when a later page fails', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock
-      .mockResolvedValueOnce({ messages: [SHOP], nextCursor: 'c2' })
+  it('shows the load error and retries the first page', async () => {
+    fetchListedShopsMock.mockRejectedValueOnce(new Error('nope'));
+    renderWithLocale(<ShopList />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not load shops. Please try again.')).toBeTruthy();
+    fetchListedShopsMock.mockResolvedValueOnce({ shops: [SHOP], nextCursor: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(fetchListedShopsMock).toHaveBeenCalledTimes(2);
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(1);
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(2);
+  });
+
+  it('keeps the first shop and retries the same cursor after a later page fails', async () => {
+    fetchListedShopsMock
+      .mockResolvedValueOnce({ shops: [SHOP], nextCursor: 'c2' })
       .mockRejectedValueOnce(new Error('nope'))
-      .mockResolvedValueOnce({
-        messages: [
-          {
-            ...SHOP,
-            id: 'm-2',
-            text: 'Other stall\n\n#21GiftsShop',
-            shopNpub: NPUB,
-          },
-        ],
-        nextCursor: null,
-      });
+      .mockResolvedValueOnce({ shops: [SHOP_2], nextCursor: null });
     renderWithLocale(<ShopList />);
     expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not load shops. Please try again.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(fetchMessagesMock).toHaveBeenLastCalledWith('tok', {
-        mode: 'all',
-        limit: 20,
-        hashtag: '21GiftsShop',
-        cursor: 'c2',
-      });
+      expect(fetchListedShopsMock).toHaveBeenLastCalledWith('c2');
     });
-    expect(await screen.findByRole('link', { name: 'Other stall' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'North Stall' })).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: 'Cafe Luna' })).toHaveLength(1);
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(2, 'c2');
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(3, 'c2');
+  });
+
+  it('appends the next page and does not duplicate the first shop', async () => {
+    fetchListedShopsMock
+      .mockResolvedValueOnce({ shops: [SHOP], nextCursor: 'c2' })
+      .mockResolvedValueOnce({ shops: [SHOP_2], nextCursor: null });
+    renderWithLocale(<ShopList />);
+    expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(await screen.findByRole('link', { name: 'North Stall' })).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: 'Cafe Luna' })).toHaveLength(1);
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(1);
+    expect(fetchListedShopsMock).toHaveBeenNthCalledWith(2, 'c2');
+  });
+
+  it('ignores a response that arrives after unmount', async () => {
+    let resolvePage: (page: { shops: ShopListItem[]; nextCursor: null }) => void = () => {};
+    fetchListedShopsMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePage = resolve;
+      }),
+    );
+    const view = renderWithLocale(<ShopList />);
+    view.unmount();
+    resolvePage({ shops: [SHOP], nextCursor: null });
+    await Promise.resolve();
+    expect(screen.queryByRole('link', { name: 'Cafe Luna' })).toBeNull();
+  });
+
+  it('ignores an error that arrives after unmount', async () => {
+    let rejectPage: (error: Error) => void = () => {};
+    fetchListedShopsMock.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectPage = reject;
+      }),
+    );
+    const view = renderWithLocale(<ShopList />);
+    view.unmount();
+    rejectPage(new Error('late'));
+    await Promise.resolve();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

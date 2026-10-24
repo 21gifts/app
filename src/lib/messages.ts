@@ -848,13 +848,13 @@ const en = {
   'contact.rulesLink': 'Living room rules',
 
   'shops.heading': 'Shops',
-  'shops.lead':
-    'Each row is a shop page, not a forum note.',
+  'shops.lead': 'Each row is a shop page, not a forum note.',
   'map.heading': 'Map',
   'map.empty': 'No places yet.',
   'map.error': 'Could not load places. Please try again.',
   'map.loading': 'Loading…',
   'shops.empty': 'No shops yet — add the first one.',
+  'shops.loadError': 'Could not load shops. Please try again.',
   'shops.add': 'Add a shop',
   'shops.stepOf': '{step} / {total} · {title}',
   'shops.stepPhotos': 'Photos',
@@ -2104,13 +2104,13 @@ const de = {
   'contact.rulesLink': 'Wohnzimmerregeln',
 
   'shops.heading': 'Shops',
-  'shops.lead':
-    'Jede Zeile ist eine Shop-Seite, keine Foren-Notiz.',
+  'shops.lead': 'Jede Zeile ist eine Shop-Seite, keine Foren-Notiz.',
   'map.heading': 'Karte',
   'map.empty': 'Noch keine Orte.',
   'map.error': 'Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'map.loading': 'Wird geladen…',
   'shops.empty': 'Noch keine Shops — fügen Sie den ersten hinzu.',
+  'shops.loadError': 'Shops konnten nicht geladen werden. Bitte erneut versuchen.',
   'shops.add': 'Shop hinzufügen',
   'shops.stepOf': '{step} von {total} · {title}',
   'shops.stepPhotos': 'Bilder',
@@ -3366,13 +3366,13 @@ const es = {
   'contact.rulesLink': 'Reglas del salón',
 
   'shops.heading': 'Tiendas',
-  'shops.lead':
-    'Cada fila es una página de tienda, no una nota del foro.',
+  'shops.lead': 'Cada fila es una página de tienda, no una nota del foro.',
   'map.heading': 'Mapa',
   'map.empty': 'Aún no hay lugares.',
   'map.error': 'No se pudieron cargar los lugares. Inténtalo de nuevo.',
   'map.loading': 'Cargando…',
   'shops.empty': 'Aún no hay tiendas — añade la primera.',
+  'shops.loadError': 'No se pudieron cargar las tiendas. Inténtalo de nuevo.',
   'shops.add': 'Añadir una tienda',
   'shops.stepOf': '{step} de {total} · {title}',
   'shops.stepPhotos': 'Fotos',
@@ -4625,13 +4625,13 @@ const fil = {
   'contact.rulesLink': 'Mga patakaran sa living room',
 
   'shops.heading': 'Mga Tindahan',
-  'shops.lead':
-    'Bawat hanay ay isang pahina ng shop, hindi isang tala sa forum.',
+  'shops.lead': 'Bawat hanay ay isang pahina ng shop, hindi isang tala sa forum.',
   'map.heading': 'Mapa',
   'map.empty': 'Wala pang mga lugar.',
   'map.error': 'Hindi ma-load ang mga lugar. Subukan ulit.',
   'map.loading': 'Naglo-load…',
   'shops.empty': 'Wala pang mga shop — magdagdag ng una.',
+  'shops.loadError': 'Hindi ma-load ang mga shop. Pakisubukan muli.',
   'shops.add': 'Magdagdag ng shop',
   'shops.stepOf': '{step} sa {total} · {title}',
   'shops.stepPhotos': 'Mga larawan',

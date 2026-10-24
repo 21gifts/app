@@ -117,27 +117,56 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
 test('Function: ShopList — a listed shop links to its page', async ({ page }) => {
   const npub = `npub1${'2'.repeat(58)}`;
   await seedSignedIn(page);
-  await fulfillForumMessages(page, [
-    {
-      ...SHOP_NOTE,
-      shopNpub: npub,
-      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          shops: [
+            {
+              npub,
+              name: 'Cafe Luna',
+              place: {
+                label: 'Cafe Luna',
+                lat: 14.6,
+                lng: 120.98,
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
+            },
+          ],
+        }),
+      });
     },
-    {
-      id: 'm-quiet',
-      name: 'Ada',
-      text: 'Quiet stall\n\n#21GiftsShop',
-      createdAt: '2026-08-28T11:30:00.000Z',
-      sats: 0,
-      payable: true,
-      hasPhoto: false,
-      role: 'basis',
-    },
-  ]);
+  );
   await page.goto('/shops');
   await expect(page.getByRole('link', { name: 'Cafe Luna' })).toHaveAttribute('href', `/${npub}`);
   await expect(page.getByText('Quiet stall')).toHaveCount(0);
   await expect(page.getByText('#Shop')).toHaveCount(0);
+});
+
+test('Function: fetchListedShops — the shops page shows the directory link', async ({ page }) => {
+  await seedSignedIn(page);
+  await page.goto('/shops');
+  await expect(page.getByRole('link', { name: 'Cafe Luna' })).toHaveAttribute(
+    'href',
+    `/npub1${'2'.repeat(58)}`,
+  );
+});
+
+test('Function: proxyShopListGet — GET /shops/list returns the directory', async ({ request }) => {
+  const res = await request.get('/shops/list');
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { shops: Array<{ name: string; npub: string }> };
+  expect(body.shops[0]?.name).toBe('Cafe Luna');
+  expect(body.shops[0]?.npub).toBe(`npub1${'2'.repeat(58)}`);
 });
 
 test('Function: ShopTable — name, place, and operator', async ({ page }) => {
@@ -282,10 +311,13 @@ test('Function: ShopsPage — shops loading', async ({ page }) => {
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await held;
-    await route.abort();
-  });
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await held;
+      await route.abort();
+    },
+  );
   await page.goto('/shops');
   await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
   release();
@@ -293,16 +325,34 @@ test('Function: ShopsPage — shops loading', async ({ page }) => {
 
 test('shops empty shows the empty copy', async ({ page }) => {
   await seedSignedIn(page);
-  await fulfillForumMessages(page, [LIVING_ROOM_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ shops: [] }),
+      });
+    },
+  );
   await page.goto('/shops');
   await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
 });
 
 test('shops error shows the load failure', async ({ page }) => {
   await seedSignedIn(page);
-  await fulfillForumMessages(page, [], 503);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shops are unavailable' }),
+      });
+    },
+  );
   await page.goto('/shops');
-  await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+  await expect(page.getByText('Could not load shops. Please try again.')).toBeVisible();
 });
 
 test('menu Shops opens /shops', async ({ page }) => {
@@ -554,7 +604,13 @@ test('Function: ShopNoteEditControl — moderator sees the pencil; basis does no
 
   await seedAda(page, 'basis');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
-  await page.goto('/shops#post');
+  const noteEditHere = new URL(page.url());
+  if (noteEditHere.pathname === '/shops' && noteEditHere.hash === '#post') {
+    await page.reload();
+  } else {
+    await page.goto('/welcome');
+    await page.goto('/shops#post');
+  }
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
   ).toHaveCount(0);
@@ -755,7 +811,13 @@ test('Function: ShopPlaceControl — moderator saves; basis cannot edit', async 
   await fulfillForumMessages(page, [
     { ...STAFF_SHOP_NOTE, place: { lat: 14.6, lng: 120.98, label: 'Happyland' } },
   ]);
-  await page.goto('/shops#post');
+  const placeHere = new URL(page.url());
+  if (placeHere.pathname === '/shops' && placeHere.hash === '#post') {
+    await page.reload();
+  } else {
+    await page.goto('/welcome');
+    await page.goto('/shops#post');
+  }
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit place' }),
   ).toHaveCount(0);
