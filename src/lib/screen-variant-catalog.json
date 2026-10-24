@@ -5532,6 +5532,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:list-more",
+    "label": "/shops list-more",
+    "visual": "state-shops-list-more",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-next",
+    "label": "/shops list-next",
+    "visual": "state-shops-list-next",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-more-error",
+    "label": "/shops list-more-error",
+    "visual": "state-shops-list-more-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-more-empty",
+    "label": "/shops list-more-empty",
+    "visual": "state-shops-list-more-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-empty",
+    "label": "/shops list-empty",
+    "visual": "state-shops-list-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-loading",
+    "label": "/shops list-loading",
+    "visual": "state-shops-list-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:list-error",
+    "label": "/shops list-error",
+    "visual": "state-shops-list-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map-empty",
     "label": "/shops map-empty",
     "visual": "state-shops-map-empty",

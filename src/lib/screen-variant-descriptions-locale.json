@@ -1839,6 +1839,41 @@
     "es": "Tabla está seleccionada y falló la primera página. No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo. El redactor desapareció.",
     "fil": "Napili ang Talahanayan at nabigo ang unang pahina. Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit. Wala na ang tagasulat."
   },
+  "/shops:list-more": {
+    "de": "Liste ist ausgewählt. Eine Zeile Cafe Luna verlinkt auf die Shop-Seite, und Mehr anzeigen steht unter der Liste. Der Eingabebereich ist weg.",
+    "es": "Lista está seleccionada. Una fila Cafe Luna enlaza a la página de la tienda, y Mostrar más está bajo la lista. El cuadro de redacción desapareció.",
+    "fil": "Napili ang Listahan. Ang isang hilera na Cafe Luna ay naka-link sa pahina ng shop, at nasa ilalim ng listahan ang Magpakita pa. Wala na ang kahon ng pagsulat."
+  },
+  "/shops:list-next": {
+    "de": "Mehr anzeigen hat die nächste Seite geladen. Cafe Luna bleibt, Anderer Stand wird hinzugefügt, und Mehr anzeigen ist weg.",
+    "es": "Mostrar más ha cargado la página siguiente. Cafe Luna se queda, se añade Otro puesto, y Mostrar más desapareció.",
+    "fil": "Naikarga ng Magpakita pa ang susunod na pahina. Nanatili ang Cafe Luna, idinagdag ang Ibang puwesto, at wala na ang Magpakita pa."
+  },
+  "/shops:list-more-error": {
+    "de": "Die nächste Seite ist fehlgeschlagen. Cafe Luna bleibt. Shops konnten nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen stehen unter der Liste, und Mehr anzeigen ist weiterhin da.",
+    "es": "Falló la página siguiente. Cafe Luna se queda. No se pudieron cargar las tiendas. Inténtalo de nuevo. e Intentar de nuevo están bajo la lista, y Mostrar más sigue ahí.",
+    "fil": "Nabigo ang susunod na pahina. Nanatili ang Cafe Luna. Nasa ilalim ng listahan ang Hindi ma-load ang mga shop. Pakisubukan muli. at Subukan ulit, at nandiyan pa rin ang Magpakita pa."
+  },
+  "/shops:list-more-empty": {
+    "de": "Die Liste ist ausgewählt. Die Seite hat keine Shop-Zeilen, aber eine andere Seite existiert. Mehr anzeigen wird angezeigt. Der Leersatz nicht.",
+    "es": "La lista está seleccionada. La página no tiene filas de tienda, pero existe otra página. Mostrar más se muestra. La oración vacía no.",
+    "fil": "Napili ang listahan. Walang hanay ng shop ang pahina, pero may ibang pahina. Ipinapakita ang Magpakita pa. Ang pangungusap na walang laman ay hindi."
+  },
+  "/shops:list-empty": {
+    "de": "Liste ist ausgewählt und es gibt keine Shops. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Eingabebereich ist weg.",
+    "es": "Lista está seleccionada y no hay tiendas. Texto vacío Aún no hay tiendas — añade la primera. El cuadro de redacción desapareció.",
+    "fil": "Napili ang Listahan at walang mga shop. Walang laman na teksto Wala pang mga shop — magdagdag ng una. Wala na ang kahon ng pagsulat."
+  },
+  "/shops:list-loading": {
+    "de": "Liste ist ausgewählt und die Seite ist noch nicht angekommen. Wird geladen… Der Eingabebereich ist weg.",
+    "es": "Lista está seleccionada y la página aún no ha llegado. Cargando… El recuadro de redacción ha desaparecido.",
+    "fil": "Napili ang Listahan at hindi pa dumating ang pahina. Naglo-load… Wala na ang kahon ng pagsulat."
+  },
+  "/shops:list-error": {
+    "de": "Liste ist ausgewählt und die erste Seite ist fehlgeschlagen. Shops konnten nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen. Der Eingabebereich ist weg.",
+    "es": "Lista está seleccionada y falló la primera página. No se pudieron cargar las tiendas. Inténtalo de nuevo. e Intentar de nuevo. El cuadro de redacción desapareció.",
+    "fil": "Napili ang Listahan at nabigo ang unang pahina. Hindi ma-load ang mga shop. Pakisubukan muli. at Subukan ulit. Wala na ang kahon ng pagsulat."
+  },
   "/grants:funding-apply": {
     "de": "Verifizierter Benutzername joey-rosima mit Status none oder rejected sieht Für 21 Förderprogramm bewerben statt des pausierten Satzes.",
     "es": "El nombre de usuario verificado joey-rosima con estado none o rejected ve Solicitar la beca 21 gifts en lugar de la frase en pausa.",
@@ -1970,9 +2005,9 @@
     "fil": "Hiling hakbang 4 sa 4 pagkatapos itakda ang halaga sa USD. Ipinapakita ng preview ang $1.00 · ₿1'000, hindi bitcoin muna. Ang I-post ang tanging pagsusumite."
   },
   "/shops:sunday": {
-    "de": "Geräte-lokaler Sonntag. Die Pille Post / Karte / Tabelle bleibt. Shop hinzufügen ist weg. Am Sonntag ist das Schreiben pausiert. Die Notiz Cafe Luna bleibt.",
-    "es": "Domingo según la hora del dispositivo. La pastilla Publicación / Mapa / Tabla se queda. Añadir una tienda desaparece. El domingo no se puede escribir. La nota Cafe Luna se queda.",
-    "fil": "Linggo ayon sa oras ng device. Nanatili ang pill na Post / Mapa / Talahanayan. Wala na ang Magdagdag ng shop. Linggo, hindi puwedeng magsulat. Nanatili ang tala Cafe Luna."
+    "de": "Geräte-lokaler Sonntag. Die Pille Liste / Karte / Tabelle / Post bleibt. Shop hinzufügen ist weg. Am Sonntag ist das Schreiben pausiert. Die Notiz Cafe Luna bleibt.",
+    "es": "Domingo según la hora del dispositivo. La pastilla Lista / Mapa / Tabla / Publicación se queda. Añadir una tienda desaparece. El domingo no se puede escribir. La nota Cafe Luna se queda.",
+    "fil": "Linggo ayon sa oras ng device. Nanatili ang pill na Listahan / Mapa / Talahanayan / Post. Wala na ang Magdagdag ng shop. Linggo, hindi puwedeng magsulat. Nanatili ang tala Cafe Luna."
   },
   "/members/[accountId]:posts-open-donation-tag-open": {
     "de": "Derselbe Beitrag wie bei posts-open-goal-110, nachdem Spende gedrückt wurde. Eine Zeile unter dem Namen sagt, dass eine Spende ein Geschenk ist und nicht zurückgezahlt wird.",
@@ -3270,9 +3305,9 @@
     "fil": "Ang bukas na kaha: ang storefront ng sticker ng tindahan sa itaas ng pangalan, pagkatapos ang natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at Magbayad. Sa malawak na screen ay ipinapakita rin ang QR ng invoice ng Bitcoin. Hindi sa smartphone. Walang glyph ng regalo at walang field ng halaga."
   },
   "/shops:default": {
-    "de": "Überschrift Shops, Einleitung, die Pille Post / Karte / Tabelle mit ausgewähltem Post, Shop hinzufügen (kein Wohnzimmer-Eingabefeld), eine Ladennotiz Cafe Luna mit einer #Shop-Pille. Ein Laden mit null Sats würde trotzdem gelistet. Hinweis zu Gesetzen fehlt. Rohes #21GiftsShop ist nicht sichtbar.",
-    "es": "Encabezado Tiendas, entradilla, la pastilla Publicación / Mapa / Tabla con Publicación seleccionada, Añadir una tienda (sin cuadro de redacción de salón), una nota de tienda Cafe Luna con una pastilla #Shop. Una tienda con cero sats seguiría listada. No hay pista de leyes. El #21GiftsShop en bruto no está visible.",
-    "fil": "Heading na Mga Tindahan, panimula, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng shop (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Shop. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
+    "de": "Überschrift Shops. Jede Zeile ist eine Shop-Seite, keine Foren-Notiz. Die Pille Liste / Karte / Tabelle / Post mit ausgewählter Liste. Eine Zeile Cafe Luna verlinkt auf die Shop-Seite. Shop hinzufügen fehlt. Es gibt keine #Shop-Pille und kein rohes #21GiftsShop. Hinweis zu Gesetzen fehlt.",
+    "es": "Encabezado Tiendas. Cada fila es una página de tienda, no una nota del foro. La pastilla Lista / Mapa / Tabla / Publicación con Lista seleccionada. Una fila Cafe Luna enlaza a la página de la tienda. Añadir una tienda no está. No hay pastilla #Shop ni #21GiftsShop en bruto. No hay pista de leyes.",
+    "fil": "Heading na Mga Tindahan. Bawat hilera ay pahina ng shop, hindi tala sa forum. Ang pill na Listahan / Mapa / Talahanayan / Post na napili ang Listahan. Isang hilera na Cafe Luna ang naka-link sa pahina ng shop. Wala ang Magdagdag ng shop. Walang pill na #Shop at walang hilaw na #21GiftsShop. Walang pahiwatig sa mga batas."
   },
   "/shops:edit-open": {
     "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",

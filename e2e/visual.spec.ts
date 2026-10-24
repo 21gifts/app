@@ -21174,6 +21174,187 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'screen-shops');
   });
 
+  const shopListLuna = {
+    npub: `npub1${'2'.repeat(58)}`,
+    name: 'Cafe Luna',
+    place: {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Cafe Luna',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    },
+  };
+
+  const shopListStall = {
+    npub: `npub1${'3'.repeat(58)}`,
+    name: 'Other stall',
+    place: {
+      lat: 14.61,
+      lng: 120.99,
+      label: 'Other stall',
+      address: {
+        street: 'Markt',
+        houseNumber: '1',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    },
+  };
+
+  test('shops list more', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ shops: [shopListLuna], nextCursor: 'c2' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByRole('link', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-list-more');
+  });
+
+  test('shops list next', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        const cursor = new URL(route.request().url()).searchParams.get('cursor');
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(
+            cursor === 'c2'
+              ? { shops: [shopListStall] }
+              : { shops: [shopListLuna], nextCursor: 'c2' },
+          ),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByRole('link', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Other stall' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-list-next');
+  });
+
+  test('shops list more error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        const cursor = new URL(route.request().url()).searchParams.get('cursor');
+        if (cursor === 'c2') {
+          await route.fulfill({
+            status: 503,
+            contentType: 'application/json',
+            body: '{"error":"Unavailable"}',
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ shops: [shopListLuna], nextCursor: 'c2' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByRole('link', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByText('Could not load shops. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-list-more-error');
+  });
+
+  test('shops list more empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ shops: [], nextCursor: 'c2' }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await expect(page.getByText('No shops yet — add the first one.')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-list-more-empty');
+  });
+
+  test('shops list empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ shops: [] }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a shop' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-list-empty');
+  });
+
+  test('shops list loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await held;
+        await route.abort();
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-shops-list-loading');
+    release();
+  });
+
+  test('shops list error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByText('Could not load shops. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-shops-list-error');
+  });
+
   test('state /shops mention-suggest', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page);

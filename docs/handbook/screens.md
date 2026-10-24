@@ -2987,6 +2987,48 @@ The next page failed. **Cafe Luna** stays. The forum error and **Try again** sit
 
 ![21.gifts shops table error](images/shops-table-error.png)
 
+### Variant: list-more
+
+**List** is selected. One row **Cafe Luna** links to the shop page, and **Show more** is under the list. There is no composer.
+
+![21.gifts shops list more](images/shops-list-more.png)
+
+### Variant: list-next
+
+**Show more** has loaded the next page. **Cafe Luna** stays, **Other stall** is added, and **Show more** is gone.
+
+![21.gifts shops list next](images/shops-list-next.png)
+
+### Variant: list-more-error
+
+The next page failed. **Cafe Luna** stays. **Could not load shops. Please try again.** and **Try again** sit under the list, and **Show more** is still there.
+
+![21.gifts shops list more error](images/shops-list-more-error.png)
+
+### Variant: list-more-empty
+
+**List** is selected. The page has no shop rows, but another page exists. **Show more** is shown. The empty sentence is not.
+
+![21.gifts shops list more empty](images/shops-list-more-empty.png)
+
+### Variant: list-empty
+
+**List** is selected and there are no shops. Empty copy **No shops yet — add the first one.** The composer is absent.
+
+![21.gifts shops list empty](images/shops-list-empty.png)
+
+### Variant: list-loading
+
+**List** is selected and the page has not arrived. **Loading…** The composer is absent.
+
+![21.gifts shops list loading](images/shops-list-loading.png)
+
+### Variant: list-error
+
+**List** is selected and the first page failed. **Could not load shops. Please try again.** and **Try again**. The composer is absent.
+
+![21.gifts shops list error](images/shops-list-error.png)
+
 ### Variant: map-empty
 
 **Map** is selected and there are no places. **No places yet.** No second **Map** heading. The composer is gone.
