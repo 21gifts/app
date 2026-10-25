@@ -4,7 +4,6 @@ import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import type { ForumMessage } from '@/lib/api-types';
 import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import {
-  DEFAULT_OG_ALT,
   loadPublicMessageForOg,
   ogDescriptionText,
   publicMessageOgMetadata,
@@ -46,10 +45,6 @@ function stubFetch(response: Response): Mock {
 }
 
 describe('ogDescriptionText', () => {
-  it('exports the default preview alt text', () => {
-    expect(DEFAULT_OG_ALT).toBe('21.gifts — peer-to-peer Bitcoin gifts');
-  });
-
   it('trims text, falls back to the name, and cuts above 300 code units', () => {
     expect(ogDescriptionText('  Coffee  ', 'Cafe Luna')).toBe('Coffee');
     expect(ogDescriptionText(' \n ', 'Cafe Luna')).toBe('Cafe Luna on 21.gifts');

@@ -6,7 +6,8 @@ import { ShopScreen } from '@/app/[npub]/ShopScreen';
 import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import { SHOP_NPUB_RE, shopResponseSchema, type Shop } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
-import { DEFAULT_OG_ALT, ogDescriptionText } from '@/lib/public-message-og';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { ogDescriptionText } from '@/lib/public-message-og';
 import { resolveShopPhotoUrl } from '@/lib/shop-photo-url';
 
 const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/;
@@ -114,7 +115,7 @@ export async function generateMetadata({
     url: '/og.png',
     width: 1200,
     height: 630,
-    alt: DEFAULT_OG_ALT,
+    alt: OG_IMAGE_ALT,
   };
   const photoImage =
     firstPhoto === undefined

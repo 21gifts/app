@@ -8,9 +8,6 @@ import { shortResourceUrl } from '@/lib/short-link';
 /** Same regex as PublicMessageLoader. Not exported (keep Function count down). */
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Alt text of the default `/og.png` preview image, kept for shop metadata. */
-export const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
-
 const EXTERNAL_OG_TITLE = 'External author on 21.gifts';
 const EXTERNAL_OG_DESCRIPTION = 'A reply from someone outside 21.gifts who sent bitcoin to a post.';
 const DESCRIPTION_MAX = 300;
