@@ -632,6 +632,13 @@
 - **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, from `ShopAccountControl`, and from `DailyPaymentAmountsScreen` for the Person field on `/grants/payments/amounts`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/accounts/by-username/[username]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/accounts/by-username/:username`. Exact account lookup by username. The stored spelling is returned; the client does not compare the name again.
+- **Errors:** Upstream 401/400/404/409, or 502 if the api is unreachable.
+- **Used by:** `lookupAccountByUsername` from `ShopAddWizard`, `ShopAccountControl`, and `ForumLoader`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/notifications
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, moderator appointment, and moderator proposal for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.

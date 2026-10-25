@@ -108,7 +108,7 @@ test('language switching updates the preview, navigation, and footer in every la
   ]) {
     const option = page.getByRole('option', { name: choice.option });
     await expect(async () => {
-      if (!(await option.isVisible())) await page.getByRole('combobox').click();
+      if (!(await option.isVisible())) await page.getByRole('banner').getByRole('combobox').click();
       await expect(option).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 10000 });
     await option.click();

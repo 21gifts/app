@@ -78,10 +78,9 @@ import {
   shopProblemField,
   shopUsernameProblem,
   stripShopHashtag,
-  usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
-import { searchMentionAccounts } from '@/lib/mention-search';
+import { lookupAccountByUsername } from '@/lib/mention-search';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -1985,15 +1984,15 @@ export function ForumLoader({
       const handle = composeShopUsername(feed, shopUsername);
       if (handle !== null) {
         try {
-          const matches = await searchMentionAccounts(session, handle.toLowerCase());
-          if (usernameLookupVerdict(matches, handle) === 'missing') {
+          const verdict = await lookupAccountByUsername(session, handle);
+          if (verdict === 'missing') {
             setFormError('usernameMissing');
             notePostInFlightRef.current = false;
             setPosting(false);
             return;
           }
         } catch {
-          // A failed optional lookup is inconclusive; the posting API validates it.
+          // A failed optional lookup does not block; the posting API validates it.
         }
       }
     }

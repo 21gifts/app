@@ -8729,6 +8729,103 @@ test('Function: setLocation — signed-in form saves a location', async ({ page,
   await expect(page.getByText('Zug')).toBeVisible();
 });
 
+test('Function: usernameProblem — login name shows the rule while typing', async ({ page }) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+  const name = page.getByRole('textbox', { name: 'Name' });
+  const continueButton = page.getByRole('button', { name: 'Continue' });
+  await expect(continueButton).toBeEnabled();
+  await expect(name).not.toHaveAttribute('aria-invalid', 'true');
+  await name.fill('_');
+  await expect(
+    page.getByText(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    ),
+  ).toBeVisible();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(continueButton).toBeDisabled();
+});
+
+test('Function: displayNameProblem — setup name shows length under the field', async ({
+  page,
+  request,
+}) => {
+  await signInUnnamed(page, request);
+  const name = page.getByRole('textbox', { name: 'Name' });
+  const continueButton = page.getByRole('button', { name: 'Continue' });
+  await expect(continueButton).toBeEnabled();
+  await name.fill('a'.repeat(81));
+  await expect(page.getByText('Name must be 1–80 characters.')).toBeVisible();
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(continueButton).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeEnabled();
+});
+
+test('Function: locationProblem — profile location shows length under the field', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Edit location' }).click();
+  const location = page.getByRole('textbox', { name: 'Location' });
+  const save = page.getByRole('button', { name: 'Save' });
+  await expect(save).toBeEnabled();
+  await location.fill('a'.repeat(81));
+  await expect(page.getByText('Location must be at most 80 characters.')).toBeVisible();
+  await expect(location).toHaveAttribute('aria-invalid', 'true');
+  await expect(save).toBeDisabled();
+});
+
+test('Function: lightningAddressProblem — profile address shows format under the field', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const section = page.getByText('Wallet of Satoshi address', { exact: true }).locator('..');
+  await section.getByRole('button', { name: 'Edit' }).click();
+  const address = page.getByRole('textbox', { name: 'Wallet of Satoshi address' });
+  const save = section.getByRole('button', { name: 'Save' });
+  await expect(save).toBeEnabled();
+  await address.fill('bad@example');
+  await expect(
+    page.getByText('Use an address like name@domain.tld, at most 255 characters.'),
+  ).toBeVisible();
+  await expect(address).toHaveAttribute('aria-invalid', 'true');
+  await expect(save).toBeDisabled();
+});
+
+test('Function: aboutMeTextProblem — profile About me shows controls under the field', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  await page.getByRole('button', { name: 'Write your About me' }).click();
+  const text = page.getByRole('textbox', { name: 'About me' });
+  const save = page.getByRole('button', { name: 'Save About me' });
+  await expect(save).toBeEnabled();
+  await text.evaluate((node) => {
+    const field = node as HTMLTextAreaElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    if (setter === undefined) {
+      throw new Error('Textarea value setter is unavailable');
+    }
+    setter.call(field, 'Hello\u0001');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(
+    page.getByText('About me cannot include control characters other than line breaks.'),
+  ).toBeVisible();
+  await expect(text).toHaveAttribute('aria-invalid', 'true');
+  await expect(save).toBeDisabled();
+});
+
 test('Function: PosPage — till heading is visible', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/pos\/charge$/, async (route) => {
@@ -12998,6 +13095,13 @@ test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 
   request,
 }) => {
   expect((await request.get('/forum/mentions')).status()).toBe(401);
+});
+
+test('Function: proxyForumAccountByUsernameGet — GET /forum/accounts/by-username/ada without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/accounts/by-username/[username]')).status()).toBe(401);
+  expect((await request.get('/forum/accounts/by-username/ada')).status()).toBe(401);
 });
 
 test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {

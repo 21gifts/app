@@ -20,11 +20,10 @@ import {
   shopPlaceComplete,
   shopProblemField,
   shopUsernameProblem,
-  usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
-import { searchMentionAccounts } from '@/lib/mention-search';
+import { lookupAccountByUsername } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** One step of the shop submission, after the closed button. */
@@ -58,8 +57,25 @@ export interface ShopKeptMedia {
 
 /** Props for the guided shop composer. */
 export interface ShopAddWizardProps {
-  /** True while the note is being sent. */
+  /** True while the note is being sent or a photo is still being prepared. */
   posting: boolean;
+  /**
+   * Sentence above the buttons while `posting` is true.
+   * Omitted when nothing is in flight.
+   */
+  busyLabel?: string;
+  /**
+   * Locks Cancel when true.
+   * Omitted means Cancel uses `posting`. Photo preparation leaves this false
+   * so Cancel can discard a pick that has not finished.
+   */
+  cancelDisabled?: boolean;
+  /**
+   * When true, Next and the chrome Back stay usable while `posting` is true.
+   * Fields and Save stay locked. The edit screen sets this while a photo is
+   * still being prepared, so the reason stays on screen and Save stays off.
+   */
+  allowStepsWhilePosting?: boolean;
   /** Visible shop text. The shop tag is added on send. */
   draft: string;
   /** Replace the visible shop text. */
@@ -146,6 +162,9 @@ function photoErrorKey(
  */
 export function ShopAddWizard({
   posting,
+  busyLabel,
+  cancelDisabled,
+  allowStepsWhilePosting = false,
   draft,
   onDraftChange,
   photoDrafts,
@@ -193,7 +212,7 @@ export function ShopAddWizard({
   const rejectionFocusStep = useRef<1 | 3 | 4 | null>(null);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
-    'idle' | 'checking' | 'found' | 'missing' | 'unknown' | 'failed'
+    'idle' | 'checking' | 'found' | 'missing' | 'failed'
   >('idle');
 
   useEffect(() => {
@@ -279,10 +298,10 @@ export function ShopAddWizard({
     let cancelled = false;
     setUsernameLookup('checking');
     const timer = window.setTimeout(() => {
-      void searchMentionAccounts(session, normalizedUsername)
-        .then((rows) => {
+      void lookupAccountByUsername(session, normalizedUsername)
+        .then((verdict) => {
           if (!cancelled) {
-            setUsernameLookup(usernameLookupVerdict(rows, normalizedUsername));
+            setUsernameLookup(verdict);
           }
         })
         .catch(() => {
@@ -304,7 +323,7 @@ export function ShopAddWizard({
     }
     setOverride({
       labelKey: 'shops.back',
-      disabled: posting,
+      disabled: posting && !allowStepsWhilePosting,
       onClick: (): void => {
         setSummaryArmed(false);
         setStep((current) => retreatShopStep(current));
@@ -313,7 +332,7 @@ export function ShopAddWizard({
     return (): void => {
       setOverride(null);
     };
-  }, [posting, setOverride, step]);
+  }, [allowStepsWhilePosting, posting, setOverride, step]);
 
   if (step === 'closed') {
     return (
@@ -349,8 +368,9 @@ export function ShopAddWizard({
   const isRejected = (item: object): boolean => rejectedMedia.includes(item);
   const photoRejected =
     (videoDraft !== null && isRejected(videoDraft)) || photoDrafts.some(isRejected);
+  const stepsLocked = posting && !allowStepsWhilePosting;
   const nextDisabled =
-    posting ||
+    stepsLocked ||
     (step === 1 && photoRejected) ||
     (step === 2 && (!placeComplete || placeServerProblem)) ||
     (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
@@ -678,13 +698,16 @@ export function ShopAddWizard({
         </dl>
       ) : null}
       {summaryProblem === null ? null : <p className="text-sm text-app-danger">{summaryProblem}</p>}
+      {posting && typeof busyLabel === 'string' && busyLabel !== '' ? (
+        <p className="text-sm text-app-muted">{busyLabel}</p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {step === 1 && cancelEdit !== undefined ? (
           <IconButton
             type="button"
             variant="secondary"
             size="md"
-            disabled={posting}
+            disabled={cancelDisabled !== undefined ? cancelDisabled : posting}
             aria-label={t('shops.cancel')}
             title={t('shops.cancel')}
             onClick={cancelEdit}

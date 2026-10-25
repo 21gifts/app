@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -94,6 +94,17 @@ function stubShopMaps(): Map<string, (event?: unknown) => void> {
   return listeners;
 }
 
+async function editTextAndSave(nextText: string): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+    target: { value: nextText },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+}
+
 function fillShopAddressFields(name = "Kiki's Bakery"): void {
   fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: name } });
   fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
@@ -118,6 +129,7 @@ vi.mock('@/lib/forum-photo', () => ({
 
 vi.mock('@/lib/mention-search', () => ({
   searchMentionAccounts: vi.fn(),
+  lookupAccountByUsername: vi.fn(async () => 'found'),
 }));
 
 const account: Account = {
@@ -1410,6 +1422,9 @@ describe('ShopNoteEditControl', () => {
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Could not save this shop note',
     );
+    expect(await screen.findByText('No edits yet')).toBeTruthy();
+    expect(screen.queryByText('Loading the history.')).toBeNull();
+    expect(fetchShopNoteEdits).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
@@ -1728,6 +1743,26 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows an empty shop name when the stored pin omits its label', async () => {
+    signIn();
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pin = {
+      lat: COMPLETE_PLACE.lat,
+      lng: COMPLETE_PLACE.lng,
+      address: COMPLETE_PLACE.address,
+    };
+    renderEdit(
+      <ShopNoteEditControl message={{ ...shopMessage, place: pin }} onUpdated={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', '');
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('saves a pin that differs only by a pipe split in street and house number', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1944,6 +1979,64 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('writes the place first when a parent rename makes the new text invalid', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const openedName = 'Abcde';
+    const currentName = 'N'.repeat(25);
+    const openedText = 'T'.repeat(30);
+    const newName = 'Solar';
+    const newText = 'D'.repeat(22);
+    const openedPlace = { ...COMPLETE_PLACE, label: openedName };
+    const currentPlace = { ...COMPLETE_PLACE, label: currentName };
+    const newPlace = { ...COMPLETE_PLACE, label: newName };
+    const opened: ForumMessage = {
+      ...shopMessage,
+      text: `${openedText}\n\n#21GiftsShop`,
+      place: openedPlace,
+    };
+    const current: ForumMessage = { ...opened, place: currentPlace };
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...current, place: newPlace });
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...current,
+      place: newPlace,
+      text: `${newText}\n\n#21GiftsShop`,
+    });
+    stubShopMaps();
+    const { rerender } = renderEdit(<ShopNoteEditControl message={opened} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    rerender(
+      <ChromeBackProvider>
+        <ProfileChromeLeft />
+        <ShopNoteEditControl message={current} onUpdated={vi.fn()} />
+      </ChromeBackProvider>,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', openedName);
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: newName } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: newText },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const placeOrder = vi.mocked(setMessagePlace).mock.invocationCallOrder[0];
+    const textOrder = vi.mocked(setMessageShopText).mock.invocationCallOrder[0];
+    expect(Number(placeOrder)).toBeLessThan(Number(textOrder));
+    expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', newPlace);
+    expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', newText);
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('writes text before place when the new text is valid against the stored name', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -2090,5 +2183,275 @@ describe('ShopNoteEditControl', () => {
     expect(Number(textOrder)).toBeLessThan(Number(placeOrder));
     delete (window as { google?: unknown }).google;
     vi.unstubAllGlobals();
+  });
+
+  it('does not write a place the parent changed after the editor opened', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    });
+    const { rerender } = renderEdit(
+      <ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    rerender(
+      <ChromeBackProvider>
+        <ProfileChromeLeft />
+        <ShopNoteEditControl
+          message={{ ...shopMessage, place: { ...COMPLETE_PLACE, label: 'Parent Bakery' } }}
+          onUpdated={vi.fn()}
+        />
+      </ChromeBackProvider>,
+    );
+    await editTextAndSave('Cafe Sol is open every morning.');
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalledWith(
+        'token',
+        'shop1',
+        'Cafe Sol is open every morning.',
+      );
+    });
+    expect(setMessagePlace).not.toHaveBeenCalled();
+  });
+
+  it('does not write an account the parent changed after the editor opened', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    });
+    const opened: ForumMessage = {
+      ...shopMessage,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    };
+    const { rerender } = renderEdit(<ShopNoteEditControl message={opened} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    rerender(
+      <ChromeBackProvider>
+        <ProfileChromeLeft />
+        <ShopNoteEditControl
+          message={{
+            ...opened,
+            shopAccount: { id: 'acc-other', username: 'other', name: 'Other' },
+          }}
+          onUpdated={vi.fn()}
+        />
+      </ChromeBackProvider>,
+    );
+    await editTextAndSave('Cafe Sol is open every morning.');
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalledWith(
+        'token',
+        'shop1',
+        'Cafe Sol is open every morning.',
+      );
+    });
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('writes the place the editor changed even when the parent place also changed', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...shopMessage,
+      place: { ...COMPLETE_PLACE, label: 'User Bakery' },
+    });
+    stubShopMaps();
+    const { rerender } = renderEdit(
+      <ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', "Kiki's Bakery");
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: 'User Bakery' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    rerender(
+      <ChromeBackProvider>
+        <ProfileChromeLeft />
+        <ShopNoteEditControl
+          message={{ ...shopMessage, place: { ...COMPLETE_PLACE, label: 'Parent Bakery' } }}
+          onUpdated={vi.fn()}
+        />
+      </ChromeBackProvider>,
+    );
+    for (let step = 0; step < 4; step += 1) {
+      if (screen.queryByRole('button', { name: 'Save changes' }) !== null) {
+        break;
+      }
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+    });
+    expect(setMessagePlace).toHaveBeenCalledWith(
+      'token',
+      'shop1',
+      expect.objectContaining({ label: 'User Bakery' }),
+    );
+    const savedPlace = vi.mocked(setMessagePlace).mock.calls[0]?.[2] as { label?: string };
+    expect(savedPlace.label).not.toBe('Parent Bakery');
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
+  it('drops a photo that finishes after cancel', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let resolvePhoto: (value: {
+      ok: true;
+      photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+    }) => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByText('Wait until this photo is ready.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    });
+    await act(async () => {
+      resolvePhoto({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'late',
+          previewUrl: 'data:image/jpeg;base64,late',
+        },
+      });
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Selected photo' })).toBeNull();
+  });
+
+  it('drops a photo that fails after cancel', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let rejectPhoto: (error: Error) => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPhoto = reject;
+        }),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByText('Wait until this photo is ready.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => {
+      expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    });
+    await act(async () => {
+      rejectPhoto(new Error('decode failed'));
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Selected photo' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('keeps save locked until the picked photo is ready', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let resolvePhoto: (value: {
+      ok: true;
+      photo: { contentType: 'image/jpeg'; data: string; previewUrl: string };
+    }) => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePhoto = resolve;
+        }),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByText('Wait until this photo is ready.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    for (let step = 0; step < 4; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    }
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
+    expect(screen.getByText('Wait until this photo is ready.')).toBeTruthy();
+    const save = screen.getByRole('button', { name: 'Save changes' });
+    expect(save).toHaveProperty('disabled', true);
+    expect(screen.queryByRole('alert')).toBeNull();
+    const form = save.closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    expect(setMessageShopText).not.toHaveBeenCalled();
+    expect(setMessagePlace).not.toHaveBeenCalled();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+    await act(async () => {
+      resolvePhoto({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,ready',
+        },
+      });
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Save changes' })).toHaveProperty(
+        'disabled',
+        false,
+      );
+    });
+    expect(screen.queryByText('Wait until this photo is ready.')).toBeNull();
+    for (let step = 0; step < 4; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    }
+    expect(screen.getByRole('img', { name: 'Selected photo' }).getAttribute('src')).toBe(
+      'data:image/jpeg;base64,ready',
+    );
+  });
+
+  it('shows a loading sentence until the history arrives', async () => {
+    signIn();
+    let resolveHistory: (rows: []) => void = () => undefined;
+    vi.mocked(fetchShopNoteEdits).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveHistory = resolve;
+        }),
+    );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const loading = await screen.findByText('Loading the history.');
+    expect(loading.getAttribute('role')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    resolveHistory([]);
+    expect(await screen.findByText('No edits yet')).toBeTruthy();
+    expect(screen.queryByText('Loading the history.')).toBeNull();
   });
 });

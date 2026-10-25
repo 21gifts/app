@@ -2109,11 +2109,6 @@
     "es": "Sesión iniciada con un nombre para mostrar (o un nombre omitido) y sin nombre de usuario. Tu nombre en 21.gifts, el campo username y Continuar. Un Menú arriba a la derecha.",
     "fil": "Naka-sign in na may pangalang ipinapakita (o isang nilaktawang pangalan) at walang username. Ang 21.gifts name mo, ang patlang na username, at Magpatuloy. Isang Menu sa kanan sa itaas."
   },
-  "/setup/username:invalid": {
-    "de": "Nach einem ungültigen Benutzernamen und Weiter siehst du den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer.",
-    "es": "Tras un nombre de usuario no válido y Continuar, se ve De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número.",
-    "fil": "Pagkatapos ng hindi wastong username at Magpatuloy, nakikita ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero."
-  },
   "/welcome:daily-payout-stopped-apply": {
     "de": "Benutzername joey-rosima, beliebige Rolle, sieht den Link Bewerben unter Tägliche Auszahlung gestoppt, nicht den Pausensatz. Dieser Link ist nicht der Bewerbungsablauf.",
     "es": "El nombre de usuario joey-rosima, de cualquier rol, ve el enlace Solicitar bajo Pago diario detenido, no la frase de pausa. Ese enlace no es el recorrido de solicitud.",
@@ -2298,6 +2293,91 @@
     "de": "Auf dem iPhone öffnest du über App installieren in der Hero-Platzierung den Dialog 21.gifts auf den Home-Bildschirm.",
     "es": "En el iPhone, el botón Instalar app del héroe abre el diálogo Añadir 21.gifts a la pantalla de inicio.",
     "fil": "Sa iPhone, binubuksan ng pindutang I-install ang app sa hero ang diyalogong Idagdag ang 21.gifts sa Home Screen."
+  },
+  "/:shops-table": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Tabelle listet nur Läden, deren Tech-Anbieter genau 21.gifts ist, und zeigt Name, Ort, Land, Shop, Tech-Anbieter und Aktivität.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La tabla lista solo tiendas cuyo proveedor técnico es exactamente 21.gifts y muestra Nombre, Lugar, País, Tienda, Proveedor técnico y Actividad.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts at nagpapakita ng Pangalan, Lugar, Bansa, Tindahan, Tech provider, at Aktibidad."
+  },
+  "/:shops-blockchain": {
+    "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "El bloque de tiendas bajo el héroe tiene abierta la lista Blockchain. La opción de cuadro de lista Bitcoin es visible. País, Nombre, Blockchain, Activo y Actividad siguen en ese orden, y Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay bukas ang listahan ng Blockchain. Nakikita ang opsyon sa listbox na Bitcoin. Nananatili ang Bansa, Pangalan, Blockchain, Asset, at Aktibidad sa ganitong ayos, at napili pa rin ang Mapa. Nakamaskara ang mapa."
+  },
+  "/:shops-asset": {
+    "de": "Bitcoin ist bereits gewählt. Die Asset-Liste ist geöffnet und die Listbox-Option BTC ist sichtbar. Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "Bitcoin ya está elegido. La lista Activo está abierta y la opción de cuadro de lista BTC es visible. Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Napili na ang Bitcoin. Bukas ang listahan ng Asset at nakikita ang opsyon sa listbox na BTC. Napili pa rin ang Mapa. Nakamaskara ang mapa."
+  },
+  "/:shops-activity": {
+    "de": "Die Aktivitätsliste ist geöffnet und die Listbox-Option Täglich ist sichtbar. Karte bleibt gewählt. Aktivität wird nicht in der Places-Abfrage gesendet. Die Karte ist maskiert.",
+    "es": "La lista Actividad está abierta y la opción de cuadro de lista Diario es visible. Mapa sigue elegido. Actividad no se envía en la consulta de lugares. El mapa está enmascarado.",
+    "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar. Nakamaskara ang mapa."
+  },
+  "/:shops-country-selected": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Der Wert der Auswahl Land ist PH.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El valor del select País es PH.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang value ng select na Bansa ay PH."
+  },
+  "/:shops-name-selected": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Der Wert der Auswahl Name ist SPAR.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El valor del select Nombre es SPAR.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang value ng select na Pangalan ay SPAR."
+  },
+  "/:shops-blockchain-selected": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Blockchain-Combobox ist geschlossen und ihr Text enthält Bitcoin. Die Listbox ist nicht offen.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El cuadro combinado Blockchain está cerrado y su texto incluye Bitcoin. El cuadro de lista no está abierto.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Sarado ang combobox na Blockchain at kasama sa teksto nito ang Bitcoin. Hindi bukas ang listbox."
+  },
+  "/:shops-asset-selected": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Blockchain Bitcoin ist gewählt. Die Asset-Liste ist geschlossen und der Text der Asset-Combobox enthält BTC.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. Blockchain Bitcoin está elegido. La lista Activo está cerrada y el texto del cuadro combinado Activo incluye BTC.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Napili ang Blockchain na Bitcoin. Sarado ang listahan ng Asset at kasama sa teksto ng combobox na Asset ang BTC."
+  },
+  "/:shops-activity-selected": {
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Aktivitätsliste ist geschlossen und ihr Text enthält Täglich. Aktivität wird nicht in der Places-Abfrage gesendet.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La lista Actividad está cerrada y su texto incluye Diario. Actividad no se envía en la consulta de lugares.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Sarado ang listahan ng Aktibidad at kasama sa teksto nito ang Araw-araw. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
+  },
+  "/:shops-marker": {
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind maskiert.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están enmascaradas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakamaskara ang mga tile ng mapa."
+  },
+  "/:shops-attribution": {
+    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln und der Shop-Pin sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa y el pin de la tienda están ocultos.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa at ang pin ng shop."
+  },
+  "/:shops-help": {
+    "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist geöffnet und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
+    "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto y muestra Al menos 5 días con un pago en los últimos 7 días.",
+    "fil": "Napili ang Talaan. Bukas ang pindutang Kahulugan ng mga salita ng aktibidad at ipinapakita ang May bayad sa hindi bababa sa 5 araw sa loob ng huling 7 araw."
+  },
+  "/:shops-error": {
+    "de": "Die Filter-Antwort hat den Status 500. Karte bleibt gewählt. Der Hinweis lautet Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. Erneut versuchen ist sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Die Karte ist maskiert.",
+    "es": "La respuesta de filtros tiene el estado 500. Mapa sigue elegido. La alerta dice No se pudieron cargar los lugares. Inténtalo de nuevo. Intentar de nuevo está visible. Aún no hay locales publicados. no está visible. El mapa está enmascarado.",
+    "fil": "Ang sagot ng filter ay status 500. Napili pa rin ang Mapa. Ang alerto ay Hindi ma-load ang mga lugar. Subukan ulit. Nakikita ang Subukan ulit. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakamaskara ang mapa."
+  },
+  "/:shops-map-failed": {
+    "de": "Das MapLibre-Skript wird abgebrochen, wie im Verhaltenstest. Tabelle ist gewählt und der Ladefehler Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. ist sichtbar.",
+    "es": "El script de MapLibre se aborta, como en la prueba de comportamiento. Tabla está elegida y el error de carga No se pudieron cargar los lugares. Inténtalo de nuevo. es visible.",
+    "fil": "Na-a-abort ang script ng MapLibre, tulad ng sa behavior test. Napili ang Talaan at nakikita ang error sa pag-load na Hindi ma-load ang mga lugar. Subukan ulit."
+  },
+  "/:shops-loading": {
+    "de": "Die Filter-Anfrage ist noch nicht fertig. Karte bleibt gewählt. Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. ist nicht sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Der Kartenbereich ist sichtbar und maskiert.",
+    "es": "La solicitud de filtros no ha terminado. Mapa sigue elegido. No se pudieron cargar los lugares. Inténtalo de nuevo. no está visible. Aún no hay locales publicados. no está visible. El panel del mapa está visible y enmascarado.",
+    "fil": "Hindi pa tapos ang kahilingan sa filter. Napili pa rin ang Mapa. Hindi nakikita ang Hindi ma-load ang mga lugar. Subukan ulit. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakikita ang pane ng mapa at ito ay nakamaskara."
+  },
+  "/:shops-empty-map": {
+    "de": "Die Places-Antwort ist ein leeres Array. Noch keine Standorte veröffentlicht. ist sichtbar. Die Karte bleibt sichtbar und ist maskiert.",
+    "es": "La respuesta de lugares es un array vacío. Aún no hay locales publicados. es visible. El mapa sigue visible y está enmascarado.",
+    "fil": "Ang sagot ng places ay isang walang lamang array. Nakikita ang Wala pang nailathalang lokasyon. Nanatiling nakikita ang mapa at ito ay nakamaskara."
+  },
+  "/:shops-empty-table": {
+    "de": "Die Places-Antwort ist ein leeres Array und Tabelle ist gewählt. Noch keine Standorte veröffentlicht. ist sichtbar. Es gibt keine Shop-Zeile Sample.",
+    "es": "La respuesta de lugares es un array vacío y Tabla está elegida. Aún no hay locales publicados. es visible. No hay una fila de tienda Sample.",
+    "fil": "Ang sagot ng places ay isang walang lamang array at napili ang Talaan. Nakikita ang Wala pang nailathalang lokasyon. Walang hanay ng tindahan na Sample."
   },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
@@ -2539,6 +2619,46 @@
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
     "fil": "Nagbukas ang tagapamagitan ng Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
   },
+  "/shops:edit-photo-preparing": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto."
+  },
+  "/shops:edit-photo-preparing-place": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/shops:edit-photo-preparing-text": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/shops:edit-photo-preparing-user": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/shops:edit-photo-preparing-summary": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+  },
+  "/shops:edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/shops:edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/shops:edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/shops:edit-save-rejected": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.",
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
@@ -2638,6 +2758,11 @@
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenrahmen ist sichtbar; Diesen Ort verwenden ist angeheftet und deaktiviert.",
     "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. El mapa está visible; Usar este lugar está fijado y desactivado.",
     "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Nakikita ang mapa; naka-pin at naka-disable ang Gamitin ang lugar na ito."
+  },
+  "/shops:staff-place-map-loading": {
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist als Dialog geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo der Kartenrahmen wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tippen Sie auf die Karte, um die Markierung zu setzen. wird nicht gezeigt. Diesen Ort verwenden ist deaktiviert.",
+    "es": "Una sesión de moderadora. Añadir un lugar en la nota Cafe Luna está abierto como diálogo. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el marco. El mapa no está disponible. no se muestra. Toca el mapa para colocar el marcador. no se muestra. Usar este lugar está deshabilitado.",
+    "fil": "Isang moderator session. Bukas bilang dialog ang Magdagdag ng lugar sa tala ng Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng frame ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Hindi ipinapakita ang I-tap ang mapa para ilagay ang pin. Naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:expanded-received-only": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort You got it right. hat nichts gesendet. Unter dem Satz steht nur ₿100 · $0.09 erhalten. Diese 100 ist nicht die Notizsumme. Die Notizfußzeile bleibt ₿0.",
@@ -3265,9 +3390,9 @@
     "fil": "Naka-expand ang tala ni Ada. Ang sagot ni Cyrill ay ang pangungusap na You got it right. Walang ipinadala at walang natanggap, kaya walang linya ng halaga sa ilalim ng pangungusap. Ang paanan ng tala ay ₿0, dahil ang sagot na ito ay hindi nagdagdag ng regalo. Nanatili si Ada sa feed dahil siya ay moderator."
   },
   "/welcome:composer-place-pending": {
-    "de": "Ort hinzufügen ist als Dialog geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt noch. Das Ortsnamenfeld und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
-    "es": "Añadir un lugar está abierto como diálogo, la clave ha llegado y el script del mapa sigue cargando. El campo del nombre y Usar este lugar desactivado están visibles; el marco está vacío.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar, dumating ang susi, at nilo-load pa ang script ng mapa. Nakikita ang field ng pangalan at ang naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
+    "de": "Ort hinzufügen ist als Dialog geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt noch. Die Karte wird geladen. steht dort, wo die Karte wäre. Das Ortsnamenfeld und das deaktivierte Diesen Ort verwenden sind sichtbar. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Añadir un lugar está abierto como diálogo, la clave ha llegado y el script del mapa sigue cargando. Cargando el mapa. está donde estaría el mapa. El campo del nombre y Usar este lugar desactivado están visibles. El mapa no está disponible. no se muestra.",
+    "fil": "Bukas bilang dialog ang Magdagdag ng lugar, dumating ang susi, at nilo-load pa ang script ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Nakikita ang field ng pangalan at ang naka-disable na Gamitin ang lugar na ito. Hindi ipinapakita ang Hindi available ang mapa."
   },
   "/contact:success": {
     "de": "Nach einem erfolgreichen Senden wechselt die App zu /messages?c= und zeigt den offiziellen 21.gifts-Thread (den Nachrichtentext, nicht einen Sackgassen-Dankessatz). Der Verfasser mit sichtbarem ImagePlus-Anhang. Nachricht und Senden teilen sich eine Zeile; der Betrag sitzt unter der Nachricht.",
@@ -3385,9 +3510,9 @@
     "fil": "Ulo Piliin ang pangalan mo. Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. Naka-lowercase ito. Etiketa Pangalan, pindutan Magpatuloy. Hindi ipinapakita ang mapurol na linya ng iOS o Android."
   },
   "/shops:composer-place-pending": {
-    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Shop-Name und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
-    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía, la clave ha llegado y el script carga. Nombre de la tienda y Usar este lugar desactivado están visibles; el marco está vacío.",
-    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
+    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Die Karte wird geladen. steht dort, wo die Karte wäre. Shop-Name und das deaktivierte Diesen Ort verwenden sind sichtbar. Die Karte ist nicht verfügbar. wird nicht gezeigt. Die Ladenliste ist noch leer.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía, la clave ha llegado y el script carga. Cargando el mapa. está donde estaría el mapa. Nombre de la tienda y Usar este lugar desactivado están visibles. El mapa no está disponible. no se muestra. La lista de tiendas sigue vacía.",
+    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nasa lugar ng mapa ang Ikinakarga ang mapa. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito. Hindi ipinapakita ang Hindi available ang mapa. Walang laman pa ang listahan ng shop."
   },
   "/statistics:shop-error": {
     "de": "Mitarbeiterseite (Moderator). Das Personendiagramm bleibt sichtbar (Personen je UTC-Tag). Die geschlossenen Moderatorenfunktionen sitzen zwischen dem Personendiagramm und dem Shop-Bereich; Auszahlung pro Person anzeigen ist noch nicht sichtbar. Der Shop-Bereich darunter zeigt Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen.",
@@ -3540,9 +3665,9 @@
     "fil": "Naka-log out. Pamagat Mag-log in gamit ang device mo, isang pindutang Mag-log in. Sa iOS na mas mababa sa 18, may faded na linya sa ilalim ng pamagat na nagsasabi ng naka-install na bersyon at ng minimum na iOS 18. Hindi kasama ang linyang iyon sa mga larawan sa computer. Kasama ito sa mga larawan sa telepono. Ang Android na mas mababa sa 9 ay nagpapakita ng gayong faded na linya sa produkto, habang ang mga larawang ito ay nananatiling iPhone baseline."
   },
   "/login:name-taken": {
-    "de": "Ein gültiger Name, dessen Benutzername schon vergeben ist, bleibt auf diesem Formular. Hinweis: Dieser Benutzername ist schon vergeben. (login.nameTaken). Wenn registration begin das meldet, öffnet sich der Passkey-Dialog nicht. Wenn registration finish denselben Text nach dem Dialog meldet, zeigt dieses Formular denselben Hinweis. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
-    "es": "Un nombre válido cuyo usuario ya está en uso permanece en este formulario. Alerta: Ese usuario ya está en uso. (login.nameTaken). Cuando registration begin informa eso, el diálogo de passkey no se abre. Cuando registration finish informa el mismo texto después del diálogo, este formulario muestra la misma alerta. La línea atenuada de iOS o Android no se muestra.",
-    "fil": "Ang valid na pangalan na ginagamit na ang username ay nananatili sa form na ito. Alerto: Ginagamit na ang username na iyan. (login.nameTaken). Kapag iyon ang iniulat ng registration begin, hindi bumubukas ang dialog ng passkey. Kapag iyon din ang teksto na iniulat ng registration finish pagkatapos ng dialog, ipinapakita ng form na ito ang parehong alerto. Hindi ipinapakita ang faded na linya ng iOS o Android."
+    "de": "Ein gültiger Name, dessen Benutzername schon vergeben ist, bleibt auf diesem Formular. Hinweis: Dieser Benutzername ist schon vergeben. (login.nameTaken). Weiter bleibt deaktiviert, bis der Name sich ändert. Wenn registration begin das meldet, öffnet sich der Passkey-Dialog nicht. Wenn registration finish denselben Text nach dem Dialog meldet, zeigt dieses Formular denselben Hinweis. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
+    "es": "Un nombre válido cuyo usuario ya está en uso permanece en este formulario. Alerta: Ese usuario ya está en uso. (login.nameTaken). Continuar permanece deshabilitado hasta que el nombre cambie. Cuando registration begin informa eso, el diálogo de passkey no se abre. Cuando registration finish informa el mismo texto después del diálogo, este formulario muestra la misma alerta. La línea atenuada de iOS o Android no se muestra.",
+    "fil": "Ang valid na pangalan na ginagamit na ang username ay nananatili sa form na ito. Alerto: Ginagamit na ang username na iyan. (login.nameTaken). Naka-disable ang Magpatuloy hanggang magbago ang pangalan. Kapag iyon ang iniulat ng registration begin, hindi bumubukas ang dialog ng passkey. Kapag iyon din ang teksto na iniulat ng registration finish pagkatapos ng dialog, ipinapakita ng form na ito ang parehong alerto. Hindi ipinapakita ang faded na linya ng iOS o Android."
   },
   "/members/[accountId]:posts-open-goal-110": {
     "de": "Identitätskarte; Beiträge gedrückt; Profilnotiz verborgen; der gelistete Beitrag hat sats: 23100 und goalSats: 21000. Die Anfrage ist in Bitcoin definiert, daher benennt ForumGoalBar Anfragen ₿21'000 · $21.00 und der Notizbetrag ist ₿23'100 · $23.10 (Betrachter-USD vom Geschenktag-Kurs). Volles Orange plus grüner Überlauf im Fluss und Beschriftung 110%, wie /welcome goal-110.",
@@ -4104,6 +4229,56 @@
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
   },
+  "/welcome:shop-edit-photo-preparing": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto."
+  },
+  "/welcome:shop-edit-photo-preparing-place": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/welcome:shop-edit-photo-preparing-text": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/welcome:shop-edit-photo-preparing-user": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/welcome:shop-edit-photo-preparing-summary": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+  },
+  "/welcome:shop-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/welcome:shop-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/welcome:shop-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/welcome:shop-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/welcome:shop-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/members/[accountId]:shop-edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
     "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
@@ -4114,6 +4289,56 @@
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
   },
+  "/members/[accountId]:shop-edit-photo-preparing": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-photo-preparing-place": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-photo-preparing-text": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-photo-preparing-user": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-photo-preparing-summary": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-saving": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/members/[accountId]:shop-edit-history-loading": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/members/[accountId]:shop-edit-save-error": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/members/[accountId]:shop-edit-history-error": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/members/[accountId]:shop-edit-place-map-loading": {
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
+  },
   "/messages/[id]:shop-edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
     "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
@@ -4123,6 +4348,56 @@
     "de": "Die Moderation hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.",
     "es": "El moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.",
     "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts."
+  },
+  "/messages/[id]:shop-edit-photo-preparing": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-photo-preparing-place": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/messages/[id]:shop-edit-photo-preparing-text": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/messages/[id]:shop-edit-photo-preparing-user": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+  },
+  "/messages/[id]:shop-edit-photo-preparing-summary": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-saving": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta.",
+    "fil": "Binago ng moderator sa pampublikong shop note na Cafe Luna ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-history-loading": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Shop-Eintrag bearbeiten geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en la nota pública Cafe Luna. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa pampublikong shop note na Cafe Luna. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/messages/[id]:shop-edit-save-error": {
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "fil": "Binago ng moderator sa pampublikong shop note na Cafe Luna ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito."
+  },
+  "/messages/[id]:shop-edit-history-error": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Shop-Eintrag bearbeiten geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Der Bildschritt bleibt geöffnet.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en la nota pública Cafe Luna. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. El paso de fotos sigue abierto.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa pampublikong shop note na Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Bukas pa ang hakbang ng mga larawan."
+  },
+  "/messages/[id]:shop-edit-place-map-loading": {
+    "de": "Ein Moderator hat an der öffentlichen Shop-Notiz Cafe Luna Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt.",
+    "es": "Un moderador abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar en la nota pública Cafe Luna. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra.",
+    "fil": "Binuksan ng moderator ang Lugar at address ng shop mula sa 2 sa 5 · Lugar sa pampublikong shop note na Cafe Luna. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa."
   },
   "/shops:edit-place-open": {
     "de": "In Schritt 2 von 5 · Ort hat die Moderation die Ortsschaltfläche gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shop-Namen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; die Kopfzeile mit Schließen und die angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
@@ -4519,6 +4794,56 @@
     "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Mapa sigue seleccionado.",
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Mapa."
   },
+  "/shops:map-edit-photo-preparing": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-photo-preparing-place": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-photo-preparing-text": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-photo-preparing-user": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-photo-preparing-summary": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda junto a Ada · Happyland. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda junto a Ada · Happyland. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
   "/shops:map-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
@@ -4533,6 +4858,56 @@
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna zu luna-new geändert und Änderungen speichern gedrückt. Die clientseitige Prüfung blieb ohne eindeutiges Ergebnis; danach lehnte die API die Kontozuordnung ab. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück und zeigt: Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. Tabelle bleibt ausgewählt.",
     "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el Texto de la tienda, cambió luna a luna-new en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La comprobación del cliente no fue concluyente; después, la API rechazó la asignación de la cuenta. El editor vuelve a 4 de 5 · Usuario de 21.gifts y muestra: No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. Tabla sigue seleccionada.",
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang Teksto ng shop, pinalitan ang luna ng luna-new sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Hindi tiyak ang resulta ng client check; pagkatapos ay tinanggihan ng API ang pagtalaga ng account. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts at ipinapakita: Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-photo-preparing": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und ein Foto gewählt, das noch vorbereitet wird. Der Editor bleibt auf 1 von 5 · Bilder. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter und Abbrechen bleiben aktiv. Foto oder Video hinzufügen ist deaktiviert. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y eligió una foto que aún se está preparando. El editor sigue en 1 de 5 · Fotos. Espera a que esta foto esté lista. está visible. Siguiente y Cancelar siguen habilitados. Añadir una foto o un vídeo está deshabilitado. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at pumili ng larawan na inihahanda pa. Nasa 1 sa 5 · Mga larawan pa ang editor. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod at Kanselahin. Naka-disable ang Magdagdag ng litrato o bidyo. Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-photo-preparing-place": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 2 von 5 · Ort. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y eligió una foto que aún se está preparando. Siguiente llevó el editor a 2 de 5 · Lugar. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 2 sa 5 · Lugar. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-photo-preparing-text": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 3 von 5 · Text. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y eligió una foto que aún se está preparando. Siguiente llevó el editor a 3 de 5 · Texto. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-photo-preparing-user": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-photo-preparing-summary": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-saving": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el texto, y Guardar cambios no ha vuelto. El editor sigue en 5 de 5 · Resumen. Guardar cambios está deshabilitado. Guardando esta nota de la tienda. está visible. No hay alerta. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang teksto, at hindi pa bumabalik ang I-save ang mga pagbabago. Nasa 5 sa 5 · Buod pa ang editor. Naka-disable ang I-save ang mga pagbabago. Nakikita ang Sine-save ang note ng shop na ito. Walang alerto. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-history-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet. Die Verlaufsanfrage ist noch nicht zurück. Unter Historie steht Der Verlauf wird geladen. Es gibt keine Meldung. Der Bildschritt bleibt geöffnet. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla. La solicitud del historial no ha vuelto. Bajo Historial aparece Cargando el historial. No hay alerta. El paso de fotos sigue abierto. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan. Hindi pa bumabalik ang kahilingan sa kasaysayan. Sa ilalim ng Kasaysayan ay Ikinakarga ang kasaysayan. Walang alerto. Bukas pa ang hakbang ng mga larawan. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-save-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang editor. Nakikita ang alerto Hindi na-save ang entry na ito. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-history-error": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet. Die Verlaufsanfrage ist fehlgeschlagen. Die Meldung Die Historie konnte nicht geladen werden ist sichtbar. Der Verlauf wird geladen. wird nicht gezeigt. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla. La solicitud del historial falló. La alerta No se pudo cargar el historial está visible. Cargando el historial. no se muestra. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Hindi ipinapakita ang Ikinakarga ang kasaysayan. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
+  },
+  "/shops:table-edit-place-map-loading": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Tabelle geöffnet und Ort und Adresse des Shops aus 2 von 5 · Ort geöffnet. Der Kartenschlüssel ist noch nicht zurück. Die Karte wird geladen. steht dort, wo die Karte wäre. Die Karte ist nicht verfügbar. wird nicht gezeigt. Tabelle bleibt ausgewählt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Tabla y abrió Lugar y dirección de la tienda desde 2 de 5 · Lugar. La clave del mapa no ha vuelto. Cargando el mapa. está donde estaría el mapa. El mapa no está disponible. no se muestra. Tabla sigue seleccionada. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/shops:table-edit-user-invalid": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu _ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
@@ -4563,5 +4938,190 @@
     "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit _ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
     "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con _ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
     "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at _ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
+  },
+  "/setup/name:empty": {
+    "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Gib deinen Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Desenfocar o Continuar con un nombre vacío muestra Introduce tu nombre (name.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang blur o Magpatuloy sa walang laman na pangalan ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:long": {
+    "de": "Ein Name mit mehr als 80 Zeichen nach dem Kürzen zeigt Der Name muss 1–80 Zeichen haben. (name.errorLength). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Un nombre de más de 80 caracteres tras recortar muestra El nombre debe tener de 1 a 80 caracteres. (name.errorLength). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang pangalan na mahigit 80 character pagkatapos ng trim ay nagpapakita ng Ang pangalan ay dapat 1–80 character. (name.errorLength). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:controls": {
+    "de": "Ein Name mit einem Steuerzeichen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Un nombre que incluye un carácter de control muestra El nombre no puede incluir caracteres de control. (name.errorControls). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang pangalan na may control character ay nagpapakita ng Hindi puwedeng may control character ang pangalan. (name.errorControls). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/name:request": {
+    "de": "Wenn POST /me/name mit 500 antwortet, zeigt das Formular Name konnte nicht gespeichert werden (name.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/name responde 500, el formulario muestra No se pudo guardar el nombre (name.errorRequest). Continuar permanece disponible. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/name ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang pangalan (name.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
+  },
+  "/setup/username:empty": {
+    "de": "Unschärfe oder Weiter bei einem leeren Benutzernamen zeigt Gib einen Benutzernamen ein (setup.usernameEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "es": "Desenfocar o Continuar con un usuario vacío muestra Escribe un nombre de usuario (setup.usernameEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. ",
+    "fil": "Ang blur o Magpatuloy sa walang laman na username ay nagpapakita ng Maglagay ng username (setup.usernameEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
+  },
+  "/setup/username:invalid": {
+    "de": "Ein Benutzername außerhalb der Handle-Regel, einschließlich desselben Satzes vom Server zeigt 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer (setup.usernameInvalid). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "es": "Un usuario fuera de la regla del identificador, incluida la misma frase del servidor muestra De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número (setup.usernameInvalid). Continuar permanece deshabilitado hasta que el borrador cambie. ",
+    "fil": "Ang username na labas sa tuntunin ng handle, kasama ang parehong pangungusap mula sa server ay nagpapakita ng 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero (setup.usernameInvalid). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
+  },
+  "/setup/username:taken": {
+    "de": "Wenn POST /me/username mit 409 Username is already in use antwortet, zeigt das Formular Dieser Name ist schon vergeben (setup.usernameTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut.",
+    "es": "Cuando POST /me/username responde 409 Username is already in use, el formulario muestra Ese nombre de usuario ya está en uso (setup.usernameTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear.",
+    "fil": "Kapag ang POST /me/username ay sumasagot ng 409 Username is already in use, ipinapakita ng form ang Nakuha na ang username na iyan (setup.usernameTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock."
+  },
+  "/setup/username:request": {
+    "de": "Wenn POST /me/username mit 500 antwortet, zeigt das Formular Dein Benutzername konnte nicht gespeichert werden (setup.usernameRequest). Weiter bleibt verfügbar. ",
+    "es": "Cuando POST /me/username responde 500, el formulario muestra No se pudo guardar el nombre de usuario (setup.usernameRequest). Continuar permanece disponible. ",
+    "fil": "Kapag ang POST /me/username ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang username (setup.usernameRequest). Nananatiling available ang Magpatuloy. "
+  },
+  "/setup/address:empty": {
+    "de": "Unschärfe oder Weiter bei einer leeren Wallet of Satoshi-Adresse zeigt Gib deine Wallet of Satoshi-Adresse ein (la.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Desenfocar o Continuar con una Wallet of Satoshi address vacía muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang blur o Magpatuloy sa walang laman na Wallet of Satoshi address ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:long": {
+    "de": "Eine Adresse mit mehr als 255 Zeichen zeigt Höchstens 255 Zeichen. (la.errorLength). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Una dirección de más de 255 caracteres muestra Como máximo 255 caracteres. (la.errorLength). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang address na mahigit 255 character ay nagpapakita ng Hanggang 255 character lang. (la.errorLength). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:format": {
+    "de": "Eine Adresse, die nicht name@domain.tld ist zeigt Adresse wie name@domain.tld, höchstens 255 Zeichen. (la.errorFormat). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "es": "Una dirección que no es name@domain.tld muestra Usa una dirección como name@domain.tld, de 255 caracteres como máximo. (la.errorFormat). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
+    "fil": "Ang address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:taken": {
+    "de": "Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse ist schon vergeben. (la.errorTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:not-found": {
+    "de": "Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse wurde nicht gefunden (la.errorNotFound). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:not-zap": {
+    "de": "Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nananatiling available ang Laktawan."
+  },
+  "/setup/address:request": {
+    "de": "Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Deine Wallet of Satoshi-Adresse konnte nicht aktualisiert werden (la.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
+    "es": "Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Continuar permanece disponible. Omitir permanece disponible.",
+    "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
+  },
+  "/profile:name-empty": {
+    "de": "Der Namenseditor ist offen und das Feld ist geleert zeigt Gib deinen Namen ein (name.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto y el campo está vacío muestra Introduce tu nombre (name.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan at walang laman ang field ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-long": {
+    "de": "Der Namenseditor ist offen mit einem Namen über 80 Zeichen zeigt Der Name muss 1–80 Zeichen haben. (name.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto con un nombre de más de 80 caracteres muestra El nombre debe tener de 1 a 80 caracteres. (name.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan na may pangalan na mahigit 80 character ay nagpapakita ng Ang pangalan ay dapat 1–80 character. (name.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-controls": {
+    "de": "Der Namenseditor ist offen mit einem Steuerzeichen im Namen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto con un carácter de control en el nombre muestra El nombre no puede incluir caracteres de control. (name.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan na may control character sa pangalan ay nagpapakita ng Hindi puwedeng may control character ang pangalan. (name.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:name-request": {
+    "de": "Der Namenseditor ist offen. Wenn POST /me/name mit 500 antwortet, zeigt das Formular Name konnte nicht gespeichert werden (name.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor del nombre está abierto. Cuando POST /me/name responde 500, el formulario muestra No se pudo guardar el nombre (name.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng pangalan. Kapag ang POST /me/name ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang pangalan (name.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:location-long": {
+    "de": "Der Ortseditor ist offen mit mehr als 80 Zeichen zeigt Der Ort darf höchstens 80 Zeichen haben. (location.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto con más de 80 caracteres muestra El lugar debe tener como máximo 80 caracteres. (location.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar na may mahigit 80 character ay nagpapakita ng Hanggang 80 character lang ang lugar. (location.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:location-controls": {
+    "de": "Der Ortseditor ist offen mit einem Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto con un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar na may control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:location-request": {
+    "de": "Der Ortseditor ist offen. Wenn POST /me/location mit 500 antwortet, zeigt das Formular Ort konnte nicht gespeichert werden (location.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor del lugar está abierto. Cuando POST /me/location responde 500, el formulario muestra No se pudo guardar la ubicación (location.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng lugar. Kapag ang POST /me/location ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang lugar (location.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:address-empty": {
+    "de": "Der Adresseditor ist offen und das Feld ist geleert zeigt Gib deine Wallet of Satoshi-Adresse ein (la.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto y el campo está vacío muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address at walang laman ang field ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-long": {
+    "de": "Der Adresseditor ist offen mit mehr als 255 Zeichen zeigt Höchstens 255 Zeichen. (la.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto con más de 255 caracteres muestra Como máximo 255 caracteres. (la.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address na may mahigit 255 character ay nagpapakita ng Hanggang 255 character lang. (la.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-format": {
+    "de": "Der Adresseditor ist offen mit einer Adresse, die nicht name@domain.tld ist zeigt Adresse wie name@domain.tld, höchstens 255 Zeichen. (la.errorFormat). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto con una dirección que no es name@domain.tld muestra Usa una dirección como name@domain.tld, de 255 caracteres como máximo. (la.errorFormat). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address na may address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:address-taken": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse ist schon vergeben. (la.errorTaken). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
+  },
+  "/profile:address-not-found": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse wurde nicht gefunden (la.errorNotFound). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
+  },
+  "/profile:address-not-zap": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nasa window ang alerto."
+  },
+  "/profile:address-request": {
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Deine Wallet of Satoshi-Adresse konnte nicht aktualisiert werden (la.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
+  },
+  "/profile:about-long": {
+    "de": "Der Über-mich-Editor ist offen mit mehr als 8000 Zeichen zeigt Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de Sobre mí está abierto con más de 8000 caracteres muestra Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng Tungkol sa akin na may mahigit 8000 character ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/profile:about-controls": {
+    "de": "Der Über-mich-Editor ist offen mit einem Steuerzeichen zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "es": "El editor de Sobre mí está abierto con un carácter de control muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
+    "fil": "Bukas ang editor ng Tungkol sa akin na may control character ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Nasa window ang alerto."
+  },
+  "/grants/apply:about-long": {
+    "de": "Der erste Bewerbungsschritt ist offen. Mehr als 8000 Zeichen in Über mich zeigen Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können. Der Hinweis liegt im Fenster.",
+    "es": "El primer paso de la solicitud está abierto. Más de 8000 caracteres en Sobre mí muestran Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Primero, escribe un breve Sobre mí para que la gente te conozca. La alerta está en la ventana.",
+    "fil": "Bukas ang unang hakbang ng pag-apply. Ang mahigit 8000 character sa About me ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Una, magsulat ng maikling About me para makilala ka ng iba. Nasa window ang alerto."
+  },
+  "/grants/apply:about-controls": {
+    "de": "Der erste Bewerbungsschritt ist offen. Ein Steuerzeichen in Über mich zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können. Der Hinweis liegt im Fenster.",
+    "es": "El primer paso de la solicitud está abierto. Un carácter de control en Sobre mí muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Primero, escribe un breve Sobre mí para que la gente te conozca. La alerta está en la ventana.",
+    "fil": "Bukas ang unang hakbang ng pag-apply. Ang control character sa About me ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Una, magsulat ng maikling About me para makilala ka ng iba. Nasa window ang alerto."
+  },
+  "/grants/apply:photo-long": {
+    "de": "Der Fotoschritt ist offen nach einem echten Über mich. Mehr als 8000 Zeichen im Editor zeigen Über mich darf höchstens 8000 Zeichen haben. (profile.about.errorLength). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes fügen Sie ein Foto zu Über mich hinzu. Der Hinweis liegt im Fenster.",
+    "es": "El paso de la foto está abierto tras un Sobre mí de verdad. Más de 8000 caracteres en el editor muestran Sobre mí debe tener como máximo 8000 caracteres. (profile.about.errorLength). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade una foto a tu Sobre mí. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng litrato pagkatapos ng totoong Tungkol sa akin. Ang mahigit 8000 character sa editor ay nagpapakita ng Hanggang 8000 character lang ang About me. (profile.about.errorLength). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, magdagdag ng larawan sa About me. Nasa window ang alerto."
+  },
+  "/grants/apply:photo-controls": {
+    "de": "Der Fotoschritt ist offen nach einem echten Über mich. Ein Steuerzeichen in Über mich zeigt Über mich darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. (profile.about.errorControls). Über mich speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes fügen Sie ein Foto zu Über mich hinzu. Der Hinweis liegt im Fenster.",
+    "es": "El paso de la foto está abierto tras un Sobre mí de verdad. Un carácter de control en Sobre mí muestra Sobre mí no puede incluir caracteres de control, salvo saltos de línea. (profile.about.errorControls). Guardar Sobre mí permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade una foto a tu Sobre mí. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng litrato pagkatapos ng totoong Tungkol sa akin. Ang control character sa About me ay nagpapakita ng Hindi puwedeng may control character ang About me maliban sa line break. (profile.about.errorControls). Naka-disable ang I-save ang Tungkol sa akin hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, magdagdag ng larawan sa About me. Nasa window ang alerto."
+  },
+  "/grants/apply:location-long": {
+    "de": "Der Ortsschritt ist offen. Mehr als 80 Zeichen zeigen Der Ort darf höchstens 80 Zeichen haben. (location.errorLength). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
+    "es": "El paso del lugar está abierto. Más de 80 caracteres muestran El lugar debe tener como máximo 80 caracteres. (location.errorLength). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng lugar. Ang mahigit 80 character ay nagpapakita ng Hanggang 80 character lang ang lugar. (location.errorLength). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
+  },
+  "/grants/apply:location-controls": {
+    "de": "Der Ortsschritt ist offen. Ein Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
+    "es": "El paso del lugar está abierto. Un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
+    "fil": "Bukas ang hakbang ng lugar. Ang control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
   }
 }

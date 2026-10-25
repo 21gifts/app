@@ -106,7 +106,7 @@ test('Function: generateMetadata — shop HTML carries the shop title, canonical
   await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute('content', photo);
   // A shop the page cannot show keeps the root metadata.
   await page.goto(`/${GONE_NPUB}`);
-  await expect(page).toHaveTitle('21.gifts — peer-to-peer Bitcoin gifts');
+  await expect(page).toHaveTitle('Help people with Bitcoin | 21.gifts');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
 });
 

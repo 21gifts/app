@@ -6,8 +6,8 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, shopUsernameProblem, usernameLookupVerdict } from '@/lib/forum-shop';
-import { searchMentionAccounts } from '@/lib/mention-search';
+import { isShopNote, shopUsernameProblem } from '@/lib/forum-shop';
+import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -147,8 +147,8 @@ export interface ShopAccountControlProps {
  * The open field starts with `@`. Suggestions from the same account list as a
  * forum post appear immediately. A typed prefix keeps only usernames that
  * start with it, before the next page returns. Choosing one fills `@username`.
- * A debounced exact-account check blocks Save only while pending or proven
- * missing; unknown and failed lookups leave the API to decide. Saving still
+ * A debounced exact-account check blocks Save while pending or proven
+ * missing; a failed lookup leaves the API to decide. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
  * phone does not scroll sideways. Rows drop until the box fits under the
  * app chrome, and the list hides rather than covering that chrome.
@@ -170,7 +170,7 @@ export function ShopAccountControl({
   const [errorKey, setErrorKey] = useState<'format' | 'missing' | 'failed' | null>(null);
   const [usernameLookup, setUsernameLookup] = useState<{
     username: string;
-    verdict: 'checking' | 'found' | 'missing' | 'unknown' | 'failed';
+    verdict: 'checking' | 'found' | 'missing' | 'failed';
   } | null>(null);
   const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
   const [remote, setRemote] = useState<{
@@ -246,12 +246,12 @@ export function ShopAccountControl({
     let cancelled = false;
     setUsernameLookup({ username: requested, verdict: 'checking' });
     const timer = window.setTimeout(() => {
-      void searchMentionAccounts(current, requested)
-        .then((rows) => {
+      void lookupAccountByUsername(current, requested)
+        .then((verdict) => {
           if (!cancelled) {
             setUsernameLookup({
               username: requested,
-              verdict: usernameLookupVerdict(rows, requested),
+              verdict,
             });
           }
         })

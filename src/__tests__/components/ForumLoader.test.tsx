@@ -86,6 +86,7 @@ vi.mock('@/lib/forum-photo', () => ({
 
 vi.mock('@/lib/mention-search', () => ({
   searchMentionAccounts: vi.fn(),
+  lookupAccountByUsername: vi.fn(),
 }));
 
 vi.mock('@/lib/forum-video', () => ({
@@ -132,7 +133,7 @@ import {
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
-import { searchMentionAccounts } from '@/lib/mention-search';
+import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 import { closeLocalPushNotifications } from '@/lib/push';
 
@@ -566,6 +567,7 @@ beforeEach(() => {
   vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => [
     { id: `acc-${query}`, username: query, name: query },
   ]);
+  vi.mocked(lookupAccountByUsername).mockResolvedValue('found');
   fetchMock.mockResolvedValue(forumPage([]));
   publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
   publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -1603,15 +1605,14 @@ describe('ForumLoader', () => {
   it('feed="shops" returns to the username field when the submit lookup no longer finds it', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     let usernameLookups = 0;
-    let resolveSubmitLookup:
-      ((rows: { id: string; username: string; name: string }[]) => void) | undefined;
-    vi.mocked(searchMentionAccounts).mockImplementation((_session, query) => {
-      if (query !== 'luna') {
-        return Promise.resolve([]);
+    let resolveSubmitLookup: ((verdict: 'found' | 'missing') => void) | undefined;
+    vi.mocked(lookupAccountByUsername).mockImplementation((_session, username) => {
+      if (username !== 'luna') {
+        return Promise.resolve('found');
       }
       usernameLookups += 1;
       if (usernameLookups === 1) {
-        return Promise.resolve([{ id: 'acc-luna', username: 'luna', name: 'Luna' }]);
+        return Promise.resolve('found');
       }
       return new Promise((resolve) => {
         resolveSubmitLookup = resolve;
@@ -1627,7 +1628,7 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('button', { name: /^Post$/ })).toHaveProperty('disabled', true);
     await act(async () => {
-      resolveSubmitLookup?.([]);
+      resolveSubmitLookup?.('missing');
     });
     expect(
       await screen.findByText(
@@ -1638,6 +1639,7 @@ describe('ForumLoader', () => {
       await screen.findByText('4 / 5 · 21.gifts user', undefined, { timeout: 5000 }),
     ).toBeTruthy();
     expect(usernameLookups).toBe(2);
+    expect(lookupAccountByUsername).toHaveBeenCalledTimes(2);
     expect(postMock).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
     await waitFor(() => {
@@ -1666,19 +1668,13 @@ describe('ForumLoader', () => {
     expect(within(dialog).getByRole('alert').textContent).toBe(localized);
   });
 
-  it('feed="shops" reaches the pre-fee invoice when a full username page is inconclusive', async () => {
+  it('feed="shops" reaches the pre-fee invoice when the username lookup fails', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
     fetchMock.mockResolvedValue(forumPage([]));
-    vi.mocked(searchMentionAccounts).mockResolvedValue(
-      Array.from({ length: 20 }, (_, index) => ({
-        id: `acc-${String(index)}`,
-        username: `other-${String(index)}`,
-        name: `Other ${String(index)}`,
-      })),
-    );
+    vi.mocked(lookupAccountByUsername).mockRejectedValue(new Error('offline'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
@@ -1706,13 +1702,13 @@ describe('ForumLoader', () => {
       payable: false,
     });
     let usernameLookups = 0;
-    vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => {
-      if (query !== 'luna') {
-        return [];
+    vi.mocked(lookupAccountByUsername).mockImplementation(async (_session, username) => {
+      if (username !== 'luna') {
+        return 'found';
       }
       usernameLookups += 1;
       if (usernameLookups === 1) {
-        return [{ id: 'acc-luna', username: 'luna', name: 'Luna' }];
+        return 'found';
       }
       throw new Error('offline');
     });

@@ -667,13 +667,15 @@ export function PlaceField(props: {
                 <div className="flex flex-col gap-3 p-4">
                   {unavailable ? (
                     <p className="text-sm text-app-danger">{t('forum.placeUnavailable')}</p>
-                  ) : (
+                  ) : scriptReady ? (
                     <>
                       <div ref={mapElRef} className="h-64 min-h-64 w-full rounded-xl" />
                       {markerPos === null ? (
                         <p className="text-sm text-app-muted">{t('shops.placeMapHint')}</p>
                       ) : null}
                     </>
+                  ) : (
+                    <p className="text-sm text-app-muted">{t('shops.placeMapLoading')}</p>
                   )}
                   {shopDetails ? (
                     <>

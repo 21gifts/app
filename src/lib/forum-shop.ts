@@ -17,9 +17,6 @@ export const SHOP_DESCRIPTION_MIN = 20;
 /** Maximum shop description length after the shop tag is stripped. */
 export const SHOP_DESCRIPTION_MAX = 1000;
 
-/** Page size enforced by the API's `GET /forum/mentions` suggestion search. */
-export const MENTION_SUGGEST_PAGE = 20;
-
 /** Address field on a shop pin. */
 export type ShopAddressField = 'street' | 'houseNumber' | 'postalCode' | 'city' | 'country';
 
@@ -433,29 +430,6 @@ export function shopUsernameProblem(raw: string): 'format' | null {
     return null;
   }
   return /^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) ? null : 'format';
-}
-
-/**
- * Whether a mention-suggestion page proves that a username exists or is missing.
- *
- * A full page without the exact username is inconclusive because the API also
- * matches display names and username segments, orders by username, and caps the
- * response at {@link MENTION_SUGGEST_PAGE} rows.
- *
- * @param rows - One `GET /forum/mentions` suggestion page.
- * @param handle - Username to compare case-insensitively, with or without `@`.
- * @returns `found`, `missing`, or `unknown` for a full page without an exact match.
- */
-export function usernameLookupVerdict(
-  rows: readonly { username: string }[],
-  handle: string,
-): 'found' | 'missing' | 'unknown' {
-  const normalized = handle.replace(/^@/, '').toLowerCase();
-  // The API matches on the trimmed username but returns it as stored.
-  if (rows.some((row) => row.username.trim().toLowerCase() === normalized)) {
-    return 'found';
-  }
-  return rows.length >= MENTION_SUGGEST_PAGE ? 'unknown' : 'missing';
 }
 
 /**
