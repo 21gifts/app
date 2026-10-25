@@ -64,9 +64,8 @@ or Next, when a known API reason is replaced with generic copy, or when a step
 or submit button is disabled without a visible reason. Check that field-level
 messages are live, adjacent (under the field, or under its row with the field
 named when two fields share a row), and linked through `aria-invalid` and
-`aria-describedby`. Forms that CONTRIBUTING.md lists under **Input feedback
-while entering** as not yet migrated are exempt until their follow-up pull
-request; a pull request that migrates one of them must meet the rule in full.
+`aria-describedby`. A pull request that touches one of these forms must meet
+the rule in full.
 
 ## Shown amounts
 

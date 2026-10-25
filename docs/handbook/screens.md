@@ -495,7 +495,7 @@ Heading **Help someone**, explainer lead, **Open the forum**.
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
 - **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; when the request then settles, that loading alert changes in place without another press and without creating the payment: **No PHP exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count inside the bounds that button already uses, and the alert goes away when it is; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A whole amount outside the profile window shows **Enter an amount from {min} to {max}.**, with those bounds formatted as bitcoin amounts, and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; when the request then settles, that loading alert changes in place without another press and without creating the payment: **No PHP exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count, **Enter an amount from {min} to {max}.** when that count sits outside the profile window, and the alert goes away when it is inside the window; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -524,7 +524,7 @@ PHP is pressed and the amount is 100. **Continue** while the gift-day request ha
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Continue** shows **No PHP exchange rate yet.** The form stays. No **Pay**.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Continue** is already off. The form stays. No **Pay**.
 
 ![21.gifts pay link no rate](images/pl-no-rate.png)
 
@@ -1249,6 +1249,12 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
 
+### Variant: ask-text-empty
+
+Ask step 3 of 4 after **Continue** with an empty message and no photo. **Enter a message or add a photo or video** sits under the field, which is linked to it with `aria-describedby` and marked `aria-invalid`. **Continue** is disabled. The empty step before that press does not cover this.
+
+![21.gifts welcome ask text empty](images/welcome-ask-text-empty.png)
+
 ### Variant: ask-shop-elsewhere
 
 Ask step 3 of 4 with **Need help at #21GiftsShop** in the message field. The live shop guidance sits directly below the field, which is linked to it with `aria-describedby` and marked `aria-invalid`; **Continue** stays disabled. The same visible reason disables **Post** on the preview step.
@@ -1437,7 +1443,7 @@ Load error **Could not load messages. Please try again.** plus **Try again**.
 
 ### Variant: validation-error
 
-Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**. The composer caps at 8000 characters (same as `POST /forum/messages`); over-length drafts show **Keep it to 8000 characters** and are not sent.
+Click **Post** with an empty composer and no photo or video → **Enter a message or add a photo or video**, and **Post** stays off. The composer does not cut the draft.
 
 ![21.gifts welcome validation error](images/welcome-validation-error.png)
 
@@ -1710,6 +1716,18 @@ One unpaid note on **All** whose place has no label. The card shows a MapPin lin
 
 ![21.gifts welcome composer place](images/welcome-composer-place.png)
 
+### Variant: composer-place-too-long
+
+**Add a place** is open and the map key is empty. The place name is longer than 80 characters. **Keep the place name to 80 characters** sits under the field, and **Use this place** stays off. Needle `Keep the place name to 80 characters`.
+
+![21.gifts welcome composer place too long](images/welcome-composer-place-too-long.png)
+
+### Variant: composer-place-controls
+
+**Add a place** is open and the map key is empty. The place name is short and contains a control character. **The place name cannot include control characters** sits under the field, and **Use this place** stays off. Needle `The place name cannot include control characters`.
+
+![21.gifts welcome composer place controls](images/welcome-composer-place-controls.png)
+
 ### Variant: composer-place-map
 
 **Add a place** is open as a dialog with a map key. The map frame is visible; **Use this place** is
@@ -1923,6 +1941,18 @@ Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stay
 Payable reply after **Show reactions**, Gift opened, amount filled, not submitted. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet. The post itself does not show Send Bitcoin.
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
+
+### Variant: pay-rate-loading
+
+Payable reply after **Show reactions**. **Gift** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The filled amount before that press does not cover this.
+
+![21.gifts welcome pay rate loading](images/welcome-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+**Show reactions** is open. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts welcome reply rate loading](images/welcome-reply-rate-loading.png)
 
 ### Variant: pay-qr
 
@@ -3593,9 +3623,15 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ### Variant: donate-rate-pending
 
-Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
+Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The amount is **1.00** in USD. Under the amount is **No exchange rate yet**. **Continue** stays available. The payment error for a settled missing rate is not shown, and no bitcoin equivalent line is shown.
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
+
+### Variant: donate-rate-loading
+
+Ada's session on someone else's comment. **Send Bitcoin** is open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled. The sheet from before that press does not cover this.
+
+![21.gifts habit tracker donate rate loading](images/habit-tracker-donate-rate-loading.png)
 
 ### Variant: donate-fiat
 
@@ -3611,7 +3647,7 @@ Ada's session after **Continue** on someone else's comment. The card shows **Pay
 
 ### Variant: donate-habit-amount
 
-Ada's session. **Send Bitcoin** is open. **Continue** was pressed with an amount that is not a whole number of sats from 1 through 10,000,000. The sheet shows **Expected a JSON body with an integer "amountSats"**.
+Ada's session. **Send Bitcoin** is open and the amount is 0. **Expected a JSON body with an integer "amountSats"** sits under the amount, and **Continue** is already off. No payment starts.
 
 ![21.gifts habit tracker donate habit amount](images/habit-tracker-donate-habit-amount.png)
 
@@ -3705,11 +3741,29 @@ Ada's session. **Add habit** was pressed with Name **Stretch** and the save fail
 
 ![21.gifts habit tracker add error](images/habit-tracker-add-error.png)
 
+### Variant: add-name-empty
+
+Ada's session. **Add habit** was pressed with an empty Name. **Enter a habit name** sits under the field and **Add habit** stays off. No habit was stored. Needle `Enter a habit name`.
+
+![21.gifts habit tracker add name empty](images/habit-tracker-add-name-empty.png)
+
+### Variant: add-name-too-long
+
+Ada's session. The add Name is longer than 80 characters. **Keep the habit name to 80 characters** shows under the field before **Add habit** is pressed, and **Add habit** stays off. Needle `Keep the habit name to 80 characters`.
+
+![21.gifts habit tracker add name too long](images/habit-tracker-add-name-too-long.png)
+
 ### Variant: comment-error
 
 Ada's session. **Post** was pressed with the draft **still here** and the save failed. The same alert and **Try again** stay. **Write a comment** still shows **still here**. The edit form and the archive confirmation are not open.
 
 ![21.gifts habit tracker comment error](images/habit-tracker-comment-error.png)
+
+### Variant: comment-empty
+
+Ada's session. **Post** was pressed with an empty comment on her open habit. **Enter a comment** sits under **Write a comment** and **Post** stays off. Needle `Enter a comment`.
+
+![21.gifts habit tracker comment empty](images/habit-tracker-comment-empty.png)
 
 ### Variant: add-saved
 
@@ -3751,7 +3805,7 @@ Idle composer with lead and rules link.
 
 ### Variant: validation-error
 
-Click **Send** with an empty composer → **Enter a message**.
+Click **Send** with an empty composer → **Enter a message**. **Send** stays off.
 
 ![21.gifts contact validation error](images/contact-validation-error.png)
 
@@ -3786,6 +3840,18 @@ Basis member identity card. Beside the name, a static Software Developer label (
 Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: pay-rate-loading
+
+Posts are open. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts member pay rate loading](images/members-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Posts are open and Carol's note is expanded. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts member reply rate loading](images/members-reply-rate-loading.png)
 
 ### Variant: mention-suggest-reply
 
@@ -4420,13 +4486,13 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ### Variant: rate-loading
 
-PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** **Create payment** stays disabled. The keypad stays. No QR.
 
 ![21.gifts point of sale rate loading](images/pos-rate-loading.png)
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Create payment** shows **No PHP exchange rate yet.** The keypad stays. No QR.
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Create payment** is already off. The keypad stays. No QR.
 
 ![21.gifts point of sale no rate](images/pos-no-rate.png)
 
@@ -5017,7 +5083,7 @@ Moderator on the direct URL. Heading **Daily payment amounts** and **You cannot 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `The amount is not valid.`
+Founder, type 0 in the add amount. **Enter an amount greater than zero** shows under the field and **Add** stays off. The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `Enter an amount greater than zero`.
 
 ![21.gifts daily payment amounts invalid](images/grants-payments-amounts-invalid.png)
 
@@ -5077,7 +5143,7 @@ Founder types `@` and presses **@cara**. The Person field shows `@cara`. The lis
 
 ### Variant: pick-person
 
-Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`
+Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** **Add** stays disabled until a person is chosen. Needle `Choose a person.`
 
 ![21.gifts daily payment amounts pick person](images/grants-payments-amounts-pick-person.png)
 
@@ -5291,7 +5357,7 @@ No on the first question says When your posts match, you can apply again.
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
 - **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Wordmark → `/welcome`. A thread opened from the list returns to the list; it does not always go to `/messages`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 8000-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. The conversation list does not offer Translate. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via the top-left arrow scrolls the conversation list to the top once when that previous view is the list. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is; the gift-day rate when that field is null or missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
-- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
+- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread. A blank message with a typed amount (0 is billed as 1 sat) or with a photo sends; a blank message with a blank amount and no photo asks for a message and leaves Send off. After the send finishes, the cleared composer stays quiet until the next blur or send. Return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
 - **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -5355,6 +5421,12 @@ Open official thread. Heading **21.gifts** (a profile control when the api sent 
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
+### Variant: thread-send-empty
+
+Open thread. **Send** was pressed with an empty message, no photo, and no amount. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The resting empty composer does not cover this.
+
+![21.gifts inbox thread send empty](images/messages-thread-send-empty.png)
+
 ### Variant: thread-translate
 
 Open thread with a German incoming message. **Translate** is visible under the body.
@@ -5408,6 +5480,18 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
+
+### Variant: thread-rate-loading
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Send** is disabled. The quiet amount before that press does not cover this.
+
+![21.gifts inbox thread rate loading](images/messages-thread-rate-loading.png)
+
+### Variant: thread-rate-loading-too-many
+
+Open thread. The amount is **1.00** USD, and **Send** was pressed while the gift-day rate was still loading. Eleven JPEGs are then chosen. The composer still shows **The USD exchange rate is still loading.** and **Send** stays disabled. A second alert says **You can add up to 10 photos.** Ten selected photos stay. An unsupported or oversized photo uses that same second alert and does not clear the loading sentence.
+
+![21.gifts inbox thread rate loading too many](images/messages-thread-rate-loading-too-many.png)
 
 ### Variant: thread-quoted-note
 
@@ -5996,6 +6080,12 @@ Moderator. Group exists, zero messages. Composer **Your message** visible.
 
 ![21.gifts moderator group empty](images/moderate-group-empty.png)
 
+### Variant: send-empty
+
+Moderator. Empty thread after **Send** with no message and no photo. **Enter a message** sits under the composer, linked with `aria-describedby` and `aria-invalid`. **Send** is disabled. The untouched empty thread does not cover this.
+
+![21.gifts moderator group send empty](images/moderate-group-send-empty.png)
+
 ### Variant: loading
 
 Moderator waiting on `GET /conversations/moderator-group`. Copy **Loading…**
@@ -6222,6 +6312,18 @@ Same public note after **Play**. The play button is gone. The fullscreen button 
 Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
+
+### Variant: pay-rate-loading
+
+Signed-in thread. A payable reply has **Gift** open, the amount is **1.00** USD, and **Continue** was pressed while the gift-day rate was still loading. The sheet shows **The USD exchange rate is still loading.** **Continue** is disabled.
+
+![21.gifts public message pay rate loading](images/messages-id-pay-rate-loading.png)
+
+### Variant: reply-rate-loading
+
+Signed-in thread. The reaction amount is **1.00** USD, and **Post** was pressed while the gift-day rate was still loading. The composer shows **The USD exchange rate is still loading.** **Post** is disabled.
+
+![21.gifts public message reply rate loading](images/messages-id-reply-rate-loading.png)
 
 ### Variant: shop-edit
 

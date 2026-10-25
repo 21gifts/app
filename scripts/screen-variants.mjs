@@ -1293,6 +1293,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-text-empty',
+    image: 'welcome-ask-text-empty.png',
+    visual: 'state-welcome-ask-text-empty',
+    needle: 'state /welcome ask-text-empty',
+  },
+  {
+    route: '/welcome',
     id: 'ask-shop-elsewhere',
     image: 'welcome-ask-shop-elsewhere.png',
     visual: 'state-welcome-ask-shop-elsewhere',
@@ -1601,6 +1608,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-place-too-long',
+    image: 'welcome-composer-place-too-long.png',
+    visual: 'state-welcome-composer-place-too-long',
+    needle: 'Keep the place name to 80 characters',
+  },
+  {
+    route: '/welcome',
+    id: 'composer-place-controls',
+    image: 'welcome-composer-place-controls.png',
+    visual: 'state-welcome-composer-place-controls',
+    needle: 'The place name cannot include control characters',
+  },
+  {
+    route: '/welcome',
     id: 'composer-place-map',
     image: 'welcome-composer-place-map.png',
     visual: 'state-welcome-composer-place-map',
@@ -1839,6 +1860,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-rate-loading',
+    image: 'welcome-pay-rate-loading.png',
+    visual: 'state-welcome-pay-rate-loading',
+    needle: 'welcome pay-rate-loading',
+  },
+  {
+    route: '/welcome',
+    id: 'reply-rate-loading',
+    image: 'welcome-reply-rate-loading.png',
+    visual: 'state-welcome-reply-rate-loading',
+    needle: 'welcome reply-rate-loading',
+  },
+  {
+    route: '/welcome',
     id: 'pay-qr',
     image: 'welcome-pay-qr.png',
     visual: 'state-welcome-pay-qr',
@@ -2000,6 +2035,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'donate-rate-loading',
+    image: 'habit-tracker-donate-rate-loading.png',
+    visual: 'state-habit-tracker-donate-rate-loading',
+    needle: 'screen /habit-tracker donate-rate-loading',
+  },
+  {
+    route: '/habit-tracker',
     id: 'donate-fiat',
     image: 'habit-tracker-donate-fiat.png',
     visual: 'state-habit-tracker-donate-fiat',
@@ -2126,10 +2168,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'add-name-empty',
+    image: 'habit-tracker-add-name-empty.png',
+    visual: 'state-habit-tracker-add-name-empty',
+    needle: 'Enter a habit name',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'add-name-too-long',
+    image: 'habit-tracker-add-name-too-long.png',
+    visual: 'state-habit-tracker-add-name-too-long',
+    needle: 'Keep the habit name to 80 characters',
+  },
+  {
+    route: '/habit-tracker',
     id: 'comment-error',
     image: 'habit-tracker-comment-error.png',
     visual: 'state-habit-tracker-comment-error',
     needle: 'screen /habit-tracker comment-error',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'comment-empty',
+    image: 'habit-tracker-comment-empty.png',
+    visual: 'state-habit-tracker-comment-empty',
+    needle: 'Enter a comment',
   },
   {
     route: '/habit-tracker',
@@ -2396,6 +2459,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open.png',
     visual: 'state-members-posts-open',
     needle: 'Second post from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'pay-rate-loading',
+    image: 'members-pay-rate-loading.png',
+    visual: 'state-members-pay-rate-loading',
+    needle: 'state /members pay-rate-loading',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'reply-rate-loading',
+    image: 'members-reply-rate-loading.png',
+    visual: 'state-members-reply-rate-loading',
+    needle: 'state /members reply-rate-loading',
   },
   {
     route: '/members/[accountId]',
@@ -3544,7 +3621,7 @@ export const SCREEN_VARIANTS = [
     id: 'invalid',
     image: 'grants-payments-amounts-invalid.png',
     visual: 'state-grants-payments-amounts-invalid',
-    needle: 'The amount is not valid.',
+    needle: 'Enter an amount greater than zero',
   },
   {
     route: '/grants/payments/amounts',
@@ -4109,6 +4186,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-send-empty',
+    image: 'messages-thread-send-empty.png',
+    visual: 'state-messages-thread-send-empty',
+    needle: 'messages thread-send-empty',
+  },
+  {
+    route: '/messages',
     id: 'thread-translate',
     image: 'messages-thread-translate.png',
     visual: 'state-messages-thread-translate',
@@ -4169,6 +4253,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-thread-pay-qr.png',
     visual: 'state-messages-thread-pay-qr',
     needle: 'Pay with Wallet of Satoshi',
+  },
+  {
+    route: '/messages',
+    id: 'thread-rate-loading',
+    image: 'messages-thread-rate-loading.png',
+    visual: 'state-messages-thread-rate-loading',
+    needle: 'messages thread-rate-loading',
+  },
+  {
+    route: '/messages',
+    id: 'thread-rate-loading-too-many',
+    image: 'messages-thread-rate-loading-too-many.png',
+    visual: 'state-messages-thread-rate-loading-too-many',
+    needle: 'messages thread-rate-loading-too-many',
   },
   {
     route: '/messages',
@@ -4753,6 +4851,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate/group',
+    id: 'send-empty',
+    image: 'moderate-group-send-empty.png',
+    visual: 'state-moderate-group-send-empty',
+    needle: 'moderate group send-empty',
+  },
+  {
+    route: '/moderate/group',
     id: 'loading',
     image: 'moderate-group-loading.png',
     visual: 'state-moderate-group-loading',
@@ -5002,6 +5107,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
     needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'pay-rate-loading',
+    image: 'messages-id-pay-rate-loading.png',
+    visual: 'state-messages-id-pay-rate-loading',
+    needle: 'state /messages/[id] pay-rate-loading',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply-rate-loading',
+    image: 'messages-id-reply-rate-loading.png',
+    visual: 'state-messages-id-reply-rate-loading',
+    needle: 'state /messages/[id] reply-rate-loading',
   },
   {
     route: '/messages/[id]',

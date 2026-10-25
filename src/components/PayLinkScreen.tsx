@@ -39,6 +39,8 @@ function PayLinkAmount(props: {
   onUnitChange: (unit: AmountUnit) => void;
   onRate: (day: FiatRateDay | null) => void;
   onRateSettled: (settled: boolean) => void;
+  onBlur: () => void;
+  error?: string;
 }): ReactElement {
   const { t } = useTranslations();
   const { rateDay, settled } = useLatestRateDayState();
@@ -58,6 +60,8 @@ function PayLinkAmount(props: {
       rateDay={rateDay}
       onUnitChange={props.onUnitChange}
       onValueChange={props.onValueChange}
+      onBlur={props.onBlur}
+      {...(props.error === undefined || props.error === '' ? {} : { error: props.error })}
     />
   );
 }
@@ -220,6 +224,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [amount, setAmount] = useState('');
   const [rateSettled, setRateSettled] = useState(false);
   const [formError, setFormError] = useState<'amount' | 'rate' | 'loading' | 'failed' | null>(null);
+  const [amountTouched, setAmountTouched] = useState(false);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
@@ -402,6 +407,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (postingRef.current || invoice !== null) {
       return;
     }
+    if (formError === 'loading' && !rateSettled) {
+      return;
+    }
+    setAmountTouched(true);
     const generation = generationRef.current;
     const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
     if (unit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
@@ -458,6 +467,26 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
   };
 
+  const payParsed = profile === null ? null : parseAmountDraft(unit, amount, rateDay, fiat);
+  const payBlank = amount.trim() === '';
+  let payFieldError: string | null = null;
+  if (profile !== null && payParsed !== null && formError !== 'loading') {
+    const showField = !payBlank || amountTouched || formError === 'amount' || formError === 'rate';
+    if (showField) {
+      if (payParsed.kind === 'no-rate') {
+        if (!(unit === 'fiat' && !rateSettled)) {
+          payFieldError = t('pos.noRate', { code: fiat });
+        }
+      } else if (payParsed.kind !== 'sats' || !Number.isSafeInteger(payParsed.sats)) {
+        payFieldError = t('pay.amountInvalid');
+      } else if (payParsed.sats < profile.minSats || payParsed.sats > profile.maxSats) {
+        payFieldError = t('pay.amountRange', {
+          min: formatBitcoin(profile.minSats, numberFormat),
+          max: formatBitcoin(profile.maxSats, numberFormat),
+        });
+      }
+    }
+  }
   const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
 
@@ -538,25 +567,23 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   disabled={posting}
                   onUnitChange={setUnit}
                   onValueChange={setAmount}
+                  onBlur={() => {
+                    setAmountTouched(true);
+                  }}
                   onRate={setRateDay}
                   onRateSettled={setRateSettled}
+                  {...(payFieldError === null ? {} : { error: payFieldError })}
                 />
-                <Button type="submit" className="w-full" disabled={posting}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={posting || payFieldError !== null || formError === 'loading'}
+                >
                   {t('forum.payContinue')}
                 </Button>
-                {formError === 'amount' ? (
-                  <p role="alert" className="text-sm text-app-danger">
-                    {t('pay.amountInvalid')}
-                  </p>
-                ) : null}
                 {formError === 'loading' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pos.rateLoading', { code: fiat })}
-                  </p>
-                ) : null}
-                {formError === 'rate' ? (
-                  <p role="alert" className="text-sm text-app-danger">
-                    {t('pos.noRate', { code: fiat })}
                   </p>
                 ) : null}
                 {formError === 'failed' ? (

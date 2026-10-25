@@ -16,13 +16,16 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import {
   fiatDraftForSats,
   parseAmountDraft,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
+  shownPaySheetError,
 } from '@/lib/stats-money';
 import {
   dismissForumLaws,
@@ -85,6 +88,7 @@ import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -502,7 +506,7 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled: rateSettled } = useLatestRateDayState();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   useEffect(() => {
@@ -2197,6 +2201,19 @@ export function ForumLoader({
     if (listed === undefined || listed.payable !== true) {
       return;
     }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
+      return;
+    }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid') {
       setPayError('amount');
@@ -2506,13 +2523,8 @@ export function ForumLoader({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-            ? 'tooLong'
-            : isRateLimitError(err)
-              ? 'rateLimit'
-              : 'request',
-        );
+        // This invoice was sent only after the draft fit the stored limit.
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       setReplyPosting(false);
@@ -2592,12 +2604,10 @@ export function ForumLoader({
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
-    const trimmed = replyDraft.trim();
-    /* v8 ignore next 4 -- textarea maxLength */
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
-      setReplyFormError('tooLong');
+    if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
+    const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
@@ -2607,9 +2617,30 @@ export function ForumLoader({
     const parentAccountId = parentRow?.accountId;
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
-    const composeOverhead = `inReplyTo:${parentId}\n`.length;
-    if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
       setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSettled,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
+      return;
+    }
+    if (replyProblem === 'no-rate') {
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
@@ -2657,6 +2688,43 @@ export function ForumLoader({
     void pending();
   };
 
+  const replyParentAccountId =
+    expandedId === null
+      ? undefined
+      : messages?.find((message) => message.id === expandedId)?.accountId;
+  const replyExempt = isReplyPaymentExempt(account, replyParentAccountId);
+  const replyParsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+  const replyTextTooLong = replyTextIsTooLong(
+    replyDraft,
+    expandedId,
+    replyExempt,
+    replyParsed === 'empty' && !replyExempt && replyParentAccountId !== undefined,
+  );
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  // A stored loading submit stays until the rate request finishes. A settled
+  // missing rate is the amount flag, not a reply-form code.
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -2924,7 +2992,7 @@ export function ForumLoader({
         payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
-        payError={payError}
+        payError={shownPayError}
         repayNotice={repayNotice}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
@@ -2948,7 +3016,7 @@ export function ForumLoader({
         onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
           setPayDraft(value);
-          setPayError(null);
+          setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
         }}
         onPaySubmit={onPaySubmit}
         onPayCancel={clearPaySheet}
@@ -2974,16 +3042,19 @@ export function ForumLoader({
         replyDraft={replyDraft}
         onReplyDraftChange={(value) => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value) => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         onReplyPost={onReplyPost}
         replyPosting={replyPosting}
-        replyFormError={replyFormError}
+        replyFormError={shownReplyFormError}
+        replyTextTooLong={replyTextTooLong}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
       />
     </>
   );

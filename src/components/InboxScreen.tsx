@@ -28,6 +28,7 @@ import {
   type Conversation,
   type ConversationMessage,
 } from '@/lib/api-types';
+import { composerTextProblem, shownEntryProblem } from '@/lib/entry-text';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -185,12 +186,17 @@ function threadEndInView(column: HTMLElement, scroller: HTMLElement): boolean {
   return columnRect.bottom <= scrollerRect.bottom + 1 && columnRect.bottom > scrollerRect.top;
 }
 
+/** Photo rejection that can sit beside a loading exchange rate. */
+export type InboxPhotoAlert = 'unsupported' | 'tooLarge' | 'tooMany';
+
 /** Client-side composer validation or request failure. */
 export type InboxFormError =
   | 'empty'
   | 'tooLong'
   | 'request'
   | 'amount'
+  | 'noRate'
+  | 'loading'
   | 'rateLimit'
   | 'authorWallet'
   | 'unsupported'
@@ -240,6 +246,11 @@ export interface InboxScreenProps {
   posting: boolean;
   /** Client-side composer validation or request failure. */
   formError: InboxFormError;
+  /**
+   * Photo rejection shown with the loading-rate sentence. Null when that
+   * rejection is already `formError`.
+   */
+  photoAlert?: InboxPhotoAlert | null;
   /** True for a moderator: show Direct/Contact/Damus. Members see the full inbound list. */
   showFilter: boolean;
   /** Amount draft for the composer sats field. */
@@ -566,6 +577,7 @@ export function InboxScreen({
   onPost,
   posting,
   formError,
+  photoAlert = null,
   showFilter,
   amountDraft = '',
   onAmountDraftChange = () => undefined,
@@ -586,6 +598,42 @@ export function InboxScreen({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const amountUnitChange = onAmountUnitChange ?? ((): void => undefined);
+  const [composerTouched, setComposerTouched] = useState(false);
+  // A thread change is a new composer. The empty error from the previous one does not travel.
+  const [seenOpenId, setSeenOpenId] = useState(openId);
+  if (openId !== seenOpenId) {
+    setSeenOpenId(openId);
+    setComposerTouched(false);
+  }
+  const composerBusy = posting || payWaiting;
+  const [seenComposerBusy, setSeenComposerBusy] = useState(composerBusy);
+  if (composerBusy !== seenComposerBusy) {
+    setSeenComposerBusy(composerBusy);
+    if (seenComposerBusy && !composerBusy && draft.trim() === '') {
+      setComposerTouched(false);
+    }
+  }
+  const mediaProblem = composerTextProblem(
+    draft,
+    CONTACT_MESSAGE_MAX_LENGTH,
+    photoDrafts.length > 0,
+  );
+  const textProblem = mediaProblem === 'empty' && amountDraft.trim() !== '' ? null : mediaProblem;
+  const textShown = shownEntryProblem(
+    textProblem,
+    composerTouched || formError === 'empty' || formError === 'tooLong',
+  );
+  const photoNotice: InboxPhotoAlert | null =
+    photoAlert ??
+    (formError === 'unsupported' || formError === 'tooLarge' || formError === 'tooMany'
+      ? formError
+      : null);
+  const textAlert: 'empty' | 'tooLong' | null =
+    textShown === 'tooLong' || (formError === 'tooLong' && textProblem !== null)
+      ? 'tooLong'
+      : textProblem === 'empty' && (textShown === 'empty' || formError === 'empty')
+        ? 'empty'
+        : null;
   const inShell = useContext(AppShellContext) !== null;
   const scroller = useAppShellScroller();
   const hadOpenThreadRef = useRef(false);
@@ -880,6 +928,7 @@ export function InboxScreen({
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    setComposerTouched(true);
     onPost();
   };
 
@@ -1175,9 +1224,14 @@ export function InboxScreen({
               placeholder={t('inbox.placeholder')}
               value={draft}
               onChange={onDraftChange}
-              maxLength={CONTACT_MESSAGE_MAX_LENGTH}
+              onBlur={() => {
+                setComposerTouched(true);
+              }}
               rows={2}
               disabled={posting || messagesLoading}
+              {...(textAlert === null
+                ? {}
+                : { ariaDescribedBy: 'inbox-composer-error', ariaInvalid: true })}
               wrapperClassName="relative min-w-0 flex-1"
               className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
             />
@@ -1185,7 +1239,14 @@ export function InboxScreen({
               type="submit"
               size="lg"
               variant="primary"
-              disabled={posting || messagesLoading}
+              disabled={
+                posting ||
+                messagesLoading ||
+                textAlert !== null ||
+                formError === 'amount' ||
+                formError === 'noRate' ||
+                formError === 'loading'
+              }
               aria-label={t('inbox.send')}
             >
               {posting ? (
@@ -1195,6 +1256,29 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
+          {formError === 'loading' ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('pos.rateLoading', { code: fiat })}
+            </p>
+          ) : null}
+          {textAlert === 'empty' ? (
+            <p
+              id="inbox-composer-error"
+              role="alert"
+              className="text-center text-sm text-app-danger"
+            >
+              {t('inbox.errorEmpty')}
+            </p>
+          ) : null}
+          {textAlert === 'tooLong' ? (
+            <p
+              id="inbox-composer-error"
+              role="alert"
+              className="text-center text-sm text-app-danger"
+            >
+              {t('inbox.errorTooLong')}
+            </p>
+          ) : null}
           {showAmount && invoice === null ? (
             <AmountEntry
               layout="composer"
@@ -1206,6 +1290,11 @@ export function InboxScreen({
               rateDay={rateDay}
               onValueChange={onAmountDraftChange}
               onUnitChange={amountUnitChange}
+              {...(formError === 'amount'
+                ? { error: t('inbox.errorAmount') }
+                : formError === 'noRate'
+                  ? { error: t('pos.noRate', { code: fiat }) }
+                  : {})}
             />
           ) : null}
           {showAttach && photoDrafts.length === 1 ? (
@@ -1256,24 +1345,9 @@ export function InboxScreen({
             </ul>
           ) : null}
         </form>
-        {formError === 'empty' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('inbox.errorEmpty')}
-          </p>
-        ) : null}
-        {formError === 'tooLong' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('inbox.errorTooLong')}
-          </p>
-        ) : null}
         {formError === 'request' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorRequest')}
-          </p>
-        ) : null}
-        {formError === 'amount' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('inbox.errorAmount')}
           </p>
         ) : null}
         {formError === 'rateLimit' ? (
@@ -1286,17 +1360,17 @@ export function InboxScreen({
             {t('inbox.errorAuthorWallet')}
           </p>
         ) : null}
-        {formError === 'unsupported' ? (
+        {photoNotice === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorUnsupported')}
           </p>
         ) : null}
-        {formError === 'tooLarge' ? (
+        {photoNotice === 'tooLarge' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooLarge')}
           </p>
         ) : null}
-        {formError === 'tooMany' ? (
+        {photoNotice === 'tooMany' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorTooMany')}
           </p>
