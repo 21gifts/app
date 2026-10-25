@@ -148,7 +148,7 @@ const en = {
   'home.faqTitle': 'Frequently asked questions',
   'home.faq1Q': 'Do I need an account to see the forum?',
   'home.faq1A':
-    'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+    'No. You can read the forum without an account. To react with an amount or write something yourself, you sign in. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
   'home.faq2Q': 'Does 21.gifts keep any of my donation?',
   'home.faq2A':
     '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
@@ -1399,7 +1399,7 @@ const de = {
   'home.faqTitle': 'Häufige Fragen',
   'home.faq1Q': 'Brauche ich ein Konto, um das Wohnzimmer zu sehen?',
   'home.faq1A':
-    'Ja. Für das Wohnzimmer meldest du dich an. Wenn du selbst Bitcoin-Spenden empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
+    'Nein. Das Wohnzimmer kannst du ohne Konto lesen. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an. Wenn du selbst Bitcoin-Spenden empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
   'home.faq2Q': 'Behält 21.gifts etwas von meiner Spende?',
   'home.faq2A':
     '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
@@ -2685,7 +2685,7 @@ const es = {
   'home.faqTitle': 'Preguntas frecuentes',
   'home.faq1Q': '¿Necesito una cuenta para ver el foro?',
   'home.faq1A':
-    'Sí. Para el foro inicias sesión. Si quieres recibir donaciones en Bitcoin, añade además una dirección de Wallet of Satoshi.',
+    'No. Puedes leer el foro sin una cuenta. Para reaccionar con un importe o escribir algo tú mismo, inicias sesión. Si quieres recibir donaciones en Bitcoin, añade además una dirección de Wallet of Satoshi.',
   'home.faq2Q': '¿Se queda 21.gifts con algo de mi donación?',
   'home.faq2A':
     '21.gifts no se queda con ninguna parte. Tu cartera o la red de pago pueden cobrar sus propias comisiones.',
@@ -3945,7 +3945,7 @@ const fil = {
   'home.faqTitle': 'Mga madalas itanong',
   'home.faq1Q': 'Kailangan ko ba ng account para makita ang forum?',
   'home.faq1A':
-    'Oo. Mag-log in ka para sa forum. Kung gusto mo ring tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address.',
+    'Hindi. Mababasa mo ang forum nang walang account. Para magbigay ng reaksyon gamit ang halaga o magsulat ng sarili mong post, mag-log in ka. Kung gusto mo ring tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address.',
   'home.faq2Q': 'May kinukuha ba ang 21.gifts sa donasyon ko?',
   'home.faq2A':
     'Walang bahaging kinukuha ang 21.gifts. Maaaring may sariling bayarin ang wallet mo o ang payment network.',

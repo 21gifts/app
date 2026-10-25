@@ -11,7 +11,10 @@ test.describe('Accept-Language de', () => {
     await expect(page.getByRole('heading', { name: /Hilf Menschen mit Bitcoin/ })).toBeVisible();
     await page.getByText('Brauche ich ein Konto, um das Wohnzimmer zu sehen?').click();
     await expect(
-      page.getByText('Ja. Für das Wohnzimmer meldest du dich an.', { exact: false }),
+      page.getByText(
+        'Nein. Das Wohnzimmer kannst du ohne Konto lesen. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an.',
+        { exact: false },
+      ),
     ).toBeVisible();
   });
 

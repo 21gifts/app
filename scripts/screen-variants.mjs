@@ -97,7 +97,7 @@ export const SCREEN_VARIANTS = [
     id: 'faq-account-open',
     image: 'root-faq-account-open.png',
     visual: 'state-root-faq-account-open',
-    needle: 'You sign in for the forum',
+    needle: 'To react with an amount or write something yourself, you sign in.',
   },
   {
     route: '/',

@@ -2280,9 +2280,9 @@
     "fil": "Bukas ang pampalit ng wika sa pampromosyong ulo. Pasadyang listahan (bilugang panid, mga hanay ng endonym na may tsek sa kasalukuyang wika) — hindi ang mukha ng sistema."
   },
   "/:faq-account-open": {
-    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du dich für das Wohnzimmer anmeldest. Um selbst Bitcoin-Spenden zu empfangen, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.",
-    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que inicias sesión para el foro. Para recibir donaciones en Bitcoin, añades además una dirección de Wallet of Satoshi.",
-    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mag-log in ka para sa forum. Para tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address."
+    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du das Wohnzimmer ohne Konto lesen kannst. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an. Um selbst Bitcoin-Spenden zu empfangen, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.",
+    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que puedes leer el foro sin una cuenta, pero debes iniciar sesión para reaccionar con un importe o escribir algo. Para recibir donaciones en Bitcoin, añades además una dirección de Wallet of Satoshi.",
+    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mababasa mo ang forum nang walang account, pero kailangan mong mag-log in para magbigay ng reaksyon gamit ang halaga o magsulat ng sarili mong post. Para tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address."
   },
   "/:faq-share-open": {
     "de": "Die zweite Frage ist geöffnet: Behält 21.gifts etwas von meiner Spende? Die Antwort sagt, dass 21.gifts keinen Anteil behält. Deine Wallet oder das Zahlungsnetzwerk kann trotzdem eigene Gebühren verlangen.",

@@ -31,7 +31,7 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 
 ### Variant: faq-account-open
 
-The first question is open: **Do I need an account to see the forum?** The answer says you sign in for the forum. To receive Bitcoin donations yourself, also add a Wallet of Satoshi address.
+The first question is open: **Do I need an account to see the forum?** The answer says you can read the forum without an account, but need to sign in to react with an amount or write something. To receive Bitcoin donations yourself, also add a Wallet of Satoshi address.
 
 ![21.gifts home FAQ account open](images/root-faq-account-open.png)
 
