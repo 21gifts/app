@@ -602,7 +602,7 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 ### Variant: invalid
 
-**Continue** after an invalid username shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
+Entering **!** shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
 
 ![21.gifts username invalid](images/setup-username-invalid.png)
 
@@ -2168,7 +2168,7 @@ username. Check the spelling of the 21.gifts username.**
 
 ### Variant: overlay-username-invalid
 
-**Continue** after **.alice** in the dialog **Add your 21.gifts name** shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
+Entering **.alice** in the dialog **Add your 21.gifts name** immediately shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
 
 ![21.gifts welcome overlay username invalid](images/welcome-overlay-username-invalid.png)
 
@@ -4272,7 +4272,7 @@ username. Check the spelling of the 21.gifts username.**
 
 ### Variant: overlay-username-invalid
 
-**Continue** after **.alice** in the **Add your 21.gifts name** dialog on an open member note shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
+Entering **.alice** in the **Add your 21.gifts name** dialog on an open member note immediately shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
 
 ![21.gifts member overlay username invalid](images/members-overlay-username-invalid.png)
 
