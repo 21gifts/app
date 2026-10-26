@@ -16,6 +16,10 @@ vi.mock('@/components/PlacesMapScreen', () => ({
   PlacesMapScreen: () => <div data-testid="places-map-screen" />,
 }));
 
+vi.mock('@/components/ShopList', () => ({
+  ShopList: () => <div data-testid="shop-list" />,
+}));
+
 vi.mock('@/components/ShopTable', () => ({
   ShopTable: () => <div data-testid="shop-table" />,
 }));
@@ -27,31 +31,39 @@ afterEach(() => {
 });
 
 describe('ShopsScreen', () => {
-  it('shows the heading, lead, and shops forum feed', () => {
+  it('shows the heading, lead, and shop list', () => {
     renderWithLocale(<ShopsScreen />);
     expect(screen.getByRole('heading', { name: 'Shops' })).toBeTruthy();
-    expect(
-      screen.getByText(
-        'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
-      ),
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
-    expect(screen.getByTestId('forum-loader').getAttribute('data-feed')).toBe('shops');
+    expect(screen.getByText('Each row is a shop page, not a forum note.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'List', pressed: true })).toBeTruthy();
+    expect(screen.getByTestId('shop-list')).toBeTruthy();
+    expect(screen.queryByTestId('forum-loader')).toBeNull();
   });
 
-  it('switches to the map and the table', () => {
+  it('switches to the map, the table, post, and back to the list', () => {
+    window.location.hash = '#post';
+    window.history.replaceState({ idx: 1 }, '', `${window.location.pathname}#post`);
     renderWithLocale(<ShopsScreen />);
-    window.history.replaceState({ idx: 1 }, '', window.location.pathname);
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+    expect(screen.getByTestId('forum-loader').getAttribute('data-feed')).toBe('shops');
     fireEvent.click(screen.getByRole('button', { name: 'Map' }));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(window.history.state).toEqual({ idx: 1 });
+    expect(screen.queryByTestId('shop-list')).toBeNull();
     expect(screen.queryByTestId('forum-loader')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Table' }));
     expect(screen.getByTestId('shop-table')).toBeTruthy();
     expect(screen.queryByTestId('places-map-screen')).toBeNull();
     expect(window.location.hash).toBe('#table');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(window.location.hash).toBe('#post');
+    expect(screen.getByTestId('forum-loader').getAttribute('data-feed')).toBe('shops');
+    expect(screen.queryByTestId('shop-table')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'List' }));
     expect(window.location.hash).toBe('');
+    expect(screen.getByTestId('shop-list')).toBeTruthy();
+    expect(screen.queryByTestId('forum-loader')).toBeNull();
+    expect(window.history.state).toEqual({ idx: 1 });
   });
 
   it('opens the map from /shops#map and ignores an unknown hash', async () => {
@@ -65,11 +77,12 @@ describe('ShopsScreen', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     expect(window.location.hash).toBe('#nope');
-    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
-    expect(screen.getByTestId('forum-loader')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'List', pressed: true })).toBeTruthy();
+    expect(screen.getByTestId('shop-list')).toBeTruthy();
+    expect(screen.queryByTestId('forum-loader')).toBeNull();
   });
 
-  it('opens the table from /shops#table', async () => {
+  it('opens the table from /shops#TABLE', async () => {
     window.location.hash = '#TABLE';
     renderWithLocale(<ShopsScreen />);
     await waitFor(() => {

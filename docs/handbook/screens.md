@@ -2236,13 +2236,13 @@ API 503. Alert **Could not load this shop. Please try again.** and labeled **Try
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Each row is a shop page, not a forum note.** Under the lead a pill offers **List**, **Map**, **Table**, and **Post**. **List** is selected. Each row is the shop name from the public directory and links to `/{npub}`, with the place under the name. A forum note without a shop page stays on **Post**. `/shops#map` opens **Map**, `/shops#table` opens **Table**, and `/shops#post` opens **Post**. `/shops#list`, no hash, or an unknown hash opens **List**. Choosing an option writes that hash; **List** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. On **Post**, the feed is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. **List** loads `GET /shops/list`, the same-origin proxy of api `GET /shops`, and does not scan forum notes. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (photos or video optional; shop text of 20–1000 characters, longer than the shop name) with its required place (name and address). Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ShopList`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
 
 ### Variant: default
 
-Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, **Add a shop** (no living-room composer), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
+Heading **Shops**, each row is a shop page rather than a forum note, the **List** / **Map** / **Table** / **Post** pill with **List** selected. One row **Cafe Luna** links to the shop page. **Add a shop** is absent. There is no `#Shop` pill and no raw `#21GiftsShop`. Laws hint absent.
 
 ![21.gifts shops](images/shops.png)
 
@@ -2272,7 +2272,7 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ### Variant: sunday
 
-Device-local Sunday. The **Post** / **Map** / **Table** pill stays. **Add a shop** is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
+Device-local Sunday. The **List** / **Map** / **Table** / **Post** pill stays. **Add a shop** is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
 
 ![21.gifts shops sunday](images/shops-sunday.png)
 
@@ -2986,6 +2986,48 @@ The next page failed. **Cafe Luna** stays. The forum error and **Try again** sit
 **Table** is selected and the first page failed. **Could not load messages. Please try again.** and **Try again**. The composer is gone.
 
 ![21.gifts shops table error](images/shops-table-error.png)
+
+### Variant: list-more
+
+**List** is selected. One row **Cafe Luna** links to the shop page, and **Show more** is under the list. There is no composer.
+
+![21.gifts shops list more](images/shops-list-more.png)
+
+### Variant: list-next
+
+**Show more** has loaded the next page. **Cafe Luna** stays, **Other stall** is added, and **Show more** is gone.
+
+![21.gifts shops list next](images/shops-list-next.png)
+
+### Variant: list-more-error
+
+The next page failed. **Cafe Luna** stays. **Could not load shops. Please try again.** and **Try again** sit under the list, and **Show more** is still there.
+
+![21.gifts shops list more error](images/shops-list-more-error.png)
+
+### Variant: list-more-empty
+
+**List** is selected. The page has no shop rows, but another page exists. **Show more** is shown. The empty sentence is not.
+
+![21.gifts shops list more empty](images/shops-list-more-empty.png)
+
+### Variant: list-empty
+
+**List** is selected and there are no shops. Empty copy **No shops yet — add the first one.** The composer is absent.
+
+![21.gifts shops list empty](images/shops-list-empty.png)
+
+### Variant: list-loading
+
+**List** is selected and the page has not arrived. **Loading…** The composer is absent.
+
+![21.gifts shops list loading](images/shops-list-loading.png)
+
+### Variant: list-error
+
+**List** is selected and the first page failed. **Could not load shops. Please try again.** and **Try again**. The composer is absent.
+
+![21.gifts shops list error](images/shops-list-error.png)
 
 ### Variant: map-empty
 

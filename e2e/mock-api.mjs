@@ -2149,6 +2149,30 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/shops') {
+    json(res, 200, {
+      shops: [
+        {
+          npub: `npub1${'2'.repeat(58)}`,
+          name: 'Cafe Luna',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Cafe Luna',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        },
+      ],
+    });
+    return;
+  }
+
   const shopMatch = pathName.match(/^\/shops\/([^/]+)$/);
   if (method === 'GET' && shopMatch !== null) {
     const value = decodeURIComponent(shopMatch[1]);
