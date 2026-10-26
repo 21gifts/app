@@ -4944,6 +4944,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/[npub]:no-pin",
+    "label": "/[npub] no-pin",
+    "visual": "state-npub-no-pin",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/[npub]:gone",
     "label": "/[npub] gone",
     "visual": "state-npub-gone",
@@ -4959,6 +4965,12 @@
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:no-pin",
+    "label": "/shops no-pin",
+    "visual": "state-shops-no-pin",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

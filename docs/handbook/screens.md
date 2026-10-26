@@ -2196,8 +2196,8 @@ A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and a
 ## Screen: /[npub]
 
 - **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
-- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, postal address as text, optional one-marker Google map, link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and, when `payUsername` is not null, a payment block like the profile cards: heading **21.gifts address**, the `username@domain` address line, then the Open CryptoPay QR with the 21.gifts logo. Without a Google Maps key there is no map frame; the address remains. A map script that fails to load, or a key Google rejects, removes the map frame too, so the page looks the same as without a key. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. Only an exact answer shows the shop: status 200 for an npub whose `shop.npub` is that same npub, or a 301 to a valid npub for a hex key. API 503, any other status (including another 2xx such as 201), a 200 for a hex key, a 200 for a different npub, or an unusable response shows `shop.error` (**Could not load this shop. Please try again.**) plus **Try again**.
-- **Inputs / metadata:** Server `GET /shops/:npub` without a session, limited to 2.5 seconds (`API_FETCH_TIMEOUT_MS`); a timeout shows the retryable error. A relative photo path resolves against the api base URL and a photo that is not http(s) is dropped (`resolveShopPhotoUrl`), for the gallery and for `og:image`. `generateMetadata` and the page share one request-cached api call, so both see the same answer. Metadata uses the same 2.5-second abort as a public note, with shop name, description cut like a public note (`ogDescriptionText`: trimmed, name fallback, 300 code units), first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. The client asks same-origin `GET /maps/key` through `fetchMapsKey`; a non-empty key draws only this shop at zoom 14. The payment heading is server-rendered; the address line `giftsLightningAddress(payUsername, window.location.hostname)` and the QR `openCryptoPayQrValue(payUsername, window.location.hostname)` appear only after mount, so the server and the browser render the same HTML on every host.
+- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, and, only when it has a pin, the postal address as text and an optional one-marker Google map. It also shows the link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and, when `payUsername` is not null, a payment block like the profile cards: heading **21.gifts address**, the `username@domain` address line, then the Open CryptoPay QR with the 21.gifts logo. Without a Google Maps key there is no map frame; the address remains. A map script that fails to load, or a key Google rejects, removes the map frame too, so the page looks the same as without a key. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. Only an exact answer shows the shop: status 200 for an npub whose `shop.npub` is that same npub, or a 301 to a valid npub for a hex key. API 503, any other status (including another 2xx such as 201), a 200 for a hex key, a 200 for a different npub, or an unusable response shows `shop.error` (**Could not load this shop. Please try again.**) plus **Try again**.
+- **Inputs / metadata:** Server `GET /shops/:npub` without a session, limited to 2.5 seconds (`API_FETCH_TIMEOUT_MS`); a timeout shows the retryable error. A relative photo path resolves against the api base URL and a photo that is not http(s) is dropped (`resolveShopPhotoUrl`), for the gallery and for `og:image`. `generateMetadata` and the page share one request-cached api call, so both see the same answer. Metadata uses the same 2.5-second abort as a public note, with shop name, description cut like a public note (`ogDescriptionText`: trimmed, name fallback, 300 code units), first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. When the shop has a pin, the client asks same-origin `GET /maps/key` through `fetchMapsKey`; a non-empty key draws only this shop at zoom 14. A shop with no pin skips that request. The payment heading is server-rendered; the address line `giftsLightningAddress(payUsername, window.location.hostname)` and the QR `openCryptoPayQrValue(payUsername, window.location.hostname)` appear only after mount, so the server and the browser render the same HTML on every host.
 - **Actions / calls:** Open `/messages/{messageId}`, copy the npub (`NpubCopyButton`), scan the `QrCode`, change language or use the signed-in Menu, retry via `router.refresh`, and use the one header back arrow. Calls `ShopPage`, `ShopScreen`, `PublicMessageChrome`, `ForumPhotoGallery`, `GoogleMapCanvas`, `fetchMapsKey`, `NpubCopyButton`, `QrCode`, `giftsLightningAddress`, and `openCryptoPayQrValue`.
 
 ### Variant: default
@@ -2242,6 +2242,12 @@ Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum
 
 ![21.gifts public shop without payment](images/npub-no-payment.png)
 
+### Variant: no-pin
+
+Listed **Roadside Stall** with a description, one photo, forum-note link, NIP-05, npub copy control, and the payment block. There is no pin, so there is no **Address** heading, no street lines, no map, and no request for a maps key.
+
+![21.gifts public shop without a pin](images/npub-no-pin.png)
+
 ### Variant: gone
 
 API 410. The page says **This shop is no longer listed.** and shows no shop name or other hidden shop data.
@@ -2266,6 +2272,12 @@ API 503. Alert **Could not load this shop. Please try again.** and labeled **Try
 Heading **Shops**, each row is a shop page rather than a forum note, the **List** / **Map** / **Table** / **Post** pill with **List** selected. One row **Cafe Luna** links to the shop page. **Add a shop** is absent. There is no `#Shop` pill and no raw `#21GiftsShop`. Laws hint absent.
 
 ![21.gifts shops](images/shops.png)
+
+### Variant: no-pin
+
+Heading **Shops**, the **List** pill selected. One row **Roadside Stall** links to the shop page and has no place line under the name. **Add a shop** is absent.
+
+![21.gifts shops without a pin](images/shops-no-pin.png)
 
 ### Variant: mention-suggest
 
