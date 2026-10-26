@@ -2067,13 +2067,25 @@ text **Fresh bread every morning.** The live error
 
 ### Variant: shop-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
 
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user suggest](images/welcome-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user chosen](images/welcome-shop-edit-user-chosen.png)
+
 ### Variant: shop-edit-user-checking
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
 still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
 says there are no edits yet.
 
@@ -2081,7 +2093,7 @@ says there are no edits yet.
 
 ### Variant: shop-edit-user-missing
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup
 returned no account. **No account with that username. Check the spelling of the 21.gifts
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
@@ -2089,7 +2101,7 @@ username.** is visible and **Next** is disabled. **History** still says there ar
 
 ### Variant: shop-edit-user-invalid
 
-Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+Step **4 / 5 · 21.gifts user** is open with **@_** in the username field. **Use 1–32 characters:
 a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
 is disabled. **History** still says there are no edits yet.
 
@@ -2099,7 +2111,7 @@ is disabled. **History** still says there are no edits yet.
 
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
 **Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
-morning.**, and 21.gifts user **None**.
+morning.**, and 21.gifts user **@ada**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
 
@@ -2111,6 +2123,15 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
+
+![21.gifts welcome shop edit account required](images/welcome-shop-edit-account-required.png)
 
 ### Variant: shop-edit-saving
 
@@ -2138,13 +2159,13 @@ A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is sti
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. The username field shows **@**. **Next** is disabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts welcome shop edit photo preparing user](images/welcome-shop-edit-photo-preparing-user.png)
 
 ### Variant: shop-edit-photo-preparing-summary
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. The 21.gifts user is **@ada**. **Save changes** is disabled. There is no alert.
 
 ![21.gifts welcome shop edit photo preparing summary](images/welcome-shop-edit-photo-preparing-summary.png)
 
@@ -2236,7 +2257,7 @@ API 503. Alert **Could not load this shop. Please try again.** and labeled **Try
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Each row is a shop page, not a forum note.** Under the lead a pill offers **List**, **Map**, **Table**, and **Post**. **List** is selected. Each row is the shop name from the public directory and links to `/{npub}`, with the place under the name. A forum note without a shop page stays on **Post**. `/shops#map` opens **Map**, `/shops#table` opens **Table**, and `/shops#post` opens **Post**. `/shops#list`, no hash, or an unknown hash opens **List**. Choosing an option writes that hash; **List** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. On **Post**, the feed is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. **List** loads `GET /shops/list`, the same-origin proxy of api `GET /shops`, and does not scan forum notes. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Each row is a shop page, not a forum note.** Under the lead a pill offers **List**, **Map**, **Table**, and **Post**. **List** is selected. Each row is the shop name from the public directory and links to `/{npub}`, with the place under the name. A forum note without a shop page stays on **Post**. `/shops#map` opens **Map**, `/shops#table` opens **Table**, and `/shops#post` opens **Post**. `/shops#list`, no hash, or an unknown hash opens **List**. Choosing an option writes that hash; **List** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. A pin label opens `/{shopNpub}` when `GET /messages/places` identifies a listed shop; null stays `/messages/{messageId}`. **Table** has columns **Name**, **Place**, and **Operator** and deliberately keeps its place link `/map?pin=…`. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, a required 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. On **Post**, the feed is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. **List** loads `GET /shops/list`, the same-origin proxy of api `GET /shops`, and does not scan forum notes. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
 - **Actions:** Post a shop (photos or video optional; shop text of 20–1000 characters, longer than the shop name) with its required place (name and address). Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ShopList`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
 
@@ -2388,13 +2409,25 @@ Step **3 / 5 · Text** is open on **Map** with a place named
 
 ### Variant: map-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit user](images/shops-map-edit-user.png)
 
+### Variant: map-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user suggest](images/shops-map-edit-user-suggest.png)
+
+### Variant: map-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user chosen](images/shops-map-edit-user-chosen.png)
+
 ### Variant: map-edit-user-checking
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
 still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
 says there are no edits yet. **Map** stays selected, with no second **Map** heading.
 
@@ -2402,7 +2435,7 @@ says there are no edits yet. **Map** stays selected, with no second **Map** head
 
 ### Variant: map-edit-user-missing
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup
 returned no account. **No account with that username. Check the spelling of the 21.gifts
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 **Map** stays selected, with no second **Map** heading.
@@ -2411,7 +2444,7 @@ username.** is visible and **Next** is disabled. **History** still says there ar
 
 ### Variant: map-edit-user-invalid
 
-Step **4 / 5 · 21.gifts user** is open on **Map** with **\_** in the username field. **Use 1–32
+Step **4 / 5 · 21.gifts user** is open on **Map** with **@_** in the username field. **Use 1–32
 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible
 and **Next** is disabled. **History** still says there are no edits yet.
 
@@ -2421,7 +2454,7 @@ and **Next** is disabled. **History** still says there are no edits yet.
 
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **Kiki's
 Bakery** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
-morning.**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
+morning.**, and 21.gifts user **@ada**. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
 
@@ -2434,6 +2467,16 @@ shows **No account with that username. Check the spelling of the 21.gifts userna
 stays selected.
 
 ![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
+
+### Variant: map-edit-account-required
+
+A moderator opened **Edit shop note** on **Map**, changed **Shop text**, entered **luna** on step
+**4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because the shop
+note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in
+the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled. **Map** stays
+selected.
+
+![21.gifts shops map edit account required](images/shops-map-edit-account-required.png)
 
 ### Variant: map-edit-saving
 
@@ -2461,13 +2504,13 @@ A moderator opened **Edit shop note** on **Map** and chose a photo that is still
 
 ### Variant: map-edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. The username field shows **@**. **Next** is disabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit photo preparing user](images/shops-map-edit-photo-preparing-user.png)
 
 ### Variant: map-edit-photo-preparing-summary
 
-A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
+A moderator opened **Edit shop note** on **Map** and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. The 21.gifts user is **@ada**. **Save changes** is disabled. There is no alert. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit photo preparing summary](images/shops-map-edit-photo-preparing-summary.png)
 
@@ -2664,16 +2707,28 @@ Step **3 / 5 · Text** is open on **Table** with a place named
 
 ### Variant: table-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows @luna.
 **History** still says there are no edits yet. Place
 **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
 
+### Variant: table-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open on **Table** after the stored username is cleared. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user suggest](images/shops-table-edit-user-suggest.png)
+
+### Variant: table-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open on **Table**. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet. **Table** stays selected.
+
+![21.gifts shops table edit user chosen](images/shops-table-edit-user-chosen.png)
+
 ### Variant: table-edit-user-checking
 
 Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
-**missing**. The live lookup is still running, so **Checking that account…** is visible and
+**@missing**. The live lookup is still running, so **Checking that account…** is visible and
 **Next** is disabled. **History** still says there are no edits yet. **Table** stays selected.
 
 ![21.gifts shops table edit user checking](images/shops-table-edit-user-checking.png)
@@ -2681,7 +2736,7 @@ Step **4 / 5 · 21.gifts user** is open after the username was changed from **lu
 ### Variant: table-edit-user-missing
 
 Step **4 / 5 · 21.gifts user** is open after the username was changed from **luna** to
-**missing**. The live lookup returned no account. **No account with that username. Check the
+**@missing**. The live lookup returned no account. **No account with that username. Check the
 spelling of the 21.gifts username.** is visible and **Next** is disabled. **History** still says
 there are no edits yet. **Table** stays selected.
 
@@ -2690,7 +2745,7 @@ there are no edits yet. **Table** stays selected.
 ### Variant: table-edit-user-invalid
 
 Step **4 / 5 · 21.gifts user** is open on **Table** after the username was changed from **luna**
-to **\_**. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or
+to **@_**. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or
 digit.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts shops table edit user invalid](images/shops-table-edit-user-invalid.png)
@@ -2711,6 +2766,16 @@ inconclusive, then the API rejected the account update. The editor returns to st
 21.gifts username.** **Table** stays selected.
 
 ![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
+
+### Variant: table-edit-account-required
+
+A moderator opened **Edit shop note** on **Table**, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
+the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
+**@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
+**Table** stays selected.
+
+![21.gifts shops table edit account required](images/shops-table-edit-account-required.png)
 
 ### Variant: table-edit-saving
 
@@ -2901,14 +2966,25 @@ disabled.
 
 ### Variant: add-user
 
-**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is empty and the optional
-hint is directly under the field. **Next** is enabled.
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts shops add user](images/shops-add-user.png)
 
+### Variant: add-user-suggest
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled.
+
+![21.gifts shops add user suggest](images/shops-add-user-suggest.png)
+
+### Variant: add-user-chosen
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert.
+
+![21.gifts shops add user chosen](images/shops-add-user-chosen.png)
+
 ### Variant: add-user-checking
 
-**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **@missing** in the username field.
 The live lookup is still running, so **Checking that account…** is visible and **Next** is
 disabled.
 
@@ -2916,7 +2992,7 @@ disabled.
 
 ### Variant: add-user-missing
 
-**Add a shop** is open on step **4 / 5 · 21.gifts user** with **missing** in the username field.
+**Add a shop** is open on step **4 / 5 · 21.gifts user** with **@missing** in the username field.
 The live lookup returned no account. **No account with that username. Check the spelling of the
 21.gifts username.** is visible and **Next** is disabled.
 
@@ -2924,14 +3000,14 @@ The live lookup returned no account. **No account with that username. Check the 
 
 ### Variant: add-user-invalid
 
-**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is **\_**, the format error
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is **@_**, the format error
 is visible under the field, and **Next** is disabled.
 
 ![21.gifts shops add user invalid](images/shops-add-user-invalid.png)
 
 ### Variant: add-summary
 
-**Add a shop** is open on step **5 / 5 · Summary**. Photos and the user were skipped. The summary
+**Add a shop** is open on step **5 / 5 · Summary**. Photos were skipped. The 21.gifts user is **@ada**. The summary
 shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The shop text is
 **Fresh bread every morning.** **Post** is the only button on the card, and it is enabled.
 
@@ -2943,6 +3019,14 @@ shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. Th
 server was unavailable. The summary stays open and the generic post error is visible.
 
 ![21.gifts shops add post rejected](images/shops-add-post-rejected.png)
+
+### Variant: add-account-required
+
+**Add a shop** reached step **5 / 5 · Summary** with **@luna**, and **Post** was pressed. The API
+rejected the post because the shop note needs a shop account. The editor returns to step
+**4 / 5 · 21.gifts user** with **@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
+
+![21.gifts shops add account required](images/shops-add-account-required.png)
 
 ### Variant: table-more
 
@@ -3230,13 +3314,25 @@ text **Fresh bread every morning.** The live error
 
 ### Variant: edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts shops edit user](images/shops-edit-user.png)
 
+### Variant: edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts shops edit user suggest](images/shops-edit-user-suggest.png)
+
+### Variant: edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts shops edit user chosen](images/shops-edit-user-chosen.png)
+
 ### Variant: edit-user-checking
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
 still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
 says there are no edits yet.
 
@@ -3244,7 +3340,7 @@ says there are no edits yet.
 
 ### Variant: edit-user-missing
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup
 returned no account. **No account with that username. Check the spelling of the 21.gifts
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
@@ -3252,7 +3348,7 @@ username.** is visible and **Next** is disabled. **History** still says there ar
 
 ### Variant: edit-user-invalid
 
-Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+Step **4 / 5 · 21.gifts user** is open with **@_** in the username field. **Use 1–32 characters:
 a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
 is disabled. **History** still says there are no edits yet.
 
@@ -3260,7 +3356,7 @@ is disabled. **History** still says there are no edits yet.
 
 ### Variant: edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** is under the card.
+**Next** again. Step **5 / 5 · Summary** is open. The 21.gifts user is **@ada**. **Save changes** is the button on the card. **History** is under the card.
 
 ![21.gifts shops edit summary](images/shops-edit-summary.png)
 
@@ -3296,13 +3392,13 @@ A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is sti
 
 ### Variant: edit-photo-preparing-user
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. The username field shows **@**. **Next** is disabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts shops edit photo preparing user](images/shops-edit-photo-preparing-user.png)
 
 ### Variant: edit-photo-preparing-summary
 
-A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+A moderator opened **Edit shop note** on Cafe Luna and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. The 21.gifts user is **@ada**. **Save changes** is disabled. There is no alert.
 
 ![21.gifts shops edit photo preparing summary](images/shops-edit-photo-preparing-summary.png)
 
@@ -3327,6 +3423,15 @@ shows **No account with that username. Check the spelling of the 21.gifts userna
 
 ![21.gifts shops edit save rejected](images/shops-edit-save-rejected.png)
 
+### Variant: edit-account-required
+
+A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
+the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
+**@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
+
+![21.gifts shops edit account required](images/shops-edit-account-required.png)
+
 ### Variant: edit-history-error
 
 A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. The photo step stays open and still dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
@@ -3350,13 +3455,13 @@ A moderator session. The Cafe Luna note has place **Happyland**. The card shows 
 ### Variant: staff-place-edit
 
 A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
-dialog. The map frame and **Remove place** are visible. The pin is not changed yet.
+dialog. The map frame is visible. There is no **Remove place**. The pin is not changed yet.
 
 ![21.gifts shops staff place edit](images/shops-staff-place-edit.png)
 
 ### Variant: staff-place-edit-error
 
-A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. **Remove place** and **Use this place** stay.
+A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, **Shop name** is **Happyland**, and the full address is filled. **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. There is no **Remove place**. **Use this place** stays.
 
 ![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
 
@@ -3372,16 +3477,10 @@ with **Use this place**.
 ### Variant: staff-place-edit-unavailable
 
 A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** is open as a
-dialog and the map key is missing. It says **The map is not available.** and shows
-**Remove place**. There is no map frame; **Use this place** is visible and disabled.
+dialog and the map key is missing. It says **The map is not available.** There is no **Remove place**
+and no map frame. **Use this place** is visible and disabled.
 
 ![21.gifts shops staff place edit unavailable](images/shops-staff-place-edit-unavailable.png)
-
-### Variant: staff-place-edit-unavailable-error
-
-A moderator session. **Edit place** is open without a map key, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Remove place** stays.
-
-![21.gifts shops staff place edit unavailable error](images/shops-staff-place-edit-unavailable-error.png)
 
 ### Variant: staff-place-map
 
@@ -3457,9 +3556,18 @@ stays.
 
 ### Variant: staff-account
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to save.** is shown under the field. There is no alert.
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to continue.** is shown under the field. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
+
+### Variant: staff-account-required
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username was edited
+and cleared, so the field is **@** again. **Type or pick the 21.gifts username to continue.** is
+the field error. **Save account** is disabled. There is no alert. The People list still shows
+**@ada** Ada Lovelace and **@adam** Adam.
+
+![21.gifts shops staff account required](images/shops-staff-account-required.png)
 
 ### Variant: staff-account-chosen
 
@@ -3469,7 +3577,7 @@ A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosi
 
 ### Variant: staff-account-checking
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@missing** in the
 username field. The live lookup is still running, so **Checking that account…** is visible and
 **Save account** is disabled.
 
@@ -3477,7 +3585,7 @@ username field. The live lookup is still running, so **Checking that account…*
 
 ### Variant: staff-account-missing
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@missing** in the
 username field. The live lookup returned no account. **No account with that username. Check the
 spelling of the 21.gifts username.** is visible and **Save account** is disabled.
 
@@ -3485,7 +3593,7 @@ spelling of the 21.gifts username.** is visible and **Save account** is disabled
 
 ### Variant: staff-account-invalid
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **\_** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@_** in the
 username field. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a
 letter or digit.** is visible and **Save account** is disabled.
 
@@ -4202,20 +4310,32 @@ text **Fresh bread every morning.** The live error
 
 ### Variant: shop-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
 
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled.
+
+![21.gifts member shop edit user suggest](images/members-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert.
+
+![21.gifts member shop edit user chosen](images/members-shop-edit-user-chosen.png)
+
 ### Variant: shop-edit-user-checking
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
 still running, so **Checking that account…** is visible and **Next** is disabled.
 
 ![21.gifts member shop edit user checking](images/members-shop-edit-user-checking.png)
 
 ### Variant: shop-edit-user-missing
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup
 returned no account. **No account with that username. Check the spelling of the 21.gifts
 username.** is visible and **Next** is disabled.
 
@@ -4223,7 +4343,7 @@ username.** is visible and **Next** is disabled.
 
 ### Variant: shop-edit-user-invalid
 
-Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+Step **4 / 5 · 21.gifts user** is open with **@_** in the username field. **Use 1–32 characters:
 a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
 is disabled.
 
@@ -4233,7 +4353,7 @@ is disabled.
 
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
 **Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
-morning.**, and 21.gifts user **None**.
+morning.**, and 21.gifts user **@ada**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
 
@@ -4245,6 +4365,15 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
+
+![21.gifts member shop edit account required](images/members-shop-edit-account-required.png)
 
 ### Variant: shop-edit-saving
 
@@ -4272,13 +4401,13 @@ A moderator viewing another member opened **Edit shop note** on Cafe Luna in Car
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. The username field shows **@**. **Next** is disabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts member shop edit photo preparing user](images/members-shop-edit-photo-preparing-user.png)
 
 ### Variant: shop-edit-photo-preparing-summary
 
-A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. The 21.gifts user is **@ada**. **Save changes** is disabled. There is no alert.
 
 ![21.gifts member shop edit photo preparing summary](images/members-shop-edit-photo-preparing-summary.png)
 
@@ -6392,13 +6521,25 @@ text **Fresh bread every morning.** The live error
 
 ### Variant: shop-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. **Type or pick the 21.gifts username to continue.** is under the field. **Next** is disabled. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
 
+### Variant: shop-edit-user-suggest
+
+Step **4 / 5 · 21.gifts user** is open. The username field shows **@**. The People list shows **@ada** Ada Lovelace and **@adam** Adam. **Next** is disabled. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user suggest](images/messages-id-shop-edit-user-suggest.png)
+
+### Variant: shop-edit-user-chosen
+
+Step **4 / 5 · 21.gifts user** is open. Choosing **@ada** from the People list writes **@ada** into the username field and keeps the list on that prefix. **Next** is enabled. There is no alert. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user chosen](images/messages-id-shop-edit-user-chosen.png)
+
 ### Variant: shop-edit-user-checking
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup is
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup is
 still running, so **Checking that account…** is visible and **Next** is disabled. **History** still
 says there are no edits yet.
 
@@ -6406,7 +6547,7 @@ says there are no edits yet.
 
 ### Variant: shop-edit-user-missing
 
-Step **4 / 5 · 21.gifts user** is open with **missing** in the username field. The live lookup
+Step **4 / 5 · 21.gifts user** is open with **@missing** in the username field. The live lookup
 returned no account. **No account with that username. Check the spelling of the 21.gifts
 username.** is visible and **Next** is disabled. **History** still says there are no edits yet.
 
@@ -6414,7 +6555,7 @@ username.** is visible and **Next** is disabled. **History** still says there ar
 
 ### Variant: shop-edit-user-invalid
 
-Step **4 / 5 · 21.gifts user** is open with **\_** in the username field. **Use 1–32 characters:
+Step **4 / 5 · 21.gifts user** is open with **@_** in the username field. **Use 1–32 characters:
 a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** is visible and **Next**
 is disabled. **History** still says there are no edits yet.
 
@@ -6424,7 +6565,7 @@ is disabled. **History** still says there are no edits yet.
 
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place
 **Happyland** with **Bahnhofstrasse 12, 8001 Zürich, Switzerland**, Text **Cafe Luna is open every
-morning.**, and 21.gifts user **None**. **Save changes** is the button on the card. **History** still
+morning.**, and 21.gifts user **@ada**. **Save changes** is the button on the card. **History** still
 says there are no edits yet.
 
 ![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
@@ -6437,6 +6578,15 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
+
+![21.gifts public message shop edit account required](images/messages-id-shop-edit-account-required.png)
 
 ### Variant: shop-edit-saving
 
@@ -6464,13 +6614,13 @@ A moderator on the public top-level shop note Cafe Luna chose a photo that is st
 
 ### Variant: shop-edit-photo-preparing-user
 
-A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. **Next** stays enabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **4 / 5 · 21.gifts user**. **Wait until this photo is ready.** is visible. The username field shows **@**. **Next** is disabled. The photo step's Close (X) is gone. The top-left arrow (**Back**) stays enabled. There is no alert.
 
 ![21.gifts public message shop edit photo preparing user](images/messages-id-shop-edit-photo-preparing-user.png)
 
 ### Variant: shop-edit-photo-preparing-summary
 
-A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. **Save changes** is disabled. There is no alert.
+A moderator on the public top-level shop note Cafe Luna chose a photo that is still being prepared. **Next** moved the editor to **5 / 5 · Summary**. **Wait until this photo is ready.** is visible. The 21.gifts user is **@ada**. **Save changes** is disabled. There is no alert.
 
 ![21.gifts public message shop edit photo preparing summary](images/messages-id-shop-edit-photo-preparing-summary.png)
 

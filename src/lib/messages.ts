@@ -471,7 +471,7 @@ const en = {
   'forum.shopAccountSave': 'Save account',
   'forum.shopAccountRemove': 'Remove account',
   'forum.shopAccountSaveFailed': 'The account could not be saved. Please try again.',
-  'forum.shopAccountHint': 'Type or pick the 21.gifts username to save.',
+  'forum.shopAccountHint': 'Type or pick the 21.gifts username to continue.',
   'forum.errorUnsupported': 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
   'forum.errorTooLarge': 'Keep photos under 1 MB and videos under 32 MB',
   'forum.errorFormatOrSize':
@@ -865,7 +865,6 @@ const en = {
   'shops.next': 'Next',
   'shops.back': 'Back',
   'shops.cancel': 'Cancel',
-  'shops.accountOptional': 'Optional. Leave blank to skip.',
   'shops.accountLabel': '21.gifts username',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -1718,8 +1717,7 @@ const de = {
   'forum.shopAccountRemove': 'Konto entfernen',
   'forum.shopAccountSaveFailed':
     'Das Konto konnte nicht gespeichert werden. Bitte erneut versuchen.',
-  'forum.shopAccountHint':
-    'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus, um zu speichern.',
+  'forum.shopAccountHint': 'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus.',
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
@@ -2121,7 +2119,6 @@ const de = {
   'shops.next': 'Weiter',
   'shops.back': 'Zurück',
   'shops.cancel': 'Abbrechen',
-  'shops.accountOptional': 'Optional. Leer lassen, um zu überspringen.',
   'shops.accountLabel': '21.gifts-Benutzername',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -2985,7 +2982,7 @@ const es = {
   'forum.shopAccountSave': 'Guardar la cuenta',
   'forum.shopAccountRemove': 'Quitar la cuenta',
   'forum.shopAccountSaveFailed': 'No se pudo guardar la cuenta. Inténtalo de nuevo.',
-  'forum.shopAccountHint': 'Escribe o elige el nombre de usuario de 21.gifts para guardar.',
+  'forum.shopAccountHint': 'Escribe o elige el usuario de 21.gifts para continuar.',
   'forum.errorUnsupported': 'Usa una foto JPEG, PNG o WebP, o un vídeo MP4, WebM o MOV',
   'forum.errorTooLarge': 'Mantén las fotos por debajo de 1 MB y los vídeos por debajo de 32 MB',
   'forum.errorFormatOrSize':
@@ -3383,7 +3380,6 @@ const es = {
   'shops.next': 'Siguiente',
   'shops.back': 'Atrás',
   'shops.cancel': 'Cancelar',
-  'shops.accountOptional': 'Opcional. Déjalo en blanco para saltarlo.',
   'shops.accountLabel': 'Usuario de 21.gifts',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',
@@ -4238,7 +4234,7 @@ const fil = {
   'forum.shopAccountSave': 'I-save ang account',
   'forum.shopAccountRemove': 'Alisin ang account',
   'forum.shopAccountSaveFailed': 'Hindi ma-save ang account. Pakisubukan muli.',
-  'forum.shopAccountHint': 'I-type o piliin ang username sa 21.gifts para ma-save.',
+  'forum.shopAccountHint': 'I-type o piliin ang username sa 21.gifts para magpatuloy.',
   'forum.errorUnsupported': 'Gumamit ng JPEG, PNG, o WebP na litrato, o MP4, WebM, o MOV na bidyo',
   'forum.errorTooLarge': 'Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo',
   'forum.errorFormatOrSize':
@@ -4642,7 +4638,6 @@ const fil = {
   'shops.next': 'Susunod',
   'shops.back': 'Bumalik',
   'shops.cancel': 'Kanselahin',
-  'shops.accountOptional': 'Opsyonal. Iwanang blangko para laktawan.',
   'shops.accountLabel': 'Username sa 21.gifts',
   'shops.photoCount': '{n} / 10',
   'shops.descriptionCount': '{n} / {max}',

@@ -587,6 +587,7 @@ describe('PlacesMapScreen', () => {
         label: "Kiki's Bakery",
         address: completeAddress,
       },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'tok', account: null });
     fetchPlacesMock.mockResolvedValue([
@@ -728,6 +729,7 @@ describe('PlacesMapScreen', () => {
       role: 'basis',
       replyCount: 0,
       place: { lat: 14.6, lng: 120.98, label: 'Happyland', address: completeAddress },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     const npub = `npub1${'3'.repeat(58)}`;
     useAuthStore.setState({ session: 'tok', account: moderator });
@@ -826,6 +828,7 @@ describe('PlacesMapScreen', () => {
         label: "Kiki's Bakery",
         address: completeAddress,
       },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'tok', account: moderator });
     fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
@@ -900,6 +903,7 @@ describe('PlacesMapScreen', () => {
         label: "Kiki's Bakery",
         address: completeAddress,
       },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'tok', account: moderator });
     fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);

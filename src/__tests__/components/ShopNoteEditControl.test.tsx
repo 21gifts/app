@@ -179,6 +179,7 @@ const shopMessage: ForumMessage = {
   role: 'basis',
   replyCount: 0,
   place: COMPLETE_PLACE,
+  shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
 };
 
 beforeEach(() => {
@@ -423,6 +424,60 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByRole('textbox', { name: 'Shop text' })).toBeNull();
   });
 
+  it('keeps a stored username that already starts with @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'shop-acc', username: '@luna', name: 'Luna' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@luna');
+  });
+
+  it('opens a shop note with an empty username at @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'shop-acc', username: '', name: 'Luna' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@');
+  });
+
+  it('opens a shop note that has no account at @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const withoutAccount = { ...shopMessage };
+    delete withoutAccount.shopAccount;
+    renderEdit(<ShopNoteEditControl message={withoutAccount} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@');
+  });
+
   it('does not patch an unchanged account with whitespace after the at sign', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -521,6 +576,7 @@ describe('ShopNoteEditControl', () => {
       'No account with that username. Check the spelling of the 21.gifts username.',
       4,
     ],
+    ['A shop note needs a shop account', 'Type or pick the 21.gifts username to continue.', 4],
     [
       'Text must be 1–8000 characters',
       'The shop text must be 20 to 1000 characters and longer than the shop name.',
@@ -1480,10 +1536,9 @@ describe('ShopNoteEditControl', () => {
     expect(setMessageShopText).not.toHaveBeenCalled();
   });
 
-  it('clears a shop user without sending stills', async () => {
+  it('keeps Next disabled when the shop user is cleared', () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
     renderWithLocale(
       <ShopNoteEditControl
         message={{
@@ -1498,11 +1553,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    await waitFor(() => {
-      expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
-    });
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
   });
 
@@ -1915,7 +1968,7 @@ describe('ShopNoteEditControl', () => {
       target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@ada' } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });

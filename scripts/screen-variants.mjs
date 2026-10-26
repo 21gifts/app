@@ -2833,6 +2833,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'shop-edit-user-suggest',
+    image: 'members-shop-edit-user-suggest.png',
+    visual: 'state-members-shop-edit-user-suggest',
+    needle: "shotScreen(page, 'state-members-shop-edit-user-suggest')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'shop-edit-user-chosen',
+    image: 'members-shop-edit-user-chosen.png',
+    visual: 'state-members-shop-edit-user-chosen',
+    needle: "shotScreen(page, 'state-members-shop-edit-user-chosen')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-user-checking',
     image: 'members-shop-edit-user-checking.png',
     visual: 'state-members-shop-edit-user-checking',
@@ -2865,6 +2879,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-shop-edit-save-rejected.png',
     visual: 'state-members-shop-edit-save-rejected',
     needle: "shotScreen(page, 'state-members-shop-edit-save-rejected')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'shop-edit-account-required',
+    image: 'members-shop-edit-account-required.png',
+    visual: 'state-members-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-members-shop-edit-account-required')",
   },
   {
     route: '/members/[accountId]',
@@ -5152,6 +5173,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'shop-edit-user-suggest',
+    image: 'messages-id-shop-edit-user-suggest.png',
+    visual: 'state-messages-id-shop-edit-user-suggest',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-user-suggest')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit-user-chosen',
+    image: 'messages-id-shop-edit-user-chosen.png',
+    visual: 'state-messages-id-shop-edit-user-chosen',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-user-chosen')",
+  },
+  {
+    route: '/messages/[id]',
     id: 'shop-edit-user-checking',
     image: 'messages-id-shop-edit-user-checking.png',
     visual: 'state-messages-id-shop-edit-user-checking',
@@ -5184,6 +5219,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-shop-edit-save-rejected.png',
     visual: 'state-messages-id-shop-edit-save-rejected',
     needle: "shotScreen(page, 'state-messages-id-shop-edit-save-rejected')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit-account-required',
+    image: 'messages-id-shop-edit-account-required.png',
+    visual: 'state-messages-id-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-account-required')",
   },
   {
     route: '/messages/[id]',
@@ -5628,6 +5670,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'shop-edit-user-suggest',
+    image: 'welcome-shop-edit-user-suggest.png',
+    visual: 'state-welcome-shop-edit-user-suggest',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-user-suggest')",
+  },
+  {
+    route: '/welcome',
+    id: 'shop-edit-user-chosen',
+    image: 'welcome-shop-edit-user-chosen.png',
+    visual: 'state-welcome-shop-edit-user-chosen',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-user-chosen')",
+  },
+  {
+    route: '/welcome',
     id: 'shop-edit-user-checking',
     image: 'welcome-shop-edit-user-checking.png',
     visual: 'state-welcome-shop-edit-user-checking',
@@ -5660,6 +5716,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-shop-edit-save-rejected.png',
     visual: 'state-welcome-shop-edit-save-rejected',
     needle: "shotScreen(page, 'state-welcome-shop-edit-save-rejected')",
+  },
+  {
+    route: '/welcome',
+    id: 'shop-edit-account-required',
+    image: 'welcome-shop-edit-account-required.png',
+    visual: 'state-welcome-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-account-required')",
   },
   {
     route: '/welcome',
@@ -5950,6 +6013,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-edit-user-suggest',
+    image: 'shops-map-edit-user-suggest.png',
+    visual: 'state-shops-map-edit-user-suggest',
+    needle: "shotScreen(page, 'state-shops-map-edit-user-suggest')",
+  },
+  {
+    route: '/shops',
+    id: 'map-edit-user-chosen',
+    image: 'shops-map-edit-user-chosen.png',
+    visual: 'state-shops-map-edit-user-chosen',
+    needle: "shotScreen(page, 'state-shops-map-edit-user-chosen')",
+  },
+  {
+    route: '/shops',
     id: 'map-edit-user-checking',
     image: 'shops-map-edit-user-checking.png',
     visual: 'state-shops-map-edit-user-checking',
@@ -5982,6 +6059,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-map-edit-save-rejected.png',
     visual: 'state-shops-map-edit-save-rejected',
     needle: "shotScreen(page, 'state-shops-map-edit-save-rejected')",
+  },
+  {
+    route: '/shops',
+    id: 'map-edit-account-required',
+    image: 'shops-map-edit-account-required.png',
+    visual: 'state-shops-map-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-map-edit-account-required')",
   },
   {
     route: '/shops',
@@ -6223,6 +6307,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'table-edit-user-suggest',
+    image: 'shops-table-edit-user-suggest.png',
+    visual: 'state-shops-table-edit-user-suggest',
+    needle: "shotScreen(page, 'state-shops-table-edit-user-suggest')",
+  },
+  {
+    route: '/shops',
+    id: 'table-edit-user-chosen',
+    image: 'shops-table-edit-user-chosen.png',
+    visual: 'state-shops-table-edit-user-chosen',
+    needle: "shotScreen(page, 'state-shops-table-edit-user-chosen')",
+  },
+  {
+    route: '/shops',
     id: 'table-edit-user-checking',
     image: 'shops-table-edit-user-checking.png',
     visual: 'state-shops-table-edit-user-checking',
@@ -6255,6 +6353,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-table-edit-save-rejected.png',
     visual: 'state-shops-table-edit-save-rejected',
     needle: "shotScreen(page, 'state-shops-table-edit-save-rejected')",
+  },
+  {
+    route: '/shops',
+    id: 'table-edit-account-required',
+    image: 'shops-table-edit-account-required.png',
+    visual: 'state-shops-table-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-table-edit-account-required')",
   },
   {
     route: '/shops',
@@ -6447,6 +6552,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'add-user-suggest',
+    image: 'shops-add-user-suggest.png',
+    visual: 'state-shops-add-user-suggest',
+    needle: "shotScreen(page, 'state-shops-add-user-suggest')",
+  },
+  {
+    route: '/shops',
+    id: 'add-user-chosen',
+    image: 'shops-add-user-chosen.png',
+    visual: 'state-shops-add-user-chosen',
+    needle: "shotScreen(page, 'state-shops-add-user-chosen')",
+  },
+  {
+    route: '/shops',
     id: 'add-user-checking',
     image: 'shops-add-user-checking.png',
     visual: 'state-shops-add-user-checking',
@@ -6479,6 +6598,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-add-post-rejected.png',
     visual: 'state-shops-add-post-rejected',
     needle: "shotScreen(page, 'state-shops-add-post-rejected')",
+  },
+  {
+    route: '/shops',
+    id: 'add-account-required',
+    image: 'shops-add-account-required.png',
+    visual: 'state-shops-add-account-required',
+    needle: "shotScreen(page, 'state-shops-add-account-required')",
   },
   {
     route: '/shops',
@@ -6783,6 +6909,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-user-suggest',
+    image: 'shops-edit-user-suggest.png',
+    visual: 'state-shops-edit-user-suggest',
+    needle: "shotScreen(page, 'state-shops-edit-user-suggest')",
+  },
+  {
+    route: '/shops',
+    id: 'edit-user-chosen',
+    image: 'shops-edit-user-chosen.png',
+    visual: 'state-shops-edit-user-chosen',
+    needle: "shotScreen(page, 'state-shops-edit-user-chosen')",
+  },
+  {
+    route: '/shops',
     id: 'edit-user-checking',
     image: 'shops-edit-user-checking.png',
     visual: 'state-shops-edit-user-checking',
@@ -6881,6 +7021,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-account-required',
+    image: 'shops-edit-account-required.png',
+    visual: 'state-shops-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-edit-account-required')",
+  },
+  {
+    route: '/shops',
     id: 'edit-history-error',
     image: 'shops-edit-history-error.png',
     visual: 'state-shops-edit-history-error',
@@ -6892,6 +7039,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-account.png',
     visual: 'state-shops-staff-account',
     needle: "shotScreen(page, 'state-shops-staff-account')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-required',
+    image: 'shops-staff-account-required.png',
+    visual: 'state-shops-staff-account-required',
+    needle: "shotScreen(page, 'state-shops-staff-account-required')",
   },
   {
     route: '/shops',
@@ -6976,13 +7130,6 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-place-edit-unavailable.png',
     visual: 'state-shops-staff-place-edit-unavailable',
     needle: "shotScreen(page, 'state-shops-staff-place-edit-unavailable')",
-  },
-  {
-    route: '/shops',
-    id: 'staff-place-edit-unavailable-error',
-    image: 'shops-staff-place-edit-unavailable-error.png',
-    visual: 'state-shops-staff-place-edit-unavailable-error',
-    needle: "shotScreen(page, 'state-shops-staff-place-edit-unavailable-error')",
   },
   {
     route: '/shops',

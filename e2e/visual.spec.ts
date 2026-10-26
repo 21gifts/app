@@ -795,6 +795,137 @@ async function fillUnknownShopUsername(page: Page, username = 'luna'): Promise<v
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 }
 
+/**
+ * Accept a shop username so the required step can continue.
+ * A 404 would show “no account” and keep Next disabled.
+ */
+async function acceptShopUsername(page: Page, username = 'ada'): Promise<void> {
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+    const asked = decodeURIComponent(
+      new URL(route.request().url()).pathname.split('/').pop() ?? '',
+    );
+    const handle = asked === '' ? username : asked;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: `acc-${handle}`, username: handle, name: 'Ada' }),
+    });
+  });
+  const lookup = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+  );
+  await page.getByLabel('21.gifts username').fill(username);
+  await lookup;
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+}
+
+/**
+ * Give an empty shop username step the account @ada.
+ * A stored account leaves Next enabled, so this does not replace it.
+ */
+async function supplyShopUsername(page: Page): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  if (await next.isDisabled()) {
+    await acceptShopUsername(page);
+  }
+}
+
+const SHOP_ACCOUNT_REQUIRED_ALERT = 'Type or pick the 21.gifts username to continue.';
+
+/**
+ * Stub the shop-text save so it returns the missing-account error.
+ *
+ * The username step then shows the same sentence as an empty username.
+ */
+async function stubShopTextAccountRequired(page: Page, messageId: string): Promise<void> {
+  await page.route(`**/forum/messages/${messageId}/text`, async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'A shop note needs a shop account' }),
+    });
+  });
+}
+
+/** Save a changed shop note and wait until the username step shows the API rejection. */
+async function rejectShopSaveForAccount(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page
+    .getByLabel('Shop text')
+    .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  const username = page.getByLabel('21.gifts username');
+  await expect(username).toBeVisible();
+  // A stored account is already @luna. Typing that same handle does not look
+  // the name up again, so only an empty field needs the unknown-username fill.
+  if ((await username.inputValue()) !== '@luna') {
+    await fillUnknownShopUsername(page);
+  }
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+  const rejected = page.getByRole('alert').filter({ hasText: SHOP_ACCOUNT_REQUIRED_ALERT });
+  await expect(rejected).toHaveText(SHOP_ACCOUNT_REQUIRED_ALERT);
+  await expect(page.getByLabel('21.gifts username')).toHaveValue('@luna');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await rejected.scrollIntoViewIfNeeded();
+}
+
+/** Leave the shop username step. The account is already stored or accepted. */
+async function continueFromShopUsername(page: Page): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  await expect(next).toBeEnabled();
+  await next.click();
+}
+
+/** Open the People list at @ and leave it ready to capture. */
+async function showShopUsernameList(page: Page, clearToAt = false): Promise<void> {
+  const field = page.getByLabel('21.gifts username');
+  const step = page.getByText('4 / 5 · 21.gifts user');
+  await expect(step).toBeVisible();
+  if (clearToAt) {
+    await field.fill('@');
+  }
+  await expect(field).toHaveValue('@');
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+  await expect(page.getByText('Ada Lovelace')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await step.scrollIntoViewIfNeeded();
+}
+
+/** Choose the row @ada and leave that account ready to capture. */
+async function chooseShopUsernameAda(page: Page): Promise<void> {
+  const field = page.getByLabel('21.gifts username');
+  const step = page.getByText('4 / 5 · 21.gifts user');
+  await page.route(/\/forum\/accounts\/by-username\//, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' }),
+    });
+  });
+  const lookup = page.waitForResponse((response) =>
+    new URL(response.url()).pathname.startsWith('/forum/accounts/by-username/'),
+  );
+  await page.getByRole('option', { name: '@ada', exact: true }).click();
+  await lookup;
+  await expect(field).toHaveValue('@ada');
+  await expect(page.getByText('Checking that account…')).toHaveCount(0);
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+  await expect(step.locator('xpath=ancestor::form[1]').getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await step.scrollIntoViewIfNeeded();
+}
+
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 async function fulfillPublicThreadReplies(
   page: Page,
@@ -883,7 +1014,8 @@ async function saveChangedShopText(page: Page): Promise<void> {
     .getByLabel('Shop text')
     .fill('Cafe Luna is open every morning and on Sunday afternoons.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await supplyShopUsername(page);
+  await continueFromShopUsername(page);
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await page.getByRole('button', { name: 'Save changes' }).click();
 }
@@ -1132,7 +1264,12 @@ async function showPreparingShopPhoto(
     '5 / 5 · Summary',
   ];
   for (let click = 0; click < nextClicks; click += 1) {
-    await page.getByRole('button', { name: 'Next' }).click();
+    if (click === 3) {
+      await supplyShopUsername(page);
+      await continueFromShopUsername(page);
+    } else {
+      await page.getByRole('button', { name: 'Next' }).click();
+    }
   }
   if (nextClicks > 0) {
     await expect(page.getByText(titles[nextClicks] ?? '')).toBeVisible();
@@ -1178,14 +1315,54 @@ async function pickShopPhotoError(
   );
 }
 
-/** Submit a newly picked edit photo and wait for the API rejection to return to Photos. */
-async function submitRejectedShopPhotoEdit(page: Page): Promise<void> {
+/**
+ * Submit a newly picked edit photo and wait for the API rejection to return to Photos.
+ * The map drops a pin whose save omits `place`, which unmounts the editor before the
+ * photo rejection can return to Photos. Callers whose note already has a pin pass it.
+ */
+async function submitRejectedShopPhotoEdit(
+  page: Page,
+  place?: {
+    lat: number;
+    lng: number;
+    label?: string | null;
+    address?: {
+      street: string;
+      houseNumber: string;
+      postalCode: string;
+      city: string;
+      country: string;
+    } | null;
+  },
+): Promise<void> {
+  await page.route(/\/forum\/messages\/[^/]+\/shop-account$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-shop',
+        name: 'Ada',
+        text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+        shopAccount: { id: 'acc-ada', username: 'ada', name: 'Ada' },
+        ...(place === undefined ? {} : { place }),
+      }),
+    });
+  });
   await page
     .locator('input[type="file"][aria-describedby$="-photo-feedback"]')
     .setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({ timeout: 10_000 });
   for (let step = 1; step < 5; step += 1) {
-    await page.getByRole('button', { name: 'Next' }).click();
+    if (step === 4) {
+      await supplyShopUsername(page);
+      await continueFromShopUsername(page);
+    } else {
+      await page.getByRole('button', { name: 'Next' }).click();
+    }
   }
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -4593,7 +4770,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -4617,6 +4795,13 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
+  });
+
+  test('welcome shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openHostedShopEditor(page, 'welcome');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-welcome-shop-edit-account-required');
   });
 
   test('welcome shop-edit-saving', async ({ page }) => {
@@ -8344,7 +8529,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -8368,6 +8554,13 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-save-rejected');
+  });
+
+  test('state /members shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, '55555555-5555-4555-8555-555555555555');
+    await openHostedShopEditor(page, 'members');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-members-shop-edit-account-required');
   });
 
   test('state /members shop-edit-saving', async ({ page }) => {
@@ -13399,7 +13592,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -13423,6 +13617,13 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
+  });
+
+  test('state /messages/[id] shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, '12121212-1212-4121-8121-121212121212');
+    await openHostedShopEditor(page, 'messages');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-account-required');
   });
 
   test('state /messages/[id] shop-edit-saving', async ({ page }) => {
@@ -21652,7 +21853,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -21704,6 +21906,13 @@ test.describe('shops screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-save-rejected');
+  });
+
+  test('shops map-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openShopsEditor(page, 'map');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-map-edit-account-required');
   });
 
   test('shops map-edit-saving', async ({ page }) => {
@@ -21947,7 +22156,13 @@ test.describe('shops screens', () => {
 
   test('shops map-edit-photos-format-or-size', async ({ page }) => {
     await openShopsEditor(page, 'map', false, true);
-    await submitRejectedShopPhotoEdit(page);
+    // The places list shows Happyland. Echo that pin so the save does not
+    // rename the row to the note's postal address and shift the editor.
+    await submitRejectedShopPhotoEdit(page, {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Happyland',
+    });
     const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
     await expect(error).toBeVisible();
     await error.scrollIntoViewIfNeeded();
@@ -22303,7 +22518,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -22362,6 +22578,13 @@ test.describe('shops screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-save-rejected');
+  });
+
+  test('shops table-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openShopsEditor(page, 'table');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-table-edit-account-required');
   });
 
   test('shops table-edit-saving', async ({ page }) => {
@@ -23135,7 +23358,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-user');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
@@ -23322,7 +23546,8 @@ test.describe('shops screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
     const alert = page.getByText('Could not save this shop note');
@@ -23492,6 +23717,13 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-edit-save-rejected');
   });
 
+  test('shops edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-staff');
+    await openShopsEditor(page, 'post');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-edit-account-required');
+  });
+
   test('shops edit-history-error', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -23623,10 +23855,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops#post');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeVisible();
+    await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
 
@@ -23671,18 +23903,18 @@ test.describe('shops screens', () => {
     await page.goto('/shops#post');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await page.getByRole('button', { name: 'Remove place' }).click();
-    const alert = page.getByRole('alert').filter({
+    await fillShopAddress(page, 'Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+    const alert = dialog.getByRole('alert').filter({
       hasText: 'The place could not be saved. Please try again.',
     });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
-    await page.locator('main [data-scrollport]').evaluate((node) => {
-      node.scrollTop += 160;
-    });
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-error');
   });
 
@@ -23771,63 +24003,12 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
     const unavailable = page.getByText('The map is not available.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
+    const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(unavailable).toBeVisible();
-    await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    await remove.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(confirm).toBeDisabled();
+    await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
-  });
-
-  test('shops staff-place-edit-unavailable-error', async ({ page }) => {
-    await seedAda(page, 'moderator');
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-staff',
-              name: 'Ada',
-              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 0,
-              payable: false,
-              hasPhoto: false,
-              role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
-            },
-          ],
-        }),
-      });
-    });
-    await page.route(
-      (url) => new URL(url).pathname.endsWith('/place'),
-      async (route) => {
-        if (route.request().method() !== 'PATCH') {
-          await route.continue();
-          return;
-        }
-        await route.fulfill({
-          status: 500,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Unavailable' }),
-        });
-      },
-    );
-    await page.goto('/shops#post');
-    const note = page.locator('[data-message-id="m-staff"]');
-    await note.getByRole('button', { name: 'Edit place' }).click();
-    await page.getByRole('button', { name: 'Remove place' }).click();
-    const alert = page.getByRole('alert').filter({
-      hasText: 'The place could not be saved. Please try again.',
-    });
-    await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = page.getByRole('button', { name: 'Remove place' });
-    await expect(remove).toBeVisible();
-    await remove.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
   });
 
   test('shops staff-place-map', async ({ page }) => {
@@ -24199,10 +24380,28 @@ test.describe('shops screens', () => {
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
     await expect(save).toBeDisabled();
-    await expect(note.getByText('Type or pick the 21.gifts username to save.')).toBeVisible();
+    await expect(note.getByText('Type or pick the 21.gifts username to continue.')).toBeVisible();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account');
+  });
+
+  test('shops staff-account-required', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('a');
+    await note.getByLabel('Username').fill('   @');
+    await expect(note.getByLabel('Username')).toHaveValue('@');
+    const required = note.getByText('Type or pick the 21.gifts username to continue.');
+    await expect(required).toBeVisible();
+    await expect(note.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
+    await expect(note.getByRole('alert')).toHaveCount(0);
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-required');
   });
 
   test('shops staff-account-chosen', async ({ page }) => {
@@ -24371,7 +24570,7 @@ test.describe('shops screens', () => {
     await note.getByLabel('Username').fill('missing');
     await lookup;
     await expect(note.getByText('Checking that account…')).toHaveCount(0);
-    await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
+    await expect(page.getByRole('option', { name: '@missing', exact: true })).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeEnabled();
     await save.click();
@@ -24432,8 +24631,8 @@ test.describe('shops screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-user-invalid');
-    await page.getByLabel('21.gifts username').fill('');
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByText("Kiki's Bakery")).toBeVisible();
     await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
@@ -24501,7 +24700,8 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     const error = page.getByText(
@@ -24685,7 +24885,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
+    await supplyShopUsername(page);
+    await continueFromShopUsername(page);
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
     await expect(post).toBeEnabled();
@@ -24699,6 +24900,125 @@ test.describe('shops screens', () => {
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-post-rejected');
+  });
+
+  test('shops add-account-required', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await fulfillMixedSatsMessages(page);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'A shop note needs a shop account' }),
+        });
+      },
+    );
+    await page.goto('/shops#post');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+    await expect(post).toBeEnabled();
+    await expect
+      .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
+      .toBe('1');
+    await post.evaluate((element) => {
+      (element as unknown as { click: () => void }).click();
+    });
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({ hasText: SHOP_ACCOUNT_REQUIRED_ALERT });
+    await expect(rejected).toHaveText(SHOP_ACCOUNT_REQUIRED_ALERT);
+    await expect(page.getByLabel('21.gifts username')).toHaveValue('@luna');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-account-required');
+  });
+
+  test('shops add-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openCreateShopUsernameStep(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-add-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-add-user-chosen');
+  });
+
+  test('shops edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'post');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-edit-user-chosen');
+  });
+
+  test('shops map-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'map');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-shops-map-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-map-edit-user-chosen');
+  });
+
+  test('shops table-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openShopsEditor(page, 'table');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page, true);
+    await shotScreen(page, 'state-shops-table-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-shops-table-edit-user-chosen');
+  });
+
+  test('welcome shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'welcome');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-welcome-shop-edit-user-chosen');
+  });
+
+  test('members shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'members');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-members-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-members-shop-edit-user-chosen');
+  });
+
+  test('messages shop-edit-user-suggest', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    await openHostedShopEditor(page, 'messages');
+    await advanceShopEditorToUsername(page);
+    await showShopUsernameList(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-suggest');
+    await chooseShopUsernameAda(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-user-chosen');
   });
 });
 
