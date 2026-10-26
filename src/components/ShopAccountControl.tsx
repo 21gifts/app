@@ -25,7 +25,7 @@ const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 const SUGGESTION_LIMIT = 8;
 
 /** One account the shop field can attach. */
-interface ShopSuggestion {
+export interface ShopAccountSuggestion {
   id: string;
   username: string;
   name: string;
@@ -163,6 +163,76 @@ function clampIntoBand(
   return { side: 'below', top, left: place.left, width: place.width };
 }
 
+/** Props for the shared shop-account people list. */
+interface ShopAccountSuggestionsProps {
+  /** DOM id of the listbox. */
+  listId: string;
+  /** Accounts whose username starts with the field prefix. */
+  rows: readonly ShopAccountSuggestion[];
+  /** Index of the highlighted row. */
+  activeIndex: number;
+  /** When true, every row button is disabled. */
+  disabled: boolean;
+  /** Classes on the list element. */
+  className: string;
+  /** DOM id of one option. */
+  optionId: (index: number) => string;
+  /** Report the chosen username. Does not save. */
+  onPick: (username: string) => void;
+}
+
+/**
+ * People list under a shop-account field.
+ *
+ * Each row is `@username` and the display name when it differs. The
+ * highlighted row uses the hover fill. Choosing a row reports that username
+ * and does not save.
+ *
+ * @param props - List identity, rows, highlight, and the pick callback.
+ * @returns The listbox.
+ */
+export function ShopAccountSuggestions({
+  listId,
+  rows,
+  activeIndex,
+  disabled,
+  className,
+  optionId,
+  onPick,
+}: ShopAccountSuggestionsProps): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <ul id={listId} role="listbox" aria-label={t('forum.mentionSuggest')} className={className}>
+      {rows.map((row, index) => (
+        <li key={row.id} role="presentation">
+          <button
+            type="button"
+            id={optionId(index)}
+            tabIndex={-1}
+            role="option"
+            aria-selected={index === activeIndex}
+            aria-label={`@${row.username}`}
+            disabled={disabled}
+            className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover${
+              index === activeIndex ? ' bg-app-hover' : ''
+            }`}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              onPick(row.username);
+            }}
+            onClick={() => {
+              onPick(row.username);
+            }}
+          >
+            <span className="font-medium">@{row.username}</span>
+            {row.name !== row.username ? <span className="text-app-muted">{row.name}</span> : null}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Props for the shops-feed staff account editor. */
 export interface ShopAccountControlProps {
   /** Top-level shop note to attach an account to. */
@@ -208,10 +278,10 @@ export function ShopAccountControl({
     username: string;
     verdict: 'checking' | 'found' | 'missing' | 'failed';
   } | null>(null);
-  const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
+  const [seed, setSeed] = useState<readonly ShopAccountSuggestion[]>([]);
   const [remote, setRemote] = useState<{
     query: string;
-    rows: readonly ShopSuggestion[];
+    rows: readonly ShopAccountSuggestion[];
   } | null>(null);
   const [panel, setPanel] = useState<PanelPlace | null>(null);
   const [rowLimit, setRowLimit] = useState(SUGGESTION_LIMIT);
@@ -553,41 +623,15 @@ export function ShopAccountControl({
             </p>
           ) : null}
           {shown.length > 0 ? (
-            <ul
-              id={listId}
-              role="listbox"
-              aria-label={t('forum.mentionSuggest')}
+            <ShopAccountSuggestions
+              listId={listId}
+              rows={shown}
+              activeIndex={suggestionActiveIndex}
+              disabled={saving}
               className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
-            >
-              {shown.map((row, index) => (
-                <li key={row.id} role="presentation">
-                  <button
-                    type="button"
-                    id={`${listId}-${String(index)}`}
-                    tabIndex={-1}
-                    role="option"
-                    aria-selected={index === suggestionActiveIndex}
-                    aria-label={`@${row.username}`}
-                    disabled={saving}
-                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover${
-                      index === suggestionActiveIndex ? ' bg-app-hover' : ''
-                    }`}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      pickSuggestion(row.username);
-                    }}
-                    onClick={() => {
-                      pickSuggestion(row.username);
-                    }}
-                  >
-                    <span className="font-medium">@{row.username}</span>
-                    {row.name !== row.username ? (
-                      <span className="text-app-muted">{row.name}</span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+              optionId={(index) => `${listId}-${String(index)}`}
+              onPick={pickSuggestion}
+            />
           ) : null}
           <Button
             type="button"

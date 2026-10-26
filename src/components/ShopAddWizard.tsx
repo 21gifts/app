@@ -12,6 +12,10 @@ import {
 } from 'react';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
+import {
+  ShopAccountSuggestions,
+  type ShopAccountSuggestion,
+} from '@/components/ShopAccountControl';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, Field, IconButton } from '@/components/ui';
@@ -59,13 +63,6 @@ const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 
 /** First rows only. A longer list would be a second scroller, which the page forbids. */
 const SUGGESTION_LIMIT = 8;
-
-/** One account the shop field can attach. */
-interface ShopAccountSuggestion {
-  id: string;
-  username: string;
-  name: string;
-}
 
 /**
  * Username prefix after a leading `@`, or `null` when the field is not a mention.
@@ -861,41 +858,17 @@ export function ShopAddWizard({
             }}
           />
           {accountSuggestions.length > 0 ? (
-            <ul
-              id={`${idPrefix}-account-suggest`}
-              role="listbox"
-              aria-label={t('forum.mentionSuggest')}
+            <ShopAccountSuggestions
+              listId={`${idPrefix}-account-suggest`}
+              rows={accountSuggestions}
+              activeIndex={accountActiveIndex}
+              disabled={stepsLocked}
               className="rounded-xl border border-app-border bg-app-card p-2"
-            >
-              {accountSuggestions.map((row, index) => (
-                <li key={row.id} role="presentation">
-                  <button
-                    type="button"
-                    id={`${idPrefix}-account-option-${String(index)}`}
-                    tabIndex={-1}
-                    role="option"
-                    aria-selected={index === accountActiveIndex}
-                    aria-label={`@${row.username}`}
-                    disabled={stepsLocked}
-                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover${
-                      index === accountActiveIndex ? ' bg-app-hover' : ''
-                    }`}
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      onUsernameChange(`@${row.username}`);
-                    }}
-                    onClick={() => {
-                      onUsernameChange(`@${row.username}`);
-                    }}
-                  >
-                    <span className="font-medium">@{row.username}</span>
-                    {row.name !== row.username ? (
-                      <span className="text-app-muted">{row.name}</span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+              optionId={(index) => `${idPrefix}-account-option-${String(index)}`}
+              onPick={(username) => {
+                onUsernameChange(`@${username}`);
+              }}
+            />
           ) : null}
         </div>
       ) : null}
