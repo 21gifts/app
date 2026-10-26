@@ -6,7 +6,8 @@ import { ShopsScreen } from '@/components/ShopsScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/shops` — signed-in shop listings (forum notes tagged `#21GiftsShop`).
+ * `/shops` is the signed-in shop list. The default view lists shop pages.
+ * Post at `#post` remains the `#21GiftsShop` forum notes.
  *
  * Requires name + address + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/welcome`. There is

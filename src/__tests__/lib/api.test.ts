@@ -19,6 +19,7 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchShopActivity,
+  fetchListedShops,
   fetchGrantContinuation,
   fetchPostStats,
   fetchAboutMePhoto,
@@ -1317,6 +1318,65 @@ describe('fetchShopActivity', () => {
     await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
+  });
+});
+
+describe('fetchListedShops', () => {
+  const shop = {
+    npub: `npub1${'2'.repeat(58)}`,
+    name: 'Cafe Luna',
+    place: {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Cafe Luna',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    },
+  };
+
+  it('maps a missing nextCursor to null without Authorization', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { shops: [shop] } });
+    await expect(fetchListedShops()).resolves.toEqual({ shops: [shop], nextCursor: null });
+    expect(fetchMock).toHaveBeenCalledWith('/shops/list?limit=20');
+  });
+
+  it('sends the cursor and keeps nextCursor', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { shops: [shop], nextCursor: 'c2' },
+    });
+    await expect(fetchListedShops('c2')).resolves.toEqual({ shops: [shop], nextCursor: 'c2' });
+    expect(fetchMock).toHaveBeenCalledWith('/shops/list?limit=20&cursor=c2');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Shops are unavailable' } });
+    await expect(fetchListedShops()).rejects.toThrow('Could not load shops. Please try again.');
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { shops: [], nextCursor: null } });
+    await expect(fetchListedShops()).rejects.toThrow('Could not load shops. Please try again.');
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        shops: [
+          {
+            npub: 'not-an-npub',
+            name: 'Cafe Luna',
+            place: { lat: 1, lng: 2, label: 'Cafe Luna' },
+          },
+        ],
+      },
+    });
+    await expect(fetchListedShops()).rejects.toThrow('Could not load shops. Please try again.');
   });
 });
 
