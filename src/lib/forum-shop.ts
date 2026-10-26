@@ -427,8 +427,8 @@ export function shopDescriptionProblem(
 /**
  * Shop-account username format problem, mirroring the API regex.
  *
- * An empty handle is not a format error. The shop composer treats that as
- * required on its own, and the API rejects a top-level shop that has none.
+ * An empty handle is not a format error. {@link shopAccountRequiredProblem}
+ * owns that required-account rule. The API rejects a top-level shop that has none.
  *
  * @param raw - Username with or without one leading `@`.
  * @returns `'format'` when non-empty input is invalid, otherwise `null`. A bare
@@ -440,6 +440,21 @@ export function shopUsernameProblem(raw: string): 'format' | null {
     return null;
   }
   return /^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) ? null : 'format';
+}
+
+/**
+ * Shop-account required problem, mirroring a top-level shop with no account.
+ *
+ * An empty handle, including a bare `@`, is required. Format stays in
+ * {@link shopUsernameProblem}. Callers still choose when an untouched field
+ * shows this result.
+ *
+ * @param raw - Username with or without one leading `@`.
+ * @returns `'required'` when the handle is empty, otherwise `null`.
+ */
+export function shopAccountRequiredProblem(raw: string): 'required' | null {
+  const username = raw.trim().replace(/^@/, '').trim();
+  return username === '' ? 'required' : null;
 }
 
 /**

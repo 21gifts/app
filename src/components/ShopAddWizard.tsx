@@ -26,6 +26,7 @@ import {
   SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   formatShopAddressLine,
+  shopAccountRequiredProblem,
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopDescriptionText,
@@ -361,6 +362,7 @@ export function ShopAddWizard({
   }, [accountUsernameId, photoAddButtonId, step]);
 
   const normalizedUsername = strippedHandle(username);
+  const usernameEmpty = shopAccountRequiredProblem(username) === 'required';
   const accountValue = accountFieldValue(username);
   const mentionPrefix = session !== null && step === 4 ? mentionQuery(accountValue) : null;
   useEffect(() => {
@@ -377,7 +379,7 @@ export function ShopAddWizard({
     }
   }, [onUsernameChange, step, username]);
   useEffect(() => {
-    if (normalizedUsername === '') {
+    if (usernameEmpty) {
       setUsernameLookup('idle');
       return;
     }
@@ -411,7 +413,7 @@ export function ShopAddWizard({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, normalizedUsername, session, username, usernameFormatProblem]);
+  }, [mode, normalizedUsername, session, username, usernameEmpty, usernameFormatProblem]);
   useEffect(() => {
     if (session === null || mentionPrefix === null) {
       setSeed([]);
@@ -492,11 +494,10 @@ export function ShopAddWizard({
   const usernameProblem =
     usernameFormatProblem !== null
       ? 'format'
-      : normalizedUsername !== '' && usernameLookup === 'missing'
+      : !usernameEmpty && usernameLookup === 'missing'
         ? 'missing'
         : null;
-  const usernameEmpty = normalizedUsername === '';
-  const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
+  const usernamePending = !usernameEmpty && usernameLookup === 'checking';
   const descriptionServerProblem = serverProblemField === 'text';
   const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
@@ -909,7 +910,7 @@ export function ShopAddWizard({
           </div>
           <div>
             <dt className="text-app-muted">{t('shops.stepAccount')}</dt>
-            <dd>{normalizedUsername === '' ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
+            <dd>{usernameEmpty ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
           </div>
         </dl>
       ) : null}

@@ -1165,6 +1165,37 @@ test('Function: shopUsernameProblem — format errors appear while typing before
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
+test('Function: shopAccountRequiredProblem — an empty username is required while typing', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops#post');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  const username = page.getByLabel('21.gifts username');
+  await expect(page.getByText('Type or pick the 21.gifts username to continue.')).toBeVisible();
+  await expect(username).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await username.fill('_');
+  await expect(
+    page.getByText(
+      /Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit/,
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('Type or pick the 21.gifts username to continue.')).toHaveCount(0);
+  await expect(username).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+});
+
 test('Function: lookupAccountByUsername — a missing account is shown while typing', async ({
   page,
 }) => {

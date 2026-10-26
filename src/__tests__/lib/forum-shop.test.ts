@@ -10,6 +10,7 @@ import {
   SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   SHOP_DESCRIPTION_MIN,
+  shopAccountRequiredProblem,
   shopAddressProblem,
   shopAddressProblems,
   shopApiProblem,
@@ -322,6 +323,17 @@ describe('forum-shop', () => {
       expect(shopDescriptionProblem('Fresh bread every morning.\t', null)).toBe(null);
       expect(shopDescriptionProblem('Fresh bread\u0001 every morning.', null)).toBe('controls');
       expect(SHOP_DESCRIPTION_MIN).toBe(20);
+    });
+  });
+
+  describe('shopAccountRequiredProblem', () => {
+    it('requires an empty handle and leaves a typed handle to the format rule', () => {
+      expect(shopAccountRequiredProblem('')).toBe('required');
+      expect(shopAccountRequiredProblem('@')).toBe('required');
+      expect(shopAccountRequiredProblem(' @ ')).toBe('required');
+      expect(shopAccountRequiredProblem('@ ada')).toBe(null);
+      expect(shopAccountRequiredProblem('@alice_21')).toBe(null);
+      expect(shopAccountRequiredProblem('Ada')).toBe(null);
     });
   });
 

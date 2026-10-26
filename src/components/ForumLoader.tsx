@@ -74,6 +74,7 @@ import {
   ensureShopHashtag,
   isShopApiProblem,
   isShopNote,
+  shopAccountRequiredProblem,
   shopApiProblem,
   shopDescriptionProblem,
   shopNameProblem,
@@ -362,8 +363,10 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
   if (feed !== 'shops') {
     return null;
   }
-  const handle = username.trim().replace(/^@/, '').trim().toLowerCase();
-  return handle === '' ? null : handle;
+  if (shopAccountRequiredProblem(username) === 'required') {
+    return null;
+  }
+  return username.trim().replace(/^@/, '').trim().toLowerCase();
 }
 
 /**

@@ -1638,9 +1638,16 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Non-negative count. No network.
 - **Used by:** `ShopAddWizard` for the text-step hint.
 
+## Function: shopAccountRequiredProblem
+
+- **Purpose:** Required-account rule for a shop username, including an optional leading `@`. Empty input, a bare `@`, and surrounding spaces are required. A typed handle is not this problem.
+- **Inputs:** Raw username draft.
+- **Returns / side effects:** `'required'` when the handle is empty after trim and one leading `@` is removed, otherwise `null`. No network. Format stays in `shopUsernameProblem`.
+- **Used by:** `ShopAddWizard`, `ShopAccountControl`, and `composeShopUsername` in `ForumLoader`.
+
 ## Function: shopUsernameProblem
 
-- **Purpose:** Checks the shop-account username format, including an optional leading `@`. Empty input returns null so the caller applies the required-account rule.
+- **Purpose:** Checks the shop-account username format, including an optional leading `@`. Empty input returns null. `shopAccountRequiredProblem` owns the required-account rule.
 - **Inputs:** Raw username draft.
 - **Returns / side effects:** Trims, removes one leading `@`, trims again, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
 - **Used by:** `ShopAddWizard`, `ShopAccountControl`, and the pre-payment validation in `ForumLoader`.

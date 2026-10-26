@@ -18,7 +18,7 @@ import {
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, shopUsernameProblem } from '@/lib/forum-shop';
+import { isShopNote, shopAccountRequiredProblem, shopUsernameProblem } from '@/lib/forum-shop';
 import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -222,7 +222,8 @@ export function ShopAccountControl({
   // hint. After an edit, or when the field is left, a bare `@` is the required
   // account, not a format error.
   const formatProblem = shopUsernameProblem(draft);
-  const usernameRequired = edited && normalizedUsername === '';
+  const accountRequired = shopAccountRequiredProblem(draft) === 'required';
+  const usernameRequired = edited && accountRequired;
 
   useEffect(() => {
     if (session === null || !open || query === null) {
@@ -267,12 +268,7 @@ export function ShopAccountControl({
   }, [query]);
 
   useEffect(() => {
-    if (
-      session === null ||
-      !open ||
-      normalizedUsername === '' ||
-      shopUsernameProblem(draft) !== null
-    ) {
+    if (session === null || !open || accountRequired || shopUsernameProblem(draft) !== null) {
       setUsernameLookup(null);
       return;
     }
@@ -300,7 +296,7 @@ export function ShopAccountControl({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [draft, normalizedUsername, open, session]);
+  }, [accountRequired, draft, normalizedUsername, open, session]);
 
   useLayoutEffect(() => {
     setRowLimit(SUGGESTION_LIMIT);
@@ -570,7 +566,7 @@ export function ShopAccountControl({
             className="mt-3"
             disabled={
               saving ||
-              normalizedUsername === '' ||
+              accountRequired ||
               formatProblem !== null ||
               usernameMissing ||
               usernamePending
