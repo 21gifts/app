@@ -3522,7 +3522,7 @@ A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosi
 
 ### Variant: staff-account-checking
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@missing** in the
 username field. The live lookup is still running, so **Checking that account…** is visible and
 **Save account** is disabled.
 
@@ -3530,7 +3530,7 @@ username field. The live lookup is still running, so **Checking that account…*
 
 ### Variant: staff-account-missing
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **missing** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@missing** in the
 username field. The live lookup returned no account. **No account with that username. Check the
 spelling of the 21.gifts username.** is visible and **Save account** is disabled.
 
@@ -3538,7 +3538,7 @@ spelling of the 21.gifts username.** is visible and **Save account** is disabled
 
 ### Variant: staff-account-invalid
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open with **\_** in the
+A moderator session. One Cafe Luna shop note. **Add an account** is open with **@_** in the
 username field. **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a
 letter or digit.** is visible and **Save account** is disabled.
 

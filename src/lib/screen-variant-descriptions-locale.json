@@ -4475,14 +4475,14 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
   },
   "/shops:staff-account-checking": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang I-save ang account."
   },
   "/shops:staff-account-missing": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang I-save ang account."
   },
   "/shops:edit-user-checking": {
     "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
@@ -4985,9 +4985,9 @@
     "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:staff-account-invalid": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit _ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con _ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at _ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @_ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @_ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
   },
   "/setup/name:empty": {
     "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
