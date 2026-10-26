@@ -269,50 +269,65 @@ describe('ShopAccountControl', () => {
     });
   });
 
-  it('shows the live format error for a bare @ without calling the API', () => {
+  it('shows the required account for a bare @ without calling the API', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '   @' } });
-    expect(
-      screen.getByText(
-        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
-      ),
-    ).toBeTruthy();
-    expect(screen.getByLabelText('Username').getAttribute('aria-invalid')).toBe('true');
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: '   @' } });
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(input).toHaveProperty('value', '@');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
-  it('shows the live format error after typing @a and returning to @', () => {
+  it('shows the required account after typing @a and returning to @', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     const input = screen.getByLabelText('Username');
     fireEvent.change(input, { target: { value: '@a' } });
     fireEvent.change(input, { target: { value: '@' } });
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(input).toHaveProperty('value', '@');
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(
-      screen.getByText(
-        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
-      ),
-    ).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
   });
 
-  it('shows the live format error and disables Save after clearing the field', () => {
+  it('puts @ back after clearing the field and shows that an account is required', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     const input = screen.getByLabelText('Username');
     fireEvent.change(input, { target: { value: '' } });
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(input).toHaveProperty('value', '@');
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(
-      screen.getByText(
-        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
-      ),
-    ).toBeTruthy();
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('lists accounts for a letter typed after the prefix was deleted', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveProperty('value', '@');
+    fireEvent.change(input, { target: { value: 'a' } });
+    expect(input).toHaveProperty('value', '@a');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(searchMentionAccounts).toHaveBeenCalledWith('token', 'a');
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
@@ -556,7 +571,7 @@ describe('ShopAccountControl', () => {
     });
   });
 
-  it('closes the list when the field does not start with @', async () => {
+  it('prefixes @ when the field does not start with one and keeps the list open', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(searchMentionAccounts).mockResolvedValue([
       { id: 'acc-luna', username: 'luna', name: 'Luna' },
@@ -564,10 +579,10 @@ describe('ShopAccountControl', () => {
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    await waitFor(() => {
-      expect(screen.queryByRole('listbox')).toBeNull();
-    });
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: 'luna' } });
+    expect(input).toHaveProperty('value', '@luna');
+    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
   });
 
   it('closes the list when the prefix is not a username', async () => {

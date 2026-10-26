@@ -24462,7 +24462,7 @@ test.describe('shops screens', () => {
     await note.getByLabel('Username').fill('missing');
     await lookup;
     await expect(note.getByText('Checking that account…')).toHaveCount(0);
-    await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
+    await expect(page.getByRole('option', { name: '@missing', exact: true })).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeEnabled();
     await save.click();

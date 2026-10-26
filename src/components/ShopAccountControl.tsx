@@ -67,6 +67,32 @@ function draftFor(username: string | undefined): string {
   return username === undefined || username === '' ? '@' : `@${username}`;
 }
 
+/**
+ * Field value after each keystroke.
+ *
+ * A value that already starts with `@` is kept, including a space after it,
+ * so `@ ` still closes the list. Blank and a lone `@` with only surrounding
+ * spaces stay `@`, so the list can open. Leading space before `@handle` is
+ * trimmed to that one `@`, so save still strips a single prefix. Any other
+ * value gets one leading `@`.
+ *
+ * @param raw - The input's current value.
+ * @returns The draft shown in the field.
+ */
+function accountDraft(raw: string): string {
+  if (raw.startsWith('@')) {
+    return raw;
+  }
+  const trimmed = raw.trim();
+  if (trimmed === '' || trimmed === '@') {
+    return '@';
+  }
+  if (trimmed.startsWith('@')) {
+    return trimmed;
+  }
+  return `@${raw}`;
+}
+
 /** Where the suggestion panel sits: below the button, or above it. */
 type PanelPlace =
   | { side: 'below'; top: number; left: number; width: number }
@@ -155,6 +181,8 @@ export interface ShopAccountControlProps {
  * The open field starts with `@`. Suggestions from the same account list as a
  * forum post appear immediately. A typed prefix keeps only usernames that
  * start with it, before the next page returns. Choosing one fills `@username`.
+ * Deleting the prefix puts `@` back, so the next letter still lists accounts.
+ * After an edit, that bare `@` is the required-account message.
  * A debounced exact-account check blocks Save while pending or proven
  * missing; a failed lookup leaves the API to decide. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
@@ -193,14 +221,10 @@ export function ShopAccountControl({
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
   const normalizedUsername = draft.trim().replace(/^@/, '').trim().toLowerCase();
-  // A newly opened picker starts with `@` so the people list is useful before
-  // typing. Once the visitor edits the field, a bare `@` is a live format error.
-  const formatProblem =
-    !edited && draft === '@'
-      ? null
-      : normalizedUsername === ''
-        ? 'format'
-        : shopUsernameProblem(draft);
+  // A newly opened picker starts with `@` and explains the disabled Save as a
+  // hint. After an edit, a bare `@` is the required account, not a format error.
+  const formatProblem = shopUsernameProblem(draft);
+  const usernameRequired = edited && normalizedUsername === '';
 
   useEffect(() => {
     if (session === null || !open || query === null) {
@@ -356,7 +380,9 @@ export function ShopAccountControl({
       ? t('login.nameInvalid')
       : usernameMissing
         ? t('shops.problemUsernameMissing')
-        : undefined;
+        : usernameRequired
+          ? t('shops.accountRequired')
+          : undefined;
   const savedError =
     errorKey === 'format'
       ? t('login.nameInvalid')
@@ -500,7 +526,7 @@ export function ShopAccountControl({
             disabled={saving}
             onKeyDown={onSuggestionKeyDown}
             onChange={(event) => {
-              setDraft(event.target.value);
+              setDraft(accountDraft(event.target.value));
               setEdited(true);
               setRemote(null);
               setErrorKey(null);
