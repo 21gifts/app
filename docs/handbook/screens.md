@@ -2244,7 +2244,7 @@ Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum
 
 ### Variant: no-pin
 
-Listed **Roadside Stall** with a description, one photo, forum-note link, NIP-05, npub copy control, and the payment block. There is no pin, so there is no **Address** heading, no street lines, no map, and no request for a maps key.
+Listed **Roadside Stall**. The overline **Shop** sits above the name. Then the description and the payment block (heading, address, QR), then the forum-note link, NIP-05, the npub copy control, and the photo last. There is no pin, so there is no **Address** heading, no street lines, no map, and no request for a maps key.
 
 ![21.gifts public shop without a pin](images/npub-no-pin.png)
 

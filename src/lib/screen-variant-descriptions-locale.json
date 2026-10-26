@@ -35,9 +35,9 @@
     "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at ang buong payment block (heading, address, QR)."
   },
   "/[npub]:no-pin": {
-    "de": "Gelisteter Roadside Stall mit Beschreibung, einem Foto, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und dem Zahlungsblock. Es gibt keinen Pin, daher keine Überschrift Adresse, keine Straßenzeilen, keine Karte und keine Anfrage nach einem Kartenschlüssel.",
-    "es": "Roadside Stall listado con descripción, una foto, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago. No hay pin, así que no hay encabezado Dirección, ni líneas de calle, ni mapa, ni solicitud de una clave de mapas.",
-    "fil": "Nakalistang Roadside Stall na may paglalarawan, isang litrato, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block. Walang pin, kaya walang heading na Address, walang mga linya ng kalye, walang mapa, at walang hiling para sa maps key."
+    "de": "Gelisteter Roadside Stall. Über dem Namen steht die Überzeile Shop. Danach die Beschreibung und der Zahlungsblock (Überschrift, Adresse, QR), dann der Link zum Forumsbeitrag, NIP-05, die npub-Kopiersteuerung und zuletzt das Foto. Es gibt keinen Pin, daher keine Überschrift Adresse, keine Straßenzeilen, keine Karte und keine Anfrage nach einem Kartenschlüssel.",
+    "es": "Roadside Stall listado. La sobrelínea Tienda queda sobre el nombre. Después van la descripción y el bloque de pago (título, dirección, QR), luego el enlace a la publicación del foro, NIP-05, el control para copiar el npub y al final la foto. No hay pin, así que no hay encabezado Dirección, ni líneas de calle, ni mapa, ni solicitud de una clave de mapas.",
+    "fil": "Nakalistang Roadside Stall. Nasa itaas ng pangalan ang linyang Tindahan. Kasunod ang paglalarawan at ang payment block (heading, address, QR), tapos ang link sa post sa forum, NIP-05, ang kontrol na kumokopya ng npub, at huli ang litrato. Walang pin, kaya walang heading na Address, walang mga linya ng kalye, walang mapa, at walang hiling para sa maps key."
   },
   "/[npub]:gone": {
     "de": "API 410. Die Seite sagt Dieses Geschäft ist nicht mehr gelistet. und zeigt weder den Geschäftsnamen noch andere verborgene Geschäftsdaten.",

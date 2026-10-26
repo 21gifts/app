@@ -76,7 +76,20 @@ describe('ShopScreen', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<ShopScreen state="ready" shop={{ ...SHOP, place: null }} />);
-    expect(screen.getByRole('heading', { name: 'Cafe Luna' })).toBeTruthy();
+    const kicker = screen.getByText('Shop');
+    const name = screen.getByRole('heading', { name: 'Cafe Luna', level: 1 });
+    const pay = screen.getByRole('heading', { name: '21.gifts address' });
+    const note = screen.getByRole('link', { name: 'View forum note' });
+    const photo = screen.getByAltText('Photo from Cafe Luna');
+    expect(kicker.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(pay.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(note.compareDocumentPosition(photo) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(screen.queryByRole('heading', { name: 'Address' })).toBeNull();
     expect(screen.queryByTestId('shop-map')).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -96,6 +109,7 @@ describe('ShopScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
     expect(screen.getByRole('heading', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(screen.queryByText('Shop')).toBeNull();
     expect(screen.getByText('Coffee, gifts, and moonlight.')).toBeTruthy();
     expect(screen.getByAltText('Photo from Cafe Luna')).toBeTruthy();
     expect(screen.getByText('Old Town')).toBeTruthy();
@@ -103,8 +117,11 @@ describe('ShopScreen', () => {
     expect(screen.getByText('8000 Zurich')).toBeTruthy();
     expect(screen.getByText('CH')).toBeTruthy();
     expect(screen.queryByTestId('shop-map')).toBeNull();
-    expect(screen.getByRole('link', { name: 'View forum note' }).getAttribute('href')).toBe(
-      `/messages/${SHOP.messageId}`,
+    const note = screen.getByRole('link', { name: 'View forum note' });
+    const pay = screen.getByRole('heading', { name: '21.gifts address' });
+    expect(note.getAttribute('href')).toBe(`/messages/${SHOP.messageId}`);
+    expect(note.compareDocumentPosition(pay) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(screen.getByText('luna@21.gifts', { selector: 'p.break-all' })).toBeTruthy();
     expect(screen.getByText(NPUB)).toBeTruthy();

@@ -739,6 +739,7 @@ const en = {
   'shop.address': 'Address',
   'shop.error': 'Could not load this shop. Please try again.',
   'shop.forumNote': 'View forum note',
+  'shop.kicker': 'Shop',
   'shop.noLongerListed': 'This shop is no longer listed.',
 
   'rules.pageTitle': 'Living room rules',
@@ -1990,6 +1991,7 @@ const de = {
   'shop.address': 'Adresse',
   'shop.error': 'Dieses Geschäft konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'shop.forumNote': 'Forumsbeitrag ansehen',
+  'shop.kicker': 'Shop',
   'shop.noLongerListed': 'Dieses Geschäft ist nicht mehr gelistet.',
 
   'rules.pageTitle': 'Wohnzimmerregeln',
@@ -3255,6 +3257,7 @@ const es = {
   'shop.address': 'Dirección',
   'shop.error': 'No se pudo cargar esta tienda. Inténtalo de nuevo.',
   'shop.forumNote': 'Ver publicación del foro',
+  'shop.kicker': 'Tienda',
   'shop.noLongerListed': 'Esta tienda ya no está en la lista.',
 
   'rules.pageTitle': 'Reglas del salón',
@@ -4507,6 +4510,7 @@ const fil = {
   'shop.address': 'Address',
   'shop.error': 'Hindi ma-load ang shop na ito. Subukan ulit.',
   'shop.forumNote': 'Tingnan ang post sa forum',
+  'shop.kicker': 'Tindahan',
   'shop.noLongerListed': 'Hindi na nakalista ang shop na ito.',
 
   'rules.pageTitle': 'Mga patakaran sa living room',

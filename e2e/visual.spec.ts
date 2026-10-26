@@ -21070,7 +21070,10 @@ test.describe('public shop screen', () => {
       }
     });
     await page.goto(`/${noPinNpub}`);
+    await expect(page.getByText('Shop', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Roadside Stall', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '21.gifts address' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Address', exact: true })).toHaveCount(0);
     await expect(page.getByTestId('shop-map')).toHaveCount(0);
     const photo = page.getByRole('img', { name: 'Photo from Roadside Stall' }).first();
