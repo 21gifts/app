@@ -1164,6 +1164,32 @@ describe('ShopAddWizard', () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it('keeps one @ when a username is pasted with space before it', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    const onUsernameChange = vi.fn();
+    renderWizard(
+      <ShopAddWizard
+        {...props({
+          draft: SHOP_DESCRIPTION,
+          place: COMPLETE_PLACE,
+          username: '@',
+          onUsernameChange,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    fireEvent.change(field, { target: { value: ' @luna' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@luna');
+    fireEvent.change(field, { target: { value: '   ' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@');
+    fireEvent.change(field, { target: { value: '  @' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@');
+  });
+
   it('picks the highlighted person with Enter and does not post', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
     searchPeople.mockResolvedValue([

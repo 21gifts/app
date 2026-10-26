@@ -830,6 +830,55 @@ async function supplyShopUsername(page: Page): Promise<void> {
   }
 }
 
+const SHOP_ACCOUNT_REQUIRED_ALERT = 'Choose a 21.gifts user to continue.';
+
+/**
+ * Make the shop-text save return the API's missing-account rejection.
+ *
+ * The text write runs before the account write, so every editor that changes
+ * the text reaches this sentence on the username step.
+ */
+async function stubShopTextAccountRequired(page: Page, messageId: string): Promise<void> {
+  await page.route(`**/forum/messages/${messageId}/text`, async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'A shop note needs a shop account' }),
+    });
+  });
+}
+
+/** Save a changed shop note and wait until the username step shows the API rejection. */
+async function rejectShopSaveForAccount(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page
+    .getByLabel('Shop text')
+    .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  const username = page.getByLabel('21.gifts username');
+  await expect(username).toBeVisible();
+  // A stored account is already @luna. Typing that same handle does not look
+  // the name up again, so only an empty field needs the unknown-username fill.
+  if ((await username.inputValue()) !== '@luna') {
+    await fillUnknownShopUsername(page);
+  }
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await page.getByRole('button', { name: 'Save changes' }).click();
+  await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+  const rejected = page.getByRole('alert').filter({ hasText: SHOP_ACCOUNT_REQUIRED_ALERT });
+  await expect(rejected).toHaveText(SHOP_ACCOUNT_REQUIRED_ALERT);
+  await expect(page.getByLabel('21.gifts username')).toHaveValue('@luna');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await rejected.scrollIntoViewIfNeeded();
+}
+
 /** Leave the shop username step. The account is already stored or accepted. */
 async function continueFromShopUsername(page: Page): Promise<void> {
   const next = page.getByRole('button', { name: 'Next' });
@@ -4749,6 +4798,13 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
   });
 
+  test('welcome shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openHostedShopEditor(page, 'welcome');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-welcome-shop-edit-account-required');
+  });
+
   test('welcome shop-edit-saving', async ({ page }) => {
     await openHostedShopEditor(page, 'welcome');
     const release = await holdJson(page, '**/forum/messages/m-shop/text', savedShopNote('m-shop'));
@@ -8499,6 +8555,13 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-save-rejected');
+  });
+
+  test('state /members shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, '55555555-5555-4555-8555-555555555555');
+    await openHostedShopEditor(page, 'members');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-members-shop-edit-account-required');
   });
 
   test('state /members shop-edit-saving', async ({ page }) => {
@@ -13555,6 +13618,13 @@ test.describe('onboarding screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
+  });
+
+  test('state /messages/[id] shop-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, '12121212-1212-4121-8121-121212121212');
+    await openHostedShopEditor(page, 'messages');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-messages-id-shop-edit-account-required');
   });
 
   test('state /messages/[id] shop-edit-saving', async ({ page }) => {
@@ -21839,6 +21909,13 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-save-rejected');
   });
 
+  test('shops map-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openShopsEditor(page, 'map');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-map-edit-account-required');
+  });
+
   test('shops map-edit-saving', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
@@ -22502,6 +22579,13 @@ test.describe('shops screens', () => {
     );
     await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-save-rejected');
+  });
+
+  test('shops table-edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-shop');
+    await openShopsEditor(page, 'table');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-table-edit-account-required');
   });
 
   test('shops table-edit-saving', async ({ page }) => {
@@ -23634,6 +23718,13 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-edit-save-rejected');
   });
 
+  test('shops edit-account-required', async ({ page }) => {
+    await stubShopTextAccountRequired(page, 'm-staff');
+    await openShopsEditor(page, 'post');
+    await rejectShopSaveForAccount(page);
+    await shotScreen(page, 'state-shops-edit-account-required');
+  });
+
   test('shops edit-history-error', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -24296,6 +24387,24 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-account');
   });
 
+  test('shops staff-account-required', async ({ page }) => {
+    await fulfillMentionPeople(page);
+    const note = await openStaffAccountControl(page);
+    await note.getByLabel('Username').fill('a');
+    await note.getByLabel('Username').fill('   @');
+    await expect(note.getByLabel('Username')).toHaveValue('@');
+    const required = note.getByText('Type or pick the 21.gifts username to continue.');
+    await expect(required).toBeVisible();
+    await expect(note.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true');
+    await expect(note.getByRole('alert')).toHaveCount(0);
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeDisabled();
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+    await save.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-account-required');
+  });
+
   test('shops staff-account-chosen', async ({ page }) => {
     await seedAda(page, 'moderator');
     await fulfillMentionPeople(page);
@@ -24792,6 +24901,56 @@ test.describe('shops screens', () => {
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-post-rejected');
+  });
+
+  test('shops add-account-required', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await fulfillMixedSatsMessages(page);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.fallback();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'A shop note needs a shop account' }),
+        });
+      },
+    );
+    await page.goto('/shops#post');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+    await expect(post).toBeEnabled();
+    await expect
+      .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
+      .toBe('1');
+    await post.evaluate((element) => {
+      (element as unknown as { click: () => void }).click();
+    });
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({ hasText: SHOP_ACCOUNT_REQUIRED_ALERT });
+    await expect(rejected).toHaveText(SHOP_ACCOUNT_REQUIRED_ALERT);
+    await expect(page.getByLabel('21.gifts username')).toHaveValue('@luna');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await rejected.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-account-required');
   });
 
   test('shops add-user-suggest', async ({ page }) => {

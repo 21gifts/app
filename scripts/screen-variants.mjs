@@ -2882,6 +2882,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'shop-edit-account-required',
+    image: 'members-shop-edit-account-required.png',
+    visual: 'state-members-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-members-shop-edit-account-required')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-saving',
     image: 'members-shop-edit-saving.png',
     visual: 'state-members-shop-edit-saving',
@@ -5215,6 +5222,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'shop-edit-account-required',
+    image: 'messages-id-shop-edit-account-required.png',
+    visual: 'state-messages-id-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-account-required')",
+  },
+  {
+    route: '/messages/[id]',
     id: 'shop-edit-saving',
     image: 'messages-id-shop-edit-saving.png',
     visual: 'state-messages-id-shop-edit-saving',
@@ -5705,6 +5719,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'shop-edit-account-required',
+    image: 'welcome-shop-edit-account-required.png',
+    visual: 'state-welcome-shop-edit-account-required',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-account-required')",
+  },
+  {
+    route: '/welcome',
     id: 'shop-edit-saving',
     image: 'welcome-shop-edit-saving.png',
     visual: 'state-welcome-shop-edit-saving',
@@ -6041,6 +6062,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-edit-account-required',
+    image: 'shops-map-edit-account-required.png',
+    visual: 'state-shops-map-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-map-edit-account-required')",
+  },
+  {
+    route: '/shops',
     id: 'map-edit-saving',
     image: 'shops-map-edit-saving.png',
     visual: 'state-shops-map-edit-saving',
@@ -6328,6 +6356,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'table-edit-account-required',
+    image: 'shops-table-edit-account-required.png',
+    visual: 'state-shops-table-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-table-edit-account-required')",
+  },
+  {
+    route: '/shops',
     id: 'table-edit-saving',
     image: 'shops-table-edit-saving.png',
     visual: 'state-shops-table-edit-saving',
@@ -6563,6 +6598,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-add-post-rejected.png',
     visual: 'state-shops-add-post-rejected',
     needle: "shotScreen(page, 'state-shops-add-post-rejected')",
+  },
+  {
+    route: '/shops',
+    id: 'add-account-required',
+    image: 'shops-add-account-required.png',
+    visual: 'state-shops-add-account-required',
+    needle: "shotScreen(page, 'state-shops-add-account-required')",
   },
   {
     route: '/shops',
@@ -6979,6 +7021,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-account-required',
+    image: 'shops-edit-account-required.png',
+    visual: 'state-shops-edit-account-required',
+    needle: "shotScreen(page, 'state-shops-edit-account-required')",
+  },
+  {
+    route: '/shops',
     id: 'edit-history-error',
     image: 'shops-edit-history-error.png',
     visual: 'state-shops-edit-history-error',
@@ -6990,6 +7039,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-account.png',
     visual: 'state-shops-staff-account',
     needle: "shotScreen(page, 'state-shops-staff-account')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-required',
+    image: 'shops-staff-account-required.png',
+    visual: 'state-shops-staff-account-required',
+    needle: "shotScreen(page, 'state-shops-staff-account-required')",
   },
   {
     route: '/shops',

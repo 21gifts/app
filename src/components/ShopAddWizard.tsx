@@ -93,18 +93,24 @@ function mentionQuery(draft: string): string | null {
 /**
  * Shop-account field value.
  *
- * Blank and a lone `@` stay `@`. A value that already starts with `@` is kept,
- * including a space after it. Any other value gets one leading `@`.
+ * A value that already starts with `@` is kept, including a space after it,
+ * so `@ ` still closes the list. Blank and a lone `@` with only surrounding
+ * spaces stay `@`. Leading space before `@handle` is trimmed to that one `@`,
+ * so save still strips a single prefix. Any other value gets one leading `@`.
  *
  * @param value - Parent username.
  * @returns The value shown in the field.
  */
 function accountFieldValue(value: string): string {
-  if (value === '' || value === '@') {
-    return '@';
-  }
   if (value.startsWith('@')) {
     return value;
+  }
+  const trimmed = value.trim();
+  if (trimmed === '' || trimmed === '@') {
+    return '@';
+  }
+  if (trimmed.startsWith('@')) {
+    return trimmed;
   }
   return `@${value}`;
 }

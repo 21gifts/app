@@ -2124,6 +2124,15 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Choose a 21.gifts user to continue.** **Next** is disabled.
+
+![21.gifts welcome shop edit account required](images/welcome-shop-edit-account-required.png)
+
 ### Variant: shop-edit-saving
 
 A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert.
@@ -2459,6 +2468,16 @@ stays selected.
 
 ![21.gifts shops map edit save rejected](images/shops-map-edit-save-rejected.png)
 
+### Variant: map-edit-account-required
+
+A moderator opened **Edit shop note** on **Map**, changed **Shop text**, entered **luna** on step
+**4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because the shop
+note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in
+the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled. **Map** stays
+selected.
+
+![21.gifts shops map edit account required](images/shops-map-edit-account-required.png)
+
 ### Variant: map-edit-saving
 
 A moderator opened **Edit shop note** on **Map**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Map** stays selected. No second **Map** heading.
@@ -2748,6 +2767,16 @@ inconclusive, then the API rejected the account update. The editor returns to st
 
 ![21.gifts shops table edit save rejected](images/shops-table-edit-save-rejected.png)
 
+### Variant: table-edit-account-required
+
+A moderator opened **Edit shop note** on **Table**, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
+the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
+**@luna** in the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled.
+**Table** stays selected.
+
+![21.gifts shops table edit account required](images/shops-table-edit-account-required.png)
+
 ### Variant: table-edit-saving
 
 A moderator opened **Edit shop note** on **Table**, changed the text, and **Save changes** has not returned. The editor stays on **5 / 5 · Summary**. **Save changes** is disabled. **Saving this shop note.** is visible. There is no alert. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
@@ -2990,6 +3019,15 @@ shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. Th
 server was unavailable. The summary stays open and the generic post error is visible.
 
 ![21.gifts shops add post rejected](images/shops-add-post-rejected.png)
+
+### Variant: add-account-required
+
+**Add a shop** reached step **5 / 5 · Summary** with **@luna**, and **Post** was pressed. The API
+rejected the post because the shop note needs a shop account. The editor returns to step
+**4 / 5 · 21.gifts user** with **@luna** in the field and shows **Choose a 21.gifts user to
+continue.** **Next** is disabled.
+
+![21.gifts shops add account required](images/shops-add-account-required.png)
 
 ### Variant: table-more
 
@@ -3386,6 +3424,15 @@ shows **No account with that username. Check the spelling of the 21.gifts userna
 
 ![21.gifts shops edit save rejected](images/shops-edit-save-rejected.png)
 
+### Variant: edit-account-required
+
+A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
+the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
+**@luna** in the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled.
+
+![21.gifts shops edit account required](images/shops-edit-account-required.png)
+
 ### Variant: edit-history-error
 
 A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. The photo step stays open and still dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
@@ -3513,6 +3560,15 @@ stays.
 A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to save.** is shown under the field. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
+
+### Variant: staff-account-required
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username was edited
+and cleared, so the field is **@** again. **Type or pick the 21.gifts username to continue.** is
+the field error. **Save account** is disabled. There is no alert. The People list still shows
+**@ada** Ada Lovelace and **@adam** Adam.
+
+![21.gifts shops staff account required](images/shops-staff-account-required.png)
 
 ### Variant: staff-account-chosen
 
@@ -4310,6 +4366,15 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Choose a 21.gifts user to continue.** **Next** is disabled.
+
+![21.gifts member shop edit account required](images/members-shop-edit-account-required.png)
 
 ### Variant: shop-edit-saving
 
@@ -6514,6 +6579,15 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
+
+### Variant: shop-edit-account-required
+
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
+The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
+**Choose a 21.gifts user to continue.** **Next** is disabled.
+
+![21.gifts public message shop edit account required](images/messages-id-shop-edit-account-required.png)
 
 ### Variant: shop-edit-saving
 
