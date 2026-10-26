@@ -27,6 +27,7 @@ import {
   giftDaySchema,
   giftStatsSchema,
   shopActivitySchema,
+  shopListResponseSchema,
   grantContinuationSchema,
   postStatsSchema,
   accountActivitySchema,
@@ -63,6 +64,7 @@ import {
   type GiftDay,
   type GiftStats,
   type ShopActivityDay,
+  type ShopListItem,
   type GrantContinuation,
   type PostStats,
   type AccountActivity,
@@ -1117,6 +1119,35 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
     throw new Error('Could not load shop activity. Please try again.');
+  }
+}
+
+const SHOPS_LOAD_ERROR = 'Could not load shops. Please try again.';
+
+/**
+ * Fetches one page of the public shop directory. No Authorization header.
+ *
+ * @param cursor - Page cursor from the previous response. Omit for the first page.
+ * @returns The shops and the next cursor, or null when that key is absent.
+ * @throws Error with visitor-facing copy when the response is not ok or the
+ * body fails {@link shopListResponseSchema}.
+ */
+export async function fetchListedShops(
+  cursor?: string,
+): Promise<{ shops: ShopListItem[]; nextCursor: string | null }> {
+  try {
+    const params = new URLSearchParams({ limit: '20' });
+    if (cursor !== undefined) {
+      params.set('cursor', cursor);
+    }
+    const response = await fetch(`/shops/list?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(SHOPS_LOAD_ERROR);
+    }
+    const body = shopListResponseSchema.parse(await response.json());
+    return { shops: body.shops, nextCursor: body.nextCursor ?? null };
+  } catch {
+    throw new Error(SHOPS_LOAD_ERROR);
   }
 }
 
