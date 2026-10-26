@@ -131,14 +131,14 @@ describe('ShopAccountControl', () => {
     expect(input.getAttribute('aria-invalid')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
-    const hint = screen.getByText('Type or pick the 21.gifts username to save.');
+    const hint = screen.getByText('Type or pick the 21.gifts username to continue.');
     expect(input.getAttribute('aria-describedby')).toBe(hint.id);
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(input).toHaveProperty('value', '@');
     expect(setMessageShopAccount).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { value: '@l' } });
-    expect(screen.queryByText('Type or pick the 21.gifts username to save.')).toBeNull();
+    expect(screen.queryByText('Type or pick the 21.gifts username to continue.')).toBeNull();
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 

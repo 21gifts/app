@@ -451,7 +451,7 @@ export function ShopAccountControl({
       : usernameMissing
         ? t('shops.problemUsernameMissing')
         : usernameRequired
-          ? t('shops.accountRequired')
+          ? t('forum.shopAccountHint')
           : undefined;
   const savedError =
     errorKey === 'format'

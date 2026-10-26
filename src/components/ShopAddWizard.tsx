@@ -544,7 +544,7 @@ export function ShopAddWizard({
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
           : usernameEmpty
-            ? t('shops.accountRequired')
+            ? t('forum.shopAccountHint')
             : undefined;
   const usernameHint = usernamePending ? t('shops.usernameChecking') : undefined;
   // While a send is in flight (for example the fee sheet), the parent may clear the draft.

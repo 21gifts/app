@@ -3557,7 +3557,7 @@ stays.
 
 ### Variant: staff-account
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to save.** is shown under the field. There is no alert.
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible and disabled, and the hint **Type or pick the 21.gifts username to continue.** is shown under the field. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
 
