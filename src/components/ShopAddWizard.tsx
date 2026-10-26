@@ -15,7 +15,7 @@ import { PlaceField } from '@/components/PlaceField';
 import {
   ShopAccountSuggestions,
   type ShopAccountSuggestion,
-} from '@/components/ShopAccountControl';
+} from '@/components/ShopAccountSuggestions';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, Field, IconButton } from '@/components/ui';
