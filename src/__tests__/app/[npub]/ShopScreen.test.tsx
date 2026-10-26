@@ -37,23 +37,24 @@ vi.mock('@/components/GoogleMapCanvas', () => ({
 }));
 
 const NPUB = `npub1${'2'.repeat(58)}`;
+const PLACE = {
+  lat: 47.37,
+  lng: 8.54,
+  label: 'Old Town',
+  address: {
+    street: 'Moon Street',
+    houseNumber: '21',
+    postalCode: '8000',
+    city: 'Zurich',
+    country: 'CH',
+  },
+};
 const SHOP: Shop = {
   npub: NPUB,
   messageId: '11111111-1111-4111-8111-111111111111',
   name: 'Cafe Luna',
   description: 'Coffee, gifts, and moonlight.',
-  place: {
-    lat: 47.37,
-    lng: 8.54,
-    label: 'Old Town',
-    address: {
-      street: 'Moon Street',
-      houseNumber: '21',
-      postalCode: '8000',
-      city: 'Zurich',
-      country: 'CH',
-    },
-  },
+  place: PLACE,
   photos: [{ url: 'https://api.21.gifts/messages/111/photo.jpg', width: 1280, height: 960 }],
   payUsername: 'luna',
   nip05: 'luna@21.gifts',
@@ -71,6 +72,26 @@ afterEach(() => {
 });
 
 describe('ShopScreen', () => {
+  it('omits the address and does not ask for a map when the shop has no pin', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<ShopScreen state="ready" shop={{ ...SHOP, place: null }} />);
+    expect(screen.getByRole('heading', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Address' })).toBeNull();
+    expect(screen.queryByTestId('shop-map')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the label and no street when the pin has no address', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(
+      <ShopScreen state="ready" shop={{ ...SHOP, place: { ...PLACE, address: null } }} />,
+    );
+    expect(screen.getByText('Old Town')).toBeTruthy();
+    expect(screen.queryByText('Moon Street 21')).toBeNull();
+    expect(await screen.findByTestId('shop-map')).toBeTruthy();
+  });
+
   it('shows the public shop content and keeps the map hidden without a key', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
@@ -156,7 +177,7 @@ describe('ShopScreen', () => {
         shop={{
           ...SHOP,
           place: {
-            ...SHOP.place,
+            ...PLACE,
             label: '',
             address: {
               street: '',

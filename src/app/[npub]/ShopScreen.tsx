@@ -49,9 +49,10 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
         .map((url, index) => ({ index, url })),
     [shop],
   );
+  const place = shop?.place ?? null;
   const points = useMemo(
-    () => (shop === null ? [] : [{ lat: shop.place.lat, lng: shop.place.lng }]),
-    [shop],
+    () => (place === null ? [] : [{ lat: place.lat, lng: place.lng }]),
+    [place],
   );
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (shop === null) {
+    if (place === null) {
       return;
     }
     let cancelled = false;
@@ -71,7 +72,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [shop]);
+  }, [place]);
 
   if (props.state !== 'ready') {
     return props.state === 'gone' ? (
@@ -92,12 +93,18 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
     );
   }
 
-  const address = props.shop.place.address;
-  const street = [address.street, address.houseNumber]
-    .filter((part) => part.trim() !== '')
-    .join(' ');
-  const city = [address.postalCode, address.city].filter((part) => part.trim() !== '').join(' ');
-  const addressLines = [street, city, address.country].filter((part) => part.trim() !== '');
+  const address = props.shop.place?.address ?? null;
+  const street =
+    address === null
+      ? ''
+      : [address.street, address.houseNumber].filter((part) => part.trim() !== '').join(' ');
+  const city =
+    address === null
+      ? ''
+      : [address.postalCode, address.city].filter((part) => part.trim() !== '').join(' ');
+  const addressLines =
+    address === null ? [] : [street, city, address.country].filter((part) => part.trim() !== '');
+  const placeLabel = props.shop.place?.label.trim() ?? '';
 
   return (
     <Card maxWidth="xl" surface={false}>
@@ -108,29 +115,31 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
         {props.shop.description}
       </p>
       <ForumPhotoGallery photos={photos} alt={t('forum.photoAlt', { name: props.shop.name })} />
-      <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-        <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
-          {t('shop.address')}
-        </h2>
-        <address className="text-center text-sm text-app-fg not-italic">
-          {props.shop.place.label.trim() === '' ? null : <span>{props.shop.place.label}</span>}
-          {addressLines.map((line, index) => (
-            <span key={`${index}:${line}`} className="block">
-              {line}
-            </span>
-          ))}
-        </address>
-        {mapsKey !== null && !mapFailed ? (
-          <GoogleMapCanvas
-            mapsKey={mapsKey}
-            points={points}
-            anchor={points[0]}
-            fitAll={false}
-            testId="shop-map"
-            onUnavailable={() => setMapFailed(true)}
-          />
-        ) : null}
-      </section>
+      {props.shop.place === null ? null : (
+        <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+          <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
+            {t('shop.address')}
+          </h2>
+          <address className="text-center text-sm text-app-fg not-italic">
+            {placeLabel === '' ? null : <span>{placeLabel}</span>}
+            {addressLines.map((line, index) => (
+              <span key={`${index}:${line}`} className="block">
+                {line}
+              </span>
+            ))}
+          </address>
+          {mapsKey !== null && !mapFailed && points[0] !== undefined ? (
+            <GoogleMapCanvas
+              mapsKey={mapsKey}
+              points={points}
+              anchor={points[0]}
+              fitAll={false}
+              testId="shop-map"
+              onUnavailable={() => setMapFailed(true)}
+            />
+          ) : null}
+        </section>
+      )}
       <section className="flex w-full flex-col items-center gap-3 border-t border-app-border pt-6">
         <Link
           href={`/messages/${props.shop.messageId}`}

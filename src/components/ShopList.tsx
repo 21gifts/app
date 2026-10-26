@@ -86,7 +86,9 @@ export function ShopList(): ReactElement {
               <a href={`/${row.npub}`} className="underline">
                 {row.name.trim()}
               </a>
-              <p className="text-sm text-app-muted">{formatPlacePinText(row.place, locale)}</p>
+              {row.place === null ? null : (
+                <p className="text-sm text-app-muted">{formatPlacePinText(row.place, locale)}</p>
+              )}
             </li>
           ))}
         </ul>

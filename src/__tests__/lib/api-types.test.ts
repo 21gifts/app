@@ -1314,6 +1314,15 @@ describe('shopResponseSchema', () => {
     expect(parsed.shop.nip05).toBeNull();
   });
 
+  it('accepts a shop with no pin and a pin with no address', () => {
+    expect(shopResponseSchema.parse({ shop: { ...shop, place: null } }).shop.place).toBeNull();
+    expect(
+      shopResponseSchema.parse({
+        shop: { ...shop, place: { ...shop.place, address: null } },
+      }).shop.place?.address,
+    ).toBeNull();
+  });
+
   it('rejects an invalid npub and invalid coordinates', () => {
     expect(() => shopResponseSchema.parse({ shop: { ...shop, npub: 'npub1bad' } })).toThrow();
     expect(() =>
