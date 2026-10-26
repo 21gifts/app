@@ -1718,8 +1718,7 @@ const de = {
   'forum.shopAccountRemove': 'Konto entfernen',
   'forum.shopAccountSaveFailed':
     'Das Konto konnte nicht gespeichert werden. Bitte erneut versuchen.',
-  'forum.shopAccountHint':
-    'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus.',
+  'forum.shopAccountHint': 'Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus.',
   'forum.errorUnsupported':
     'Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format',
   'forum.errorTooLarge': 'Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein',
