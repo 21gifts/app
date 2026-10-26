@@ -5845,6 +5845,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/[npub]',
+    id: 'no-pin',
+    image: 'npub-no-pin.png',
+    visual: 'state-npub-no-pin',
+    needle: "shotScreen(page, 'state-npub-no-pin')",
+  },
+  {
+    route: '/[npub]',
     id: 'gone',
     image: 'npub-gone.png',
     visual: 'state-npub-gone',
@@ -5863,6 +5870,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops.png',
     visual: 'screen-shops',
     needle: 'Cafe Luna',
+  },
+  {
+    route: '/shops',
+    id: 'no-pin',
+    image: 'shops-no-pin.png',
+    visual: 'state-shops-no-pin',
+    needle: "shotScreen(page, 'state-shops-no-pin')",
   },
   {
     route: '/shops',

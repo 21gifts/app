@@ -20949,6 +20949,7 @@ test.describe('public shop screen', () => {
   const unavailableNpub = `npub1${'4'.repeat(58)}`;
   const noPaymentNpub = `npub1${'5'.repeat(58)}`;
   const galleryNpub = `npub1${'7'.repeat(58)}`;
+  const noPinNpub = `npub1${'8'.repeat(58)}`;
   /** Waits until both gallery stills have decoded, so no shot shows a broken image. */
   const galleryLoaded = async (page: Page): Promise<void> => {
     const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
@@ -21059,6 +21060,31 @@ test.describe('public shop screen', () => {
     await expect(page.getByRole('heading', { name: 'Quiet Shop' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
     await shotScreen(page, 'state-npub-no-payment');
+  });
+
+  test('public shop no pin', async ({ page }) => {
+    const mapsKeyRequests: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname.endsWith('/maps/key')) {
+        mapsKeyRequests.push(request.url());
+      }
+    });
+    await page.goto(`/${noPinNpub}`);
+    await expect(page.getByText('Shop', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Roadside Stall', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '21.gifts address' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Address', exact: true })).toHaveCount(0);
+    await expect(page.getByTestId('shop-map')).toHaveCount(0);
+    const photo = page.getByRole('img', { name: 'Photo from Roadside Stall' }).first();
+    await expect(photo).toBeVisible();
+    await expect
+      .poll(() =>
+        photo.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+      )
+      .toBe(true);
+    await shotScreen(page, 'state-npub-no-pin');
+    expect(mapsKeyRequests).toEqual([]);
   });
 
   test('public shop gone', async ({ page }) => {
@@ -21373,6 +21399,36 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('link', { name: '#Shop' })).toHaveCount(0);
     await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
     await shotScreen(page, 'screen-shops');
+  });
+
+  test('shops list no pin', async ({ page }) => {
+    await seedAda(page);
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/shops/list'),
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            shops: [
+              {
+                npub: `npub1${'8'.repeat(58)}`,
+                name: 'Roadside Stall',
+                place: null,
+              },
+            ],
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
+    const row = page.getByRole('link', { name: 'Roadside Stall' });
+    await expect(row).toHaveAttribute('href', `/npub1${'8'.repeat(58)}`);
+    await expect(row.locator('xpath=ancestor::li[1]').locator('p')).toHaveCount(0);
+    await expect(page.getByText('Bahnhofstrasse')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-no-pin');
   });
 
   const shopListLuna = {

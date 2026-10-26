@@ -21,6 +21,8 @@ export type ShopScreenProps = { state: 'ready'; shop: Shop } | { state: 'gone' |
 /**
  * Public shop identity card, including photos, address, map, payment QR, and npub.
  * The map is left out without a key and after the map reports it cannot draw.
+ * A shop with no pin says Shop above the name and leads with the payment block,
+ * so the first window is a shop rather than a photo and a forum link.
  *
  * @param props - Ready shop data, the unlisted state, or the retryable error state.
  * @returns The matching public shop page body.
@@ -49,9 +51,10 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
         .map((url, index) => ({ index, url })),
     [shop],
   );
+  const place = shop?.place ?? null;
   const points = useMemo(
-    () => (shop === null ? [] : [{ lat: shop.place.lat, lng: shop.place.lng }]),
-    [shop],
+    () => (place === null ? [] : [{ lat: place.lat, lng: place.lng }]),
+    [place],
   );
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
   }, []);
 
   useEffect(() => {
-    if (shop === null) {
+    if (place === null) {
       return;
     }
     let cancelled = false;
@@ -71,7 +74,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [shop]);
+  }, [place]);
 
   if (props.state !== 'ready') {
     return props.state === 'gone' ? (
@@ -92,45 +95,81 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
     );
   }
 
-  const address = props.shop.place.address;
-  const street = [address.street, address.houseNumber]
-    .filter((part) => part.trim() !== '')
-    .join(' ');
-  const city = [address.postalCode, address.city].filter((part) => part.trim() !== '').join(' ');
-  const addressLines = [street, city, address.country].filter((part) => part.trim() !== '');
+  const address = props.shop.place?.address ?? null;
+  const street =
+    address === null
+      ? ''
+      : [address.street, address.houseNumber].filter((part) => part.trim() !== '').join(' ');
+  const city =
+    address === null
+      ? ''
+      : [address.postalCode, address.city].filter((part) => part.trim() !== '').join(' ');
+  const addressLines =
+    address === null ? [] : [street, city, address.country].filter((part) => part.trim() !== '');
+  const placeLabel = props.shop.place?.label.trim() ?? '';
+  const unpinned = props.shop.place === null;
+  const gallery = (
+    <ForumPhotoGallery photos={photos} alt={t('forum.photoAlt', { name: props.shop.name })} />
+  );
+  const payment =
+    payAddress === null ? null : (
+      <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+        <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
+          {t('profile.giftsHeading')}
+        </h2>
+        {/* The address and QR use the browser host, so they render after mount. */}
+        {showQr && qr !== null ? (
+          <>
+            <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">
+              {payAddress}
+            </p>
+            <div className="flex justify-center">
+              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+            </div>
+          </>
+        ) : null}
+      </section>
+    );
 
   return (
     <Card maxWidth="xl" surface={false}>
+      {unpinned ? (
+        <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+          {t('shop.kicker')}
+        </p>
+      ) : null}
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {props.shop.name}
       </h1>
       <p className="w-full whitespace-pre-wrap text-center text-sm text-app-fg">
         {props.shop.description}
       </p>
-      <ForumPhotoGallery photos={photos} alt={t('forum.photoAlt', { name: props.shop.name })} />
-      <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-        <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
-          {t('shop.address')}
-        </h2>
-        <address className="text-center text-sm text-app-fg not-italic">
-          {props.shop.place.label.trim() === '' ? null : <span>{props.shop.place.label}</span>}
-          {addressLines.map((line, index) => (
-            <span key={`${index}:${line}`} className="block">
-              {line}
-            </span>
-          ))}
-        </address>
-        {mapsKey !== null && !mapFailed ? (
-          <GoogleMapCanvas
-            mapsKey={mapsKey}
-            points={points}
-            anchor={points[0]}
-            fitAll={false}
-            testId="shop-map"
-            onUnavailable={() => setMapFailed(true)}
-          />
-        ) : null}
-      </section>
+      {unpinned ? payment : gallery}
+      {unpinned ? null : (
+        <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+          <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
+            {t('shop.address')}
+          </h2>
+          <address className="text-center text-sm text-app-fg not-italic">
+            {placeLabel === '' ? null : <span>{placeLabel}</span>}
+            {addressLines.map((line, index) => (
+              <span key={`${index}:${line}`} className="block">
+                {line}
+              </span>
+            ))}
+          </address>
+          {mapsKey !== null && !mapFailed && points[0] !== undefined ? (
+            <GoogleMapCanvas
+              mapsKey={mapsKey}
+              points={points}
+              anchor={points[0]}
+              fitAll={false}
+              testId="shop-map"
+              onUnavailable={() => setMapFailed(true)}
+            />
+          ) : null}
+        </section>
+      )}
       <section className="flex w-full flex-col items-center gap-3 border-t border-app-border pt-6">
         <Link
           href={`/messages/${props.shop.messageId}`}
@@ -156,24 +195,12 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
           <NpubCopyButton key={props.shop.npub} npub={props.shop.npub} />
         </div>
       </section>
-      {payAddress !== null ? (
+      {unpinned && photos.length > 0 ? (
         <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-          <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
-            {t('profile.giftsHeading')}
-          </h2>
-          {/* The address and QR use the browser host, so they render after mount. */}
-          {showQr && qr !== null ? (
-            <>
-              <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">
-                {payAddress}
-              </p>
-              <div className="flex justify-center">
-                <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-              </div>
-            </>
-          ) : null}
+          {gallery}
         </section>
       ) : null}
+      {unpinned ? null : payment}
     </Card>
   );
 }

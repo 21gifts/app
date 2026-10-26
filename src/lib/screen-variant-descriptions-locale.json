@@ -34,6 +34,11 @@
     "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y todo el bloque de pago (título, dirección, QR).",
     "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at ang buong payment block (heading, address, QR)."
   },
+  "/[npub]:no-pin": {
+    "de": "Gelisteter Roadside Stall. Über dem Namen steht die Überzeile Shop. Danach die Beschreibung und der Zahlungsblock (Überschrift, Adresse, QR), dann der Link zum Forumsbeitrag, NIP-05, die npub-Kopiersteuerung und zuletzt das Foto. Es gibt keinen Pin, daher keine Überschrift Adresse, keine Straßenzeilen, keine Karte und keine Anfrage nach einem Kartenschlüssel.",
+    "es": "Roadside Stall listado. La sobrelínea Tienda queda sobre el nombre. Después van la descripción y el bloque de pago (título, dirección, QR), luego el enlace a la publicación del foro, NIP-05, el control para copiar el npub y al final la foto. No hay pin, así que no hay encabezado Dirección, ni líneas de calle, ni mapa, ni solicitud de una clave de mapas.",
+    "fil": "Nakalistang Roadside Stall. Nasa itaas ng pangalan ang linyang Tindahan. Kasunod ang paglalarawan at ang payment block (heading, address, QR), tapos ang link sa post sa forum, NIP-05, ang kontrol na kumokopya ng npub, at huli ang litrato. Walang pin, kaya walang heading na Address, walang mga linya ng kalye, walang mapa, at walang hiling para sa maps key."
+  },
   "/[npub]:gone": {
     "de": "API 410. Die Seite sagt Dieses Geschäft ist nicht mehr gelistet. und zeigt weder den Geschäftsnamen noch andere verborgene Geschäftsdaten.",
     "es": "API 410. La página dice Esta tienda ya no está en la lista. y no muestra el nombre ni otros datos ocultos de la tienda.",
@@ -3303,6 +3308,11 @@
     "de": "Überschrift Shops. Jede Zeile ist eine Shop-Seite, keine Foren-Notiz. Die Pille Liste / Karte / Tabelle / Post mit ausgewählter Liste. Eine Zeile Cafe Luna verlinkt auf die Shop-Seite. Shop hinzufügen fehlt. Es gibt keine #Shop-Pille und kein rohes #21GiftsShop. Hinweis zu Gesetzen fehlt.",
     "es": "Encabezado Tiendas. Cada fila es una página de tienda, no una nota del foro. La pastilla Lista / Mapa / Tabla / Publicación con Lista seleccionada. Una fila Cafe Luna enlaza a la página de la tienda. Añadir una tienda no está. No hay pastilla #Shop ni #21GiftsShop en bruto. No hay pista de leyes.",
     "fil": "Heading na Mga Tindahan. Bawat hilera ay pahina ng shop, hindi tala sa forum. Ang pill na Listahan / Mapa / Talahanayan / Post na napili ang Listahan. Isang hilera na Cafe Luna ang naka-link sa pahina ng shop. Wala ang Magdagdag ng shop. Walang pill na #Shop at walang hilaw na #21GiftsShop. Walang pahiwatig sa mga batas."
+  },
+  "/shops:no-pin": {
+    "de": "Überschrift Shops. Die Pille Liste ist ausgewählt. Eine Zeile Roadside Stall verlinkt auf die Shop-Seite und hat keine Ortszeile unter dem Namen. Shop hinzufügen fehlt.",
+    "es": "Encabezado Tiendas. La pastilla Lista está seleccionada. Una fila Roadside Stall enlaza a la página de la tienda y no tiene línea de lugar bajo el nombre. Añadir una tienda no está.",
+    "fil": "Heading na Mga Tindahan. Napili ang pill na Listahan. Isang hilera na Roadside Stall ang naka-link sa pahina ng shop at walang linya ng lugar sa ilalim ng pangalan. Wala ang Magdagdag ng shop."
   },
   "/shops:edit-open": {
     "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
