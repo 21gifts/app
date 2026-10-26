@@ -576,7 +576,7 @@ describe('ShopNoteEditControl', () => {
       'No account with that username. Check the spelling of the 21.gifts username.',
       4,
     ],
-    ['A shop note needs a shop account', 'Choose a 21.gifts user to continue.', 4],
+    ['A shop note needs a shop account', 'Type or pick the 21.gifts username to continue.', 4],
     [
       'Text must be 1–8000 characters',
       'The shop text must be 20 to 1000 characters and longer than the shop name.',

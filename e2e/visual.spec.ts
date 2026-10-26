@@ -830,13 +830,12 @@ async function supplyShopUsername(page: Page): Promise<void> {
   }
 }
 
-const SHOP_ACCOUNT_REQUIRED_ALERT = 'Choose a 21.gifts user to continue.';
+const SHOP_ACCOUNT_REQUIRED_ALERT = 'Type or pick the 21.gifts username to continue.';
 
 /**
- * Make the shop-text save return the API's missing-account rejection.
+ * Stub the shop-text save so it returns the missing-account error.
  *
- * The text write runs before the account write, so every editor that changes
- * the text reaches this sentence on the username step.
+ * The username step then shows the same sentence as an empty username.
  */
 async function stubShopTextAccountRequired(page: Page, messageId: string): Promise<void> {
   await page.route(`**/forum/messages/${messageId}/text`, async (route) => {

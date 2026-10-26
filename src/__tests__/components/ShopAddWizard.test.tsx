@@ -1375,7 +1375,11 @@ describe('ShopAddWizard', () => {
       '4 / 5 · 21.gifts user',
       'No account with that username. Check the spelling of the 21.gifts username.',
     ],
-    ['usernameRequired' as const, '4 / 5 · 21.gifts user', 'Choose a 21.gifts user to continue.'],
+    [
+      'usernameRequired' as const,
+      '4 / 5 · 21.gifts user',
+      'Type or pick the 21.gifts username to continue.',
+    ],
   ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
     renderWizard(
       <ShopAddWizard

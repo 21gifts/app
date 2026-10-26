@@ -2129,7 +2129,7 @@ username. Check the spelling of the 21.gifts username.**
 The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
 pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
 The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
-**Choose a 21.gifts user to continue.** **Next** is disabled.
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
 
 ![21.gifts welcome shop edit account required](images/welcome-shop-edit-account-required.png)
 
@@ -2473,7 +2473,7 @@ stays selected.
 A moderator opened **Edit shop note** on **Map**, changed **Shop text**, entered **luna** on step
 **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because the shop
 note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in
-the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled. **Map** stays
+the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled. **Map** stays
 selected.
 
 ![21.gifts shops map edit account required](images/shops-map-edit-account-required.png)
@@ -2772,7 +2772,7 @@ inconclusive, then the API rejected the account update. The editor returns to st
 A moderator opened **Edit shop note** on **Table**, changed **Shop text**, entered **luna** on
 step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
 the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
-**@luna** in the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled.
+**@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
 **Table** stays selected.
 
 ![21.gifts shops table edit account required](images/shops-table-edit-account-required.png)
@@ -3024,8 +3024,7 @@ server was unavailable. The summary stays open and the generic post error is vis
 
 **Add a shop** reached step **5 / 5 · Summary** with **@luna**, and **Post** was pressed. The API
 rejected the post because the shop note needs a shop account. The editor returns to step
-**4 / 5 · 21.gifts user** with **@luna** in the field and shows **Choose a 21.gifts user to
-continue.** **Next** is disabled.
+**4 / 5 · 21.gifts user** with **@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
 
 ![21.gifts shops add account required](images/shops-add-account-required.png)
 
@@ -3429,7 +3428,7 @@ shows **No account with that username. Check the spelling of the 21.gifts userna
 A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
 step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The API rejected the save because
 the shop note needs a shop account. The editor returns to step **4 / 5 · 21.gifts user** with
-**@luna** in the field and shows **Choose a 21.gifts user to continue.** **Next** is disabled.
+**@luna** in the field and shows **Type or pick the 21.gifts username to continue.** **Next** is disabled.
 
 ![21.gifts shops edit account required](images/shops-edit-account-required.png)
 
@@ -4372,7 +4371,7 @@ username. Check the spelling of the 21.gifts username.**
 The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
 pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
 The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
-**Choose a 21.gifts user to continue.** **Next** is disabled.
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
 
 ![21.gifts member shop edit account required](images/members-shop-edit-account-required.png)
 
@@ -6585,7 +6584,7 @@ username. Check the spelling of the 21.gifts username.**
 The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
 pressed **Save changes**. The API rejected the save because the shop note needs a shop account.
 The editor returns to step **4 / 5 · 21.gifts user** with **@luna** in the field and shows
-**Choose a 21.gifts user to continue.** **Next** is disabled.
+**Type or pick the 21.gifts username to continue.** **Next** is disabled.
 
 ![21.gifts public message shop edit account required](images/messages-id-shop-edit-account-required.png)
 

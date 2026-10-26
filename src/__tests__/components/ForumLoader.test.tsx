@@ -2091,7 +2091,7 @@ describe('ForumLoader', () => {
     bypassDisabledShopNext();
     submitDisabledShopSummary();
     expect(await screen.findByText('4 / 5 · 21.gifts user')).toBeTruthy();
-    expect(screen.getByText('Choose a 21.gifts user to continue.')).toBeTruthy();
+    expect(screen.getByText('Type or pick the 21.gifts username to continue.')).toBeTruthy();
     expectNoShopComposeOrPost();
   });
 

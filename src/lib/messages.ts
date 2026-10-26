@@ -947,7 +947,6 @@ const en = {
     'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
   'shops.problemUsernameMissing':
     'No account with that username. Check the spelling of the 21.gifts username.',
-  'shops.problemUsernameRequired': 'Choose a 21.gifts user to continue.',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -2204,7 +2203,6 @@ const de = {
     'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
   'shops.problemUsernameMissing':
     'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
-  'shops.problemUsernameRequired': 'Wählen Sie einen 21.gifts-Nutzer, um fortzufahren.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -3466,7 +3464,6 @@ const es = {
     'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
   'shops.problemUsernameMissing':
     'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
-  'shops.problemUsernameRequired': 'Elige un usuario de 21.gifts para continuar.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -4725,7 +4722,6 @@ const fil = {
     'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
   'shops.problemUsernameMissing':
     'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
-  'shops.problemUsernameRequired': 'Pumili ng user sa 21.gifts para magpatuloy.',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
