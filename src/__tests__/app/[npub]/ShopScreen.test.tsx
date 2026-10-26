@@ -81,13 +81,14 @@ describe('ShopScreen', () => {
     const pay = screen.getByRole('heading', { name: '21.gifts address' });
     const note = screen.getByRole('link', { name: 'View forum note' });
     const photo = screen.getByAltText('Photo from Cafe Luna');
+    const npub = screen.getByText(NPUB);
     expect(kicker.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(pay.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(note.compareDocumentPosition(photo) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    expect(npub.compareDocumentPosition(photo) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(screen.queryByRole('heading', { name: 'Address' })).toBeNull();
@@ -111,7 +112,7 @@ describe('ShopScreen', () => {
     expect(screen.getByRole('heading', { name: 'Cafe Luna' })).toBeTruthy();
     expect(screen.queryByText('Shop')).toBeNull();
     expect(screen.getByText('Coffee, gifts, and moonlight.')).toBeTruthy();
-    expect(screen.getByAltText('Photo from Cafe Luna')).toBeTruthy();
+    const photo = screen.getByAltText('Photo from Cafe Luna');
     expect(screen.getByText('Old Town')).toBeTruthy();
     expect(screen.getByText('Moon Street 21')).toBeTruthy();
     expect(screen.getByText('8000 Zurich')).toBeTruthy();
@@ -119,6 +120,9 @@ describe('ShopScreen', () => {
     expect(screen.queryByTestId('shop-map')).toBeNull();
     const note = screen.getByRole('link', { name: 'View forum note' });
     const pay = screen.getByRole('heading', { name: '21.gifts address' });
+    expect(photo.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(note.getAttribute('href')).toBe(`/messages/${SHOP.messageId}`);
     expect(note.compareDocumentPosition(pay) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
