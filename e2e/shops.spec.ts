@@ -935,6 +935,40 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
   ).toHaveCount(0);
 });
 
+test('Function: ShopAccountSuggestions — picking a person fills the username', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await page.route('**/forum/mentions**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: [{ id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' }],
+      }),
+    });
+  });
+  let saved = 0;
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+    async (route) => {
+      saved += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STAFF_SHOP_NOTE),
+      });
+    },
+  );
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops#post');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Add an account' }).click();
+  const list = note.getByRole('listbox', { name: 'People' });
+  await expect(list).toBeVisible();
+  await list.getByRole('option', { name: '@ada' }).click();
+  await expect(note.getByLabel('Username')).toHaveValue('@ada');
+  expect(saved).toBe(0);
+});
+
 test('Function: setMessageShopAccount — moderator save shows the account', async ({ page }) => {
   await seedAda(page, 'moderator');
   await stubLunaMentionLookup(page);
