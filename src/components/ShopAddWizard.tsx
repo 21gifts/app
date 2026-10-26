@@ -1,7 +1,15 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactElement,
+} from 'react';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -213,8 +221,10 @@ function photoErrorKey(
  * are photos, place, text, a required 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
  * soon as `@` is typed. The account step starts at `@` and lists people
- * whose username starts with what was typed. A failed account lookup does
- * not block the API-validated submit. An empty handle does. Adding a shop
+ * whose username starts with what was typed. Arrow keys move the highlight
+ * and Enter picks that person without posting. A failed account lookup does
+ * not block the API-validated submit. An empty handle does, and that reason
+ * is a linked field error. Adding a shop
  * shows Next on the photo step. Edit mode shows an icon-only Close (X)
  * there. Its accessible name is Cancel.
  *
@@ -280,6 +290,7 @@ export function ShopAddWizard({
     query: string;
     rows: readonly ShopAccountSuggestion[];
   } | null>(null);
+  const [accountActive, setAccountActive] = useState(0);
 
   useEffect(() => {
     const key = `${mode}:${String(resetToken)}`;
@@ -349,6 +360,9 @@ export function ShopAddWizard({
   const normalizedUsername = strippedHandle(username);
   const accountValue = accountFieldValue(username);
   const mentionPrefix = session !== null && step === 4 ? mentionQuery(accountValue) : null;
+  useEffect(() => {
+    setAccountActive(0);
+  }, [mentionPrefix]);
   const usernameFormatProblem = shopUsernameProblem(username);
   useEffect(() => {
     if (step !== 4) {
@@ -526,8 +540,10 @@ export function ShopAddWizard({
         ? t('login.nameInvalid')
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
-          : undefined;
-  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountRequired');
+          : usernameEmpty
+            ? t('shops.accountRequired')
+            : undefined;
+  const usernameHint = usernamePending ? t('shops.usernameChecking') : undefined;
   // While a send is in flight (for example the fee sheet), the parent may clear the draft.
   const summaryProblem =
     step !== 5 || posting
@@ -554,6 +570,48 @@ export function ShopAddWizard({
           ? remote.rows
           : seed.filter((row) => row.username.toLowerCase().startsWith(mentionPrefix))
   ).slice(0, SUGGESTION_LIMIT);
+  const accountActiveIndex =
+    accountSuggestions.length === 0 ? 0 : accountActive % accountSuggestions.length;
+
+  const onAccountKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+      return;
+    }
+    if (accountSuggestions.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setAccountActive((index) => (index + 1) % accountSuggestions.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setAccountActive(
+        (index) => (index - 1 + accountSuggestions.length) % accountSuggestions.length,
+      );
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setAccountActive(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      setAccountActive(accountSuggestions.length - 1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = accountSuggestions[accountActiveIndex];
+      /* v8 ignore next 3 -- the list is open only while a row is shown */
+      if (row === undefined) {
+        return;
+      }
+      onUsernameChange(`@${row.username}`);
+    }
+  };
 
   return (
     <form
@@ -779,15 +837,19 @@ export function ShopAddWizard({
             label={t('shops.accountLabel')}
             value={accountValue}
             disabled={stepsLocked}
-            hint={usernameHint}
+            {...(usernameHint === undefined ? {} : { hint: usernameHint })}
             autoComplete="off"
             aria-autocomplete="list"
             {...(accountSuggestions.length > 0
-              ? { 'aria-controls': `${idPrefix}-account-suggest` }
+              ? {
+                  'aria-controls': `${idPrefix}-account-suggest`,
+                  'aria-activedescendant': `${idPrefix}-account-option-${String(accountActiveIndex)}`,
+                }
               : {})}
             {...(usernameError === undefined
               ? {}
               : { error: usernameError, errorAnnounce: usernameServerProblem })}
+            onKeyDown={onAccountKeyDown}
             onChange={(event) => {
               onUsernameChange(accountFieldValue(event.target.value));
             }}
@@ -799,17 +861,19 @@ export function ShopAddWizard({
               aria-label={t('forum.mentionSuggest')}
               className="rounded-xl border border-app-border bg-app-card p-2"
             >
-              {accountSuggestions.map((row) => (
+              {accountSuggestions.map((row, index) => (
                 <li key={row.id} role="presentation">
                   <button
                     type="button"
+                    id={`${idPrefix}-account-option-${String(index)}`}
+                    tabIndex={-1}
                     role="option"
-                    aria-selected={
-                      accountValue.trim().toLowerCase() === `@${row.username.toLowerCase()}`
-                    }
+                    aria-selected={index === accountActiveIndex}
                     aria-label={`@${row.username}`}
                     disabled={stepsLocked}
-                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover${
+                      index === accountActiveIndex ? ' bg-app-hover' : ''
+                    }`}
                     onMouseDown={(event) => {
                       event.preventDefault();
                       onUsernameChange(`@${row.username}`);

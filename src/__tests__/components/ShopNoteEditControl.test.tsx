@@ -444,6 +444,40 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@luna');
   });
 
+  it('opens a shop note with an empty username at @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'shop-acc', username: '', name: 'Luna' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@');
+  });
+
+  it('opens a shop note that has no account at @', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const withoutAccount = { ...shopMessage };
+    delete withoutAccount.shopAccount;
+    renderEdit(<ShopNoteEditControl message={withoutAccount} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@');
+  });
+
   it('does not patch an unchanged account with whitespace after the at sign', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

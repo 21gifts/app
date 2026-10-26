@@ -1,7 +1,15 @@
 'use client';
 
 import { User } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactElement,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
@@ -179,6 +187,7 @@ export function ShopAccountControl({
   } | null>(null);
   const [panel, setPanel] = useState<PanelPlace | null>(null);
   const [rowLimit, setRowLimit] = useState(SUGGESTION_LIMIT);
+  const [suggestionActive, setSuggestionActive] = useState(0);
   const anchorRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
@@ -230,6 +239,10 @@ export function ShopAccountControl({
       cancelled = true;
     };
   }, [open, query, session]);
+
+  useEffect(() => {
+    setSuggestionActive(0);
+  }, [query]);
 
   useEffect(() => {
     if (
@@ -329,6 +342,7 @@ export function ShopAccountControl({
           ? remote.rows
           : seed.filter((row) => row.username.toLowerCase().startsWith(query))
   ).slice(0, rowLimit);
+  const suggestionActiveIndex = shown.length === 0 ? 0 : suggestionActive % shown.length;
   const ariaLabel = hasAccount ? t('forum.editShopAccount') : t('forum.addShopAccount');
   const usernameLookupCurrent = usernameLookup?.username === normalizedUsername;
   const usernameMissing =
@@ -362,6 +376,52 @@ export function ShopAccountControl({
         : untouched
           ? `${listId}-hint`
           : undefined;
+
+  const pickSuggestion = (username: string): void => {
+    setDraft(`@${username}`);
+    setEdited(true);
+    setRemote(null);
+    setErrorKey(null);
+    setSuggestionActive(0);
+  };
+
+  const onSuggestionKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+      return;
+    }
+    if (shown.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSuggestionActive((index) => (index + 1) % shown.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSuggestionActive((index) => (index - 1 + shown.length) % shown.length);
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setSuggestionActive(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      setSuggestionActive(shown.length - 1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = shown[suggestionActiveIndex];
+      /* v8 ignore next 3 -- the list is open only while a row is shown */
+      if (row === undefined) {
+        return;
+      }
+      pickSuggestion(row.username);
+    }
+  };
 
   const saveUsername = async (): Promise<void> => {
     const trimmed = normalizedUsername;
@@ -431,10 +491,14 @@ export function ShopAccountControl({
             type="text"
             aria-label={t('forum.shopAccountLabel')}
             aria-controls={shown.length > 0 ? listId : undefined}
+            aria-activedescendant={
+              shown.length > 0 ? `${listId}-${String(suggestionActiveIndex)}` : undefined
+            }
             aria-invalid={shownError === undefined ? undefined : true}
             aria-describedby={usernameFeedbackId}
             value={draft}
             disabled={saving}
+            onKeyDown={onSuggestionKeyDown}
             onChange={(event) => {
               setDraft(event.target.value);
               setEdited(true);
@@ -469,25 +533,25 @@ export function ShopAccountControl({
               aria-label={t('forum.mentionSuggest')}
               className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
             >
-              {shown.map((row) => (
+              {shown.map((row, index) => (
                 <li key={row.id} role="presentation">
                   <button
                     type="button"
+                    id={`${listId}-${String(index)}`}
+                    tabIndex={-1}
                     role="option"
-                    aria-selected={draft.trim().toLowerCase() === `@${row.username.toLowerCase()}`}
+                    aria-selected={index === suggestionActiveIndex}
                     aria-label={`@${row.username}`}
                     disabled={saving}
-                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover${
+                      index === suggestionActiveIndex ? ' bg-app-hover' : ''
+                    }`}
                     onMouseDown={(event) => {
                       event.preventDefault();
-                      setDraft(`@${row.username}`);
-                      setRemote(null);
-                      setErrorKey(null);
+                      pickSuggestion(row.username);
                     }}
                     onClick={() => {
-                      setDraft(`@${row.username}`);
-                      setRemote(null);
-                      setErrorKey(null);
+                      pickSuggestion(row.username);
                     }}
                   >
                     <span className="font-medium">@{row.username}</span>

@@ -2688,7 +2688,7 @@ Step **3 / 5 · Text** is open on **Table** with a place named
 
 ### Variant: table-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows @luna.
 **History** still says there are no edits yet. Place
 **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 

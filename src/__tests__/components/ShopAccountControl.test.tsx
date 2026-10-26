@@ -133,8 +133,40 @@ describe('ShopAccountControl', () => {
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     const hint = screen.getByText('Type or pick the 21.gifts username to save.');
     expect(input.getAttribute('aria-describedby')).toBe(hint.id);
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(input).toHaveProperty('value', '@');
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { value: '@l' } });
     expect(screen.queryByText('Type or pick the 21.gifts username to save.')).toBeNull();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('picks the highlighted person with Enter and does not save', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+      { id: 'acc-adam', username: 'adam', name: 'Adam' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    const ada = await screen.findByRole('option', { name: '@ada' });
+    expect(ada.getAttribute('aria-selected')).toBe('true');
+    expect(input.getAttribute('aria-activedescendant')).toBe(ada.id);
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 });
+    expect(input).toHaveProperty('value', '@');
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(screen.getByRole('option', { name: '@adam' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    fireEvent.keyDown(input, { key: 'End' });
+    fireEvent.keyDown(input, { key: 'Home' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(input).toHaveProperty('value', '@adam');
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 

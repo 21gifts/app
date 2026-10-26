@@ -508,8 +508,8 @@ describe('ShopAddWizard', () => {
     const usernames = screen.getAllByLabelText('21.gifts username');
     expect(usernames[0]!.id).toBeTruthy();
     expect(usernames[0]!.id).not.toBe(usernames[1]!.id);
-    expect(usernames[0]!.getAttribute('aria-describedby')).toBe(`${usernames[0]!.id}-hint`);
-    expect(usernames[1]!.getAttribute('aria-describedby')).toBe(`${usernames[1]!.id}-hint`);
+    expect(usernames[0]!.getAttribute('aria-describedby')).toBe(`${usernames[0]!.id}-error`);
+    expect(usernames[1]!.getAttribute('aria-describedby')).toBe(`${usernames[1]!.id}-error`);
   });
 
   it('keeps Next disabled until the place and description are complete', () => {
@@ -1131,6 +1131,90 @@ describe('ShopAddWizard', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows an empty username as a field error and ignores keys when nobody is listed', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([]);
+    const onUsernameChange = vi.fn();
+    const onSubmit = vi.fn();
+    renderWizard(
+      <ShopAddWizard
+        {...props({
+          draft: SHOP_DESCRIPTION,
+          place: COMPLETE_PLACE,
+          username: '@',
+          onUsernameChange,
+          onSubmit,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(field.getAttribute('aria-describedby')).toContain(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onUsernameChange).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('picks the highlighted person with Enter and does not post', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+      { id: 'acc-adam', username: 'adam', name: 'Adam' },
+    ]);
+    const onSubmit = vi.fn();
+    function Host(): ReactElement {
+      const [username, setUsername] = useState('@');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+            onSubmit,
+          })}
+        />
+      );
+    }
+    renderWizard(<Host />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    const ada = await screen.findByRole('option', { name: '@ada' });
+    expect(ada.getAttribute('aria-selected')).toBe('true');
+    expect(field.getAttribute('aria-activedescendant')).toBe(ada.id);
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 });
+    expect(field).toHaveProperty('value', '@');
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    expect(screen.getByRole('option', { name: '@adam' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(field, { key: 'End' });
+    expect(screen.getByRole('option', { name: '@adam' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(field, { key: 'Home' });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveProperty('value', '@ada');
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('Type or pick the 21.gifts username to continue.')).toBeNull();
+    });
   });
 
   it('checks a valid username exists before enabling Next', async () => {
