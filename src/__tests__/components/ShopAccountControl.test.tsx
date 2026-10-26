@@ -142,6 +142,22 @@ describe('ShopAccountControl', () => {
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
+  it('marks the empty username invalid when the field is left', () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    fireEvent.blur(input);
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(input).toHaveProperty('value', '@');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
   it('picks the highlighted person with Enter and does not save', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(searchMentionAccounts).mockResolvedValue([

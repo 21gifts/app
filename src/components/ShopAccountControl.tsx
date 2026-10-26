@@ -292,7 +292,8 @@ export function ShopAccountControl({
   const query = open && session !== null ? mentionQuery(draft) : null;
   const normalizedUsername = draft.trim().replace(/^@/, '').trim().toLowerCase();
   // A newly opened picker starts with `@` and explains the disabled Save as a
-  // hint. After an edit, a bare `@` is the required account, not a format error.
+  // hint. After an edit, or when the field is left, a bare `@` is the required
+  // account, not a format error.
   const formatProblem = shopUsernameProblem(draft);
   const usernameRequired = edited && normalizedUsername === '';
 
@@ -600,6 +601,9 @@ export function ShopAccountControl({
               setEdited(true);
               setRemote(null);
               setErrorKey(null);
+            }}
+            onBlur={() => {
+              setEdited(true);
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
