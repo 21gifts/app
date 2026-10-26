@@ -4,12 +4,16 @@ import { Check, ChevronDown } from 'lucide-react';
 import {
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { AppShellContext } from '@/components/AppShell';
+import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 /** One option in {@link ForumModeSelect}. */
 export type ForumModeSelectOption<T extends string> = {
@@ -28,6 +32,42 @@ const BADGE_CLASS =
 
 const OPTION_ROW_CLASS =
   'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
+
+const PLACED_BOX_FIELDS = ['left', 'width', 'maxHeight', 'top', 'bottom'] as const;
+
+function samePlacedBox(a: PlacedFrameBox | null, b: PlacedFrameBox | null): boolean {
+  if (a === null || b === null) {
+    return a === b;
+  }
+  for (const field of PLACED_BOX_FIELDS) {
+    if (a[field] !== b[field]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
+  const style: CSSProperties = {
+    left: box.left,
+    width: box.width,
+  };
+  if (box.top !== null) {
+    style.top = box.top;
+  } else {
+    style.bottom = box.bottom!;
+  }
+  /* v8 ignore else -- the chip listbox always fills its measured overlay box */
+  if (fill) {
+    const viewportHeight = window.innerHeight;
+    if (box.top !== null) {
+      style.bottom = viewportHeight - box.top - box.maxHeight;
+    } else {
+      style.top = viewportHeight - box.bottom! - box.maxHeight;
+    }
+  }
+  return style;
+}
 
 /**
  * Stable DOM id for a forum-mode option row.
@@ -117,8 +157,9 @@ function triggerBadge<T extends string>(
  * (`ShopsCountryFilter`). Post/Ask stays a SegmentedControl.
  *
  * The `chip` variant is a compact pill for the app chrome row; its open
- * listbox bounds its width to the app frame box (`AppShellContext.frameEl`),
- * never to the viewport (viewport widths escape the rounded frame).
+ * listbox is placed inside the app frame box via `fitBoxInFrame` and a fixed
+ * portal, never sized from the viewport (viewport widths escape the rounded
+ * frame).
  *
  * @param props - Selected value, options, change handler, accessible name, and visual variant.
  * @returns The forum-mode select element.
@@ -133,11 +174,13 @@ export function ForumModeSelect<T extends string>(props: {
   const { value, options, onChange, ariaLabel, variant = 'field' } = props;
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState<T>(value);
-  const shell = useContext(AppShellContext);
-  // Chip listbox width cap for the open list, from the frame box. Null keeps w-80.
-  const [chipMaxWidth, setChipMaxWidth] = useState<number | null>(null);
+  const ctx = useContext(AppShellContext);
+  const frameEl = ctx?.frameEl ?? null;
+  const [placed, setPlaced] = useState<PlacedFrameBox | null>(null);
+  const placedRef = useRef<PlacedFrameBox | null>(null);
   const selectedLabel = options.find((opt) => opt.value === value)!.label;
 
   useEffect(() => {
@@ -155,7 +198,11 @@ export function ForumModeSelect<T extends string>(props: {
         setOpen(false);
         return;
       }
-      if (rootRef.current?.contains(event.target as Node) !== true) {
+      const target = event.target as Node;
+      if (
+        rootRef.current?.contains(target) !== true &&
+        listboxRef.current?.contains(target) !== true
+      ) {
         return;
       }
       const currentIndex = options.findIndex((opt) => opt.value === highlight);
@@ -188,7 +235,13 @@ export function ForumModeSelect<T extends string>(props: {
     };
     const onMouseDown = (event: MouseEvent): void => {
       const root = rootRef.current;
-      if (root !== null && !root.contains(event.target as Node)) {
+      const listbox = listboxRef.current;
+      const target = event.target as Node;
+      if (
+        root !== null &&
+        !root.contains(target) &&
+        (listbox === null || !listbox.contains(target))
+      ) {
         setOpen(false);
       }
     };
@@ -200,22 +253,66 @@ export function ForumModeSelect<T extends string>(props: {
     };
   }, [open, highlight, options, onChange]);
 
+  useLayoutEffect(() => {
+    const commitPlaced = (next: PlacedFrameBox | null): void => {
+      if (samePlacedBox(placedRef.current, next)) {
+        return;
+      }
+      placedRef.current = next;
+      setPlaced(next);
+    };
+    if (variant !== 'chip' || !open) {
+      commitPlaced(null);
+      return;
+    }
+    const measure = (): void => {
+      const anchor = rootRef.current;
+      /* v8 ignore next 4 -- the anchor stays mounted for the whole open effect */
+      if (anchor === null) {
+        commitPlaced(null);
+        return;
+      }
+      if (frameEl === null) {
+        commitPlaced(null);
+        return;
+      }
+      const anchorRect = anchor.getBoundingClientRect();
+      const raw = frameEl.getBoundingClientRect();
+      const band = window.visualViewport;
+      const viewTop = band?.offsetTop ?? 0;
+      const viewBottom = viewTop + (band?.height ?? window.innerHeight);
+      commitPlaced(
+        fitBoxInFrame({
+          frameLeft: Math.max(raw.left, 0),
+          frameRight: Math.min(raw.right, window.innerWidth),
+          frameTop: Math.max(raw.top, viewTop),
+          frameBottom: Math.min(raw.bottom, viewBottom),
+          anchorLeft: anchorRect.left,
+          anchorTop: anchorRect.top,
+          anchorBottom: anchorRect.bottom,
+          gap: 8,
+          preferredWidth: 320,
+          inset: 16,
+          viewportHeight: window.innerHeight,
+        }),
+      );
+    };
+    measure();
+    const viewport = window.visualViewport;
+    window.addEventListener('resize', measure);
+    document.addEventListener('scroll', measure, true);
+    viewport?.addEventListener('resize', measure);
+    viewport?.addEventListener('scroll', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      document.removeEventListener('scroll', measure, true);
+      viewport?.removeEventListener('resize', measure);
+      viewport?.removeEventListener('scroll', measure);
+    };
+  }, [frameEl, open, variant]);
+
   const openListbox = (): void => {
     setHighlight(value);
-    if (variant === 'chip') {
-      // Bound the chip listbox to the app frame box, never to the viewport
-      // (viewport widths escape the rounded frame; see check-scrollports.mjs).
-      const root = rootRef.current;
-      const frame = shell === null ? null : shell.frameEl;
-      if (root !== null && frame !== null) {
-        const pill = root.getBoundingClientRect();
-        const box = frame.getBoundingClientRect();
-        const available = box.right - pill.left - 8;
-        setChipMaxWidth(available >= 160 ? available : null);
-      } else {
-        setChipMaxWidth(null);
-      }
-    }
     setOpen(true);
   };
 
@@ -243,6 +340,37 @@ export function ForumModeSelect<T extends string>(props: {
     triggerRef.current?.focus();
   };
 
+  const optionRows = options.map((opt) => {
+    const selected = value === opt.value;
+    return (
+      <button
+        key={opt.value}
+        type="button"
+        role="option"
+        id={optionId(opt.value)}
+        tabIndex={-1}
+        aria-selected={selected}
+        aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
+        className={`${OPTION_ROW_CLASS}${selected ? ' font-medium' : ''}`}
+        onMouseDown={(event) => {
+          event.preventDefault();
+        }}
+        onClick={() => {
+          selectOption(opt.value);
+        }}
+        onMouseEnter={() => {
+          setHighlight(opt.value);
+        }}
+      >
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+          {selected ? <Check className="h-4 w-4 shrink-0 text-app-fg" aria-hidden="true" /> : null}
+        </span>
+        {opt.label}
+        {optionBadge(opt.badge)}
+      </button>
+    );
+  });
+
   return (
     <div ref={rootRef} className="relative">
       <button
@@ -269,58 +397,54 @@ export function ForumModeSelect<T extends string>(props: {
         <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-app-muted" />
       </button>
       {open ? (
-        <div
-          role="listbox"
-          id="forum-mode-listbox"
-          aria-label={ariaLabel}
-          aria-activedescendant={optionId(highlight)}
-          className={
-            variant === 'field'
-              ? 'absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg'
-              : 'absolute left-0 z-50 mt-2 w-80 rounded-xl border border-app-border bg-app-card p-2 shadow-lg'
-          }
-          style={
-            variant === 'chip' && chipMaxWidth !== null
-              ? { maxWidth: `${chipMaxWidth}px` }
-              : undefined
-          }
-        >
-          {options.map((opt) => {
-            const selected = value === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                id={optionId(opt.value)}
-                tabIndex={-1}
-                aria-selected={selected}
-                aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
-                className={`${OPTION_ROW_CLASS}${selected ? ' font-medium' : ''}`}
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                }}
-                onClick={() => {
-                  selectOption(opt.value);
-                }}
-                onMouseEnter={() => {
-                  setHighlight(opt.value);
-                }}
+        variant === 'chip' ? (
+          placed !== null ? (
+            createPortal(
+              <div
+                className={
+                  placed.top !== null
+                    ? 'pointer-events-none fixed z-50 flex flex-col justify-start overflow-clip'
+                    : 'pointer-events-none fixed z-50 flex flex-col justify-end overflow-clip'
+                }
+                style={placedBoxStyle(placed, true)}
               >
-                <span
-                  className="flex h-4 w-4 shrink-0 items-center justify-center"
-                  aria-hidden="true"
+                <div
+                  ref={listboxRef}
+                  role="listbox"
+                  id="forum-mode-listbox"
+                  aria-label={ariaLabel}
+                  aria-activedescendant={optionId(highlight)}
+                  className="pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-clip rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
                 >
-                  {selected ? (
-                    <Check className="h-4 w-4 shrink-0 text-app-fg" aria-hidden="true" />
-                  ) : null}
-                </span>
-                {opt.label}
-                {optionBadge(opt.badge)}
-              </button>
-            );
-          })}
-        </div>
+                  {optionRows}
+                </div>
+              </div>,
+              document.body,
+            )
+          ) : (
+            <div
+              ref={listboxRef}
+              role="listbox"
+              id="forum-mode-listbox"
+              aria-label={ariaLabel}
+              aria-activedescendant={optionId(highlight)}
+              className="absolute left-0 z-50 mt-2 w-80 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+            >
+              {optionRows}
+            </div>
+          )
+        ) : (
+          <div
+            ref={listboxRef}
+            role="listbox"
+            id="forum-mode-listbox"
+            aria-label={ariaLabel}
+            aria-activedescendant={optionId(highlight)}
+            className="absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+          >
+            {optionRows}
+          </div>
+        )
       ) : null}
     </div>
   );

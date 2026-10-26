@@ -95,6 +95,30 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
   await expect(page.getByText('Cafe Luna')).toBeVisible();
 });
 
+test('Function: AppShellTopLeftExtra — chip sits right of the wordmark', async ({ page }) => {
+  await seedShopList(page);
+  await page.route('**/forum/messages/places', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ places: [] }),
+    });
+  });
+  await page.goto('/shops');
+  const chip = page.getByRole('combobox', { name: 'Country' });
+  const extra = page.locator('[data-top-left-extra]');
+  const scrollPage = page.locator('[data-scroll-page]');
+  await expect(chip).toBeVisible();
+  await expect(extra.getByRole('combobox', { name: 'Country' })).toBeVisible();
+  await expect(scrollPage.getByRole('combobox', { name: 'Country' })).toHaveCount(0);
+  const wordmark = page.locator('[data-app-chrome]').getByRole('link', { name: '21.gifts' });
+  const chipBox = await chip.boundingBox();
+  const wordmarkBox = await wordmark.boundingBox();
+  expect(chipBox).not.toBeNull();
+  expect(wordmarkBox).not.toBeNull();
+  expect(chipBox!.x).toBeGreaterThan(wordmarkBox!.x + wordmarkBox!.width);
+});
+
 test('Function: ShopTable — name, place, and operator', async ({ page }) => {
   await seedSignedIn(page);
   await fulfillForumMessages(page, [

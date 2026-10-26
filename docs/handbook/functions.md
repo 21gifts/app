@@ -911,9 +911,9 @@
 
 ## Function: ForumModeSelect
 
-- **Purpose:** Closed combobox for the living-room forum view (Active, No gifts yet, All, Most popular). The trigger shows the selected label and a chevron. A positive unpaid badge is also shown as a count chip on the closed trigger. Opening the trigger shows a listbox of option rows; the selected row has a check. Choosing a row calls onChange and closes the list. The shops feed has no view filter; `/shops` mounts it once as the country filter (`ShopsCountryFilter`). Post/Ask stays a SegmentedControl.
-- **Inputs:** `value`; `options` (`value`, `label`, optional `badge`, optional `badgeAriaLabel`); `onChange(value)`; `ariaLabel` (the caller's catalog label: `forum.modeLabel` in `ForumBoard`, `shops.countryLabel` in `ShopsCountryFilter`).
-- **Returns:** A relative wrapper with the combobox button and, only while open, the listbox.
+- **Purpose:** Combobox for the living-room forum view (Active, No gifts yet, All, Most popular) and the shops country filter. The field trigger shows the selected label and a chevron. The chip trigger is a compact `rounded-full` pill with a 44px minimum hit target and a truncating label. A positive unpaid badge is also shown as a count chip on the closed trigger. Opening the trigger shows a listbox of option rows; the selected row has a check. Choosing a row calls onChange and closes the list. Post/Ask stays a SegmentedControl.
+- **Inputs:** `value`; `options` (`value`, `label`, optional `badge`, optional `badgeAriaLabel`); `onChange(value)`; `ariaLabel` (the caller's catalog label: `forum.modeLabel` in `ForumBoard`, `shops.countryLabel` in `ShopsCountryFilter`); optional `variant` (`'field'` by default, or `'chip'`).
+- **Returns:** A relative wrapper with the combobox button and, only while open, the listbox. The field listbox is absolutely anchored. Once the chip and frame are measured, the chip listbox is a fixed DOM portal placed inside the frame via `fitBoxInFrame`; its wrapper uses `overflow-clip` and does not create another scroller. Until placement is available it uses the absolute fallback.
 
 ## Function: IconButton
 
@@ -1080,6 +1080,13 @@
   - **`RulesSetup`** (chapter back + wordmark)
   - **`WalletScreenView`** (Wallet Back and wordmark; wins over the page `topLeft`)
   - **`AppShell` unit tests** (child portal wins over the page `topLeft` prop)
+
+## Function: AppShellTopLeftExtra
+
+- **Purpose:** Registers extra chrome to the right of the top-left cluster via a DOM portal into the frame chrome row. Without an `AppShell` ancestor, renders children inline; before the host mounts, renders null.
+- **Inputs:** `children`.
+- **Returns / side effects:** Portal into the shell top-left-extra host when present, inline children without shell context, or null while the shell host is not mounted. Layout only.
+- **Used by:** `ShopsCountryFilter`.
 
 ## Function: PageChrome
 
@@ -1627,7 +1634,7 @@ Motion in the reaction flow (`Collapse` and `AutoHeight`, with `src/lib/motion.t
 - **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
 - **Inputs:** Frame left, right, top, and bottom, anchor left, top, and bottom, gap, preferred width, inset, and viewport height, all in pixels.
 - **Returns / side effects:** `{ left, width, maxHeight, top, bottom }` with exactly one of top or bottom set, or null. No DOM writes and no network.
-- **Used by:** `PlaceField` for the place preview and the map panel.
+- **Used by:** `PlaceField` for the place preview and map panel, and `ForumModeSelect` for the chip listbox.
 
 ## Function: pageFrameProblems
 
@@ -1668,12 +1675,12 @@ Motion in the reaction flow (`Collapse` and `AutoHeight`, with `src/lib/motion.t
 
 - **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`. A plain click on a link to a view of this same page (a place in the post list or the table opens `/shops?pin=…#map`) selects that view once the click is dispatched (no or an unknown hash is Post, as on load, so the top-left arrow back to `/shops` shows the posts), because the client-side push fires no `hashchange`. The push keeps the entry the link was clicked from, so browser Back (`popstate`) returns to that view. Links with a `target` or `download` are left alone.
 - **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it. The `country` query (`shopCountryFromQuery`) is the country filter: it is read with the hash on load, on `popstate`, and from a link to this page.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. `ShopsCountryFilter` sits above the pill. Choosing a country sets or removes `country` with `useRouter().push` (`scroll: false`), keeping the other query values and the hash, so each choice is a history entry that browser Back and Forward return to. The country goes to `ForumLoader` and `ShopTable` (both remounted per country, so their pages restart) and to `PlacesMapScreen`. Each of the three reports `onShopsChanged` after a shop is added or hidden, or once per moderator save of a shop note or pin (complete, or partly written once its editor closes or unmounts); the filter then reloads its counts, and a filtered view reloads from the api, because only the api knows the country of a new or moved pin. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. `ShopsCountryFilter` registers its chip in the top bar. Choosing a country sets or removes `country` with `useRouter().push` (`scroll: false`), keeping the other query values and the hash, so each choice is a history entry that browser Back and Forward return to. The country goes to `ForumLoader` and `ShopTable` (both remounted per country, so their pages restart) and to `PlacesMapScreen`. Each of the three reports `onShopsChanged` after a shop is added or hidden, or once per moderator save of a shop note or pin (complete, or partly written once its editor closes or unmounts); the filter then reloads its counts, and a filtered view reloads from the api, because only the api knows the country of a new or moved pin. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
 - **Used by:** `ShopsPage`.
 
 ## Function: ShopsCountryFilter
 
-Country filter above the **Post** / **Map** / **Table** pill. It reuses `ForumModeSelect`, the closed full-width select of the forum view filter, with the accessible name **Country** (`shops.countryLabel`). The first row is **All countries** (`shops.countryAll`); the others come from `shopCountryOptions` and read `{name} ({count})` (`shops.countryOption`), with no count while the pins load or when they could not be loaded. No chip on the trigger.
+Compact country chip in the top bar, to the right of the wordmark. It reuses the `chip` variant of `ForumModeSelect`, with the accessible name **Country** (`shops.countryLabel`); its listbox is placed inside the frame box. The first row is **All countries** (`shops.countryAll`); the others come from `shopCountryOptions` and read `{name} ({count})` (`shops.countryOption`), with no count while the pins load or when they could not be loaded.
 
 - **Purpose:** Choose the country whose shops `/shops` shows, or All countries.
 - **Inputs:** `value` (ISO 3166-1 alpha-2 code or null) and `onChange`. Session from `useAuthStore`; locale and catalog via `useTranslations`.
