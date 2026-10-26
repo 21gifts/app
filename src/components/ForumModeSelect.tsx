@@ -2,12 +2,14 @@
 
 import { Check, ChevronDown } from 'lucide-react';
 import {
+  useContext,
   useEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
 } from 'react';
+import { AppShellContext } from '@/components/AppShell';
 
 /** One option in {@link ForumModeSelect}. */
 export type ForumModeSelectOption<T extends string> = {
@@ -114,7 +116,11 @@ function triggerBadge<T extends string>(
  * view filter; `/shops` mounts it once, as the country filter
  * (`ShopsCountryFilter`). Post/Ask stays a SegmentedControl.
  *
- * @param props - Selected value, options, change handler, and accessible name.
+ * The `chip` variant is a compact pill for the app chrome row; its open
+ * listbox bounds its width to the app frame box (`AppShellContext.frameEl`),
+ * never to the viewport (viewport widths escape the rounded frame).
+ *
+ * @param props - Selected value, options, change handler, accessible name, and visual variant.
  * @returns The forum-mode select element.
  */
 export function ForumModeSelect<T extends string>(props: {
@@ -122,12 +128,16 @@ export function ForumModeSelect<T extends string>(props: {
   options: readonly ForumModeSelectOption<T>[];
   onChange: (value: T) => void;
   ariaLabel: string;
+  variant?: 'field' | 'chip';
 }): ReactElement {
-  const { value, options, onChange, ariaLabel } = props;
+  const { value, options, onChange, ariaLabel, variant = 'field' } = props;
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState<T>(value);
+  const shell = useContext(AppShellContext);
+  // Chip listbox width cap for the open list, from the frame box. Null keeps w-80.
+  const [chipMaxWidth, setChipMaxWidth] = useState<number | null>(null);
   const selectedLabel = options.find((opt) => opt.value === value)!.label;
 
   useEffect(() => {
@@ -192,6 +202,20 @@ export function ForumModeSelect<T extends string>(props: {
 
   const openListbox = (): void => {
     setHighlight(value);
+    if (variant === 'chip') {
+      // Bound the chip listbox to the app frame box, never to the viewport
+      // (viewport widths escape the rounded frame; see check-scrollports.mjs).
+      const root = rootRef.current;
+      const frame = shell === null ? null : shell.frameEl;
+      if (root !== null && frame !== null) {
+        const pill = root.getBoundingClientRect();
+        const box = frame.getBoundingClientRect();
+        const available = box.right - pill.left - 8;
+        setChipMaxWidth(available >= 160 ? available : null);
+      } else {
+        setChipMaxWidth(null);
+      }
+    }
     setOpen(true);
   };
 
@@ -230,12 +254,16 @@ export function ForumModeSelect<T extends string>(props: {
         aria-controls="forum-mode-listbox"
         aria-label={ariaLabel}
         {...(open ? { 'aria-activedescendant': optionId(highlight) } : {})}
-        className="flex w-full min-h-11 items-center justify-between gap-2 rounded-2xl border border-app-border bg-app-card px-4 py-2 text-left text-base text-app-fg"
+        className={
+          variant === 'field'
+            ? 'flex w-full min-h-11 items-center justify-between gap-2 rounded-2xl border border-app-border bg-app-card px-4 py-2 text-left text-base text-app-fg'
+            : 'flex min-h-11 max-w-48 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 py-1 text-left text-sm text-app-fg hover:bg-app-hover'
+        }
         onClick={onTriggerClick}
         onKeyDown={onTriggerKeyDown}
       >
         <span className="flex min-w-0 items-center">
-          {selectedLabel}
+          {variant === 'chip' ? <span className="truncate">{selectedLabel}</span> : selectedLabel}
           {optionBadge(triggerBadge(options))}
         </span>
         <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-app-muted" />
@@ -246,7 +274,16 @@ export function ForumModeSelect<T extends string>(props: {
           id="forum-mode-listbox"
           aria-label={ariaLabel}
           aria-activedescendant={optionId(highlight)}
-          className="absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+          className={
+            variant === 'field'
+              ? 'absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg'
+              : 'absolute left-0 z-50 mt-2 w-80 rounded-xl border border-app-border bg-app-card p-2 shadow-lg'
+          }
+          style={
+            variant === 'chip' && chipMaxWidth !== null
+              ? { maxWidth: `${chipMaxWidth}px` }
+              : undefined
+          }
         >
           {options.map((opt) => {
             const selected = value === opt.value;

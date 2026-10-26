@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { ShopsCountryFilter } from '@/components/ShopsCountryFilter';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumPlaceRow } from '@/lib/api-types';
@@ -47,8 +48,10 @@ describe('ShopsCountryFilter', () => {
       { ...PIN, id: 'k1', countryCode: 'KE' },
     ]);
     const onChange = vi.fn();
-    renderWithLocale(<ShopsCountryFilter value={null} onChange={onChange} />);
+    const { container } = renderWithLocale(<ShopsCountryFilter value={null} onChange={onChange} />);
     const trigger = screen.getByRole('combobox', { name: 'Country' });
+    expect(container.contains(trigger)).toBe(true);
+    expect(trigger.closest('[data-top-left-extra]')).toBeNull();
     expect(trigger.textContent).toBe('All countries');
     fireEvent.click(trigger);
     await waitFor(() => {
@@ -87,6 +90,24 @@ describe('ShopsCountryFilter', () => {
       expect(fetchPlacesMock).toHaveBeenCalled();
     });
     expect(trigger.textContent).toBe('Kenya');
+  });
+
+  it('renders the combobox into the AppShell top-left-extra host', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([PIN]);
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ShopsCountryFilter value="PH" onChange={() => undefined} />
+      </AppShell>,
+    );
+    const trigger = screen.getByRole('combobox', { name: 'Country' });
+    await waitFor(() => {
+      expect(trigger.textContent).toBe('Philippines (1)');
+    });
+    const host = container.querySelector('[data-top-left-extra]');
+    const page = container.querySelector('[data-scroll-page]');
+    expect(host?.contains(trigger)).toBe(true);
+    expect(page?.contains(trigger)).toBe(false);
   });
 
   it('ignores pins that arrive after unmount', async () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import { AppShellTopLeftExtra } from '@/components/AppShell';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { useTranslations } from '@/components/LocaleProvider';
 import { fetchPlaces } from '@/lib/api';
@@ -20,13 +21,13 @@ export interface ShopsCountryFilterProps {
 }
 
 /**
- * Country filter above the Post / Map / Table pill on `/shops`.
+ * Country filter in the top bar right of the wordmark on `/shops`.
  *
  * Loads the pins once (`GET /forum/messages/places`) and offers All countries
  * plus every country that has a shop, each with its name in the UI language
  * and its shop count, sorted by name. While the pins load, or when they
  * cannot be loaded, the selected country is still listed, without a count.
- * Reuses {@link ForumModeSelect}, the closed full-width select of the forum.
+ * Reuses {@link ForumModeSelect} as a compact chip.
  *
  * @param props - Selected code and change handler.
  * @returns The select, or null without a session.
@@ -74,7 +75,7 @@ export function ShopsCountryFilter({
   ];
 
   return (
-    <div className="mt-4 w-full">
+    <AppShellTopLeftExtra>
       <ForumModeSelect
         value={value ?? ALL}
         options={options}
@@ -82,7 +83,8 @@ export function ShopsCountryFilter({
           onChange(next === ALL ? null : next);
         }}
         ariaLabel={t('shops.countryLabel')}
+        variant="chip"
       />
-    </div>
+    </AppShellTopLeftExtra>
   );
 }
