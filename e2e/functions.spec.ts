@@ -1,3 +1,4 @@
+import { openHabitGroups } from './habit-helpers';
 import fs from 'node:fs';
 import path from 'node:path';
 import jsQR from 'jsqr';
@@ -13359,6 +13360,7 @@ test('Function: habitTextProblem — an empty habit name stays off the request',
     });
   });
   await page.goto('/habit-tracker');
+  await openHabitGroups(page);
   await expect(page.getByText('No habits yet.')).toBeVisible();
   const add = page.getByRole('button', { name: 'Add habit' });
   await expect(add).toBeEnabled();
@@ -13550,6 +13552,7 @@ test('Function: shownPaySheetError — a loading submit stays until the rate req
   const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
   await meDone;
+  await openHabitGroups(page);
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
   await expect(cont).toBeEnabled();
