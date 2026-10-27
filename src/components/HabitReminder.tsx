@@ -98,6 +98,12 @@ export function HabitReminder(): ReactElement | null {
     };
   }, [visible]);
 
+  function dismiss(): void {
+    // Close while mounted so native dialog focus returns to the previous control.
+    dialog.current!.close();
+    setPendingFor(null);
+  }
+
   if (!visible) return null;
   return (
     <dialog
@@ -105,7 +111,10 @@ export function HabitReminder(): ReactElement | null {
       aria-labelledby="habit-reminder-title"
       aria-describedby="habit-reminder-body"
       className="m-auto max-h-[calc(var(--app-height)-2rem)] w-[calc(100%-2rem)] max-w-sm rounded-3xl border border-app-border bg-app-card p-6 text-app-fg shadow-sm backdrop:bg-app-overlay"
-      onCancel={() => setPendingFor(null)}
+      onCancel={(event) => {
+        event.preventDefault();
+        dismiss();
+      }}
     >
       <Scrollport className="max-h-[calc(var(--app-height)-5rem)]">
         <div className="flex flex-col gap-4">
@@ -118,19 +127,14 @@ export function HabitReminder(): ReactElement | null {
           <Button
             type="button"
             onClick={() => {
-              setPendingFor(null);
+              dismiss();
               window.dispatchEvent(new Event(HABIT_REVIEW_EVENT));
               router.push('/habit-tracker?review=1');
             }}
           >
             {t('habit.reminderNow')}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            data-habit-reminder-later
-            onClick={() => setPendingFor(null)}
-          >
+          <Button type="button" variant="secondary" data-habit-reminder-later onClick={dismiss}>
             {t('habit.reminderLater')}
           </Button>
         </div>

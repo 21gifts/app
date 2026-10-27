@@ -133,3 +133,34 @@ test('Function: HabitPeriods — ten rows, scrollable full history, keyboard clo
   await expect(tracker.getByRole('button', { name: 'All ratings' })).toBeFocused();
   await expect(tracker.getByRole('listitem')).toHaveCount(10);
 });
+
+for (const dismissal of ['Later', 'Escape'] as const) {
+  test(`Function: HabitReminder — ${dismissal} restores focus after returning to the app`, async ({
+    page,
+  }) => {
+    await seed(page);
+    await page.route('**/habits', async (route) =>
+      route.fulfill({ json: { reviewWeek: { start: '2026-10-05' }, habits: [habit] } }),
+    );
+    await page.goto('/habit-tracker');
+    const reminder = page.getByRole('dialog', { name: 'A moment for your habits' });
+    await reminder.getByRole('button', { name: 'Later' }).click();
+    const person = page.getByRole('button', { name: 'Ada', exact: true });
+    await person.focus();
+    await expect(person).toBeFocused();
+    await page.evaluate(() => {
+      for (const state of ['hidden', 'visible']) {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, value: state });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }
+    });
+    await expect(reminder.getByRole('button', { name: 'Later' })).toBeFocused();
+    if (dismissal === 'Escape') {
+      await page.keyboard.press('Escape');
+    } else {
+      await reminder.getByRole('button', { name: 'Later' }).click();
+    }
+    await expect(reminder).toHaveCount(0);
+    await expect(person).toBeFocused();
+  });
+}

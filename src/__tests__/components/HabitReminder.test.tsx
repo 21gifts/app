@@ -59,7 +59,9 @@ function visibility(state: 'hidden' | 'visible'): void {
   Object.defineProperty(document, 'visibilityState', { configurable: true, value: state });
   fireEvent(document, new Event('visibilitychange'));
 }
+let closedWhileMounted = false;
 beforeEach(() => {
+  closedWhileMounted = false;
   push.mockReset();
   useAuthStore.setState({ session: 'token', account: owner });
   Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
@@ -68,6 +70,7 @@ beforeEach(() => {
     this.querySelector('button')?.focus();
   };
   HTMLDialogElement.prototype.close = function () {
+    closedWhileMounted = this.isConnected;
     this.removeAttribute('open');
   };
 });
@@ -90,6 +93,7 @@ describe('HabitReminder', () => {
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Später' })).toBe(document.activeElement);
     fireEvent.click(screen.getByRole('button', { name: 'Jetzt eintragen' }));
+    expect(closedWhileMounted).toBe(true);
     expect(push).toHaveBeenCalledWith('/habit-tracker?review=1');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(fetch).toHaveBeenCalledWith('/habits', { headers: { Authorization: 'Bearer token' } });
@@ -100,6 +104,7 @@ describe('HabitReminder', () => {
     vi.stubGlobal('fetch', fetch);
     const view = renderWithLocale(<HabitReminder />);
     fireEvent.click(await screen.findByRole('button', { name: 'Later' }));
+    expect(closedWhileMounted).toBe(true);
     view.rerender(<HabitReminder />);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -195,6 +200,7 @@ describe('HabitReminder', () => {
     renderWithLocale(<HabitReminder />);
     act(() => useAuthStore.setState({ session: 'token', account: owner }));
     fireEvent(await screen.findByRole('dialog'), new Event('cancel'));
+    expect(closedWhileMounted).toBe(true);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
   it('ignores a request that finishes after logout or unmount', async () => {
