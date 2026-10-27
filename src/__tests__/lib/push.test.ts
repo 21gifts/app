@@ -680,6 +680,37 @@ describe('resyncPushSubscription VAPID key change', () => {
     expect(postPushSubscription).not.toHaveBeenCalled();
   });
 
+  it('subscribes with the current key when the worker reports a change it could not restore', async () => {
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(null),
+        subscribe: vi.fn().mockResolvedValue({
+          toJSON: () => ({
+            endpoint: 'https://push.example/new',
+            keys: { p256dh: 'p256-new', auth: 'auth-new' },
+          }),
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    await resyncPushSubscription('sess', true);
+    expect(registration.pushManager.subscribe).toHaveBeenCalledWith({
+      userVisibleOnly: true,
+      applicationServerKey: CURRENT_KEY,
+    });
+    expect(postPushSubscription).toHaveBeenCalledWith('sess', {
+      endpoint: 'https://push.example/new',
+      keys: { p256dh: 'p256-new', auth: 'auth-new' },
+    });
+    expect(deletePushSubscription).not.toHaveBeenCalled();
+    expect(pushRenewalPending()).toBe(false);
+  });
+
   it('is a no-op without registering a worker when none is registered', async () => {
     const register = vi.fn();
     vi.stubGlobal('navigator', {

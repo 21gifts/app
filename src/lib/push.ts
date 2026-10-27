@@ -295,11 +295,18 @@ export async function enablePush(sessionToken: string): Promise<void> {
  * local subscription. POST failure leaves the local subscription in place.
  *
  * @param sessionToken - Bearer session token.
+ * @param subscriptionChanged - True when the service worker reported a
+ * browser-side subscription change. A missing local subscription then means
+ * the worker could not subscribe again, not an opt-out, so subscribe with the
+ * current key.
  * @throws When fetching the VAPID key or persisting the subscription fails (503
  * `Push is not configured`, or the api error on other non-2xx), or with
  * `Invalid subscription` when a new subscription omits endpoint or keys.
  */
-export async function resyncPushSubscription(sessionToken: string): Promise<void> {
+export async function resyncPushSubscription(
+  sessionToken: string,
+  subscriptionChanged = false,
+): Promise<void> {
   const epoch = pushEpoch;
   await runPushOp(async () => {
     if (epoch !== pushEpoch) {
@@ -319,7 +326,7 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
       return;
     }
     const subscription = await registration.pushManager.getSubscription();
-    if (subscription === null && !pushRenewalPending()) {
+    if (subscription === null && !subscriptionChanged && !pushRenewalPending()) {
       return;
     }
     if (epoch !== pushEpoch) {

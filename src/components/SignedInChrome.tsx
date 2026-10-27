@@ -283,7 +283,7 @@ export function SignedInChrome(): ReactElement {
         'type' in data &&
         data.type === '21gifts-push-subscription-change'
       ) {
-        void resyncPushSubscription(session).catch(() => undefined);
+        void resyncPushSubscription(session, true).catch(() => undefined);
       }
     };
     worker.addEventListener('message', onMessage);

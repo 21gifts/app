@@ -390,7 +390,7 @@ describe('SignedInChrome', () => {
       new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
     );
     expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(resyncPushSubscription)).toHaveBeenLastCalledWith('tok');
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenLastCalledWith('tok', true);
     unmount();
     worker.dispatchEvent(
       new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
