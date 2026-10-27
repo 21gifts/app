@@ -9,7 +9,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
  * Public habit tracker, signed-out readable.
  *
  * The auth-store read lives in {@link HabitTrackerTopRight}. This page stays
- * a server component.
+ * a server component; Suspense contains the client-side review query.
  *
  * @returns The habit-tracker page.
  */
