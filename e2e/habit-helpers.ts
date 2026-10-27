@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 
-/** Open the people and creation disclosure before exercising existing tracker controls. */
+/** Wait for the tracker, then open its people and creation disclosure before using controls. */
 export async function openHabitGroups(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Habit-Tracker', exact: true })).toBeVisible();
   const people = page.locator('button[aria-controls^="habit-group-"]');
