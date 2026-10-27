@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { Suspense, type ReactElement } from 'react';
 import { HabitTrackerTopRight } from '@/app/habit-tracker/HabitTrackerTopRight';
 import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
 import { AppShell } from '@/components/AppShell';
@@ -22,7 +22,9 @@ export default function HabitTrackerPage(): ReactElement {
       topRight={<HabitTrackerTopRight />}
     >
       <OnboardingGate screen="welcome" allowGuest>
-        <MemberHabits />
+        <Suspense fallback={null}>
+          <MemberHabits />
+        </Suspense>
       </OnboardingGate>
     </AppShell>
   );
