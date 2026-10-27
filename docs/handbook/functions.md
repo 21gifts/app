@@ -5260,3 +5260,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** A visible label, the committed value, the All label, the options, and a change handler. An option may carry a decorative swatch.
 - **Returns / side effects:** A combobox button and, while open, a listbox. Choosing an option commits that value and closes the list. No network request.
 - **Used by:** HomeShops on the marketing page at `/`.
+
+## Function: HabitReminder
+
+- **Purpose:** Offer a gentle catch-up prompt after login, page load, or returning from the background when the signed-in member has unlogged ratings on an active habit.
+- **Inputs:** The existing auth store and `fetchMemberHabits` payload; the API already limits periods to ratable dates in the habit's time zone. No new clock, endpoint, or permission rule.
+- **Actions:** Rate now opens `/habit-tracker?review=1`; Later or Escape closes the prompt for this visit. Ordinary route changes do not reopen it. Reopening checks fresh data. Network failures and requests from an old session never show a prompt.
+
+The native modal traps keyboard focus and uses the existing `Scrollport`, so the background stays locked. It waits for onboarding and passkey renewal. Archived habits remain read-only and do not trigger reminders. The two explicit text choices are required by this feature's product request; they are not destructive confirm/cancel actions.
+
+## Function: HabitPeriods
+
+- **Purpose:** Keep each habit compact with its ten most recent period rows, newest first.
+- **Inputs:** One existing `MemberHabitList` habit, ownership, catch-up intent, the existing save handler and load/save error and retry state.
+- **Actions:** All ratings opens the complete history in a native modal and the shared `Scrollport`. The owner can rate older active-habit periods using the same `postMemberHabit` path. Close or Escape returns to the ten-row preview. Read-only and archived habits have no rating controls.
+
+The page does not gain another simultaneous scrolling surface. Opening history locks the page; closing restores it and native focus returns to the opener. A catch-up link opens the first own pending habit's full history when its pending period lies outside the preview. Failures stay visible in that history alongside the existing retry action.

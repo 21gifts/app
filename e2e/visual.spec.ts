@@ -1,3 +1,4 @@
+import { openHabitGroups } from './habit-helpers';
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
@@ -29385,6 +29386,7 @@ async function shotRatedHabit(
     });
   });
   await page.goto('/habit-tracker');
+  await openHabitGroups(page);
   const pill = page.getByRole('button', { name: buttonName, exact: true });
   await expect(pill).toHaveAttribute('aria-pressed', 'false');
   await pill.click();
@@ -29423,12 +29425,112 @@ async function seedHabitAda(page: Page): Promise<void> {
   });
 }
 
+const HABIT_LONG = {
+  ...HABIT_ROW,
+  accountId: 'acc_e2e',
+  comments: [],
+  periods: Array.from({ length: 12 }, (_, i) => ({
+    period: `2026-10-${String(i + 1).padStart(2, '0')}`,
+    name: 'Walk',
+    description: 'Outside',
+    logged: true,
+    status: 'achieved',
+  })),
+};
+
+test('screen /habit-tracker reminder', async ({ page }) => {
+  await seedHabitAda(page);
+  await stubHabitList(page, { ...HABIT_PUBLIC, habits: [{ ...HABIT_ROW, accountId: 'acc_e2e' }] });
+  await page.goto('/habit-tracker');
+  await expect(page.getByRole('dialog', { name: 'A moment for your habits' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Later', exact: true })).toBeFocused();
+  await shotScreen(page, 'state-habit-tracker-reminder');
+});
+
 test.describe('habit tracker baselines', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addLocatorHandler(
+      page.getByRole('button', { name: 'Later', exact: true }),
+      async (button) => {
+        await button.click();
+      },
+    );
+  });
+
+  test('screen /habit-tracker people', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      ...HABIT_PUBLIC,
+      habits: [
+        { ...HABIT_LONG, id: 'b', accountId: 'b', ownerName: 'Bea', role: 'basis' },
+        { ...HABIT_LONG, id: 'm', accountId: 'm', ownerName: 'Mia', role: 'moderator' },
+        { ...HABIT_LONG, id: 'f', accountId: 'f', ownerName: 'Fred', role: 'founder' },
+        { ...HABIT_LONG, id: 'i', accountId: 'i', ownerName: 'Ian', role: 'initiator' },
+        HABIT_LONG,
+      ],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.locator('button[aria-controls^="habit-group-"]')).toHaveText([
+      'Ada',
+      'Fred',
+      'Ian',
+      'Mia',
+      'Bea',
+    ]);
+    await expect(page.getByRole('heading', { name: 'Walk', exact: true })).toBeHidden();
+    await expect(page.getByRole('textbox', { name: 'Name', exact: true })).toBeHidden();
+    await shotScreen(page, 'state-habit-tracker-people');
+  });
+
+  test('screen /habit-tracker history-preview', async ({ page }) => {
+    await stubHabitList(page, {
+      ...HABIT_PUBLIC,
+      habits: [HABIT_LONG, { ...HABIT_LONG, id: 'read', name: 'Read', periods: [] }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Ada', exact: true }).click();
+    await expect(page.locator('time')).toHaveCount(10);
+    await expect(page.getByRole('heading', { name: 'Read', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-history-preview');
+  });
+
+  test('screen /habit-tracker history', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, { ...HABIT_PUBLIC, habits: [HABIT_LONG] });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Ada', exact: true }).click();
+    await page.getByRole('button', { name: 'All ratings', exact: true }).click();
+    await expect(page.getByRole('dialog').locator('time')).toHaveCount(12);
+    await shotScreen(page, 'state-habit-tracker-history');
+  });
+
+  test('screen /habit-tracker history-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      await route.fulfill(
+        route.request().method() === 'POST'
+          ? { status: 500, json: {} }
+          : { json: { ...HABIT_PUBLIC, habits: [HABIT_LONG] } },
+      );
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Ada', exact: true }).click();
+    await page.getByRole('button', { name: 'All ratings', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Not achieved', exact: true }).first().click();
+    await expect(dialog.getByRole('alert')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-history-error');
+  });
+
   test('screen /habit-tracker default', async ({ page }) => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await expect(page.getByRole('heading', { name: 'Habit-Tracker' })).toBeVisible();
-    await expect(page.getByText('Outside')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Ada', exact: true })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await expect(page.getByText('Outside')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Sign in to comment' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
     await shotScreen(page, 'screen-habit-tracker');
@@ -29440,6 +29542,7 @@ test.describe('habit tracker baselines', () => {
       habits: [],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('No habits yet.')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-empty');
   });
@@ -29454,6 +29557,7 @@ test.describe('habit tracker baselines', () => {
   test('screen /habit-tracker error', async ({ page }) => {
     await stubHabitList(page, {}, 500);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-error');
   });
@@ -29465,6 +29569,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Internal notes:')).toBeVisible();
     await expect(page.getByText('secret')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-signed-in');
@@ -29477,6 +29582,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-menu-open');
@@ -29489,6 +29595,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     const cadence = page.getByRole('group', { name: 'Cadence' });
     await cadence.getByRole('button', { name: 'Weekly' }).click();
     await expect(cadence.getByRole('button', { name: 'Weekly' })).toHaveAttribute(
@@ -29520,6 +29627,7 @@ test.describe('habit tracker baselines', () => {
     await seedHabitAda(page);
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByLabel('Amount')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
@@ -29552,6 +29660,7 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await meDone;
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     const cont = page.getByRole('button', { name: 'Continue' });
@@ -29573,6 +29682,7 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await meDone;
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     const cont = page.getByRole('button', { name: 'Continue' });
@@ -29612,6 +29722,7 @@ test.describe('habit tracker baselines', () => {
     });
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
@@ -29647,6 +29758,7 @@ test.describe('habit tracker baselines', () => {
     });
     await fulfillRateDay(page);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
@@ -29658,6 +29770,7 @@ test.describe('habit tracker baselines', () => {
     await seedHabitAda(page);
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
@@ -29690,6 +29803,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -29719,6 +29833,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -29753,6 +29868,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -29788,6 +29904,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -29812,6 +29929,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
     await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
@@ -29826,6 +29944,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Edit' }).click();
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
     await expect(page.getByText('Save', { exact: true })).toHaveCount(0);
@@ -29840,6 +29959,7 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Archive' }).click();
     await expect(page.getByText('Archive this habit? Its history stays visible.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
@@ -29877,6 +29997,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Archive' }).click();
     await page.getByRole('button', { name: 'Confirm archive' }).click();
     await expect(page.getByText('Archived', { exact: true })).toBeVisible();
@@ -29908,6 +30029,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Achieved', exact: true }).click();
     await expect(
@@ -29941,6 +30063,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('button', { name: 'Save' }).click();
@@ -29981,6 +30104,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Archive' }).click();
     await page.getByRole('button', { name: 'Confirm archive' }).click();
@@ -30017,6 +30141,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('No habits yet.')).toBeVisible();
     const name = page.locator('#habit-add-name');
     await name.fill('Stretch');
@@ -30049,6 +30174,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('No habits yet.')).toBeVisible();
     await page.getByRole('button', { name: 'Add habit' }).click();
     await expect(page.getByText('Enter a habit name')).toBeVisible();
@@ -30072,6 +30198,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('No habits yet.')).toBeVisible();
     await page.locator('#habit-add-name').fill('a'.repeat(81));
     await expect(page.getByText('Keep the habit name to 80 characters')).toBeVisible();
@@ -30111,6 +30238,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     const draft = page.getByLabel('Write a comment');
     await draft.fill('still here');
@@ -30151,6 +30279,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Post' }).click();
     await expect(page.getByText('Enter a comment')).toBeVisible();
@@ -30197,6 +30326,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.locator('#habit-add-name').fill('Stretch');
     await page.getByRole('button', { name: 'Add habit' }).click();
@@ -30237,6 +30367,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('Walk', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Edit' }).click();
     await page.locator('#habit-h-ada-name').fill('Stretch');
@@ -30291,6 +30422,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await expect(page.getByText('hello', { exact: true })).toBeVisible();
     await page.getByLabel('Write a comment').fill('kept this');
     await page.getByRole('button', { name: 'Post' }).click();
@@ -30351,6 +30483,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Delete comment' }).click();
     await page.getByRole('button', { name: 'Confirm deletion' }).click();
     const empty = page.getByText('No comments yet.');
@@ -30383,6 +30516,7 @@ test.describe('habit tracker baselines', () => {
     });
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     const trash = page.getByRole('button', { name: 'Delete comment' });
     await expect(trash).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
@@ -30413,6 +30547,7 @@ test.describe('habit tracker baselines', () => {
     });
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Delete comment' }).click();
     await expect(page.getByText('Delete this comment from the Habit-Tracker?')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeVisible();
@@ -30457,6 +30592,7 @@ test.describe('habit tracker baselines', () => {
       });
     });
     await page.goto('/habit-tracker');
+    await openHabitGroups(page);
     await page.getByRole('button', { name: 'Delete comment' }).click();
     await page.getByRole('button', { name: 'Confirm deletion' }).click();
     await expect(

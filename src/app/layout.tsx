@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
+import { HabitReminder } from '@/components/HabitReminder';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
@@ -159,6 +160,7 @@ export default async function RootLayout({
             <FiatPreferenceProvider initial={fiat}>
               <ThemeProvider>
                 <AccountPreferenceSync />
+                <HabitReminder />
                 <PushOpenListener />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />

@@ -1,7 +1,9 @@
 'use client';
 
-import { Archive, Check, Pencil, X } from 'lucide-react';
+import { Archive, Check, ChevronDown, Pencil, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { HabitPeriods } from '@/app/habit-tracker/HabitPeriods';
 import { HabitComments } from '@/app/habit-tracker/HabitComments';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
@@ -20,7 +22,12 @@ import {
   type RequiredTextProblem,
 } from '@/lib/entry-text';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
-import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
+import {
+  fetchMemberHabits,
+  postMemberHabit,
+  HABIT_REVIEW_EVENT,
+  type MemberHabitList,
+} from '@/lib/member-habits';
 import {
   payDraftProblem,
   paySatsFromDraft,
@@ -37,6 +44,7 @@ type HabitStatus = 'achieved' | 'partial' | 'missed';
 type HabitGroup = {
   accountId: string;
   ownerName: string;
+  role: string;
   habits: MemberHabit[];
 };
 
@@ -117,6 +125,11 @@ function habitFieldError(
  */
 export function MemberHabits(): ReactElement {
   const { t } = useTranslations();
+  const searchParams = useSearchParams();
+  const review = searchParams.get('review') === '1';
+  const accountId = useAuthStore((state) => state.account?.id);
+  const [reviewRequest, setReviewRequest] = useState(0);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const [loading, setLoading] = useState(true);
@@ -253,9 +266,21 @@ export function MemberHabits(): ReactElement {
     };
   }, [session, attempt]);
 
+  useEffect(() => {
+    const openReview = (): void => {
+      if (accountId === undefined) return;
+      setExpanded((current) => ({ ...current, [accountId]: true }));
+      setReviewRequest((current) => current + 1);
+    };
+    if (review) openReview();
+    window.addEventListener(HABIT_REVIEW_EVENT, openReview);
+    return () => window.removeEventListener(HABIT_REVIEW_EVENT, openReview);
+  }, [review, accountId]);
+
   // Cleared in this render, so the previous account is not painted.
   if (draftSession !== session) {
     setDraftSession(session);
+    setExpanded({});
     sessionVisit.current += 1;
     setAddName('');
     setAddDescription('');
@@ -646,335 +671,350 @@ export function MemberHabits(): ReactElement {
         {data.habits.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('habit.empty')}</p>
         ) : null}
-        {groupHabitsByAccount(data.habits).map((group) => (
+        {groupHabitsByAccount(data.habits, account?.id).map((group) => (
           <section key={group.accountId} className="flex w-full flex-col gap-4">
-            <h2 className="text-xl font-semibold text-app-fg">{group.ownerName}</h2>
-            {group.habits.map((habit) => {
-              const owns = account !== null && account.id === habit.accountId;
-              const editing = editingHabitId === habit.id;
-              const storedDraft = editByHabitId[habit.id];
-              const draft = storedDraft ?? {
-                name: habit.name,
-                description: habit.description,
-                notes: habit.notes === undefined ? '' : habit.notes,
-              };
-              const editApi = habitApi?.where === 'edit' && habitApi.id === habit.id;
-              const editNameError = habitFieldError(
-                t,
-                'name',
-                draft.name,
-                editNameTouched[habit.id] === true,
-                editApi && habitApi?.field === 'name',
-              );
-              const editDescriptionError = habitFieldError(
-                t,
-                'description',
-                draft.description,
-                false,
-                editApi && habitApi?.field === 'description',
-              );
-              const editNotesError = habitFieldError(
-                t,
-                'notes',
-                draft.notes,
-                false,
-                editApi && habitApi?.field === 'notes',
-              );
-              const commentText = commentByHabitId[habit.id] ?? '';
-              const commentError = habitFieldError(
-                t,
-                'comment',
-                commentText,
-                commentTouchedById[habit.id] === true,
-                habitApi?.where === 'comment' && habitApi.id === habit.id,
-              );
-              const openHabit = owns && habit.lastPeriod === null;
-              return (
-                <article
-                  key={habit.id}
-                  className="flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <h3 className="text-base font-semibold text-app-fg">{habit.name}</h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                          {habit.cadence === 'daily'
-                            ? t('habit.cadenceDaily')
-                            : t('habit.cadenceWeekly')}
-                        </span>
-                        {habit.lastPeriod !== null ? (
+            <h2 className="text-xl font-semibold text-app-fg">
+              <button
+                type="button"
+                aria-expanded={expanded[group.accountId] === true}
+                aria-controls={`habit-group-${group.accountId}`}
+                className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-app-border px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                onClick={() =>
+                  setExpanded((current) => ({
+                    ...current,
+                    [group.accountId]: !current[group.accountId],
+                  }))
+                }
+              >
+                <span className="min-w-0 break-words">{group.ownerName}</span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`h-5 w-5 shrink-0 ${expanded[group.accountId] ? 'rotate-180' : ''}`}
+                />
+              </button>
+            </h2>
+            <div
+              id={`habit-group-${group.accountId}`}
+              hidden={!expanded[group.accountId]}
+              className="flex flex-col gap-4"
+            >
+              {group.habits.map((habit) => {
+                const owns = account !== null && account.id === habit.accountId;
+                const editing = editingHabitId === habit.id;
+                const storedDraft = editByHabitId[habit.id];
+                const draft = storedDraft ?? {
+                  name: habit.name,
+                  description: habit.description,
+                  notes: habit.notes === undefined ? '' : habit.notes,
+                };
+                const editApi = habitApi?.where === 'edit' && habitApi.id === habit.id;
+                const editNameError = habitFieldError(
+                  t,
+                  'name',
+                  draft.name,
+                  editNameTouched[habit.id] === true,
+                  editApi && habitApi?.field === 'name',
+                );
+                const editDescriptionError = habitFieldError(
+                  t,
+                  'description',
+                  draft.description,
+                  false,
+                  editApi && habitApi?.field === 'description',
+                );
+                const editNotesError = habitFieldError(
+                  t,
+                  'notes',
+                  draft.notes,
+                  false,
+                  editApi && habitApi?.field === 'notes',
+                );
+                const commentText = commentByHabitId[habit.id] ?? '';
+                const commentError = habitFieldError(
+                  t,
+                  'comment',
+                  commentText,
+                  commentTouchedById[habit.id] === true,
+                  habitApi?.where === 'comment' && habitApi.id === habit.id,
+                );
+                const openHabit = owns && habit.lastPeriod === null;
+                return (
+                  <article
+                    key={habit.id}
+                    className="flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-app-fg">{habit.name}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
                           <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                            {t('habit.archived')}
+                            {habit.cadence === 'daily'
+                              ? t('habit.cadenceDaily')
+                              : t('habit.cadenceWeekly')}
                           </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    {openHabit ? (
-                      <div className="flex shrink-0 items-center gap-5">
-                        {editing ? null : (
-                          <IconButton
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            aria-label={t('habit.edit')}
-                            onClick={() => {
-                              startEdit(habit);
-                            }}
-                          >
-                            <Pencil aria-hidden="true" className="h-4 w-4" />
-                          </IconButton>
-                        )}
-                        {confirmArchiveId === habit.id ? null : (
-                          <IconButton
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            aria-label={t('habit.archive')}
-                            onClick={() => {
-                              setConfirmArchiveId(habit.id);
-                            }}
-                          >
-                            <Archive aria-hidden="true" className="h-4 w-4" />
-                          </IconButton>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                  {confirmArchiveId === habit.id && openHabit ? (
-                    <InlineConfirm
-                      label={t('habit.archiveConfirm')}
-                      confirmLabel={t('habit.archiveConfirmAction')}
-                      cancelLabel={t('habit.archiveCancel')}
-                      onConfirm={() => {
-                        void submit({ action: 'archive', id: habit.id }, false);
-                      }}
-                      onCancel={() => {
-                        if (archiveUnresolved(habit.id)) {
-                          return;
-                        }
-                        setConfirmArchiveId(null);
-                      }}
-                    />
-                  ) : null}
-                  {habit.description !== '' ? (
-                    <p className="text-sm text-app-fg">{habit.description}</p>
-                  ) : null}
-                  {owns && habit.notes !== undefined && !editing ? (
-                    <p className="text-sm text-app-fg">
-                      <span className="text-app-muted">{t('habit.notes')}: </span>
-                      <span>{habit.notes}</span>
-                    </p>
-                  ) : null}
-                  {habit.periods.length > 0 ? (
-                    <ul className="flex flex-col gap-2">
-                      {habit.periods.map((period) => (
-                        <li key={period.period} className="flex flex-col gap-2">
-                          <div className="flex items-baseline justify-between gap-3">
-                            <time dateTime={period.period} className="text-xs text-app-subtle">
-                              {period.period}
-                            </time>
-                            {openHabit ? null : (
-                              <span className="text-sm text-app-fg">
-                                {statusCopy(period.status, t)}
-                              </span>
-                            )}
-                          </div>
-                          {openHabit ? (
-                            <SegmentedControl<HabitStatus>
-                              tone="neutral"
-                              ariaLabel={t('habit.rate')}
-                              className="[&>button]:!flex [&>button]:!min-w-0 [&>button]:!items-center [&>button]:!justify-center [&>button]:!px-1.5 [&>button]:!text-center [&>button]:!text-xs [&>button]:!leading-tight sm:[&>button]:!px-3 sm:[&>button]:!text-sm sm:[&>button]:!leading-5"
-                              value={(period.status ?? 'unrated') as HabitStatus}
-                              options={[
-                                { value: 'achieved', label: t('habit.achieved') },
-                                { value: 'partial', label: t('habit.partial') },
-                                { value: 'missed', label: t('habit.missed') },
-                              ]}
-                              onChange={(status) => {
-                                void onLog(habit.id, period.period, status);
-                              }}
-                            />
+                          {habit.lastPeriod !== null ? (
+                            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                              {t('habit.archived')}
+                            </span>
                           ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                  {editing && owns ? (
-                    <form
-                      className="flex flex-col gap-3"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
-                        if (
-                          habitTextProblem('name', draft.name) !== null ||
-                          habitTextProblem('description', draft.description) !== null ||
-                          habitTextProblem('notes', draft.notes) !== null
-                        ) {
-                          return;
-                        }
-                        void submit(
-                          {
-                            action: 'edit',
-                            id: habit.id,
-                            name: draft.name,
-                            description: draft.description,
-                            notes: draft.notes,
-                          },
-                          false,
-                        );
-                      }}
-                    >
-                      <Field
-                        id={`habit-${habit.id}-name`}
-                        label={t('habit.name')}
-                        value={draft.name}
-                        {...(editNameError === undefined
-                          ? {}
-                          : { error: editNameError, errorAnnounce: true })}
-                        onBlur={() => {
-                          setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
-                        }}
-                        onChange={(event) => {
-                          setEditByHabitId((current) => ({
-                            ...current,
-                            [habit.id]: { ...draft, name: event.target.value },
-                          }));
-                          if (
-                            habitApi?.where === 'edit' &&
-                            habitApi.id === habit.id &&
-                            habitApi.field === 'name'
-                          ) {
-                            setHabitApi(null);
-                          }
-                        }}
-                      />
-                      <Field
-                        id={`habit-${habit.id}-description`}
-                        label={t('habit.description')}
-                        value={draft.description}
-                        {...(editDescriptionError === undefined
-                          ? {}
-                          : { error: editDescriptionError, errorAnnounce: true })}
-                        onChange={(event) => {
-                          setEditByHabitId((current) => ({
-                            ...current,
-                            [habit.id]: { ...draft, description: event.target.value },
-                          }));
-                          if (
-                            habitApi?.where === 'edit' &&
-                            habitApi.id === habit.id &&
-                            habitApi.field === 'description'
-                          ) {
-                            setHabitApi(null);
-                          }
-                        }}
-                      />
-                      <Field
-                        id={`habit-${habit.id}-notes`}
-                        label={t('habit.notes')}
-                        value={draft.notes}
-                        {...(editNotesError === undefined
-                          ? {}
-                          : { error: editNotesError, errorAnnounce: true })}
-                        onChange={(event) => {
-                          setEditByHabitId((current) => ({
-                            ...current,
-                            [habit.id]: { ...draft, notes: event.target.value },
-                          }));
-                          if (
-                            habitApi?.where === 'edit' &&
-                            habitApi.id === habit.id &&
-                            habitApi.field === 'notes'
-                          ) {
-                            setHabitApi(null);
-                          }
-                        }}
-                      />
-                      <div className="flex items-center gap-2">
-                        <IconButton
-                          type="submit"
-                          variant="secondary"
-                          size="md"
-                          aria-label={t('habit.save')}
-                          disabled={
-                            editNameError !== undefined ||
-                            editDescriptionError !== undefined ||
-                            editNotesError !== undefined
-                          }
-                        >
-                          <Check aria-hidden="true" className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton
-                          type="button"
-                          variant="secondary"
-                          size="md"
-                          aria-label={t('habit.cancel')}
-                          onClick={() => {
-                            cancelEdit(habit.id);
-                          }}
-                        >
-                          <X aria-hidden="true" className="h-4 w-4" />
-                        </IconButton>
+                        </div>
                       </div>
-                    </form>
-                  ) : null}
-                  <HabitComments
-                    habit={habit}
-                    account={account}
-                    session={session}
-                    commentText={commentText}
-                    payCommentId={payCommentId}
-                    payDraft={payDraft}
-                    payBusy={payBusy}
-                    payError={shownHabitPayError}
-                    payInvoice={payInvoice}
-                    rateDay={rateDay}
-                    showPaymentQr={showPaymentQr}
-                    onPayOpen={openPay}
-                    onPayDraftChange={(value) => {
-                      setPayDraft(value);
-                      setPayError((current) =>
-                        current === 'habitAmount' || current === 'noRate' ? null : current,
-                      );
-                    }}
-                    onPayUnitChange={setPayShownUnit}
-                    onPaySubmit={onPaySubmit}
-                    onPayCancel={closePay}
-                    onCommentText={(value) => {
-                      setCommentByHabitId((current) => ({ ...current, [habit.id]: value }));
-                      if (habitApi?.where === 'comment' && habitApi.id === habit.id) {
-                        setHabitApi(null);
-                      }
-                    }}
-                    onCommentBlur={() => {
-                      setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
-                    }}
-                    {...(commentError === undefined ? {} : { commentError })}
-                    commentBlocked={commentError !== undefined}
-                    onPostComment={() => {
-                      const text = commentByHabitId[habit.id] ?? '';
-                      setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
-                      if (habitTextProblem('comment', text) !== null) {
-                        return;
-                      }
-                      void submit({ action: 'comment', habitId: habit.id, text }, true).then(
-                        (saved) => {
-                          if (!saved) {
+                      {openHabit ? (
+                        <div className="flex shrink-0 items-center gap-5">
+                          {editing ? null : (
+                            <IconButton
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              aria-label={t('habit.edit')}
+                              onClick={() => {
+                                startEdit(habit);
+                              }}
+                            >
+                              <Pencil aria-hidden="true" className="h-4 w-4" />
+                            </IconButton>
+                          )}
+                          {confirmArchiveId === habit.id ? null : (
+                            <IconButton
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              aria-label={t('habit.archive')}
+                              onClick={() => {
+                                setConfirmArchiveId(habit.id);
+                              }}
+                            >
+                              <Archive aria-hidden="true" className="h-4 w-4" />
+                            </IconButton>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                    {confirmArchiveId === habit.id && openHabit ? (
+                      <InlineConfirm
+                        label={t('habit.archiveConfirm')}
+                        confirmLabel={t('habit.archiveConfirmAction')}
+                        cancelLabel={t('habit.archiveCancel')}
+                        onConfirm={() => {
+                          void submit({ action: 'archive', id: habit.id }, false);
+                        }}
+                        onCancel={() => {
+                          if (archiveUnresolved(habit.id)) {
                             return;
                           }
-                          setCommentByHabitId((current) => ({ ...current, [habit.id]: '' }));
-                          setCommentTouchedById((current) => ({ ...current, [habit.id]: false }));
-                        },
-                      );
-                    }}
-                    onDeleteComment={(commentId) => {
-                      void submit({ action: 'deleteComment', id: commentId }, true);
-                    }}
-                  />
-                </article>
-              );
-            })}
+                          setConfirmArchiveId(null);
+                        }}
+                      />
+                    ) : null}
+                    {habit.description !== '' ? (
+                      <p className="text-sm text-app-fg">{habit.description}</p>
+                    ) : null}
+                    {owns && habit.notes !== undefined && !editing ? (
+                      <p className="text-sm text-app-fg">
+                        <span className="text-app-muted">{t('habit.notes')}: </span>
+                        <span>{habit.notes}</span>
+                      </p>
+                    ) : null}
+                    {habit.periods.length > 0 ? (
+                      <HabitPeriods
+                        key={`${session ?? 'guest'}:${accountId ?? 'guest'}`}
+                        habit={habit}
+                        owns={openHabit}
+                        review={
+                          review &&
+                          expanded[group.accountId] === true &&
+                          habit.id ===
+                            data.habits.find(
+                              (item) =>
+                                item.accountId === account?.id &&
+                                item.lastPeriod === null &&
+                                item.periods.some(
+                                  (period) => !period.logged && period.status === null,
+                                ),
+                            )?.id
+                        }
+                        reviewRequest={reviewRequest}
+                        error={error}
+                        onRetry={() => setAttempt((current) => current + 1)}
+                        onLog={onLog}
+                      />
+                    ) : null}
+                    {editing && owns ? (
+                      <form
+                        className="flex flex-col gap-3"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
+                          if (
+                            habitTextProblem('name', draft.name) !== null ||
+                            habitTextProblem('description', draft.description) !== null ||
+                            habitTextProblem('notes', draft.notes) !== null
+                          ) {
+                            return;
+                          }
+                          void submit(
+                            {
+                              action: 'edit',
+                              id: habit.id,
+                              name: draft.name,
+                              description: draft.description,
+                              notes: draft.notes,
+                            },
+                            false,
+                          );
+                        }}
+                      >
+                        <Field
+                          id={`habit-${habit.id}-name`}
+                          label={t('habit.name')}
+                          value={draft.name}
+                          {...(editNameError === undefined
+                            ? {}
+                            : { error: editNameError, errorAnnounce: true })}
+                          onBlur={() => {
+                            setEditNameTouched((current) => ({ ...current, [habit.id]: true }));
+                          }}
+                          onChange={(event) => {
+                            setEditByHabitId((current) => ({
+                              ...current,
+                              [habit.id]: { ...draft, name: event.target.value },
+                            }));
+                            if (
+                              habitApi?.where === 'edit' &&
+                              habitApi.id === habit.id &&
+                              habitApi.field === 'name'
+                            ) {
+                              setHabitApi(null);
+                            }
+                          }}
+                        />
+                        <Field
+                          id={`habit-${habit.id}-description`}
+                          label={t('habit.description')}
+                          value={draft.description}
+                          {...(editDescriptionError === undefined
+                            ? {}
+                            : { error: editDescriptionError, errorAnnounce: true })}
+                          onChange={(event) => {
+                            setEditByHabitId((current) => ({
+                              ...current,
+                              [habit.id]: { ...draft, description: event.target.value },
+                            }));
+                            if (
+                              habitApi?.where === 'edit' &&
+                              habitApi.id === habit.id &&
+                              habitApi.field === 'description'
+                            ) {
+                              setHabitApi(null);
+                            }
+                          }}
+                        />
+                        <Field
+                          id={`habit-${habit.id}-notes`}
+                          label={t('habit.notes')}
+                          value={draft.notes}
+                          {...(editNotesError === undefined
+                            ? {}
+                            : { error: editNotesError, errorAnnounce: true })}
+                          onChange={(event) => {
+                            setEditByHabitId((current) => ({
+                              ...current,
+                              [habit.id]: { ...draft, notes: event.target.value },
+                            }));
+                            if (
+                              habitApi?.where === 'edit' &&
+                              habitApi.id === habit.id &&
+                              habitApi.field === 'notes'
+                            ) {
+                              setHabitApi(null);
+                            }
+                          }}
+                        />
+                        <div className="flex items-center gap-2">
+                          <IconButton
+                            type="submit"
+                            variant="secondary"
+                            size="md"
+                            aria-label={t('habit.save')}
+                            disabled={
+                              editNameError !== undefined ||
+                              editDescriptionError !== undefined ||
+                              editNotesError !== undefined
+                            }
+                          >
+                            <Check aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
+                          <IconButton
+                            type="button"
+                            variant="secondary"
+                            size="md"
+                            aria-label={t('habit.cancel')}
+                            onClick={() => {
+                              cancelEdit(habit.id);
+                            }}
+                          >
+                            <X aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
+                        </div>
+                      </form>
+                    ) : null}
+                    <HabitComments
+                      habit={habit}
+                      account={account}
+                      session={session}
+                      commentText={commentText}
+                      payCommentId={payCommentId}
+                      payDraft={payDraft}
+                      payBusy={payBusy}
+                      payError={shownHabitPayError}
+                      payInvoice={payInvoice}
+                      rateDay={rateDay}
+                      showPaymentQr={showPaymentQr}
+                      onPayOpen={openPay}
+                      onPayDraftChange={(value) => {
+                        setPayDraft(value);
+                        setPayError((current) =>
+                          current === 'habitAmount' || current === 'noRate' ? null : current,
+                        );
+                      }}
+                      onPayUnitChange={setPayShownUnit}
+                      onPaySubmit={onPaySubmit}
+                      onPayCancel={closePay}
+                      onCommentText={(value) => {
+                        setCommentByHabitId((current) => ({ ...current, [habit.id]: value }));
+                        if (habitApi?.where === 'comment' && habitApi.id === habit.id) {
+                          setHabitApi(null);
+                        }
+                      }}
+                      onCommentBlur={() => {
+                        setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
+                      }}
+                      {...(commentError === undefined ? {} : { commentError })}
+                      commentBlocked={commentError !== undefined}
+                      onPostComment={() => {
+                        const text = commentByHabitId[habit.id] ?? '';
+                        setCommentTouchedById((current) => ({ ...current, [habit.id]: true }));
+                        if (habitTextProblem('comment', text) !== null) {
+                          return;
+                        }
+                        void submit({ action: 'comment', habitId: habit.id, text }, true).then(
+                          (saved) => {
+                            if (!saved) {
+                              return;
+                            }
+                            setCommentByHabitId((current) => ({ ...current, [habit.id]: '' }));
+                            setCommentTouchedById((current) => ({ ...current, [habit.id]: false }));
+                          },
+                        );
+                      }}
+                      onDeleteComment={(commentId) => {
+                        void submit({ action: 'deleteComment', id: commentId }, true);
+                      }}
+                    />
+                  </article>
+                );
+              })}
+            </div>
           </section>
         ))}
       </div>
@@ -1010,108 +1050,115 @@ export function MemberHabits(): ReactElement {
       <p className="text-center text-sm text-app-muted">{t('habit.schedule')}</p>
       {body}
       {session !== null ? (
-        <form
-          className="flex w-full flex-col gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            setAddNameTouched(true);
-            if (
-              habitTextProblem('name', addName) !== null ||
-              habitTextProblem('description', addDescription) !== null ||
-              habitTextProblem('notes', addNotes) !== null
-            ) {
-              return;
-            }
-            void submit(
-              {
-                action: 'add',
-                name: addName,
-                description: addDescription,
-                notes: addNotes,
-                cadence: addCadence,
-              },
-              true,
-            ).then((saved) => {
-              if (!saved) {
+        <details data-habit-create className="w-full">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-app-fg">
+            {t('habit.add')}
+          </summary>
+          <form
+            className="flex w-full flex-col gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setAddNameTouched(true);
+              if (
+                habitTextProblem('name', addName) !== null ||
+                habitTextProblem('description', addDescription) !== null ||
+                habitTextProblem('notes', addNotes) !== null
+              ) {
                 return;
               }
-              setAddName('');
-              setAddDescription('');
-              setAddNotes('');
-              setAddCadence('daily');
-              setAddNameTouched(false);
-              setHabitApi(null);
-            });
-          }}
-        >
-          <Field
-            id="habit-add-name"
-            label={t('habit.name')}
-            value={addName}
-            {...(addNameError === undefined ? {} : { error: addNameError, errorAnnounce: true })}
-            onBlur={() => {
-              setAddNameTouched(true);
-            }}
-            onChange={(event) => {
-              setAddName(event.target.value);
-              if (habitApi?.where === 'add' && habitApi.field === 'name') {
+              void submit(
+                {
+                  action: 'add',
+                  name: addName,
+                  description: addDescription,
+                  notes: addNotes,
+                  cadence: addCadence,
+                },
+                true,
+              ).then((saved) => {
+                if (!saved) {
+                  return;
+                }
+                setAddName('');
+                setAddDescription('');
+                setAddNotes('');
+                setAddCadence('daily');
+                setAddNameTouched(false);
                 setHabitApi(null);
-              }
+              });
             }}
-          />
-          <Field
-            id="habit-add-description"
-            label={t('habit.description')}
-            value={addDescription}
-            {...(addDescriptionError === undefined
-              ? {}
-              : { error: addDescriptionError, errorAnnounce: true })}
-            onChange={(event) => {
-              setAddDescription(event.target.value);
-              if (habitApi?.where === 'add' && habitApi.field === 'description') {
-                setHabitApi(null);
-              }
-            }}
-          />
-          <Field
-            id="habit-add-notes"
-            label={t('habit.notes')}
-            value={addNotes}
-            {...(addNotesError === undefined ? {} : { error: addNotesError, errorAnnounce: true })}
-            onChange={(event) => {
-              setAddNotes(event.target.value);
-              if (habitApi?.where === 'add' && habitApi.field === 'notes') {
-                setHabitApi(null);
-              }
-            }}
-          />
-          <SegmentedControl
-            tone="neutral"
-            ariaLabel={t('habit.cadence')}
-            value={addCadence}
-            options={[
-              { value: 'daily', label: t('habit.cadenceDaily') },
-              { value: 'weekly', label: t('habit.cadenceWeekly') },
-            ]}
-            onChange={setAddCadence}
-          />
-          <Button
-            type="submit"
-            disabled={
-              addNameError !== undefined ||
-              addDescriptionError !== undefined ||
-              addNotesError !== undefined
-            }
           >
-            {t('habit.add')}
-          </Button>
-        </form>
+            <Field
+              id="habit-add-name"
+              label={t('habit.name')}
+              value={addName}
+              {...(addNameError === undefined ? {} : { error: addNameError, errorAnnounce: true })}
+              onBlur={() => {
+                setAddNameTouched(true);
+              }}
+              onChange={(event) => {
+                setAddName(event.target.value);
+                if (habitApi?.where === 'add' && habitApi.field === 'name') {
+                  setHabitApi(null);
+                }
+              }}
+            />
+            <Field
+              id="habit-add-description"
+              label={t('habit.description')}
+              value={addDescription}
+              {...(addDescriptionError === undefined
+                ? {}
+                : { error: addDescriptionError, errorAnnounce: true })}
+              onChange={(event) => {
+                setAddDescription(event.target.value);
+                if (habitApi?.where === 'add' && habitApi.field === 'description') {
+                  setHabitApi(null);
+                }
+              }}
+            />
+            <Field
+              id="habit-add-notes"
+              label={t('habit.notes')}
+              value={addNotes}
+              {...(addNotesError === undefined
+                ? {}
+                : { error: addNotesError, errorAnnounce: true })}
+              onChange={(event) => {
+                setAddNotes(event.target.value);
+                if (habitApi?.where === 'add' && habitApi.field === 'notes') {
+                  setHabitApi(null);
+                }
+              }}
+            />
+            <SegmentedControl
+              tone="neutral"
+              ariaLabel={t('habit.cadence')}
+              value={addCadence}
+              options={[
+                { value: 'daily', label: t('habit.cadenceDaily') },
+                { value: 'weekly', label: t('habit.cadenceWeekly') },
+              ]}
+              onChange={setAddCadence}
+            />
+            <Button
+              type="submit"
+              disabled={
+                addNameError !== undefined ||
+                addDescriptionError !== undefined ||
+                addNotesError !== undefined
+              }
+            >
+              {t('habit.add')}
+            </Button>
+          </form>
+        </details>
       ) : null}
     </Card>
   );
 }
 
-function groupHabitsByAccount(habits: MemberHabit[]): HabitGroup[] {
+function groupHabitsByAccount(habits: MemberHabit[], viewerId: string | undefined): HabitGroup[] {
   const groups: HabitGroup[] = [];
   const indexByAccountId = new Map<string, number>();
   for (const habit of habits) {
@@ -1121,6 +1168,7 @@ function groupHabitsByAccount(habits: MemberHabit[]): HabitGroup[] {
       groups.push({
         accountId: habit.accountId,
         ownerName: habit.ownerName,
+        role: habit.role,
         habits: [habit],
       });
       continue;
@@ -1132,23 +1180,19 @@ function groupHabitsByAccount(habits: MemberHabit[]): HabitGroup[] {
     }
     group.habits.push(habit);
   }
-  return groups;
-}
-
-function statusCopy(
-  status: HabitStatus | null,
-  t: (key: 'habit.achieved' | 'habit.partial' | 'habit.missed' | 'habit.unrated') => string,
-): string {
-  if (status === 'achieved') {
-    return t('habit.achieved');
+  function priority(group: HabitGroup): number {
+    if (group.accountId === viewerId) return 0;
+    if (group.role === 'founder') return 1;
+    if (group.role === 'initiator') return 2;
+    if (group.role === 'moderator') return 3;
+    return 4;
   }
-  if (status === 'partial') {
-    return t('habit.partial');
-  }
-  if (status === 'missed') {
-    return t('habit.missed');
-  }
-  return t('habit.unrated');
+  return groups.sort(
+    (a, b) =>
+      priority(a) - priority(b) ||
+      a.ownerName.localeCompare(b.ownerName) ||
+      a.accountId.localeCompare(b.accountId),
+  );
 }
 
 /** Drops actions that had already reached the server when this load started. Edit and archive ids close. An add does not. */

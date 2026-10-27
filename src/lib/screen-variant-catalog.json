@@ -1560,6 +1560,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:people",
+    "label": "/habit-tracker people",
+    "visual": "state-habit-tracker-people",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:history-preview",
+    "label": "/habit-tracker history-preview",
+    "visual": "state-habit-tracker-history-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:history",
+    "label": "/habit-tracker history",
+    "visual": "state-habit-tracker-history",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:history-error",
+    "label": "/habit-tracker history-error",
+    "visual": "state-habit-tracker-history-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:reminder",
+    "label": "/habit-tracker reminder",
+    "visual": "state-habit-tracker-reminder",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:empty",
     "label": "/habit-tracker empty",
     "visual": "state-habit-tracker-empty",

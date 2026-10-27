@@ -1328,3 +1328,9 @@ Marketing light/dark goldens are identical (always ink) — accepted.
 | Variants / goldens | `scripts/screen-variants.mjs`, `e2e/visual.spec.ts`, `e2e/visual.spec.ts-snapshots/` |
 
 **Public-repo hygiene.** In-repo docs never name private repositories, internal hostnames, or infra internals. Say “the API concept document (Brand)” without a private path. CONTRIBUTING already links the public API repo; that link may stay. Mermaid is fine. Keep numbers.
+
+### Habit tracker navigation and catch-up
+
+The initial habit tracker is a list of collapsed person-name disclosures, ordered self, founder, initiator, moderators, others. Each person's name is the accessible disclosure label, with `aria-expanded` and `aria-controls`; its chevron is decorative. Add habit is a separate native disclosure and starts closed. Open cards show at most ten latest period rows. The labeled **All ratings** control names the history view; it opens a native dialog containing the existing `Scrollport`, with an icon-only Close and Escape dismissal. The background does not scroll while history is open.
+
+The entry reminder is an optional native modal with two explicit, labeled choices, **Rate now** and **Later** (German: **Jetzt eintragen** / **Später**), as requested for this feature. Later dismisses until the next app opening. Rate now opens the user's own tracker and reveals older pending entries when needed. This choice is distinct from `InlineConfirm`'s destructive archive/delete confirmation, and neither choice posts a rating.

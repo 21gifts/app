@@ -1,6 +1,14 @@
 import type { Locale } from '@/lib/locale';
 
 const en = {
+  'habit.reminderTitle': 'A moment for your habits',
+  'habit.reminderBody':
+    'You have ratings waiting in your habit tracker. Would you like to catch up now?',
+  'habit.reminderNow': 'Rate now',
+  'habit.reminderLater': 'Later',
+  'habit.allRatings': 'All ratings',
+  'habit.closeHistory': 'Close rating history',
+
   'happyland.title': 'Happyland – a glimpse of life in Manila',
   'happyland.intro':
     'Happyland is in Tondo, Manila. Families live here under difficult, often extremely difficult, conditions. We want to look more closely and portray the people and their surroundings with respect.',
@@ -1252,6 +1260,14 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const de = {
+  'habit.reminderTitle': 'Ein Moment für deine Gewohnheiten',
+  'habit.reminderBody':
+    'In deinem Habit Tracker sind noch Bewertungen offen. Möchtest du sie jetzt nachtragen?',
+  'habit.reminderNow': 'Jetzt eintragen',
+  'habit.reminderLater': 'Später',
+  'habit.allRatings': 'Alle Bewertungen',
+  'habit.closeHistory': 'Bewertungsverlauf schliessen',
+
   'happyland.title': 'Happyland – ein Einblick in das Leben in Manila',
   'happyland.intro':
     'Happyland liegt in Tondo, Manila. Familien leben hier unter schwierigen, oft sehr schwierigen Bedingungen. Wir möchten genauer hinschauen und die Menschen und ihr Umfeld mit Respekt darstellen.',
@@ -2525,6 +2541,14 @@ const de = {
 } satisfies Messages;
 
 const es = {
+  'habit.reminderTitle': 'Un momento para tus hábitos',
+  'habit.reminderBody':
+    'Tienes valoraciones pendientes en tu seguimiento de hábitos. ¿Quieres completarlas ahora?',
+  'habit.reminderNow': 'Valorar ahora',
+  'habit.reminderLater': 'Más tarde',
+  'habit.allRatings': 'Todas las valoraciones',
+  'habit.closeHistory': 'Cerrar el historial de valoraciones',
+
   'happyland.title': 'Happyland: una mirada a la vida en Manila',
   'happyland.intro':
     'Happyland está en Tondo, Manila. Las familias viven aquí en condiciones difíciles, a menudo extremadamente difíciles. Queremos conocer mejor a las personas y su entorno y mostrarlos con respeto.',
@@ -3772,6 +3796,14 @@ const es = {
 } satisfies Messages;
 
 const fil = {
+  'habit.reminderTitle': 'Sandali para sa iyong mga gawi',
+  'habit.reminderBody':
+    'May mga pagtatasa ka pang hindi nailalagay sa iyong habit tracker. Gusto mo bang ilagay ang mga ito ngayon?',
+  'habit.reminderNow': 'Ilagay ngayon',
+  'habit.reminderLater': 'Mamaya na',
+  'habit.allRatings': 'Lahat ng pagtatasa',
+  'habit.closeHistory': 'Isara ang tala ng mga pagtatasa',
+
   'happyland.title': 'Happyland – isang sulyap sa buhay sa Maynila',
   'happyland.intro':
     'Ang Happyland ay nasa Tondo, Maynila. Namumuhay rito ang mga pamilya sa mahirap, at kadalasan ay napakahirap, na kalagayan. Nais naming mas maunawaan at mailarawan nang may paggalang ang mga tao at ang kanilang paligid.',

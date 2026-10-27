@@ -4,6 +4,24 @@ import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const navigation = vi.hoisted(() => ({ query: '' }));
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(navigation.query),
+}));
+
+function openCreate(): void {
+  const create = document.querySelector<HTMLDetailsElement>('[data-habit-create]');
+  if (create !== null && !create.open)
+    fireEvent.click(create.querySelector('summary') as HTMLElement);
+}
+
+function openGroups(): void {
+  openCreate();
+  for (const button of screen.queryAllByRole('button', { expanded: false })) {
+    if (button.getAttribute('aria-controls')?.startsWith('habit-group-')) fireEvent.click(button);
+  }
+}
+
 const owner = {
   id: 'acc-owner',
   linkingKey: `02${'ab'.repeat(31)}`,
@@ -153,6 +171,7 @@ function formsNamed(buttonName: string): HTMLFormElement[] {
 }
 
 beforeEach(() => {
+  navigation.query = '';
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
 });
 
@@ -163,11 +182,102 @@ afterEach(() => {
 });
 
 describe('MemberHabits', () => {
+  beforeEach(() => {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close = function () {
+      this.removeAttribute('open');
+    };
+  });
+  it('starts with names only, ordered self, founder, initiator, moderators, then everyone else', async () => {
+    const example = payload().habits[0]!;
+    const list = {
+      reviewWeek: payload().reviewWeek,
+      habits: [
+        { ...example, id: 'z', accountId: 'z', ownerName: 'Bea', role: 'basis' },
+        { ...example, id: 'b', accountId: 'b', ownerName: 'Bea', role: 'basis' },
+        { ...example, id: 'm2', accountId: 'm2', ownerName: 'Zoe', role: 'moderator' },
+        { ...example, id: 'i', accountId: 'i', ownerName: 'Ian', role: 'initiator' },
+        { ...example, id: 'f', accountId: 'f', ownerName: 'Fred', role: 'founder' },
+        { ...example, id: 'v', accountId: 'v', ownerName: 'Alice', role: 'verified' },
+        { ...example, id: 'm1', accountId: 'm1', ownerName: 'Cara', role: 'moderator' },
+        example,
+      ],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(list)),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    await screen.findByRole('button', { name: 'Fred' });
+    const people = Array.from(document.querySelectorAll('button[aria-controls^="habit-group-"]'));
+    expect(people.map((button) => button.textContent)).toEqual([
+      'Ada',
+      'Fred',
+      'Ian',
+      'Cara',
+      'Zoe',
+      'Alice',
+      'Bea',
+      'Bea',
+    ]);
+    expect(people.every((button) => button.getAttribute('aria-expanded') === 'false')).toBe(true);
+    expect(screen.queryByRole('heading', { name: 'Walk' })).toBeNull();
+    expect(document.querySelector<HTMLDetailsElement>('[data-habit-create]')?.open).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Ada' }));
+    expect(screen.getByRole('heading', { name: 'Walk' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ada' }));
+    expect(screen.queryByRole('heading', { name: 'Walk' })).toBeNull();
+  });
+
+  it('opens only the signed-in person when arriving from the catch-up action', async () => {
+    navigation.query = 'review=1';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(payload())),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByRole('heading', { name: 'Walk' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ada' }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Bea' }).getAttribute('aria-expanded')).toBe('false');
+  });
+  it('ignores catch-up for a guest and clears an open history after a session change', async () => {
+    navigation.query = 'review=1';
+    const data = payload();
+    data.habits[0]!.periods = Array.from({ length: 11 }, (_, i) => ({
+      period: `2026-10-${String(i + 1).padStart(2, '0')}`,
+      name: 'Walk',
+      description: '',
+      logged: false,
+      status: null,
+    }));
+    let fail = false;
+    const fetch = vi.fn(async () => (fail ? new Response('{}', { status: 500 }) : json(data)));
+    vi.stubGlobal('fetch', fetch);
+    renderWithLocale(<MemberHabits />);
+    await screen.findByRole('button', { name: 'Ada' });
+    expect(screen.getByRole('button', { name: 'Ada' }).getAttribute('aria-expanded')).toBe('false');
+    act(() => useAuthStore.setState({ session: 'tok', account: owner }));
+    const dialog = await screen.findByRole('dialog');
+    fail = true;
+    fireEvent.click(within(dialog).getAllByRole('button', { name: 'Achieved' })[0]!);
+    await within(dialog).findByRole('alert');
+    fail = false;
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(within(dialog).queryByRole('alert')).toBeNull());
+    act(() => useAuthStore.setState({ session: null, account: null }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
   it('shows the public list to a signed-out visitor', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Ada' })).toBeTruthy();
+    openGroups();
     expect(screen.getByRole('heading', { name: 'Bea' })).toBeTruthy();
     expect(screen.getByText('Outside')).toBeTruthy();
     expect(screen.getByText('Books')).toBeTruthy();
@@ -201,15 +311,18 @@ describe('MemberHabits', () => {
       }),
     );
     const first = renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('No habits yet.')).toBeTruthy();
     expect(screen.getByText(/A week can be rated from Monday 08:00/)).toBeTruthy();
     expect(screen.queryByText(/Monday at 16:00/)).toBeNull();
     first.unmount();
 
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByRole('alert')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { name: 'Ada' })).toBeTruthy();
+    openGroups();
     expect(screen.queryByLabelText('Write a comment')).toBeNull();
   });
 
@@ -232,9 +345,11 @@ describe('MemberHabits', () => {
       ),
     );
     const first = renderWithLocale(<MemberHabits />);
+    openCreate();
     first.unmount();
     resolveFetch(json(payload()));
     const second = renderWithLocale(<MemberHabits />);
+    openCreate();
     second.unmount();
     rejectFetch(new Error('gone'));
     await Promise.resolve();
@@ -263,7 +378,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     const view = renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     await waitFor(() => {
       expect(gets).toBe(2);
@@ -291,7 +408,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText(/Internal notes:/)).toBeTruthy();
+    openGroups();
     expect(screen.getByText('secret')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Delete comment' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Send Bitcoin' })).toHaveLength(1);
@@ -450,7 +569,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const editName = screen.getAllByLabelText('Name')[0];
@@ -517,7 +638,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -592,7 +715,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -629,6 +754,7 @@ describe('MemberHabits', () => {
       reload(json(payload()));
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const settledName = screen.getByLabelText('Name');
     if (!(settledName instanceof HTMLInputElement)) {
@@ -675,7 +801,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -742,7 +870,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -770,6 +900,7 @@ describe('MemberHabits', () => {
       reload(json(payload()));
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const settledName = screen.getByLabelText('Name');
     if (!(settledName instanceof HTMLInputElement)) {
@@ -837,7 +968,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
 
@@ -873,6 +1006,7 @@ describe('MemberHabits', () => {
       releaseRetry(json(payload()));
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     expect(addName.value).toBe('Held');
     expect(gets).toBe(2);
   });
@@ -909,7 +1043,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -933,6 +1069,7 @@ describe('MemberHabits', () => {
     expect(addName.value).toBe('');
     expect(screen.queryByRole('alert')).toBeNull();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     expect(callAuth).toEqual([
       'GET Bearer tok',
       'POST Bearer tok',
@@ -963,7 +1100,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -984,6 +1123,7 @@ describe('MemberHabits', () => {
       expect(gets).toBe(2);
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     expect(screen.queryByRole('alert')).toBeNull();
 
     await act(async () => {
@@ -1024,7 +1164,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -1045,12 +1187,14 @@ describe('MemberHabits', () => {
       expect(gets).toBe(2);
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     useAuthStore.setState({ session: 'tok', account: owner });
     await waitFor(() => {
       expect(gets).toBe(3);
     });
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     expect(screen.queryByRole('alert')).toBeNull();
 
     await act(async () => {
@@ -1101,7 +1245,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1199,7 +1345,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -1251,7 +1399,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -1298,7 +1448,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const editName = screen.getAllByLabelText('Name')[0];
@@ -1388,7 +1540,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const editName = screen.getAllByLabelText('Name')[0];
@@ -1492,7 +1646,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
@@ -1558,7 +1714,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
 
@@ -1623,7 +1781,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
@@ -1671,7 +1831,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
@@ -1709,7 +1871,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
@@ -1736,7 +1900,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const editName = screen.getAllByLabelText('Name')[0];
@@ -1784,7 +1950,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -1856,7 +2024,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -1875,6 +2045,7 @@ describe('MemberHabits', () => {
 
     useAuthStore.setState({ session: 'other', account: viewer });
     expect(await screen.findByText('Next')).toBeTruthy();
+    openGroups();
     expect(screen.queryByText('Walk')).toBeNull();
 
     await act(async () => {
@@ -1903,7 +2074,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -1953,7 +2126,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Walk')).toBeTruthy();
@@ -2008,7 +2183,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Walk')).toBeTruthy();
@@ -2058,7 +2235,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     const addName = screen.getAllByLabelText('Name').at(-1);
     if (!(addName instanceof HTMLInputElement)) {
       throw new Error('missing add name');
@@ -2099,7 +2278,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     await waitFor(() => {
@@ -2180,7 +2361,9 @@ describe('MemberHabits', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: owner });
     const first = renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
@@ -2188,7 +2371,9 @@ describe('MemberHabits', () => {
 
     useAuthStore.setState({ session: '', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
@@ -2249,6 +2434,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: viewer });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
     const gifts = await screen.findAllByRole('button', { name: 'Send Bitcoin' });
     expect(gifts).toHaveLength(2);
     const gift = gifts[0];
@@ -2380,6 +2568,10 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: viewer });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
+    openGroups();
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2404,6 +2596,7 @@ describe('MemberHabits', () => {
     expect(screen.queryByText('Pay ₿21')).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
 
+    openGroups();
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2440,7 +2633,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     expect(screen.getByText(/Internal notes:/)).toBeTruthy();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
@@ -2476,7 +2671,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
     );
@@ -2486,12 +2683,14 @@ describe('MemberHabits', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Confirm deletion' })).toBeNull();
     });
+    openGroups();
     expect(screen.getAllByRole('button', { name: 'Delete comment' }).length).toBeGreaterThan(0);
 
     useAuthStore.setState({ session: 'tok', account: owner });
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Confirm deletion' })).toBeNull();
     });
+    openGroups();
     expect(screen.getAllByRole('button', { name: 'Delete comment' }).length).toBeGreaterThan(0);
   });
 
@@ -2507,7 +2706,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addName = screen.getByLabelText('Name');
     if (!(addName instanceof HTMLInputElement)) {
@@ -2568,6 +2769,10 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: viewer });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
+    openGroups();
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2583,6 +2788,7 @@ describe('MemberHabits', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    openGroups();
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2610,6 +2816,7 @@ describe('MemberHabits', () => {
     expect(screen.getByText('Pay ₿22')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    openGroups();
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2644,6 +2851,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: viewer });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
     const gifts = await screen.findAllByRole('button', { name: 'Send Bitcoin' });
     const gift = gifts[0];
     if (gift === undefined) {
@@ -2701,6 +2911,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
     const title = await screen.findByRole('heading', { name: 'Old walk' });
     const card = title.closest('article');
     if (!(card instanceof HTMLElement)) {
@@ -2735,6 +2948,9 @@ describe('MemberHabits', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(list)));
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
+    await screen.findByRole('button', { name: 'Ada' });
+    openGroups();
     const achieved = await screen.findByRole('button', { name: 'Achieved' });
     expect(achieved.getAttribute('aria-pressed')).toBe('false');
   });
@@ -2743,12 +2959,14 @@ describe('MemberHabits', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: viewer });
     const first = renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('hello')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     first.unmount();
 
     useAuthStore.setState({ session: '', account: viewer });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('hello')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
@@ -2768,6 +2986,7 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Walk' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add habit' }));
     await act(async () => {
@@ -2806,6 +3025,7 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     await waitFor(() => {
       expect(pending.length).toBeGreaterThan(0);
     });
@@ -2874,7 +3094,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addForm = formsNamed('Add habit')[0];
     if (addForm === undefined) {
@@ -2975,7 +3197,9 @@ describe('MemberHabits', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
     );
@@ -3008,7 +3232,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const saveForm = formsNamed('Save')[0];
     if (saveForm === undefined) {
@@ -3054,7 +3280,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const addForm = formsNamed('Add habit')[0];
     if (addForm === undefined) {
@@ -3156,7 +3384,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const saveForm = formsNamed('Save')[0];
     if (saveForm === undefined) {
@@ -3207,7 +3437,9 @@ describe('MemberHabits', () => {
       account: { ...owner, amountUnit: 'fiat' },
     });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
     );
@@ -3259,7 +3491,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Held' } });
     const addForm = formsNamed('Add habit')[0];
     if (addForm === undefined) {
@@ -3298,7 +3532,9 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
+    openCreate();
     expect(await screen.findByText('Walk')).toBeTruthy();
+    openGroups();
 
     const comment = screen.getAllByLabelText('Write a comment')[0];
     if (!(comment instanceof HTMLTextAreaElement)) {
