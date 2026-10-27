@@ -1217,7 +1217,7 @@ describe('PosScreen', () => {
       return screen.findByRole('alertdialog', { name: 'Paid' });
     }
 
-    it('fills the screen with Paid, bitcoin, fiat, and New payment for a paid charge', async () => {
+    it('fills the screen with Paid, bitcoin and fiat at the same size, and Done', async () => {
       // The till and its History each read the spot.
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       vi.stubGlobal(
@@ -1243,9 +1243,11 @@ describe('PosScreen', () => {
       // No figure is stored with this charge: the current spot stands beside the bitcoin.
       expect(await within(dialog).findByText('$0.02')).toBeTruthy();
       expect(await within(history).findByText('$0.02')).toBeTruthy();
-      expect(within(dialog).getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
-        '/pos/amount',
-      );
+      const bitcoin = within(dialog).getByText('₿21');
+      const fiat = within(dialog).getByText('$0.02');
+      expect(bitcoin.className).toBe(fiat.className);
+      expect(within(dialog).queryByRole('link', { name: 'New payment' })).toBeNull();
+      expect(within(dialog).getByRole('button', { name: 'Done' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
       expect(screen.queryByText(/left$/)).toBeNull();
@@ -1337,7 +1339,8 @@ describe('PosScreen', () => {
         vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [] })),
       );
       renderWithLocale(<PosScreen />);
-      expect(within(await confirmation()).getByRole('link', { name: 'New payment' })).toBeTruthy();
+      expect(within(await confirmation()).getByRole('button', { name: 'Done' })).toBeTruthy();
+      expect(screen.queryByRole('link', { name: 'New payment' })).toBeNull();
       expect(screen.queryByText(/\$/)).toBeNull();
     });
 
@@ -1698,13 +1701,13 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
-    it('New payment closes the confirmation, so the next till does not show it again', async () => {
+    it('Done closes the confirmation, so the next till does not show it again', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
       );
       const first = renderWithLocale(<PosScreen />);
-      fireEvent.click(within(await confirmation()).getByRole('link', { name: 'New payment' }));
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       first.unmount();
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
@@ -3336,7 +3339,7 @@ describe('PosScreen', () => {
       const till = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      fireEvent.click(within(await confirmation()).getByRole('link', { name: 'New payment' }));
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       till.unmount();
       renderWithLocale(<PosAmount />);
       await pressAmount('42');

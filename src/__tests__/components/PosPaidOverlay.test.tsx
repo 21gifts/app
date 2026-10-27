@@ -9,19 +9,22 @@ afterEach(() => {
 });
 
 describe('PosPaidOverlay', () => {
-  it('fills the screen with Paid, the amount, the fiat, and the two actions', () => {
+  it('fills the screen with Paid, both amounts at the same size, and Done', () => {
     renderWithLocale(<PosPaidOverlay amount="₿98" fiat="₱5.00" onClose={() => undefined} />);
     const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.className).toContain('fixed inset-0');
     expect(dialog.className).toContain('bg-app-success');
-    expect(within(dialog).getByText('₿98')).toBeTruthy();
-    expect(within(dialog).getByText('₱5.00')).toBeTruthy();
+    const bitcoin = within(dialog).getByText('₿98');
+    const fiat = within(dialog).getByText('₱5.00');
+    expect(bitcoin.className).toBe(fiat.className);
+    expect(bitcoin.className).toContain('text-6xl');
+    expect(bitcoin.className).toContain('sm:text-8xl');
     expect(within(dialog).getByText('The amount has arrived in your wallet.')).toBeTruthy();
-    const next = within(dialog).getByRole('link', { name: 'New payment' });
-    expect(next.getAttribute('href')).toBe('/pos/amount');
-    expect(document.activeElement).toBe(next);
-    expect(within(dialog).getByRole('button', { name: 'Done' })).toBeTruthy();
+    expect(within(dialog).queryByRole('link', { name: 'New payment' })).toBeNull();
+    const done = within(dialog).getByRole('button', { name: 'Done' });
+    expect(within(dialog).getAllByRole('button')).toEqual([done]);
+    expect(document.activeElement).toBe(done);
   });
 
   it('leaves the fiat out when there is none', () => {
@@ -30,13 +33,11 @@ describe('PosPaidOverlay', () => {
     expect(within(dialog).queryByText(/₱/)).toBeNull();
   });
 
-  it('closes on Done and on New payment', () => {
+  it('closes on Done', () => {
     const onClose = vi.fn();
     renderWithLocale(<PosPaidOverlay amount="₿98" fiat={null} onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onClose).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('link', { name: 'New payment' }));
-    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it('vibrates a phone once on open', () => {

@@ -10766,7 +10766,7 @@ test('Function: fetchMemberSparkInvoice — POST /pay/alice/invoice issues a Spa
   expect(refused.status()).toBe(400);
 });
 
-test('Function: PosTill — an open charge turns into Paid the moment the wallet receives it, and New payment opens the keypad', async ({
+test('Function: PosTill — an open charge turns into Paid the moment the wallet receives it, and Done returns to this till', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -10821,9 +10821,11 @@ test('Function: PosTill — an open charge turns into Paid the moment the wallet
   await expect(dialog.getByText('₿21')).toBeVisible();
   await expect.poll(() => loads).toBe(2);
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-  await dialog.getByRole('link', { name: 'New payment' }).click();
-  await expect(page).toHaveURL(/\/pos\/amount$/);
-  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+  await expect(dialog.getByRole('link')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(page).toHaveURL(/\/pos\?visual=pos-received$/);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
 });
 
 /** Signed-in Ada with a verified wallet whose till always returns `charge`. */
@@ -10889,7 +10891,8 @@ test('Function: PosPaidOverlay — the whole window turns green with Paid, and D
     })
     .toEqual([viewport?.width, viewport?.height]);
   await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
-  await expect(dialog.getByRole('link', { name: 'New payment' })).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
+  await expect(dialog.getByRole('link')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Done' }).click();
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();

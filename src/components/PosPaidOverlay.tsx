@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, ButtonLink } from '@/components/ui';
+import { Button } from '@/components/ui';
 
 /** Vibration pattern on a phone when the payment arrives: two firm pulses. */
 export const POS_PAID_VIBRATION: readonly number[] = [180, 90, 180];
+
+/** Bitcoin and the currency figure use this size, so neither reads as the lesser amount. */
+const PAID_FIGURE_CLASS = 'text-6xl font-bold tabular-nums lining-nums sm:text-8xl';
 
 /** Props for {@link PosPaidOverlay}. */
 export interface PosPaidOverlayProps {
@@ -13,17 +16,18 @@ export interface PosPaidOverlayProps {
   amount: string;
   /** The currency figure stored with the charge, or without one the current spot, formatted; `null` while there is neither. */
   fiat: string | null;
-  /** Closes the confirmation: **Done**, and **New payment** before it opens `/pos/amount`. */
+  /** Closes the confirmation. **Done** calls this and leaves the till already on screen. */
   onClose: () => void;
 }
 
 /**
  * Full-screen confirmation that a till charge was paid: the whole window
  * turns green, a check draws itself inside pulsing rings, and **Paid** with
- * the amount in bitcoin, and the charge's stored currency figure (or the
- * current spot without one), fills the middle, so nobody at the counter
- * can miss it. A phone vibrates once on open. **New payment** closes it and
- * opens `/pos/amount`; **Done** closes it. Focus moves to **New payment** on open.
+ * the amount in bitcoin and, at the same size, the charge's stored currency
+ * figure (or the current spot without one), fills the middle, so nobody at
+ * the counter can miss it. A phone vibrates once on open. **Done** is the
+ * only action: it closes the confirmation and leaves the till already under
+ * it (`/pos`). Focus moves to **Done** on open.
  * With reduced motion the screen stays the same without the movement.
  *
  * @param props - See {@link PosPaidOverlayProps}.
@@ -34,7 +38,7 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
   const first = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    first.current?.querySelector('a')?.focus();
+    first.current?.querySelector('button')?.focus();
     // Not every browser has it (desktop, iOS Safari); it is a bonus, never the signal.
     if (typeof navigator.vibrate === 'function') {
       navigator.vibrate(POS_PAID_VIBRATION);
@@ -82,17 +86,12 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
         {t('pos.paidTitle')}
       </h2>
       <div id="pos-paid-amount" className="flex flex-col items-center gap-1">
-        <p className="text-6xl font-bold tabular-nums lining-nums sm:text-8xl">{amount}</p>
-        {fiat === null ? null : (
-          <p className="text-2xl font-semibold tabular-nums lining-nums sm:text-3xl">{fiat}</p>
-        )}
+        <p className={PAID_FIGURE_CLASS}>{amount}</p>
+        {fiat === null ? null : <p className={PAID_FIGURE_CLASS}>{fiat}</p>}
         <p className="mt-2 max-w-xs text-base font-medium">{t('pos.paidArrived')}</p>
       </div>
       <div ref={first} className="flex w-full max-w-xs flex-col gap-3">
-        <ButtonLink href="/pos/amount" size="lg" onClick={onClose}>
-          {t('pos.newPayment')}
-        </ButtonLink>
-        <Button type="button" variant="secondary" size="lg" onClick={onClose}>
+        <Button type="button" size="lg" onClick={onClose}>
           {t('pos.paidDone')}
         </Button>
       </div>

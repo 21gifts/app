@@ -4040,7 +4040,7 @@ export const SCREEN_VARIANTS = [
     id: 'paid',
     image: 'pos-paid.png',
     visual: 'state-pos-paid',
-    needle: "getByRole('link', { name: 'New payment' })",
+    needle: "shotScreen(page, 'state-pos-paid')",
   },
   {
     route: '/pos',

@@ -10679,14 +10679,14 @@ test.describe('onboarding screens', () => {
     const dialog = page.getByRole('alertdialog', { name: 'Paid' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('₿21')).toBeVisible();
-    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    // No figure is stored with this charge: the current spot stands beside the bitcoin, same size.
     await expect(dialog.getByText('$0.02')).toBeVisible();
-    await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
-      'href',
-      '/pos/amount',
+    expect(await dialog.getByText('₿21').evaluate((node) => getComputedStyle(node).fontSize)).toBe(
+      await dialog.getByText('$0.02').evaluate((node) => getComputedStyle(node).fontSize),
     );
-    await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
+    await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
+    await expect(dialog.getByRole('link')).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
     await shotScreen(page, 'state-pos-paid');
   });
 
@@ -10815,7 +10815,11 @@ test.describe('onboarding screens', () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("₿5'000")).toBeVisible();
     await expect(dialog.getByText('$5.00')).toBeVisible();
-    await expect(dialog.getByRole('link', { name: 'New payment' })).toBeVisible();
+    expect(
+      await dialog.getByText("₿5'000").evaluate((node) => getComputedStyle(node).fontSize),
+    ).toBe(await dialog.getByText('$5.00').evaluate((node) => getComputedStyle(node).fontSize));
+    await expect(dialog.getByRole('link')).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
     await shotScreen(page, 'state-pos-paid-fiat');
   });
 
