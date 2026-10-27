@@ -5,7 +5,13 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { SegmentedControl } from '@/components/ui';
 import { postNotificationLevel } from '@/lib/api';
 import { accountNotificationLevel, type NotificationLevel } from '@/lib/api-types';
-import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
+import {
+  disablePush,
+  enablePush,
+  isIosSafari,
+  isStandaloneDisplay,
+  pushRenewalPending,
+} from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
 type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
@@ -59,7 +65,7 @@ export function PushToggle(): ReactElement | null {
           registration === undefined ? null : await registration.pushManager.getSubscription();
         if (!cancelled) {
           setShowInstallHint(iosHint);
-          setSubscribed(subscription !== null);
+          setSubscribed(subscription !== null || pushRenewalPending());
           setPhase('ready');
         }
       } catch {

@@ -7,6 +7,7 @@ import {
   enablePush,
   isIosSafari,
   isStandaloneDisplay,
+  pushRenewalPending,
   pushTagForNotification,
   registerPushWorker,
   resyncPushSubscription,
@@ -734,6 +735,39 @@ describe('disablePush', () => {
     expect(window.localStorage.getItem('21gifts-push-renew')).toBeNull();
   });
 
+  it('clears a pending key renewal before an in-flight resync settles', async () => {
+    let releaseKey!: (key: string) => void;
+    const keyHold = new Promise<string>((resolve) => {
+      releaseKey = resolve;
+    });
+    let startedKey!: () => void;
+    const keyStarted = new Promise<void>((resolve) => {
+      startedKey = resolve;
+    });
+    window.localStorage.setItem('21gifts-push-renew', '1');
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null), subscribe: vi.fn() },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(fetchVapidPublicKey).mockImplementation(async () => {
+      startedKey();
+      return keyHold;
+    });
+    const resyncP = resyncPushSubscription('sess');
+    await keyStarted;
+    const disableP = disablePush('sess');
+    expect(pushRenewalPending()).toBe(false);
+    releaseKey(bytesToBase64Url(CURRENT_KEY));
+    await resyncP;
+    await disableP;
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(pushRenewalPending()).toBe(false);
+  });
+
   it('no-ops when this browser has no service worker', async () => {
     vi.stubGlobal('navigator', {});
     await expect(disablePush('sess')).resolves.toBeUndefined();
@@ -905,6 +939,14 @@ function installNavigator(value: unknown): () => void {
     Object.defineProperty(globalThis, 'navigator', descriptor);
   };
 }
+
+describe('pushRenewalPending', () => {
+  it('reads the renewal marker', () => {
+    expect(pushRenewalPending()).toBe(false);
+    window.localStorage.setItem('21gifts-push-renew', '1');
+    expect(pushRenewalPending()).toBe(true);
+  });
+});
 
 describe('pushTagForNotification', () => {
   it('returns null for a proposal', () => {

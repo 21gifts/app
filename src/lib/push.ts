@@ -153,7 +153,15 @@ let pushEpoch = 0;
 /** Set while a VAPID key change has dropped the old subscription but not stored a new one. */
 const PUSH_RENEW_KEY = '21gifts-push-renew';
 
-function pushRenewPending(): boolean {
+/**
+ * Whether a VAPID key change dropped this browser's old subscription and has
+ * not stored a new one yet. The next resync finishes it unless push is
+ * turned off, so the device counts as subscribed until then.
+ *
+ * @returns True while the renewal marker is stored; false when it is not or
+ * storage throws.
+ */
+export function pushRenewalPending(): boolean {
   try {
     return window.localStorage.getItem(PUSH_RENEW_KEY) === '1';
   } catch {
@@ -311,7 +319,7 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
       return;
     }
     const subscription = await registration.pushManager.getSubscription();
-    if (subscription === null && !pushRenewPending()) {
+    if (subscription === null && !pushRenewalPending()) {
       return;
     }
     if (epoch !== pushEpoch) {
@@ -371,6 +379,8 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
  */
 export async function disablePush(sessionToken: string): Promise<void> {
   pushEpoch += 1;
+  // Clear now as well: log out waits only briefly for the queue.
+  setPushRenewPending(false);
   await runPushOp(async () => {
     setPushRenewPending(false);
     if (typeof navigator.serviceWorker === 'undefined') {

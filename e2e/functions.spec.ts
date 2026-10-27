@@ -11013,6 +11013,19 @@ test('Function: enablePush — profile shows the this-device control', async ({ 
   ).toBeVisible();
 });
 
+test('Function: pushRenewalPending — a pending key renewal shows this device as On', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts-push-renew', '1');
+  });
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'On' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');
