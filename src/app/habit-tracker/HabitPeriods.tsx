@@ -55,6 +55,12 @@ export function HabitPeriods({
     };
   }, [historyOpen]);
 
+  function closeHistory(): void {
+    // Close while still mounted so the browser restores focus to the opener.
+    dialog.current!.close();
+    setHistoryOpen(false);
+  }
+
   function rows(shown: Habit['periods']): ReactElement {
     return (
       <ul className="flex flex-col gap-2">
@@ -113,7 +119,10 @@ export function HabitPeriods({
           ref={dialog}
           aria-label={`${habit.name}: ${t('habit.allRatings')}`}
           className="m-auto max-h-[calc(var(--app-height)-2rem)] w-[calc(100%-2rem)] max-w-xl rounded-3xl border border-app-border bg-app-card p-4 text-app-fg shadow-sm backdrop:bg-app-overlay"
-          onCancel={() => setHistoryOpen(false)}
+          onCancel={(event) => {
+            event.preventDefault();
+            closeHistory();
+          }}
         >
           <div className="mb-4 flex items-center justify-between gap-3">
             <h4 className="min-w-0 text-lg font-semibold break-words">{habit.name}</h4>
@@ -121,7 +130,7 @@ export function HabitPeriods({
               type="button"
               variant="ghost"
               aria-label={t('habit.closeHistory')}
-              onClick={() => setHistoryOpen(false)}
+              onClick={closeHistory}
             >
               <X aria-hidden="true" className="h-4 w-4" />
             </IconButton>

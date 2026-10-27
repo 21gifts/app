@@ -28,12 +28,15 @@ function habit(count: number): MemberHabitList['habits'][number] {
 }
 const onLog = vi.fn(async () => {});
 const onRetry = vi.fn();
+let closedWhileMounted = false;
 beforeEach(() => {
   vi.clearAllMocks();
+  closedWhileMounted = false;
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
   };
   HTMLDialogElement.prototype.close = function () {
+    closedWhileMounted = this.isConnected;
     this.removeAttribute('open');
   };
 });
@@ -74,6 +77,7 @@ describe('HabitPeriods', () => {
     fireEvent.click(within(row).getByRole('button', { name: 'Achieved' }));
     expect(onLog).toHaveBeenCalledWith('h1', '2026-10-01', 'achieved');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close rating history' }));
+    expect(closedWhileMounted).toBe(true);
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getAllByRole('listitem')).toHaveLength(10);
   });
@@ -86,6 +90,7 @@ describe('HabitPeriods', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledOnce();
     fireEvent(dialog, new Event('cancel'));
+    expect(closedWhileMounted).toBe(true);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
   it('shows public and archived ratings as read-only', () => {
