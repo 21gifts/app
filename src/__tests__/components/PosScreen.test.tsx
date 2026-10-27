@@ -1599,6 +1599,41 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alert')).toBeNull();
     });
 
+    it('does not let an older expiry read replace a newer till answer', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let releaseExpiry: ((value: Response) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (reads === 2) {
+            return new Promise<Response>((resolve) => {
+              releaseExpiry = resolve;
+            });
+          }
+          return jsonResponse({ charge: null, history: [{ ...ended, status: 'expired' }] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByText('0:00 left')).toBeTruthy();
+      await waitFor(() => {
+        expect(releaseExpiry).toEqual(expect.any(Function));
+      });
+      showTab();
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => {
+        releaseExpiry?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.queryByText('0:00 left')).toBeNull();
+    });
+
     it('does not count a payment more than a minute after the charge ran out', async () => {
       const old = { ...OPEN, expiresAt: new Date(Date.now() - 61_000).toISOString() };
       vi.stubGlobal(
