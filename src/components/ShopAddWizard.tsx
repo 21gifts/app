@@ -1,9 +1,21 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactElement,
+} from 'react';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
+import {
+  ShopAccountSuggestions,
+  type ShopAccountSuggestion,
+} from '@/components/ShopAccountSuggestions';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, Field, IconButton } from '@/components/ui';
@@ -14,6 +26,7 @@ import {
   SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   formatShopAddressLine,
+  shopAccountRequiredProblem,
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopDescriptionText,
@@ -23,7 +36,7 @@ import {
   type ShopApiProblem,
 } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
-import { lookupAccountByUsername } from '@/lib/mention-search';
+import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** One step of the shop submission, after the closed button. */
@@ -45,6 +58,64 @@ function retreatShopStep(current: ShopAddStep | 'closed'): ShopAddStep | 'closed
   }
   /* v8 ignore stop */
   return (current - 1) as ShopAddStep;
+}
+
+const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
+
+/** First rows only. A longer list would be a second scroller, which the page forbids. */
+const SUGGESTION_LIMIT = 8;
+
+/**
+ * Username prefix after a leading `@`, or `null` when the field is not a mention.
+ *
+ * Empty string means the field is exactly `@` and the first suggestion page applies.
+ * Any space, including a trailing one, is not a username and closes the list.
+ *
+ * @param draft - Current field value.
+ * @returns The lowercase prefix, `""`, or `null`.
+ */
+function mentionQuery(draft: string): string | null {
+  if (draft === '@') {
+    return '';
+  }
+  if (!draft.startsWith('@') || draft.includes(' ')) {
+    return null;
+  }
+  const query = draft.slice(1).toLowerCase();
+  if (!USERNAME_PREFIX.test(query)) {
+    return null;
+  }
+  return query;
+}
+
+/**
+ * Shop-account field value.
+ *
+ * A value that already starts with `@` is kept, including a space after it,
+ * so `@ ` still closes the list. Blank and a lone `@` with only surrounding
+ * spaces stay `@`. Leading space before `@handle` is trimmed to that one `@`,
+ * so save still strips a single prefix. Any other value gets one leading `@`.
+ *
+ * @param value - Parent username.
+ * @returns The value shown in the field.
+ */
+function accountFieldValue(value: string): string {
+  if (value.startsWith('@')) {
+    return value;
+  }
+  const trimmed = value.trim();
+  if (trimmed === '' || trimmed === '@') {
+    return '@';
+  }
+  if (trimmed.startsWith('@')) {
+    return trimmed;
+  }
+  return `@${value}`;
+}
+
+/** Username without a leading `@`, trimmed and lowercased. */
+function strippedHandle(value: string): string {
+  return value.trim().replace(/^@/, '').trim().toLowerCase();
 }
 
 /** A still or video already stored on the shop note. */
@@ -94,9 +165,9 @@ export interface ShopAddWizardProps {
   place: ForumPlacePin | null;
   /** Replace the map pin. */
   onPlaceChange: (place: ForumPlacePin | null) => void;
-  /** Optional 21.gifts username, without a required \@. */
+  /** 21.gifts username. The account step shows it with a leading \@. */
   username: string;
-  /** Replace the optional username. */
+  /** Replace the username. The account step always sends a value that starts with \@. */
   onUsernameChange: (username: string) => void;
   /** Send the shop from the summary. */
   onSubmit: () => void;
@@ -151,11 +222,15 @@ function photoErrorKey(
 
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
- * are photos, place, text, an optional 21.gifts username, then a summary
+ * are photos, place, text, a required 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
- * soon as `@` is typed. A failed optional-account lookup does not block the
- * API-validated submit. Adding a shop shows Next on the photo step.
- * Edit mode shows an icon-only Close (X) there. Its accessible name is Cancel.
+ * soon as `@` is typed. The account step starts at `@` and lists people
+ * whose username starts with what was typed. Arrow keys move the highlight
+ * and Enter picks that person without posting. A failed account lookup does
+ * not block the API-validated submit. An empty handle does, and that reason
+ * is a linked field error. Adding a shop
+ * shows Next on the photo step. Edit mode shows an icon-only Close (X)
+ * there. Its accessible name is Cancel.
  *
  * @param props - Draft fields and the send callback.
  * @returns The button, or the current step.
@@ -207,13 +282,19 @@ export function ShopAddWizard({
   // Skip the mount run. useState already opened on the right step, and
   // repeating it undoes a Next click from the same turn the editor opened.
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
-  const initialUsername = useRef(username);
+  const initialHandle = useRef(strippedHandle(username));
   const lastAutoOpenedPlaceProblem = useRef<ShopApiProblem | null>(null);
   const rejectionFocusStep = useRef<1 | 3 | 4 | null>(null);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
     'idle' | 'checking' | 'found' | 'missing' | 'failed'
   >('idle');
+  const [seed, setSeed] = useState<readonly ShopAccountSuggestion[]>([]);
+  const [remote, setRemote] = useState<{
+    query: string;
+    rows: readonly ShopAccountSuggestion[];
+  } | null>(null);
+  const [accountActive, setAccountActive] = useState(0);
 
   useEffect(() => {
     const key = `${mode}:${String(resetToken)}`;
@@ -280,10 +361,25 @@ export function ShopAddWizard({
     control!.focus();
   }, [accountUsernameId, photoAddButtonId, step]);
 
-  const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
+  const normalizedUsername = strippedHandle(username);
+  const usernameEmpty = shopAccountRequiredProblem(username) === 'required';
+  const accountValue = accountFieldValue(username);
+  const mentionPrefix = session !== null && step === 4 ? mentionQuery(accountValue) : null;
+  useEffect(() => {
+    setAccountActive(0);
+  }, [mentionPrefix]);
   const usernameFormatProblem = shopUsernameProblem(username);
   useEffect(() => {
-    if (normalizedUsername === '') {
+    if (step !== 4) {
+      return;
+    }
+    const next = accountFieldValue(username);
+    if (next !== username) {
+      onUsernameChange(next);
+    }
+  }, [onUsernameChange, step, username]);
+  useEffect(() => {
+    if (usernameEmpty) {
       setUsernameLookup('idle');
       return;
     }
@@ -291,7 +387,12 @@ export function ShopAddWizard({
       setUsernameLookup('idle');
       return;
     }
-    if (session === null || (mode === 'edit' && username === initialUsername.current)) {
+    if (
+      session === null ||
+      (mode === 'edit' &&
+        initialHandle.current !== '' &&
+        normalizedUsername === initialHandle.current)
+    ) {
       setUsernameLookup('found');
       return;
     }
@@ -312,7 +413,44 @@ export function ShopAddWizard({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, normalizedUsername, session, username, usernameFormatProblem]);
+  }, [mode, normalizedUsername, session, username, usernameEmpty, usernameFormatProblem]);
+  useEffect(() => {
+    if (session === null || mentionPrefix === null) {
+      setSeed([]);
+      setRemote(null);
+      return;
+    }
+    const current = session;
+    const requested = mentionPrefix;
+    let cancelled = false;
+    if (requested !== '') {
+      setRemote(null);
+    }
+    void searchMentionAccounts(current, requested)
+      .then((rows) => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed(rows);
+          return;
+        }
+        setRemote({ query: requested, rows });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed([]);
+          return;
+        }
+        setRemote({ query: requested, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mentionPrefix, session]);
 
   useLayoutEffect(() => {
     if (step === 'closed' || step === 1) {
@@ -356,10 +494,10 @@ export function ShopAddWizard({
   const usernameProblem =
     usernameFormatProblem !== null
       ? 'format'
-      : normalizedUsername !== '' && usernameLookup === 'missing'
+      : !usernameEmpty && usernameLookup === 'missing'
         ? 'missing'
         : null;
-  const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
+  const usernamePending = !usernameEmpty && usernameLookup === 'checking';
   const descriptionServerProblem = serverProblemField === 'text';
   const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
@@ -374,7 +512,8 @@ export function ShopAddWizard({
     (step === 1 && photoRejected) ||
     (step === 2 && (!placeComplete || placeServerProblem)) ||
     (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
-    (step === 4 && (usernameProblem !== null || usernamePending || usernameServerProblem));
+    (step === 4 &&
+      (usernameEmpty || usernameProblem !== null || usernamePending || usernameServerProblem));
   const submitDisabled =
     posting ||
     !summaryArmed ||
@@ -382,6 +521,7 @@ export function ShopAddWizard({
     placeServerProblem ||
     descriptionProblem !== null ||
     descriptionServerProblem ||
+    usernameEmpty ||
     usernameProblem !== null ||
     usernamePending ||
     usernameServerProblem;
@@ -404,8 +544,10 @@ export function ShopAddWizard({
         ? t('login.nameInvalid')
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
-          : undefined;
-  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
+          : usernameEmpty
+            ? t('forum.shopAccountHint')
+            : undefined;
+  const usernameHint = usernamePending ? t('shops.usernameChecking') : undefined;
   // While a send is in flight (for example the fee sheet), the parent may clear the draft.
   const summaryProblem =
     step !== 5 || posting
@@ -423,6 +565,57 @@ export function ShopAddWizard({
               : usernamePending
                 ? t('shops.usernameChecking')
                 : null;
+  const accountSuggestions = (
+    mentionPrefix === null
+      ? []
+      : mentionPrefix === ''
+        ? seed
+        : remote !== null && remote.query === mentionPrefix
+          ? remote.rows
+          : seed.filter((row) => row.username.toLowerCase().startsWith(mentionPrefix))
+  ).slice(0, SUGGESTION_LIMIT);
+  const accountActiveIndex =
+    accountSuggestions.length === 0 ? 0 : accountActive % accountSuggestions.length;
+
+  const onAccountKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+      return;
+    }
+    if (accountSuggestions.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setAccountActive((index) => (index + 1) % accountSuggestions.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setAccountActive(
+        (index) => (index - 1 + accountSuggestions.length) % accountSuggestions.length,
+      );
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setAccountActive(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      setAccountActive(accountSuggestions.length - 1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = accountSuggestions[accountActiveIndex];
+      /* v8 ignore next 3 -- the list is open only while a row is shown */
+      if (row === undefined) {
+        return;
+      }
+      onUsernameChange(`@${row.username}`);
+    }
+  };
 
   return (
     <form
@@ -646,14 +839,38 @@ export function ShopAddWizard({
           <Field
             id={accountUsernameId}
             label={t('shops.accountLabel')}
-            value={username}
-            disabled={posting}
-            hint={usernameHint}
+            value={accountValue}
+            disabled={stepsLocked}
+            {...(usernameHint === undefined ? {} : { hint: usernameHint })}
+            autoComplete="off"
+            aria-autocomplete="list"
+            {...(accountSuggestions.length > 0
+              ? {
+                  'aria-controls': `${idPrefix}-account-suggest`,
+                  'aria-activedescendant': `${idPrefix}-account-option-${String(accountActiveIndex)}`,
+                }
+              : {})}
             {...(usernameError === undefined
               ? {}
               : { error: usernameError, errorAnnounce: usernameServerProblem })}
-            onChange={(event) => onUsernameChange(event.target.value)}
+            onKeyDown={onAccountKeyDown}
+            onChange={(event) => {
+              onUsernameChange(accountFieldValue(event.target.value));
+            }}
           />
+          {accountSuggestions.length > 0 ? (
+            <ShopAccountSuggestions
+              listId={`${idPrefix}-account-suggest`}
+              rows={accountSuggestions}
+              activeIndex={accountActiveIndex}
+              disabled={stepsLocked}
+              className="rounded-xl border border-app-border bg-app-card p-2"
+              optionId={(index) => `${idPrefix}-account-option-${String(index)}`}
+              onPick={(username) => {
+                onUsernameChange(`@${username}`);
+              }}
+            />
+          ) : null}
         </div>
       ) : null}
       {step === 5 ? (
@@ -693,7 +910,7 @@ export function ShopAddWizard({
           </div>
           <div>
             <dt className="text-app-muted">{t('shops.stepAccount')}</dt>
-            <dd>{normalizedUsername === '' ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
+            <dd>{usernameEmpty ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
           </div>
         </dl>
       ) : null}

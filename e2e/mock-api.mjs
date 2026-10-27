@@ -2149,6 +2149,30 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/shops') {
+    json(res, 200, {
+      shops: [
+        {
+          npub: `npub1${'2'.repeat(58)}`,
+          name: 'Cafe Luna',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Cafe Luna',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        },
+      ],
+    });
+    return;
+  }
+
   const shopMatch = pathName.match(/^\/shops\/([^/]+)$/);
   if (method === 'GET' && shopMatch !== null) {
     const value = decodeURIComponent(shopMatch[1]);
@@ -2157,6 +2181,7 @@ const server = http.createServer(async (req, res) => {
     const unavailableNpub = `npub1${'4'.repeat(58)}`;
     const noPaymentNpub = `npub1${'5'.repeat(58)}`;
     const galleryNpub = `npub1${'7'.repeat(58)}`;
+    const noPinNpub = `npub1${'8'.repeat(58)}`;
     const knownHex = 'a'.repeat(64);
     if (value === knownHex) {
       res.writeHead(301, {
@@ -2268,6 +2293,33 @@ const server = http.createServer(async (req, res) => {
             photos: [],
             payUsername: null,
             nip05: null,
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === noPinNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: noPinNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Roadside Stall',
+            description: 'Fruit and cold water, no street address.',
+            place: null,
+            photos: [
+              {
+                url: `http://${HOST}:${PORT}/messages/11111111-1111-4111-8111-111111111111/photo.jpg`,
+                width: 1,
+                height: 1,
+              },
+            ],
+            payUsername: 'stall',
+            nip05: 'stall@21.gifts',
             createdAt: '2026-08-28T12:00:00.000Z',
           },
         },

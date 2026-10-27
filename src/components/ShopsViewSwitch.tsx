@@ -5,7 +5,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { SegmentedControl } from '@/components/ui';
 
 /** Which shops body is on screen. */
-export type ShopsView = 'post' | 'map' | 'table';
+export type ShopsView = 'list' | 'post' | 'map' | 'table';
 
 /** Props for the shops view pill. */
 export interface ShopsViewSwitchProps {
@@ -15,10 +15,10 @@ export interface ShopsViewSwitchProps {
   onChange: (value: ShopsView) => void;
 }
 
-const VIEWS: readonly ShopsView[] = ['post', 'map', 'table'];
+const VIEWS: readonly ShopsView[] = ['list', 'map', 'table', 'post'];
 
 /**
- * Post / Map / Table pill under the shops lead.
+ * List / Map / Table / Post pill under the shops lead.
  *
  * @param props - Selected view and change handler.
  * @returns The view switch.
@@ -26,6 +26,7 @@ const VIEWS: readonly ShopsView[] = ['post', 'map', 'table'];
 export function ShopsViewSwitch({ value, onChange }: ShopsViewSwitchProps): ReactElement {
   const { t } = useTranslations();
   const label: Record<ShopsView, string> = {
+    list: t('shops.viewList'),
     post: t('shops.viewPost'),
     map: t('shops.viewMap'),
     table: t('shops.viewTable'),

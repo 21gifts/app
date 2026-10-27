@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -222,8 +222,10 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByText('Describe the shop in at least 20 more characters.')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+    expect(screen.getByLabelText('21.gifts username')).toHaveProperty('value', '@luna');
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
-    expect(onUsernameChange).toHaveBeenCalledWith('luna');
+    expect(onUsernameChange).toHaveBeenCalledWith('@luna');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
     expect(screen.getByText('2')).toBeTruthy();
@@ -261,6 +263,7 @@ describe('ShopAddWizard', () => {
             submitLabel: 'Save changes',
             draft: SHOP_DESCRIPTION,
             place: COMPLETE_PLACE,
+            username: '@luna',
             serverProblem,
             onSubmit: () => setServerProblem('shopDescription'),
           })}
@@ -319,6 +322,7 @@ describe('ShopAddWizard', () => {
           {...props({
             draft: SHOP_DESCRIPTION,
             place: COMPLETE_PLACE,
+            username: '@luna',
             photoError,
             onSubmit: () => setPhotoError('tooLarge'),
           })}
@@ -418,6 +422,7 @@ describe('ShopAddWizard', () => {
             {...props({
               draft: paying ? '' : SHOP_DESCRIPTION,
               place: COMPLETE_PLACE,
+              username: '@luna',
               posting: paying,
             })}
           />
@@ -503,8 +508,8 @@ describe('ShopAddWizard', () => {
     const usernames = screen.getAllByLabelText('21.gifts username');
     expect(usernames[0]!.id).toBeTruthy();
     expect(usernames[0]!.id).not.toBe(usernames[1]!.id);
-    expect(usernames[0]!.getAttribute('aria-describedby')).toBe(`${usernames[0]!.id}-hint`);
-    expect(usernames[1]!.getAttribute('aria-describedby')).toBe(`${usernames[1]!.id}-hint`);
+    expect(usernames[0]!.getAttribute('aria-describedby')).toBe(`${usernames[0]!.id}-error`);
+    expect(usernames[1]!.getAttribute('aria-describedby')).toBe(`${usernames[1]!.id}-error`);
   });
 
   it('keeps Next disabled until the place and description are complete', () => {
@@ -540,6 +545,7 @@ describe('ShopAddWizard', () => {
         {...props({
           place: COMPLETE_PLACE,
           draft: SHOP_DESCRIPTION,
+          username: '@luna',
           photoDrafts: [photo],
         })}
       />,
@@ -641,6 +647,7 @@ describe('ShopAddWizard', () => {
               place,
               onPlaceChange: setPlace,
               draft: SHOP_DESCRIPTION,
+              username: '@luna',
             })}
           />
         </>
@@ -696,7 +703,14 @@ describe('ShopAddWizard', () => {
           >
             Drop pin name
           </button>
-          <ShopAddWizard {...props({ place, onPlaceChange: setPlace, draft: SHOP_DESCRIPTION })} />
+          <ShopAddWizard
+            {...props({
+              place,
+              onPlaceChange: setPlace,
+              draft: SHOP_DESCRIPTION,
+              username: '@luna',
+            })}
+          />
         </>
       );
     }
@@ -718,12 +732,18 @@ describe('ShopAddWizard', () => {
 
   it('shows a pending username check when the account changes on the summary', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
-    lookupAccount.mockImplementation(() => new Promise<never>(() => undefined));
+    lookupAccount.mockResolvedValue('found');
     function SummaryHost(): ReactElement {
-      const [username, setUsername] = useState('');
+      const [username, setUsername] = useState('@ada');
       return (
         <>
-          <button type="button" onClick={() => setUsername('luna')}>
+          <button
+            type="button"
+            onClick={() => {
+              lookupAccount.mockImplementation(() => new Promise<never>(() => undefined));
+              setUsername('luna');
+            }}
+          >
             Set summary username
           </button>
           <ShopAddWizard
@@ -742,7 +762,11 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Set summary username' }));
     expect(await screen.findByText('Checking that account…')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
@@ -803,6 +827,7 @@ describe('ShopAddWizard', () => {
           keptMedia: [{ url: 'blob:still', kind: 'photo' }],
           place: COMPLETE_PLACE,
           draft: SHOP_DESCRIPTION,
+          username: '@luna',
         })}
       />,
     );
@@ -852,6 +877,128 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
   });
 
+  it('lists people whose username starts with the typed letter', async () => {
+    searchPeople.mockImplementation(async (_session, query) => {
+      if (query === '') {
+        return [
+          { id: 'acc-ada', username: 'ada', name: 'Ada' },
+          { id: 'acc-adam', username: 'adam', name: 'Adam' },
+        ];
+      }
+      if (query === 'c') {
+        return [
+          { id: 'acc-cafe', username: 'cafe', name: 'Cafe' },
+          { id: 'acc-coco', username: 'coco', name: 'Coco' },
+        ];
+      }
+      return [];
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    function UsernameHost(): ReactElement {
+      const [username, setUsername] = useState('@');
+      const [draft, setDraft] = useState('');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft,
+            onDraftChange: setDraft,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<UsernameHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username') as HTMLInputElement;
+    expect(field.value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@adam' })).toBeTruthy();
+    fireEvent.change(field, { target: { value: 'C' } });
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@C');
+    expect(await screen.findByRole('option', { name: '@cafe' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@coco' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: '@cafe' }));
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@cafe');
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@' } });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('option', { name: '@ada' }));
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@ada');
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@.ada' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+    });
+  });
+
+  it('drops account suggestions when the search fails', async () => {
+    const pending: Array<{ query: string; reject: (error: Error) => void }> = [];
+    searchPeople.mockImplementation(
+      (_session, query) =>
+        new Promise((_resolve, reject) => {
+          pending.push({ query, reject });
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account: null });
+    function UsernameHost(): ReactElement {
+      const [username, setUsername] = useState('@');
+      const [draft, setDraft] = useState('');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft,
+            onDraftChange: setDraft,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<UsernameHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
+    const beforeAccountStep = pending.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(pending.slice(beforeAccountStep).some((row) => row.query === '')).toBe(true);
+    });
+    const empty = pending.slice(beforeAccountStep).find((row) => row.query === '');
+    await act(async () => {
+      empty?.reject(new Error('offline'));
+    });
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@c' } });
+    await waitFor(() => {
+      expect(pending.filter((row) => row.query === 'c')).toHaveLength(1);
+    });
+    const cancelled = pending.find((row) => row.query === 'c');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    await act(async () => {
+      cancelled?.reject(new Error('offline'));
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => {
+      expect(pending.filter((row) => row.query === 'c')).toHaveLength(2);
+    });
+    const live = pending.filter((row) => row.query === 'c')[1];
+    await act(async () => {
+      live?.reject(new Error('offline'));
+    });
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+  });
+
   it.each([
     ['tooMany' as const, 'You can add up to 10 photos'],
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
@@ -893,6 +1040,7 @@ describe('ShopAddWizard', () => {
             {...props({
               draft: SHOP_DESCRIPTION,
               place: COMPLETE_PLACE,
+              username: '@luna',
               photoError,
             })}
           />
@@ -983,6 +1131,116 @@ describe('ShopAddWizard', () => {
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows an empty username as a field error and ignores keys when nobody is listed', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([]);
+    const onUsernameChange = vi.fn();
+    const onSubmit = vi.fn();
+    renderWizard(
+      <ShopAddWizard
+        {...props({
+          draft: SHOP_DESCRIPTION,
+          place: COMPLETE_PLACE,
+          username: '@',
+          onUsernameChange,
+          onSubmit,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    const message = screen.getByText('Type or pick the 21.gifts username to continue.');
+    expect(field.getAttribute('aria-describedby')).toContain(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(onUsernameChange).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('keeps one @ when a username is pasted with space before it', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    const onUsernameChange = vi.fn();
+    renderWizard(
+      <ShopAddWizard
+        {...props({
+          draft: SHOP_DESCRIPTION,
+          place: COMPLETE_PLACE,
+          username: '@',
+          onUsernameChange,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    fireEvent.change(field, { target: { value: ' @luna' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@luna');
+    fireEvent.change(field, { target: { value: '   ' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@');
+    fireEvent.change(field, { target: { value: '  @' } });
+    expect(onUsernameChange).toHaveBeenCalledWith('@');
+  });
+
+  it('picks the highlighted person with Enter and does not post', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+      { id: 'acc-adam', username: 'adam', name: 'Adam' },
+    ]);
+    const onSubmit = vi.fn();
+    function Host(): ReactElement {
+      const [username, setUsername] = useState('@');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+            onSubmit,
+          })}
+        />
+      );
+    }
+    renderWizard(<Host />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const field = screen.getByLabelText('21.gifts username');
+    const ada = await screen.findByRole('option', { name: '@ada' });
+    expect(ada.getAttribute('aria-selected')).toBe('true');
+    expect(field.getAttribute('aria-activedescendant')).toBe(ada.id);
+    fireEvent.keyDown(field, { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(field, { key: 'Enter', keyCode: 229 });
+    expect(field).toHaveProperty('value', '@');
+    fireEvent.keyDown(field, { key: 'ArrowDown' });
+    expect(screen.getByRole('option', { name: '@adam' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(field, { key: 'ArrowUp' });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(field, { key: 'End' });
+    expect(screen.getByRole('option', { name: '@adam' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.keyDown(field, { key: 'Home' });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(field).toHaveProperty('value', '@ada');
+    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('Type or pick the 21.gifts username to continue.')).toBeNull();
+    });
   });
 
   it('checks a valid username exists before enabling Next', async () => {
@@ -1117,6 +1375,11 @@ describe('ShopAddWizard', () => {
       '4 / 5 · 21.gifts user',
       'No account with that username. Check the spelling of the 21.gifts username.',
     ],
+    [
+      'usernameRequired' as const,
+      '4 / 5 · 21.gifts user',
+      'Type or pick the 21.gifts username to continue.',
+    ],
   ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
     renderWizard(
       <ShopAddWizard
@@ -1139,7 +1402,11 @@ describe('ShopAddWizard', () => {
       expect(screen.getByText(message)).toBeTruthy();
       const alert = screen.getByRole('alert');
       expect(alert.textContent).toBe(message);
-      if (serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing') {
+      if (
+        serverProblem === 'usernameInvalid' ||
+        serverProblem === 'usernameMissing' ||
+        serverProblem === 'usernameRequired'
+      ) {
         const username = screen.getByLabelText('21.gifts username');
         expect(alert.tagName).toBe('SPAN');
         expect(alert.id).toBe(`${username.id}-error`);

@@ -348,7 +348,13 @@ export function ShopNoteEditControl({
       keptStillBytes.current.clear();
       const openedText = stripShopHashtag(message.text);
       const openedPlace = copyOpenedPlace(message.place);
-      const openedUsername = message.shopAccount?.username ?? '';
+      const storedUsername = message.shopAccount?.username ?? '';
+      const openedUsername =
+        storedUsername === ''
+          ? '@'
+          : storedUsername.startsWith('@')
+            ? storedUsername
+            : `@${storedUsername}`;
       openedTextRef.current = openedText;
       openedPlaceRef.current = openedPlace;
       openedUsernameRef.current = openedUsername;
@@ -531,8 +537,8 @@ export function ShopNoteEditControl({
       }
       const nextUser = usernameOf(username);
       const prevUser = usernameOf(openedUsernameRef.current);
-      if (nextUser !== prevUser) {
-        latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
+      if (nextUser !== prevUser && nextUser !== '') {
+        latest = await setMessageShopAccount(token, message.id, nextUser);
         onUpdated(latest);
       }
       if (photosChanged) {

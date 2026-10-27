@@ -53,7 +53,8 @@ export type ShopApiProblem =
   | 'shopDescriptionControls'
   | 'placeAddress'
   | 'usernameInvalid'
-  | 'usernameMissing';
+  | 'usernameMissing'
+  | 'usernameRequired';
 
 /** Visitor-facing catalog key for each {@link ShopApiProblem}, from the API or the pre-fee guard. */
 export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
@@ -67,6 +68,7 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   placeAddress: 'shops.problemAddressInvalid',
   usernameInvalid: 'login.nameInvalid',
   usernameMissing: 'shops.problemUsernameMissing',
+  usernameRequired: 'forum.shopAccountHint',
 };
 
 /**
@@ -89,7 +91,11 @@ export function shopProblemField(problem: ShopApiProblem): 'place' | 'text' | 'u
   if (problem === 'shopDescription' || problem === 'shopDescriptionControls') {
     return 'text';
   }
-  if (problem === 'usernameInvalid' || problem === 'usernameMissing') {
+  if (
+    problem === 'usernameInvalid' ||
+    problem === 'usernameMissing' ||
+    problem === 'usernameRequired'
+  ) {
     return 'username';
   }
   return 'place';
@@ -109,6 +115,7 @@ const PLACE_ADDRESS_INVALID = 'Place address is invalid';
 const PLACE_LABEL_LONG = 'Place label must be at most 80 characters';
 const USERNAME_INVALID = 'Username is not valid';
 const USERNAME_MISSING = 'No account with that username';
+const SHOP_ACCOUNT_REQUIRED = 'A shop note needs a shop account';
 const TEXT_RANGE = new Set([
   'Text must be 1–8000 characters',
   'Text must be 1–8000 characters or include a photo',
@@ -418,9 +425,12 @@ export function shopDescriptionProblem(
 }
 
 /**
- * Optional shop-account username format problem, mirroring the API regex.
+ * Shop-account username format problem, mirroring the API regex.
  *
- * @param raw - Optional username with or without one leading `@`.
+ * An empty handle is not a format error. {@link shopAccountRequiredProblem}
+ * owns that required-account rule. The API rejects a top-level shop that has none.
+ *
+ * @param raw - Username with or without one leading `@`.
  * @returns `'format'` when non-empty input is invalid, otherwise `null`. A bare
  * `@` counts as empty, like in the API.
  */
@@ -430,6 +440,21 @@ export function shopUsernameProblem(raw: string): 'format' | null {
     return null;
   }
   return /^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) ? null : 'format';
+}
+
+/**
+ * Shop-account required problem, mirroring a top-level shop with no account.
+ *
+ * An empty handle, including a bare `@`, is required. Format stays in
+ * {@link shopUsernameProblem}. Callers still choose when an untouched field
+ * shows this result.
+ *
+ * @param raw - Username with or without one leading `@`.
+ * @returns `'required'` when the handle is empty, otherwise `null`.
+ */
+export function shopAccountRequiredProblem(raw: string): 'required' | null {
+  const username = raw.trim().replace(/^@/, '').trim();
+  return username === '' ? 'required' : null;
 }
 
 /**
@@ -524,6 +549,9 @@ export function shopApiProblem(message: string, shop: boolean): ShopApiProblem |
   }
   if (message === USERNAME_MISSING) {
     return 'usernameMissing';
+  }
+  if (message === SHOP_ACCOUNT_REQUIRED) {
+    return 'usernameRequired';
   }
   return null;
 }

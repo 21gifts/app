@@ -101,6 +101,10 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
     });
   });
   await page.goto('/shops');
+  await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a shop' })).toHaveCount(0);
+  await page.goto('/shops#post');
+  await page.getByRole('button', { name: 'Post' }).click();
   await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
   await page.getByRole('button', { name: 'Map' }).click();
@@ -109,6 +113,61 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
   await expect(page.getByText('Cafe Luna')).toBeVisible();
+});
+
+test('Function: ShopList — a listed shop links to its page', async ({ page }) => {
+  const npub = `npub1${'2'.repeat(58)}`;
+  await seedSignedIn(page);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          shops: [
+            {
+              npub,
+              name: 'Cafe Luna',
+              place: {
+                label: 'Cafe Luna',
+                lat: 14.6,
+                lng: 120.98,
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  await expect(page.getByRole('link', { name: 'Cafe Luna' })).toHaveAttribute('href', `/${npub}`);
+  await expect(page.getByText('Quiet stall')).toHaveCount(0);
+  await expect(page.getByText('#Shop')).toHaveCount(0);
+});
+
+test('Function: fetchListedShops — the shops page shows the directory link', async ({ page }) => {
+  await seedSignedIn(page);
+  await page.goto('/shops');
+  await expect(page.getByRole('link', { name: 'Cafe Luna' })).toHaveAttribute(
+    'href',
+    `/npub1${'2'.repeat(58)}`,
+  );
+});
+
+test('Function: proxyShopListGet — GET /shops/list returns the directory', async ({ request }) => {
+  const res = await request.get('/shops/list');
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { shops: Array<{ name: string; npub: string }> };
+  expect(body.shops[0]?.name).toBe('Cafe Luna');
+  expect(body.shops[0]?.npub).toBe(`npub1${'2'.repeat(58)}`);
 });
 
 test('Function: ShopTable — name, place, and operator', async ({ page }) => {
@@ -125,7 +184,7 @@ test('Function: ShopTable — name, place, and operator', async ({ page }) => {
       shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
     },
   ]);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
     'href',
@@ -150,7 +209,7 @@ test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(page.getByLabel('Your message')).toHaveCount(0);
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -186,11 +245,7 @@ test('Function: ShopsScreen — lead is visible', async ({ page }) => {
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
   await page.goto('/shops');
-  await expect(
-    page.getByText(
-      'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
-    ),
-  ).toBeVisible();
+  await expect(page.getByText('Each row is a shop page, not a forum note.')).toBeVisible();
 });
 
 test('Function: isShopNote — shop note is listed', async ({ page }) => {
@@ -223,7 +278,7 @@ test('Function: isShopNote — shop note is listed', async ({ page }) => {
       }),
     });
   });
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(page.getByText('Quiet stall')).toBeVisible();
   await expect(page.getByText('Cafe Luna')).toBeVisible();
   const shopLinks = page.getByRole('link', { name: '#Shop' });
@@ -246,7 +301,7 @@ test('Function: isShopNote — shop note is listed', async ({ page }) => {
 
 test('Function: stripShopHashtag — raw hashtag is hidden', async ({ page }) => {
   await seedShopList(page);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(page.getByText('Cafe Luna')).toBeVisible();
   await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
 });
@@ -257,10 +312,13 @@ test('Function: ShopsPage — shops loading', async ({ page }) => {
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await held;
-    await route.abort();
-  });
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await held;
+      await route.abort();
+    },
+  );
   await page.goto('/shops');
   await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
   release();
@@ -268,16 +326,34 @@ test('Function: ShopsPage — shops loading', async ({ page }) => {
 
 test('shops empty shows the empty copy', async ({ page }) => {
   await seedSignedIn(page);
-  await fulfillForumMessages(page, [LIVING_ROOM_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ shops: [] }),
+      });
+    },
+  );
   await page.goto('/shops');
   await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
 });
 
 test('shops error shows the load failure', async ({ page }) => {
   await seedSignedIn(page);
-  await fulfillForumMessages(page, [], 503);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/shops/list'),
+    async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shops are unavailable' }),
+      });
+    },
+  );
   await page.goto('/shops');
-  await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+  await expect(page.getByText('Could not load shops. Please try again.')).toBeVisible();
 });
 
 test('menu Shops opens /shops', async ({ page }) => {
@@ -335,7 +411,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
     },
   );
   await stubPlaceMap(page);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -345,7 +421,7 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Cafe Luna is open every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
   await expect(post).toBeEnabled();
   await post.evaluate((element) => {
@@ -517,19 +593,38 @@ async function fillShopAddress(
   await address.getByLabel('Country', { exact: true }).selectOption('CH');
 }
 
+/** Leave the required shop-user step. An empty @ keeps Next off until a handle is entered. */
+async function passRequiredShopUser(
+  page: import('@playwright/test').Page,
+  username = 'ada',
+): Promise<void> {
+  const next = page.getByRole('button', { name: 'Next' });
+  if (await next.isDisabled()) {
+    await page.getByLabel('21.gifts username').fill(username);
+    await expect(next).toBeEnabled();
+  }
+  await next.click();
+}
+
 test('Function: ShopNoteEditControl — moderator sees the pencil; basis does not', async ({
   page,
 }) => {
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
   ).toBeVisible();
 
   await seedAda(page, 'basis');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
-  await page.goto('/shops');
+  const noteEditHere = new URL(page.url());
+  if (noteEditHere.pathname === '/shops' && noteEditHere.hash === '#post') {
+    await page.reload();
+  } else {
+    await page.goto('/welcome');
+    await page.goto('/shops#post');
+  }
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
   ).toHaveCount(0);
@@ -561,7 +656,7 @@ test('Function: fetchShopNoteEdits — opening the pencil shows who edited the n
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Edit shop note' }).click();
   await expect(note.getByRole('heading', { name: 'History' })).toBeVisible();
@@ -572,7 +667,12 @@ test('Function: fetchShopNoteEdits — opening the pencil shows who edited the n
 test('Function: setMessageShopPhotos — moderator save replaces stills', async ({ page }) => {
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [
-    { ...STAFF_SHOP_NOTE_COMPLETE, hasPhoto: true, photoCount: 1 },
+    {
+      ...STAFF_SHOP_NOTE_COMPLETE,
+      hasPhoto: true,
+      photoCount: 1,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
   ]);
   await page.route('**/messages/m-staff/photo*', async (route) => {
     await route.fulfill({
@@ -605,7 +705,7 @@ test('Function: setMessageShopPhotos — moderator save replaces stills', async 
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await expect(note.getByRole('img').first()).toBeVisible();
   await note.getByRole('button', { name: 'Edit shop note' }).click();
@@ -630,7 +730,12 @@ test('Function: setMessageShopPhotos — moderator save replaces stills', async 
 
 test('Function: setMessageShopText — moderator save updates the shop note', async ({ page }) => {
   await seedAda(page, 'moderator');
-  await fulfillForumMessages(page, [STAFF_SHOP_NOTE_COMPLETE]);
+  await fulfillForumMessages(page, [
+    {
+      ...STAFF_SHOP_NOTE_COMPLETE,
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
+  ]);
   await page.route(
     (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
     async (route) => {
@@ -659,7 +764,7 @@ test('Function: setMessageShopText — moderator save updates the shop note', as
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Edit shop note' }).click();
   await note.getByRole('button', { name: 'Next' }).click();
@@ -703,7 +808,7 @@ test('Function: ShopPlaceControl — moderator saves; basis cannot edit', async 
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await expect(note.getByText('Cafe Luna')).toBeVisible();
   await note.getByRole('button', { name: 'Add a place' }).click();
@@ -730,7 +835,13 @@ test('Function: ShopPlaceControl — moderator saves; basis cannot edit', async 
   await fulfillForumMessages(page, [
     { ...STAFF_SHOP_NOTE, place: { lat: 14.6, lng: 120.98, label: 'Happyland' } },
   ]);
-  await page.goto('/shops');
+  const placeHere = new URL(page.url());
+  if (placeHere.pathname === '/shops' && placeHere.hash === '#post') {
+    await page.reload();
+  } else {
+    await page.goto('/welcome');
+    await page.goto('/shops#post');
+  }
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit place' }),
   ).toHaveCount(0);
@@ -758,7 +869,7 @@ test('Function: setMessagePlace — moderator save shows the pin', async ({ page
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
@@ -791,7 +902,7 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await expect(note.getByText('Cafe Luna')).toBeVisible();
   await note.getByRole('button', { name: 'Add an account' }).click();
@@ -818,10 +929,44 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
       shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
     },
   ]);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(
     page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Add an account' }),
   ).toHaveCount(0);
+});
+
+test('Function: ShopAccountSuggestions — picking a person fills the username', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await page.route('**/forum/mentions**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: [{ id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' }],
+      }),
+    });
+  });
+  let saved = 0;
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
+    async (route) => {
+      saved += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STAFF_SHOP_NOTE),
+      });
+    },
+  );
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops#post');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Add an account' }).click();
+  const list = note.getByRole('listbox', { name: 'People' });
+  await expect(list).toBeVisible();
+  await list.getByRole('option', { name: '@ada' }).click();
+  await expect(note.getByLabel('Username')).toHaveValue('@ada');
+  expect(saved).toBe(0);
 });
 
 test('Function: setMessageShopAccount — moderator save shows the account', async ({ page }) => {
@@ -847,7 +992,7 @@ test('Function: setMessageShopAccount — moderator save shows the account', asy
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Add an account' }).click();
   await note.getByLabel('Username').fill('luna');
@@ -861,7 +1006,7 @@ test('Function: ISO_COUNTRIES — country select lists Switzerland', async ({ pa
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -876,7 +1021,7 @@ test('Function: countryDisplayName — confirmed pin shows Switzerland', async (
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -886,7 +1031,7 @@ test('Function: countryDisplayName — confirmed pin shows Switzerland', async (
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
 });
 
@@ -894,7 +1039,7 @@ test('Function: countryOptions — first option is Choose a country', async ({ p
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -908,7 +1053,7 @@ test('Function: shopAddressProblem — Use this place stays off without an addre
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -924,7 +1069,7 @@ test('Function: shopAddressProblems — address errors appear before confirm', a
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
@@ -965,14 +1110,14 @@ test('shop summary keeps Post disabled with an off-screen reason', async ({ page
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
   await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await expect(page.getByText(/Describe the shop in at least 20 more characters/)).toBeVisible();
   await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
-  await page.getByRole('button', { name: 'Next' }).click();
+  await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
   await expect(page.locator('form').getByRole('button', { name: 'Post' })).toBeDisabled();
@@ -984,7 +1129,7 @@ test('Function: shopUsernameProblem — format errors appear while typing before
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1020,6 +1165,37 @@ test('Function: shopUsernameProblem — format errors appear while typing before
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
+test('Function: shopAccountRequiredProblem — an empty username is required while typing', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops#post');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  const username = page.getByLabel('21.gifts username');
+  await expect(page.getByText('Type or pick the 21.gifts username to continue.')).toBeVisible();
+  await expect(username).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await username.fill('_');
+  await expect(
+    page.getByText(
+      /Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit/,
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('Type or pick the 21.gifts username to continue.')).toHaveCount(0);
+  await expect(username).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+});
+
 test('Function: lookupAccountByUsername — a missing account is shown while typing', async ({
   page,
 }) => {
@@ -1033,7 +1209,7 @@ test('Function: lookupAccountByUsername — a missing account is shown while typ
       body: JSON.stringify({ error: 'No account with that username' }),
     });
   });
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1063,7 +1239,7 @@ test('Function: lookupAccountByUsername — a failed lookup does not block Next'
       body: JSON.stringify({ error: 'unavailable' }),
     });
   });
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1147,7 +1323,7 @@ test('Function: isShopApiProblem — a shop-feed account rejection returns to th
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1187,7 +1363,7 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
@@ -1199,7 +1375,7 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
 
   await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -1240,7 +1416,7 @@ test('Function: shopProblemField — editing the username clears its server reje
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1266,7 +1442,7 @@ test('Function: shopNameProblem — a street in the name is rejected', async ({ 
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1282,7 +1458,7 @@ test('Function: shopDescriptionProblem — short shop text keeps Next off', asyn
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1298,7 +1474,7 @@ test('Function: shopDescriptionText — the counter leaves out the shop tag', as
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1314,7 +1490,7 @@ test('Function: shopDescriptionRemaining — remaining characters are shown', as
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1330,7 +1506,7 @@ test('Function: formatShopAddressLine — summary shows the address line', async
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
@@ -1340,7 +1516,7 @@ test('Function: formatShopAddressLine — summary shows the address line', async
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Next' }).click();
+  await passRequiredShopUser(page);
   await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
 });
 
@@ -1352,7 +1528,7 @@ test('Function: formatPlacePinText — table place uses name and address', async
       place: COMPLETE_SHOP_PLACE,
     },
   ]);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(
     page.getByRole('link', {
@@ -1367,7 +1543,7 @@ test('Function: shopPlaceComplete — place step Next stays off until the pin is
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
@@ -1399,7 +1575,7 @@ test('Function: shopApiProblem — a shop 400 is shown at its field', async ({ p
       });
     },
   );
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
@@ -1417,7 +1593,7 @@ test('Function: ShopAddressFields; Function: Field — accessible name and error
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();

@@ -10,6 +10,7 @@ import {
   SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   SHOP_DESCRIPTION_MIN,
+  shopAccountRequiredProblem,
   shopAddressProblem,
   shopAddressProblems,
   shopApiProblem,
@@ -325,6 +326,17 @@ describe('forum-shop', () => {
     });
   });
 
+  describe('shopAccountRequiredProblem', () => {
+    it('requires an empty handle and leaves a typed handle to the format rule', () => {
+      expect(shopAccountRequiredProblem('')).toBe('required');
+      expect(shopAccountRequiredProblem('@')).toBe('required');
+      expect(shopAccountRequiredProblem(' @ ')).toBe('required');
+      expect(shopAccountRequiredProblem('@ ada')).toBe(null);
+      expect(shopAccountRequiredProblem('@alice_21')).toBe(null);
+      expect(shopAccountRequiredProblem('Ada')).toBe(null);
+    });
+  });
+
   describe('shopUsernameProblem', () => {
     it('accepts optional API usernames and rejects invalid starts or lengths', () => {
       expect(shopUsernameProblem('')).toBe(null);
@@ -425,6 +437,7 @@ describe('forum-shop', () => {
       expect(shopApiProblem('Place address is invalid', false)).toBe('placeAddress');
       expect(shopApiProblem('Username is not valid', false)).toBe('usernameInvalid');
       expect(shopApiProblem('No account with that username', false)).toBe('usernameMissing');
+      expect(shopApiProblem('A shop note needs a shop account', false)).toBe('usernameRequired');
       expect(shopApiProblem('Could not post your message', false)).toBe(null);
     });
 
@@ -470,6 +483,7 @@ describe('forum-shop', () => {
       expect(shopProblemField('shopDescriptionControls')).toBe('text');
       expect(shopProblemField('usernameInvalid')).toBe('username');
       expect(shopProblemField('usernameMissing')).toBe('username');
+      expect(shopProblemField('usernameRequired')).toBe('username');
     });
   });
 
@@ -487,6 +501,7 @@ describe('forum-shop', () => {
         'placeAddress',
         'usernameInvalid',
         'usernameMissing',
+        'usernameRequired',
       ];
       expect(Object.keys(SHOP_API_MESSAGE).sort()).toEqual([...problems].sort());
       for (const problem of problems) {

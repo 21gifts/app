@@ -828,24 +828,29 @@ export const shopPhotoSchema = z.object({
   height: z.number().int().positive().nullable(),
 });
 
-/** Runtime schema for `GET /shops/:npub` shop data. */
-export const shopSchema = z.object({
-  npub: z.string().regex(SHOP_NPUB_RE),
-  messageId: z.string().uuid(),
-  name: z.string().min(1),
-  description: z.string(),
-  place: z.object({
-    lat: z.number().gte(-90).lte(90),
-    lng: z.number().gte(-180).lte(180),
-    label: z.string(),
-    address: z.object({
+/** Pin on a public shop. `address` is null until every structured part is set. */
+const shopPlaceSchema = z.object({
+  lat: z.number().gte(-90).lte(90),
+  lng: z.number().gte(-180).lte(180),
+  label: z.string(),
+  address: z
+    .object({
       street: z.string(),
       houseNumber: z.string(),
       postalCode: z.string(),
       city: z.string(),
       country: z.string(),
-    }),
-  }),
+    })
+    .nullable(),
+});
+
+/** Runtime schema for `GET /shops/:npub` shop data. `place` is null without coordinates. */
+export const shopSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  messageId: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string(),
+  place: shopPlaceSchema.nullable(),
   photos: z.array(shopPhotoSchema).max(10),
   payUsername: z.string().min(1).nullable(),
   nip05: z.string().min(1).nullable(),
@@ -857,6 +862,32 @@ export const shopResponseSchema = z.object({ shop: shopSchema });
 
 /** Public listed shop returned by `GET /shops/:npub`. */
 export type Shop = z.infer<typeof shopSchema>;
+
+/** One directory row from `GET /shops`. `place` and `address` may be null. */
+export const shopListItemSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  name: z.string(),
+  place: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+      label: z.string(),
+      address: forumPlaceAddressSchema.nullable(),
+    })
+    .nullable(),
+});
+
+/** One public shop in the directory. */
+export type ShopListItem = z.infer<typeof shopListItemSchema>;
+
+/**
+ * Runtime schema for `GET /shops`.
+ * `nextCursor` is omitted on the last page. Null is not accepted.
+ */
+export const shopListResponseSchema = z.object({
+  shops: z.array(shopListItemSchema),
+  nextCursor: z.string().optional(),
+});
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
