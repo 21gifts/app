@@ -5265,7 +5265,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Offer a gentle catch-up prompt after login, page load, or returning from the background when the signed-in member has unlogged ratings on an active habit.
 - **Inputs:** The existing auth store and `fetchMemberHabits` payload; the API already limits periods to ratable dates in the habit's time zone. No new clock, endpoint, or permission rule.
-- **Actions:** Rate now opens `/habit-tracker?review=1`; Later or Escape closes the prompt for this visit. Ordinary route changes do not reopen it. Reopening checks fresh data. Network failures and requests from an old session never show a prompt.
+- **Actions:** Rate now opens `/habit-tracker?review=1`; Later or Escape closes the prompt while mounted, restoring the previous keyboard focus, and defers it for this visit. Ordinary route changes do not reopen it. Reopening checks fresh data. Network failures and requests from an old session never show a prompt.
 
 The native modal traps keyboard focus and uses the existing `Scrollport`, so the background stays locked. It waits for onboarding and passkey renewal. Archived habits remain read-only and do not trigger reminders. The two explicit text choices are required by this feature's product request; they are not destructive confirm/cancel actions.
 
