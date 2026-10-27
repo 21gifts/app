@@ -2907,10 +2907,11 @@ describe('PosScreen', () => {
       );
       const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
       await pressAmount('68');
+      expect(screen.getByLabelText('Amount').textContent).toBe('68');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       // Only the api reports this charge paid, so the keypad stays and can create the next one.
       await waitFor(() => {
-        expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
+        expect(screen.getByLabelText('Amount').textContent).toBe('0');
       });
       expect(replace).not.toHaveBeenCalled();
       expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
