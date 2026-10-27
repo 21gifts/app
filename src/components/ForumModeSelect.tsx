@@ -159,7 +159,7 @@ function triggerBadge<T extends string>(
  * The `chip` variant is a compact pill for the app chrome row; its open
  * listbox is placed inside the app frame box via `fitBoxInFrame` and a fixed
  * portal, never sized from the viewport (viewport widths escape the rounded
- * frame). Below sm the chip trigger shows a globe icon instead of the label.
+ * frame). Below sm the chip trigger shows a globe icon instead of the label and badge.
  *
  * @param props - Selected value, options, change handler, accessible name, and visual variant.
  * @returns The forum-mode select element.
