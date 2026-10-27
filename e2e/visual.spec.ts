@@ -10197,42 +10197,441 @@ test.describe('onboarding screens', () => {
           aboutMe: null,
           setup: null,
           missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
         }),
       });
     });
+    let created: Record<string, unknown> | null = null;
     await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        created = {
+          id: 'pos-e2e',
+          amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
+          status: 'pending',
+          createdAt: '2026-09-20T12:00:00.000Z',
+          expiresAt: '2026-09-20T12:05:00.000Z',
+        };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      // After the create the api returns the new charge as open.
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          charge: {
-            id: 'pos-e2e',
-            amountSats: 21,
-            status: 'pending',
-            createdAt: '2026-09-20T12:00:00.000Z',
-            expiresAt: '2026-09-20T12:05:00.000Z',
-          },
-          history: [
-            {
-              id: 'pos-e2e',
-              amountSats: 21,
-              status: 'pending',
-              createdAt: '2026-09-20T12:00:00.000Z',
-              expiresAt: '2026-09-20T12:05:00.000Z',
-            },
-          ],
-        }),
+        body: JSON.stringify(
+          created === null
+            ? { charge: null, history: [] }
+            : { charge: created, history: [created] },
+        ),
       });
     });
-    await page.goto('/pos');
+    // The operator types $5.00 on this till: the open charge shows that typed figure.
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(page.getByText("₿5'000")).toBeVisible();
+    await expect(page.getByText('$5.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-open');
+  });
+
+  test('pos cancelled', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    let created: Record<string, unknown> | null = null;
+    let cancelled = false;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      const method = route.request().method();
+      if (method === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        created = {
+          id: 'pos-e2e',
+          amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
+          status: 'pending',
+          createdAt: '2026-09-20T12:00:00.000Z',
+          expiresAt: '2026-09-20T12:05:00.000Z',
+        };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      if (method === 'DELETE') {
+        cancelled = true;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      let body: Record<string, unknown> = { charge: null, history: [] };
+      if (created !== null) {
+        body = cancelled
+          ? { charge: null, history: [{ ...created, status: 'cancelled' }] }
+          : { charge: created, history: [created] };
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    // The operator typed $5.00 on this till and cancels: History keeps that typed figure.
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+    await expect(row.getByText('Cancelled')).toBeVisible();
+    await expect(row).toContainText("\u20bf5'000 · $5.00");
+    await shotScreen(page, 'state-pos-cancelled');
+  });
+
+  test('pos open cancel failed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    let created: Record<string, unknown> | null = null;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      const method = route.request().method();
+      if (method === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        created = {
+          id: 'pos-e2e',
+          amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
+          status: 'pending',
+          createdAt: '2026-09-20T12:00:00.000Z',
+          expiresAt: '2026-09-20T12:05:00.000Z',
+        };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      if (method === 'DELETE') {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      const body =
+        created === null ? { charge: null, history: [] } : { charge: created, history: [created] };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    // The operator typed $5.00 on this till; Cancel fails, so the charge and its typed figure stay.
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText("\u20bf5'000")).toBeVisible();
+    await expect(page.getByText('$5.00')).toBeVisible();
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-open-cancel-failed');
+  });
+
+  test('pos cancelled read failed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    let created: Record<string, unknown> | null = null;
+    let cancelled = false;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      const method = route.request().method();
+      if (method === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        created = {
+          id: 'pos-e2e',
+          amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
+          status: 'pending',
+          createdAt: '2026-09-20T12:00:00.000Z',
+          expiresAt: '2026-09-20T12:05:00.000Z',
+        };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      if (method === 'DELETE') {
+        cancelled = true;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      if (cancelled) {
+        // The read after the cancel fails.
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      const body =
+        created === null ? { charge: null, history: [] } : { charge: created, history: [created] };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    // The cancel goes through but the read after it fails: the till drops the charge itself.
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+    await expect(row.getByText('Cancelled')).toBeVisible();
+    await expect(row).toContainText("\u20bf5'000 · $5.00");
+    await shotScreen(page, 'state-pos-cancelled-read-failed');
+  });
+
+  test('pos open spot', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    const open = {
+      id: 'pos-e2e',
+      amountSats: 2_100,
+      status: 'pending',
+      createdAt: '2026-09-20T12:00:00.000Z',
+      expiresAt: '2026-09-20T12:05:00.000Z',
+    };
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: open, history: [open] }),
+      });
+    });
+    // The charge was typed in bitcoin: no figure is stored, so the current spot stands beside it.
+    await page.goto('/pos');
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText("₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toBeVisible();
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-open-spot');
+  });
+
+  test('pos cancelled spot', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:00:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    const open = {
+      id: 'pos-e2e',
+      amountSats: 2_100,
+      status: 'pending',
+      createdAt: '2026-09-20T12:00:00.000Z',
+      expiresAt: '2026-09-20T12:05:00.000Z',
+    };
+    let cancelled = false;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'DELETE') {
+        cancelled = true;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      const body = cancelled
+        ? { charge: null, history: [{ ...open, status: 'cancelled' }] }
+        : { charge: open, history: [open] };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+    // Cancel on a charge stored without a figure: History lists it as Cancelled, with the current spot.
+    await page.goto('/pos');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+    await expect(row.getByText('Cancelled')).toBeVisible();
+    await expect(row).toContainText("₿2'100 · $2.10");
+    await shotScreen(page, 'state-pos-cancelled-spot');
   });
 
   test('pos paid', async ({ page }) => {
@@ -10277,18 +10676,230 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toHaveCount(2);
-    await expect(page.getByText('$0.02').first()).toBeVisible();
+    const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('₿21')).toBeVisible();
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(dialog.getByText('$0.02')).toBeVisible();
+    await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
       '/pos/amount',
     );
-    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
-    await expect(page.getByText('Paid ✓ 12:00 PM')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Done' })).toBeVisible();
     await shotScreen(page, 'state-pos-paid');
+  });
+
+  test('pos paid closed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const paid = {
+      id: 'pos-e2e',
+      amountSats: 21,
+      status: 'paid',
+      createdAt: '2026-09-20T12:00:00.000Z',
+      expiresAt: '2026-09-20T12:05:00.000Z',
+      paidAt: '2026-09-20T12:00:40.000Z',
+    };
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: paid, history: [paid] }),
+      });
+    });
+    await page.goto('/pos');
+    await page
+      .getByRole('alertdialog', { name: 'Paid' })
+      .getByRole('button', { name: 'Done' })
+      .click();
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    await expect(page.getByText('Paid ✓ 12:00 PM')).toBeVisible();
+    await shotScreen(page, 'state-pos-paid-closed');
+  });
+
+  test('pos paid fiat', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            charge: {
+              id: 'pos-e2e',
+              amountSats,
+              // The api stores the typed figure with the charge and returns it.
+              amountCurrency,
+              amount,
+              status: 'pending',
+              createdAt: '2026-09-20T12:01:00.000Z',
+              expiresAt: '2026-09-20T12:06:00.000Z',
+            },
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    // The operator types $5.00 on this till: the confirmation shows that typed figure.
+    await page.goto('/pos/amount?visual=pos-received');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("₿5'000")).toBeVisible();
+    await expect(dialog.getByText('$5.00')).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'New payment' })).toBeVisible();
+    await shotScreen(page, 'state-pos-paid-fiat');
+  });
+
+  test('pos paid fiat closed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    let paid: Record<string, unknown> | null = null;
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        const {
+          amountSats,
+          amountCurrency = null,
+          amount = null,
+        } = route.request().postDataJSON() as {
+          amountSats: number;
+          amountCurrency?: string;
+          amount?: string;
+        };
+        const created = {
+          id: 'pos-e2e',
+          amountSats,
+          // The api stores the typed figure with the charge and returns it.
+          amountCurrency,
+          amount,
+          status: 'pending',
+          createdAt: '2026-09-20T12:01:00.000Z',
+          expiresAt: '2026-09-20T12:06:00.000Z',
+        };
+        paid = { ...created, status: 'paid', paidAt: '2026-09-20T12:01:00.000Z' };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ charge: created }),
+        });
+        return;
+      }
+      // After the payment the api returns the charge as paid.
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          paid === null ? { charge: null, history: [] } : { charge: paid, history: [paid] },
+        ),
+      });
+    });
+    // The operator typed $5.00 on this till; after Done, History keeps that typed figure.
+    await page.goto('/pos/amount?visual=pos-received');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await page
+      .getByRole('alertdialog', { name: 'Paid' })
+      .getByRole('button', { name: 'Done' })
+      .click();
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+    await expect(row.getByText('Paid ✓ 12:01 PM')).toBeVisible();
+    await expect(row).toContainText("₿5'000 · $5.00");
+    await shotScreen(page, 'state-pos-paid-fiat-closed');
   });
 
   test('state /pos history', async ({ page }) => {
@@ -10357,7 +10968,7 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
-    await expect(history.getByText("₿2'100")).toBeVisible();
+    // No figure is stored with these charges: each shows the current spot beside the bitcoin.
     await expect(history.getByText('$2.10')).toBeVisible();
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
@@ -10939,7 +11550,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({
           charge: {
             id: 'pos-e2e',
-            amountSats: 21,
+            amountSats: 2_100,
             status: 'pending',
             createdAt: '2026-09-20T12:00:00.000Z',
             expiresAt: '2026-09-20T12:05:00.000Z',
@@ -10947,7 +11558,7 @@ test.describe('onboarding screens', () => {
           history: [
             {
               id: 'pos-e2e',
-              amountSats: 21,
+              amountSats: 2_100,
               status: 'pending',
               createdAt: '2026-09-20T12:00:00.000Z',
               expiresAt: '2026-09-20T12:05:00.000Z',
@@ -10962,7 +11573,9 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(page.getByText("₿2'100")).toBeVisible();
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(page.getByText('$2.10')).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
 
@@ -11025,7 +11638,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    // No figure is stored with this charge: the current spot stands beside the bitcoin.
+    await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });
