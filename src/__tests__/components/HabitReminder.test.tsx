@@ -65,6 +65,7 @@ beforeEach(() => {
   Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute('open', '');
+    this.querySelector('button')?.focus();
   };
   HTMLDialogElement.prototype.close = function () {
     this.removeAttribute('open');
@@ -87,7 +88,7 @@ describe('HabitReminder', () => {
         'In deinem Habit Tracker sind noch Bewertungen offen. Möchtest du sie jetzt nachtragen?',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Später' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Später' })).toBe(document.activeElement);
     fireEvent.click(screen.getByRole('button', { name: 'Jetzt eintragen' }));
     expect(push).toHaveBeenCalledWith('/habit-tracker?review=1');
     expect(screen.queryByRole('dialog')).toBeNull();

@@ -89,7 +89,10 @@ export function HabitReminder(): ReactElement | null {
     pendingFor.accountId === accountId;
   useEffect(() => {
     const element = dialog.current;
-    if (visible && element !== null && !element.open) element.showModal();
+    if (visible && element !== null && !element.open) {
+      element.showModal();
+      element.querySelector<HTMLButtonElement>('[data-habit-reminder-later]')!.focus();
+    }
     return () => {
       if (element?.open) element.close();
     };
@@ -122,7 +125,12 @@ export function HabitReminder(): ReactElement | null {
           >
             {t('habit.reminderNow')}
           </Button>
-          <Button type="button" variant="secondary" autoFocus onClick={() => setPendingFor(null)}>
+          <Button
+            type="button"
+            variant="secondary"
+            data-habit-reminder-later
+            onClick={() => setPendingFor(null)}
+          >
             {t('habit.reminderLater')}
           </Button>
         </div>
