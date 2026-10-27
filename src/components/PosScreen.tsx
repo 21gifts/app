@@ -111,8 +111,8 @@ function withoutOpenCharge(state: PosState): PosState {
   };
 }
 
-/** Till reads started and the newest one whose answer is on screen. */
-type TillReads = { started: number; applied: number };
+/** Till reads started, the newest answer on screen, and the oldest a cancel still shows. */
+type TillReads = { started: number; applied: number; floor: number };
 
 /** Number the next till read. */
 function startRead(reads: { current: TillReads }): number {
@@ -121,15 +121,16 @@ function startRead(reads: { current: TillReads }): number {
 }
 
 /**
- * Apply the answer of read `seq` only when no newer read is already on
- * screen, so a slow refresh cannot replace a newer answer (such as a paid
- * charge) with an older one.
+ * Apply the answer of read `seq` only when it is still new enough to show.
+ * A slow refresh cannot replace a newer answer, and a read already in flight
+ * cannot put a charge back after a successful cancel moved the floor past it.
  */
 function applyRead(reads: { current: TillReads }, seq: number, apply: () => void): void {
-  if (seq > reads.current.applied) {
-    reads.current.applied = seq;
-    apply();
+  if (seq < reads.current.floor || seq <= reads.current.applied) {
+    return;
   }
+  reads.current.applied = seq;
+  apply();
 }
 
 /** Create or cancel that is still talking to the server, across page changes. */
@@ -598,7 +599,7 @@ function usePosTillState(): PosTillState {
   const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
-  const reads = useRef<TillReads>({ started: 0, applied: 0 });
+  const reads = useRef<TillReads>({ started: 0, applied: 0, floor: 0 });
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const rateDay = useSpotRate(session !== null);
@@ -808,7 +809,10 @@ function usePosTillState(): PosTillState {
       if (
         memory.late.length > 0 &&
         lateRead.current !== null &&
-        reads.current.applied >= lateRead.current
+        reads.current.applied >= lateRead.current &&
+        // A successful cancel raises the floor above the read it overtook. That
+        // read is not on screen, and this later answer must not settle its payment.
+        lateRead.current >= reads.current.floor
       ) {
         lateRead.current = null;
         resolveLate(memory, state);
@@ -1186,8 +1190,9 @@ function usePosTillState(): PosTillState {
         }
         return;
       }
-      // The cancel went through. Drop the charge now and take the next read
-      // number, so a refresh already in flight cannot put that charge back.
+      // The cancel went through. Drop the charge now. Reads already in flight
+      // stay below the floor, so they cannot put that charge back. The floor is
+      // not an answer: the late-minute read this cancel overtook still settles.
       wentThrough = true;
       whenCurrent(generation, mine, () => {
         setTill((prev) =>
@@ -1198,7 +1203,7 @@ function usePosTillState(): PosTillState {
         );
       });
       reconcileSeq = startRead(reads);
-      reads.current.applied = reconcileSeq;
+      reads.current.floor = reconcileSeq;
     })();
     trackTillWrite(work);
     try {
@@ -1214,7 +1219,8 @@ function usePosTillState(): PosTillState {
       return;
     }
     const deliver = (apply: () => void): void => {
-      if (reads.current.applied !== reconcileSeq) {
+      // A newer read is already on screen.
+      if (reads.current.applied >= reconcileSeq) {
         return;
       }
       whenCurrent(generation, mine, apply);
@@ -1222,6 +1228,7 @@ function usePosTillState(): PosTillState {
     try {
       const next = await fetchPosState(session);
       deliver(() => {
+        reads.current.applied = reconcileSeq;
         setTill({ state: next, session });
       });
     } catch {

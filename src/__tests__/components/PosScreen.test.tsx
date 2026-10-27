@@ -3502,6 +3502,79 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('gives a late-minute payment held before Cancel to the newer charge the overtaken read shows', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      // Only the follow-up shows this row, so the test can see that read land.
+      const marker = {
+        ...ended,
+        id: 'marker',
+        amountSats: 7,
+        status: 'expired' as const,
+        createdAt: new Date(now - 400_000).toISOString(),
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ charge: null });
+          }
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          if (reads > 3) {
+            return jsonResponse({
+              charge: null,
+              history: [{ ...ended, status: 'cancelled' }, marker],
+            });
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      // The follow-up is on screen. The payment is not confirmed yet: the read
+      // Cancel overtook is the one that says which charge took it.
+      expect(await screen.findByText('₿7')).toBeTruthy();
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        answerLateRead?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+      expect(within(dialog).queryByText('$0.02')).toBeNull();
+    });
+
     it('gives the charge before no late-minute payment made after a newer charge took one', async () => {
       const now = Date.now();
       const ended = {
