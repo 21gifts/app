@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { deviceTimeZoneHeader } from '@/lib/api';
 
+/** In-tab catch-up intent when the habit tracker is already the current route. */
+export const HABIT_REVIEW_EVENT = '21gifts:habit-review';
+
 const LOAD_ERROR = 'Could not load the habit tracker. Please try again.';
 const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
 
