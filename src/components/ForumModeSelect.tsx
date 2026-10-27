@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Globe } from 'lucide-react';
 import {
   useContext,
   useEffect,
@@ -159,7 +159,7 @@ function triggerBadge<T extends string>(
  * The `chip` variant is a compact pill for the app chrome row; its open
  * listbox is placed inside the app frame box via `fitBoxInFrame` and a fixed
  * portal, never sized from the viewport (viewport widths escape the rounded
- * frame).
+ * frame). Below sm the chip trigger shows a globe icon instead of the label.
  *
  * @param props - Selected value, options, change handler, accessible name, and visual variant.
  * @returns The forum-mode select element.
@@ -391,8 +391,20 @@ export function ForumModeSelect<T extends string>(props: {
         onKeyDown={onTriggerKeyDown}
       >
         <span className="flex min-w-0 items-center">
-          {variant === 'chip' ? <span className="truncate">{selectedLabel}</span> : selectedLabel}
-          {optionBadge(triggerBadge(options))}
+          {variant === 'chip' ? (
+            <>
+              <Globe aria-hidden="true" className="h-4 w-4 shrink-0 text-app-muted sm:hidden" />
+              <span className="hidden truncate sm:inline">
+                {selectedLabel}
+                {optionBadge(triggerBadge(options))}
+              </span>
+            </>
+          ) : (
+            <>
+              {selectedLabel}
+              {optionBadge(triggerBadge(options))}
+            </>
+          )}
         </span>
         <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-app-muted" />
       </button>

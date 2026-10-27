@@ -825,7 +825,7 @@ Visible text is the selected label. `ChevronDown` is `h-4 w-4 shrink-0 text-app-
 flex min-h-11 max-w-48 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 py-1 text-left text-sm text-app-fg hover:bg-app-hover
 ```
 
-The chip trigger is `rounded-full` by design (still not `bg-app-btn`).
+The chip trigger is `rounded-full` by design (still not `bg-app-btn`). Below `sm` the trigger shows a globe icon instead of the label and badge.
 
 **Panel** (only while open, `role="listbox"` `id="forum-mode-listbox"`):
 

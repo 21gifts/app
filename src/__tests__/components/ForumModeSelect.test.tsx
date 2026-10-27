@@ -56,6 +56,9 @@ describe('ForumModeSelect', () => {
     const trigger = screen.getByRole('combobox', { name: 'Forum view' });
     const label = trigger.querySelector('.truncate');
     expect(label?.textContent).toBe('Most popular');
+    expect(trigger.querySelector('svg.lucide-globe')).not.toBeNull();
+    expect(label?.className).toContain('hidden');
+    expect(label?.className).toContain('sm:inline');
     fireEvent.click(trigger);
     const listbox = screen.getByRole('listbox');
     expect(listbox.className).toContain('absolute');
