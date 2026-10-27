@@ -678,7 +678,7 @@ export function MemberHabits(): ReactElement {
                 type="button"
                 aria-expanded={expanded[group.accountId] === true}
                 aria-controls={`habit-group-${group.accountId}`}
-                className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-app-border px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-app-border px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-focus"
                 onClick={() =>
                   setExpanded((current) => ({
                     ...current,
