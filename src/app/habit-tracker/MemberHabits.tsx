@@ -273,8 +273,13 @@ export function MemberHabits(): ReactElement {
       setReviewRequest((current) => current + 1);
     };
     if (review) openReview();
-    window.addEventListener(HABIT_REVIEW_EVENT, openReview);
-    return () => window.removeEventListener(HABIT_REVIEW_EVENT, openReview);
+    const refreshReview = (): void => {
+      openReview();
+      // The reminder may have found periods that arrived while this view stayed mounted.
+      setAttempt((current) => current + 1);
+    };
+    window.addEventListener(HABIT_REVIEW_EVENT, refreshReview);
+    return () => window.removeEventListener(HABIT_REVIEW_EVENT, refreshReview);
   }, [review, accountId]);
 
   // Cleared in this render, so the previous account is not painted.

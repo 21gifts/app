@@ -134,6 +134,52 @@ test('Function: HabitPeriods — ten rows, scrollable full history, keyboard clo
   await expect(tracker.getByRole('listitem')).toHaveCount(10);
 });
 
+test('Function: HabitReminder — returning to the same catch-up URL reloads newly pending ratings', async ({
+  page,
+}) => {
+  await seed(page);
+  let pending = false;
+  await page.route('**/habits', async (route) =>
+    route.fulfill({
+      json: {
+        reviewWeek: { start: '2026-10-05' },
+        habits: [
+          {
+            ...habit,
+            periods: habit.periods.map((period) =>
+              pending ? period : { ...period, logged: true, status: 'achieved' },
+            ),
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto('/habit-tracker?review=1');
+  await expect(page.getByRole('heading', { name: 'Walk', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ada', exact: true }).click();
+
+  pending = true;
+  await page.evaluate(() => {
+    for (const state of ['hidden', 'visible']) {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: state });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }
+  });
+  await page
+    .getByRole('dialog', { name: 'A moment for your habits' })
+    .getByRole('button', { name: 'Rate now' })
+    .click();
+  const history = page.getByRole('dialog', { name: 'Walk: All ratings' });
+  await expect(history).toBeVisible();
+  const old = history.getByRole('listitem').filter({ hasText: '2026-10-01' });
+  await expect(old.getByRole('button', { name: 'Achieved', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  );
+  await expect(page).toHaveURL(/habit-tracker\?review=1$/);
+});
+
 for (const dismissal of ['Later', 'Escape'] as const) {
   test(`Function: HabitReminder — ${dismissal} restores focus after returning to the app`, async ({
     page,

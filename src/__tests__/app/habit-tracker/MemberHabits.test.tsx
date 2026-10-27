@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
 import { useAuthStore } from '@/stores/auth-store';
+import { HABIT_REVIEW_EVENT } from '@/lib/member-habits';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const navigation = vi.hoisted(() => ({ query: '' }));
@@ -241,6 +242,32 @@ describe('MemberHabits', () => {
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
     expect(await screen.findByRole('heading', { name: 'Walk' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ada' }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Bea' }).getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('reloads newly available periods when catch-up is requested on the same mounted tracker', async () => {
+    navigation.query = 'review=1';
+    const data = payload();
+    data.habits[0]!.periods = Array.from({ length: 10 }, (_, i) =>
+      period(`2026-10-${String(i + 2).padStart(2, '0')}`, 'achieved'),
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(data)),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    await screen.findByRole('heading', { name: 'Walk' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Ada' }));
+
+    data.habits[0]!.periods.push(period('2026-10-01', null));
+    act(() => window.dispatchEvent(new Event(HABIT_REVIEW_EVENT)));
+
+    const history = await screen.findByRole('dialog', { name: 'Walk: All ratings' });
+    expect(within(history).getByText('2026-10-01')).toBeTruthy();
+    expect(within(history).getAllByRole('listitem')).toHaveLength(11);
     expect(screen.getByRole('button', { name: 'Ada' }).getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('button', { name: 'Bea' }).getAttribute('aria-expanded')).toBe('false');
   });
