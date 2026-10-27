@@ -2879,7 +2879,7 @@ describe('PosScreen', () => {
       return alerted;
     }
 
-    it('confirms at once a charge the lost create made that is already paid', async () => {
+    it('keeps the amount page when a lost create is already paid, and the till confirms that read', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
       const paidMeanwhile = {
@@ -2908,9 +2908,12 @@ describe('PosScreen', () => {
       const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
       await pressAmount('68');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      // Only the api reports this charge paid, so the keypad stays and can create the next one.
       await waitFor(() => {
-        expect(replace).toHaveBeenCalledWith('/pos');
+        expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
       });
+      expect(replace).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
       expect(screen.queryByRole('alert')).toBeNull();
       amountPage.unmount();
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');

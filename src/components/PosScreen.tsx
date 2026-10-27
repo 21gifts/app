@@ -1080,12 +1080,10 @@ function usePosTillState(): PosTillState {
             });
             if (made !== null) {
               // The charge was made: the till shows it, with the figure stored on it, and counts the
-              // payments kept meanwhile.
-              if (made.status === 'paid') {
-                // Already paid while the answer was lost: confirm it like a payment the wallet saw.
-                creating.paid.set(made.id, made);
-                settledChanged();
-              }
+              // payments kept meanwhile. A read that already shows it paid is only the api's
+              // report. This tab's wallet did not see that payment, so it is not stored as one
+              // the wallet paid. The amount page can create the next charge.
+              // The till confirms it from the read.
               return;
             }
           } catch {
