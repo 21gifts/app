@@ -154,8 +154,8 @@ let heldPayments: WalletPayment[] = [];
  * The received payments the {@link onPaymentReceived} listeners heard, by id
  * in the order told, with the phrase they belong to: whichever way a payment
  * is reported or listed, and across reconnects, they hear it once, and a
- * listener that subscribes later hears them all first. A sign-out or another
- * phrase starts it over.
+ * listener that subscribes later hears them all first. Another phrase starts
+ * it over. A sign-out forgets them only when it is still the latest run.
  */
 let toldReceived: { mnemonic: string; payments: Map<string, WalletPayment> } | null = null;
 
