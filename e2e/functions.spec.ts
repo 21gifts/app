@@ -13552,6 +13552,7 @@ test('Function: shownPaySheetError — a loading submit stays until the rate req
   const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
   await meDone;
+  await openHabitGroups(page);
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
   await expect(cont).toBeEnabled();
