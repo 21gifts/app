@@ -1155,6 +1155,8 @@ function usePosTillState(): PosTillState {
     // The charge on screen: the arming effect may not have armed it yet when Cancel was pressed.
     const cancelled = charge;
     cancelling.open = null;
+    let wentThrough = false;
+    let reconcileSeq = 0;
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
@@ -1184,29 +1186,19 @@ function usePosTillState(): PosTillState {
         }
         return;
       }
-      const seq = startRead(reads);
-      try {
-        const next = await fetchPosState(session);
-        whenCurrent(generation, mine, () => {
-          applyRead(reads, seq, () => {
-            setTill({ state: next, session });
-          });
-        });
-      } catch {
-        whenCurrent(generation, mine, () => {
-          // The api cancelled: without its answer the till still drops the charge it showed.
-          applyRead(reads, seq, () => {
-            setTill((prev) =>
-              /* v8 ignore next 3 -- Cancel shows only on this session's answered till */
-              prev.session === session && prev.state !== null
-                ? { state: withoutOpenCharge(prev.state), session }
-                : prev,
-            );
-          });
-          readFailed.current = true;
-          setErrorState({ message: t('pos.error'), session });
-        });
-      }
+      // The cancel went through. Drop the charge now and take the next read
+      // number, so a refresh already in flight cannot put that charge back.
+      wentThrough = true;
+      whenCurrent(generation, mine, () => {
+        setTill((prev) =>
+          /* v8 ignore next 3 -- Cancel shows only on this session's answered till */
+          prev.session === session && prev.state !== null
+            ? { state: withoutOpenCharge(prev.state), session }
+            : prev,
+        );
+      });
+      reconcileSeq = startRead(reads);
+      reads.current.applied = reconcileSeq;
     })();
     trackTillWrite(work);
     try {
@@ -1215,6 +1207,28 @@ function usePosTillState(): PosTillState {
       busyRef.current = false;
       setBusy(false);
       runSkippedLoad();
+    }
+    // The follow-up read only reconciles. It is not part of the cancel the next
+    // load waits for, so a read that never returns leaves the till free.
+    if (!wentThrough) {
+      return;
+    }
+    const deliver = (apply: () => void): void => {
+      if (reads.current.applied !== reconcileSeq) {
+        return;
+      }
+      whenCurrent(generation, mine, apply);
+    };
+    try {
+      const next = await fetchPosState(session);
+      deliver(() => {
+        setTill({ state: next, session });
+      });
+    } catch {
+      deliver(() => {
+        readFailed.current = true;
+        setErrorState({ message: t('pos.error'), session });
+      });
     }
   }
 

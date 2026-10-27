@@ -2687,6 +2687,79 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('drops a cancelled charge before the follow-up read returns', async () => {
+      let releaseRead: ((value: Response) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return Promise.resolve(jsonResponse({ charge: null }));
+          }
+          reads += 1;
+          if (reads === 1) {
+            return Promise.resolve(jsonResponse({ charge: OPEN, history: [OPEN] }));
+          }
+          return new Promise<Response>((resolve) => {
+            releaseRead = resolve;
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(releaseRead).toBeDefined();
+        expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      });
+      expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.getByText('Cancelled')).toBeTruthy();
+      await act(async () => {
+        releaseRead?.(jsonResponse({ charge: null, history: [{ ...OPEN, status: 'cancelled' }] }));
+      });
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('keeps a newer till read when the read after a successful cancel is late', async () => {
+      let releaseRead: ((value: Response) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return Promise.resolve(jsonResponse({ charge: null }));
+          }
+          reads += 1;
+          if (reads === 1) {
+            return Promise.resolve(jsonResponse({ charge: OPEN, history: [OPEN] }));
+          }
+          if (reads === 2) {
+            return new Promise<Response>((resolve) => {
+              releaseRead = resolve;
+            });
+          }
+          return Promise.resolve(
+            jsonResponse({
+              charge: null,
+              history: [{ ...OPEN, id: 'newer', amountSats: 42, status: 'cancelled' }],
+            }),
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(releaseRead).toBeDefined();
+      });
+      showTab();
+      expect(await screen.findByText('₿42')).toBeTruthy();
+      await act(async () => {
+        releaseRead?.(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      });
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.getByText('₿42')).toBeTruthy();
+    });
+
     it('shows the till error when the read after a cancel that went through fails', async () => {
       let reads = 0;
       vi.stubGlobal(
