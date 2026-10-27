@@ -711,6 +711,21 @@ describe('resyncPushSubscription VAPID key change', () => {
     expect(pushRenewalPending()).toBe(false);
   });
 
+  it('keeps a reported change owed when the key fetch fails', async () => {
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null), subscribe: vi.fn() },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(fetchVapidPublicKey).mockRejectedValueOnce(new Error('offline'));
+    await expect(resyncPushSubscription('sess', true)).rejects.toThrow('offline');
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(pushRenewalPending()).toBe(true);
+  });
+
   it('is a no-op without registering a worker when none is registered', async () => {
     const register = vi.fn();
     vi.stubGlobal('navigator', {

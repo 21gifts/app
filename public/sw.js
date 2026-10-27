@@ -279,8 +279,10 @@ function previousServerKey(event) {
 // The api accepts a subscription only with a member session, which this worker
 // does not hold. Subscribe again with the same key, then ask open windows to
 // post it; a window also subscribes with the current key when this worker
-// could not. With no window open, the next app start posts it. The api drops
-// the old endpoint once the push service reports it gone.
+// could not. With no window open, the next app start posts a subscription
+// this worker restored; one it could not restore has to be turned on again in
+// the profile. The api drops the old endpoint once the push service reports it
+// gone.
 self.addEventListener('pushsubscriptionchange', (event) => {
   const key = previousServerKey(event);
   const resubscribed =

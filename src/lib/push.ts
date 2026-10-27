@@ -336,6 +336,10 @@ export async function resyncPushSubscription(
     if (subscription !== null && body === null) {
       return;
     }
+    if (subscription === null) {
+      // Owed before the key fetch, so a failed fetch is retried on the next start.
+      setPushRenewPending(true);
+    }
     const applicationServerKey = new Uint8Array(
       vapidPublicKeyToBytes(await fetchVapidPublicKey(sessionToken)),
     );
