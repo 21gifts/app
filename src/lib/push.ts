@@ -159,6 +159,47 @@ function runPushOp(op: () => Promise<void>): Promise<void> {
   return run;
 }
 
+/** Endpoint and keys of a browser subscription, or `null` when one is missing. */
+function subscriptionBody(
+  subscription: PushSubscription,
+): { endpoint: string; keys: { p256dh: string; auth: string } } | null {
+  const json = subscription.toJSON();
+  const endpoint = json.endpoint;
+  const p256dh = json.keys?.['p256dh'];
+  const auth = json.keys?.['auth'];
+  if (
+    typeof endpoint !== 'string' ||
+    endpoint === '' ||
+    typeof p256dh !== 'string' ||
+    p256dh === '' ||
+    typeof auth !== 'string' ||
+    auth === ''
+  ) {
+    return null;
+  }
+  return { endpoint, keys: { p256dh, auth } };
+}
+
+/**
+ * Whether a subscription was made with a different application server key.
+ *
+ * @param subscription - Existing browser subscription.
+ * @param currentKey - Current VAPID public key bytes.
+ * @returns False when the browser does not expose the key, so an unknown key
+ * never forces a new subscription on every start.
+ */
+function subscriptionKeyDiffers(subscription: PushSubscription, currentKey: Uint8Array): boolean {
+  const raw = subscription.options?.applicationServerKey;
+  if (raw === null || raw === undefined) {
+    return false;
+  }
+  const stored = new Uint8Array(raw);
+  if (stored.length !== currentKey.length) {
+    return true;
+  }
+  return stored.some((byte, index) => byte !== currentKey[index]);
+}
+
 /**
  * Subscribe with the VAPID key and POST the endpoint to the api.
  *
@@ -172,26 +213,13 @@ async function subscribeAndPost(sessionToken: string): Promise<void> {
     userVisibleOnly: true,
     applicationServerKey,
   });
-  const json = subscription.toJSON();
-  const endpoint = json.endpoint;
-  const p256dh = json.keys?.['p256dh'];
-  const auth = json.keys?.['auth'];
-  if (
-    typeof endpoint !== 'string' ||
-    endpoint === '' ||
-    typeof p256dh !== 'string' ||
-    p256dh === '' ||
-    typeof auth !== 'string' ||
-    auth === ''
-  ) {
+  const body = subscriptionBody(subscription);
+  if (body === null) {
     await subscription.unsubscribe().catch(() => undefined);
     throw new Error('Invalid subscription');
   }
   try {
-    await postPushSubscription(sessionToken, {
-      endpoint,
-      keys: { p256dh, auth },
-    });
+    await postPushSubscription(sessionToken, body);
   } catch (err) {
     await subscription.unsubscribe().catch(() => undefined);
     throw err;
@@ -226,13 +254,18 @@ export async function enablePush(sessionToken: string): Promise<void> {
 
 /**
  * Re-POST an existing Web Push subscription when OS permission is already
- * granted. No-op when Push APIs are missing, permission is not `granted`, or
- * there is no local subscription (opt-out). Does not call `requestPermission`
- * or `subscribe()`. POST failure leaves the local subscription in place.
+ * granted. No-op when Push APIs are missing, permission is not `granted`, no
+ * service worker is registered, or there is no local subscription (opt-out).
+ * Does not register the worker or call `requestPermission`. When the
+ * subscription was made with a different VAPID key than the api's current one,
+ * unsubscribe, subscribe again with the current key, POST the new
+ * subscription, and DELETE the old endpoint. POST failure leaves the local
+ * subscription in place.
  *
  * @param sessionToken - Bearer session token.
- * @throws When persisting the existing subscription fails (503
- * `Push is not configured`, or the api error on other non-2xx).
+ * @throws When fetching the VAPID key or persisting the subscription fails (503
+ * `Push is not configured`, or the api error on other non-2xx), or with
+ * `Invalid subscription` when a new subscription omits endpoint or keys.
  */
 export async function resyncPushSubscription(sessionToken: string): Promise<void> {
   const epoch = pushEpoch;
@@ -249,7 +282,10 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
     ) {
       return;
     }
-    const registration = await registerPushWorker();
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return;
+    }
     const subscription = await registration.pushManager.getSubscription();
     if (subscription === null) {
       return;
@@ -257,37 +293,56 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
     if (epoch !== pushEpoch) {
       return;
     }
-    const json = subscription.toJSON();
-    const endpoint = json.endpoint;
-    const p256dh = json.keys?.['p256dh'];
-    const auth = json.keys?.['auth'];
-    if (
-      typeof endpoint !== 'string' ||
-      endpoint === '' ||
-      typeof p256dh !== 'string' ||
-      p256dh === '' ||
-      typeof auth !== 'string' ||
-      auth === ''
-    ) {
+    const body = subscriptionBody(subscription);
+    if (body === null) {
       return;
     }
-    await postPushSubscription(sessionToken, {
-      endpoint,
-      keys: { p256dh, auth },
+    const applicationServerKey = new Uint8Array(
+      vapidPublicKeyToBytes(await fetchVapidPublicKey(sessionToken)),
+    );
+    if (epoch !== pushEpoch) {
+      return;
+    }
+    if (!subscriptionKeyDiffers(subscription, applicationServerKey)) {
+      await postPushSubscription(sessionToken, body);
+      return;
+    }
+    // The push service rejects sends signed with the new key for a
+    // subscription bound to the old one, so replace it.
+    await subscription.unsubscribe().catch(() => undefined);
+    const next = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
     });
+    const nextBody = subscriptionBody(next);
+    if (nextBody === null) {
+      await next.unsubscribe().catch(() => undefined);
+      throw new Error('Invalid subscription');
+    }
+    await postPushSubscription(sessionToken, nextBody);
+    if (nextBody.endpoint !== body.endpoint) {
+      await deletePushSubscription(sessionToken, body.endpoint).catch(() => undefined);
+    }
   });
 }
 
 /**
  * Disable Web Push for the signed-in member: DELETE the endpoint on the api
- * (when a subscription exists) and unsubscribe locally.
+ * (when a subscription exists) and unsubscribe locally. Never registers the
+ * service worker; no-op when none is registered or Push APIs are missing.
  *
  * @param sessionToken - Bearer session token.
  */
 export async function disablePush(sessionToken: string): Promise<void> {
   pushEpoch += 1;
   await runPushOp(async () => {
-    const registration = await registerPushWorker();
+    if (typeof navigator.serviceWorker === 'undefined') {
+      return;
+    }
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return;
+    }
     const subscription = await registration.pushManager.getSubscription();
     if (subscription === null) {
       return;

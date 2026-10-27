@@ -1,5 +1,6 @@
 /* Push-only service worker for 21.gifts. No asset or offline cache.
-   A notification click stores a short-lived 21gifts-push-open path. */
+   A notification click stores a short-lived 21gifts-push-open path.
+   A browser-side subscription change subscribes again and tells open windows. */
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -263,5 +264,38 @@ self.addEventListener('notificationclick', (event) => {
         return undefined;
       }),
     ),
+  );
+});
+
+/** Key the lost subscription was made with, when the browser still exposes it. */
+function previousServerKey(event) {
+  const old = event.oldSubscription;
+  if (old && old.options && old.options.applicationServerKey) {
+    return old.options.applicationServerKey;
+  }
+  return null;
+}
+
+// The api accepts a subscription only with a member session, which this worker
+// does not hold. Subscribe again with the same key, then ask open windows to
+// post it; with no window open, the next app start posts it. The api drops the
+// old endpoint once the push service reports it gone.
+self.addEventListener('pushsubscriptionchange', (event) => {
+  const key = previousServerKey(event);
+  const resubscribed =
+    event.newSubscription || key === null
+      ? Promise.resolve()
+      : self.registration.pushManager
+          .subscribe({ userVisibleOnly: true, applicationServerKey: key })
+          .catch(() => undefined);
+  event.waitUntil(
+    resubscribed
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then((clientList) => {
+        for (const client of clientList) {
+          client.postMessage({ type: '21gifts-push-subscription-change' });
+        }
+      })
+      .catch(() => undefined),
   );
 });

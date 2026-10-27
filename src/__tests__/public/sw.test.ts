@@ -294,3 +294,103 @@ describe('service worker notification click behavior', () => {
     expect(openWindow).toHaveBeenCalledWith('https://21.gifts/messages?c=c-1');
   });
 });
+
+type SubscriptionChangeListener = (event: {
+  oldSubscription?: { options?: { applicationServerKey?: ArrayBuffer | null } } | null;
+  newSubscription?: unknown;
+  waitUntil: (pending: Promise<unknown>) => void;
+}) => void;
+
+function bootSubscriptionChangeWorker(subscribe: ReturnType<typeof vi.fn>): {
+  change: (event: Omit<Parameters<SubscriptionChangeListener>[0], 'waitUntil'>) => Promise<void>;
+  postMessage: ReturnType<typeof vi.fn>;
+  matchAll: ReturnType<typeof vi.fn>;
+} {
+  const listeners: Record<string, SubscriptionChangeListener> = {};
+  const postMessage = vi.fn();
+  const matchAll = vi.fn(async () => [{ postMessage }]);
+  const sandbox = {
+    self: {
+      location: { origin: 'https://21.gifts' },
+      addEventListener(type: string, fn: SubscriptionChangeListener) {
+        listeners[type] = fn;
+      },
+      clients: { claim: async () => undefined, matchAll },
+      registration: { pushManager: { subscribe } },
+      skipWaiting() {},
+    },
+    URL,
+    Promise,
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox);
+  const listener = listeners['pushsubscriptionchange'];
+  if (listener === undefined) {
+    throw new Error('pushsubscriptionchange was not registered');
+  }
+  return {
+    change: async (event) => {
+      let pending: Promise<unknown> = Promise.resolve();
+      listener({
+        ...event,
+        waitUntil(next) {
+          pending = next;
+        },
+      });
+      await pending;
+    },
+    postMessage,
+    matchAll,
+  };
+}
+
+describe('service worker pushsubscriptionchange', () => {
+  it('subscribes again with the old key and tells open windows', async () => {
+    const key = new Uint8Array([4, 5, 6]).buffer;
+    const subscribe = vi.fn(async () => ({}));
+    const worker = bootSubscriptionChangeWorker(subscribe);
+    await worker.change({ oldSubscription: { options: { applicationServerKey: key } } });
+    expect(subscribe).toHaveBeenCalledWith({ userVisibleOnly: true, applicationServerKey: key });
+    expect(worker.matchAll).toHaveBeenCalledWith({ type: 'window', includeUncontrolled: true });
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: '21gifts-push-subscription-change' });
+    expect(subscribe.mock.invocationCallOrder[0]).toBeLessThan(
+      worker.matchAll.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('keeps the subscription the browser already made', async () => {
+    const subscribe = vi.fn(async () => ({}));
+    const worker = bootSubscriptionChangeWorker(subscribe);
+    await worker.change({
+      oldSubscription: { options: { applicationServerKey: new Uint8Array([1]).buffer } },
+      newSubscription: {},
+    });
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: '21gifts-push-subscription-change' });
+  });
+
+  it('only tells open windows when the old key is unknown', async () => {
+    const subscribe = vi.fn(async () => ({}));
+    const worker = bootSubscriptionChangeWorker(subscribe);
+    await worker.change({ oldSubscription: null });
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: '21gifts-push-subscription-change' });
+  });
+
+  it('still tells open windows when subscribing again rejects', async () => {
+    const subscribe = vi.fn(async () => {
+      throw new Error('denied');
+    });
+    const worker = bootSubscriptionChangeWorker(subscribe);
+    await worker.change({
+      oldSubscription: { options: { applicationServerKey: new Uint8Array([1]).buffer } },
+    });
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: '21gifts-push-subscription-change' });
+  });
+
+  it('settles when listing windows rejects', async () => {
+    const worker = bootSubscriptionChangeWorker(vi.fn(async () => ({})));
+    worker.matchAll.mockRejectedValueOnce(new Error('gone'));
+    await expect(worker.change({ oldSubscription: null })).resolves.toBeUndefined();
+  });
+});

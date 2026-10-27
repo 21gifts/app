@@ -371,6 +371,33 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
   });
 
+  it('resyncs again when the service worker reports a subscription change', async () => {
+    cleanup();
+    vi.mocked(resyncPushSubscription).mockClear();
+    const worker = new EventTarget();
+    vi.stubGlobal('navigator', { serviceWorker: worker });
+    const { unmount } = renderWithLocale(<SignedInChrome />);
+    await waitFor(() => {
+      expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(1);
+    });
+    worker.dispatchEvent(new MessageEvent('message', { data: null }));
+    worker.dispatchEvent(new MessageEvent('message', { data: 'other' }));
+    worker.dispatchEvent(new MessageEvent('message', { data: {} }));
+    worker.dispatchEvent(new MessageEvent('message', { data: { type: '21gifts-push-open' } }));
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(1);
+    vi.mocked(resyncPushSubscription).mockRejectedValueOnce(new Error('boom'));
+    worker.dispatchEvent(
+      new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
+    );
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenLastCalledWith('tok');
+    unmount();
+    worker.dispatchEvent(
+      new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
+    );
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(2);
+  });
+
   it('does not resync push when there is no session', () => {
     cleanup();
     vi.mocked(resyncPushSubscription).mockClear();
@@ -395,7 +422,9 @@ describe('SignedInChrome', () => {
   it('asks for OS permission when Notifications is opened without grant', () => {
     vi.mocked(enablePush).mockClear();
     vi.stubGlobal('Notification', { permission: 'default' });
-    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    });
     vi.stubGlobal('PushManager', function PushManager() {});
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -407,7 +436,9 @@ describe('SignedInChrome', () => {
     vi.mocked(enablePush).mockClear();
     vi.mocked(resyncPushSubscription).mockClear();
     vi.stubGlobal('Notification', { permission: 'default' });
-    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    });
     const original = window.PushManager;
     // @ts-expect-error coverage: missing PushManager
     delete window.PushManager;
