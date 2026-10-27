@@ -1,12 +1,24 @@
 'use client';
 
-import { User, X } from 'lucide-react';
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { User } from 'lucide-react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactElement,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import {
+  ShopAccountSuggestions,
+  type ShopAccountSuggestion,
+} from '@/components/ShopAccountSuggestions';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, shopUsernameProblem } from '@/lib/forum-shop';
+import { isShopNote, shopAccountRequiredProblem, shopUsernameProblem } from '@/lib/forum-shop';
 import { lookupAccountByUsername, searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -15,13 +27,6 @@ const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 
 /** First rows only. A longer list would be a second scroller, which the page forbids. */
 const SUGGESTION_LIMIT = 8;
-
-/** One account the shop field can attach. */
-interface ShopSuggestion {
-  id: string;
-  username: string;
-  name: string;
-}
 
 /**
  * Username prefix after a leading `@`, or `null` when the field is not a mention.
@@ -57,6 +62,32 @@ function mentionQuery(draft: string): string | null {
  */
 function draftFor(username: string | undefined): string {
   return username === undefined || username === '' ? '@' : `@${username}`;
+}
+
+/**
+ * Field value after each keystroke.
+ *
+ * A value that already starts with `@` is kept, including a space after it,
+ * so `@ ` still closes the list. Blank and a lone `@` with only surrounding
+ * spaces stay `@`, so the list can open. Leading space before `@handle` is
+ * trimmed to that one `@`, so save still strips a single prefix. Any other
+ * value gets one leading `@`.
+ *
+ * @param raw - The input's current value.
+ * @returns The draft shown in the field.
+ */
+function accountDraft(raw: string): string {
+  if (raw.startsWith('@')) {
+    return raw;
+  }
+  const trimmed = raw.trim();
+  if (trimmed === '' || trimmed === '@') {
+    return '@';
+  }
+  if (trimmed.startsWith('@')) {
+    return trimmed;
+  }
+  return `@${raw}`;
 }
 
 /** Where the suggestion panel sits: below the button, or above it. */
@@ -133,7 +164,7 @@ function clampIntoBand(
 export interface ShopAccountControlProps {
   /** Top-level shop note to attach an account to. */
   message: ForumMessage;
-  /** Apply the saved account (or `null` when cleared) to the listed row. */
+  /** Apply the saved account to the listed row. */
   onUpdated: (
     messageId: string,
     shopAccount: { id: string; username: string; name: string } | null,
@@ -147,6 +178,8 @@ export interface ShopAccountControlProps {
  * The open field starts with `@`. Suggestions from the same account list as a
  * forum post appear immediately. A typed prefix keeps only usernames that
  * start with it, before the next page returns. Choosing one fills `@username`.
+ * Deleting the prefix puts `@` back, so the next letter still lists accounts.
+ * After an edit, that bare `@` is the required-account message.
  * A debounced exact-account check blocks Save while pending or proven
  * missing; a failed lookup leaves the API to decide. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
@@ -172,26 +205,25 @@ export function ShopAccountControl({
     username: string;
     verdict: 'checking' | 'found' | 'missing' | 'failed';
   } | null>(null);
-  const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
+  const [seed, setSeed] = useState<readonly ShopAccountSuggestion[]>([]);
   const [remote, setRemote] = useState<{
     query: string;
-    rows: readonly ShopSuggestion[];
+    rows: readonly ShopAccountSuggestion[];
   } | null>(null);
   const [panel, setPanel] = useState<PanelPlace | null>(null);
   const [rowLimit, setRowLimit] = useState(SUGGESTION_LIMIT);
+  const [suggestionActive, setSuggestionActive] = useState(0);
   const anchorRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
   const normalizedUsername = draft.trim().replace(/^@/, '').trim().toLowerCase();
-  // A newly opened picker starts with `@` so the people list is useful before
-  // typing. Once the visitor edits the field, a bare `@` is a live format error.
-  const formatProblem =
-    !edited && draft === '@'
-      ? null
-      : normalizedUsername === ''
-        ? 'format'
-        : shopUsernameProblem(draft);
+  // A newly opened picker starts with `@` and explains the disabled Save as a
+  // hint. After an edit, or when the field is left, a bare `@` is the required
+  // account, not a format error.
+  const formatProblem = shopUsernameProblem(draft);
+  const accountRequired = shopAccountRequiredProblem(draft) === 'required';
+  const usernameRequired = edited && accountRequired;
 
   useEffect(() => {
     if (session === null || !open || query === null) {
@@ -232,12 +264,11 @@ export function ShopAccountControl({
   }, [open, query, session]);
 
   useEffect(() => {
-    if (
-      session === null ||
-      !open ||
-      normalizedUsername === '' ||
-      shopUsernameProblem(draft) !== null
-    ) {
+    setSuggestionActive(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (session === null || !open || accountRequired || shopUsernameProblem(draft) !== null) {
       setUsernameLookup(null);
       return;
     }
@@ -265,7 +296,7 @@ export function ShopAccountControl({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [draft, normalizedUsername, open, session]);
+  }, [accountRequired, draft, normalizedUsername, open, session]);
 
   useLayoutEffect(() => {
     setRowLimit(SUGGESTION_LIMIT);
@@ -329,6 +360,7 @@ export function ShopAccountControl({
           ? remote.rows
           : seed.filter((row) => row.username.toLowerCase().startsWith(query))
   ).slice(0, rowLimit);
+  const suggestionActiveIndex = shown.length === 0 ? 0 : suggestionActive % shown.length;
   const ariaLabel = hasAccount ? t('forum.editShopAccount') : t('forum.addShopAccount');
   const usernameLookupCurrent = usernameLookup?.username === normalizedUsername;
   const usernameMissing =
@@ -342,7 +374,9 @@ export function ShopAccountControl({
       ? t('login.nameInvalid')
       : usernameMissing
         ? t('shops.problemUsernameMissing')
-        : undefined;
+        : usernameRequired
+          ? t('forum.shopAccountHint')
+          : undefined;
   const savedError =
     errorKey === 'format'
       ? t('login.nameInvalid')
@@ -363,6 +397,52 @@ export function ShopAccountControl({
           ? `${listId}-hint`
           : undefined;
 
+  const pickSuggestion = (username: string): void => {
+    setDraft(`@${username}`);
+    setEdited(true);
+    setRemote(null);
+    setErrorKey(null);
+    setSuggestionActive(0);
+  };
+
+  const onSuggestionKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+      return;
+    }
+    if (shown.length === 0) {
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setSuggestionActive((index) => (index + 1) % shown.length);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setSuggestionActive((index) => (index - 1 + shown.length) % shown.length);
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      setSuggestionActive(0);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      setSuggestionActive(shown.length - 1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = shown[suggestionActiveIndex];
+      /* v8 ignore next 3 -- the list is open only while a row is shown */
+      if (row === undefined) {
+        return;
+      }
+      pickSuggestion(row.username);
+    }
+  };
+
   const saveUsername = async (): Promise<void> => {
     const trimmed = normalizedUsername;
     setSaving(true);
@@ -381,21 +461,6 @@ export function ShopAccountControl({
       } else {
         setErrorKey('failed');
       }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const removeAccount = async (): Promise<void> => {
-    setSaving(true);
-    setErrorKey(null);
-    try {
-      await setMessageShopAccount(token, message.id, null);
-      onUpdated(message.id, null);
-      setOpen(false);
-      setErrorKey(null);
-    } catch {
-      setErrorKey('failed');
     } finally {
       setSaving(false);
     }
@@ -446,15 +511,22 @@ export function ShopAccountControl({
             type="text"
             aria-label={t('forum.shopAccountLabel')}
             aria-controls={shown.length > 0 ? listId : undefined}
+            aria-activedescendant={
+              shown.length > 0 ? `${listId}-${String(suggestionActiveIndex)}` : undefined
+            }
             aria-invalid={shownError === undefined ? undefined : true}
             aria-describedby={usernameFeedbackId}
             value={draft}
             disabled={saving}
+            onKeyDown={onSuggestionKeyDown}
             onChange={(event) => {
-              setDraft(event.target.value);
+              setDraft(accountDraft(event.target.value));
               setEdited(true);
               setRemote(null);
               setErrorKey(null);
+            }}
+            onBlur={() => {
+              setEdited(true);
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
@@ -478,41 +550,15 @@ export function ShopAccountControl({
             </p>
           ) : null}
           {shown.length > 0 ? (
-            <ul
-              id={listId}
-              role="listbox"
-              aria-label={t('forum.mentionSuggest')}
+            <ShopAccountSuggestions
+              listId={listId}
+              rows={shown}
+              activeIndex={suggestionActiveIndex}
+              disabled={saving}
               className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
-            >
-              {shown.map((row) => (
-                <li key={row.id} role="presentation">
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={draft.trim().toLowerCase() === `@${row.username.toLowerCase()}`}
-                    aria-label={`@${row.username}`}
-                    disabled={saving}
-                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      setDraft(`@${row.username}`);
-                      setRemote(null);
-                      setErrorKey(null);
-                    }}
-                    onClick={() => {
-                      setDraft(`@${row.username}`);
-                      setRemote(null);
-                      setErrorKey(null);
-                    }}
-                  >
-                    <span className="font-medium">@{row.username}</span>
-                    {row.name !== row.username ? (
-                      <span className="text-app-muted">{row.name}</span>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+              optionId={(index) => `${listId}-${String(index)}`}
+              onPick={pickSuggestion}
+            />
           ) : null}
           <Button
             type="button"
@@ -520,7 +566,7 @@ export function ShopAccountControl({
             className="mt-3"
             disabled={
               saving ||
-              normalizedUsername === '' ||
+              accountRequired ||
               formatProblem !== null ||
               usernameMissing ||
               usernamePending
@@ -531,21 +577,6 @@ export function ShopAccountControl({
           >
             {t('forum.shopAccountSave')}
           </Button>
-          {hasAccount ? (
-            <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="mt-3"
-              aria-label={t('forum.shopAccountRemove')}
-              disabled={saving}
-              onClick={() => {
-                void removeAccount();
-              }}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          ) : null}
         </div>
       ) : null}
     </div>

@@ -62,6 +62,16 @@ describe('ShopList', () => {
     }
   });
 
+  it('omits the place line when the shop has no pin', async () => {
+    fetchListedShopsMock.mockResolvedValue({
+      shops: [{ ...SHOP, place: null }],
+      nextCursor: null,
+    });
+    renderWithLocale(<ShopList />);
+    expect(await screen.findByRole('link', { name: 'Cafe Luna' })).toBeTruthy();
+    expect(screen.queryByText(PLACE_LINE)).toBeNull();
+  });
+
   it('fetches and renders a shop when no account is signed in', async () => {
     expect(useAuthStore.getState().session).toBeNull();
     fetchListedShopsMock.mockResolvedValue({ shops: [SHOP], nextCursor: null });

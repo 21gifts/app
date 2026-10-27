@@ -34,6 +34,11 @@
     "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y todo el bloque de pago (título, dirección, QR).",
     "fil": "Nakalistang Quiet Shop na may payUsername: null at nip05: null. Nananatili ang address, link sa forum, at npub; wala ang seksyon ng beripikadong address at ang buong payment block (heading, address, QR)."
   },
+  "/[npub]:no-pin": {
+    "de": "Gelisteter Roadside Stall. Über dem Namen steht die Überzeile Shop. Danach die Beschreibung und der Zahlungsblock (Überschrift, Adresse, QR), dann der Link zum Forumsbeitrag, NIP-05, die npub-Kopiersteuerung und zuletzt das Foto. Es gibt keinen Pin, daher keine Überschrift Adresse, keine Straßenzeilen, keine Karte und keine Anfrage nach einem Kartenschlüssel.",
+    "es": "Roadside Stall listado. La sobrelínea Tienda queda sobre el nombre. Después van la descripción y el bloque de pago (título, dirección, QR), luego el enlace a la publicación del foro, NIP-05, el control para copiar el npub y al final la foto. No hay pin, así que no hay encabezado Dirección, ni líneas de calle, ni mapa, ni solicitud de una clave de mapas.",
+    "fil": "Nakalistang Roadside Stall. Nasa itaas ng pangalan ang linyang Tindahan. Kasunod ang paglalarawan at ang payment block (heading, address, QR), tapos ang link sa post sa forum, NIP-05, ang kontrol na kumokopya ng npub, at huli ang litrato. Walang pin, kaya walang heading na Address, walang mga linya ng kalye, walang mapa, at walang hiling para sa maps key."
+  },
   "/[npub]:gone": {
     "de": "API 410. Die Seite sagt Dieses Geschäft ist nicht mehr gelistet. und zeigt weder den Geschäftsnamen noch andere verborgene Geschäftsdaten.",
     "es": "API 410. La página dice Esta tienda ya no está en la lista. y no muestra el nombre ni otros datos ocultos de la tienda.",
@@ -490,9 +495,9 @@
     "fil": "Pampublikong tala sa Aleman. Ang katawan ay ang German fixture; Nakikita ang Isalin."
   },
   "/members/[accountId]:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer.",
-    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío.",
-    "fil": "Susunod ulit. Hakbang 4 sa 5 · bukas ang User ng 21.gifts. Walang laman ang pangalan ng gumagamit."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · bukas ang User ng 21.gifts. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod."
   },
   "/grants/apply:location": {
     "de": "Nach Über mich und einem Foto fragt der nächste Schritt nach dem Wohnort.",
@@ -1175,9 +1180,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May hindi pinapayagang control character ang teksto ng shop. Nakikita sa ilalim ng field ang tiyak na error bago isumite. Naka-disable ang Susunod."
   },
   "/shops:add-user-invalid": {
-    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Benutzer geöffnet. Der Benutzername ist _, der Formatfehler steht unter dem Feld und Weiter ist deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts. El nombre de usuario es _, el error de formato aparece bajo el campo y Siguiente está desactivado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · 21.gifts user. _ ang username, nakikita sa ilalim ng field ang format error, at naka-disable ang Susunod."
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Benutzer geöffnet. Der Benutzername ist @_, der Formatfehler steht unter dem Feld und Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts. El nombre de usuario es @_, el error de formato aparece bajo el campo y Siguiente está desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · 21.gifts user. @_ ang username, nakikita sa ilalim ng field ang format error, at naka-disable ang Susunod."
   },
   "/shops:add-text-not-longer": {
     "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery and Coffee House Zurich ist bereits gesetzt. Der Shop-Text ist Fresh bread every morning. Der Hinweis Der Shop-Text muss länger sein als der Shop-Name. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
@@ -1425,9 +1430,9 @@
     "fil": "Hiling hakbang 4 sa 4, Isang beses ang pinindot, pagkatapos mabigo ang pagpapadala. Nasa ilalim ng paunang tingin ang Hindi ma-post ang mensahe."
   },
   "/shops:edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf liegt unter der Karte.",
-    "es": "Siguiente otra vez. El paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
-    "fil": "Susunod ulit. Bukas ang hakbang 5 sa 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf liegt unter der Karte.",
+    "es": "Siguiente otra vez. El paso 5 de 5 · Resumen está abierto. El usuario de 21.gifts es @ada. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
+    "fil": "Susunod ulit. Bukas ang hakbang 5 sa 5 · Buod. Ang user ng 21.gifts ay @ada. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
   },
   "/moderate/proposals:error": {
     "de": "Das Laden der Liste für das Personal (Moderatorin oder Moderator) ist fehlgeschlagen. Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
@@ -1445,9 +1450,9 @@
     "fil": "Nakabuka ang tala ng tindahan, ang patlang ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao. Sarado pa ang Magdagdag ng shop."
   },
   "/shops:add-user": {
-    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer geöffnet. Der Benutzername ist leer, und der Hinweis Optional. Leer lassen, um zu überspringen. steht direkt unter dem Feld. Weiter ist aktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts. El nombre de usuario está vacío y el aviso Opcional. Déjalo en blanco para saltarlo. está directamente bajo el campo. Siguiente está habilitado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts. Walang laman ang username at nasa ilalim mismo ng field ang Opsyonal. Iwanang blangko para laktawan. Naka-enable ang Susunod."
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod."
   },
   "/pos:loading": {
     "de": "Die Anfrage der Kasse ist noch nicht zurück. Überschrift Kasse, die Adresse und die Warteanzeige. Noch kein Betrag festlegen.",
@@ -1525,9 +1530,9 @@
     "fil": "Isinasagawa ang paglakip (hindi pinagana ang pag-post + umiikot na sagisag, wala pang paunang tingin). Ang katutubong tagapili ng file ay palamuti ng OS at hindi isang baryante."
   },
   "/welcome:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/shops:table-empty": {
     "de": "Tabelle ist ausgewählt und es gibt keine Shop-Notizen. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Verfasser ist verschwunden.",
@@ -1540,14 +1545,14 @@
     "fil": "Napili ang Mapa at nabigo ang mga lugar. Hindi ma-load ang mga lugar. Subukan ulit. at Subukan ulit. Walang pangalawang pamagat na Mapa."
   },
   "/shops:edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/messages/[id]:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/messages/[id]/author:posts-empty": {
     "de": "0 Beiträge gedrückt. Der Feed zeigt Noch keine Nachrichten — schreiben Sie die erste. Die Schaltfläche 0 Reaktionen bleibt geschlossen.",
@@ -1725,14 +1730,14 @@
     "fil": "Session ng tagapamagitan. Isang tala ng tindahan sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang Baguhin ang entry sa shop pagkatapos kopyahin. Sarado ang editor."
   },
   "/welcome:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer @ada.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts @ada.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts @ada."
   },
   "/members/[accountId]:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer @ada.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts @ada.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts @ada."
   },
   "/grants/payments/amounts:duplicate": {
     "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
@@ -1880,9 +1885,9 @@
     "fil": "Ang nabe-verify na username na joey-rosima na may status na none o rejected ay nakakakita ng Mag-apply para sa 21 gifts grant sa halip ng naka-pause na pangungusap."
   },
   "/messages/[id]:shop-edit-summary": {
-    "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts Ninguno. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
+    "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Die Karte listet Fotos Keine, Ort Happyland mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer @ada. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Happyland con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y usuario de 21.gifts @ada. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Happyland na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts @ada. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
   },
   "/shops:add-place": {
     "de": "Shop hinzufügen ist offen auf Schritt 2 von 5 · Ort. Einen Ort hinzufügen ist geschlossen. Der sichtbare Grund fordert Ort und Adresse; Weiter ist deaktiviert.",
@@ -1955,9 +1960,9 @@
     "fil": "Habang nakabinbin ang DELETE ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
   },
   "/shops:add-summary": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos und die Nutzerin oder der Nutzer wurden übersprungen. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Schweiz. Der Shop-Text ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos y la usuaria o el usuario. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Suiza. El Texto de la tienda es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato at ang user. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang Teksto ng shop ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos wurden übersprungen. Der 21.gifts-Nutzer ist @ada. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Schweiz. Der Shop-Text ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos. El usuario de 21.gifts es @ada. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Suiza. El Texto de la tienda es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato. Ang user ng 21.gifts ay @ada. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang Teksto ng shop ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
   },
   "/shops:add-post-rejected": {
     "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und abgelehnt, weil der Server nicht verfügbar war. Die Zusammenfassung bleibt geöffnet, und die allgemeine Meldung Nachricht konnte nicht gesendet werden ist sichtbar.",
@@ -2480,9 +2485,9 @@
     "fil": "Nakabukas ang pambaba ng tanawin ng forum sa default na feed na Aktibo. Naka-check ang Aktibo. Wala pang regalo, Lahat, at Pinakasikat ay nakalista sa ilalim. Nakabukas pa ang listahan."
   },
   "/shops:map-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Siguiente otra vez. El paso 4 de 5 · usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Walang laman ang username. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. steht unter dem Feld. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Siguiente otra vez. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. Escribe o elige el usuario de 21.gifts para continuar. está bajo el campo. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. I-type o piliin ang username sa 21.gifts para magpatuloy. ay nasa ilalim ng field. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/pos:refresh-failed": {
     "de": "Die offene Belastung ist bereits abgelaufen (0:00). Der Sat-Betrag und das Standard-Fiat bleiben. Das Aktualisieren schlägt fehl. Abbrechen bleibt. Hinweis Die Kasse ist gerade nicht erreichbar.",
@@ -2585,9 +2590,9 @@
     "fil": "Humingi ng pera ang napili. Hakbang 1 sa 4 na naka-pindot ang Araw-araw sa pildoras sa itaas ng halaga at 1000 ang nai-type sa bitcoin kaya $1.00 ang lumalabas sa ilalim ng patlang. Naka-enable ang Magpatuloy."
   },
   "/shops:staff-place-edit": {
-    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist als Dialog geöffnet. Der Kartenrahmen und Ort entfernen sind sichtbar. Die Stecknadel ist noch nicht geändert.",
-    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar el lugar está abierto como diálogo. El mapa y Quitar el lugar están visibles. El pin aún no se ha cambiado.",
-    "fil": "Isang session ng moderator. May lugar na Happyland ang tala ng Cafe Luna. Bukas bilang dialog ang Baguhin ang lugar. Nakikita ang mapa at Alisin ang lugar. Hindi pa nababago ang pin."
+    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist als Dialog geöffnet. Der Kartenrahmen ist sichtbar. Ort entfernen gibt es nicht. Die Stecknadel ist noch nicht geändert.",
+    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar el lugar está abierto como diálogo. El mapa está visible. No hay Quitar el lugar. El pin aún no se ha cambiado.",
+    "fil": "Isang session ng moderator. May lugar na Happyland ang tala ng Cafe Luna. Bukas bilang dialog ang Baguhin ang lugar. Nakikita ang mapa. Walang Alisin ang lugar. Hindi pa nababago ang pin."
   },
   "/messages:thread-gift": {
     "de": "Offiziellen Thread geöffnet. fromMe-Blase nur mit Geschenk senden ₿21. Verfasser weiterhin sichtbar: ImagePlus in der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht. Auswähler fehlt.",
@@ -2620,9 +2625,9 @@
     "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Kiki's Bakery mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer Keiner. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Kiki's Bakery con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Kiki's Bakery na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Kiki's Bakery mit Bahnhofstrasse 12, 8001 Zürich, Schweiz, Text Cafe Luna is open every morning. und 21.gifts-Nutzer @ada. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Kiki's Bakery con Bahnhofstrasse 12, 8001 Zürich, Suiza, Texto Cafe Luna is open every morning. y Usuario de 21.gifts @ada. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Kiki's Bakery na may Bahnhofstrasse 12, 8001 Zürich, Switzerland, Teksto Cafe Luna is open every morning., at User ng 21.gifts @ada. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants:no-applications": {
     "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications.",
@@ -2655,14 +2660,14 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/shops:edit-photo-preparing-user": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Das Feld zeigt @. Weiter ist deaktiviert. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. El campo muestra @. Siguiente está deshabilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Ipinapakita ng field ang @. Naka-disable ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/shops:edit-photo-preparing-summary": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. El usuario de 21.gifts es @ada. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Ang user ng 21.gifts ay @ada. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
   },
   "/shops:edit-saving": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
@@ -2760,9 +2765,9 @@
     "fil": "Binubuksan ng tagapagtatag ang komento gamit ang lapis at pinipindot ang tsek. Tinatanggihan ito ng Spend. Bukas pa ang patlang. Alerto Hindi wasto ang komento. Karayom Hindi wasto ang komento."
   },
   "/shops:table-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin @luna bleiben.",
-    "es": "Otra vez Siguiente. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora @luna permanecen.",
-    "fil": "Muli ang Susunod. Bukas ang Hakbang 4 sa 5 · User ng 21.gifts. Ipinapakita na ng patlang ng pangalan ng gumagamit ang luna. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits @luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin @luna bleiben.",
+    "es": "Otra vez Siguiente. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra @luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora @luna permanecen.",
+    "fil": "Muli ang Susunod. Bukas ang Hakbang 4 sa 5 · User ng 21.gifts. Ipinapakita na ng patlang ng pangalan ng gumagamit ang @luna. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/welcome:note-video-paused": {
     "de": "Angemeldetes /welcome mit einer Notiz, deren Text A clip lautet und deren Bild ein Video ist. Die Wiedergabe-Schaltfläche und die Vollbild-Schaltfläche sitzen auf diesem Bild. Das Bild ist zentriert.",
@@ -3054,11 +3059,6 @@
     "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
     "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
   },
-  "/shops:staff-place-edit-unavailable-error": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten ist ohne Kartenschlüssel geöffnet, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar und Ort entfernen bleibt.",
-    "es": "Una sesión de moderador. Editar lugar está abierto sin clave de mapa, y se pulsó Quitar lugar. El guardado falló, así que la alerta No se pudo guardar el lugar. Inténtalo de nuevo. es visible y Quitar lugar permanece.",
-    "fil": "Isang sesyon ng moderator. Bukas ang I-edit ang lugar nang walang susi ng mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Alisin ang lugar."
-  },
   "/welcome:repay-today-error": {
     "de": "Dieselbe finanzierte Kredit-Notiz wie repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Der POST ist fehlgeschlagen, und der Hinweis Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen ist sichtbar. Es gibt keinen Rechnungs-QR.",
     "es": "La misma nota de crédito financiado que repay-today, después de pulsar Pagar la cuota de hoy. El POST falló, y la alerta La wallet del autor no puede recibir este pago en Bitcoin es visible. No hay código QR de factura.",
@@ -3150,9 +3150,9 @@
     "fil": "Bukas ang menu na may dalawang hindi pa nababasang hilera ng pasukan ng mensahe na naka-stub sa GET /conversations → Ipinapakita ng Mga mensahe ang 2 sa kanan (nav.inboxUnread, pangalang pangkasali Mga mensahe, 2 hindi pa nababasa). Nanatili sa bilang 0 ang Mga abiso. Ang ibang mga hilera ng menu ay tumutugma sa menu-open."
   },
   "/shops:staff-place-edit-unavailable": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten für Happyland ist als Dialog ohne Kartenschlüssel geöffnet. Ort entfernen bleibt sichtbar; Diesen Ort verwenden ist sichtbar und deaktiviert.",
-    "es": "Una sesión de moderador. Editar lugar para Happyland está abierto como diálogo sin clave de mapa. Quitar lugar sigue visible; Usar este lugar está visible y desactivado.",
-    "fil": "Isang moderator session. Bukas bilang dialog ang I-edit ang lugar para sa Happyland nang walang susi ng mapa. Nakikita ang Alisin ang lugar; nakikita at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort bearbeiten für Happyland ist als Dialog ohne Kartenschlüssel geöffnet. Ort entfernen gibt es nicht. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "es": "Una sesión de moderador. Editar lugar para Happyland está abierto como diálogo sin clave de mapa. No hay Quitar lugar. Usar este lugar está visible y desactivado.",
+    "fil": "Isang moderator session. Bukas bilang dialog ang I-edit ang lugar para sa Happyland nang walang susi ng mapa. Walang Alisin ang lugar. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:expanded-donated": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort hat keinen Text. Sie zeigt senden ₿21'000 · $18.14 und keine Empfangen-Zeile. Die Notizfußzeile ist ₿21'000 · $18.14, dasselbe Geschenk, keine zweite Zahlung. Nichts an dieser Antwort wird in ₿21'100 eingerechnet.",
@@ -3309,6 +3309,11 @@
     "es": "Encabezado Tiendas. Cada fila es una página de tienda, no una nota del foro. La pastilla Lista / Mapa / Tabla / Publicación con Lista seleccionada. Una fila Cafe Luna enlaza a la página de la tienda. Añadir una tienda no está. No hay pastilla #Shop ni #21GiftsShop en bruto. No hay pista de leyes.",
     "fil": "Heading na Mga Tindahan. Bawat hilera ay pahina ng shop, hindi tala sa forum. Ang pill na Listahan / Mapa / Talahanayan / Post na napili ang Listahan. Isang hilera na Cafe Luna ang naka-link sa pahina ng shop. Wala ang Magdagdag ng shop. Walang pill na #Shop at walang hilaw na #21GiftsShop. Walang pahiwatig sa mga batas."
   },
+  "/shops:no-pin": {
+    "de": "Überschrift Shops. Die Pille Liste ist ausgewählt. Eine Zeile Roadside Stall verlinkt auf die Shop-Seite und hat keine Ortszeile unter dem Namen. Shop hinzufügen fehlt.",
+    "es": "Encabezado Tiendas. La pastilla Lista está seleccionada. Una fila Roadside Stall enlaza a la página de la tienda y no tiene línea de lugar bajo el nombre. Añadir una tienda no está.",
+    "fil": "Heading na Mga Tindahan. Napili ang pill na Listahan. Isang hilera na Roadside Stall ang naka-link sa pahina ng shop at walang linya ng lugar sa ilalim ng pangalan. Wala ang Magdagdag ng shop."
+  },
   "/shops:edit-open": {
     "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
     "es": "Una persona moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 de 5 · Fotos está abierto. El paso de fotos se cierra con un Cerrar (X) solo de icono. El nombre accesible es Cancelar. No hay una palabra Cancelar visible. Siguiente está etiquetado. El historial está bajo la tarjeta.",
@@ -3320,9 +3325,9 @@
     "fil": "Na-verify na miyembro, walang pondo. Heading na 21 gifts grant. Ang pangungusap ng paghinto. Link https://21.gifts/statistics. Walang kontrol na Mag-apply. Hindi nagbabago ang pampublikong naka-pause na mga screenshot dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
   },
   "/shops:staff-place-edit-error": {
-    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet, die Karte ist sichtbar, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar. Ort entfernen und Diesen Ort verwenden bleiben.",
-    "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna, el mapa es visible y se pulsó Quitar lugar. El guardado falló, así que el aviso No se pudo guardar el lugar. Inténtalo de nuevo. está visible. Quitar lugar y Usar este lugar permanecen.",
-    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Nanatili ang Alisin ang lugar at Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet, die Karte ist sichtbar, der Shop-Name ist Happyland und die Adresse ist ausgefüllt. Diesen Ort verwenden wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar. Ort entfernen gibt es nicht. Diesen Ort verwenden bleibt.",
+    "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna, el mapa es visible, el nombre de la tienda es Happyland y la dirección está rellenada. Se pulsó Usar este lugar. El guardado falló, así que el aviso No se pudo guardar el lugar. Inténtalo de nuevo. está visible. No hay Quitar lugar. Usar este lugar permanece.",
+    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, Happyland ang pangalan ng shop, at puno ang address. Pinindot ang Gamitin ang lugar na ito. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Walang Alisin ang lugar. Nanatili ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-edit-rejected": {
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf einer Shop-Notiz geöffnet (Text Fresh bread every morning.). Shop-Name ist Happyland, die vollständige Adresse ist ausgefüllt, und Diesen Ort verwenden wurde gedrückt. Der gespeicherte Shop-Text wurde auf dem Server geändert, deshalb ist die Meldung Der Shop-Name muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text. in der Dialogfusszeile sichtbar. Der Dialog bleibt mit Diesen Ort verwenden offen.",
@@ -4300,14 +4305,14 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/welcome:shop-edit-photo-preparing-user": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Das Feld zeigt @. Weiter ist deaktiviert. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. El campo muestra @. Siguiente está deshabilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Ipinapakita ng field ang @. Naka-disable ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/welcome:shop-edit-photo-preparing-summary": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. El usuario de 21.gifts es @ada. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Cafe Luna at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Ang user ng 21.gifts ay @ada. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
   },
   "/welcome:shop-edit-saving": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
@@ -4360,14 +4365,14 @@
     "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/members/[accountId]:shop-edit-photo-preparing-user": {
-    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
-    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
-    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Das Feld zeigt @. Weiter ist deaktiviert. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. El campo muestra @. Siguiente está deshabilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Ipinapakita ng field ang @. Naka-disable ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/members/[accountId]:shop-edit-photo-preparing-summary": {
-    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
-    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
-    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+    "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Una moderadora que ve a otra miembro abrió Editar la entrada de la tienda en Cafe Luna, en las publicaciones de Carol, y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. El usuario de 21.gifts es @ada. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Binuksan ng moderator na tumitingin sa ibang miyembro ang Baguhin ang entry sa shop sa Cafe Luna sa mga post ni Carol at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Ang user ng 21.gifts ay @ada. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
   },
   "/members/[accountId]:shop-edit-saving": {
     "de": "Eine Moderation, die ein anderes Mitglied ansieht, hat Shop-Eintrag bearbeiten bei Cafe Luna in Carols Beiträgen geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
@@ -4420,14 +4425,14 @@
     "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/messages/[id]:shop-edit-photo-preparing-user": {
-    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
-    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
-    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Das Feld zeigt @. Weiter ist deaktiviert. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. El campo muestra @. Siguiente está deshabilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Ipinapakita ng field ang @. Naka-disable ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto."
   },
   "/messages/[id]:shop-edit-photo-preparing-summary": {
-    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
-    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta.",
-    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
+    "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist deaktiviert. Es gibt keine Meldung.",
+    "es": "Un moderador en la nota pública de tienda Cafe Luna eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. El usuario de 21.gifts es @ada. Guardar cambios está deshabilitado. No hay alerta.",
+    "fil": "Pumili ang moderator sa pampublikong shop note na Cafe Luna ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Ang user ng 21.gifts ay @ada. Naka-disable ang I-save ang mga pagbabago. Walang alerto."
   },
   "/messages/[id]:shop-edit-saving": {
     "de": "Ein Moderator an der öffentlichen Shop-Notiz Cafe Luna hat den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung.",
@@ -4470,84 +4475,84 @@
     "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang pindutan ng lugar. Bukas ang form sheet na Lugar at address ng shop kasama ang kasalukuyang pin, pangalan ng shop, at buong address. Ang loob nito ang aktibong scroll surface; nananatiling nakikita ang header na may Isara at ang naka-pin na footer na may Gamitin ang lugar na ito. Napili pa ang Talahanayan."
   },
   "/shops:add-user-checking": {
-    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
   },
   "/shops:add-user-missing": {
-    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · Usuario de 21.gifts con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
   },
   "/shops:staff-account-checking": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang I-save ang account."
   },
   "/shops:staff-account-missing": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang I-save ang account."
   },
   "/shops:edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:map-edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Karte bleibt ausgewählt, ohne zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Mapa sigue seleccionado, sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Mapa at walang pangalawang pamagat na Mapa."
   },
   "/shops:table-edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu missing geändert. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Tabelle bleibt ausgewählt.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto; el nombre de usuario cambió de luna a missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Tabla sigue seleccionada.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong missing. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Talahanayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu @missing geändert. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto; el nombre de usuario cambió de luna a @missing. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Tabla sigue seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong @missing. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Talahanayan."
   },
   "/shops:table-edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu missing geändert. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Tabelle bleibt ausgewählt.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto; el nombre de usuario cambió de luna a missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Tabla sigue seleccionada.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong missing. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Talahanayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet; der Benutzername wurde von luna zu @missing geändert. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto; el nombre de usuario cambió de luna a @missing. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios. Tabla sigue seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts; binago ang username mula luna patungong @missing. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan. Napili pa ang Talahanayan."
   },
   "/welcome:shop-edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/welcome:shop-edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/members/[accountId]:shop-edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod."
   },
   "/members/[accountId]:shop-edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod."
   },
   "/messages/[id]:shop-edit-user-checking": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung läuft noch; Konto wird geprüft… ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo sigue en curso; Comprobando la cuenta… está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Isinasagawa pa ang live check; nakikita ang Tinitingnan ang account… at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/messages/[id]:shop-edit-user-missing": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist mit @missing im Benutzernamenfeld geöffnet. Die Live-Prüfung fand kein Konto. Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. ist sichtbar und Weiter deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto con @missing en el campo del nombre de usuario. La comprobación en vivo no encontró ninguna cuenta. No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. está visible y Siguiente deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas ang hakbang 4 sa 5 · User ng 21.gifts at @missing ang nasa field ng username. Walang nahanap na account ang live check. Nakikita ang Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/members/[accountId]:shop-edit-photos-unsupported": {
     "de": "Schritt 1 von 5 · Bilder ist nach der Auswahl einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
@@ -4815,9 +4820,9 @@
     "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/members/[accountId]:shop-edit-place-unavailable-open": {
     "de": "Ort und Adresse des Shops ist im Mitgliederprofil aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
@@ -4825,9 +4830,9 @@
     "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/members/[accountId]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el perfil de miembro con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
-    "fil": "Bukas sa profile ng member ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el perfil de miembro con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas sa profile ng member ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
   },
   "/messages/[id]:shop-edit-place-unavailable-open": {
     "de": "Ort und Adresse des Shops ist in der öffentlichen Nachricht aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, und Diesen Ort verwenden ist deaktiviert.",
@@ -4835,9 +4840,9 @@
     "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/messages/[id]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:map-edit-place-unavailable-open": {
     "de": "Ort und Adresse des Shops ist auf Karte aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, Diesen Ort verwenden ist deaktiviert und Karte bleibt ausgewählt.",
@@ -4865,14 +4870,14 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 3 sa 5 · Teksto. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-photo-preparing-user": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Weiter bleibt aktiv. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. Siguiente sigue habilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Pinagana pa ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 4 von 5 · 21.gifts-Nutzer. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Das Feld zeigt @. Weiter ist deaktiviert. Das Schliessen (X) des Fotoschritts ist weg. Der Pfeil oben links (Zurück) bleibt aktiv. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 4 de 5 · Usuario de 21.gifts. Espera a que esta foto esté lista. está visible. El campo muestra @. Siguiente está deshabilitado. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda (Atrás) sigue habilitada. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 4 sa 5 · User ng 21.gifts. Nakikita ang Hintayin munang maging handa ang larawang ito. Ipinapakita ng field ang @. Naka-disable ang Susunod. Wala na ang Isara (X) ng hakbang ng litrato. Pinagana pa ang palaso sa kaliwang itaas (Bumalik). Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-photo-preparing-summary": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Änderungen speichern ist deaktiviert. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. Guardar cambios está deshabilitado. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Naka-disable ang I-save ang mga pagbabago. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet und ein Foto gewählt, das noch vorbereitet wird. Weiter führt auf 5 von 5 · Zusammenfassung. Warten Sie, bis dieses Foto bereit ist. ist sichtbar. Der 21.gifts-Nutzer ist @ada. Änderungen speichern ist deaktiviert. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Mapa y eligió una foto que aún se está preparando. Siguiente llevó el editor a 5 de 5 · Resumen. Espera a que esta foto esté lista. está visible. El usuario de 21.gifts es @ada. Guardar cambios está deshabilitado. No hay alerta. Mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at pumili ng larawan na inihahanda pa. Dinala ng Susunod ang editor sa 5 sa 5 · Buod. Nakikita ang Hintayin munang maging handa ang larawang ito. Ang user ng 21.gifts ay @ada. Naka-disable ang I-save ang mga pagbabago. Walang alerto. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-saving": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten auf Karte geöffnet, den Text geändert, und Änderungen speichern ist noch nicht zurück. Der Editor bleibt auf 5 von 5 · Zusammenfassung. Änderungen speichern ist deaktiviert. Dieser Shop-Eintrag wird gespeichert. ist sichtbar. Es gibt keine Meldung. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
@@ -4900,9 +4905,9 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:table-edit-place-unavailable-open": {
     "de": "Ort und Adresse des Shops ist auf Tabelle aus Schritt 2 von 5 · Ort ohne verfügbare Karte geöffnet. Die Karte ist nicht verfügbar. ist dort sichtbar, wo die Karte wäre, Diesen Ort verwenden ist deaktiviert und Tabelle bleibt ausgewählt.",
@@ -4965,9 +4970,9 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/shops:table-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu _ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla después de cambiar el nombre de usuario de luna a _. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts matapos baguhin ang username mula luna patungong _. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu @_ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla después de cambiar el nombre de usuario de luna a @_. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts matapos baguhin ang username mula luna patungong @_. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:add-place-unavailable": {
     "de": "Shop hinzufügen ist bei Schritt 2 von 5 · Ort geöffnet, nachdem das Ortsformular ohne verfügbare Karte geöffnet und geschlossen wurde. Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden. bleibt sichtbar und Weiter ist deaktiviert.",
@@ -4985,14 +4990,14 @@
     "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit _ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
-    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con _ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
-    "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may _ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
+    "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:staff-account-invalid": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit _ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
-    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con _ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
-    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at _ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @_ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @_ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
   },
   "/setup/name:empty": {
     "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
@@ -5178,5 +5183,115 @@
     "de": "Der Ortsschritt ist offen. Ein Steuerzeichen zeigt Der Ort darf keine Steuerzeichen enthalten. (location.errorControls). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Schritt sagt weiter Als Nächstes tragen Sie den Ort ein, an dem Sie leben. Der Hinweis liegt im Fenster.",
     "es": "El paso del lugar está abierto. Un carácter de control muestra El lugar no puede incluir caracteres de control. (location.errorControls). Guardar permanece deshabilitado hasta que el borrador cambie. El paso sigue diciendo Después, añade el lugar donde vives. La alerta está en la ventana.",
     "fil": "Bukas ang hakbang ng lugar. Ang control character ay nagpapakita ng Hindi puwedeng may control character ang lugar. (location.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Sinasabi pa rin ng hakbang ang Sunod, ilagay ang lugar kung saan ka nakatira. Nasa window ang alerto."
+  },
+  "/shops:add-user-suggest": {
+    "de": "Shop hinzufügen ist geöffnet. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado.",
+    "fil": "Bukas ang Magdagdag ng shop. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod."
+  },
+  "/shops:add-user-chosen": {
+    "de": "Shop hinzufügen ist geöffnet. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm.",
+    "es": "Añadir una tienda está abierto. El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta.",
+    "fil": "Bukas ang Magdagdag ng shop. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto."
+  },
+  "/shops:edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/shops:edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/shops:map-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:table-edit-user-suggest": {
+    "de": "Auf Tabelle wird der gespeicherte Name geleert. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Tabelle bleibt ausgewählt.",
+    "es": "En Tabla se borra el nombre guardado. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones. Tabla permanece seleccionada.",
+    "fil": "Sa Talahanayan binura ang naka-save na pangalan. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Talahanayan."
+  },
+  "/shops:table-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Tabelle bleibt ausgewählt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones. Tabla permanece seleccionada.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Talahanayan."
+  },
+  "/welcome:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/welcome:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/members/[accountId]:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod."
+  },
+  "/members/[accountId]:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto."
+  },
+  "/messages/[id]:shop-edit-user-suggest": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Feld zeigt @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Weiter ist deaktiviert. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. El campo muestra @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Siguiente está deshabilitado. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ipinapakita ng field ang @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Naka-disable ang Susunod. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/messages/[id]:shop-edit-user-chosen": {
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Die Wahl von @ada aus der Personenliste schreibt @ada in das Feld und lässt die Liste auf diesem Präfix offen. Weiter ist aktiviert. Es gibt keinen Alarm. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "El paso 4 de 5 · usuario de 21.gifts está abierto. Elegir @ada en la lista Personas escribe @ada en el campo y mantiene la lista en ese prefijo. Siguiente está habilitado. No hay alerta. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Ang pagpili ng @ada mula sa listahan ng Mga tao ay nagsusulat ng @ada sa field at pinananatiling bukas ang listahan sa prefix na iyon. Naka-enable ang Susunod. Walang alerto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+  },
+  "/welcome:shop-edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod."
+  },
+  "/members/[accountId]:shop-edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod."
+  },
+  "/messages/[id]:shop-edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod."
+  },
+  "/shops:map-edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert. Karte bleibt ausgewählt.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado. Mapa sigue seleccionado.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod. Napili pa ang Mapa."
+  },
+  "/shops:table-edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert. Tabelle bleibt ausgewählt.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado. Tabla sigue seleccionada.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod. Napili pa ang Talahanayan."
+  },
+  "/shops:edit-account-required": {
+    "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
+    "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
+    "fil": "Binago ng moderator ang Teksto ng shop, inilagay ang luna sa 4 sa 5 · User ng 21.gifts, at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod."
+  },
+  "/shops:add-account-required": {
+    "de": "Shop hinzufügen hat Schritt 5 von 5 · Zusammenfassung mit @luna erreicht, und Posten wurde gedrückt. Die API lehnte den Beitrag ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda llegó al paso 5 de 5 · Resumen con @luna y se pulsó Publicar. La API rechazó la publicación porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
+    "fil": "Naabot ng Magdagdag ng shop ang hakbang 5 sa 5 · Buod na may @luna, at pinindot ang I-post. Tinanggihan ng API ang post dahil kailangan ng note ng shop ang isang account ng shop. Bumalik ang editor sa 4 sa 5 · User ng 21.gifts, @luna ang nasa field, at nakikita ang Pumili ng user sa 21.gifts para magpatuloy. Naka-disable ang Susunod."
+  },
+  "/shops:staff-account-required": {
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist geöffnet. Der Benutzername wurde bearbeitet und geleert, das Feld ist wieder @. Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus. ist der Feldfehler. Konto speichern ist deaktiviert. Es gibt keine Meldung. Die Personenliste zeigt weiterhin @ada Ada Lovelace und @adam Adam.",
+    "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto. El nombre de usuario se editó y se vació, así que el campo vuelve a ser @. Escribe o elige el usuario de 21.gifts para continuar. es el error del campo. Guardar la cuenta está deshabilitado. No hay alerta. La lista de Personas sigue mostrando @ada Ada Lovelace y @adam Adam.",
+    "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account. Na-edit at nabura ang username, kaya @ na ulit ang field. Ang I-type o piliin ang username sa 21.gifts para magpatuloy. ang error ng field. Naka-disable ang I-save ang account. Walang alerto. Ipinapakita pa ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam."
   }
 }

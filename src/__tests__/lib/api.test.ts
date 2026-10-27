@@ -1355,6 +1355,16 @@ describe('fetchListedShops', () => {
     expect(fetchMock).toHaveBeenCalledWith('/shops/list?limit=20&cursor=c2');
   });
 
+  it('accepts a shop with no pin and a pin with no address', async () => {
+    const unpinned = { ...shop, place: null };
+    const unlabeled = { ...shop, place: { ...shop.place, address: null } };
+    stubFetch({ ok: true, status: 200, body: { shops: [unpinned, unlabeled] } });
+    await expect(fetchListedShops()).resolves.toEqual({
+      shops: [unpinned, unlabeled],
+      nextCursor: null,
+    });
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Shops are unavailable' } });
     await expect(fetchListedShops()).rejects.toThrow('Could not load shops. Please try again.');

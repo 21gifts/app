@@ -465,12 +465,11 @@ async function submitShopWizard(text: string, username?: string, media?: File): 
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: text } });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  if (username !== undefined) {
-    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
-    });
-  }
+  const handle = username ?? '@ada';
+  fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: handle } });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+  });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
 }
@@ -510,6 +509,14 @@ function invokeDisabledButton(button: HTMLElement, missingHandler: string): void
   act(() => {
     onClick();
   });
+}
+
+async function advanceFromRequiredShopUser(username = 'ada'): Promise<void> {
+  fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 }
 
 function bypassDisabledShopNext(): void {
@@ -1434,6 +1441,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: SHOP_NOTE_BODY,
         place: COMPLETE_SHOP_PLACE,
+        shopUsername: 'ada',
       });
     });
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
@@ -1579,7 +1587,7 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
   });
 
-  it('feed="shops" sends an optional shop username', async () => {
+  it('feed="shops" sends the shop username', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -1642,9 +1650,8 @@ describe('ForumLoader', () => {
     expect(lookupAccountByUsername).toHaveBeenCalledTimes(2);
     expect(postMock).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
-    });
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
   it.each([
@@ -1789,6 +1796,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: SHOP_NOTE_BODY,
         place: COMPLETE_SHOP_PLACE,
+        shopUsername: 'ada',
       });
     });
   });
@@ -1914,7 +1922,7 @@ describe('ForumLoader', () => {
       target: { value: SHOP_DESCRIPTION },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await advanceFromRequiredShopUser();
 
     submitDisabledShopSummary();
 
@@ -1948,7 +1956,7 @@ describe('ForumLoader', () => {
       target: { value: SHOP_DESCRIPTION },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await advanceFromRequiredShopUser();
 
     submitDisabledShopSummary();
 
@@ -1976,7 +1984,7 @@ describe('ForumLoader', () => {
       target: { value: SHOP_DESCRIPTION },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await advanceFromRequiredShopUser();
 
     submitDisabledShopSummary();
 
@@ -1996,7 +2004,7 @@ describe('ForumLoader', () => {
       target: { value: 'Too short' },
     });
     bypassDisabledShopNext();
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await advanceFromRequiredShopUser();
 
     submitDisabledShopSummary();
 
@@ -2022,7 +2030,7 @@ describe('ForumLoader', () => {
       target: { value: 'Fresh bread\u0001 every morning.' },
     });
     bypassDisabledShopNext();
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await advanceFromRequiredShopUser();
 
     submitDisabledShopSummary();
 
@@ -2062,9 +2070,29 @@ describe('ForumLoader', () => {
     ).toBeTruthy();
     expectNoShopComposeOrPost();
 
-    fireEvent.change(username, { target: { value: '' } });
+    fireEvent.change(username, { target: { value: 'ada' } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
     await submitValidShopWizardFromCurrentStep();
     await expectShopComposeAfterRetry();
+  });
+
+  it('feed="shops" refuses a blank shop username before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: SHOP_DESCRIPTION },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect((screen.getByLabelText('21.gifts username') as HTMLInputElement).value).toBe('@');
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    bypassDisabledShopNext();
+    submitDisabledShopSummary();
+    expect(await screen.findByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(screen.getByText('Type or pick the 21.gifts username to continue.')).toBeTruthy();
+    expectNoShopComposeOrPost();
   });
 
   it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {
@@ -2154,6 +2182,7 @@ describe('ForumLoader', () => {
           hasPhoto: true,
           photoCount: 1,
           place: COMPLETE_SHOP_PLACE,
+          shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
         },
         {
           ...SAMPLE,
@@ -2162,6 +2191,7 @@ describe('ForumLoader', () => {
           sats: 5,
           hasPhoto: true,
           photoCount: 1,
+          shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
         },
       ]),
     );
@@ -2319,7 +2349,7 @@ describe('ForumLoader', () => {
     delete (window as { google?: unknown }).google;
   });
 
-  it('feed="shops" clears the listed pin when the save returns no place', async () => {
+  it('feed="shops" drops the listed pin when a saved place comes back without one', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'moderator', forumLawsDismissed: true },
@@ -2329,7 +2359,7 @@ describe('ForumLoader', () => {
         {
           ...SAMPLE,
           id: 'shop1',
-          text: 'Cafe Luna\n\n#21GiftsShop',
+          text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
           sats: 5,
           place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
         },
@@ -2338,7 +2368,7 @@ describe('ForumLoader', () => {
     vi.mocked(setMessagePlace).mockResolvedValue({
       ...SAMPLE,
       id: 'shop1',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 5,
     });
     const map = {
@@ -2366,8 +2396,10 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit place' }));
-    expect(await screen.findByRole('button', { name: 'Remove place' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByLabelText('Shop name')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    fillShopAddressFields('Happyland');
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
     });
@@ -2411,7 +2443,7 @@ describe('ForumLoader', () => {
     expect(screen.queryByRole('link', { name: '@other' })).toBeNull();
   });
 
-  it('feed="shops" clears the listed account when the save returns null', async () => {
+  it('feed="shops" drops the listed account when the save omits shopAccount', async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, role: 'moderator', forumLawsDismissed: true },
@@ -2439,7 +2471,12 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit account' }));
-    fireEvent.click(within(card).getByRole('button', { name: 'Remove account' }));
+    fireEvent.change(within(card).getByLabelText('Username'), { target: { value: 'ada' } });
+    const save = within(card).getByRole('button', { name: 'Save account' });
+    await waitFor(() => {
+      expect(save).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(save);
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: '@luna' })).toBeNull();
     });
