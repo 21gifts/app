@@ -3649,6 +3649,166 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('$8.00')).toBeTruthy();
     });
 
+    it('does not let a later load that never reaches the screen spend the overtaken read', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      const marker = {
+        ...ended,
+        id: 'marker',
+        amountSats: 7,
+        status: 'expired' as const,
+        createdAt: new Date(now - 400_000).toISOString(),
+      };
+      const replaced = {
+        charge: null,
+        history: [{ ...ended, status: 'cancelled' as const }, marker],
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      let answerReplaced: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ charge: null });
+          }
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          if (reads === 5) {
+            return new Promise<Response>((resolve) => {
+              answerReplaced = resolve;
+            });
+          }
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          return jsonResponse(replaced);
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByText('₿7')).toBeTruthy();
+      showTab();
+      await waitFor(() => {
+        expect(answerReplaced).toBeDefined();
+      });
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBeGreaterThanOrEqual(6);
+      });
+      await act(async () => {
+        answerReplaced?.(jsonResponse(replaced));
+        await Promise.resolve();
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        answerLateRead?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+    });
+
+    it('does not let a later load that fails spend the overtaken read', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      const marker = {
+        ...ended,
+        id: 'marker',
+        amountSats: 7,
+        status: 'expired' as const,
+        createdAt: new Date(now - 400_000).toISOString(),
+      };
+      let reads = 0;
+      let answerLateRead: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ charge: null });
+          }
+          reads += 1;
+          if (reads === 3) {
+            return new Promise<Response>((resolve) => {
+              answerLateRead = resolve;
+            });
+          }
+          if (reads > 4) {
+            throw new TypeError('Failed to fetch');
+          }
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          return jsonResponse({
+            charge: null,
+            history: [{ ...ended, status: 'cancelled' }, marker],
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(answerLateRead).toBeDefined();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByText('₿7')).toBeTruthy();
+      showTab();
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        answerLateRead?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+    });
+
     it('gives the charge before no late-minute payment made after a newer charge took one', async () => {
       const now = Date.now();
       const ended = {

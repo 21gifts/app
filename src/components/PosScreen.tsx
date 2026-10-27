@@ -709,18 +709,18 @@ function usePosTillState(): PosTillState {
             });
           });
         }
-        // A create or cancel overtook this read: its answer still says which charge a held
-        // late-minute payment paid.
-        if (!applied && lateRead.current !== null && seq >= lateRead.current) {
+        // Only the read asked for this payment. A later load that fails, or that
+        // never reaches the screen, must not spend it.
+        if (!applied && lateRead.current === seq) {
           lateRead.current = null;
           const memory = settledFor(session);
           reassignPaid(memory, next);
           resolveLate(memory, next);
         }
       } catch {
-        // Without the read, a held late-minute payment goes to the charge it was held for,
-        // also when a later load already replaced this effect.
-        if (lateRead.current !== null && seq >= lateRead.current) {
+        // This read failed: the payment goes to the charge it was held for, also when a
+        // later load already replaced this effect. A later load's own failure does not.
+        if (lateRead.current === seq) {
           lateRead.current = null;
           resolveLate(settledFor(session), null);
         }
