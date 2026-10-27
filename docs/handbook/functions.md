@@ -755,16 +755,16 @@
 
 ## Function: resyncPushSubscription
 
-- **Purpose:** When `Notification.permission` is already `granted`, a service worker is already registered (`getRegistration()`; never registers one), and a local `pushManager` subscription exists, fetch the current VAPID key and POST that endpoint to the api. When the subscription's `options.applicationServerKey` differs byte for byte from the current key, `unsubscribe()`, `subscribe()` again with the current key, POST the new subscription, and DELETE the old endpoint (a DELETE failure is ignored). A browser that does not expose the stored key keeps the plain re-POST. Never calls `requestPermission`. Opt-out (no local subscription) is a no-op. POST failure leaves the local subscription in place. Shares a serial queue with `enablePush` and `disablePush`; a later disable no-ops a queued resync so it cannot POST after DELETE.
+- **Purpose:** When `Notification.permission` is already `granted`, a service worker is already registered (`getRegistration()`; never registers one), and a local `pushManager` subscription exists, fetch the current VAPID key and POST that endpoint to the api. When the subscription's `options.applicationServerKey` differs byte for byte from the current key, `unsubscribe()`, `subscribe()` again with the current key, POST the new subscription, and DELETE the old endpoint (a DELETE failure is ignored). A browser that does not expose the stored key keeps the plain re-POST. Before dropping the old subscription it stores `21gifts-push-renew` in `localStorage` and removes it after a successful POST, so when `subscribe()` or the POST fails in between, the next call subscribes with the current key even though no local subscription is left. Never calls `requestPermission`. Opt-out (no local subscription and no pending renewal) is a no-op. POST failure leaves the local subscription in place. Shares a serial queue with `enablePush` and `disablePush`; a later disable no-ops a queued resync so it cannot POST after DELETE.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when permission is not `granted`, Push APIs are missing, no worker is registered, or `getSubscription()` is null. Throws api errors from `fetchVapidPublicKey` / `postPushSubscription` without unsubscribing, and `Invalid subscription` when a new subscription omits endpoint or keys.
+- **Returns / side effects:** `void`. No-op when permission is not `granted`, Push APIs are missing, no worker is registered, or `getSubscription()` is null with no pending renewal. Throws api errors from `fetchVapidPublicKey` / `postPushSubscription` without unsubscribing, and `Invalid subscription` when a new subscription omits endpoint or keys.
 - **Used by:** `SignedInChrome` (mount, Notifications click when permission is already granted, and the worker's `21gifts-push-subscription-change` message).
 
 ## Function: disablePush
 
 - **Purpose:** When a service worker is already registered (`getRegistration()`; never registers one) and it holds a local push subscription, DELETE its endpoint on the api then `unsubscribe()` locally. Bumps a generation so in-flight enable/resync cannot POST after this opt-out, and waits for the shared serial queue so DELETE is the last server mutation.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when `serviceWorker` is missing, no worker is registered, or there is no subscription, so log out never installs a worker. Local `unsubscribe()` still runs if the api DELETE fails.
+- **Returns / side effects:** `void`. Clears a pending `21gifts-push-renew` key renewal. No-op when `serviceWorker` is missing, no worker is registered, or there is no subscription, so log out never installs a worker. Local `unsubscribe()` still runs if the api DELETE fails.
 - **Used by:** `PushToggle` and `LogoutButton`.
 
 ## Function: fetchVapidPublicKey

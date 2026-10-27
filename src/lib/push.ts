@@ -150,6 +150,29 @@ export function isIosSafari(): boolean {
 let pushOps: Promise<void> = Promise.resolve();
 let pushEpoch = 0;
 
+/** Set while a VAPID key change has dropped the old subscription but not stored a new one. */
+const PUSH_RENEW_KEY = '21gifts-push-renew';
+
+function pushRenewPending(): boolean {
+  try {
+    return window.localStorage.getItem(PUSH_RENEW_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setPushRenewPending(pending: boolean): void {
+  try {
+    if (pending) {
+      window.localStorage.setItem(PUSH_RENEW_KEY, '1');
+    } else {
+      window.localStorage.removeItem(PUSH_RENEW_KEY);
+    }
+  } catch {
+    // no-op
+  }
+}
+
 function runPushOp(op: () => Promise<void>): Promise<void> {
   const run = pushOps.then(op, op);
   pushOps = run.then(
@@ -259,8 +282,9 @@ export async function enablePush(sessionToken: string): Promise<void> {
  * Does not register the worker or call `requestPermission`. When the
  * subscription was made with a different VAPID key than the api's current one,
  * unsubscribe, subscribe again with the current key, POST the new
- * subscription, and DELETE the old endpoint. POST failure leaves the local
- * subscription in place.
+ * subscription, and DELETE the old endpoint. A renewal that failed after the
+ * old subscription was dropped is finished on the next call even without a
+ * local subscription. POST failure leaves the local subscription in place.
  *
  * @param sessionToken - Bearer session token.
  * @throws When fetching the VAPID key or persisting the subscription fails (503
@@ -287,14 +311,14 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
       return;
     }
     const subscription = await registration.pushManager.getSubscription();
-    if (subscription === null) {
+    if (subscription === null && !pushRenewPending()) {
       return;
     }
     if (epoch !== pushEpoch) {
       return;
     }
-    const body = subscriptionBody(subscription);
-    if (body === null) {
+    const body = subscription === null ? null : subscriptionBody(subscription);
+    if (subscription !== null && body === null) {
       return;
     }
     const applicationServerKey = new Uint8Array(
@@ -303,13 +327,23 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
     if (epoch !== pushEpoch) {
       return;
     }
-    if (!subscriptionKeyDiffers(subscription, applicationServerKey)) {
+    if (
+      subscription !== null &&
+      body !== null &&
+      !subscriptionKeyDiffers(subscription, applicationServerKey)
+    ) {
       await postPushSubscription(sessionToken, body);
+      setPushRenewPending(false);
       return;
     }
     // The push service rejects sends signed with the new key for a
-    // subscription bound to the old one, so replace it.
-    await subscription.unsubscribe().catch(() => undefined);
+    // subscription bound to the old one, and a browser subscribes with a new
+    // key only after the old subscription is gone. The marker lets the next
+    // start finish a renewal that failed in between.
+    setPushRenewPending(true);
+    if (subscription !== null) {
+      await subscription.unsubscribe().catch(() => undefined);
+    }
     const next = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey,
@@ -320,7 +354,8 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
       throw new Error('Invalid subscription');
     }
     await postPushSubscription(sessionToken, nextBody);
-    if (nextBody.endpoint !== body.endpoint) {
+    setPushRenewPending(false);
+    if (body !== null && nextBody.endpoint !== body.endpoint) {
       await deletePushSubscription(sessionToken, body.endpoint).catch(() => undefined);
     }
   });
@@ -328,14 +363,16 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
 
 /**
  * Disable Web Push for the signed-in member: DELETE the endpoint on the api
- * (when a subscription exists) and unsubscribe locally. Never registers the
- * service worker; no-op when none is registered or Push APIs are missing.
+ * (when a subscription exists) and unsubscribe locally. Clears a pending key
+ * renewal. Never registers the service worker; no-op when none is registered
+ * or Push APIs are missing.
  *
  * @param sessionToken - Bearer session token.
  */
 export async function disablePush(sessionToken: string): Promise<void> {
   pushEpoch += 1;
   await runPushOp(async () => {
+    setPushRenewPending(false);
     if (typeof navigator.serviceWorker === 'undefined') {
       return;
     }
