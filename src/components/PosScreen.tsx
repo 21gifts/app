@@ -693,21 +693,22 @@ function usePosTillState(): PosTillState {
       const seq = startRead(reads);
       try {
         const next = await fetchPosState(session);
-        if (!alive) {
-          return;
-        }
+        // A later load may already have replaced this effect. It still must not
+        // drop this answer: a held late-minute payment is settled from it below.
         let applied = false;
-        whenCurrent(generation, mine, () => {
-          applyRead(reads, seq, () => {
-            applied = true;
-            setTill({ state: next, session });
-            // The till answered: an earlier failed read no longer holds.
-            if (readFailed.current) {
-              readFailed.current = false;
-              setErrorState(null);
-            }
+        if (alive) {
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seq, () => {
+              applied = true;
+              setTill({ state: next, session });
+              // The till answered: an earlier failed read no longer holds.
+              if (readFailed.current) {
+                readFailed.current = false;
+                setErrorState(null);
+              }
+            });
           });
-        });
+        }
         // A create or cancel overtook this read: its answer still says which charge a held
         // late-minute payment paid.
         if (!applied && lateRead.current !== null && seq >= lateRead.current) {
@@ -717,8 +718,9 @@ function usePosTillState(): PosTillState {
           resolveLate(memory, next);
         }
       } catch {
-        // Without the read, a held late-minute payment goes to the open charge it paid.
-        if (alive && lateRead.current !== null && seq >= lateRead.current) {
+        // Without the read, a held late-minute payment goes to the charge it was held for,
+        // also when a later load already replaced this effect.
+        if (lateRead.current !== null && seq >= lateRead.current) {
           lateRead.current = null;
           resolveLate(settledFor(session), null);
         }
