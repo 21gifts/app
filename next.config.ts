@@ -22,10 +22,20 @@ function appVersionForBuild(): string {
  * under `.next/standalone` — that is what the Dockerfile runtime stage ships.
  * `outputFileTracingRoot` pins that layout to this package even when a parent
  * directory also has a lockfile (Next would otherwise nest standalone).
+ *
+ * The CI check job already runs `tsc --noEmit`, and Lint is its own job.
+ * Repeating both inside `next build` makes that job miss its 10-minute limit.
+ * Only that build step sets the variable. Image builds leave it unset.
  */
+function skipRepeatedBuildChecks(): boolean {
+  return process.env.SKIP_NEXT_BUILD_CHECKS === '1';
+}
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: appRoot,
+  eslint: { ignoreDuringBuilds: skipRepeatedBuildChecks() },
+  typescript: { ignoreBuildErrors: skipRepeatedBuildChecks() },
   outputFileTracingIncludes: {
     '/handbook': ['./docs/handbook/**/*'],
     '/handbook/screens': ['./docs/handbook/**/*', './scripts/screen-variants.mjs'],

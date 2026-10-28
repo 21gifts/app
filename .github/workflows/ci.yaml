@@ -67,7 +67,12 @@ jobs:
         run: npm run test:coverage
 
       - name: Build
+        # This job already typechecked. Lint is its own job. Repeating both
+        # here makes this job miss its 10-minute limit. Image builds do not
+        # set the variable.
         run: npm run build
+        env:
+          SKIP_NEXT_BUILD_CHECKS: '1'
 
   e2e:
     name: E2E (behavior, shard ${{ matrix.shard }}/${{ matrix.shards }})
