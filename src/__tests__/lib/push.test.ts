@@ -138,9 +138,11 @@ describe('enablePush', () => {
     });
     vi.mocked(fetchVapidPublicKey).mockResolvedValue(bytesToBase64Url(new Uint8Array([9, 8, 7])));
     vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    window.localStorage.setItem('21gifts-push-off', '1');
 
     await enablePush('sess');
 
+    expect(window.localStorage.getItem('21gifts-push-off')).toBeNull();
     expect(subscribe).toHaveBeenCalledWith({
       userVisibleOnly: true,
       applicationServerKey: expect.any(Uint8Array),
@@ -650,16 +652,49 @@ describe('resyncPushSubscription VAPID key change', () => {
     expect(window.localStorage.getItem('21gifts-push-renew')).toBeNull();
   });
 
-  it('still renews when storage throws', async () => {
+  it('keeps and re-posts the old subscription when the renewal marker cannot be stored', async () => {
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const { subscribe, oldUnsubscribe } = stubRotation({
+      storedKey: new Uint8Array([1, 2, 3]).buffer,
+    });
+    await resyncPushSubscription('sess');
+    expect(oldUnsubscribe).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(postPushSubscription).toHaveBeenCalledWith('sess', {
+      endpoint: 'https://push.example/old',
+      keys: { p256dh: 'p256', auth: 'auth' },
+    });
+    expect(deletePushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('still subscribes for a reported change when storage cannot be written', async () => {
     vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
       throw new Error('quota');
     });
     vi.spyOn(window.localStorage, 'removeItem').mockImplementation(() => {
       throw new Error('quota');
     });
-    const { subscribe } = stubRotation({ storedKey: new Uint8Array([1, 2, 3]).buffer });
-    await resyncPushSubscription('sess');
-    expect(subscribe).toHaveBeenCalledTimes(1);
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(null),
+        subscribe: vi.fn().mockResolvedValue({
+          toJSON: () => ({
+            endpoint: 'https://push.example/new',
+            keys: { p256dh: 'p256-new', auth: 'auth-new' },
+          }),
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    await resyncPushSubscription('sess', true);
+    expect(registration.pushManager.subscribe).toHaveBeenCalledTimes(1);
     expect(postPushSubscription).toHaveBeenCalledTimes(1);
   });
 
@@ -724,6 +759,93 @@ describe('resyncPushSubscription VAPID key change', () => {
     await expect(resyncPushSubscription('sess', true)).rejects.toThrow('offline');
     expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
     expect(pushRenewalPending()).toBe(true);
+  });
+
+  it('drops a pending renewal when notification permission is withdrawn', async () => {
+    window.localStorage.setItem('21gifts-push-renew', '1');
+    vi.stubGlobal('Notification', { permission: 'denied' });
+    await resyncPushSubscription('sess');
+    expect(window.localStorage.getItem('21gifts-push-renew')).toBeNull();
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    expect(pushRenewalPending()).toBe(false);
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('does not subscribe for a worker message that arrives after Off', async () => {
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null), subscribe: vi.fn() },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    await disablePush('sess');
+    expect(window.localStorage.getItem('21gifts-push-off')).toBe('1');
+    await resyncPushSubscription('sess', true);
+    expect(fetchVapidPublicKey).not.toHaveBeenCalled();
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(pushRenewalPending()).toBe(false);
+  });
+
+  it('drops a subscription the worker made after Off', async () => {
+    window.localStorage.setItem('21gifts-push-off', '1');
+    const unsubscribe = vi.fn().mockRejectedValue(new Error('gone'));
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({
+          endpoint: 'https://push.example/worker',
+          toJSON: () => ({
+            endpoint: 'https://push.example/worker',
+            keys: { p256dh: 'p256', auth: 'auth' },
+          }),
+          unsubscribe,
+        }),
+        subscribe: vi.fn(),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    await resyncPushSubscription('sess', true);
+    expect(unsubscribe).toHaveBeenCalled();
+    expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+
+  it('keeps a subscription after Off when the start-up resync was not started by the worker', async () => {
+    window.localStorage.setItem('21gifts-push-off', '1');
+    const { oldUnsubscribe } = stubRotation({ storedKey: new Uint8Array(CURRENT_KEY).buffer });
+    await resyncPushSubscription('sess');
+    expect(oldUnsubscribe).not.toHaveBeenCalled();
+    expect(postPushSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats unreadable storage as push not turned off for a worker message', async () => {
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue(null),
+        subscribe: vi.fn().mockResolvedValue({
+          toJSON: () => ({
+            endpoint: 'https://push.example/new',
+            keys: { p256dh: 'p256-new', auth: 'auth-new' },
+          }),
+        }),
+      },
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue(registration) },
+    });
+    vi.stubGlobal('Notification', { permission: 'granted' });
+    vi.stubGlobal('PushManager', function PushManager() {});
+    vi.mocked(postPushSubscription).mockResolvedValue(undefined);
+    await resyncPushSubscription('sess', true);
+    expect(registration.pushManager.subscribe).toHaveBeenCalledTimes(1);
   });
 
   it('is a no-op without registering a worker when none is registered', async () => {
@@ -987,10 +1109,19 @@ function installNavigator(value: unknown): () => void {
 }
 
 describe('pushRenewalPending', () => {
-  it('reads the renewal marker', () => {
+  it('reads the renewal marker while permission is granted', () => {
+    vi.stubGlobal('Notification', { permission: 'granted' });
     expect(pushRenewalPending()).toBe(false);
     window.localStorage.setItem('21gifts-push-renew', '1');
     expect(pushRenewalPending()).toBe(true);
+  });
+
+  it('ignores a stored marker once notifications are blocked', () => {
+    window.localStorage.setItem('21gifts-push-renew', '1');
+    vi.stubGlobal('Notification', { permission: 'denied' });
+    expect(pushRenewalPending()).toBe(false);
+    vi.stubGlobal('Notification', undefined);
+    expect(pushRenewalPending()).toBe(false);
   });
 });
 
