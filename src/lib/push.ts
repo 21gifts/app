@@ -156,7 +156,7 @@ let pushEpoch = 0;
  */
 const PUSH_RENEW_KEY = '21gifts-push-renew';
 
-/** Set by turning push off and cleared by turning it on, so a late worker message cannot undo Off. */
+/** Set by turning push off and cleared by turning it on, so no later resync undoes Off. */
 const PUSH_OFF_KEY = '21gifts-push-off';
 
 /**
@@ -311,24 +311,25 @@ export async function enablePush(sessionToken: string): Promise<void> {
 
 /**
  * Re-POST an existing Web Push subscription when OS permission is already
- * granted. No-op when Push APIs are missing, permission is not `granted`, no
- * service worker is registered, or there is no local subscription (opt-out).
- * Does not register the worker or call `requestPermission`. When the
+ * granted. No-op when Push APIs are missing, no service worker is registered,
+ * or there is no local subscription (opt-out). Without granted permission it
+ * only removes a pending renewal, so granting permission later is not an
+ * opt-in. Does not register the worker or call `requestPermission`. When the
  * subscription was made with a different VAPID key than the api's current one,
  * unsubscribe, subscribe again with the current key, POST the new
  * subscription, and DELETE the old endpoint. A renewal that failed after the
  * old subscription was dropped is finished on the next call even without a
  * local subscription. When the renewal marker cannot be stored, the old
  * subscription is kept and re-posted instead. POST failure leaves the local
- * subscription in place. Without granted permission, a pending renewal is
- * dropped.
+ * subscription in place. While the Off flag from {@link disablePush} is set,
+ * a subscription still present is deleted and unsubscribed instead, and
+ * nothing is subscribed.
  *
  * @param sessionToken - Bearer session token.
  * @param subscriptionChanged - True when the service worker reported a
  * browser-side subscription change. A missing local subscription then means
  * the worker could not subscribe again, not an opt-out, so subscribe with the
- * current key. When push was turned off meanwhile, nothing is subscribed and a
- * subscription the worker made is dropped.
+ * current key.
  * @throws When fetching the VAPID key or persisting the subscription fails (503
  * `Push is not configured`, or the api error on other non-2xx), when the
  * browser's `PushManager.subscribe` rejects, or with `Invalid subscription`
@@ -362,9 +363,12 @@ export async function resyncPushSubscription(
     if (epoch !== pushEpoch) {
       return;
     }
-    if (subscriptionChanged && pushTurnedOff()) {
-      // Off won while the worker replaced the subscription, maybe in another tab.
+    if (pushTurnedOff()) {
+      // The last choice on this browser was Off or log out. Finish it for a
+      // subscription that survived a cut-off log out or that the worker made
+      // meanwhile, maybe in another tab.
       if (subscription !== null) {
+        await deletePushSubscription(sessionToken, subscription.endpoint).catch(() => undefined);
         await subscription.unsubscribe().catch(() => undefined);
       }
       return;
@@ -427,7 +431,7 @@ export async function resyncPushSubscription(
 /**
  * Disable Web Push for the signed-in member: DELETE the endpoint on the api
  * (when a subscription exists) and unsubscribe locally. Clears a pending key
- * renewal and stores the Off flag that a later worker message respects. Never
+ * renewal and stores the Off flag that a later resync respects. Never
  * registers the service worker; no-op when none is registered or Push APIs are
  * missing.
  *

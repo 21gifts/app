@@ -791,6 +791,7 @@ describe('resyncPushSubscription VAPID key change', () => {
 
   it('drops a subscription the worker made after Off', async () => {
     window.localStorage.setItem('21gifts-push-off', '1');
+    vi.mocked(deletePushSubscription).mockRejectedValue(new Error('offline'));
     const unsubscribe = vi.fn().mockRejectedValue(new Error('gone'));
     const registration = {
       pushManager: {
@@ -811,16 +812,26 @@ describe('resyncPushSubscription VAPID key change', () => {
     vi.stubGlobal('Notification', { permission: 'granted' });
     vi.stubGlobal('PushManager', function PushManager() {});
     await resyncPushSubscription('sess', true);
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/worker');
     expect(unsubscribe).toHaveBeenCalled();
     expect(postPushSubscription).not.toHaveBeenCalled();
   });
 
-  it('keeps a subscription after Off when the start-up resync was not started by the worker', async () => {
+  it('finishes an Off that a cut-off log out left behind instead of re-posting', async () => {
     window.localStorage.setItem('21gifts-push-off', '1');
-    const { oldUnsubscribe } = stubRotation({ storedKey: new Uint8Array(CURRENT_KEY).buffer });
+    const { oldUnsubscribe, subscribe } = stubRotation({
+      storedKey: new Uint8Array(CURRENT_KEY).buffer,
+    });
     await resyncPushSubscription('sess');
-    expect(oldUnsubscribe).not.toHaveBeenCalled();
-    expect(postPushSubscription).toHaveBeenCalledTimes(1);
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/old');
+    expect(oldUnsubscribe).toHaveBeenCalled();
+    expect(fetchVapidPublicKey).not.toHaveBeenCalled();
+
+    vi.mocked(deletePushSubscription).mockClear();
+    await resyncPushSubscription('sess', true);
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(postPushSubscription).not.toHaveBeenCalled();
   });
 
   it('treats unreadable storage as push not turned off for a worker message', async () => {
