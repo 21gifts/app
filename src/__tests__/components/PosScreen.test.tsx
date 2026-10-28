@@ -3094,6 +3094,11 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(screen.queryByRole('alertdialog')).toBeNull();
       });
+      // The later read no longer returns the charge. History still shows it paid.
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText("₿85'000")).toBeTruthy();
+      expect(within(history).getByText('CHF 68.00')).toBeTruthy();
+      expect(within(history).getByText(/Paid ✓/)).toBeTruthy();
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 

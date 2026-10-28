@@ -835,7 +835,16 @@ function usePosTillState(): PosTillState {
   const history =
     state === null
       ? []
-      : state.history.map((row) => (row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row)));
+      : (() => {
+          const rows = state.history.map((row) =>
+            row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row),
+          );
+          // A lost create the api already showed paid stays in History after Done,
+          // even when a later read no longer returns it. It is not a wallet payment.
+          const seen = new Set(rows.map((row) => row.id));
+          const remembered = [...memory.reported.values()].filter((row) => !seen.has(row.id));
+          return [...remembered.reverse(), ...rows];
+        })();
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   // Only a figure stored with the charge (typed, else its stored snapshot in the viewer's
   // currency), never one priced from a rate (docs/fiat-amounts.md).
