@@ -385,6 +385,7 @@ export function PlaceField(props: {
       }
       const anchorRect = anchor.getBoundingClientRect();
       const frameEl = anchor.closest('[data-app-frame]');
+      const chromeEl = frameEl !== null ? frameEl.querySelector('[data-app-chrome]') : null;
       const raw =
         frameEl !== null
           ? frameEl.getBoundingClientRect()
@@ -392,11 +393,14 @@ export function PlaceField(props: {
       const band = window.visualViewport;
       const viewTop = band?.offsetTop ?? 0;
       const viewBottom = viewTop + (band?.height ?? window.innerHeight);
+      /** Include the chrome row bottom in the top bound so the panel never covers the app chrome. */
+      const chromeBottom =
+        chromeEl instanceof HTMLElement ? chromeEl.getBoundingClientRect().bottom : raw.top;
       commitPlacedBox(
         fitBoxInFrame({
           frameLeft: Math.max(raw.left, 0),
           frameRight: Math.min(raw.right, window.innerWidth),
-          frameTop: Math.max(raw.top, viewTop),
+          frameTop: Math.max(raw.top, viewTop, chromeBottom),
           frameBottom: Math.min(raw.bottom, viewBottom),
           anchorLeft: anchorRect.left,
           anchorTop: anchorRect.top,

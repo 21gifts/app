@@ -926,6 +926,49 @@ describe('PlaceField', () => {
     }
   });
 
+  it('keeps the open place panel below the app chrome', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    const chromeBottom = 120;
+    window.innerWidth = 400;
+    window.innerHeight = 800;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(0, 0, 400, 800);
+      }
+      if (this.hasAttribute('data-app-chrome')) {
+        return clientRect(0, 0, 400, chromeBottom);
+      }
+      return clientRect(30, 40, 70, 80);
+    };
+    stubMaps();
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <div data-app-chrome />
+          <PlaceField
+            ariaLabel="Edit place"
+            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+            disabled={false}
+            onChange={() => undefined}
+          />
+        </div>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+      const input = await screen.findByLabelText('Place name');
+      await waitFor(() => {
+        const panel = input.closest('.fixed') as HTMLElement;
+        expect(panel).not.toBeNull();
+        expect(parseFloat(panel.style.top)).toBeGreaterThanOrEqual(chromeBottom);
+      });
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+    }
+  });
+
   it('gives the short map no fixed height', async () => {
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
     const originalWidth = window.innerWidth;
