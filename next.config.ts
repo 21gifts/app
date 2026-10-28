@@ -28,7 +28,7 @@ function appVersionForBuild(): string {
  * Only that build step sets the variable. Image builds leave it unset.
  */
 function skipRepeatedBuildChecks(): boolean {
-  return process.env.SKIP_NEXT_BUILD_CHECKS === '1';
+  return process.env['SKIP_NEXT_BUILD_CHECKS'] === '1';
 }
 
 const nextConfig: NextConfig = {
