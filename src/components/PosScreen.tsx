@@ -1300,6 +1300,12 @@ function usePosTillState(): PosTillState {
       });
     } catch {
       deliver(() => {
+        // This follow-up belongs to the session that cancelled. A later session's
+        // failed read does not move `applied`, so this failure must not replace
+        // that session's error. The next session would otherwise keep the loader.
+        if (useAuthStore.getState().session !== session) {
+          return;
+        }
         readFailed.current = true;
         setErrorState({ message: t('pos.error'), session });
       });

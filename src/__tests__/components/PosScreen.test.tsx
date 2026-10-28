@@ -2795,6 +2795,51 @@ describe('PosScreen', () => {
       expect(screen.getByText('₿42')).toBeTruthy();
     });
 
+    it('does not let a cancel follow-up replace the next sessions failed read', async () => {
+      let failFollow: ((reason: unknown) => void) | undefined;
+      let failNext: ((reason: unknown) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return Promise.resolve(jsonResponse({ charge: null }));
+          }
+          reads += 1;
+          if (reads === 1) {
+            return Promise.resolve(jsonResponse({ charge: OPEN, history: [OPEN] }));
+          }
+          if (reads === 2) {
+            return new Promise<Response>((_resolve, reject) => {
+              failFollow = reject;
+            });
+          }
+          return new Promise<Response>((_resolve, reject) => {
+            failNext = reject;
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(failFollow).toBeDefined();
+      });
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      await waitFor(() => {
+        expect(failNext).toBeDefined();
+      });
+      await act(async () => {
+        failNext?.(new TypeError('Failed to fetch'));
+      });
+      expect((await screen.findByRole('alert')).textContent).toBe('Point of sale is unavailable.');
+      await act(async () => {
+        failFollow?.(new TypeError('Failed to fetch'));
+      });
+      expect(screen.getByRole('alert').textContent).toBe('Point of sale is unavailable.');
+    });
+
     it('shows the till error when the read after a cancel that went through fails', async () => {
       let reads = 0;
       vi.stubGlobal(
