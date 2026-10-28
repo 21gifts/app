@@ -2987,7 +2987,7 @@ describe('PosScreen', () => {
       return alerted;
     }
 
-    it('keeps the amount page when a lost create is already paid, and the till confirms that read', async () => {
+    it('keeps the amount page when a lost create is already paid, and the till confirms that read after it is gone', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
       useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
       const paidMeanwhile = {
@@ -3001,6 +3001,8 @@ describe('PosScreen', () => {
         amount: '68',
       };
       let lost = false;
+      let lostReads = 0;
+      let gets = 0;
       vi.stubGlobal(
         'fetch',
         vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
@@ -3008,7 +3010,14 @@ describe('PosScreen', () => {
             lost = true;
             return jsonResponse({ error: 'Bad gateway' }, 502);
           }
-          return lost
+          gets += 1;
+          if (!lost) {
+            return jsonResponse({ charge: null, history: [] });
+          }
+          lostReads += 1;
+          // Only the read right after the lost create returns the paid charge.
+          // Every later read, including the till's own, no longer has it.
+          return lostReads === 1
             ? jsonResponse({ charge: paidMeanwhile, history: [paidMeanwhile] })
             : jsonResponse({ charge: null, history: [] });
         }),
@@ -3024,11 +3033,22 @@ describe('PosScreen', () => {
       expect(replace).not.toHaveBeenCalled();
       expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
       expect(screen.queryByRole('alert')).toBeNull();
+      const readsBeforeTill = gets;
       amountPage.unmount();
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
-      const dialog = await confirmation();
+      // The till's own read has answered without that charge, and the confirmation is still there.
+      await waitFor(() => {
+        expect(gets).toBeGreaterThan(readsBeforeTill);
+        expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      });
+      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
       expect(within(dialog).getByText("₿85'000")).toBeTruthy();
       expect(within(dialog).getByText('CHF 68.00')).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 

@@ -152,7 +152,8 @@ type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> 
  * What this tab's wallet settled for one session, shared by `/pos` and
  * `/pos/amount` so a page change keeps it: the last open charge (a payment
  * just after its end still counts), the charges the wallet saw paid before
- * the api may know it, and the paid charges whose confirmation was closed.
+ * the api may know it, a lost create the api already showed paid, and the
+ * paid charges whose confirmation was closed.
  */
 type WalletSettled = {
   session: string | null;
@@ -168,6 +169,13 @@ type WalletSettled = {
   }>;
   /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
   paidBy: Map<string, TillPayment>;
+  /**
+   * A create whose answer was lost, when the read after it already showed the
+   * new charge paid. The till confirms it after that page is gone, even when
+   * a later read fails or no longer returns it. Not a payment this tab's
+   * wallet saw, so it is not in `paid`.
+   */
+  reported: Map<string, PosCharge>;
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), by payment time. */
   early: Array<TillPayment>;
@@ -211,6 +219,7 @@ function settledFor(session: string | null): WalletSettled {
       paid: new Map(),
       late: [],
       paidBy: new Map(),
+      reported: new Map(),
       closed: new Set(),
       early: [],
       recheck: false,
@@ -803,8 +812,10 @@ function usePosTillState(): PosTillState {
   const charge = pending !== null && !walletPaid.has(pending.id) ? pending : null;
   const serverPaid = shown !== null && shown.status === 'paid' ? shown : null;
   // The newest paid charge whose confirmation is not closed yet, by creation; once it is closed the
-  // next one shows, so two payments settled at once both confirm.
-  const latest = [serverPaid, ...walletPaid.values()].reduce<PosCharge | null>(
+  // next one shows, so two payments settled at once both confirm. A lost create the api already
+  // showed paid stays here after that read is gone.
+  const confirmed = [serverPaid, ...walletPaid.values(), ...memory.reported.values()];
+  const latest = confirmed.reduce<PosCharge | null>(
     (newest, row) => (row === null || closed.has(row.id) ? newest : newerCharge(newest, row)),
     null,
   );
@@ -814,7 +825,7 @@ function usePosTillState(): PosTillState {
   const hiddenPaidIds =
     charge === null
       ? ''
-      : [serverPaid, ...walletPaid.values()]
+      : confirmed
           .filter(
             (row): row is PosCharge =>
               row !== null && !closed.has(row.id) && newerCharge(charge, row) === charge,
@@ -1129,6 +1140,13 @@ function usePosTillState(): PosTillState {
               });
               if (made !== null) {
                 setAmount('');
+                if (made.status === 'paid') {
+                  // Remember it for the till. A later read that fails, or no longer returns it,
+                  // still confirms it. Not `paid`: this tab's wallet did not see the payment, so
+                  // the amount page stays and can create the next charge.
+                  creating.reported.set(made.id, made);
+                  settledChanged();
+                }
               }
             });
             if (made !== null) {
@@ -1136,7 +1154,7 @@ function usePosTillState(): PosTillState {
               // payments kept meanwhile. A read that already shows it paid is only the api's
               // report. This tab's wallet did not see that payment, so it is not stored as one
               // the wallet paid. The amount page can create the next charge.
-              // The till confirms it from the read.
+              // The till confirms that read, including after this page is gone.
               return;
             }
           } catch {
@@ -1349,7 +1367,10 @@ function usePosTillState(): PosTillState {
  * or names a charge no read listed (whether another device's charge takes
  * it), and when the
  * confirmation is closed. A paid charge
- * the api returns also opens the confirmation. Under the till, once it has
+ * the api returns also opens the confirmation. A lost create the api already
+ * shows paid is remembered for the session and still confirmed here when a
+ * later read fails or no longer returns it; it is not a payment this tab's
+ * wallet saw. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
  * paid already as paid. An
  * account whose wallet is not verified sees **Set up your wallet first.**

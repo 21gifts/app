@@ -8,7 +8,7 @@ import { Button } from '@/components/ui';
 export const POS_PAID_VIBRATION: readonly number[] = [180, 90, 180];
 
 /** Bitcoin and the currency figure use this size, so neither reads as the lesser amount. */
-const PAID_FIGURE_CLASS = 'text-6xl font-bold tabular-nums lining-nums sm:text-8xl';
+const PAID_FIGURE_CLASS = 'pos-paid-figure text-6xl font-bold tabular-nums lining-nums sm:text-8xl';
 
 /** Props for {@link PosPaidOverlay}. */
 export interface PosPaidOverlayProps {
@@ -25,9 +25,11 @@ export interface PosPaidOverlayProps {
  * turns green, a check draws itself inside pulsing rings, and **Paid** with
  * the amount in bitcoin and, at the same size, the charge's stored currency
  * figure (or the current spot without one), fills the middle, so nobody at
- * the counter can miss it. A phone vibrates once on open. **Done** is the
- * only action: it closes the confirmation and leaves the till already under
- * it (`/pos`). Focus moves to **Done** on open.
+ * the counter can miss it. A phone vibrates once on open. On a short window
+ * the disc, the title and both amounts shrink together, so the amounts stay
+ * the same size and **Done** stays inside the window. The screen does not
+ * scroll. **Done** is the only action: it closes the confirmation and leaves
+ * the till already under it (`/pos`). Focus moves to **Done** on open.
  * With reduced motion the screen stays the same without the movement.
  *
  * @param props - See {@link PosPaidOverlayProps}.
@@ -51,9 +53,9 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
       aria-modal="true"
       aria-labelledby="pos-paid-title"
       aria-describedby="pos-paid-amount"
-      className="fixed inset-0 z-[100] flex animate-paid-in flex-col items-center justify-center gap-6 bg-app-success p-6 text-center text-app-bg"
+      className="pos-paid-fit fixed inset-0 z-[100] flex animate-paid-in flex-col items-center justify-center gap-6 bg-app-success p-6 text-center text-app-bg"
     >
-      <div className="relative flex h-32 w-32 items-center justify-center sm:h-40 sm:w-40">
+      <div className="pos-paid-mark relative flex h-32 w-32 items-center justify-center sm:h-40 sm:w-40">
         <span
           aria-hidden="true"
           className="pos-paid-ring absolute inset-0 rounded-full border-4 border-app-bg"
@@ -82,13 +84,16 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
           </svg>
         </span>
       </div>
-      <h2 id="pos-paid-title" className="text-5xl font-bold tracking-tight sm:text-7xl">
+      <h2
+        id="pos-paid-title"
+        className="pos-paid-title text-5xl font-bold tracking-tight sm:text-7xl"
+      >
         {t('pos.paidTitle')}
       </h2>
       <div id="pos-paid-amount" className="flex flex-col items-center gap-1">
         <p className={PAID_FIGURE_CLASS}>{amount}</p>
         {fiat === null ? null : <p className={PAID_FIGURE_CLASS}>{fiat}</p>}
-        <p className="mt-2 max-w-xs text-base font-medium">{t('pos.paidArrived')}</p>
+        <p className="pos-paid-note mt-2 max-w-xs text-base font-medium">{t('pos.paidArrived')}</p>
       </div>
       <div ref={first} className="flex w-full max-w-xs flex-col gap-3">
         <Button type="button" size="lg" onClick={onClose}>
