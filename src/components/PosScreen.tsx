@@ -318,9 +318,15 @@ function markPaid(memory: WalletSettled, charge: PosCharge, payment: TillPayment
  * held for does, unless an earlier payment already paid that charge, when it
  * is kept like any payment no known charge took.
  */
-function resolveLate(memory: WalletSettled, state: PosState | null): void {
-  const held = memory.late;
-  memory.late = [];
+function resolveLate(
+  memory: WalletSettled,
+  state: PosState | null,
+  batch: WalletSettled['late'],
+): void {
+  // Only the payments this read was sent for. One that arrived after the request
+  // stays held: it needs a read taken after it, not this earlier snapshot.
+  const held = batch;
+  memory.late = memory.late.filter((item) => !held.includes(item));
   const taken = new Set<string>();
   for (const { payment, charge } of held) {
     // Newer charges the payment could pay: made after it was, so the receiving address was theirs.
@@ -728,6 +734,9 @@ function usePosTillState(): PosTillState {
       } else {
         seq = startRead(reads);
       }
+      // Taken at the request, not when the answer arrives. A payment that lands
+      // after this stays held for a later read.
+      const batch = lateRead.current === seq ? settledFor(session).late.slice() : null;
       try {
         const next = await fetchPosState(session);
         // A later load may already have replaced this effect. It still must not
@@ -746,19 +755,28 @@ function usePosTillState(): PosTillState {
         }
         // Only this read spends the payment, from its own answer, even when a later
         // load is already on screen. A till that has gone must not: the next one claimed it.
-        if (lateRead.current === seq && mounted.current) {
-          lateRead.current = null;
+        if (batch !== null && lateRead.current === seq && mounted.current) {
           const memory = settledFor(session);
           reassignPaid(memory, next);
-          resolveLate(memory, next);
+          // Clear before settling, so a payment that arrived after this request
+          // draws its own number from the wallet callback.
+          lateRead.current = null;
+          resolveLate(memory, next, batch);
+          if (memory.late.length > 0) {
+            setReload((n) => n + 1);
+          }
         }
       } catch {
         // This read failed: the payment goes to the charge it was held for, also when a
         // later load already replaced this effect. A later load's own failure does not,
         // and neither does a till that has gone.
-        if (lateRead.current === seq && mounted.current) {
+        if (batch !== null && lateRead.current === seq && mounted.current) {
           lateRead.current = null;
-          resolveLate(settledFor(session), null);
+          const memory = settledFor(session);
+          resolveLate(memory, null, batch);
+          if (memory.late.length > 0) {
+            setReload((n) => n + 1);
+          }
         }
         // A newer read already answered, so this failure says nothing about the till now.
         if (!alive || quiet || seq < reads.current.applied) {
@@ -905,12 +923,17 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
+    // Not while a late payment is still held. The read taken after it may pay that open charge,
+    // and then both confirmations are still due.
+    if (lateHeld) {
+      return;
+    }
     for (const id of hiddenPaidIds.split(' ')) {
       if (id !== '') {
         settledFor(session).closed.add(id);
       }
     }
-  }, [hiddenPaidIds, session]);
+  }, [hiddenPaidIds, lateHeld, session]);
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
