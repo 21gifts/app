@@ -649,6 +649,14 @@ function usePosTillState(): PosTillState {
   const lateRead = useRef<number | null>(null);
   // Its number, drawn when the payment is held, until the load that follows claims it.
   const latePending = useRef<number | null>(null);
+  // False after this till is gone. Its read must not spend a payment the next till claimed.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   useEffect(() => {
     // A read of the session before never answers for this session's late-minute payments.
     lateRead.current = null;
@@ -724,11 +732,9 @@ function usePosTillState(): PosTillState {
         const next = await fetchPosState(session);
         // A later load may already have replaced this effect. It still must not
         // drop this answer: a held late-minute payment is settled from it below.
-        let applied = false;
         if (alive) {
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
-              applied = true;
               setTill({ state: next, session });
               // The till answered: an earlier failed read no longer holds.
               if (readFailed.current) {
@@ -738,9 +744,9 @@ function usePosTillState(): PosTillState {
             });
           });
         }
-        // Only the read asked for this payment. A later load that fails, or that
-        // never reaches the screen, must not spend it.
-        if (!applied && lateRead.current === seq) {
+        // Only this read spends the payment, from its own answer, even when a later
+        // load is already on screen. A till that has gone must not: the next one claimed it.
+        if (lateRead.current === seq && mounted.current) {
           lateRead.current = null;
           const memory = settledFor(session);
           reassignPaid(memory, next);
@@ -748,8 +754,9 @@ function usePosTillState(): PosTillState {
         }
       } catch {
         // This read failed: the payment goes to the charge it was held for, also when a
-        // later load already replaced this effect. A later load's own failure does not.
-        if (lateRead.current === seq) {
+        // later load already replaced this effect. A later load's own failure does not,
+        // and neither does a till that has gone.
+        if (lateRead.current === seq && mounted.current) {
           lateRead.current = null;
           resolveLate(settledFor(session), null);
         }
@@ -837,17 +844,6 @@ function usePosTillState(): PosTillState {
         memory.seen.add(row.id);
       }
       reassignPaid(memory, state);
-      if (
-        memory.late.length > 0 &&
-        lateRead.current !== null &&
-        reads.current.applied >= lateRead.current &&
-        // A successful cancel raises the floor above the read it overtook. That
-        // read is not on screen, and this later answer must not settle its payment.
-        lateRead.current >= reads.current.floor
-      ) {
-        lateRead.current = null;
-        resolveLate(memory, state);
-      }
     }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it. Not

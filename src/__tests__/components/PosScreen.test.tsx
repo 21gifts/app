@@ -3683,6 +3683,209 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('does not let a later visible load spend the read the payment asked for', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      let reads = 0;
+      let releaseLate: ((value: Response) => void) | undefined;
+      let releaseVisible: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (releaseLate === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseLate = resolve;
+            });
+          }
+          if (releaseVisible === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseVisible = resolve;
+            });
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(releaseLate).toEqual(expect.any(Function));
+      });
+      showTab();
+      await waitFor(() => {
+        expect(releaseVisible).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        releaseVisible?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        releaseLate?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+    });
+
+    it('does not let a till that has gone spend the payment the next one claimed', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      let reads = 0;
+      let releaseOld: ((value: Response) => void) | undefined;
+      let releaseNew: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (releaseOld === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseOld = resolve;
+            });
+          }
+          if (releaseNew === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseNew = resolve;
+            });
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(releaseOld).toEqual(expect.any(Function));
+      });
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(releaseNew).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        releaseOld?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        releaseNew?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+    });
+
+    it('does not let a failed read of a till that has gone spend the payment', async () => {
+      const now = Date.now();
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(now - 120_000).toISOString(),
+        expiresAt: new Date(now - 5_000).toISOString(),
+      };
+      const newerCreated = now - 3_000;
+      const newer = {
+        ...OPEN,
+        id: 'c-newer',
+        amountCurrency: 'USD',
+        amount: '8',
+        createdAt: new Date(newerCreated).toISOString(),
+        expiresAt: new Date(newerCreated + 300_000).toISOString(),
+      };
+      let reads = 0;
+      let rejectOld: ((reason: Error) => void) | undefined;
+      let releaseNew: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (rejectOld === undefined) {
+            return new Promise<Response>((_resolve, reject) => {
+              rejectOld = reject;
+            });
+          }
+          if (releaseNew === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseNew = resolve;
+            });
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21, 0, now);
+      await waitFor(() => {
+        expect(rejectOld).toEqual(expect.any(Function));
+      });
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(releaseNew).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        rejectOld?.(new Error('offline'));
+        await Promise.resolve();
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        releaseNew?.(
+          jsonResponse({ charge: newer, history: [newer, { ...ended, status: 'expired' }] }),
+        );
+        await Promise.resolve();
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('$8.00')).toBeTruthy();
+    });
+
     it('gives a late-minute payment held before Cancel to the newer charge the overtaken read shows', async () => {
       const now = Date.now();
       const ended = {
