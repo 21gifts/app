@@ -645,11 +645,14 @@ function usePosTillState(): PosTillState {
   const [settledVersion, setSettledVersion] = useState(0);
   const memory = settledFor(session);
   const lateHeld = memory.late.length > 0;
-  // The read asked for by a held late-minute payment: it settles once a read from then on answers.
+  // The read asked for by a held late-minute payment: it settles once that read answers.
   const lateRead = useRef<number | null>(null);
+  // Its number, drawn when the payment is held, until the load that follows claims it.
+  const latePending = useRef<number | null>(null);
   useEffect(() => {
     // A read of the session before never answers for this session's late-minute payments.
     lateRead.current = null;
+    latePending.current = null;
   }, [session]);
   const walletPaid = memory.paid;
   const closed = memory.closed;
@@ -690,7 +693,15 @@ function usePosTillState(): PosTillState {
       if (!alive) {
         return;
       }
-      const seq = startRead(reads);
+      // The late-minute read drew its number already. A later startRead must not take it.
+      const reserved = latePending.current;
+      let seq: number;
+      if (reserved !== null) {
+        latePending.current = null;
+        seq = reserved;
+      } else {
+        seq = startRead(reads);
+      }
       try {
         const next = await fetchPosState(session);
         // A later load may already have replaced this effect. It still must not
@@ -862,7 +873,12 @@ function usePosTillState(): PosTillState {
       lateRead.current === null &&
       settledFor(session).late.length > 0
     ) {
-      lateRead.current = reads.current.started + 1;
+      // Draw the number now. A cancel that starts after this takes the next one, so its
+      // follow-up cannot answer this payment. The load below uses this number, also when
+      // it had to wait until that cancel left the till.
+      const seq = startRead(reads);
+      lateRead.current = seq;
+      latePending.current = seq;
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     }

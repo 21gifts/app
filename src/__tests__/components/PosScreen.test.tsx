@@ -3537,6 +3537,74 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('does not let a cancel that starts with the held payment answer that read', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let releaseDelete: ((value: Response) => void) | undefined;
+      let releaseFollow: ((value: Response) => void) | undefined;
+      let releaseLate: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return new Promise<Response>((resolve) => {
+              releaseDelete = resolve;
+            });
+          }
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (releaseFollow === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseFollow = resolve;
+            });
+          }
+          return new Promise<Response>((resolve) => {
+            releaseLate = resolve;
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // The cancel starts in the same turn as the held payment, before its read is issued.
+      const cancelOnReport = (): void => {
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      };
+      received.listeners.add(cancelOnReport);
+      receive(21);
+      received.listeners.delete(cancelOnReport);
+      await waitFor(() => {
+        expect(releaseDelete).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        releaseDelete?.(jsonResponse({ charge: null }));
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(releaseFollow).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        releaseFollow?.(
+          jsonResponse({ charge: null, history: [{ ...ended, status: 'cancelled' }] }),
+        );
+        await Promise.resolve();
+      });
+      // The follow-up is not the read the payment asked for.
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await waitFor(() => {
+        expect(releaseLate).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        releaseLate?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
     it('gives a late-minute payment held before Cancel to the newer charge the overtaken read shows', async () => {
       const now = Date.now();
       const ended = {
