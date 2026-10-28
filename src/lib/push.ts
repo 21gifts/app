@@ -180,7 +180,16 @@ export function pushRenewalPending(): boolean {
   }
 }
 
-function pushTurnedOff(): boolean {
+/**
+ * Whether the last choice on this browser was Off or log out
+ * (`21gifts-push-off`, stored by {@link disablePush} and removed by
+ * {@link enablePush}). Shared by every tab, so a resync in another tab
+ * respects it too.
+ *
+ * @returns True while the Off flag is stored; false when it is not or storage
+ * throws.
+ */
+export function pushTurnedOff(): boolean {
   try {
     return window.localStorage.getItem(PUSH_OFF_KEY) === '1';
   } catch {
@@ -204,6 +213,25 @@ function writePushFlag(key: string, on: boolean): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Finish an Off: DELETE the endpoint (failure ignored), unsubscribe locally,
+ * and drop a pending renewal.
+ *
+ * @param sessionToken - Bearer session token.
+ * @param subscription - Local subscription to remove, or `null`.
+ */
+async function finishPushOff(
+  sessionToken: string,
+  subscription: PushSubscription | null,
+): Promise<void> {
+  writePushFlag(PUSH_RENEW_KEY, false);
+  if (subscription === null) {
+    return;
+  }
+  await deletePushSubscription(sessionToken, subscription.endpoint).catch(() => undefined);
+  await subscription.unsubscribe().catch(() => undefined);
 }
 
 function runPushOp(op: () => Promise<void>): Promise<void> {
@@ -359,18 +387,21 @@ export async function resyncPushSubscription(
     if (registration === undefined) {
       return;
     }
-    const subscription = await registration.pushManager.getSubscription();
-    if (epoch !== pushEpoch) {
-      return;
-    }
-    if (pushTurnedOff()) {
-      // The last choice on this browser was Off or log out. Finish it for a
-      // subscription that survived a cut-off log out or that the worker made
-      // meanwhile, maybe in another tab.
-      if (subscription !== null) {
-        await deletePushSubscription(sessionToken, subscription.endpoint).catch(() => undefined);
-        await subscription.unsubscribe().catch(() => undefined);
+    // Off in this tab bumps pushEpoch, and its queued disablePush cleans up.
+    // Off in another tab, or an earlier Off whose log out was cut off, shows
+    // only in the shared flag; finish it here for the subscription held now.
+    const stopped = async (current: PushSubscription | null): Promise<boolean> => {
+      if (epoch !== pushEpoch) {
+        return true;
       }
+      if (!pushTurnedOff()) {
+        return false;
+      }
+      await finishPushOff(sessionToken, current);
+      return true;
+    };
+    const subscription = await registration.pushManager.getSubscription();
+    if (await stopped(subscription)) {
       return;
     }
     if (subscription === null && !subscriptionChanged && !pushRenewalPending()) {
@@ -387,7 +418,7 @@ export async function resyncPushSubscription(
     const applicationServerKey = new Uint8Array(
       vapidPublicKeyToBytes(await fetchVapidPublicKey(sessionToken)),
     );
-    if (epoch !== pushEpoch) {
+    if (await stopped(subscription)) {
       return;
     }
     if (
@@ -396,6 +427,9 @@ export async function resyncPushSubscription(
       !subscriptionKeyDiffers(subscription, applicationServerKey)
     ) {
       await postPushSubscription(sessionToken, body);
+      if (await stopped(subscription)) {
+        return;
+      }
       writePushFlag(PUSH_RENEW_KEY, false);
       return;
     }
@@ -406,6 +440,7 @@ export async function resyncPushSubscription(
     // subscription rather than risk losing push.
     if (!writePushFlag(PUSH_RENEW_KEY, true) && body !== null) {
       await postPushSubscription(sessionToken, body);
+      await stopped(subscription);
       return;
     }
     if (subscription !== null) {
@@ -420,7 +455,13 @@ export async function resyncPushSubscription(
       await next.unsubscribe().catch(() => undefined);
       throw new Error('Invalid subscription');
     }
+    if (await stopped(next)) {
+      return;
+    }
     await postPushSubscription(sessionToken, nextBody);
+    if (await stopped(next)) {
+      return;
+    }
     writePushFlag(PUSH_RENEW_KEY, false);
     if (body !== null && nextBody.endpoint !== body.endpoint) {
       await deletePushSubscription(sessionToken, body.endpoint).catch(() => undefined);

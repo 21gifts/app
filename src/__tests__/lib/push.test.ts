@@ -9,6 +9,7 @@ import {
   isStandaloneDisplay,
   pushRenewalPending,
   pushTagForNotification,
+  pushTurnedOff,
   registerPushWorker,
   resyncPushSubscription,
   vapidPublicKeyToBytes,
@@ -859,6 +860,94 @@ describe('resyncPushSubscription VAPID key change', () => {
     expect(registration.pushManager.subscribe).toHaveBeenCalledTimes(1);
   });
 
+  it('finishes an Off from another tab that lands during the key fetch', async () => {
+    const { subscribe, oldUnsubscribe } = stubRotation({
+      storedKey: new Uint8Array(CURRENT_KEY).buffer,
+    });
+    vi.mocked(fetchVapidPublicKey).mockImplementation(async () => {
+      window.localStorage.setItem('21gifts-push-off', '1');
+      return bytesToBase64Url(CURRENT_KEY);
+    });
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/old');
+    expect(oldUnsubscribe).toHaveBeenCalled();
+  });
+
+  it('finishes an Off from another tab that lands while the kept subscription is posted', async () => {
+    const { oldUnsubscribe } = stubRotation({ storedKey: new Uint8Array(CURRENT_KEY).buffer });
+    vi.mocked(postPushSubscription).mockImplementation(async () => {
+      window.localStorage.setItem('21gifts-push-off', '1');
+    });
+    await resyncPushSubscription('sess');
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/old');
+    expect(oldUnsubscribe).toHaveBeenCalled();
+  });
+
+  it('drops the new subscription when Off from another tab lands during subscribe', async () => {
+    const { subscribe, nextUnsubscribe } = stubRotation({
+      storedKey: new Uint8Array([1, 2, 3]).buffer,
+    });
+    subscribe.mockImplementation(async () => {
+      window.localStorage.setItem('21gifts-push-off', '1');
+      return {
+        toJSON: () => ({
+          endpoint: 'https://push.example/new',
+          keys: { p256dh: 'p256-new', auth: 'auth-new' },
+        }),
+        endpoint: 'https://push.example/new',
+        unsubscribe: nextUnsubscribe,
+      };
+    });
+    await resyncPushSubscription('sess');
+    expect(postPushSubscription).not.toHaveBeenCalled();
+    expect(nextUnsubscribe).toHaveBeenCalled();
+    expect(pushRenewalPending()).toBe(false);
+  });
+
+  it('removes the new subscription when Off from another tab lands while it is posted', async () => {
+    const { subscribe, nextUnsubscribe } = stubRotation({
+      storedKey: new Uint8Array([1, 2, 3]).buffer,
+    });
+    subscribe.mockResolvedValue({
+      toJSON: () => ({
+        endpoint: 'https://push.example/new',
+        keys: { p256dh: 'p256-new', auth: 'auth-new' },
+      }),
+      endpoint: 'https://push.example/new',
+      unsubscribe: nextUnsubscribe,
+    });
+    vi.mocked(postPushSubscription).mockImplementation(async () => {
+      window.localStorage.setItem('21gifts-push-off', '1');
+    });
+    await resyncPushSubscription('sess');
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/new');
+    expect(nextUnsubscribe).toHaveBeenCalled();
+    expect(deletePushSubscription).not.toHaveBeenCalledWith('sess', 'https://push.example/old');
+    expect(pushRenewalPending()).toBe(false);
+  });
+
+  it('finishes an Off that lands while an old subscription is re-posted without storage', async () => {
+    let off = false;
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) =>
+      key === '21gifts-push-off' && off ? '1' : null,
+    );
+    const { oldUnsubscribe, subscribe } = stubRotation({
+      storedKey: new Uint8Array([1, 2, 3]).buffer,
+    });
+    vi.mocked(postPushSubscription).mockImplementation(async () => {
+      off = true;
+    });
+    await resyncPushSubscription('sess');
+    expect(subscribe).not.toHaveBeenCalled();
+    expect(deletePushSubscription).toHaveBeenCalledWith('sess', 'https://push.example/old');
+    expect(oldUnsubscribe).toHaveBeenCalled();
+  });
+
   it('is a no-op without registering a worker when none is registered', async () => {
     const register = vi.fn();
     vi.stubGlobal('navigator', {
@@ -1118,6 +1207,14 @@ function installNavigator(value: unknown): () => void {
     Object.defineProperty(globalThis, 'navigator', descriptor);
   };
 }
+
+describe('pushTurnedOff', () => {
+  it('reads the Off flag that disablePush stores and enablePush removes', () => {
+    expect(pushTurnedOff()).toBe(false);
+    window.localStorage.setItem('21gifts-push-off', '1');
+    expect(pushTurnedOff()).toBe(true);
+  });
+});
 
 describe('pushRenewalPending', () => {
   it('reads the renewal marker while permission is granted', () => {

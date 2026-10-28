@@ -11,6 +11,7 @@ import {
   isIosSafari,
   isStandaloneDisplay,
   pushRenewalPending,
+  pushTurnedOff,
 } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -65,7 +66,7 @@ export function PushToggle(): ReactElement | null {
           registration === undefined ? null : await registration.pushManager.getSubscription();
         if (!cancelled) {
           setShowInstallHint(iosHint);
-          setSubscribed(subscription !== null || pushRenewalPending());
+          setSubscribed(!pushTurnedOff() && (subscription !== null || pushRenewalPending()));
           setPhase('ready');
         }
       } catch {

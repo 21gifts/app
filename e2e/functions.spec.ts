@@ -11041,6 +11041,19 @@ test('Function: pushRenewalPending — a stored marker without notification perm
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
+test('Function: pushTurnedOff — an earlier Off shows this device as Off', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts-push-off', '1');
+    localStorage.setItem('21gifts-push-renew', '1');
+    Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'granted' });
+  });
+  await seedAdaSession(page);
+  await page.goto('/profile');
+  await expect(
+    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/profile');

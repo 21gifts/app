@@ -9,6 +9,7 @@ import {
   isIosSafari,
   isStandaloneDisplay,
   pushRenewalPending,
+  pushTurnedOff,
 } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -19,6 +20,7 @@ vi.mock('@/lib/push', () => ({
   isIosSafari: vi.fn().mockReturnValue(false),
   isStandaloneDisplay: vi.fn().mockReturnValue(false),
   pushRenewalPending: vi.fn().mockReturnValue(false),
+  pushTurnedOff: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -243,6 +245,22 @@ describe('PushToggle', () => {
     fireEvent.click(within(device).getByRole('button', { name: 'Off' }));
     await waitFor(() => {
       expect(disablePush).toHaveBeenCalledWith('tok');
+    });
+  });
+
+  it('shows Off after an earlier Off even while a subscription survives, so On enables again', async () => {
+    stubPushApis({ subscription: { endpoint: 'https://push.example/sub' } });
+    vi.mocked(pushTurnedOff).mockReturnValueOnce(true);
+    renderWithLocale(<PushToggle />);
+    const device = await screen.findByRole('group', { name: 'This device' });
+    await waitFor(() => {
+      expect(within(device).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
+    fireEvent.click(within(device).getByRole('button', { name: 'On' }));
+    await waitFor(() => {
+      expect(enablePush).toHaveBeenCalledWith('tok');
     });
   });
 
