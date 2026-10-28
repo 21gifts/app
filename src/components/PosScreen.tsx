@@ -661,8 +661,22 @@ function usePosTillState(): PosTillState {
     setShowQr(true);
   }, []);
 
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
   useEffect(() => {
     const listener = (): void => {
+      const current = sessionRef.current;
+      if (current !== null) {
+        const held = settledFor(current);
+        // Draw before this callback returns. A load or a cancel that follows in
+        // this turn takes the next number, so it cannot answer this payment or
+        // be overwritten by it.
+        if (held.late.length > 0 && lateRead.current === null) {
+          const seq = startRead(reads);
+          lateRead.current = seq;
+          latePending.current = seq;
+        }
+      }
       setSettledVersion((n) => n + 1);
     };
     walletSettledListeners.add(listener);
@@ -694,11 +708,15 @@ function usePosTillState(): PosTillState {
         return;
       }
       // The late-minute read drew its number already. A later startRead must not take it.
+      // A payment already held when this till mounted has no number yet: this load is that read.
       const reserved = latePending.current;
       let seq: number;
       if (reserved !== null) {
         latePending.current = null;
         seq = reserved;
+      } else if (lateRead.current === null && settledFor(session).late.length > 0) {
+        seq = startRead(reads);
+        lateRead.current = seq;
       } else {
         seq = startRead(reads);
       }
@@ -866,19 +884,13 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     // A held late-minute payment asks the api once (not on a timer) which charge it paid.
-    // Read the memory now: the arming effect of this same commit may just have settled it.
-    if (
-      lateHeld &&
-      session !== null &&
-      lateRead.current === null &&
-      settledFor(session).late.length > 0
-    ) {
-      // Draw the number now. A cancel that starts after this takes the next one, so its
-      // follow-up cannot answer this payment. The load below uses this number, also when
-      // it had to wait until that cancel left the till.
-      const seq = startRead(reads);
-      lateRead.current = seq;
-      latePending.current = seq;
+    // The wallet callback drew the number. Ask for its load while that number is still
+    // waiting. A load already scheduled in this commit claims it itself. A payment that
+    // was already held when this till mounted is claimed by that mount's own load.
+    if (!lateHeld || session === null || settledFor(session).late.length === 0) {
+      return;
+    }
+    if (latePending.current !== null) {
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     }

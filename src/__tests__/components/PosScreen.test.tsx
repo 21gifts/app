@@ -3605,6 +3605,84 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
+    it('does not let a tab shown in the same turn take a number ahead of the held payment', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let releaseLate: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          return new Promise<Response>((resolve) => {
+            releaseLate = resolve;
+          });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // The tab is shown in the same turn as the held payment, before effects run.
+      const showOnReport = (): void => {
+        const state = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+        document.dispatchEvent(new Event('visibilitychange'));
+        state.mockRestore();
+      };
+      received.listeners.add(showOnReport);
+      receive(21);
+      received.listeners.delete(showOnReport);
+      await waitFor(() => {
+        expect(releaseLate).toEqual(expect.any(Function));
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      // One read, the one the payment asked for. A second read would be a number taken first.
+      expect(reads).toBe(3);
+      await act(async () => {
+        releaseLate?.(jsonResponse({ charge: ended, history: [ended] }));
+        await Promise.resolve();
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('uses the mount load for a late payment that was already held', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      let releaseHeld: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads <= 2) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (releaseHeld === undefined) {
+            return new Promise<Response>((resolve) => {
+              releaseHeld = resolve;
+            });
+          }
+          return jsonResponse({ charge: ended, history: [ended] });
+        }),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(releaseHeld).toEqual(expect.any(Function));
+      });
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      expect(await confirmation()).toBeTruthy();
+    });
+
     it('gives a late-minute payment held before Cancel to the newer charge the overtaken read shows', async () => {
       const now = Date.now();
       const ended = {
