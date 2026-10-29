@@ -1058,8 +1058,8 @@ Privacy rules (this app holds wallets):
 - One scrubber (`beforeSend` / `beforeSendTransaction` / `beforeBreadcrumb` in
   `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
   recovery-phrase runs of 12 or more words in any letter case (they also
-  cover a social recovery share), word arrays of 12 to 24 words and of a
-  share's 20 or 33 words;
+  cover a social recovery share), word arrays of a phrase's or a share's
+  length (12, 15, 18, 20, 21, 24, or 33 words);
   `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
   `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
   addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
