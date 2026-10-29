@@ -66,8 +66,10 @@ jobs:
           # runner user; without the -c override git status dies on
           # "dubious ownership" and the pipeline below hides it (pipeline
           # status is awk's). $GITHUB_WORKSPACE is set inside the container.
-          cd e2e/visual.spec.ts-snapshots
-          git -c safe.directory="$GITHUB_WORKSPACE" status --porcelain -- . \
+          # --porcelain prints repo-root-relative paths, so tar must run
+          # from the repo root as well — cd-ing into the snapshots dir
+          # doubled the prefix and tar stat'ed every entry missing.
+          git -c safe.directory="$GITHUB_WORKSPACE" status --porcelain -- e2e/visual.spec.ts-snapshots \
             | awk '{print $NF}' | sort -u > /tmp/changed.txt
           wc -l /tmp/changed.txt
           # Seeded placeholders can only stay unchanged if nothing ran.
