@@ -337,14 +337,43 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });
 
-  it('says that a recovery is not finished yet, and Try again logs in again', () => {
+  it('says that a recovery is not finished yet, links to it under Try again, and Try again logs in again', () => {
     mockPasskey('error', 'recovery_pending', null, true);
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('alert').textContent).toBe(
       'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    expect(retry.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(retry);
     expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no Social Recovery entry on an unfinished recovery when a member session stands behind the card', () => {
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+  });
+
+  it('offers no Social Recovery entry on other errors, and the wrong-account copy wins over an unfinished recovery', () => {
+    mockPasskey('error', 'network');
+    const generic = renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe('Something went wrong. Please try again.');
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    generic.unmount();
+    useAuthStore.setState({ wrongAccount: true });
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'You signed in with the wrong account. Please try again with the correct account.',
+    );
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });
 
   it('shows the unknown-passkey heading and create button', () => {

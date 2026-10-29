@@ -1916,6 +1916,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/recover',
+    id: 'scan-second-camera',
+    image: 'recover-scan-second-camera.png',
+    visual: 'state-recover-scan-second-camera',
+    needle: "shotScreen(page, 'state-recover-scan-second-camera')",
+  },
+  {
+    route: '/recover',
     id: 'code-invalid',
     image: 'recover-code-invalid.png',
     visual: 'state-recover-code-invalid',
@@ -2165,6 +2172,13 @@ export const SCREEN_VARIANTS = [
     image: 'previous-wallet-scan-second.png',
     visual: 'state-previous-wallet-scan-second',
     needle: "shotScreen(page, 'state-previous-wallet-scan-second')",
+  },
+  {
+    route: '/settings/previous-wallets/[sparkPubkey]',
+    id: 'scan-second-camera',
+    image: 'previous-wallet-scan-second-camera.png',
+    visual: 'state-previous-wallet-scan-second-camera',
+    needle: "shotScreen(page, 'state-previous-wallet-scan-second-camera')",
   },
   {
     route: '/settings/previous-wallets/[sparkPubkey]',

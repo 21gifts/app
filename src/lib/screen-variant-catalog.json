@@ -1578,6 +1578,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/recover:scan-second-camera",
+    "label": "/recover scan-second-camera",
+    "visual": "state-recover-scan-second-camera",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/recover:code-invalid",
     "label": "/recover code-invalid",
     "visual": "state-recover-code-invalid",
@@ -1791,6 +1797,12 @@
     "id": "/settings/previous-wallets/[sparkPubkey]:scan-second",
     "label": "/settings/previous-wallets/[sparkPubkey] scan-second",
     "visual": "state-previous-wallet-scan-second",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan-second-camera",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan-second-camera",
+    "visual": "state-previous-wallet-scan-second-camera",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

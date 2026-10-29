@@ -5503,6 +5503,9 @@ test.describe('login variant baselines', () => {
       ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toBeVisible();
     await shotScreen(page, 'state-login-recovery-pending');
   });
 
@@ -37444,9 +37447,18 @@ test.describe('recover states', () => {
   test('recover scan-second', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
-    await expect(page.getByText('Scan code 2 of 2')).toBeVisible();
-    await cameraPlaying(page);
+    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
     await shotScreen(page, 'state-recover-scan-second');
+  });
+
+  test('recover scan-second-camera', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-recover-scan-second-camera');
   });
 
   test('recover code-invalid', async ({ page }) => {
@@ -37458,6 +37470,7 @@ test.describe('recover states', () => {
 
   test('recover code-same', async ({ page }) => {
     await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -37466,6 +37479,7 @@ test.describe('recover states', () => {
 
   test('recover code-other-set', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'These two codes do not belong together.',
     );
@@ -37913,8 +37927,18 @@ test.describe('previous wallet states', () => {
   test('previous wallet scan-second', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
-    await cameraPlaying(page);
+    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
     await shotScreen(page, 'state-previous-wallet-scan-second');
+  });
+
+  test('previous wallet scan-second-camera', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-previous-wallet-scan-second-camera');
   });
 
   test('previous wallet code-invalid', async ({ page }) => {
@@ -37925,6 +37949,7 @@ test.describe('previous wallet states', () => {
 
   test('previous wallet code-same', async ({ page }) => {
     await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -37933,6 +37958,7 @@ test.describe('previous wallet states', () => {
 
   test('previous wallet code-other-set', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'These two codes do not belong together.',
     );

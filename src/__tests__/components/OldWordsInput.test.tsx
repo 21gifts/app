@@ -59,6 +59,11 @@ async function scan(text: string): Promise<void> {
   });
 }
 
+/** Presses **Scan code 2 of 2**, which starts the camera for the second code. */
+function askSecond(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Scan code 2 of 2' }));
+}
+
 beforeEach(() => {
   scanner.props = null;
   scanner.mounts = 0;
@@ -82,13 +87,21 @@ describe('OldWordsInput', () => {
       });
     });
 
-    it('keeps the first code, starts the camera again for code 2, and rebuilds the words', async () => {
+    it('keeps the first code, keeps the camera off until code 2 is asked for, and rebuilds the words', async () => {
       const onWords = vi.fn();
       renderWithLocale(<OldWordsInput mode="scan" onWords={onWords} />);
       await scan(code(SHARES[0]));
       expect(screen.getByRole('status').textContent).toBe('Code 1 of 2 scanned (@ada).');
+      expect(screen.queryByText('Camera stub')).toBeNull();
+      expect(scanner.mounts).toBe(1);
+      expect(screen.queryByRole('alert')).toBeNull();
+      const button = screen.getByRole('button', { name: 'Scan code 2 of 2' });
+      expect(button.className).toContain('min-h-12');
+      askSecond();
       expect(scanner.mounts).toBe(2);
       expect(scanner.props?.copy?.hintVars).toEqual({ n: 2 });
+      expect(screen.queryByRole('button', { name: 'Scan code 2 of 2' })).toBeNull();
+      expect(screen.getByRole('status').textContent).toBe('Code 1 of 2 scanned (@ada).');
       await scan(code(SHARES[1]));
       await waitFor(() => {
         expect(onWords).toHaveBeenCalledTimes(1);
@@ -109,6 +122,7 @@ describe('OldWordsInput', () => {
       const onWords = vi.fn();
       renderWithLocale(<OldWordsInput mode="scan" onWords={onWords} />);
       await scan(code(SHARES[0]));
+      askSecond();
       await scan(code(SHARES[1]));
       expect(screen.queryByText('Camera stub')).toBeNull();
       await act(async () => {
@@ -138,6 +152,7 @@ describe('OldWordsInput', () => {
         renderWithLocale(<OldWordsInput mode="scan" onWords={onWords} />);
         for (const first of before) {
           await scan(first);
+          askSecond();
         }
         await scan(text);
         await waitFor(() => {
@@ -148,6 +163,7 @@ describe('OldWordsInput', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
         expect(screen.queryByRole('alert')).toBeNull();
         expect(scanner.mounts).toBe(mounts + 1);
+        expect(scanner.props?.copy?.hintVars).toEqual({ n: before.length + 1 });
         expect(onWords).not.toHaveBeenCalled();
       },
     );
@@ -156,6 +172,7 @@ describe('OldWordsInput', () => {
       vi.mocked(phraseFromShareCodes).mockRejectedValueOnce(new Error('crypto'));
       renderWithLocale(<OldWordsInput mode="scan" onWords={vi.fn()} />);
       await scan(code(SHARES[0]));
+      askSecond();
       await scan(code(SHARES[1]));
       await waitFor(() => {
         expect(screen.getByRole('alert').textContent).toBe(
@@ -179,6 +196,7 @@ describe('OldWordsInput', () => {
         <OldWordsInput mode="scan" onWords={onWords} expectedOwnerAccountId="acc_ada" />,
       );
       await scan(code(SHARES[0]));
+      askSecond();
       await scan(code(SHARES[1]));
       await waitFor(() => {
         expect(onWords).toHaveBeenCalled();
@@ -196,6 +214,7 @@ describe('OldWordsInput', () => {
       const onWords = vi.fn();
       const { unmount } = renderWithLocale(<OldWordsInput mode="scan" onWords={onWords} />);
       await scan(code(SHARES[0]));
+      askSecond();
       await scan(code(SHARES[1]));
       unmount();
       await act(async () => {

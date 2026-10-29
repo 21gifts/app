@@ -5685,9 +5685,9 @@
     "fil": "May naka-store na session na pinipigilan (pagkatapos mag-reload, sa bagong tab, o sa muling binuksang app; naka-pin gamit ang ?visual=held-session, Playwright builds lang). Ang card ay ang karaniwang login na may mahinang bati na Maligayang pagbabalik, Ada sa itaas ng Mag-log in gamit ang device mo, pagkatapos ay ang mahinang linya na Kumpirmahin para mabuksan ang wallet mo, Mag-log in, Bago ka sa 21.gifts? at Magbukas ng bagong account, at walang Social Recovery entry. Walang Mag-log out: ang Mag-log in ay isang passkey prompt na nagbubukas ng session at wallet, at kung sumagot ang passkey ng ibang account, papalitan ng account na iyon ang pinipigilang session. Ang kinanselang prompt o ibang pagkabigo ay nananatili sa card na ito na may May nangyaring mali. Subukan ulit. sa itaas ng Mag-log in."
   },
   "/login:recovery-pending": {
-    "de": "Nach Anmelden gehört der Passkey, der geantwortet hat, zu einer Social Recovery, die noch nicht abgeschlossen ist (authenticate finish antwortet 409 recovery_pending). Die Fehlerkarte zeigt Die Wiederherstellung Ihres Kontos ist noch nicht abgeschlossen. Öffnen Sie „Account über Social Recovery wiederherstellen“, um sie abzuschließen. und Erneut versuchen. Es wird keine Sitzung gespeichert, und der Passkey wird dem Authenticator nicht als unbekannt gemeldet.",
-    "es": "Tras Iniciar sesión, el passkey que respondió pertenece a una Social Recovery que aún no ha terminado (authenticate finish responde 409 recovery_pending). La tarjeta de error muestra La recuperación de tu cuenta aún no ha terminado. Abre «Recuperar la cuenta con Social Recovery» para terminarla. e Intentar de nuevo. No se guarda ninguna sesión, y el passkey no se notifica al autenticador como desconocido.",
-    "fil": "Pagkatapos ng Mag-log in, ang passkey na sumagot ay kabilang sa Social Recovery na hindi pa tapos (sumasagot ang authenticate finish ng 409 recovery_pending). Ipinapakita ng error card ang Hindi pa tapos ang pagbawi ng account mo. Buksan ang “Bawiin ang account gamit ang Social Recovery” para tapusin ito. at Subukan ulit. Walang session na sine-save, at hindi iniuulat sa authenticator na hindi kilala ang passkey."
+    "de": "Nach Anmelden gehört der Passkey, der geantwortet hat, zu einer Social Recovery, die noch nicht abgeschlossen ist (authenticate finish antwortet 409 recovery_pending). Die Fehlerkarte zeigt Die Wiederherstellung Ihres Kontos ist noch nicht abgeschlossen. Öffnen Sie „Account über Social Recovery wiederherstellen“, um sie abzuschließen., Erneut versuchen und darunter den sekundären Link Account über Social Recovery wiederherstellen, der /recover öffnet (Erneut versuchen fragt denselben Passkey, der abgelehnt bleibt, bis die Wiederherstellung abgeschlossen ist). Es wird keine Sitzung gespeichert, und der Passkey wird dem Authenticator nicht als unbekannt gemeldet.",
+    "es": "Tras Iniciar sesión, el passkey que respondió pertenece a una Social Recovery que aún no ha terminado (authenticate finish responde 409 recovery_pending). La tarjeta de error muestra La recuperación de tu cuenta aún no ha terminado. Abre «Recuperar la cuenta con Social Recovery» para terminarla., Intentar de nuevo y debajo el enlace secundario Recuperar la cuenta con Social Recovery, que abre /recover (Intentar de nuevo pide el mismo passkey, que sigue rechazado hasta que la recuperación termine). No se guarda ninguna sesión, y el passkey no se notifica al autenticador como desconocido.",
+    "fil": "Pagkatapos ng Mag-log in, ang passkey na sumagot ay kabilang sa Social Recovery na hindi pa tapos (sumasagot ang authenticate finish ng 409 recovery_pending). Ipinapakita ng error card ang Hindi pa tapos ang pagbawi ng account mo. Buksan ang “Bawiin ang account gamit ang Social Recovery” para tapusin ito., ang Subukan ulit, at sa ilalim nito ang pangalawang link na Bawiin ang account gamit ang Social Recovery, na nagbubukas ng /recover (hinihingi ng Subukan ulit ang parehong passkey, na tinatanggihan pa rin hanggang matapos ang pagbawi). Walang session na sine-save, at hindi iniuulat sa authenticator na hindi kilala ang passkey."
   },
   "/welcome:held-session": {
     "de": "Ein angemeldetes Mitglied hat die Seite neu geladen (fixiert mit ?visual=held-session, nur Playwright-Builds): Die gespeicherte Sitzung wird zurückgehalten, bis die Wallet wieder offen ist, also zeigt die Forum-Startseite die Anmeldekarte anstelle des Feeds, nicht die Gastansicht. Die Karte grüßt Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, mit der gedämpften Zeile Bestätigen Sie, um Ihre Wallet zu öffnen über Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen, und ohne Abmelden. Oben rechts steht weder Anmelden noch das Menü. Ein Tipp auf Anmelden, eine Passkey-Abfrage, und das Mitglied ist zurück auf /welcome, angemeldet und mit offener Wallet. Ein Besucher ohne gespeicherte Sitzung sieht weiterhin das Gast-Forum mit Anmelden oben rechts.",
@@ -5885,9 +5885,14 @@
     "fil": "Pagkatapos ng Mag-scan ng dalawang code: pinupuno ng camera ang page, may hint na I-scan ang code 1 ng 2 sa ibabaw ng larawan."
   },
   "/recover:scan-second": {
-    "de": "Der erste Code wurde gelesen: Code 1 von 2 gescannt (@ada). bleibt unten stehen, und die Kamera startet neu mit dem Hinweis Code 2 von 2 scannen.",
-    "es": "Se leyó el primer código: Código 1 de 2 escaneado (@ada). queda abajo, y la cámara vuelve a empezar con la indicación Escanea el código 2 de 2.",
-    "fil": "Nabasa ang unang code: nananatili sa ibaba ang Na-scan ang code 1 ng 2 (@ada)., at nagsimula ulit ang camera na may hint na I-scan ang code 2 ng 2."
+    "de": "Der erste Code wurde gelesen: Die Kamera stoppt, Code 1 von 2 gescannt (@ada). bleibt unten stehen, und Code 2 von 2 scannen startet die Kamera für den zweiten Code, damit der erste Code, der oft noch vor der Kamera ist, nicht erneut gelesen wird.",
+    "es": "Se leyó el primer código: la cámara se detiene, Código 1 de 2 escaneado (@ada). queda abajo, y Escanea el código 2 de 2 inicia la cámara para el segundo código, para que el primero, que a menudo sigue delante de la cámara, no se lea otra vez.",
+    "fil": "Nabasa ang unang code: humihinto ang camera, nananatili sa ibaba ang Na-scan ang code 1 ng 2 (@ada)., at sinisimulan ng I-scan ang code 2 ng 2 ang camera para sa pangalawang code, para hindi na mabasa ulit ang unang code na madalas ay nasa harap pa ng camera."
+  },
+  "/recover:scan-second-camera": {
+    "de": "Nach Code 2 von 2 scannen: Die Kamera läuft wieder mit dem Hinweis Code 2 von 2 scannen, und Code 1 von 2 gescannt (@ada). bleibt unten stehen.",
+    "es": "Tras Escanea el código 2 de 2: la cámara vuelve a funcionar con la indicación Escanea el código 2 de 2, y Código 1 de 2 escaneado (@ada). queda abajo.",
+    "fil": "Pagkatapos ng I-scan ang code 2 ng 2: tumatakbo ulit ang camera na may hint na I-scan ang code 2 ng 2, at nananatili sa ibaba ang Na-scan ang code 1 ng 2 (@ada)."
   },
   "/recover:code-invalid": {
     "de": "Die Kamera hat einen Text gelesen, der kein Anteil-Code ist: Die Kamera stoppt, und der Hinweis Das ist kein Social-Recovery-Code. erscheint über der schwarzen Fläche mit Erneut versuchen, das die Kamera neu startet.",
@@ -6065,9 +6070,14 @@
     "fil": "Pagkatapos ng Mag-scan ng dalawang code: pinupuno ng camera ang page na may hint na I-scan ang code 1 ng 2."
   },
   "/settings/previous-wallets/[sparkPubkey]:scan-second": {
-    "de": "Der erste Code wurde gelesen: Code 1 von 2 gescannt (@ada). unten, und die Kamera startet neu für Code 2.",
-    "es": "Se leyó el primer código: Código 1 de 2 escaneado (@ada). abajo, y la cámara vuelve a empezar para el código 2.",
-    "fil": "Nabasa ang unang code: Na-scan ang code 1 ng 2 (@ada). sa ibaba, at nagsimula ulit ang camera para sa code 2."
+    "de": "Der erste Code wurde gelesen: Die Kamera stoppt, Code 1 von 2 gescannt (@ada). unten, und Code 2 von 2 scannen, das die Kamera für Code 2 startet.",
+    "es": "Se leyó el primer código: la cámara se detiene, Código 1 de 2 escaneado (@ada). abajo, y Escanea el código 2 de 2, que inicia la cámara para el código 2.",
+    "fil": "Nabasa ang unang code: humihinto ang camera, Na-scan ang code 1 ng 2 (@ada). sa ibaba, at I-scan ang code 2 ng 2, na nagsisimula ng camera para sa code 2."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:scan-second-camera": {
+    "de": "Nach Code 2 von 2 scannen: Die Kamera läuft wieder für Code 2, mit Code 1 von 2 gescannt (@ada). unten.",
+    "es": "Tras Escanea el código 2 de 2: la cámara vuelve a funcionar para el código 2, con Código 1 de 2 escaneado (@ada). abajo.",
+    "fil": "Pagkatapos ng I-scan ang code 2 ng 2: tumatakbo ulit ang camera para sa code 2, kasama ang Na-scan ang code 1 ng 2 (@ada). sa ibaba."
   },
   "/settings/previous-wallets/[sparkPubkey]:code-invalid": {
     "de": "Die Kamera hat einen Text gelesen, der kein Anteil-Code ist: Das ist kein Social-Recovery-Code. über der gestoppten Kamera mit Erneut versuchen.",

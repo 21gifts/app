@@ -904,30 +904,74 @@ describe('transfer', () => {
       expect(view()).toEqual({ step: 'done', balanceMissing: false });
     });
 
-    it('a new wallet that fails after a restart keeps the attempt cleared', async () => {
-      await toTransfer();
-      vi.mocked(finishPasskeyRecovery).mockRejectedValueOnce(new RecoveryError('challenge'));
-      vi.mocked(startPasskeyRecovery).mockResolvedValueOnce(BEGIN_2);
-      await transfer();
-      sdk.connect.mockRejectedValueOnce(new Error('x'));
-      await createNewPasskey();
-      expect(view()).toEqual({
-        step: 'found',
-        username: 'ada',
-        restart: true,
-        error: 'wallet',
-        busy: false,
-      });
-      useRecoveryStore.getState().setView({
-        step: 'transfer',
-        done: { account: false, address: false, signedIn: false, balance: false },
-        busy: false,
-        waiting: false,
-        error: null,
-      });
-      await transfer();
-      expect(finishPasskeyRecovery).toHaveBeenCalledTimes(1);
-    });
+    it.each([
+      [
+        'a connect error',
+        (): (() => Promise<void>) => {
+          sdk.connect.mockRejectedValueOnce(new Error('x'));
+          return () => Promise.resolve();
+        },
+      ],
+      [
+        'a connect timeout',
+        (): (() => Promise<void>) => {
+          const late = connectionOf();
+          let open: (connection: FakeConnection) => void = () => undefined;
+          sdk.connect.mockImplementationOnce(
+            () =>
+              new Promise((resolve) => {
+                open = resolve;
+              }),
+          );
+          deps.sleep.mockImplementationOnce(() => Promise.resolve());
+          return async () => {
+            open(late);
+            await vi.waitFor(() => {
+              expect(late.disconnect).toHaveBeenCalled();
+            });
+          };
+        },
+      ],
+      [
+        'an address that does not come',
+        (): (() => Promise<void>) => {
+          const half = connectionOf();
+          half.receiveSparkAddress.mockRejectedValueOnce(new Error('x'));
+          sdk.connect.mockImplementationOnce(async () => half);
+          return () => {
+            expect(half.disconnect).toHaveBeenCalled();
+            return Promise.resolve();
+          };
+        },
+      ],
+    ])(
+      'a new wallet that fails after a restart (%s) is closed and keeps the attempt cleared',
+      async (_label, arrange) => {
+        await toTransfer();
+        vi.mocked(finishPasskeyRecovery).mockRejectedValueOnce(new RecoveryError('challenge'));
+        vi.mocked(startPasskeyRecovery).mockResolvedValueOnce(BEGIN_2);
+        await transfer();
+        const closed = arrange();
+        await createNewPasskey();
+        expect(view()).toEqual({
+          step: 'found',
+          username: 'ada',
+          restart: true,
+          error: 'wallet',
+          busy: false,
+        });
+        await closed();
+        useRecoveryStore.getState().setView({
+          step: 'transfer',
+          done: { account: false, address: false, signedIn: false, balance: false },
+          busy: false,
+          waiting: false,
+          error: null,
+        });
+        await transfer();
+        expect(finishPasskeyRecovery).toHaveBeenCalledTimes(1);
+      },
+    );
 
     it('stops after Start over while the old wallet signs', async () => {
       await toTransfer();
@@ -988,6 +1032,61 @@ describe('transfer', () => {
         error: 'generic',
       });
     });
+
+    it.each([
+      [
+        'no address',
+        (settle: () => void): void =>
+          void old.hasAddress.mockImplementationOnce(async () => {
+            settle();
+            return false;
+          }),
+      ],
+      [
+        'a lookup that throws',
+        (settle: () => void): void =>
+          void old.hasAddress.mockImplementationOnce(async () => {
+            settle();
+            throw new Error('x');
+          }),
+      ],
+      [
+        'an authorization that throws',
+        (settle: () => void): void =>
+          void old.authorizeAddressTransfer.mockImplementationOnce(async () => {
+            settle();
+            throw new Error('x');
+          }),
+      ],
+      [
+        'a claim that throws',
+        (settle: () => void): void =>
+          void neu.claimAddressTransfer.mockImplementationOnce(async () => {
+            settle();
+            throw new Error('x');
+          }),
+      ],
+    ])(
+      '%s still marks when the address step settled, and the settle wait counts from it',
+      async (_label, arrange) => {
+        await toTransfer();
+        let settled: number | null = null;
+        arrange(() => {
+          clock += 4_000;
+          settled = clock;
+        });
+        vi.mocked(finishPasskeyAuthentication).mockRejectedValueOnce(new RecoveryPendingError());
+        vi.mocked(startPasskeyRecovery).mockRejectedValueOnce(new RecoveryError('done'));
+        await transfer();
+        expect(settled).not.toBeNull();
+        expect(deps.sleep).toHaveBeenCalledWith(RECOVERY_SETTLE_WAIT_MS);
+        expect(vi.mocked(startPasskeyRecovery).mock.calls[1]![0].lookup.timestamp).toBe(
+          Math.floor((settled! + RECOVERY_SETTLE_WAIT_MS) / 1000),
+        );
+        expect(startPasskeyAuthentication).toHaveBeenCalledTimes(2);
+        expect(view()).toEqual({ step: 'done', balanceMissing: false });
+      },
+    );
 
     it('a later press claims again with the new wallet opened again', async () => {
       await toTransfer();

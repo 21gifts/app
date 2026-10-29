@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { stubCamera } from './camera';
+import { cameraStats, stubCamera } from './camera';
 import { fulfillSpot } from './fx-spot';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
@@ -332,6 +332,19 @@ test('Function: RecoveryPendingError — the pending passkey is never signalled 
   expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
 });
 
+test('a passkey of an unfinished recovery is offered the way to finish it', async ({ page }) => {
+  await answerRecoveryPending(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.locator('p[role="alert"]')).toHaveText(
+    'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+  );
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+  await expect(page).toHaveURL(/\/recover$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Recover your account' })).toBeVisible();
+});
+
 /** A share of another member's recovery set (20 SLIP-39 words), as a holder keeps it. */
 const HELD_CODE =
   '21gifts-share:v1:acc_owner:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
@@ -410,7 +423,8 @@ async function openRecover(page: Page, pin?: string): Promise<void> {
 }
 
 /**
- * Scans codes on `/recover` with the stubbed camera, one per camera start.
+ * Scans codes on `/recover` with the stubbed camera, one per camera start,
+ * and presses **Scan code 2 of 2** between the first and the second.
  *
  * @param page - The page.
  * @param codes - The QR texts in turn.
@@ -419,6 +433,9 @@ async function scanOnRecover(page: Page, codes: readonly string[]): Promise<void
   await stubCamera(page, { kind: 'qrs', texts: codes });
   await openRecover(page);
   await page.getByRole('button', { name: 'Scan two codes' }).click();
+  if (codes.length > 1) {
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+  }
 }
 
 /**
@@ -466,6 +483,7 @@ test.describe('social recovery libraries', () => {
     await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
     await openRecover(page);
     await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -480,6 +498,7 @@ test.describe('social recovery libraries', () => {
     page,
   }) => {
     await scanOnRecover(page, [ADA_CODES[0]]);
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
   });
 
@@ -1458,23 +1477,28 @@ test.describe('Recover account via Social Recovery', () => {
     expect(wasm()).toBe(0);
   });
 
-  test('the first code stays named while the camera asks for the second', async ({ page }) => {
-    await scanOnRecover(page, [ADA_CODES[0]]);
+  test('after the first code the camera stays off until Scan code 2 of 2, so the code still in view is not read twice', async ({
+    page,
+  }) => {
+    await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
-    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () => (window as unknown as { __cameraStub: { requests: number } }).__cameraStub.requests,
-        ),
-      )
-      .toBe(2);
+    await expect.poll(async () => (await cameraStats(page)).live).toBe(0);
+    await page.waitForTimeout(1_500);
+    expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect.poll(async () => (await cameraStats(page)).requests).toBe(2);
   });
 
   test('a refused code stops the camera, and Try again starts it again', async ({ page }) => {
     await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
     await openRecover(page);
     await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
