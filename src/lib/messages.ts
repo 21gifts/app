@@ -1498,7 +1498,7 @@ const de = {
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
   'login.nameInvalid':
-    'Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer.',
+    '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer.',
   'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':

@@ -3795,7 +3795,7 @@
     "fil": "Pahina ng staff (moderator) na may pamagat na Mga istatistika, laging bukas ang panel na Mga taong nabayaran (bilang kahapon, talata ng sukat, tsart ng 30 araw na UTC). Nakasara ang Mga tungkulin ng moderator sa pagitan ng tsart ng tao at ng tsart ng tindahan; hindi pa nakikita ang Ipakita ang bayad bawat tao. Ang tsart ng tindahan ay nasa ilalim ng pagbubukas na iyon (Mga tindahan ayon sa araw na UTC). Ang panel ng tao ay hindi toggle."
   },
   "/login:name-invalid": {
-    "de": "Das Drücken von Weiter mit leerem Namen, oder einem Namen, der nach Trim und Kleinschreibung nicht /^[a-z0-9][a-z0-9._-]{0,31}$/ entspricht (ein einzelner Unterstrich und ein führender Punkt werden abgelehnt), bleibt auf diesem Formular. Hinweis: Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. (login.nameInvalid). Der Passkey-Dialog öffnet sich nicht. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
+    "de": "Das Drücken von Weiter mit leerem Namen, oder einem Namen, der nach Trim und Kleinschreibung nicht /^[a-z0-9][a-z0-9._-]{0,31}$/ entspricht (ein einzelner Unterstrich und ein führender Punkt werden abgelehnt), bleibt auf diesem Formular. Hinweis: 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. (login.nameInvalid). Der Passkey-Dialog öffnet sich nicht. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
     "es": "Pulsar Continuar con un nombre vacío, o un nombre que tras recortar y minúsculas no coincide con /^[a-z0-9][a-z0-9._-]{0,31}$/ (se rechazan un guion bajo solo y un punto inicial), permanece en este formulario. Alerta: Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. (login.nameInvalid). El diálogo de passkey no se abre. La línea atenuada de iOS o Android no se muestra.",
     "fil": "Ang pagpindot ng Magpatuloy na walang pangalan, o pangalang pagkatapos ng trim at lowercase ay hindi tumutugma sa /^[a-z0-9][a-z0-9._-]{0,31}$/ (tinatanggihan ang mag-isang underscore at ang tuldok sa umpisa), ay nananatili sa form na ito. Alerto: Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. (login.nameInvalid). Hindi bumubukas ang dialog ng passkey. Hindi ipinapakita ang faded na linya ng iOS o Android."
   },
@@ -4885,7 +4885,7 @@
     "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4895,7 +4895,7 @@
     "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/members/[accountId]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el perfil de miembro con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
     "fil": "Bukas sa profile ng member ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
   },
@@ -4905,7 +4905,7 @@
     "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/messages/[id]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4970,7 +4970,7 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -5035,7 +5035,7 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/shops:table-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu @_ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu @_ geändert wurde. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla después de cambiar el nombre de usuario de luna a @_. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts matapos baguhin ang username mula luna patungong @_. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -5055,12 +5055,12 @@
     "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:staff-account-invalid": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
     "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @_ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
     "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @_ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
   },
