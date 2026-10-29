@@ -3110,7 +3110,7 @@ describe('onIncomingPayment', () => {
       .fn()
       .mockResolvedValueOnce(hanging as unknown as WalletConnection)
       .mockResolvedValueOnce(next as unknown as WalletConnection);
-    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const loadSdk: WalletSdkLoader = async () => sdkOf(connect);
     await connectWallet(loadSdk);
     await vi.waitFor(() => expect(hanging.listPayments).toHaveBeenCalled());
     await Promise.resolve();
