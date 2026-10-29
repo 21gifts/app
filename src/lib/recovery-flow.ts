@@ -1018,6 +1018,40 @@ export async function finishWithoutBalance(): Promise<void> {
 }
 
 /**
+ * **Try again** on `blocked` `closed`: picks the recovery up where closed
+ * logins stopped it. Before the account was found it opens and begins again
+ * ({@link openAndBegin}, which reuses an open old wallet). During the move it
+ * shows the transfer view with its done parts and the `generic` error, so the
+ * next **Transfer** press resumes at the first part not done. With a begin
+ * but no new passkey yet it shows `found`. No-op without a recovery or on any
+ * other view.
+ *
+ * @returns Resolves when the view shows the result.
+ */
+export async function resumeRecovery(): Promise<void> {
+  const f = flow;
+  const view = useRecoveryStore.getState().view;
+  if (f === null || view.step !== 'blocked' || view.kind !== 'closed') {
+    return;
+  }
+  if (f.begin === null) {
+    await openAndBegin();
+    return;
+  }
+  if (f.attempt === null) {
+    show(f, {
+      step: 'found',
+      username: f.begin.username,
+      restart: false,
+      error: null,
+      busy: false,
+    });
+    return;
+  }
+  showTransfer(f, f.attempt, { busy: false, waiting: false, error: 'generic' });
+}
+
+/**
  * Closes the wallets of a recovery (best effort).
  *
  * @param f - The recovery.

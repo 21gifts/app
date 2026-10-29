@@ -1604,6 +1604,29 @@ test.describe('Recover account via Social Recovery', () => {
     await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
   });
 
+  test('Function: resumeRecovery — the pinned closed logins offer Try again and Start over, and stay after leaving', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.goto('/recover?visual=recover-blocked-closed');
+    await expect(page.getByRole('status')).toHaveText(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+    await expect(page).toHaveURL(/\/recover$/);
+    await expect(page.getByRole('status')).toHaveText(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    await page.getByRole('button', { name: 'Start over' }).click();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+  });
+
   test('Function: createNewPasskey — the pinned found step asks for a new passkey on this phone', async ({
     page,
   }) => {

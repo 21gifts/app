@@ -58,6 +58,7 @@ function show(view: RecoveryView): void {
     type: vi.fn(),
     onWords: vi.fn(),
     retry: vi.fn(),
+    resume: vi.fn(),
     createPasskey: vi.fn(),
     transfer: vi.fn(),
     balanceLater: vi.fn(),
@@ -136,18 +137,25 @@ describe('RecoverScreen', () => {
     expect(screen.getByRole('status').textContent).toBe(text);
   });
 
-  it('closed logins show the login card notice', () => {
+  it('closed logins show the login card notice with Try again and Start over', () => {
     show({ step: 'blocked', kind: 'closed' });
     expect(screen.getByRole('status').textContent).toBe(
       '21.gifts is updating. Please try again a little later.',
     );
     expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(flow.resume).toHaveBeenCalledTimes(1);
+    expect(flow.retry).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }));
+    expect(flow.startOver).toHaveBeenCalledTimes(1);
   });
 
-  it('an outdated build shows the new-version notice with Reload', () => {
+  it('an outdated build shows the new-version notice with Reload only', () => {
     show({ step: 'blocked', kind: 'outdated' });
     expect(screen.getByRole('status').textContent).toBe('A new version is ready');
     expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
   });
 
   it.each([

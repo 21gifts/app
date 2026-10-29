@@ -62,7 +62,9 @@ const ALERT = 'text-center text-sm text-app-danger';
  * - **Opening:** **Opening the old wallet…**, or, while the address service is
  *   asked again after a pause, **Checking the account. This can take a few
  *   minutes.**
- * - **Blocked:** the login card's {@link LoginBlockedNotice}.
+ * - **Blocked:** the login card's {@link LoginBlockedNotice}; closed logins
+ *   also offer **Try again**, which resumes where they stopped the recovery,
+ *   and **Start over**.
  * - **Refused:** the reason as an alert and **Start over**; an account that is
  *   already recovered also offers **Log in**, which returns to `/login`.
  * - **Retry:** the reason, **Try again**, and **Start over**.
@@ -128,7 +130,20 @@ export function RecoverScreen(): ReactElement {
       body = <BusyLine label={t(view.waiting ? 'recover.openingWait' : 'recover.opening')} />;
       break;
     case 'blocked':
-      body = <LoginBlockedNotice kind={view.kind} />;
+      body =
+        view.kind === 'closed' ? (
+          <>
+            <LoginBlockedNotice kind="closed" />
+            <Button type="button" onClick={recovery.resume}>
+              {t('login.retry')}
+            </Button>
+            <Button type="button" variant="secondary" onClick={recovery.startOver}>
+              {t('recover.again')}
+            </Button>
+          </>
+        ) : (
+          <LoginBlockedNotice kind="outdated" />
+        );
       break;
     case 'refused':
       body = (

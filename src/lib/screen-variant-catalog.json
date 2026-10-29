@@ -1740,6 +1740,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/recover:transfer-busy",
+    "label": "/recover transfer-busy",
+    "visual": "state-recover-transfer-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/recover:transfer-progress",
     "label": "/recover transfer-progress",
     "visual": "state-recover-transfer-progress",

@@ -26,6 +26,7 @@ import {
   RECOVERY_SETTLE_WAIT_MS,
   rememberOldWords,
   resetRecovery,
+  resumeRecovery,
   transfer,
   type RecoveryDeps,
 } from '@/lib/recovery-flow';
@@ -1534,6 +1535,87 @@ describe('transfer', () => {
       await transfer();
       expect(view()).toEqual({ step: 'start' });
     });
+  });
+});
+
+describe('resumeRecovery', () => {
+  it('after closed logins at the begin, Try again begins again with the open old wallet', async () => {
+    vi.mocked(startPasskeyRecovery).mockRejectedValueOnce(new LoginsClosedError());
+    await toFound();
+    expect(view()).toEqual({ step: 'blocked', kind: 'closed' });
+    await resumeRecovery();
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    expect(startPasskeyRecovery).toHaveBeenCalledTimes(2);
+    expect(view()).toEqual({
+      step: 'found',
+      username: 'ada',
+      restart: false,
+      error: null,
+      busy: false,
+    });
+  });
+
+  it('logins still closed at the begin show the notice again', async () => {
+    vi.mocked(startPasskeyRecovery).mockRejectedValue(new LoginsClosedError());
+    await toFound();
+    await resumeRecovery();
+    expect(startPasskeyRecovery).toHaveBeenCalledTimes(2);
+    expect(view()).toEqual({ step: 'blocked', kind: 'closed' });
+  });
+
+  it.each([
+    ['the account', finishPasskeyRecovery, { account: false, address: false }, 2, 1],
+    ['the sign-in', startPasskeyAuthentication, { account: true, address: true }, 1, 2],
+  ])(
+    'after closed logins at %s, Try again shows the transfer with its done parts, and the next press resumes',
+    async (_label, fn, done, finishes, signIns) => {
+      await toTransfer();
+      vi.mocked(fn as typeof finishPasskeyRecovery).mockRejectedValueOnce(new LoginsClosedError());
+      await transfer();
+      expect(view()).toEqual({ step: 'blocked', kind: 'closed' });
+      await resumeRecovery();
+      expect(view()).toEqual({
+        step: 'transfer',
+        done: { ...done, signedIn: false, balance: false },
+        busy: false,
+        waiting: false,
+        error: 'generic',
+      });
+      await transfer();
+      expect(finishPasskeyRecovery).toHaveBeenCalledTimes(finishes);
+      expect(startPasskeyAuthentication).toHaveBeenCalledTimes(signIns);
+      expect(view()).toEqual({ step: 'done', balanceMissing: false });
+    },
+  );
+
+  it('with a begin but no new passkey yet, Try again shows the found account', async () => {
+    await toFound();
+    useRecoveryStore.getState().setView({ step: 'blocked', kind: 'closed' });
+    await resumeRecovery();
+    expect(startPasskeyRecovery).toHaveBeenCalledTimes(1);
+    expect(view()).toEqual({
+      step: 'found',
+      username: 'ada',
+      restart: false,
+      error: null,
+      busy: false,
+    });
+  });
+
+  it('does nothing without a recovery, for an outdated build, or on another view', async () => {
+    useRecoveryStore.getState().setView({ step: 'blocked', kind: 'closed' });
+    await resumeRecovery();
+    expect(view()).toEqual({ step: 'blocked', kind: 'closed' });
+    expect(deps.loadSdk).not.toHaveBeenCalled();
+    vi.mocked(startPasskeyRecovery).mockRejectedValueOnce(new AppOutdatedError());
+    await toFound();
+    expect(view()).toEqual({ step: 'blocked', kind: 'outdated' });
+    await resumeRecovery();
+    expect(view()).toEqual({ step: 'blocked', kind: 'outdated' });
+    useRecoveryStore.getState().setView({ step: 'retry', reason: 'unavailable' });
+    await resumeRecovery();
+    expect(view()).toEqual({ step: 'retry', reason: 'unavailable' });
+    expect(startPasskeyRecovery).toHaveBeenCalledTimes(1);
   });
 });
 

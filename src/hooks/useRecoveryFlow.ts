@@ -7,6 +7,7 @@ import {
   openAndBegin,
   rememberOldWords,
   resetRecovery,
+  resumeRecovery,
   transfer,
 } from '@/lib/recovery-flow';
 import { visualPin } from '@/lib/visual-pin';
@@ -24,6 +25,8 @@ export interface UseRecoveryFlowResult {
   onWords: (words: string, ownerAccountId: string | null) => void;
   /** **Try again** on `retry`: opens the old wallet and looks the account up again. */
   retry: () => void;
+  /** **Try again** on `blocked` `closed`: resumes the recovery where closed logins stopped it. */
+  resume: () => void;
   /** **Create new passkey** on `found`. */
   createPasskey: () => void;
   /** **Transfer** on `transfer`. */
@@ -89,6 +92,7 @@ const RECOVERY_VISUAL_PINS: ReadonlyMap<string, RecoveryView> = new Map<string, 
   ['recover-prf', { ...FOUND, error: 'prf' }],
   ['recover-new-wallet-error', { ...FOUND, error: 'wallet' }],
   ['recover-transfer', TRANSFER],
+  ['recover-transfer-busy', { ...TRANSFER, busy: true }],
   [
     'recover-transfer-progress',
     {
@@ -167,6 +171,9 @@ export function useRecoveryFlow(): UseRecoveryFlowResult {
     onWords,
     retry: () => {
       void openAndBegin();
+    },
+    resume: () => {
+      void resumeRecovery();
     },
     createPasskey: () => {
       void createNewPasskey();

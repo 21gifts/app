@@ -5945,9 +5945,9 @@
     "fil": "Naka-pin na fixture (?visual=recover-opening-wait, sa mga Playwright build lang): hindi pa mahanap ang account, at itatanong ulit pagkatapos ng pahinga. Tinitingnan ang account. Maaaring tumagal ito nang ilang minuto. na may spinner."
   },
   "/recover:blocked-closed": {
-    "de": "Angeheftete Fixture (?visual=recover-blocked-closed, nur Playwright-Builds): Anmeldungen sind für ein Update geschlossen. Der Hinweis der Anmeldekarte 21.gifts wird gerade aktualisiert. Bitte versuchen Sie es etwas später erneut. ohne etwas zum Drücken.",
-    "es": "Fixture fijado (?visual=recover-blocked-closed, solo builds de Playwright): los inicios de sesión están cerrados por una actualización. El aviso de la tarjeta de inicio de sesión 21.gifts se está actualizando. Inténtalo de nuevo un poco más tarde. sin nada que pulsar.",
-    "fil": "Naka-pin na fixture (?visual=recover-blocked-closed, sa mga Playwright build lang): sarado ang mga login dahil sa update. Ang abiso ng login card na Nag-a-update ang 21.gifts. Subukan ulit mamaya. na walang pipindutin."
+    "de": "Angeheftete Fixture (?visual=recover-blocked-closed, nur Playwright-Builds): Anmeldungen sind für ein Update geschlossen. Der Hinweis der Anmeldekarte 21.gifts wird gerade aktualisiert. Bitte versuchen Sie es etwas später erneut., dann Erneut versuchen, das die Wiederherstellung dort fortsetzt, wo sie stehen blieb, und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-blocked-closed, solo builds de Playwright): los inicios de sesión están cerrados por una actualización. El aviso de la tarjeta de inicio de sesión 21.gifts se está actualizando. Inténtalo de nuevo un poco más tarde., luego Intentar de nuevo, que retoma la recuperación donde se detuvo, y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-blocked-closed, sa mga Playwright build lang): sarado ang mga login dahil sa update. Ang abiso ng login card na Nag-a-update ang 21.gifts. Subukan ulit mamaya., pagkatapos ay Subukan ulit, na nagpapatuloy sa pagbawi kung saan ito huminto, at Magsimula ulit."
   },
   "/recover:blocked-outdated": {
     "de": "Angeheftete Fixture (?visual=recover-blocked-outdated, nur Playwright-Builds): Dieser Tab läuft mit einem älteren Build. Der Hinweis der Anmeldekarte Eine neue Version ist bereit mit Neu laden.",
@@ -6023,6 +6023,11 @@
     "de": "Angeheftete Fixture (?visual=recover-transfer, nur Playwright-Builds): Auf dieses Telefon übertragen, was umzieht, die Liste Konto, 21.gifts-Adresse und Guthaben, noch nichts abgehakt, und Übertragen.",
     "es": "Fixture fijado (?visual=recover-transfer, solo builds de Playwright): Pasar a este teléfono, lo que se traslada, la lista Cuenta, Dirección 21.gifts y Saldo sin nada marcado todavía, y Transferir.",
     "fil": "Naka-pin na fixture (?visual=recover-transfer, sa mga Playwright build lang): Ilipat sa teleponong ito, kung ano ang lilipat, ang listahang Account, 21.gifts address, at Balanse na wala pang check, at Ilipat."
+  },
+  "/recover:transfer-busy": {
+    "de": "Angeheftete Fixture (?visual=recover-transfer-busy, nur Playwright-Builds): Übertragen wurde eben gedrückt, und der Umzug beginnt. Noch nichts ist abgehakt, und Übertragen ist deaktiviert und zeigt einen Spinner.",
+    "es": "Fixture fijado (?visual=recover-transfer-busy, solo builds de Playwright): se acaba de pulsar Transferir y empieza el traslado. Todavía no hay nada marcado, y Transferir está desactivado con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=recover-transfer-busy, sa mga Playwright build lang): kapipindot lang ng Ilipat at nagsisimula ang paglipat. Wala pang naka-check, at naka-disable ang Ilipat na may spinner."
   },
   "/recover:transfer-progress": {
     "de": "Angeheftete Fixture (?visual=recover-transfer-progress, nur Playwright-Builds): Ein Drücken, das auf die Bestätigung des Umzugs wartet. Konto und 21.gifts-Adresse sind abgehakt, Der Umzug wird bestätigt. Das kann einige Minuten dauern., und Übertragen ist deaktiviert und zeigt einen Spinner.",

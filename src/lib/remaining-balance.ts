@@ -51,9 +51,10 @@ async function closeQuietly(connection: WalletConnection): Promise<void> {
 
 /**
  * Opens a previous wallet from its old 12 words. Words of another wallet (or
- * no phrase at all) are `mismatch`, found offline before anything connects. Otherwise a wallet
- * still open from an earlier call is closed, the wallet connects and reads its
- * synced balance within the recovery's connect deadline, and a fresh
+ * no phrase at all) are `mismatch`, found offline before anything connects.
+ * Otherwise a wallet still open from an earlier call is closed, the wallet
+ * connects and reads its synced balance within `WALLET_CONNECT_TIMEOUT_MS`,
+ * the member's own wallet deadline ({@link openWordsWallet}), and a fresh
  * idempotency key is drawn for its sends, so two wallets never share one.
  * Without a wallet in this build, or when it does not open, the answer is
  * `wallet`.

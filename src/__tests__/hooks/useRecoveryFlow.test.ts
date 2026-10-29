@@ -7,6 +7,7 @@ import {
   openAndBegin,
   rememberOldWords,
   resetRecovery,
+  resumeRecovery,
   transfer,
 } from '@/lib/recovery-flow';
 import { useRecoveryStore, type RecoveryView } from '@/stores/recovery-store';
@@ -17,6 +18,7 @@ vi.mock('@/lib/recovery-flow', () => ({
   openAndBegin: vi.fn(async () => undefined),
   rememberOldWords: vi.fn(async () => undefined),
   resetRecovery: vi.fn(async () => undefined),
+  resumeRecovery: vi.fn(async () => undefined),
   transfer: vi.fn(async () => undefined),
 }));
 
@@ -63,6 +65,7 @@ describe('useRecoveryFlow', () => {
     act(() => {
       result.current.onWords('old words', 'acc_ada');
       result.current.retry();
+      result.current.resume();
       result.current.createPasskey();
       result.current.transfer();
       result.current.balanceLater();
@@ -70,6 +73,7 @@ describe('useRecoveryFlow', () => {
     });
     expect(rememberOldWords).toHaveBeenCalledWith('old words', 'acc_ada');
     expect(openAndBegin).toHaveBeenCalledTimes(1);
+    expect(resumeRecovery).toHaveBeenCalledTimes(1);
     expect(createNewPasskey).toHaveBeenCalledTimes(1);
     expect(transfer).toHaveBeenCalledTimes(1);
     expect(finishWithoutBalance).toHaveBeenCalledTimes(1);
@@ -104,6 +108,10 @@ describe('useRecoveryFlow', () => {
     useRecoveryStore.setState({ view: { step: 'opening', waiting: false } });
     const first = renderHook(() => useRecoveryFlow());
     first.unmount();
+    useRecoveryStore.setState({ view: { step: 'blocked', kind: 'closed' } });
+    const blocked = renderHook(() => useRecoveryFlow());
+    expect(blocked.result.current.view).toEqual({ step: 'blocked', kind: 'closed' });
+    blocked.unmount();
     expect(resetRecovery).not.toHaveBeenCalled();
     useRecoveryStore.setState({ view: { step: 'done', balanceMissing: false } });
     const second = renderHook(() => useRecoveryFlow());
@@ -147,6 +155,10 @@ describe('useRecoveryFlow', () => {
     [
       'recover-transfer',
       { step: 'transfer', done: NONE, busy: false, waiting: false, error: null },
+    ],
+    [
+      'recover-transfer-busy',
+      { step: 'transfer', done: NONE, busy: true, waiting: false, error: null },
     ],
     [
       'recover-transfer-progress',

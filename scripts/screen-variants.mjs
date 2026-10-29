@@ -2105,6 +2105,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/recover',
+    id: 'transfer-busy',
+    image: 'recover-transfer-busy.png',
+    visual: 'state-recover-transfer-busy',
+    needle: "shotScreen(page, 'state-recover-transfer-busy')",
+  },
+  {
+    route: '/recover',
     id: 'transfer-progress',
     image: 'recover-transfer-progress.png',
     visual: 'state-recover-transfer-progress',

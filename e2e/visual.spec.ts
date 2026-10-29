@@ -37610,6 +37610,11 @@ test.describe('recover states', () => {
       'This moves your account, your 21.gifts address and your whole balance to the new wallet on this phone.',
     ],
     [
+      'recover-transfer-busy',
+      'state-recover-transfer-busy',
+      'This moves your account, your 21.gifts address and your whole balance to the new wallet on this phone.',
+    ],
+    [
       'recover-transfer-progress',
       'state-recover-transfer-progress',
       'Confirming the move. This can take a few minutes.',
@@ -37647,6 +37652,8 @@ test.describe('recover states', () => {
   test('recover blocked-closed', async ({ page }) => {
     await openRecover(page, pinned[2]![0]);
     await expect(page.getByText(pinned[2]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start over' })).toBeVisible();
     await shotScreen(page, 'state-recover-blocked-closed');
   });
 
@@ -37745,37 +37752,46 @@ test.describe('recover states', () => {
     await shotScreen(page, 'state-recover-transfer');
   });
 
-  test('recover transfer-progress', async ({ page }) => {
+  test('recover transfer-busy', async ({ page }) => {
     await openRecover(page, pinned[18]![0]);
     await expect(page.getByText(pinned[18]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Transfer' })).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'done' })).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(0);
+    await shotScreen(page, 'state-recover-transfer-busy');
+  });
+
+  test('recover transfer-progress', async ({ page }) => {
+    await openRecover(page, pinned[19]![0]);
+    await expect(page.getByText(pinned[19]![2])).toBeVisible();
     await expect(page.getByRole('img', { name: 'done' })).toHaveCount(2);
     await shotScreen(page, 'state-recover-transfer-progress');
   });
 
   test('recover transfer-error', async ({ page }) => {
-    await openRecover(page, pinned[19]![0]);
-    await expect(page.getByText(pinned[19]![2])).toBeVisible();
+    await openRecover(page, pinned[20]![0]);
+    await expect(page.getByText(pinned[20]![2])).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start over' })).toBeVisible();
     await shotScreen(page, 'state-recover-transfer-error');
   });
 
   test('recover balance-error', async ({ page }) => {
-    await openRecover(page, pinned[20]![0]);
-    await expect(page.getByText(pinned[20]![2])).toBeVisible();
+    await openRecover(page, pinned[21]![0]);
+    await expect(page.getByText(pinned[21]![2])).toBeVisible();
     await expect(page.getByRole('button', { name: 'Move the balance later' })).toBeVisible();
     await shotScreen(page, 'state-recover-balance-error');
   });
 
   test('recover done', async ({ page }) => {
-    await openRecover(page, pinned[21]![0]);
-    await expect(page.getByText(pinned[21]![2])).toBeVisible();
+    await openRecover(page, pinned[22]![0]);
+    await expect(page.getByText(pinned[22]![2])).toBeVisible();
     await expect(page.getByText(/^Some balance stayed/)).toHaveCount(0);
     await shotScreen(page, 'state-recover-done');
   });
 
   test('recover done-balance-missing', async ({ page }) => {
-    await openRecover(page, pinned[22]![0]);
-    await expect(page.getByText(pinned[22]![2])).toBeVisible();
+    await openRecover(page, pinned[23]![0]);
+    await expect(page.getByText(pinned[23]![2])).toBeVisible();
     await shotScreen(page, 'state-recover-done-balance-missing');
   });
 });
