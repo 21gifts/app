@@ -9,10 +9,13 @@ const FINISH_HEADERS = { ...APP_BUILD, origin: 'http://localhost:3000' };
 const OLD_KEY = `02${'a'.repeat(64)}`;
 const NEW_KEY = `03${'b'.repeat(64)}`;
 
+/** Lowercase hex of a 70-byte DER signature, as the lookup carries it. */
+const LOOKUP_SIGNATURE = `30440220${'ab'.repeat(32)}0220${'cd'.repeat(32)}`;
+
 /** A well-formed recovery begin of an old wallet the stub api does not know. */
 const BEGIN_BODY = {
   sparkPubkey: OLD_KEY,
-  lookup: { signature: '3044', timestamp: 1_761_700_000 },
+  lookup: { signature: LOOKUP_SIGNATURE, timestamp: 1_761_700_000 },
 };
 
 /** A well-formed recovery finish without a begun recovery. */
@@ -122,25 +125,43 @@ test.describe('social recovery endpoints', () => {
     const outdated = await request.post('/auth/passkey/recovery/begin', { data: BEGIN_BODY });
     expect(outdated.status()).toBe(403);
     expect(((await outdated.json()) as { code: string }).code).toBe('app_outdated');
-    const malformed = await request.post('/auth/passkey/recovery/begin', {
-      headers: APP_BUILD,
-      data: { sparkPubkey: OLD_KEY },
-    });
-    expect(malformed.status()).toBe(400);
-    expect(await malformed.json()).toEqual({
-      error: 'Expected a JSON body with sparkPubkey and lookup',
-    });
+    const malformed = [
+      { sparkPubkey: OLD_KEY },
+      { ...BEGIN_BODY, words: 'extra' },
+      { ...BEGIN_BODY, sparkPubkey: `04${'a'.repeat(64)}` },
+      { ...BEGIN_BODY, lookup: { ...BEGIN_BODY.lookup, signature: '3044' } },
+      {
+        ...BEGIN_BODY,
+        lookup: { ...BEGIN_BODY.lookup, signature: LOOKUP_SIGNATURE.toUpperCase() },
+      },
+      { ...BEGIN_BODY, lookup: { ...BEGIN_BODY.lookup, timestamp: -1 } },
+      { ...BEGIN_BODY, lookup: { ...BEGIN_BODY.lookup, timestamp: 1.5 } },
+      { ...BEGIN_BODY, lookup: { ...BEGIN_BODY.lookup, extra: true } },
+    ];
+    for (const data of malformed) {
+      const response = await request.post('/auth/passkey/recovery/begin', {
+        headers: APP_BUILD,
+        data,
+      });
+      expect(response.status(), JSON.stringify(data)).toBe(400);
+      expect(await response.json()).toEqual({
+        error: 'Expected a JSON body with sparkPubkey and lookup',
+      });
+    }
   });
 
   test('Function: startPasskeyRecovery — an old wallet without an account is not found', async ({
     request,
   }) => {
-    const response = await request.post('/auth/passkey/recovery/begin', {
-      headers: APP_BUILD,
-      data: BEGIN_BODY,
-    });
-    expect(response.status()).toBe(404);
-    expect(await response.json()).toEqual({ error: 'Not found' });
+    // The api normalizes the key, so padding and upper case still look it up.
+    for (const sparkPubkey of [OLD_KEY, ` ${OLD_KEY.toUpperCase()} `]) {
+      const response = await request.post('/auth/passkey/recovery/begin', {
+        headers: APP_BUILD,
+        data: { ...BEGIN_BODY, sparkPubkey },
+      });
+      expect(response.status(), sparkPubkey).toBe(404);
+      expect(await response.json()).toEqual({ error: 'Not found' });
+    }
   });
 
   test('Function: proxyAuthPasskeyRecoveryFinishPost — finish is forwarded with the build id', async ({
@@ -152,14 +173,23 @@ test.describe('social recovery endpoints', () => {
     });
     expect(outdated.status()).toBe(403);
     expect(((await outdated.json()) as { code: string }).code).toBe('app_outdated');
-    const malformed = await request.post('/auth/passkey/recovery/finish', {
-      headers: APP_BUILD,
-      data: { challengeId: 'c'.repeat(64) },
-    });
-    expect(malformed.status()).toBe(400);
-    expect(await malformed.json()).toEqual({
-      error: 'Expected a JSON body with challengeId, credential, newSparkPubkey and signature',
-    });
+    const malformed = [
+      { challengeId: 'c'.repeat(64) },
+      { ...FINISH_BODY, extra: true },
+      { ...FINISH_BODY, newSparkPubkey: `04${'b'.repeat(64)}` },
+      { ...FINISH_BODY, signature: { ...FINISH_BODY.signature, pubkey: 'a'.repeat(66) } },
+      { ...FINISH_BODY, signature: { ...FINISH_BODY.signature, extra: true } },
+    ];
+    for (const data of malformed) {
+      const response = await request.post('/auth/passkey/recovery/finish', {
+        headers: APP_BUILD,
+        data,
+      });
+      expect(response.status(), JSON.stringify(data)).toBe(400);
+      expect(await response.json()).toEqual({
+        error: 'Expected a JSON body with challengeId, credential, newSparkPubkey and signature',
+      });
+    }
   });
 
   test('Function: finishPasskeyRecovery — a finish without a begun recovery is refused', async ({

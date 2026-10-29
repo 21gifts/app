@@ -5330,7 +5330,10 @@ const passkeySession = { token: 'tok', account: passkeyAccount };
 
 const recoveryBeginBody = {
   sparkPubkey: `02${'a'.repeat(64)}`,
-  lookup: { signature: '3044', timestamp: 1_761_700_000 },
+  lookup: {
+    signature: `30440220${'ab'.repeat(32)}0220${'cd'.repeat(32)}`,
+    timestamp: 1_761_700_000,
+  },
 };
 const recoveryFinishBody = {
   challengeId: 'ch'.repeat(16),
