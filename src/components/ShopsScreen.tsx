@@ -66,7 +66,9 @@ function shopsCountryHref(country: string | null): string {
  * opens List. A plain click on a link to a view of this same page (a place opens
  * `/shops?pin=…#map`) shows that view (no or an unknown hash is List, as on load), since the
  * client-side push fires no `hashchange`. The push keeps the entry the link was clicked from
- * for browser Back (`popstate`). Links with `target` or `download` are ignored.
+ * for browser Back (`popstate`). When a history step arrives before that switch (the top-left
+ * arrow steps back to `/shops#post` while its href is `/shops`), the entry it arrives at
+ * decides the view. Links with `target` or `download` are ignored.
  * The view stays unset until the hash is read, so the list, post feed, map, and table mount
  * only after that.
  *
@@ -91,10 +93,16 @@ export function ShopsScreen(): ReactElement {
       setCountry(shopCountryFromQuery(new URLSearchParams(window.location.search).get('country')));
     };
     apply();
+    // Counts history steps, so a link switch scheduled before one does not undo it.
+    let steps = 0;
+    const onPopState = (): void => {
+      steps += 1;
+      apply();
+    };
     window.addEventListener('hashchange', apply);
     // Browser back and forward between entries of this page that differ in
     // more than the hash fire popstate, not hashchange.
-    window.addEventListener('popstate', apply);
+    window.addEventListener('popstate', onPopState);
     // A link to a view of this page (a place in the post list or the table
     // opens `/shops?pin=…#map`) is a client-side push, which fires no
     // hashchange. Capture runs before next/link prevents the default.
@@ -128,8 +136,15 @@ export function ShopsScreen(): ReactElement {
       const nextCountry = shopCountryFromQuery(url.searchParams.get('country'));
       // The router push carries the hash and keeps the entry being left for Back.
       // Switch after this click is dispatched: unmounting the link first would
-      // stop next/link from preventing the default document load.
+      // stop next/link from preventing the default document load. The top-left
+      // arrow may take a history step back instead of opening its href (`/shops`,
+      // which has no hash); when that step has already arrived, its entry (such
+      // as `/shops#post`) decides the view, not the href.
+      const stepsAtClick = steps;
       window.setTimeout(() => {
+        if (steps !== stepsAtClick) {
+          return;
+        }
         setView(next);
         setCountry(nextCountry);
       }, 0);
@@ -137,7 +152,7 @@ export function ShopsScreen(): ReactElement {
     document.addEventListener('click', onLinkClick, true);
     return () => {
       window.removeEventListener('hashchange', apply);
-      window.removeEventListener('popstate', apply);
+      window.removeEventListener('popstate', onPopState);
       document.removeEventListener('click', onLinkClick, true);
     };
   }, []);

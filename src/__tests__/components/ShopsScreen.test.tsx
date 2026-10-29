@@ -216,6 +216,31 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
   });
 
+  it('keeps the posts when the top-left arrow steps back before its href switch runs', () => {
+    window.history.replaceState(null, '', '/shops?pin=p1#table');
+    renderWithLocale(<ShopsScreen />);
+    // The arrow's href is /shops; the step back arrives at /shops#post first.
+    const arrow = screen.getByText('no hash');
+    arrow.addEventListener(
+      'click',
+      (event) => {
+        event.preventDefault();
+        window.history.replaceState(null, '', '/shops#post');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      },
+      { once: true },
+    );
+    vi.useFakeTimers();
+    act(() => {
+      fireEvent.click(arrow);
+    });
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+  });
+
   it('shows the map when the table opens a place, and ignores other clicks', () => {
     window.history.replaceState(null, '', '/shops#table');
     renderWithLocale(<ShopsScreen />);
