@@ -629,7 +629,7 @@ describe('CreditLedger', () => {
       const onLedger = vi.fn();
       renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
       expect(await screen.findByText('Given')).toBeTruthy();
-      expect(onLedger).toHaveBeenCalled();
+      await waitFor(() => expect(onLedger).toHaveBeenCalled());
       expect(
         onLedger.mock.calls
           .at(-1)?.[0]
