@@ -720,6 +720,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-waiting-fiat",
+    "label": "/wallet loans-waiting-fiat",
+    "visual": "state-wallet-loans-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-fiat-open",
+    "label": "/wallet loans-waiting-fiat-open",
+    "visual": "state-wallet-loans-waiting-fiat-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:received",
     "label": "/wallet received",
     "visual": "state-wallet-received",

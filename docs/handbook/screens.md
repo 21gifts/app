@@ -222,6 +222,18 @@ The same ready wallet after **Show loan** is pressed. The disclosure is open as 
 
 ![21.gifts wallet loans waiting all open](images/wallet-loans-waiting-all-open.png)
 
+### Variant: loans-waiting-fiat
+
+Ready wallet with **Balance ₿21'000 · $21.00** and a PHP loan whose lender Farid cannot receive yet. The **Your loan** card shows **Fully funded.**, **Ask ₱300.00 · ₿12'000** with **100%**, **Due today**, **₿720 · $0.72**, and **Send**, and under them the muted line **₱12.00 · ₿480 is waiting for a lender to set up their wallet**: the stored fiat figure of the waiting share with its bitcoin. **Show loan** remains closed.
+
+![21.gifts wallet loans waiting fiat](images/wallet-loans-waiting-fiat.png)
+
+### Variant: loans-waiting-fiat-open
+
+The same ready wallet after **Show loan** is pressed. The disclosure is open as **Hide loan** and shows the linked text **Small loan for school books for my daughter. Paid back daily over 10 days.** with **100%**; **Due today**, **₿720 · $0.72**, **Send**, and **₱12.00 · ₿480 is waiting for a lender to set up their wallet** stay unchanged.
+
+![21.gifts wallet loans waiting fiat open](images/wallet-loans-waiting-fiat-open.png)
+
 ### Variant: balance-locked
 
 Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, the muted line **Confirm to open your wallet**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: logging in with any passkey decides the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.

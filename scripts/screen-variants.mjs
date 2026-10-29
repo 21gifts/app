@@ -914,6 +914,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-waiting-fiat',
+    image: 'wallet-loans-waiting-fiat.png',
+    visual: 'state-wallet-loans-waiting-fiat',
+    needle: 'state /wallet loans-waiting-fiat',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-waiting-fiat-open',
+    image: 'wallet-loans-waiting-fiat-open.png',
+    visual: 'state-wallet-loans-waiting-fiat-open',
+    needle: 'state /wallet loans-waiting-fiat-open',
+  },
+  {
+    route: '/wallet',
     id: 'received',
     image: 'wallet-received.png',
     visual: 'state-wallet-received',

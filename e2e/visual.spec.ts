@@ -2155,6 +2155,72 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-waiting-all-open');
   });
 
+  test('state /wallet loans-waiting-fiat', async ({ page }) => {
+    const waitingFiatLoan = loanWith(loanB, {
+      due: {
+        payableSats: 720,
+        payablePeople: 1,
+        waitingSats: 480,
+        waitingPeople: 1,
+        waitingShares: 1,
+        payableAmount: '18.00',
+        waitingAmount: '12.00',
+      },
+    });
+    const waitingFiatLedger = ledgerWith(ledgerB, {
+      givers: ledgerB.givers.map((giver) => ({
+        ...giver,
+        canReceive: giver.accountId !== 'acc_farid',
+      })),
+      waitingShares: 1,
+      repayments: ledgerB.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.accountId === 'acc_farid',
+      })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingFiatLoan], { 'loan-b': waitingFiatLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(
+      page.getByText('₱12.00 · ₿480 is waiting for a lender to set up their wallet'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-fiat');
+  });
+
+  test('state /wallet loans-waiting-fiat-open', async ({ page }) => {
+    const waitingFiatLoan = loanWith(loanB, {
+      due: {
+        payableSats: 720,
+        payablePeople: 1,
+        waitingSats: 480,
+        waitingPeople: 1,
+        waitingShares: 1,
+        payableAmount: '18.00',
+        waitingAmount: '12.00',
+      },
+    });
+    const waitingFiatLedger = ledgerWith(ledgerB, {
+      givers: ledgerB.givers.map((giver) => ({
+        ...giver,
+        canReceive: giver.accountId !== 'acc_farid',
+      })),
+      waitingShares: 1,
+      repayments: ledgerB.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.accountId === 'acc_farid',
+      })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingFiatLoan], { 'loan-b': waitingFiatLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(
+      page.getByText('₱12.00 · ₿480 is waiting for a lender to set up their wallet'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanB.text })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-fiat-open');
+  });
+
   test('screen /wallet/phrase', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
