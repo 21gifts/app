@@ -2700,6 +2700,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:lender-waiting",
+    "label": "/welcome lender-waiting",
+    "visual": "state-welcome-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-sunday",
     "label": "/welcome loans-sunday",
     "visual": "state-welcome-loans-sunday",
@@ -7953,6 +7959,12 @@
     "id": "/messages/[id]/repayment-list:overview",
     "label": "/messages/[id]/repayment-list overview",
     "visual": "state-messages-id-repayment-list-overview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:waiting",
+    "label": "/messages/[id]/repayment-list waiting",
+    "visual": "state-messages-id-repayment-list-waiting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
