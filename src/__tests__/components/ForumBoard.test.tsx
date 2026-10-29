@@ -7345,6 +7345,49 @@ describe('ForumBoard', () => {
     expect(onReplyAmountDraftChange).toHaveBeenCalledWith('21');
   });
 
+  it('names the loading rate and the missing rate on the reply composer', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="loading"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    cleanup();
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError={null}
+        replyAmountNoRate
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
+  });
+
   it('shows replyFormError tooLong, request, rateLimit, and deleted when expanded', () => {
     const { rerender } = renderWithLocale(
       <ForumBoard

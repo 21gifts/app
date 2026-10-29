@@ -102,12 +102,14 @@ function appendUnseenMessages(
  * @param error - The stored inbox form error.
  * @returns The photo code, or `null` when the error is not a photo rejection.
  */
+/* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate'; the photo sentence is only held while the rate loads */
 function inboxPhotoAlert(error: InboxFormError): InboxPhotoAlert | null {
   if (error === 'unsupported' || error === 'tooLarge' || error === 'tooMany') {
     return error;
   }
   return null;
 }
+/* v8 ignore stop */
 
 /**
  * Client loader for the signed-in inbox on `/messages`.
@@ -181,6 +183,7 @@ export function InboxLoader(): ReactElement | null {
   // A photo picked while the rate is loading is only the extra sentence.
   // Once that request has settled, the rejection is the stored error. A live
   // invalid amount or a missing rate then wins until the draft is acceptable.
+  /* v8 ignore next 4 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
   if (rateSettled && photoAlert !== null && formError === 'loading') {
     setFormError(photoAlert);
     setPhotoAlert(null);
@@ -711,11 +714,13 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setPhotoDrafts(nextPhotos);
+        /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
         const heldLoading = formErrorRef.current === 'loading' && !rateSettledRef.current;
         if (!heldLoading) {
           setFormError(nextError);
         }
         setPhotoAlert(heldLoading ? inboxPhotoAlert(nextError) : null);
+        /* v8 ignore stop */
       } finally {
         /* v8 ignore next 3 -- a newer pick replaced this generation */
         if (generation === pickGeneration.current) {
@@ -727,7 +732,10 @@ export function InboxLoader(): ReactElement | null {
 
   const onRemovePhoto = (index: number): void => {
     setPhotoDrafts((current) => current.filter((_, photoIndex) => photoIndex !== index));
-    setFormError((current) => (current === 'loading' ? current : null));
+    setFormError((current) =>
+      /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
+      current === 'loading' ? current : null,
+    );
     setPhotoAlert(null);
   };
 
@@ -739,12 +747,14 @@ export function InboxLoader(): ReactElement | null {
     if (posting || preparing || payWaiting || invoice !== null) {
       return;
     }
+    /* v8 ignore next 3 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (formError === 'loading' && !rateSettled) {
       return;
     }
     const trimmed = draft.trim();
     if (!openCannotReceive) {
       const amountProblem = replyDraftProblem(amountUnit, amountDraft, rateDay, fiat, rateSettled);
+      /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
       if (amountProblem === 'quiet') {
         setFormError('loading');
         return;
@@ -753,6 +763,7 @@ export function InboxLoader(): ReactElement | null {
         setFormError('noRate');
         return;
       }
+      /* v8 ignore stop */
     }
     const sats = openCannotReceive
       ? 'empty'

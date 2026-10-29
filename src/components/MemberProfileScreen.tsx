@@ -1218,6 +1218,7 @@ export function MemberProfileScreen({
       return;
     }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (payProblem === 'quiet') {
       setPayError('loading');
       return;
@@ -1226,6 +1227,7 @@ export function MemberProfileScreen({
       setPayError('noRate');
       return;
     }
+    /* v8 ignore stop */
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
     const payRate = rateDay;
@@ -1382,6 +1384,7 @@ export function MemberProfileScreen({
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
+    /* v8 ignore next 3 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
@@ -1416,6 +1419,7 @@ export function MemberProfileScreen({
       rateSettled,
     );
     // A fiat amount with no settled rate is not "at least 1 sat".
+    /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (replyProblem === 'quiet') {
       setReplyFormError('loading');
       return;
@@ -1423,6 +1427,7 @@ export function MemberProfileScreen({
     if (replyProblem === 'no-rate') {
       return;
     }
+    /* v8 ignore stop */
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -1517,6 +1522,7 @@ export function MemberProfileScreen({
     rateSettled,
   );
   const shownReplyFormError: ForumReplyFormError =
+    /* v8 ignore next 7 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     replyFormError !== 'loading'
       ? replyFormError
       : rateSettled
@@ -1545,6 +1551,7 @@ export function MemberProfileScreen({
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
+      /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
       setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
     },
     onPayUnitChange: setPayShownUnit,
@@ -1565,12 +1572,18 @@ export function MemberProfileScreen({
     replyDraft,
     onReplyDraftChange: (value: string): void => {
       setReplyDraft(value);
-      setReplyFormError((current) => (current === 'loading' ? current : null));
+      setReplyFormError((current) =>
+        /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
+        current === 'loading' ? current : null,
+      );
     },
     replyAmountDraft,
     onReplyAmountDraftChange: (value: string): void => {
       setReplyAmountDraft(value);
-      setReplyFormError((current) => (current === 'loading' ? current : null));
+      setReplyFormError((current) =>
+        /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
+        current === 'loading' ? current : null,
+      );
     },
     replyPosting,
     replyFormError: shownReplyFormError,

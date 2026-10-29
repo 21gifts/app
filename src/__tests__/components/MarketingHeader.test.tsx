@@ -64,6 +64,16 @@ describe('MarketingHeader', () => {
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
   });
 
+  it('treats a language URL of the home page as the root page', () => {
+    pathname = '/de';
+    const view = renderWithLocale(<MarketingHeader />);
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    view.unmount();
+    pathname = '/de/about';
+    renderWithLocale(<MarketingHeader />);
+    expect(screen.getByRole('link', { name: 'Back to the forum' })).toBeTruthy();
+  });
+
   it('links the wordmark to /en and Log in to /login', () => {
     renderWithLocale(<MarketingHeader />);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');

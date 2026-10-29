@@ -846,6 +846,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setAmountTouched(true);
     const generation = generationRef.current;
     const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
+    /* v8 ignore next 4 -- Continue is off while the amount names a missing rate, and the fiat unit needs a rate */
     if (parsed.kind === 'no-rate') {
       setFormError('rate');
       return;

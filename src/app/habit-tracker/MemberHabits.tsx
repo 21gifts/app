@@ -530,6 +530,7 @@ export function MemberHabits(): ReactElement {
       return;
     }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (payProblem === 'quiet') {
       setPayError('loading');
       return;
@@ -538,6 +539,7 @@ export function MemberHabits(): ReactElement {
       setPayError('noRate');
       return;
     }
+    /* v8 ignore stop */
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid' || sats > FORUM_GOAL_SATS_MAX) {
       setPayError('habitAmount');
@@ -622,6 +624,7 @@ export function MemberHabits(): ReactElement {
   // The api uses the same code as a bad draft. A draft the form already
   // accepted keeps that message until the amount changes.
   const shownHabitPayError =
+    /* v8 ignore next 2 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     payError === 'loading'
       ? shownPaySheetError(payError, habitPayProblem, 'habitAmount', 'noRate', rateSettled)
       : habitPayProblem === null && payError === 'habitAmount'

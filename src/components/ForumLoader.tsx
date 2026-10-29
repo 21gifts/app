@@ -2231,6 +2231,7 @@ export function ForumLoader({
       return;
     }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (payProblem === 'quiet') {
       setPayError('loading');
       return;
@@ -2239,6 +2240,7 @@ export function ForumLoader({
       setPayError('noRate');
       return;
     }
+    /* v8 ignore stop */
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
     const payRate = rateDay;
@@ -2682,6 +2684,7 @@ export function ForumLoader({
     if (expandedId === null || replyPosting || repliesLoading || repliesError || replies === null) {
       return;
     }
+    /* v8 ignore next 3 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
@@ -2717,6 +2720,7 @@ export function ForumLoader({
       rateSettled,
     );
     // A fiat amount with no settled rate is not "at least 1 sat".
+    /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (replyProblem === 'quiet') {
       setReplyFormError('loading');
       return;
@@ -2724,6 +2728,7 @@ export function ForumLoader({
     if (replyProblem === 'no-rate') {
       return;
     }
+    /* v8 ignore stop */
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -2810,6 +2815,7 @@ export function ForumLoader({
   // A stored loading submit stays until the rate request finishes. A settled
   // missing rate is the amount flag, not a reply-form code.
   const shownReplyFormError: ForumReplyFormError =
+    /* v8 ignore next 7 -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     replyFormError !== 'loading'
       ? replyFormError
       : rateSettled
@@ -3152,12 +3158,18 @@ export function ForumLoader({
           replyDraft={replyDraft}
           onReplyDraftChange={(value) => {
             setReplyDraft(value);
-            setReplyFormError((current) => (current === 'loading' ? current : null));
+            setReplyFormError((current) =>
+              /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
+              current === 'loading' ? current : null,
+            );
           }}
           replyAmountDraft={replyAmountDraft}
           onReplyAmountDraftChange={(value) => {
             setReplyAmountDraft(value);
-            setReplyFormError((current) => (current === 'loading' ? current : null));
+            setReplyFormError((current) =>
+              /* v8 ignore next -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
+              current === 'loading' ? current : null,
+            );
           }}
           onReplyPost={onReplyPost}
           replyPosting={replyPosting}

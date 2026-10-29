@@ -2380,6 +2380,107 @@ describe('ForumLoader', () => {
     );
   });
 
+  it('revokes the saved shop note composer preview after a staff save', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'keep', previewUrl: 'blob:keep' },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'shop', previewUrl: 'blob:shop' },
+      });
+    postMock.mockResolvedValueOnce({
+      ...SAMPLE,
+      id: 'shop-keep',
+      text: SHOP_NOTE_BODY,
+      place: COMPLETE_SHOP_PLACE,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    postMock.mockResolvedValueOnce({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: SHOP_NOTE_BODY,
+      place: COMPLETE_SHOP_PLACE,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(
+      SHOP_DESCRIPTION,
+      '@luna',
+      new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' }),
+    );
+    await waitFor(() => {
+      expect(document.querySelector('[data-message-id="shop-keep"]')).not.toBeNull();
+    });
+    await submitShopWizard(
+      SHOP_DESCRIPTION,
+      '@luna',
+      new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' }),
+    );
+    const card = await waitFor(() => {
+      const shopCard = document.querySelector('[data-message-id="shop-new"]') as HTMLElement;
+      expect(within(shopCard).getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:shop');
+      return shopCard;
+    });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+          }),
+      })),
+    );
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: COMPLETE_SHOP_PLACE,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    vi.mocked(URL.revokeObjectURL).mockClear();
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
+    });
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:shop');
+    expect(vi.mocked(URL.revokeObjectURL)).not.toHaveBeenCalledWith('blob:keep');
+    vi.unstubAllGlobals();
+  });
+
   it('does not put a staff place control on living-room notes', async () => {
     useAuthStore.setState({
       session: 'sess',
