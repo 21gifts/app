@@ -18312,7 +18312,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/repayment-list`);
     await expect(page.getByText('Next repayment')).toBeVisible();
     await expect(page.getByText('3 days · Waiting')).toBeVisible();
-    await expect(page.getByText('Waiting for Bea @bea to set up their wallet')).toHaveCount(2);
+    await expect(page.getByText('Waiting for Bea @bea to set up their wallet')).toHaveCount(3);
     const month = page.getByRole('heading', { name: 'November 2026' });
     await month.evaluate((node) => {
       const scroller = node.closest('[data-scrollport]');

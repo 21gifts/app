@@ -778,6 +778,19 @@ describe('CreditLedger', () => {
     ).toBeGreaterThanOrEqual(6);
   });
 
+  it('names the waiting lender under the usual split when every day has a waiting share', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({ ...row, waiting: row.name === 'Yorelene' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
   it('names a month waiting when every share of it waits', async () => {
     const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
     ledger({ ...plan, repayments: plan.repayments.map((row) => ({ ...row, waiting: true })) });

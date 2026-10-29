@@ -419,6 +419,15 @@ function LongRepayment({
                   split: splitText(month.usualGroup.rows, fiat, numberFormat, spot),
                 })}
               </p>
+              {month.usualGroup.rows
+                .filter((row) => row.waiting === true)
+                .map((row) => (
+                  <p key={row.accountId} className="mt-1 text-xs text-app-muted">
+                    {t('loans.waitingFor', {
+                      name: giverLabel(row.name, row.username, row.accountId),
+                    })}
+                  </p>
+                ))}
               {month.exceptions.length > 0 ? (
                 <DayGroups
                   groups={month.exceptions}
