@@ -147,6 +147,7 @@ const DEV_PLACES = 'https://dev-api.opencryptopay.io/map/places';
 const MAP_STYLE_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
 const MAP_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
 const TILE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
 const HOME_CENTER: LngLat = [8.23, 46.8];
 const HOME_ZOOM = 7;
 const SINGLE_ZOOM = 12;
@@ -889,6 +890,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       const script = document.createElement('script');
       script.src = MAP_SCRIPT_URL;
       script.async = true;
+      // Same nonce as the page's own scripts, so every script of the page carries it.
+      // The browser hides the attribute value; the `nonce` property keeps it.
+      const nonced = [...document.querySelectorAll('script')].find((each) => each.nonce !== '');
+      if (nonced !== undefined) script.nonce = nonced.nonce;
       script.setAttribute('data-shops-map', 'loading');
       listen(script);
       document.head.appendChild(script);

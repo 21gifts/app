@@ -643,6 +643,24 @@ describe('HomeShops', () => {
     expect(tableShell().hasAttribute('hidden')).toBe(true);
   });
 
+  it('gives the map script the nonce of the page scripts', async () => {
+    const page = document.createElement('script');
+    page.nonce = 'page-nonce';
+    document.head.append(page);
+    try {
+      renderShops();
+      await act(async () => {
+        latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+      });
+      await waitFor(() =>
+        expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1),
+      );
+      expect(mapScript().nonce).toBe('page-nonce');
+    } finally {
+      page.remove();
+    }
+  });
+
   it('uses the production host for 21.gifts and www.21.gifts', async () => {
     setHostname('21.gifts');
     const first = renderShops();
