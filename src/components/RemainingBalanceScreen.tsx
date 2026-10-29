@@ -27,8 +27,9 @@ const ALERT = 'text-center text-sm text-app-danger';
  * the signed-in member moves what is left in a wallet the account used before
  * a social recovery to the current wallet ({@link useRemainingBalance}).
  * Nothing shows while the account's previous wallets are read. A wallet that
- * is not one of them says so with **Done**; a failed read shows its alert and
- * **Try again**. Every other step keeps the title **Transfer remaining
+ * is not one of them says so in a muted line with nothing to press (the
+ * top-left arrow leaves, as on a missing view); a failed read shows its alert
+ * and **Try again**. Every other step keeps the title **Transfer remaining
  * balance**. The start explains that the wallet's two codes or its 12 words
  * open it and offers **Scan two codes** and **Type my 12 words**
  * ({@link OldWordsInput}; the camera fills the page, and codes of another
@@ -133,14 +134,7 @@ export function RemainingBalanceScreen({
       );
       break;
     case 'notFound':
-      body = (
-        <>
-          <p role="alert" className={ALERT}>
-            {t('remaining.notFound')}
-          </p>
-          {done}
-        </>
-      );
+      body = <p className={BODY}>{t('remaining.notFound')}</p>;
       break;
     case 'start':
       body = (

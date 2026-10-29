@@ -5704,6 +5704,11 @@
     "es": "La sesión retenida en /welcome (?visual=held-session) tras Iniciar sesión desde una pestaña con una versión anterior de la app: el inicio de la autenticación respondió 403 con code app_outdated. LoginBlockedNotice reemplaza la tarjeta de inicio de sesión: Hay una nueva versión lista (login.outdated) y Recargar (login.reload), que vuelve a cargar la página para que se ejecute la nueva versión.",
     "fil": "Ang naka-hold na session sa /welcome (?visual=held-session) pagkatapos ng Mag-log in mula sa tab na may lumang build ng app: sumagot ng 403 na may code app_outdated ang simula ng authentication. Pinapalitan ng LoginBlockedNotice ang login card: May bagong bersyon na (login.outdated) at I-reload (login.reload), na naglo-load ulit ng page para tumakbo ang bagong build."
   },
+  "/welcome:held-session-recovery-pending": {
+    "de": "Die zurückgehaltene Sitzung auf /welcome (?visual=held-session) nach Anmelden mit dem Passkey einer Social Recovery, die noch nicht abgeschlossen ist: Der Authentifizierungs-Abschluss antwortete 409 mit code recovery_pending. Die Karte bleibt mit dem Gruß Willkommen zurück, Ada, mit Die Wiederherstellung Ihres Kontos ist noch nicht abgeschlossen. Öffnen Sie „Account über Social Recovery wiederherstellen“, um sie abzuschließen. (login.recoveryPending) über Anmelden anstelle von Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut., und dem sekundären Link Account über Social Recovery wiederherstellen direkt unter Anmelden, der /recover öffnet; danach folgen Neu bei 21.gifts? und Ein neues Konto eröffnen. Der Passkey wird dem Authenticator nicht als unbekannt gemeldet, die Sitzung bleibt zurückgehalten, und oben rechts stehen weiterhin weder Anmelden noch das Menü.",
+    "es": "La sesión retenida en /welcome (?visual=held-session) tras Iniciar sesión con el passkey de una Social Recovery que aún no ha terminado: el final de la autenticación respondió 409 con code recovery_pending. La tarjeta se mantiene con el saludo Hola de nuevo, Ada, con La recuperación de tu cuenta aún no ha terminado. Abre «Recuperar la cuenta con Social Recovery» para terminarla. (login.recoveryPending) encima de Iniciar sesión en lugar de Algo salió mal. Inténtalo de nuevo., y el enlace secundario Recuperar la cuenta con Social Recovery justo debajo de Iniciar sesión, que abre /recover; después siguen ¿Primera vez en 21.gifts? y Abrir una cuenta nueva. El passkey no se notifica al autenticador como desconocido, la sesión sigue retenida y arriba a la derecha sigue sin haber Iniciar sesión ni el Menú.",
+    "fil": "Ang naka-hold na session sa /welcome (?visual=held-session) pagkatapos ng Mag-log in gamit ang passkey ng Social Recovery na hindi pa tapos: sumagot ng 409 na may code recovery_pending ang pagtatapos ng authentication. Nananatili ang card na may bating Maligayang pagbabalik, Ada, na may Hindi pa tapos ang pagbawi ng account mo. Buksan ang “Bawiin ang account gamit ang Social Recovery” para tapusin ito. (login.recoveryPending) sa itaas ng Mag-log in sa halip na May nangyaring mali. Subukan ulit., at ang pangalawang link na Bawiin ang account gamit ang Social Recovery sa mismong ilalim ng Mag-log in, na nagbubukas ng /recover; kasunod ang Bago ka sa 21.gifts? at Magbukas ng bagong account. Hindi iniuulat sa authenticator na hindi kilala ang passkey, nananatiling naka-hold ang session, at sa kanan itaas ay wala pa ring Mag-log in at walang Menu."
+  },
   "/settings:no-username": {
     "de": "Konto, das die Einrichtung ohne Benutzernamen abgeschlossen hat. Unter 21.gifts-Adresse stehen Zuerst einen Benutzernamen setzen. und das Benutzernamenfeld mit Weiter dort, wo sonst die Adresse und ihr Kopier-Symbol stehen.",
     "es": "Cuenta que terminó la configuración sin nombre de usuario. Bajo Dirección 21.gifts, Primero elige un nombre de usuario. y el campo de nombre de usuario con Continuar ocupan el lugar de la dirección y su icono de copiar.",
@@ -6060,9 +6065,9 @@
     "fil": "Si Ada na may dating wallet, binuksan mula sa link nitong Ilipat ang natitirang balanse sa /settings. Pamagat na Ilipat ang natitirang balanse, I-scan ang dalawang code ng wallet na ito o i-type ang 12 salita nito., Mag-scan ng dalawang code, at I-type ang 12 salita ko."
   },
   "/settings/previous-wallets/[sparkPubkey]:not-found": {
-    "de": "Der Schlüssel in der Adresse ist keine frühere Wallet des Kontos: Diese frühere Wallet gehört nicht zu deinem Konto. und Fertig, das zu /settings zurückführt.",
-    "es": "La clave de la dirección no es una wallet anterior de la cuenta: Esta wallet anterior no pertenece a tu cuenta. y Listo, que vuelve a /settings.",
-    "fil": "Hindi dating wallet ng account ang key sa address: Hindi kabilang sa account mo ang dating wallet na ito. at Tapos na, na bumabalik sa /settings."
+    "de": "Der Schlüssel in der Adresse ist keine frühere Wallet des Kontos: die gedämpfte Zeile Diese frühere Wallet gehört nicht zu deinem Konto. und nichts zu drücken; der Pfeil oben links verlässt die Seite.",
+    "es": "La clave de la dirección no es una wallet anterior de la cuenta: la línea atenuada Esta wallet anterior no pertenece a tu cuenta. y nada que pulsar; la flecha de arriba a la izquierda sale de la página.",
+    "fil": "Hindi dating wallet ng account ang key sa address: ang mahinang linya na Hindi kabilang sa account mo ang dating wallet na ito. at walang mapipindot; aalis sa page ang arrow sa kaliwang itaas."
   },
   "/settings/previous-wallets/[sparkPubkey]:load-error": {
     "de": "GET /me/previous-wallets ist fehlgeschlagen: Frühere Wallets konnten nicht geladen werden. und Erneut versuchen.",
@@ -6178,6 +6183,21 @@
     "de": "Angeheftete Fixture (?visual=prev-done, nur Playwright-Builds): Der Umzug endete mit einem synchronisierten Lesen von 0. In deine Wallet übertragen., Frühere Wallet entfernen und Fertig.",
     "es": "Fixture fijado (?visual=prev-done, solo builds de Playwright): el traslado terminó con una lectura sincronizada de 0. Transferido a tu wallet., Quitar la wallet anterior y Listo.",
     "fil": "Naka-pin na fixture (?visual=prev-done, sa mga Playwright build lang): natapos ang paglipat na may naka-sync na pagbasang 0. Nailipat na sa wallet mo., Alisin ang dating wallet, at Tapos na."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:done-remove-confirm": {
+    "de": "Bei der angehefteten übertragenen Wallet (?visual=prev-done) nach Frühere Wallet entfernen: In deine Wallet übertragen. über der Bestätigung Diese frühere Wallet aus deinem Konto entfernen? mit den Symbolknöpfen Entfernen (Haken) und Behalten (X), und Fertig.",
+    "es": "En la wallet trasladada fijada (?visual=prev-done), tras Quitar la wallet anterior: Transferido a tu wallet. sobre la confirmación ¿Quitar esta wallet anterior de tu cuenta? con los botones de icono Quitar (marca) y Conservar (X), y Listo.",
+    "fil": "Sa naka-pin na nailipat na wallet (?visual=prev-done), pagkatapos ng Alisin ang dating wallet: Nailipat na sa wallet mo. sa itaas ng kumpirmasyon na Alisin ang dating wallet na ito sa account mo? na may mga icon button na Alisin (check) at Panatilihin (X), at Tapos na."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:done-removing": {
+    "de": "Bei der angehefteten übertragenen Wallet nach der Bestätigung, solange DELETE /me/previous-wallets/<key> nicht geantwortet hat: In deine Wallet übertragen. bleibt, der Haken zeigt einen Spinner, und beide Knöpfe sind deaktiviert.",
+    "es": "En la wallet trasladada fijada, tras la confirmación, mientras DELETE /me/previous-wallets/<key> no ha respondido: Transferido a tu wallet. se mantiene, la marca muestra un indicador de carga y ambos botones están desactivados.",
+    "fil": "Sa naka-pin na nailipat na wallet, pagkatapos ng kumpirmasyon, habang hindi pa sumasagot ang DELETE /me/previous-wallets/<key>: nananatili ang Nailipat na sa wallet mo., may spinner ang check, at naka-disable ang dalawang button."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:done-remove-error": {
+    "de": "Bei der angehefteten übertragenen Wallet nach der Bestätigung, wenn DELETE fehlgeschlagen ist: In deine Wallet übertragen. bleibt, mit Die Wallet konnte nicht entfernt werden. Versuche es erneut. in der offenen Bestätigung.",
+    "es": "En la wallet trasladada fijada, tras la confirmación, cuando DELETE falló: Transferido a tu wallet. se mantiene, con No se pudo quitar la wallet. Inténtalo de nuevo. dentro de la confirmación abierta.",
+    "fil": "Sa naka-pin na nailipat na wallet, pagkatapos ng kumpirmasyon, kapag nabigo ang DELETE: nananatili ang Nailipat na sa wallet mo., kasama ang Hindi maalis ang wallet. Subukan ulit. sa loob ng bukas na kumpirmasyon."
   },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",

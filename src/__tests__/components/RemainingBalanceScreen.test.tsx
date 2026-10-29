@@ -101,13 +101,13 @@ describe('RemainingBalanceScreen', () => {
     expect(wallet.reload).toHaveBeenCalled();
   });
 
-  it('a wallet that is not listed says so, and Done returns', () => {
+  it('a wallet that is not listed says so in a muted line, with only the arrow to leave', () => {
     show({ step: 'notFound' });
-    expect(screen.getByRole('alert').textContent).toBe(
-      'This previous wallet is not on your account.',
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-    expect(wallet.leave).toHaveBeenCalled();
+    const line = screen.getByText('This previous wallet is not on your account.');
+    expect(line.className).toContain('text-app-muted');
+    expect(line.getAttribute('role')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Back']);
   });
 
   it('starts with the title, what opens the wallet, and the two ways in', () => {

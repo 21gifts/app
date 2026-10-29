@@ -87,10 +87,19 @@ describe('useRemainingBalance', () => {
     expect(result.current.removable).toBe(false);
   });
 
-  it('a wallet that is not listed is not found, and Done returns to the settings', async () => {
+  it('a wallet that is not listed is not found', async () => {
     vi.mocked(fetchPreviousWallets).mockResolvedValue([]);
     const { result } = await rendered();
     expect(result.current.step).toBe('notFound');
+    expect(result.current.removable).toBe(false);
+  });
+
+  it('Done returns to the settings', async () => {
+    vi.mocked(openPreviousWallet).mockResolvedValueOnce({ balanceSats: 0 });
+    const { result } = await rendered();
+    await act(async () => {
+      result.current.onWords(WORDS);
+    });
     act(() => {
       result.current.leave();
     });
@@ -351,6 +360,33 @@ describe('useRemainingBalance', () => {
     });
     expect(result.current.removal).toBe('error');
     expect(returnToView).not.toHaveBeenCalled();
+  });
+
+  it('Try again after a failed removal removes the wallet and returns to the settings', async () => {
+    vi.mocked(openPreviousWallet).mockResolvedValueOnce({ balanceSats: 0 });
+    vi.mocked(deletePreviousWallet).mockRejectedValueOnce(new Error('502'));
+    const { result } = await rendered();
+    await act(async () => {
+      result.current.onWords(WORDS);
+    });
+    await act(async () => {
+      result.current.transfer();
+    });
+    expect(result.current.step).toBe('done');
+    act(() => {
+      result.current.askRemove();
+    });
+    await act(async () => {
+      result.current.confirmRemove();
+    });
+    expect(result.current.removal).toBe('error');
+    expect(returnToView).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.confirmRemove();
+    });
+    expect(deletePreviousWallet).toHaveBeenCalledTimes(2);
+    expect(closePreviousWallet).toHaveBeenCalled();
+    expect(returnToView).toHaveBeenCalledWith('/settings', router);
   });
 
   it('a removal that ends after the page closed changes nothing', async () => {

@@ -4282,11 +4282,14 @@ export async function fetchPreviousWallets(sessionToken: string): Promise<Previo
 
 /**
  * Drops a previous wallet of the signed-in account, together with the
- * 21.gifts share stored for it.
+ * 21.gifts share stored for it. The api answers 404 once that wallet is no
+ * longer one of the account's (also on a repeat), and the app only asks for a
+ * key it found listed, so 404 means the wallet is already removed, e.g. by a
+ * press whose answer was lost.
  *
  * @param sessionToken - Bearer session.
  * @param sparkPubkey - The previous wallet's identity key.
- * @returns Resolves on 204.
+ * @returns Resolves on 204, and on 404 (already removed).
  * @throws Error `Could not remove the previous wallet` on any other status.
  */
 export async function deletePreviousWallet(
@@ -4297,7 +4300,7 @@ export async function deletePreviousWallet(
     method: 'DELETE',
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
-  if (response.status !== 204) {
+  if (response.status !== 204 && response.status !== 404) {
     throw new Error('Could not remove the previous wallet');
   }
 }

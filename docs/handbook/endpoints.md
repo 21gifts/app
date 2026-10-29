@@ -366,8 +366,8 @@
 ## Endpoint: DELETE /me/previous-wallets/[sparkPubkey]
 
 - **Purpose:** Same-origin proxy of api `DELETE /me/previous-wallets/:sparkPubkey`. Drops one previous wallet of the account, together with the 21.gifts share stored for it. 204 with no body.
-- **Errors:** Upstream 401, 404 `Not found` (not a previous wallet of the account, or feature off), 503 `Wallet data is unavailable`, or 502 if the api is unreachable.
-- **Used by:** `deletePreviousWallet`.
+- **Errors:** Upstream 401, 404 `Not found` (not a previous wallet of the account, also on a repeat, or feature off), 503 `Wallet data is unavailable`, or 502 if the api is unreachable.
+- **Used by:** `deletePreviousWallet`, which takes 404 as already removed: it asks only for a key the page found listed.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /lnurlpay/[pubkey]

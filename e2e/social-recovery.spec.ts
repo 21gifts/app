@@ -378,6 +378,63 @@ test('a passkey of an unfinished recovery is offered the way to finish it', asyn
   await expect(page.getByRole('heading', { level: 1, name: 'Recover your account' })).toBeVisible();
 });
 
+test('a held session whose Log in is answered by the passkey of an unfinished recovery is offered the way to finish it', async ({
+  page,
+}) => {
+  await answerRecoveryPending(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        hasPosted: true,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+        passkeyCredentialId: 'cred-seed',
+      }),
+    });
+  });
+  await page.goto('/welcome?visual=held-session');
+  await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Recover account via Social Recovery' })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+    'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+  );
+  await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __unknownCredentialSignals: unknown[] }).__unknownCredentialSignals,
+    ),
+  ).toEqual([]);
+  expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBe('sess-e2e');
+  await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+  await expect(page).toHaveURL(/\/recover$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Recover your account' })).toBeVisible();
+});
+
 /** A share of another member's recovery set (20 SLIP-39 words), as a holder keeps it. */
 const HELD_CODE =
   '21gifts-share:v1:acc_owner:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
@@ -1789,17 +1846,19 @@ test.describe('Transfer remaining balance', () => {
   /** The previous wallet of the page, listed on the account. */
   const PREVIOUS_KEY = PREVIOUS_WALLETS[0]!.sparkPubkey;
 
-  test('Function: PreviousWalletPage — a key that is not one of the account’s previous wallets says so, and Done returns to the settings', async ({
+  test('Function: PreviousWalletPage — a key that is not one of the account’s previous wallets says so, and only the arrow leaves', async ({
     page,
   }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
     await page.goto('/settings/previous-wallets/[sparkPubkey]');
-    await expect(page.locator('p[role="alert"]')).toHaveText(
-      'This previous wallet is not on your account.',
-    );
-    await page.getByRole('button', { name: 'Done' }).click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.getByText('This previous wallet is not on your account.')).toBeVisible();
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    // The Menu is the only button: nothing on the card to press.
+    await expect(page.getByRole('main').getByRole('button')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await page.getByRole('link', { name: 'Back to the forum' }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 
   test('Function: RemainingBalanceScreen — the settings link opens the previous wallet, which asks for its words', async ({
@@ -1975,5 +2034,37 @@ test.describe('Transfer remaining balance', () => {
       'The wallet could not be removed. Try again.',
     );
     await expect(page).toHaveURL(new RegExp(`/settings/previous-wallets/${PREVIOUS_KEY}`));
+  });
+
+  test('a removal whose answer was lost ends on the next press, which finds the wallet already removed', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
+    const answers: number[] = [];
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      // The api dropped the wallet on the first press, but its answer was lost.
+      const status = answers.length === 0 ? 502 : 404;
+      answers.push(status);
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: status === 502 ? 'Bad gateway' : 'Not found' }),
+      });
+    });
+    await page.goto('/settings');
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-done`);
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Remove this previous wallet from your account?',
+    });
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be removed. Try again.',
+    );
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    expect(answers).toEqual([502, 404]);
   });
 });

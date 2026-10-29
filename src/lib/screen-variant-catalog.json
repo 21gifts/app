@@ -1926,6 +1926,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-remove-confirm",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-remove-confirm",
+    "visual": "state-previous-wallet-done-remove-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-removing",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-removing",
+    "visual": "state-previous-wallet-done-removing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-remove-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-remove-error",
+    "visual": "state-previous-wallet-done-remove-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",
@@ -2037,6 +2055,12 @@
     "id": "/welcome:held-session-outdated",
     "label": "/welcome held-session-outdated",
     "visual": "state-welcome-held-session-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-recovery-pending",
+    "label": "/welcome held-session-recovery-pending",
+    "visual": "state-welcome-held-session-recovery-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

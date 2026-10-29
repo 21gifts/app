@@ -2321,6 +2321,27 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-previous-wallet-done')",
   },
   {
+    route: '/settings/previous-wallets/[sparkPubkey]',
+    id: 'done-remove-confirm',
+    image: 'previous-wallet-done-remove-confirm.png',
+    visual: 'state-previous-wallet-done-remove-confirm',
+    needle: "shotScreen(page, 'state-previous-wallet-done-remove-confirm')",
+  },
+  {
+    route: '/settings/previous-wallets/[sparkPubkey]',
+    id: 'done-removing',
+    image: 'previous-wallet-done-removing.png',
+    visual: 'state-previous-wallet-done-removing',
+    needle: "shotScreen(page, 'state-previous-wallet-done-removing')",
+  },
+  {
+    route: '/settings/previous-wallets/[sparkPubkey]',
+    id: 'done-remove-error',
+    image: 'previous-wallet-done-remove-error.png',
+    visual: 'state-previous-wallet-done-remove-error',
+    needle: "shotScreen(page, 'state-previous-wallet-done-remove-error')",
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',
@@ -2452,6 +2473,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-held-session-outdated.png',
     visual: 'state-welcome-held-session-outdated',
     needle: "shotScreen(page, 'state-welcome-held-session-outdated')",
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-recovery-pending',
+    image: 'welcome-held-session-recovery-pending.png',
+    visual: 'state-welcome-held-session-recovery-pending',
+    needle: "shotScreen(page, 'state-welcome-held-session-recovery-pending')",
   },
   {
     route: '/welcome',

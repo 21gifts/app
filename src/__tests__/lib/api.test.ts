@@ -5957,7 +5957,12 @@ describe('deletePreviousWallet', () => {
     });
   });
 
-  it.each([200, 401, 404, 503])('throws on status %i', async (status) => {
+  it('resolves on 404: the wallet is already removed, e.g. a repeat after a lost answer', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(deletePreviousWallet('sess', 'key')).resolves.toBeUndefined();
+  });
+
+  it.each([200, 401, 502, 503])('throws on status %i', async (status) => {
     stubFetch({ ok: status === 200, status, body: {} });
     await expect(deletePreviousWallet('sess', 'key')).rejects.toThrow(
       'Could not remove the previous wallet',

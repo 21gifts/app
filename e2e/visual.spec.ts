@@ -2531,6 +2531,28 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-welcome-held-session-outdated');
   });
 
+  test('welcome held-session-recovery-pending', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Recovery is not finished', code: 'recovery_pending' }),
+      });
+    });
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-recovery-pending');
+  });
+
   test('wallet balance-connecting', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -37920,9 +37942,9 @@ test.describe('previous wallet states', () => {
   test('previous wallet not-found', async ({ page }) => {
     await seedOwner(page, { listed: false });
     await openWallet(page);
-    await expect(page.locator('p[role="alert"]')).toHaveText(
-      'This previous wallet is not on your account.',
-    );
+    await expect(page.getByText('This previous wallet is not on your account.')).toBeVisible();
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0);
     await shotScreen(page, 'state-previous-wallet-not-found');
   });
 
@@ -38134,5 +38156,54 @@ test.describe('previous wallet states', () => {
     await expect(page.getByRole('status')).toHaveText('Moved to your wallet.');
     await expect(page.getByRole('button', { name: 'Remove previous wallet' })).toBeVisible();
     await shotScreen(page, 'state-previous-wallet-done');
+  });
+
+  test('previous wallet done-remove-confirm', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Remove this previous wallet from your account?' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-remove-confirm');
+  });
+
+  test('previous wallet done-removing', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, () => {
+      // Never answered: the removal stays in flight for the picture.
+    });
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Remove this previous wallet from your account?',
+    });
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(confirm.getByRole('button', { name: 'Remove' })).toBeDisabled();
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-removing');
+  });
+
+  test('previous wallet done-remove-error', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet data is unavailable' }),
+      });
+    });
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await page
+      .getByRole('group', { name: 'Remove this previous wallet from your account?' })
+      .getByRole('button', { name: 'Remove' })
+      .click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be removed. Try again.',
+    );
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-remove-error');
   });
 });
