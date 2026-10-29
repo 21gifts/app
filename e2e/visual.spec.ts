@@ -18261,6 +18261,71 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-repayment-list-overview');
   });
 
+  test('state /messages/[id]/repayment-list waiting-long', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const bea = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const repayments = Array.from({ length: 10 }, (_, day) => {
+      const due = day < 4;
+      return {
+        dayIndex: day,
+        dueOn: new Date(Date.UTC(2026, 9, 29 + day)).toISOString().slice(0, 10),
+        accountId: bea,
+        name: 'Bea',
+        username: 'bea',
+        amount: null,
+        sats: 10,
+        dueSats: due ? 10 : null,
+        status: due ? 'due' : 'scheduled',
+        waiting: due,
+        via: 'lightning',
+      };
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-10-09T12:00:00.000Z',
+          startsOn: '2026-10-29',
+          termDays: 10,
+          daysDue: 4,
+          daysPaid: 0,
+          waitingShares: 4,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: bea,
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 100,
+              givenAmount: null,
+              canReceive: false,
+            },
+          ],
+          repayments,
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('Next repayment')).toBeVisible();
+    await expect(page.getByText('3 days · Waiting')).toBeVisible();
+    await expect(page.getByText('Waiting for Bea @bea to set up their wallet')).toHaveCount(2);
+    const month = page.getByRole('heading', { name: 'November 2026' });
+    await month.evaluate((node) => {
+      const scroller = node.closest('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        return;
+      }
+      scroller.scrollTop +=
+        node.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 16;
+    });
+    await expect(month).toBeInViewport();
+    await shotScreen(page, 'state-messages-id-repayment-list-waiting-long');
+  });
+
   test('state /messages/[id] photos', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111112';
     const jpeg = Buffer.from(

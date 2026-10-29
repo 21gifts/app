@@ -8184,6 +8184,12 @@ Unsigned. The 2-day plan of the default state, where Bea @bea cannot receive yet
 
 ![21.gifts repayment list waiting](images/messages-id-repayment-list-waiting.png)
 
+### Variant: waiting-long
+
+Unsigned. A fully given plan of ten dated days from Oct 29 to Nov 7, 2026 for Bea @bea, who cannot receive yet; the first four days are due and waiting. **Still owed** is ₿100 · $0.10, then **Oct 29, 2026 – Nov 7, 2026** and **0 of 10 days paid.** **Next repayment** is Oct 29, 2026 with Bea's ₿10 · $0.01, the muted line **Waiting for Bea @bea to set up their wallet**, and the muted status **Waiting**. **October 2026** says **3 days · Waiting**, because every share of that month waits. **November 2026** says **7 days** and **6 days at ₿10 · $0.01 a day.**; Nov 1, 2026, the waiting day of that month, is listed apart with Bea's ₿10 · $0.01, the same waiting line, and **Waiting**.
+
+![21.gifts repayment list waiting long plan](images/messages-id-repayment-list-waiting-long.png)
+
 ## Screen: /messages/[id]/author
 
 - **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, chart, about, message, hint paragraph, or close control. Count buttons appear when both `postCount` and `replyCount` are numbers; the feed is read-only under the card (no pay, no composer, no react); a post opens `/messages/{id}`; a reply opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`. If either count is absent, no buttons. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.

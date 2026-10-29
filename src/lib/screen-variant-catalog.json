@@ -8010,6 +8010,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/repayment-list:waiting-long",
+    "label": "/messages/[id]/repayment-list waiting-long",
+    "visual": "state-messages-id-repayment-list-waiting-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:default",
     "label": "/messages/[id]/author default",
     "visual": "screen-messages-id-author",

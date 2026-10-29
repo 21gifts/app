@@ -9420,6 +9420,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state /messages/[id]/repayment-list waiting',
   },
   {
+    route: '/messages/[id]/repayment-list',
+    id: 'waiting-long',
+    image: 'messages-id-repayment-list-waiting-long.png',
+    visual: 'state-messages-id-repayment-list-waiting-long',
+    needle: 'state /messages/[id]/repayment-list waiting-long',
+  },
+  {
     route: '/messages/[id]/author',
     id: 'default',
     image: 'messages-id-author.png',
