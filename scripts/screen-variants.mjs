@@ -76,7 +76,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'root.png',
     visual: 'screen-root',
-    needle: 'Direct human-to-human gifts',
+    needle: 'Help people',
   },
   {
     route: '/',
@@ -91,6 +91,69 @@ export const SCREEN_VARIANTS = [
     image: 'root-language.png',
     visual: 'state-root-language',
     needle: "getByRole('option', { name: 'Español' })",
+  },
+  {
+    route: '/',
+    id: 'faq-account-open',
+    image: 'root-faq-account-open.png',
+    visual: 'state-root-faq-account-open',
+    needle: 'To react with an amount or write something yourself, you sign in.',
+  },
+  {
+    route: '/',
+    id: 'faq-share-open',
+    image: 'root-faq-share-open.png',
+    visual: 'state-root-faq-share-open',
+    needle: '21.gifts keeps no share',
+  },
+  {
+    route: '/',
+    id: 'faq-password-open',
+    image: 'root-faq-password-open.png',
+    visual: 'state-root-faq-password-open',
+    needle: 'You do not create a password',
+  },
+  {
+    route: '/',
+    id: 'faq-device-open',
+    image: 'root-faq-device-open.png',
+    visual: 'state-root-faq-device-open',
+    needle: 'we cannot recover your account yet',
+  },
+  {
+    route: '/',
+    id: 'faq-recipient-open',
+    image: 'root-faq-recipient-open.png',
+    visual: 'state-root-faq-recipient-open',
+    needle: "that person's wallet address",
+  },
+  {
+    route: '/',
+    id: 'faq-bitcoin-open',
+    image: 'root-faq-bitcoin-open.png',
+    visual: 'state-root-faq-bitcoin-open',
+    needle: 'even small amounts',
+  },
+  {
+    route: '/',
+    id: 'faq-taxes-open',
+    image: 'root-faq-taxes-open.png',
+    visual: 'state-root-faq-taxes-open',
+    needle: 'Which rules and taxes apply',
+  },
+  {
+    route: '/',
+    id: 'faq-sat-open',
+    image: 'root-faq-sat-open.png',
+    visual: 'state-root-faq-sat-open',
+    needle: 'means one sat',
+  },
+  {
+    route: '/',
+    id: 'install-open',
+    image: 'root-install-open.png',
+    visual: 'state-root-install-open',
+    needle: 'Add 21.gifts to your Home Screen',
   },
   {
     route: '/',
@@ -223,7 +286,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'about.png',
     visual: 'screen-about',
-    needle: 'Three convictions',
+    needle: 'What 21.gifts stands for',
   },
   {
     route: '/login',
@@ -265,7 +328,7 @@ export const SCREEN_VARIANTS = [
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',
-    needle: 'You signed in with the wrong account. Please try again with the correct account.',
+    needle: 'You signed in with a different account. Try again with the right one.',
   },
   {
     route: '/login',
@@ -505,7 +568,7 @@ export const SCREEN_VARIANTS = [
     image: 'setup-username-invalid.png',
     visual: 'state-setup-username-invalid',
     needle:
-      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+      'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
   },
   {
     route: '/setup/username',
@@ -2882,6 +2945,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'overlay-username-invalid',
+    image: 'members-overlay-username-invalid.png',
+    visual: 'state-members-overlay-username-invalid',
+    needle: "shotScreen(page, 'state-members-overlay-username-invalid')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-account-required',
     image: 'members-shop-edit-account-required.png',
     visual: 'state-members-shop-edit-account-required',
@@ -3257,6 +3327,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-push-enable-error.png',
     visual: 'state-profile-push-enable-error',
     needle: 'Notifications are not available in this browser.',
+  },
+  {
+    route: '/profile',
+    id: 'location-edit',
+    image: 'profile-location-edit.png',
+    visual: 'state-profile-location-edit',
+    needle: 'City or country',
   },
   {
     route: '/profile',
@@ -3972,7 +4049,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-empty.png',
     visual: 'state-stats-empty',
-    needle: 'No gifts recorded yet.',
+    needle: 'No donations recorded yet.',
   },
   {
     route: '/stats',
@@ -4042,7 +4119,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-day-empty.png',
     visual: 'state-stats-day-empty',
-    needle: 'No gifts recorded on this day.',
+    needle: 'No donations recorded on this day.',
   },
   {
     route: '/stats/[day]',
@@ -5716,6 +5793,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-shop-edit-save-rejected.png',
     visual: 'state-welcome-shop-edit-save-rejected',
     needle: "shotScreen(page, 'state-welcome-shop-edit-save-rejected')",
+  },
+  {
+    route: '/welcome',
+    id: 'overlay-username-invalid',
+    image: 'welcome-overlay-username-invalid.png',
+    visual: 'state-welcome-overlay-username-invalid',
+    needle: "shotScreen(page, 'state-welcome-overlay-username-invalid')",
+  },
+  {
+    route: '/welcome',
+    id: 'install-open',
+    image: 'welcome-install-open.png',
+    visual: 'state-welcome-install-open',
+    needle: "shotScreen(page, 'state-welcome-install-open', false)",
   },
   {
     route: '/welcome',

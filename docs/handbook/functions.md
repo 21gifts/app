@@ -1,5 +1,12 @@
 # Functions
 
+## Function: marketingMetadata
+
+- **Purpose:** Title, description, and the Open Graph image stay the same English sentences on every language URL. Only the canonical URL, which is also the Open Graph URL, and the reciprocal hreflang links change with the language. Filipino pages are linked with `hreflang="tl"` because Google Search accepts only ISO 639-1 codes in hreflang and lists Filipino as `tl`. The URL prefix stays `/fil`.
+- **Inputs:** Unprefixed path, English title, English description, and an optional locale for Home, About, Donate, and Rules. `HREFLANG_BY_LOCALE` maps each UI locale to its hreflang code (`fil` → `tl`; `en`, `de`, and `es` stay themselves).
+- **Returns / side effects:** Next.js `Metadata`; no I/O. Localized Home, About, Donate, and Rules alternates use that map, so the Filipino alternate is `hreflang="tl"` with href `/fil…`, plus `x-default` on the unprefixed path.
+- **Used by:** Home, About, Donate, Rules, Stats, Legal, and Handbook pages.
+
 ## Function: PosPage
 
 - **Purpose:** App Router page for `/pos`. Wraps `PosScreen` in `AppShell` and `OnboardingGate screen="profile"`.
@@ -164,7 +171,7 @@
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each gift's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}`. Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each donation's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
 - **Inputs:** `stats`, `error`, `loading`, `onRetry`.
 - **Returns / side effects:** React element. Reads `useFiatPreference`. No network.
 - **Used by:** `StatsLoader`.
@@ -185,14 +192,14 @@
 
 ## Function: DayLoader
 
-- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. FiatPicker on the loaded table **only when unsigned** (`useHydrateSession().ready && session === null`). The summary line is `{n} gift(s) · ₿ · formatFiatDisplay(total, selected fiat, numberFormat)`.
+- **Purpose:** Client loader for `/stats/[day]`. Fetches `GET /gifts?day=`, date input navigates, retry on error. FiatPicker on the loaded table **only when unsigned** (`useHydrateSession().ready && session === null`). The summary line is `{n} donation(s) · ₿ · formatFiatDisplay(total, selected fiat, numberFormat)`.
 - **Inputs:** `day` UTC `YYYY-MM-DD`.
 - **Returns / side effects:** React element. Calls `fetchGiftDay`. Reads `useFiatPreference` and `useNumberFormat` and passes both into `GiftDayTable`.
 - **Used by:** `GiftDayPage`.
 
 ## Function: GiftDayTable
 
-- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, {FiatCode}), or empty copy **No gifts recorded on this day.**
+- **Purpose:** Table of individual gifts on one UTC day (Time, Recipient, ₿, {FiatCode}), or empty copy **No donations recorded on this day.**
 - **Inputs:** `day: GiftDay`, `fiat: FiatCode`, and required `numberFormat` (`ch` / `us` / `de`) for ₿ and fiat cells.
 - **Returns / side effects:** React element. Fourth column header is the selected code; cells use `formatBitcoin` and `formatFiatDisplay` with `numberFormat`. No network.
 - **Used by:** `DayLoader`.
@@ -227,23 +234,44 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, the white shop block (`HomeShops`) between the hero and how it works, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`, `/en`, `/de`, `/es`, and `/fil`. Marketing landing: pitch, `HomeShops` directly under the hero and before how it works, the redesign's how-it-works cards and discovery links, why, the `HappylandSection` photo essay, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and the localized donate page (**Send help**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Send help, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
-- **Returns / side effects:** The home screen element.
-- **Used by:** Route `/`.
+- **Returns / side effects:** The home screen element. The donate action points at `/{locale}/donate`.
+- **Used by:** Routes `/`, `/en`, `/de`, `/es`, and `/fil`.
+
+## Function: writeLocaleCookie
+
+- **Purpose:** Write the visitor's language into the `locale` cookie for one year. Shared by the language controls, account sync, and route sync so each caller stores the same attributes.
+- **Inputs:** `locale`, one supported locale (`en`, `de`, `es`, or `fil`).
+- **Returns / side effects:** Sets `document.cookie` to `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax`, and appends `; Secure` when the page is HTTPS. Returns void. Does not navigate or refresh.
+- **Used by:** `LanguageSwitcher`, `LanguagePreferenceSwitcher`, `AccountPreferenceSync`, and `LocaleRouteSync`.
+
+## Function: readLocaleCookie
+
+- **Purpose:** Read the supported language stored in the `locale` cookie.
+- **Inputs:** None. Reads `document.cookie`.
+- **Returns / side effects:** That locale when the value is exactly `en`, `de`, `es`, or `fil`; otherwise `null` (missing or unsupported). Does not write.
+- **Used by:** `LocaleRouteSync` and `AccountPreferenceSync`.
+
+## Function: LocaleRouteSync
+
+- **Purpose:** Keep the root layout on the language of the path that is showing. Mounted once under the root provider. Renders nothing. A client navigation does not re-render the root layout, so a mismatch refreshes it. The language switcher does not do this.
+- **Inputs:** None. Reads the pathname, the provider locale, the auth account's saved language, and the locale cookie via `readLocaleCookie`.
+- **Returns / side effects:** Returns `null`. On a pathname change, when the provider locale changes, and on `pageshow` when `persisted` is true, a language URL whose cookie differs is stored with `writeLocaleCookie` when the account has no saved language. On a path without a language prefix, the saved account language is stored with `writeLocaleCookie` when the cookie differs, before refresh. The language the server should render is the URL language, otherwise the saved account language, otherwise the cookie. When that differs from the provider locale, `router.refresh()` runs once for that path and language; the guard is cleared as soon as the provider shows the expected language, including on the same path, so a later mismatch there refreshes again, as does a later return to the same language URL. A provider change onto the expected language does not refresh. A `pageshow` that is not persisted, a plain event, a cookie that already matches, a language URL when the account has a saved language, and unmounting do not write.
+- **Used by:** `RootLayout`.
 
 ## Function: LanguageSwitcher
 
-- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie and refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
+- **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie, stores it on the account when signed in, and either opens the localized public URL or refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations` and an optional session token from storage. No `embedded` prop.
-- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS before `router.refresh()`, as before. Never set on first visit.
+- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels (English/Deutsch/Español/Filipino). With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not navigate, while success merges only `locale` onto the current same-id account. After that successful save, the path and the target are read again from the URL as it is then. A signed-out choice keeps the path read before the click. It then calls `writeLocaleCookie`. Public Home, About, Donate, and Rules choices fully load the corresponding `/{locale}` URL so the page, shared navigation, and footer all use the new language; other unsigned app routes call `router.refresh()`. Choosing the current language on an already localized URL is a no-op; choosing it on a legacy URL opens its stable URL. The switcher never sets the cookie on a first visit; a public language URL sets it in `middleware` when the browser opens that URL as a page. The switcher does not watch the path and does not listen for `pageshow`. `LocaleRouteSync` aligns the cookie and the rendered language for an in-app navigation and for a page restored from the back/forward cache.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, unsigned `/rules`, unsigned `/messages/[id]`, `/view/[viewKey]`.
 
 ## Function: LanguagePreferenceSwitcher
 
 - **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
 - **Inputs:** None. Reads current locale via `useTranslations` and an optional session token from storage. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
-- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes the locale cookie, including `Secure` on HTTPS, then refreshes as before.
+- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before `writeLocaleCookie` and refreshing. Without a token it does not bump or POST and calls `writeLocaleCookie`, then refreshes as before.
 - **Used by:** `ProfileScreen`.
 
 ## Function: NumberFormatSwitcher
@@ -313,7 +341,7 @@
 
 - **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
 - **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
-- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, writes a differing locale through `writeLocaleCookie` and refreshes when `readLocaleCookie()` is not that language, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
 - **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
 
 ## Function: bumpLocaleGeneration
@@ -381,11 +409,11 @@
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`. Guest-visible Send help explainer: pick a forum message, then send Bitcoin; CTA to `/welcome`. No address/amount form and no QR.
+- **Purpose:** Next.js page for `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`. Guest-visible donation explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
-- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `localizedPublicPath(locale, '/')` when unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
-  - **Route `/donate`**
+  - **Route `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`**
   - **Home CTA `home.ctaSend`**
   - **LanguageSwitcher on `/donate`**
 
@@ -473,9 +501,16 @@
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. Follows `nextOnboardingPath`. The recovery phrase is not a setup step and does not replace the opened page; `nextOnboardingPath` never returns `/wallet`. `/wallet` itself stays on screen when `setup` is `'wallet'` or the next step is `/welcome`. `allowGuest` on `/welcome` renders the children with no session instead of `/login`. Profile and members stay only when the next step is `/welcome`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/grants`, `/grants/apply`, `/grants/applications`, `/grants/applications/[accountId]`, `/trust-chain`, `/shops`, `/statistics`.
 
+## Function: WelcomeLayout
+
+- **Purpose:** Segment layout for `/welcome`. Publishes noindex metadata so the signed-in living room is not public search content.
+- **Inputs:** `children`, the nested page.
+- **Returns / side effects:** Renders `children` unchanged. `metadata.robots` is `{ index: false, follow: false }`.
+- **Used by:** Route `/welcome`.
+
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile (`/profile`, lucide `User`, `profile.title`) with no given or received amounts; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Habit-Tracker** (`/habit-tracker`, lucide `ListChecks`, `nav.habitTracker`); **Trust Chain**; **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) for every signed-in account, immediately after Trust Chain, with no unread count; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile (`/profile`, lucide `User`, `profile.title`) with no given or received amounts; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Habit-Tracker** (`/habit-tracker`, lucide `ListChecks`, `nav.habitTracker`); **Trust Chain**; **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) for every signed-in account, immediately after Trust Chain, with no unread count; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`, and calls `resyncPushSubscription(session, true)` when the service worker posts `{ type: '21gifts-push-subscription-change' }`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useUnreadCount(open)` (default write-badge: writes the home-screen badge), `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
 - **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel stays mounted. Wide (frame content box at least 576px; until `frameWidth` is measured, `matchMedia('(max-width: 36rem)')`, and a missing `matchMedia` counts as wide): it portals to the trigger parent as `absolute right-0 z-50 mt-2 w-72` (18rem, not a percentage, because a percentage would resolve against the trigger). When that wide panel's bottom would pass the window, the same panel uses `mt-0`, `px-2 py-0`, and the version line uses `py-0`. Rows stay `min-h-11`. If that compact panel still passes the window and a non-negative lift keeps the bottom inside, it is a `fixed` overlay. Its `style` sets the measured `top`, `left`, and `width` so the bottom sits on the window and the top is never less than 0. That `left` is the trigger parent's right edge minus the panel width, so a horizontal move of the frame does not keep the last inline left. It does not scroll, and it does not shorten a row. When that lift would still leave the bottom outside, the wide menu uses the same sheet as a narrow frame (`w-full`, `html[data-menu-sheet='1']`, no scroll) and does not use a negative top. The Menu button is `relative z-[60]` only while that fixed overlay is up, so a click on Menu still closes it when the panel covers the button, and a dialog in the same header still covers Menu. A window resize or a later change in the panel's own size measures again. The panel returns to `mt-2` and `p-2` only when the compact box still has 48px of room under the window, so the two layouts do not alternate. The scrim `#signed-in-menu-scrim` portals to `[data-menu-scrim-host]` inside `[data-app-frame]` as `absolute inset-0 z-40 rounded-3xl` (the radius is set on the scrim; the host is `display: contents`, so `inherit` would be 0). Narrow (content box under 576px): it portals to `[data-menu-sheet-host]` (`px-8`, the same horizontal inset as `[data-scroll-page]`) inside the one scrollport as `w-full` and stays in that host while closed (`hidden`), reads the scrollport `scrollTop` before it sets `html[data-menu-sheet='1']` (which hides `[data-scroll-page]`), sets that scroll position to 0, and writes the saved position back after the page is shown again. Not a body portal. `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`), Profile link (`/profile`, lucide `User`, `profile.title`) with no given or received amounts, **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member, **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Habit-Tracker** (`/habit-tracker`, lucide `ListChecks`, `nav.habitTracker`), **Trust Chain** (`/trust-chain`), **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) for every signed-in account, immediately after Trust Chain, with no unread count, **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `PosPage`, `ProfilePage`, `GrantsPage`, `FundingApplyPage`, `WalletPage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `StatisticsPage`, `HabitTrackerPage`, `RulesPageChrome`, `PublicMessageChrome`.
@@ -608,8 +643,8 @@
 
 ## Function: PushToggle
 
-- **Purpose:** Profile identity-card Notifications section: uppercase heading `profile.push.heading`, a `SegmentedControl tone="neutral"` All / Active / Mentions (`profile.push.level.all` / `active` / `mentions`, group `profile.push.level.label`) whenever a session exists (including while Push APIs are still being inspected), a muted hint (`profile.push.level.hint`), and a second On / Off `SegmentedControl` (`profile.push.on` / `off`, group `aria.push` **This device**) only when `serviceWorker` / `PushManager` are ready. No Bell / IconButton / trailing slot. Changing the level POSTs `/me/notification-level` via `postNotificationLevel` and merges `notificationLevel` into the current store account when the session still matches; a second change while the POST is in flight is ignored; failure keeps the previous value and shows `profile.push.level.error`. The device pill calls `enablePush` / `disablePush`; same-value or busy is a no-op. Renders nothing without a session. On iPhone Safari outside standalone, shows `profile.push.installHint` under the device pill.
-- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `postNotificationLevel` / `accountNotificationLevel` / `setAccount`; `enablePush` / `disablePush` / `isIosSafari` / `isStandaloneDisplay`.
+- **Purpose:** Profile identity-card Notifications section: uppercase heading `profile.push.heading`, a `SegmentedControl tone="neutral"` All / Active / Mentions (`profile.push.level.all` / `active` / `mentions`, group `profile.push.level.label`) whenever a session exists (including while Push APIs are still being inspected), a muted hint (`profile.push.level.hint`), and a second On / Off `SegmentedControl` (`profile.push.on` / `off`, group `aria.push` **This device**) only when `serviceWorker` / `PushManager` are ready. No Bell / IconButton / trailing slot. Changing the level POSTs `/me/notification-level` via `postNotificationLevel` and merges `notificationLevel` into the current store account when the session still matches; a second change while the POST is in flight is ignored; failure keeps the previous value and shows `profile.push.level.error`. The device pill calls `enablePush` / `disablePush`; same-value or busy is a no-op. The device counts as On when a local subscription exists or `pushRenewalPending()` is true, so Off still clears a pending key renewal, and never while `pushTurnedOff()` is true, so On after a cut-off log out runs `enablePush`. Renders nothing without a session. On iPhone Safari outside standalone, shows `profile.push.installHint` under the device pill.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `postNotificationLevel` / `accountNotificationLevel` / `setAccount`; `enablePush` / `disablePush` / `pushRenewalPending` / `pushTurnedOff` / `isIosSafari` / `isStandaloneDisplay`.
 - **Returns / side effects:** Heading, All/Active/Mentions control (always when a session exists), muted hint, and (when Push APIs are ready) a This-device On/Off `SegmentedControl`. Level change calls `postNotificationLevel` then merges `notificationLevel`; On calls `enablePush` when not subscribed, Off calls `disablePush` when subscribed; may show `profile.push.unavailable` on push failure or `profile.push.level.error` on level failure.
 - **Used by:** `ProfileScreen`.
 
@@ -674,18 +709,18 @@
 - **Purpose:** Decode a VAPID application server public key (url-safe base64) to bytes for `pushManager.subscribe`.
 - **Inputs:** Url-safe base64 public key string.
 - **Returns / side effects:** `Uint8Array`. No network.
-- **Used by:** `enablePush`.
+- **Used by:** `enablePush`, `resyncPushSubscription`.
 
 ## Function: registerPushWorker
 
 - **Purpose:** Register the push-only service worker at `/sw.js` (scope `/`) and wait until ready.
 - **Inputs:** None (uses `navigator.serviceWorker`).
 - **Returns / side effects:** `ServiceWorkerRegistration`.
-- **Used by:** `enablePush`, `disablePush`, `resyncPushSubscription`.
+- **Used by:** `enablePush` only. `disablePush` and `resyncPushSubscription` look up an existing registration with `getRegistration()` and never register the worker.
 
 ## Function: push service worker
 
-- **Purpose:** Push-only service worker at `/sw.js`. A payload whose `type` is `dismiss` closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` including 0, and returns before the Sunday check. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No asset or offline cache. A notification click stores a short-lived `21gifts-push-open` entry so a reloaded page can still open the path when `postMessage` was missed.
+- **Purpose:** Push-only service worker at `/sw.js`. A payload whose `type` is `dismiss` closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` including 0, and returns before the Sunday check. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No asset or offline cache. A notification click stores a short-lived `21gifts-push-open` entry so a reloaded page can still open the path when `postMessage` was missed. On `pushsubscriptionchange` the worker subscribes again with the lost subscription's application server key (skipped when the browser already supplies `newSubscription` or the old key is unknown), then posts `{ type: '21gifts-push-subscription-change' }` to every window. The api accepts a subscription only with a member session, which the worker does not hold, so an open `SignedInChrome` runs `resyncPushSubscription(session, true)` on that message (which also subscribes with the current key when the worker could not) and otherwise the next app start posts a subscription the worker restored (one it could not restore with no window open has to be turned on again in the profile); the api drops the old endpoint once the push service reports it gone.
 - **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `tags`, `unreadCount`).
 - **Returns / side effects:** When `type` is `dismiss`, closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` when `unreadCount` is finite, and returns before the Sunday check. On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients. Notification click closes the note, stores the in-app path in the `21gifts-push-open` cache, then the focused same-origin window (or the first one, if none is focused) is focused and, after that, receives `{ type: '21gifts-push-open', url }` (pathname + search + hash) before `navigate` (only when that function exists and the URL differs; rejection or null still focuses). No window: `clients.openWindow` on the same-origin href. Empty, invalid, or foreign `data.url` becomes `/welcome`.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
@@ -748,23 +783,37 @@
 
 ## Function: enablePush
 
-- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api. Shares a serial queue with `resyncPushSubscription` and `disablePush`; a later disable no-ops a queued enable.
+- **Purpose:** Register the worker, fetch the VAPID key, request notification permission, subscribe, and POST the subscription to the api. Once permission is granted it removes the `21gifts-push-off` flag a previous Off stored. Shares a serial queue with `resyncPushSubscription` and `disablePush`; a later disable no-ops a queued enable.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `void`. Throws `Notification permission denied` or `Push is not configured` (and other api errors).
 - **Used by:** `PushToggle`, `SignedInChrome`.
 
 ## Function: resyncPushSubscription
 
-- **Purpose:** When `Notification.permission` is already `granted` and a local `pushManager` subscription exists, POST that endpoint to the api. Does not call `requestPermission` or `subscribe()`. Opt-out (no local subscription) is a no-op. POST failure leaves the local subscription in place. Shares a serial queue with `enablePush` and `disablePush`; a later disable no-ops a queued resync so it cannot POST after DELETE.
-- **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when permission is not `granted`, Push APIs are missing, or `getSubscription()` is null. Throws api errors from `postPushSubscription` without unsubscribing.
-- **Used by:** `SignedInChrome` (mount and Notifications click when permission is already granted).
+- **Purpose:** When `Notification.permission` is already `granted`, a service worker is already registered (`getRegistration()`; never registers one), and a local `pushManager` subscription exists, fetch the current VAPID key and POST that endpoint to the api. When the subscription's `options.applicationServerKey` differs byte for byte from the current key, `unsubscribe()`, `subscribe()` again with the current key, POST the new subscription, and DELETE the old endpoint (a DELETE failure is ignored). A browser that does not expose the stored key keeps the plain re-POST. Before dropping the old subscription it stores `21gifts-push-renew` in `localStorage` and removes it after a successful POST, so when `subscribe()` fails (or returns no keys) after the old subscription was dropped, the next call subscribes with the current key even though no local subscription is left. When only the POST fails, the new subscription stays and the next call re-POSTs it. When storage cannot hold the marker, it keeps the old subscription and re-POSTs it instead of dropping it. When permission is not `granted`, it removes a pending marker, so granting permission later does not subscribe on its own. With `subscriptionChanged` true (the worker's `21gifts-push-subscription-change` message), a missing local subscription is not an opt-out either: the worker could not subscribe again, so the resync stores the `21gifts-push-renew` marker before it fetches the key and subscribes with the current key. While `disablePush`'s `21gifts-push-off` flag is set (Off or log out in this or another tab, until `enablePush`), any resync subscribes nothing and finishes the Off for a subscription still present (one that survived a cut-off log out, or one the worker made meanwhile): DELETE its endpoint (failure ignored), `unsubscribe()`, and drop a pending renewal. The flag is shared by every tab while the queue generation is per tab, so the resync reads it again after the key fetch, after `subscribe()`, and after each POST, and finishes the Off for whichever subscription it holds then. Never calls `requestPermission`. Opt-out (no local subscription, no pending renewal, and no reported change) is a no-op. POST failure leaves the local subscription in place. Shares a serial queue with `enablePush` and `disablePush`; a later disable no-ops a queued resync so it cannot POST after DELETE.
+- **Inputs:** `sessionToken`; optional `subscriptionChanged` (default `false`).
+- **Returns / side effects:** `void`. Without granted permission, only removes a pending `21gifts-push-renew` marker. While `21gifts-push-off` is set, only DELETEs and unsubscribes a subscription still present. No-op when Push APIs are missing, no worker is registered, or `getSubscription()` is null with no pending renewal and no reported change. Throws api errors from `fetchVapidPublicKey` / `postPushSubscription` without unsubscribing, the browser's `PushManager.subscribe` rejection, and `Invalid subscription` when a new subscription omits endpoint or keys.
+- **Used by:** `SignedInChrome` (mount, Notifications click when permission is already granted, and the worker's `21gifts-push-subscription-change` message).
+
+## Function: pushRenewalPending
+
+- **Purpose:** Whether this browser owes a resubscription after a VAPID key change or a browser-reported subscription change, with no new subscription stored yet (`21gifts-push-renew` in `localStorage`). The next resync finishes it unless push is turned off, so the device counts as subscribed until then. Counts only while `Notification.permission` is `granted`, because without it the resync cannot finish the renewal.
+- **Inputs:** None (reads `Notification.permission` and `localStorage`).
+- **Returns / side effects:** `boolean`. False when permission is not granted, the marker is missing, or storage throws. No network.
+- **Used by:** `resyncPushSubscription`, `PushToggle`.
+
+## Function: pushTurnedOff
+
+- **Purpose:** Whether the last choice on this browser was Off or log out (`21gifts-push-off` in `localStorage`, stored by `disablePush` and removed by `enablePush`). Shared by every tab, so a resync in another tab respects it too.
+- **Inputs:** None (reads `localStorage`).
+- **Returns / side effects:** `boolean`. False when the flag is missing or storage throws. No network.
+- **Used by:** `resyncPushSubscription`, `PushToggle`.
 
 ## Function: disablePush
 
-- **Purpose:** When a local push subscription exists, DELETE its endpoint on the api then `unsubscribe()` locally. Bumps a generation so in-flight enable/resync cannot POST after this opt-out, and waits for the shared serial queue so DELETE is the last server mutation.
+- **Purpose:** When a service worker is already registered (`getRegistration()`; never registers one) and it holds a local push subscription, DELETE its endpoint on the api then `unsubscribe()` locally. Bumps a generation so in-flight enable/resync cannot POST after this opt-out, and waits for the shared serial queue so DELETE is the last server mutation.
 - **Inputs:** `sessionToken`.
-- **Returns / side effects:** `void`. No-op when there is no subscription. Local `unsubscribe()` still runs if the api DELETE fails.
+- **Returns / side effects:** `void`. Clears a pending `21gifts-push-renew` key renewal and stores `21gifts-push-off` at once (log out waits only briefly for the queue), and clears the renewal again inside the queue. No-op when `serviceWorker` is missing, no worker is registered, or there is no subscription, so log out never installs a worker. Local `unsubscribe()` still runs if the api DELETE fails.
 - **Used by:** `PushToggle` and `LogoutButton`.
 
 ## Function: fetchVapidPublicKey
@@ -772,7 +821,7 @@
 - **Purpose:** GET `/push/vapid-public` with the bearer session and return the VAPID public key string.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `string`. Throws `Push is not configured` on 503; other non-2xx throw with status.
-- **Used by:** `enablePush`.
+- **Used by:** `enablePush`, `resyncPushSubscription`.
 
 ## Function: postPushSubscription
 
@@ -786,7 +835,7 @@
 - **Purpose:** DELETE `/me/push-subscriptions` with bearer + `{ endpoint }`.
 - **Inputs:** `sessionToken`, `endpoint`.
 - **Returns / side effects:** `void`. 404 is success (already gone). Throws `Push is not configured` on 503.
-- **Used by:** `disablePush`.
+- **Used by:** `disablePush`, `resyncPushSubscription` (old endpoint after a VAPID key change).
 
 ## Function: proxyPushVapidPublicGet
 
@@ -1032,10 +1081,10 @@
 
 ## Function: HomeWordmark
 
-- **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
-- **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Uses `useHydrateSession` and `useAuthStore`.
+- **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `publicHref`. When `publicHref` is omitted, the unsigned target is `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
+- **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Optional `publicHref`: the target without a session; with a session the link is still `/welcome`. Uses `useHydrateSession` and `useAuthStore`.
 - **Returns / side effects:** A client `Wordmark` link. Hydrates the session; no other network of its own.
-- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`, `PayLinkScreen`.
+- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `RulesPageChrome`, `ViewProfilePage`, `PayLinkScreen`.
 
 ## Function: PublicMessageChrome
 
@@ -1088,10 +1137,10 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`. Both use `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms) and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
-- **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
-- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
-- **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
+- **Purpose:** Next.js App Router metadata for six pages. On `/messages/[id]`, loads the public note via `loadPublicMessageForOg` and maps it through `publicMessageOgMetadata` so crawlers see the author, text, and photo without running JS. Missing or failed fetches inherit the root layout preview. On `/`, `/about`, `/donate`, and `/rules`, each implementation reads the language with `getRequestLocale()` and calls `marketingMetadata` with that locale, an English title, and an English description that stay the same on every language URL. Home title `Help people with Bitcoin | 21.gifts`, description `Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.` About title `What 21.gifts stands for | 21.gifts`, description `In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.` Donate title `Donate Bitcoin and help someone | 21.gifts`, description `Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.` Rules title `Living room rules | 21.gifts`, description `You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.` A shop on `/{npub}` loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`, uses `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms), inherits root metadata on missing, invalid, timed-out, or unusable responses, and builds description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `OG_IMAGE_ALT`.
+- **Inputs:** `/messages/[id]` takes `{ params: Promise<{ id: string }> }` from the dynamic route. The four public pages take no route params. Each of them calls `getRequestLocale()` and passes that locale into `marketingMetadata` with path `/`, `/about`, `/donate`, or `/rules`. `/{npub}` takes `{ npub }` from the dynamic route.
+- **Returns / side effects:** `Promise<Metadata>`. `/messages/[id]` returns per-note Open Graph / Twitter tags when the note is found, or `{}` so the site-wide layout preview is inherited, and does not render the visible page. Each public page returns the English title and description above, a canonical URL for the language of the request (`/en`, `/de`, `/es`, `/fil`, and the same prefix on `/about`, `/donate`, and `/rules`), reciprocal `hreflang` links for `en`, `de`, `es`, and `tl` (Filipino pages; the URL prefix stays `/fil`) plus `x-default` to the unprefixed path, and Open Graph / Twitter image `/og.png`. Those four do not render the visible page. `/{npub}` returns the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), the first photo (or `/og.png`), and the relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`, and does not render the visible page.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Routes `/`, `/en`, `/de`, `/es`, and `/fil` (`Home`). Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about` (`AboutPage`). Routes `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate` (`DonatePage`). Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` (`RulesPage`). Route `/[npub]` (`ShopPage`).
 
 ## Function: loadPublicMessageForOg
 
@@ -1102,7 +1151,7 @@
 
 ## Function: ogDescriptionText
 
-- **Purpose:** Shared link-preview description for a public note and a public shop: trimmed text, or `` `${name} on 21.gifts` `` when the text is blank — never the marketing layout copy. Text longer than 300 UTF-16 code units is cut to 299 plus `…`. The same module exports `DEFAULT_OG_ALT`, the alt text of the default `/og.png` image.
+- **Purpose:** Shared link-preview description for a public note and a public shop: trimmed text, or `` `${name} on 21.gifts` `` when the text is blank — never the marketing layout copy. Text longer than 300 UTF-16 code units is cut to 299 plus `…`.
 - **Inputs:** `text` (note text or shop description) and `name` (author or shop name).
 - **Returns / side effects:** Description string of at most 300 code units. No I/O.
 - **Used by:** `publicMessageOgMetadata`, shop `generateMetadata` on `/[npub]`.
@@ -1203,7 +1252,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, `WelcomeTopRight` (the member menu when a session exists, otherwise a link to `/login`), and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
+- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, the member menu when a session exists, otherwise a link to `/login`, and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
@@ -1409,10 +1458,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: middleware
 
-- **Purpose:** Send an old `/map` address to the shops map. There is no map page.
-- **Inputs:** The incoming request whose path is `/map`.
-- **Returns / side effects:** Redirect to `/shops#map`. A query string such as `?pin=` is kept (`/shops?pin=#map`).
-- **Used by:** Route `/map`.
+- **Purpose:** Serve the stable language URLs of the public pages and send an old `/map` address to the shops map. There is no map page.
+- **Inputs:** The incoming request. Language URLs are `/en`, `/de`, `/es`, and `/fil`, alone or followed by `/about`, `/donate`, or `/rules`. Every other path under a language prefix, such as `/de/login`, is not one of them.
+- **Returns / side effects:** A language URL is rewritten onto the existing page. The language goes down as the `x-21gifts-public-locale` request header, so the page renders in it even against another cookie. The response sets the `locale` cookie to that language (`Path=/`, `Max-Age=31536000`, `SameSite=Lax`, `Secure` when the request URL or the first `x-forwarded-proto` value is https) when the browser opens the language URL as a page (`sec-fetch-dest` is `document`, or that header is absent), including a prerender (`purpose` or `sec-purpose` contains `prerender`, any case). A prefetch that is not a prerender does not set it (`purpose` or `sec-purpose` contains `prefetch` and not `prerender`, any case), and neither do in-app navigations (`sec-fetch-dest` is present and is not `document`). The rewrite and `x-21gifts-public-locale` stay the same in every case. Later pages without a language prefix, including `/login`, `/stats`, `/handbook`, and `/legal`, therefore stay in that language for a signed-out visitor; for a signed-in account with a stored language, `AccountPreferenceSync` writes that language back after hydration. `/map` redirects to `/shops#map` and keeps a query string such as `?pin=` (`/shops?pin=#map`). Other paths continue to normal routing and set no cookie.
+- **Used by:** Routes `/map`, `/{locale}`, and `/{locale}/{about,donate,rules}`.
 
 ## Function: PlacesMapScreen
 
@@ -1801,17 +1850,17 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RulesPageChrome
 
-- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with wordmark href `/` plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
-- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. No network beyond session hydration.
+- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with `HomeWordmark` (`publicHref` is `homeHref`, the language home) plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The signed-in wordmark stays `/welcome`.
+- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`) and `homeHref` (unsigned language home). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. The unsigned wordmark opens `homeHref`. No network beyond session hydration.
 - **Used by:** `RulesPage`.
 
 ## Function: RulesPage
 
-- **Purpose:** Next.js page for `/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
-- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language).
-- **Used by:** Route `/rules`.
+- **Purpose:** Next.js page for `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
+- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog, and passes `homeHref={localizedPublicPath(locale, '/')}` to `RulesPageChrome`.
+- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language). The unsigned wordmark opens that language home.
+- **Used by:** Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules`.
 
 ## Function: ForumLoader
 
@@ -2020,7 +2069,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync` and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `LocaleRouteSync`, and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -2814,10 +2863,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: getRequestLocale
 
-- **Purpose:** Resolve the UI locale for the current request without writing cookies.
-- **Inputs:** Reads the `locale` cookie and the `Accept-Language` header via `next/headers` (both async in Next 15).
-- **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). Valid cookie wins; invalid/missing cookie falls through to `parseAcceptLanguage`; unmatched → `en`.
-- **Used by:** `RootLayout`, `Home`, `/login`, `NotFound`, `MarketingFooter`, `HandbookPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
+- **Purpose:** Resolve the UI locale for the current request without writing cookies. Order: header `x-21gifts-public-locale` (set by middleware for language URLs), then cookie `locale`, then Accept-Language.
+- **Inputs:** Reads `x-21gifts-public-locale`, the `locale` cookie, and the `Accept-Language` header via `next/headers` (async in Next 15).
+- **Returns / side effects:** A supported locale (`en`/`de`/`es`/`fil`). A valid public-locale header wins; otherwise a valid cookie; otherwise `parseAcceptLanguage`; unmatched → `en`.
+- **Used by:** `RootLayout`, `MarketingLayout`, `Home`, `AboutPage`, `DonatePage`, `NotFound`, `MarketingFooter`, `HandbookPage`, `HandbookScreensPage`, `HandbookFunctionsPage`, `HandbookEndpointsPage`, `RulesPage`, and `RulesSetupPage`. Lives in `src/lib/request-locale.ts` so client components can import locale constants without `next/headers`.
 
 ## Function: getRequestNumberFormat
 
@@ -3157,10 +3206,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: AboutPage
 
-- **Purpose:** Next.js page for `/about`. Three convictions, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
+- **Purpose:** Next.js page for `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`. What 21.gifts stands for, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
 - **Inputs:** None. Calls `getRequestLocale()` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** The about screen with a link to `/welcome`.
-- **Used by:** Route `/about`.
+- **Used by:** Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`.
 
 ## Function: LegalPage
 
@@ -3178,7 +3227,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingHeader
 
-- **Purpose:** Sticky marketing header with one top-left arrow (`ProfileChromeLeft` `tone="dark"`) beside `HomeWordmark` (`tone="dark"`; `/` unsigned, `/welcome` when a session is hydrated). The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The wordmark is not that control. Section nav (How / Happyland / Why / FAQ / About / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/#happyland` photo essay from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
+- **Purpose:** Sticky marketing header with one top-left arrow (`ProfileChromeLeft` `tone="dark"`) beside `HomeWordmark` (`tone="dark"`; `publicHref` is the language home when unsigned, `/welcome` when a session is hydrated). The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The wordmark is not that control. Section nav (How / Happyland / Why / FAQ / About 21.gifts / Stats / Handbook, accent **Log in**, optional `PwaInstall` `tone="dark"` `placement="header"`), always-visible `LanguageSwitcher` (`tone="dark"`), and a mobile menu toggle. Happyland links to the existing `/{locale}#happyland` place portrait from any marketing page. ThemeSwitcher and NumberFormatSwitcher are marketing-forbidden.
 - **Inputs:** None. Internal open state. Reads copy via `useTranslations`.
 - **Returns / side effects:** Header element; toggles nav on small screens. `LanguageSwitcher` stays visible when the hamburger is closed. Install control stays `null` until after mount when an offer applies.
 - **Used by:** `MarketingLayout`, `NotFound` (no extra props).
@@ -5083,15 +5132,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HappylandSection
 
-- **Purpose:** Presents Father Severin's account of Happyland after How it works on the public homepage.
-- **Input:** Receives the marketing page locale and reads all paragraphs, headings and image descriptions from the shared English, German, Spanish or Filipino catalog.
-- **Output:** Renders an accessible section with eight full-proportion photographs in a lead image, alternating text and image groups, and a portrait row that stacks on small screens.
-
-## Function: HappylandPhoto
-
-- **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
-- **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
-- **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
+- **Purpose:** Presents Father Severin's account of Happyland after Why on the public homepage.
+- **Input:** Receives the marketing page locale and reads the place portrait and observations from the shared English, German, Spanish or Filipino catalog.
+- **Output:** Renders four photographs from the existing 21.gifts Happyland page, one place portrait and three photographs in equal frames, an unlinked source paragraph, and three observations.
 
 ## Function: fiatDraftForSats
 
@@ -5246,6 +5289,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `sessionToken` — bearer token; `body` — JSON action; `timeZone` — when true, also sends the device `Time-Zone` header.
 - **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
 - **Used by:** `MemberHabits`.
+
+## Function: localizedPublicPath
+
+- **Purpose:** Builds a stable public URL for one supported language and one of Home, About, Donate, or Rules.
+- **Inputs:** A supported locale and one localized public path.
+- **Returns:** A language-prefixed path such as `/de/about`; used by metadata, links, and the language switcher.
+
+## Function: parseLocalizedPublicPath
+
+- **Purpose:** Recognizes only the sixteen supported language and public-page combinations.
+- **Inputs:** A request pathname.
+- **Returns:** Its locale and public path, or `null` for app routes, unsupported languages, or extra path segments.
+
+## Function: publicPathFromUrl
+
+- **Purpose:** Keeps the visitor on the same public page when they choose another language.
+- **Inputs:** A legacy or language-prefixed pathname.
+- **Returns:** The public page path, or `null` when the pathname belongs to the app.
 
 ## Function: HomeShops
 

@@ -45,9 +45,9 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 | Context                | Size             | Weight | Color               | Element                                                                                                                                                                       |
 | ---------------------- | ---------------- | ------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Marketing header       | 17px / 1.06rem   | 700    | `paper` (`#ffffff`) | `ProfileChromeLeft tone="dark"` plus `HomeWordmark tone="dark"` (`/` unsigned, `/welcome` when a session is hydrated)                                                         |
+| Marketing header       | 17px / 1.06rem   | 700    | `paper` (`#ffffff`) | `ProfileChromeLeft tone="dark"` plus `HomeWordmark tone="dark"` (the language home `/{locale}` unsigned via `publicHref`, `/welcome` when a session is hydrated)              |
 | Marketing footer       | 15px / 0.9375rem | 700    | `paper`             | `Wordmark tone="dark" size="footer"` as `<span>`                                                                                                                              |
-| App chrome (unsigned)  | 17px / 1.06rem   | 700    | `app-fg`            | `ProfileChromeLeft` plus `HomeWordmark` on `/login`, `/donate`, `/pl`, `/view/*`; wordmark `/` on unsigned `/rules`, `/messages/[id]`, `/messages/[id]/author`, and `/{npub}` |
+| App chrome (unsigned)  | 17px / 1.06rem   | 700    | `app-fg`            | `ProfileChromeLeft` plus `HomeWordmark` on `/login`, `/donate`, `/rules`, `/pl`, `/view/*`; wordmark `/` on unsigned `/messages/[id]`, `/messages/[id]/author`, and `/{npub}` |
 | App chrome (signed-in) | 17px / 1.06rem   | 700    | `app-fg`            | `Wordmark` link `/welcome`, except `/setup/*` (`<span>` — `OnboardingGate` would bounce an incomplete account off `/welcome`)                                                 |
 
 **Clear space.** Minimum 8px (`spacing-2`) on all sides of the glyph bounds. Do not place controls closer than 12px (`spacing-3`) to the wordmark.
@@ -56,10 +56,10 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 **Favicon / apple-touch / OG (keep).**
 
-- `public/favicon.svg` — 64×64, fill `#0A090C`, text `21` at 32px/700, fill `#f7931a`. This is the only drawn mark in the app; the shop sticker's outlined sign is print artwork (see **Wordmark**).
+- `public/favicon.svg` — 64×64, fill `#0A090C`, text `21` at 32px/700, fill `#f7931a`. This is the only drawn brand mark in the app; the other drawn exceptions are under **Set.** in Iconography. The shop sticker's outlined sign is print artwork (see **Wordmark**).
 - `public/favicon.ico` — 48×48, same composition.
 - `public/apple-touch-icon.png` / `icon-192.png` / `icon-512.png` — ink field, orange `21`, no rounded-squircle decoration beyond what iOS applies.
-- `public/og.png` — ink, orange kicker `PEER-TO-PEER · BITCOIN · WALLET OF SATOSHI`, white `21.gifts`, subtitle, orange-outline pill. Keep.
+- `public/og.png` — 1200×630 social preview in the landing-page palette. It shows the real Bitcoin symbol and the wallet-to-wallet path; its copy does not claim that wallet or network fees are absent.
 
 ## Color
 
@@ -81,6 +81,56 @@ Live tokens from `src/app/globals.css` `@theme` and `html.dark`.
 | `ink`    | `#0a090c` | `bg-ink`, `text-ink`       |
 | `paper`  | `#ffffff` | `text-paper`, `bg-paper`   |
 | `accent` | `#f7931a` | `bg-accent`, `text-accent` |
+
+**Home surface tokens** (do not flip with `html.dark`; the marketing shell stays dark, and these panels are local to `/`). Light panels inside that shell use `scheme-light` (`color-scheme: light`). Happyland photographs use `aspect-4/3` (`aspect-ratio: 4/3`).
+
+| Token            | Value     | Tailwind            | Use                                                         |
+| ---------------- | --------- | ------------------- | ----------------------------------------------------------- |
+| `home-happyland` | `#151316` | `bg-home-happyland` | Happyland section fill                                      |
+| `home-portrait`  | `#241d19` | `bg-home-portrait`  | Frame behind the Happyland place portrait                   |
+| `home-card`      | `#faf9f7` | `bg-home-card`      | How step cards, discovery cards, and the hero preview quote |
+| `home-why`       | `#f5f2ec` | `bg-home-why`       | Why section fill                                            |
+| `home-bitcoin`   | `#18120d` | `bg-home-bitcoin`   | Discovery Bitcoin panel                                     |
+| `home-reply`     | `#b76100` | `text-home-reply`   | Reply glyph on the hero preview                             |
+
+**Home background images** (`--background-image-*`, not a color; no `html.dark` override):
+
+| Token        | Value                                                                       | Tailwind        | Use                         |
+| ------------ | --------------------------------------------------------------------------- | --------------- | --------------------------- |
+| `home-glow`  | `radial-gradient(ellipse at 75% 42%,rgba(247,147,26,0.17),transparent 45%)` | `bg-home-glow`  | Hero wash                   |
+| `home-story` | `radial-gradient(circle at 75% 25%,#5b3a1e,#211b18 60%)`                    | `bg-home-story` | Discovery Happyland graphic |
+
+**Paper on the dark home surfaces.** Opacity steps of shell `paper` (`#ffffff`) used on `/` and in `HappylandSection`. `text-paper/60` is the `/about` lead and the stats subtitle; it is not used on these home surfaces. The home hero lead is `text-paper/75`.
+
+| Step | Utilities                            | Use                                                                                                             |
+| ---- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| 5    | `bg-paper/5`                         | Preview flow cells, the project address chip, Happyland photo frames and observation cards                      |
+| 10   | `border-paper/10`                    | Hero rule, preview frame, Happyland section edges                                                               |
+| 12   | `border-paper/12`                    | Happyland gallery frames and observation cards                                                                  |
+| 15   | `border-paper/15`, `divide-paper/15` | Hero proof line, preview panel, wallet cells and preview footnote line, portrait frame, address chip, FAQ lines |
+| 50   | `text-paper/50`                      | Project address label, Happyland source line                                                                    |
+| 65   | `text-paper/65`                      | Preview footnote, FAQ answers                                                                                   |
+| 70   | `text-paper/70`                      | Hero proof, project lead, Happyland captions and notes                                                          |
+| 75   | `text-paper/75`                      | Hero lead, the How receive path, Happyland lead and portrait caption                                            |
+| 85   | `text-paper/85`                      | Preview flow labels                                                                                             |
+
+**Ink and accent on the light home surfaces.** Opacity steps of shell `ink` (`#0a090c`) and `accent` (`#f7931a`) on the light panels of `/` (process preview, How, discovery, Why). `HappylandSection` does not use them.
+
+| Step | Utilities       | Use                                                                               |
+| ---- | --------------- | --------------------------------------------------------------------------------- |
+| 50   | `text-ink/50`   | Preview arrow icons only                                                          |
+| 60   | `text-ink/60`   | Kickers, labels, How and Why numbers, and discovery arrows                        |
+| 65   | `text-ink/65`   | How lead and step bodies, discovery bodies, Why bodies                            |
+| 10   | `border-ink/10` | Preview header and quote, How cards, discovery rule and cards, Why rule and cards |
+| 20   | `border-ink/20` | Preview step connectors                                                           |
+
+Accent on those same panels:
+
+| Step | Utilities          | Use                |
+| ---- | ------------------ | ------------------ |
+| 10   | `bg-accent/10`     | Preview reply row  |
+| 15   | `bg-accent/15`     | Preview label pill |
+| 50   | `border-accent/50` | Preview reply row  |
 
 **App semantic tokens.**
 
@@ -154,7 +204,7 @@ flowchart TD
 
 **QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. A specific invoice omits it (`isSmartphoneUserAgent`, not viewport): the forum-post pay sheet, the inbox pay sheet, and the public pay link, the same card as desktop, without a mounted `QrCode`.
 
-**Contrast (WCAG 2.2 AA)** against current tokens.
+**Contrast (WCAG 2.2 AA)** against current tokens. Text on the light home panels uses `text-ink/60` or `text-ink/65` (at least 4.5:1 on white, `#faf9f7`, and `#f5f2ec`). `text-ink/50` is only the preview arrow icons.
 
 | Pair                                     | Ratio (approx.) | AA body (4.5:1) | Notes                                                                                                        |
 | ---------------------------------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -169,6 +219,8 @@ flowchart TD
 | Accent on paper                          | ~2.3:1          | **Fail**        | Never orange _text_ on light paper. Orange is fill + `text-ink`, chart paint, or the decorative THE TEST bar |
 | `text-ink` on accent fill                | ~8.6:1          | Pass            | Accent buttons                                                                                               |
 | Given `#525252` on white                 | ~7.0:1          | Pass            | Legend + series                                                                                              |
+| `text-ink/60` on paper, card, why        | 5.097–5.278:1   | Pass            | Home text on white, `#faf9f7`, and `#f5f2ec`. `/45`, `/50`, and `/55` are not used for that text.            |
+| `text-ink/50` arrows on `#faf9f7`        | 3.690:1         | Non-text 3:1    | Preview ArrowDown icons only. Non-text contrast is 3:1, so this step is not body text.                       |
 
 Destructive alerts: `role="alert"` + `text-app-danger`. Do not use `text-red-600` on new surfaces.
 
@@ -213,25 +265,41 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 
 **Ramp.** 16px root. Use these classes (write the utilities on the JSX as CONTRIBUTING requires).
 
-| Token          | px      | rem          | Weight | Line-height            | Letter-spacing              | Max measure                                        | Tailwind recipe                                                   | Use                                                                                                                                                                      |
-| -------------- | ------- | ------------ | ------ | ---------------------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **display**    | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight` | Marketing H1 (`/`, `/stats` “Gifts”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                                            |
-| **h1**         | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                    | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`   | App page title **inside a card or setup column**: welcome, profile, wallet, contact, inbox, notifications, setup. **Not login** (see **card-title**)                     |
-| **card-title** | 18      | 1.125        | 500    | 1.3                    | 0                           | 22em                                               | `text-lg font-medium text-center text-app-fg`                     | Login card heading (`LoginCard` `login.heading`, or `login.choiceHeading` on the account-choice state). Keep this smaller step so the card is an action, not a billboard |
-| **h1-lg**      | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                    | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`   | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                  |
-| **display-sm** | 36 / 48 | 2.25 / 3     | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`) | 22em                                               | `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` | `/about` H1 (reading-width marketing page; not the home 60px display)                                                                                                    |
-| **h2-lg**      | 24      | 1.5          | 600    | 1.3                    | 0                           | 28em                                               | `text-2xl font-semibold`                                          | `/about` conviction titles                                                                                                                                               |
-| **h2**         | 20      | 1.25         | 600    | 1.3                    | 0                           | 28em                                               | `text-xl font-semibold`                                           | Marketing step titles, legal Imprint H2, handbook H2. `/legal` Privacy Policy is an h2 at `text-3xl` so the page keeps one outline h1 (Legal Notice)                     |
-| **h3**         | 18      | 1.125        | 600    | 1.35                   | 0                           | 28em                                               | `text-lg font-semibold`                                           | Marketing why-grid titles, legal H3. `/legal` Overview is an h3 at `text-xl font-semibold` as the first subsection under Privacy Policy                                  |
-| **kicker**     | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)   | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`       | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                                    |
-| **overline**   | 12      | 0.75         | 500    | 1.3                    | 0.1em                       | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`   | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                                                   |
-| **body**       | 16      | 1            | 400    | 1.5                    | 0                           | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                        | App body. Marketing lead is **body-lg**. Form control text (inputs/textareas) uses body / `text-base` because iOS auto-zooms below 16px. **body-sm** keeps field labels. |
-| **body-lg**    | 18      | 1.125        | 400    | 1.5                    | 0                           | 36em                                               | `text-lg text-paper/60` (marketing) or `text-lg text-app-muted`   | Hero lead, stats subtitle                                                                                                                                                |
-| **body-sm**    | 14      | 0.875        | 400    | 1.45                   | 0                           | 36em                                               | `text-sm`                                                         | Forum note body, card sentences, field labels, button labels, FAQ answers                                                                                                |
-| **section**    | 14      | 0.875        | 600    | 1.45                   | 0                           | —                                                  | `text-sm font-semibold text-app-muted`                            | Notification group headings (**Unread**, **Already seen**). Not centered. Not **overline** and not the marketing **h2**.                                                 |
-| **caption**    | 12      | 0.75         | 400    | 1.4                    | 0                           | —                                                  | `text-xs text-app-subtle`                                         | Forum timestamp, pay “Waiting for payment…”                                                                                                                              |
-| **numeric**    | inherit | inherit      | 600    | 1.2                    | 0                           | —                                                  | `font-semibold tabular-nums lining-nums`                          | `formatBitcoin`, USD, KPI values, chart ticks                                                                                                                            |
-| **code**       | 14      | 0.875        | 400    | 1.4                    | 0                           | —                                                  | `font-mono text-sm`                                               | `you@walletofsatoshi.com` on marketing; Lightning Address _value_ on profile uses `font-mono text-sm`                                                                    |
+| Token           | px      | rem          | Weight | Line-height            | Letter-spacing                 | Max measure                                        | Tailwind recipe                                                                                                            | Use                                                                                                                                                                                           |
+| --------------- | ------- | ------------ | ------ | ---------------------- | ------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **display**     | 36 / 60 | 2.25 / 3.75  | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`)    | 20em                                               | `text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`                                                          | Marketing H1 (`/stats` “Donations”, `/stats/[day]`). 404 “404” stays `text-5xl` = 48px / 600                                                                                                  |
+| **h1**          | 24 / 30 | 1.5 / 1.875  | 600    | 1.25                   | -0.025em                       | 22em                                               | `text-2xl sm:text-3xl font-semibold tracking-tight text-center`                                                            | App page title **inside a card or setup column**: welcome, profile, wallet, contact, inbox, notifications, setup. **Not login** (see **card-title**)                                          |
+| **card-title**  | 18      | 1.125        | 500    | 1.3                    | 0                              | 22em                                               | `text-lg font-medium text-center text-app-fg`                                                                              | Login card heading (`LoginCard` `login.heading`, or `login.choiceHeading` on the account-choice state). Keep this smaller step so the card is an action, not a billboard                      |
+| **h1-lg**       | 30 / 36 | 1.875 / 2.25 | 600    | 1.2                    | -0.025em                       | 22em                                               | `text-3xl sm:text-4xl font-semibold tracking-tight text-center`                                                            | `/donate`, `/rules` (document titles on a full page, not inside a card)                                                                                                                       |
+| **display-sm**  | 36 / 48 | 2.25 / 3     | 600    | 1.15 (`leading-tight`) | -0.025em (`tracking-tight`)    | 22em                                               | `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight text-balance`                                             | `/about` H1 (reading-width marketing page)                                                                                                                                                    |
+| **h2-lg**       | 24      | 1.5          | 600    | 1.3                    | 0                              | 28em                                               | `text-2xl font-semibold`                                                                                                   | `/about` conviction titles                                                                                                                                                                    |
+| **h2**          | 20      | 1.25         | 600    | 1.3                    | 0                              | 28em                                               | `text-xl font-semibold`                                                                                                    | Marketing step titles, legal Imprint H2, handbook H2. `/legal` Privacy Policy is an h2 at `text-3xl` so the page keeps one outline h1 (Legal Notice)                                          |
+| **h3**          | 18      | 1.125        | 600    | 1.35                   | 0                              | 28em                                               | `text-lg font-semibold`                                                                                                    | Marketing why-grid titles add `text-balance`; legal H3. `/legal` Overview is an h3 at `text-xl font-semibold` as the first subsection under Privacy Policy                                    |
+| **kicker**      | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)      | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`                                                                | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                                                         |
+| **home-kicker** | 12      | 0.75         | 700    | calc(1 / 0.75)         | 0.2em (`tracking-home-kicker`) | —                                                  | `text-xs font-bold tracking-home-kicker uppercase`                                                                         | Home kickers on How, the discovery label, Why, Happyland, Project, and FAQ. Light panels use `text-ink/60`; dark panels use `text-accent`.                                                    |
+| **home-title**  | 30 / 36 | 1.875 / 2.25 | 600    | 1.25 (`leading-tight`) | -0.025em (`tracking-tight`)    | 42rem on How                                       | `text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl`                                             | Home section titles on How, Why, Project, and FAQ. Discovery omits `leading-tight` and uses `text-balance`. Happyland is `text-4xl sm:text-6xl` with `leading-home-title` and `text-balance`. |
+| **overline**    | 12      | 0.75         | 500    | 1.3                    | 0.1em                          | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`                                                            | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                                                                        |
+| **body**        | 16      | 1            | 400    | 1.5                    | 0                              | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                                                                                 | App body. Marketing lead is **body-lg**. Form control text (inputs/textareas) uses body / `text-base` because iOS auto-zooms below 16px. **body-sm** keeps field labels.                      |
+| **body-lg**     | 18      | 1.125        | 400    | 1.5                    | 0                              | 36em                                               | `text-lg text-paper/75` (home lead) or `text-lg text-paper/60` (`/about` lead, stats subtitle) or `text-lg text-app-muted` | Home hero lead is `text-paper/75` (`sm:text-xl`). `/about` lead and stats subtitles stay `text-lg text-paper/60`.                                                                             |
+| **body-sm**     | 14      | 0.875        | 400    | 1.45                   | 0                              | 36em                                               | `text-sm`                                                                                                                  | Forum note body, card sentences, field labels, button labels, FAQ answers                                                                                                                     |
+| **section**     | 14      | 0.875        | 600    | 1.45                   | 0                              | —                                                  | `text-sm font-semibold text-app-muted`                                                                                     | Notification group headings (**Unread**, **Already seen**). Not centered. Not **overline** and not the marketing **h2**.                                                                      |
+| **caption**     | 12      | 0.75         | 400    | 1.4                    | 0                              | —                                                  | `text-xs text-app-subtle`                                                                                                  | Forum timestamp, pay “Waiting for payment…”                                                                                                                                                   |
+| **numeric**     | inherit | inherit      | 600    | 1.2                    | 0                              | —                                                  | `font-semibold tabular-nums lining-nums`                                                                                   | `formatBitcoin`, USD, KPI values, chart ticks                                                                                                                                                 |
+| **code**        | 14      | 0.875        | 400    | 1.4                    | 0                              | —                                                  | `font-mono text-sm`                                                                                                        | `you@walletofsatoshi.com` on marketing; Lightning Address _value_ on profile uses `font-mono text-sm`                                                                                         |
+
+**Home type tokens.** Each sets one declaration. `text-home-display` and `text-home-preview` set font-size only; line height and tracking stay on their own utilities. No `html.dark` override. Ramp rows **home-kicker** and **home-title** are the class recipes; this table is the token values.
+
+| Token                   | Value                         | Utility                 | Use                                                        |
+| ----------------------- | ----------------------------- | ----------------------- | ---------------------------------------------------------- |
+| `home-display`          | `clamp(3.25rem,5.8vw,5.7rem)` | `text-home-display`     | Home H1                                                    |
+| `home-preview`          | `2rem`                        | `sm:text-home-preview`  | Process-preview title from `sm`                            |
+| `home-display` leading  | `0.99`                        | `leading-home-display`  | Home H1                                                    |
+| `home-title` leading    | `1.08`                        | `leading-home-title`    | Happyland H2 (`text-4xl` / `sm:text-6xl`)                  |
+| `home-display` tracking | `-0.055em`                    | `tracking-home-display` | Home H1                                                    |
+| `home-hero`             | `0.22em`                      | `tracking-home-hero`    | Hero kicker (`text-xs font-semibold`, not **home-kicker**) |
+| `home-preview` tracking | `0.18em`                      | `tracking-home-preview` | Process-preview kicker                                     |
+| `home-kicker`           | `0.2em`                       | `tracking-home-kicker`  | Ramp **home-kicker**                                       |
+| `home-label`            | `0.15em`                      | `tracking-home-label`   | Discovery labels and Happyland note numbers                |
 
 **One title per page.** The document outline has one `h1` (or `card-title` used as the sole heading). Card must not repeat a page title. `LoginPage` has no outer “Log in to 21.gifts”; the only heading is `LoginCard` at **card-title** (`login.heading`, or `login.choiceHeading` on the account-choice state). Do not add the outer title back. Welcome has no Forum heading; the only `h1` is “Welcome, {name}”.
 
@@ -260,21 +328,33 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 16      | 64        | `pt-16`                  | Stats top                                        |
 | 20      | 80        | `py-20`                  | Marketing section py                             |
 | 24      | 96        | `py-24`                  | Legal/handbook top                               |
-| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                   |
+| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | `/about` first section                           |
 
 App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px). Do not mix.
 
+**Home layout tokens.** Column templates and the How-step stroke are theme tokens, not spacing steps.
+
+| Token            | Value                              | Utility                       | Use                                   |
+| ---------------- | ---------------------------------- | ----------------------------- | ------------------------------------- |
+| `home-flow`      | `minmax(0,1fr) auto minmax(0,1fr)` | `grid-cols-home-flow`         | Preview path: wallet, Bitcoin, person |
+| `home-split`     | `0.8fr 1.2fr`                      | `md:grid-cols-home-split`     | Why, Project, and FAQ                 |
+| `home-happyland` | `1fr 0.9fr`                        | `lg:grid-cols-home-happyland` | Happyland columns                     |
+| `home-step`      | `1.75`                             | `stroke-home-step`            | How step icon stroke width            |
+
 **Radius.**
 
-| Token     | px   | Tailwind                    | Use                                                                      |
-| --------- | ---- | --------------------------- | ------------------------------------------------------------------------ |
-| `pill`    | 9999 | `rounded-full`              | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
-| `card`    | 24   | `rounded-3xl`               | AppShell page frame; default `Card` overlays and note panels             |
-| `note`    | 16   | `rounded-2xl`               | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
-| `panel`   | 12   | `rounded-xl`                | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
-| `control` | 8    | `rounded-lg`                | Menu rows                                                                |
-| `chart`   | 6    | `rounded-md` / SVG `rx={6}` | ₿\|USD track, person bars `rx={6}`                                       |
-| `none`    | 0    | —                           | Marketing month bars (square)                                            |
+| Token      | px   | Tailwind                    | Use                                                                      |
+| ---------- | ---- | --------------------------- | ------------------------------------------------------------------------ |
+| `pill`     | 9999 | `rounded-full`              | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
+| `card`     | 24   | `rounded-3xl`               | AppShell page frame; default `Card` overlays and note panels             |
+| `note`     | 16   | `rounded-2xl`               | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
+| `panel`    | 12   | `rounded-xl`                | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
+| `control`  | 8    | `rounded-lg`                | Menu rows                                                                |
+| `chart`    | 6    | `rounded-md` / SVG `rx={6}` | ₿\|USD track, person bars `rx={6}`                                       |
+| `none`     | 0    | —                           | Marketing month bars (square)                                            |
+| `portrait` | 28   | `rounded-home-portrait`     | Happyland place portrait (`1.75rem`)                                     |
+| `wallet`   | 17.6 | `rounded-home-wallet`       | Hero preview wallet strip (`1.1rem`)                                     |
+| `frame`    | 32   | `rounded-4xl`               | Hero preview frame from `sm` (`--radius-4xl` is `2rem`)                  |
 
 **Elevation.**
 
@@ -414,9 +494,13 @@ flowchart TB
 | Marketing pad      | `px-5`                                      | Header, sections, footer                                                                        |
 | Vertical app shell | `AppShell` fill/flow + `--app-height`       | Centered cards and long documents                                                               |
 | Onboarding column  | fill `AppShell` + `AppShellFooter` CTA slot | `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`                              |
-| Marketing hero     | `pt-28 pb-20 sm:pt-36`                      | `/`                                                                                             |
-| Marketing section  | `py-20`                                     | how / why / project / faq                                                                       |
+| Marketing hero     | `pt-16 pb-20 sm:pt-24 sm:pb-28`             | `/`                                                                                             |
+| Marketing section  | `py-16 sm:py-20`; `py-20 sm:py-24`          | How and discovery; Why, Happyland, Project, FAQ                                                 |
 | Stats / handbook   | `pt-16 pb-24` / `py-24`                     |                                                                                                 |
+| Home hero copy     | `max-w-home-copy` (560px)                   | Hero column on `/`                                                                              |
+| Home lead          | `max-w-home-lead` (510px)                   | Hero lead on `/`                                                                                |
+| Home preview       | `max-w-home-preview` (540px)                | Process preview on `/`                                                                          |
+| Home path          | `max-w-home-path` (250px)                   | Discovery path diagram on `/`                                                                   |
 
 **Mobile vs desktop.** Marketing nav hides below `md`, hamburger `md:hidden`. App cards are single-column at all breakpoints. Forum `Card maxWidth="xl"` is the widest app panel. Playwright viewports: desktop and mobile combos already in `scripts/screen-variants.mjs` (`BASELINE_COMBOS`). Do not add a third breakpoint.
 
@@ -429,10 +513,10 @@ flowchart TB
 [                         children                                      ]
 ```
 
-| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/messages/[id]/author`, `/{npub}`, `/view/*`)                                                                                                                                                                                                                                                      | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topLeft`  | `ProfileChromeLeft` on `/login`, `/donate`, `/pl`, `/view/*`, unsigned `/rules`, unsigned `/messages/[id]`, unsigned `/messages/[id]/author`, and unsigned `/{npub}`. Wordmark href stays `/` unsigned and `/welcome` when hydrated (`HomeWordmark` or `wordmarkHref`). `/welcome` omits the arrow only when this tab has no earlier view; an ask-wizard step uses that same slot. | `ProfileChromeLeft` supplies one arrow to the previous in-app view, or `/welcome` when this tab has none, followed by the wordmark (`/welcome`, except `/setup/name`, `/setup/username`, and `/setup/address`, where the wordmark is a span). `MessagesChromeLeft` and `WalletChromeLeft` only render `ProfileChromeLeft`. `/setup/rules` portals a non-link wordmark plus one previous-view or previous-chapter arrow. |
-| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                                                                                                                                                                                                                                    | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                          |
+| Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/messages/[id]/author`, `/{npub}`, `/view/*`)                                                                                                                                                                                                                                                                                                                                          | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `topLeft`  | `ProfileChromeLeft` on `/login`, `/donate`, `/pl`, `/view/*`, unsigned `/rules`, unsigned `/messages/[id]`, unsigned `/messages/[id]/author`, and unsigned `/{npub}`. Wordmark href stays `/` unsigned (on `/donate` and unsigned `/rules` the language home `/{locale}` via `publicHref`) and `/welcome` when hydrated (`HomeWordmark` or `wordmarkHref`). `/welcome` omits the arrow only when this tab has no earlier view; an ask-wizard step uses that same slot. | `ProfileChromeLeft` supplies one arrow to the previous in-app view, or `/welcome` when this tab has none, followed by the wordmark (`/welcome`, except `/setup/name`, `/setup/username`, and `/setup/address`, where the wordmark is a span). `MessagesChromeLeft` and `WalletChromeLeft` only render `ProfileChromeLeft`. `/setup/rules` portals a non-link wordmark plus one previous-view or previous-chapter arrow. |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                                                                                                                                                                                                                                                                                                                        | `SignedInChrome` (Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                                                          |
 
 **`ProfileChromeLeft`.** One `h-11 w-11` lucide `ArrowLeft` link to the previous in-app view, or `/welcome` when this tab has none, plus the wordmark. `tone="dark"` is the ink marketing header. `hideWithoutHistory` omits the arrow only when there is no earlier view. An ask-wizard step temporarily replaces the link with the same chrome button. There is no in-card back.
 
@@ -482,9 +566,9 @@ flowchart LR
 
 ## Iconography
 
-**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, the shop-sticker storefront on every valid pay link, and handbook images.
+**Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, the shop-sticker storefront on every valid pay link, `public/bitcoin-symbol.svg` (Bitcoin symbol in the five homepage marks, `src/app/(marketing)/page.tsx`), and handbook images.
 
-**Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills.
+**Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills. Preview `MessageCircle` and `UserRound` at 20px (`h-5 w-5`) use `strokeWidth={1.75}`. Preview wallet-strip `Wallet` and `UserRound`, and the discovery-path `Wallet` and `UserRound`, at 24px (`h-6 w-6`) use `strokeWidth={1.75}`. The How-step `Search`, `MessageCircle`, and `Wallet` use `stroke-home-step`, the same 1.75 (`--stroke-width-home-step`). These stay at the default 2: the hero `ArrowRight` (`h-4 w-4`), both preview `ArrowDown` icons (`h-4 w-4`), the preview `Reply` (`h-5 w-5`), the wallet-strip `ArrowRight` (`h-4 w-4`), the How receive `ArrowUpRight` (`h-4 w-4`), and the three discovery `ArrowUpRight` icons (`h-5 w-5`). `HappylandSection` sets no `strokeWidth` and no `stroke-*` class.
 
 **Sizes (glyph, not hit target).**
 
@@ -645,7 +729,7 @@ export function Wordmark(props: {
 }): ReactElement;
 ```
 
-`HomeWordmark` is the session-aware wrapper (`/` until hydrate, `/welcome` when `ready && session !== null`). Do not over-type primitive `href` as `'/' | '/welcome'` — unsigned `/rules` still uses `/`, and the footer is not a link.
+`HomeWordmark` is the session-aware wrapper (`publicHref`, default `/`, until hydrate; `/welcome` when `ready && session !== null`). Do not over-type primitive `href` as `'/' | '/welcome'` — unsigned `/messages/[id]` still uses `/`, the language homes are `/{locale}`, and the footer is not a link.
 
 ### `Card`
 
@@ -682,7 +766,7 @@ Same visual variants/sizes as `Button`, rendered as `next/link` `Link` (or `<a>`
 | `app` (default) | `border-app-border-strong bg-app-card text-app-fg`            | accent = `bg-app-accent text-ink`; primary = `bg-app-btn` |
 | `dark`          | `border-paper/20 bg-transparent text-paper hover:bg-paper/10` | accent fill unchanged (`text-ink` on orange)              |
 
-Hero **Send help**: `ButtonLink href="/donate" variant="secondary" tone="dark"`. Header **Log in** / **Ask for help**: `variant="accent"`. The 404 page has no second back button.
+Hero **Send help**: `ButtonLink href={localizedPublicPath(locale, '/donate')} variant="secondary" tone="dark"`. Header **Log in** / **Ask for help**: `variant="accent"`. The 404 page has no second back button.
 
 ### `IconButton`
 
@@ -826,6 +910,8 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 **Option row:** `flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm min-h-11`. Selected: `font-medium` + `Check` 16px. Dark selected check: `text-accent`. App selected check: `text-app-fg` (not orange — choosing Deutsch is not a gift).
 
+On Home, About, Donate, and Rules, selecting a language loads its public URL as a full page so the shared navigation and footer update with the page content.
+
 #### ThemeSwitcher profile settings section
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
@@ -934,7 +1020,7 @@ The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown 
 
 ### Chart
 
-**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No gifts recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
+**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No donations recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
 
 **Profile activity.** FiatPicker only when `useHydrateSession().ready && session === null` (unsigned public view). Signed-in mounts omit it. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Unsigned empty: FiatPicker plus `profile.chartEmpty` `role="status"`, no SVG. Signed-in empty: `profile.chartEmpty` alone. Empty series and failed is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Successful empty and in-flight stay `profile.chartEmpty` `role="status"`, no SVG. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`.
 
@@ -949,11 +1035,13 @@ Load and request failures next to labeled **Try again** use this grammar (`login
 ### Marketing header / footer / CTA pair
 
 **Header.** Sticky `z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl`. Left: one `flex items-center` group with `ProfileChromeLeft tone="dark"` and `HomeWordmark tone="dark"`. Right: `nav` (how, happyland, why, faq, about, stats, handbook) `text-sm text-paper/80 gap-6` + `ButtonLink variant="accent" size="sm"` **Log in** + `PwaInstall tone="dark" placement="header"` + `LanguageSwitcher tone="dark"` + hamburger (`flex min-h-11 min-w-11 flex-col items-center justify-center gap-1.5 lg:hidden`, three `h-0.5 w-5` bars, `aria-label` menu, `aria-expanded`).
-Below the `lg` breakpoint, use the menu toggle so the translated links fit without horizontal overflow. Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile. Happyland follows How it works in both layouts, uses the shared `nav.happyland` catalog label in all four locales, and links to `/#happyland`. The existing photo essay uses `scroll-mt-24` to keep its anchor clear of the sticky header. Selecting the link closes the mobile menu.
+Below the `lg` breakpoint, use the menu toggle so the translated links fit without horizontal overflow. Mobile open nav: `absolute top-full inset-x-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4`. Log in pill is inside the nav on mobile. Happyland follows How it works in both layouts, uses the shared `nav.happyland` catalog label in all four locales, and links to `/{locale}#happyland`. The existing place portrait uses `scroll-mt-20` to keep its anchor clear of the sticky header. Selecting the link closes the mobile menu.
 
 **Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
-**Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
+Home, About, Donate, and Rules have stable `/en`, `/de`, `/es`, and `/fil` paths. Public navigation and the language switcher keep visitors on those paths. The legacy unprefixed paths still render and point canonically to the matching language URL.
+
+**Home hero CTA pair.** Asking for help is the first action: primary `ButtonLink href="/login" variant="accent" tone="dark"` **Ask for help** (with `ArrowRight`). Secondary `ButtonLink href={localizedPublicPath(locale, '/donate')} variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`. The light process diagram shows “Read a post in the forum”, “React and donate” with the Reply glyph, “Send from your wallet”, and then the wallet row (your wallet, the Bitcoin mark, their wallet). It is explanatory, with no payment input or simulated post. The German copy says clearly that `/welcome` requires sign-in and that you give by writing a reaction with an amount under a post, and the Bitcoin goes to the person who wrote the post. The shared marketing header keeps its existing login action.
 
 **Signed-in menu Install.** `PwaInstall placement="menu"` stays the labeled row — app shell, not dark Button.
 
@@ -971,7 +1059,7 @@ Below the `lg` breakpoint, use the menu toggle so the translated links fit witho
 | Inbox none (staff Contact)  | `inbox.empty.contact`                 | Filter still shown        |
 | Inbox none (staff Damus)    | `inbox.empty.damus`                   | Filter still shown        |
 | Notifications none          | `notifications.empty`                 | None                      |
-| Stats none                  | “No gifts recorded yet.”              | None                      |
+| Stats none                  | “No donations recorded yet.”          | None                      |
 | Profile chart none          | `profile.chartEmpty`                  | None                      |
 | View / member missing       | `view.missing`                        | None                      |
 | 404                         | `notFound.body`                       | No second back button     |
@@ -996,15 +1084,15 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 
 ### `/` — marketing home
 
-`MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → white shops block (`HomeShops` `#shops` between the hero and `#how`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, three h3+body in `sm:grid-cols-2`) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
+`MarketingHeader` → dark two-column hero (`bg-home-glow`; kicker `tracking-home-hero` `text-balance`; H1 `text-home-display` `leading-home-display` `tracking-home-display` `text-balance`; copy `max-w-home-copy`; lead `max-w-home-lead` `text-pretty`; Bitcoin headline, **Ask for help** / **Send help** / `PwaInstall`, clearly labeled static process preview `max-w-home-preview` with frame `rounded-4xl` from `sm`, panel `scheme-light`, quote `bg-home-card`, reply glyph `text-home-reply`, wallet strip `rounded-home-wallet`, step-3 Bitcoin mark `h-10 w-10`, flow `grid-cols-home-flow` with the Bitcoin mark `h-11 w-11 sm:h-12 sm:w-12`, and a wallet → Bitcoin → person diagram) → white `HomeShops` block `#shops` directly under the hero and before `#how` (filters for country, name, blockchain, asset, and activity; Map/Table control; map or table) → light `#how` (`scheme-light`; kicker `tracking-home-kicker`; title the **home-title** classes; cards `bg-home-card`; step icons `stroke-home-step`; three donor steps and a distinct receive-help path) → light discovery cards (`scheme-light`, `bg-home-card`, Happyland graphic `bg-home-story`, Bitcoin panel `bg-home-bitcoin`, path `max-w-home-path`) linking to Happyland, Why, and FAQ (graphic cards; no repeated photograph or fictional forum post) → warm `#why` (`bg-home-why`, `scheme-light`, split `md:grid-cols-home-split`; four concise benefit cards; titles `text-balance`) → dark `#happyland` (`bg-home-happyland`, split `lg:grid-cols-home-happyland`, portrait `rounded-home-portrait` `bg-home-portrait` `aspect-4/3`, title leading `leading-home-title`; four photographs from the existing 21.gifts Happyland page, one localized place portrait and three photographs in equal frames, captions `text-pretty`, an unlinked source paragraph, and three observations; the gallery has equal 4:3 frames) → dark `#project` (`md:grid-cols-home-split`; separate project support address) → dark `#faq` (`details/summary` sharing `name="home-faq"`, so only one answer is open, entries `py-4`, `summary` `py-3` with hanging indent `pl-4 -indent-4`, list bounded top and bottom, `md:grid-cols-home-split`) → `MarketingFooter`. The white and warm home sections are local panels within the always-dark marketing shell. Sections stay in `max-w-[1100px]`. Decorative Bitcoin marks use the downloadable [Bitcoin Design Guide symbol](https://bitcoin.design/guide/getting-started/visual-language/) at `public/bitcoin-symbol.svg`; the 21.gifts brand remains the text wordmark. Photo sources and consents: see `docs/happyland-content.md`.
 
-Handbook states: live marketing home, shops-table, shops-blockchain, shops-asset, shops-activity, shops-country-selected, shops-name-selected, shops-blockchain-selected, shops-asset-selected, shops-activity-selected, shops-marker, shops-attribution, shops-help, shops-loading, shops-error, shops-map-failed, shops-empty-map, shops-empty-table.
+Handbook states: live marketing home, mobile-nav, language-open, faq-account-open, faq-share-open, faq-password-open, faq-device-open, faq-recipient-open, faq-bitcoin-open, faq-taxes-open, faq-sat-open, install-open, shops-table, shops-blockchain, shops-asset, shops-activity, shops-country-selected, shops-name-selected, shops-blockchain-selected, shops-asset-selected, shops-activity-selected, shops-marker, shops-attribution, shops-help, shops-loading, shops-error, shops-map-failed, shops-empty-map, shops-empty-table.
 
 The activity help button sits with the filters and stays available while the map is selected. Its popover is the color key. An open marker popup also prints the activity words.
 
 ### `/about`
 
-`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, H1 `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` — reading width, not the home display 60px, `body-lg` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (three `article`s, each accent number + h2 + `text-paper/60` body; first article also a second paragraph and a verse blockquote; then `ButtonLink href="/welcome" variant="accent" tone="dark"` **Open the living room**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. No second typeface, no cross. No separate “origin” section — the convictions carry it.
+`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, H1 `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight text-balance` — reading width (**display-sm**), not the home H1 `text-home-display`, `text-lg text-paper/60` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (three `article`s, each accent number + h2 + `text-paper/60` body; first article also a second paragraph and a verse blockquote; then `ButtonLink href="/welcome" variant="accent" tone="dark"` **Go to the forum**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. No second typeface, no cross. No separate “origin” section — the convictions carry it.
 
 ### `/legal`
 
@@ -1012,7 +1100,7 @@ The activity help button sits with the filters and stays available while the map
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts.
 
@@ -1024,7 +1112,7 @@ Handbook states: default, expanded, empty, loading, error, hop-error.
 
 ### `/stats/[day]`
 
-**All stats** link `text-accent underline underline-offset-2` to `/stats` (not a second back control) → display “Gifts on YYYY-MM-DD” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
+**All stats** link `text-accent underline underline-offset-2` to `/stats` (not a second back control) → display “Donations on YYYY-MM-DD” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`, date `whitespace-nowrap`) → subtitle → `DayLoader` / `GiftDayTable`. Invalid day: `notFound()` (404 shell).
 
 ### `/handbook` (+ screens / functions / endpoints)
 
@@ -1040,7 +1128,7 @@ Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try 
 
 ### `/donate`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent). The forum CTA is not a second back control.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Help someone**), muted lead `text-pretty`, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent). The forum CTA is not a second back control.
 
 ### `/setup/name`
 
@@ -1204,7 +1292,7 @@ Handbook states: default, no-pin, map, map-staff, map-edit-open, map-edit-photos
 
 ### `/rules`
 
-App shell via `RulesPageChrome`. Unsigned: one top-left arrow (`ProfileChromeLeft`, wordmark href `/`) + LanguageSwitcher. Signed-in: the same arrow (`ProfileChromeLeft`) + `SignedInChrome`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, and one CTA **Contact 21.gifts** to `/contact`). There is no second back in the document. B′ overlines and ticks as in Color.
+App shell via `RulesPageChrome`. Unsigned: one top-left arrow (`ProfileChromeLeft` with `HomeWordmark` to the language home `/{locale}`) + LanguageSwitcher. Signed-in: the same arrow (`ProfileChromeLeft`) + `SignedInChrome`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. **h1-lg** Living room rules. `RulesDocument` (rule cards, Welcome/Allowed/Better not/Forbidden lists with check/x, house card, and one CTA **Contact 21.gifts** to `/contact`). There is no second back in the document. B′ overlines and ticks as in Color.
 
 ### `/habit-tracker`
 

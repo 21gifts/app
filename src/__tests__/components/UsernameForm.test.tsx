@@ -89,7 +89,7 @@ describe('UsernameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(
       await screen.findByText(
-        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+        'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
       ),
     ).toBeTruthy();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
@@ -146,7 +146,7 @@ describe('UsernameForm', () => {
     fireEvent.change(field, { target: { value: '_' } });
     const formatAlert = screen.getByRole('alert');
     expect(formatAlert.textContent).toBe(
-      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+      'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
     );
     expect(field.getAttribute('aria-describedby')).toBe(formatAlert.id);
     expect(button.disabled).toBe(true);
@@ -171,7 +171,7 @@ describe('UsernameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(
       await screen.findByText(
-        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+        'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
       ),
     ).toBeTruthy();
     expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(

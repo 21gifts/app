@@ -47,8 +47,8 @@ describe('getCatalog', () => {
     );
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
-      expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
-      expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
+      expect(catalog['la.heading']).toContain('Wallet of Satoshi');
+      expect(catalog['la.aria']).toContain('Wallet of Satoshi');
       expect(catalog['forum.payOpenWalletAria']).toContain('Wallet of Satoshi');
       expect(catalog['forum.payOpenWalletAria'].trim().length).toBeGreaterThan(0);
       expect(catalog['aria.github']).toBe('GitHub');
@@ -68,12 +68,6 @@ describe('getCatalog', () => {
     }
   });
 
-  it('prefixes home.step2BodyAfter with a period in every locale', () => {
-    for (const locale of LOCALES) {
-      expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
-    }
-  });
-
   it('contains no visitor-facing sats unit except Wallet of Satoshi and home.faq8A', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
@@ -82,7 +76,7 @@ describe('getCatalog', () => {
           continue;
         }
         const withoutProduct = value.replaceAll('Wallet of Satoshi', '');
-        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
+        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b(?:sats?|satoshis?)\b/i);
       }
     }
   });

@@ -7,19 +7,19 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection. Under the hero and before How it works, a white block lists only shops whose tech provider is exactly 21.gifts, with country, name, blockchain, asset, and activity filters, a Map/Table control, then the map or the table; a matching shop id links to /{npub} on this site.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow). The language-prefixed public URL (`/en`, `/de`, `/es`, or `/fil`) has reciprocal language links and a matching canonical. The Bitcoin-led hero offers **Ask for help** (`/login`) first and **Send help** (`/{locale}/donate`) second, with a labeled, non-interactive example of the real post → reply → Bitcoin journey and a wallet → Bitcoin → recipient diagram. Directly under it, the white `HomeShops` block lists only shops whose tech provider is exactly 21.gifts, with country, name, blockchain, asset, and activity filters, a Map/Table control, then the map or table; a matching shop id links to `/{npub}` on this site. The redesign's light sections show three donor steps and discovery links, Why uses four concise cards, and Happyland follows with four photographs, an unlinked source paragraph, and three observations in all four languages. The dark closing sections distinguish gifts to people from separate support for the 21.gifts project at `21gifts@walletofsatoshi.com`, then answer common questions, with only one FAQ answer open at a time. **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
 - **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
-- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `HomeShops`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
+- **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `HomeShops`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `ProfileChromeLeft`.
 
 ### Variant: default
 
-Desktop/wide layout (from 1024px): section nav is visible in the header (How it works, Happyland, Why, FAQ, About, Stats, Handbook, Log in). Happyland links to `/#happyland`, including from other marketing pages, and leaves space below the sticky header for the section heading. No hamburger.
+Desktop/wide layout (from 1024px): section nav is visible in the header (How it works, Happyland, Why, FAQ, About 21.gifts, Stats, Handbook, Log in). Happyland links to `/{locale}#happyland`, including from other marketing pages, and leaves space below the sticky header for the section heading. No hamburger.
 
 ![21.gifts home](images/root.png)
 
 ### Variant: mobile-nav
 
-Captured at desktop and mobile. Below 1024px the header shows the Menu button; open it to reveal the same links stacked, with Happyland immediately after How it works. Tapping Happyland closes the menu and scrolls to the existing photo essay. On desktop this is the landing without the hamburger.
+Captured at desktop and mobile. Below 1024px the header shows the Menu button; open it to reveal the same links stacked, with Happyland immediately after How it works. Tapping Happyland closes the menu and scrolls to the existing place portrait. On desktop this is the landing without the hamburger.
 
 ![21.gifts home mobile nav](images/root-mobile-nav.png)
 
@@ -28,6 +28,60 @@ Captured at desktop and mobile. Below 1024px the header shows the Menu button; o
 Open the language switcher in the marketing header. Custom listbox (rounded panel, endonym rows with a check on the current locale) — not OS chrome.
 
 ![21.gifts home language](images/root-language.png)
+
+### Variant: faq-account-open
+
+The first question is open: **Do I need an account to see the forum?** The answer says you can read the forum without an account, but need to sign in to react with an amount or write something. To receive Bitcoin donations yourself, also add a Wallet of Satoshi address.
+
+![21.gifts home FAQ account open](images/root-faq-account-open.png)
+
+### Variant: faq-share-open
+
+The second question is open: **Does 21.gifts keep any of my donation?** The answer says 21.gifts keeps no share. A wallet or the payment network may still charge its own fees.
+
+![21.gifts home FAQ share open](images/root-faq-share-open.png)
+
+### Variant: faq-password-open
+
+The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.
+
+![21.gifts home FAQ password open](images/root-faq-password-open.png)
+
+### Variant: faq-device-open
+
+The fourth question is open: **What if I lose my device?** The answer says that if you lose access on your device and in any sync, the account cannot be recovered yet. Check how your device backs up your sign-in.
+
+![21.gifts home FAQ device open](images/root-faq-device-open.png)
+
+### Variant: faq-recipient-open
+
+The fifth question is open: **Who receives the Bitcoin?** The answer says the person who wrote the post. A reaction with an amount sends the Bitcoin to that person's wallet address.
+
+![21.gifts home FAQ recipient open](images/root-faq-recipient-open.png)
+
+### Variant: faq-bitcoin-open
+
+The sixth question is open: **Why Bitcoin?** The answer says you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.
+
+![21.gifts home FAQ bitcoin open](images/root-faq-bitcoin-open.png)
+
+### Variant: faq-taxes-open
+
+The seventh question is open: **Is this regulated, and how do taxes work?** The answer says 21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation.
+
+![21.gifts home FAQ taxes open](images/root-faq-taxes-open.png)
+
+### Variant: faq-sat-open
+
+The eighth question is open: **What does ₿1 mean here?** The answer says that on 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.
+
+![21.gifts home FAQ sat open](images/root-faq-sat-open.png)
+
+### Variant: install-open
+
+The hero **Install app** button on iPhone opens the dialog **Add 21.gifts to your Home Screen**.
+
+![21.gifts home install](images/root-install-open.png)
 
 ### Variant: shops-table
 
@@ -134,7 +188,7 @@ The places response is an empty array and Table is selected. No locations publis
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; `locale` only after a language choice, when you open a language address such as `/de`, or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
 - **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -148,8 +202,8 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **Purpose:** Public foundation of the house — three convictions and Matthew 10:8.
 - **URL:** `/about` — public marketing page (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, kicker **About**, heading **Three convictions**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is a duty with 1 John 3:18; Direct, with no middleman; Bitcoin is the most effective money) and **Open the living room** (`/welcome`). Visitor copy comes from the catalog.
-- **Actions:** Change language. Read the convictions. Open **Open the living room** (`/welcome`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), kicker **The idea**, heading **What 21.gifts stands for**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is part of faith with 1 John 3:18; Directly from person to person; Why Bitcoin?) and **Go to the forum** (`/welcome`). Visitor copy comes from the catalog.
+- **Actions:** Change language. Read the convictions. Open **Go to the forum** (`/welcome`). Header **Log in** goes to `/login`.
 - **Calls:** `AboutPage` inside `MarketingLayout`, `LanguageSwitcher`, `ButtonLink`.
 
 ### Variant: default
@@ -160,21 +214,21 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 ## Screen: /stats/[day]
 
-- **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), an **All stats** link to `/stats` (not a second back control), heading **Gifts on {day}**, a **UTC day** date input, then either the gift table (Time, Recipient, ₿, selected fiat code) with a FiatPicker **only when unsigned**, empty copy **No gifts recorded on this day.**, **Loading…**, or **Try again**. Signed-in visitors still see preferred-fiat amounts and cannot change the code here. Summary `{n} gift(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
+- **URL:** `/stats/YYYY-MM-DD` — public list of outbound donations that UTC day. Invalid dates 404.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), an **All stats** link to `/stats` (not a second back control), heading **Donations on {day}**, a **UTC day** date input, then either the donation table (Time, Recipient, ₿, selected fiat code) with a FiatPicker **only when unsigned**, empty copy **No donations recorded on this day.**, **Loading…**, or **Try again**. Signed-in visitors still see preferred-fiat amounts and cannot change the code here. Summary `{n} donation(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
 - **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
 - **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `FiatPicker`, `fetchGiftDay` (`GET /gifts?day=`).
 - **Auth:** None.
 
 ### Variant: default
 
-Loaded day with at least one gift row (recipient **alice**).
+Loaded day with at least one donation row (recipient **alice**).
 
-![21.gifts gifts on a day](images/stats-day.png)
+![21.gifts donations on a day](images/stats-day.png)
 
 ### Variant: empty
 
-No gifts that UTC day. Copy **No gifts recorded on this day.**
+No donations that UTC day. Copy **No donations recorded on this day.**
 
 ![21.gifts empty day](images/stats-day-empty.png)
 
@@ -192,9 +246,9 @@ Fetch failed. Button **Try again**.
 
 ## Screen: /stats
 
-- **URL:** `/stats` — public gift totals and a posts total (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Gifts**. When post stats load, a **Posts** total sits above the gift cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. A failed post fetch omits that block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, gifts, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No gifts recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the posts total and the gift charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **URL:** `/stats` — public donation totals and a posts total (no auth gate).
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. A failed post fetch omits that block and still shows the donation diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the posts total and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `LanguageSwitcher`.
 
 ### Variant: default
@@ -211,7 +265,7 @@ Inverted ranking fixture (June tall in ₿ / short in USD, July the reverse). **
 
 ### Variant: empty
 
-Zero gifts and zero posts. **Posts** shows 0 with no bars. KPI zeros and **No gifts recorded yet.**
+Zero donations and zero posts. **Posts** shows 0 with no bars. KPI zeros and **No donations recorded yet.**
 
 ![21.gifts stats empty](images/stats-empty.png)
 
@@ -223,7 +277,7 @@ Waiting on `GET /gifts/stats`. Copy **Loading…**
 
 ### Variant: error
 
-Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try again**.
+Fetch failed. Copy **Could not load donation stats. Please try again.** and **Try again**.
 
 ![21.gifts stats error](images/stats-error.png)
 
@@ -342,7 +396,7 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with a different account. Try again with the right one.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, `openInSystemBrowser`.
 
@@ -378,7 +432,7 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** (
 
 ### Variant: wrong-account
 
-GET `/me` 403 with the api wrong-account copy, or passkey finish with that same string. Alert **You signed in with the wrong account. Please try again with the correct account.** (`login.wrongAccount`) and **Try again**. Phone pictures also show the muted installed-iOS line. The leftover session is cleared so the visitor is not left signed in. **Try again** starts authenticate-first login.
+GET `/me` 403 with the api wrong-account copy, or passkey finish with that same api string. Alert **You signed in with a different account. Try again with the right one.** (`login.wrongAccount`) and **Try again**. Phone pictures also show the muted installed-iOS line. The leftover session is cleared so the visitor is not left signed in. **Try again** starts authenticate-first login.
 
 ![21.gifts login wrong-account](images/login-wrong-account.png)
 
@@ -427,13 +481,13 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Send help**, short lead about opening **Show reactions** then sending Bitcoin on a payable reaction, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark the localized public home when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Help someone**, short lead about writing a reaction under a post with an amount and paying from your wallet, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
 - **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`.
 
 ### Variant: default
 
-Heading **Send help**, explainer lead, **Open the forum**.
+Heading **Help someone**, explainer lead, **Open the forum**.
 
 ![21.gifts donate](images/donate.png)
 
@@ -546,17 +600,17 @@ When POST /me/name answers 500, the form shows **Could not save your name** (`na
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
 
+### Variant: invalid
+
+Entering **!** shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
+
+![21.gifts username invalid](images/setup-username-invalid.png)
+
 ### Variant: empty
 
 Blur or Continue on an empty username shows **Enter a username** (`setup.usernameEmpty`). **Continue** stays disabled until the draft changes.
 
 ![21.gifts username setup empty](images/setup-username-empty.png)
-
-### Variant: invalid
-
-A username outside the handle rule, including the same sentence from the server shows **Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.** (`setup.usernameInvalid`). **Continue** stays disabled until the draft changes.
-
-![21.gifts username setup invalid](images/setup-username-invalid.png)
 
 ### Variant: taken
 
@@ -2124,6 +2178,18 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
+### Variant: overlay-username-invalid
+
+Entering **.alice** in the dialog **Add your 21.gifts name** immediately shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
+
+![21.gifts welcome overlay username invalid](images/welcome-overlay-username-invalid.png)
+
+### Variant: install-open
+
+On iPhone, **Menu** then **Install app** opens the dialog **Add 21.gifts to your Home Screen**.
+
+![21.gifts welcome install](images/welcome-install-open.png)
+
 ### Variant: shop-edit-account-required
 
 The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
@@ -3626,9 +3692,9 @@ A moderator session. **Add an account** is open on the Cafe Luna note. The live 
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
-- **What the user sees:** Chrome is the page-frame header (wordmark + menu/language inside the rounded sheet). Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and one CTA **Contact 21.gifts** (`/contact`). There is no second back in the document. Unsigned (no session): one top-left arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, wordmark → `/` (the wordmark is not that control), LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
+- **What the user sees:** Chrome is the page-frame header (wordmark + menu/language inside the rounded sheet). Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and one CTA **Contact 21.gifts** (`/contact`). There is no second back in the document. Unsigned (no session): one top-left arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, wordmark → the localized public home `/{locale}` (the wordmark is not that control), LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
 - **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Read the rules. Open contact. There is no second forum CTA. Dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
-- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `IntroduceYourselfOverlay`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
+- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `HomeWordmark`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `IntroduceYourselfOverlay`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
 - **Auth:** None required to view; chrome depends on hydrated session.
 
 ### Variant: default
@@ -4378,6 +4444,12 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
 
+### Variant: overlay-username-invalid
+
+Entering **.alice** in the **Add your 21.gifts name** dialog on an open member note immediately shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit** under the field, and **Continue** stays disabled.
+
+![21.gifts member overlay username invalid](images/members-overlay-username-invalid.png)
+
 ### Variant: shop-edit-account-required
 
 The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
@@ -4900,6 +4972,12 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 Notifications section with `role="alert"` after clicking On on the This device pill when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
+### Variant: location-edit
+
+**Edit location** opens the field with the placeholder **City or country**.
+
+![21.gifts profile location edit](images/profile-location-edit.png)
 
 ### Variant: name-empty
 

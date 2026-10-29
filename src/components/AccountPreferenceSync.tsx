@@ -7,7 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { setAccountFiat, setAccountLocale } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
-import { LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { readLocaleCookie, writeLocaleCookie } from '@/lib/locale-cookie';
 import { fiatGeneration, localeGeneration } from '@/lib/preference-generation';
 import { defaultFiatForLocale, FIAT_CODES, FIAT_COOKIE, type FiatCode } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -23,16 +23,6 @@ const syncedAccountIds = new Set<string>();
 function readPreferenceCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match?.[1];
-}
-
-/**
- * Writes the locale cookie using the shared preference attributes.
- *
- * @param locale - Locale to persist.
- */
-function writeLocaleCookie(locale: Locale): void {
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
 }
 
 /**
@@ -150,7 +140,7 @@ export function AccountPreferenceSync(): null {
             }
             if (typeof updated.locale === 'string') {
               effectiveLocale = updated.locale;
-              if (readPreferenceCookie(LOCALE_COOKIE) !== updated.locale) {
+              if (readLocaleCookie() !== updated.locale) {
                 writeLocaleCookie(updated.locale);
                 router.refresh();
               }
@@ -161,10 +151,7 @@ export function AccountPreferenceSync(): null {
         }
       } else if (typeof account.locale === 'string') {
         effectiveLocale = account.locale;
-        if (
-          localeGeneration() === localeAtRunStart &&
-          readPreferenceCookie(LOCALE_COOKIE) !== account.locale
-        ) {
+        if (localeGeneration() === localeAtRunStart && readLocaleCookie() !== account.locale) {
           writeLocaleCookie(account.locale);
           router.refresh();
         }
