@@ -743,6 +743,30 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).not.toContain('8 days · Due');
   });
 
+  it('lists a later waiting day of a long plan with its waiting line', async () => {
+    const plan = longPlan({ status: (day) => (day < 3 ? 'due' : 'scheduled') });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.dayIndex > 0 && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
+  it('names a month waiting when every share of it waits', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({ ...plan, repayments: plan.repayments.map((row) => ({ ...row, waiting: true })) });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('8 days · Waiting');
+  });
+
   it('prices a long bitcoin plan in bitcoin across two months', async () => {
     ledger(longBitcoinPlan());
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);

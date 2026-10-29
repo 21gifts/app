@@ -266,7 +266,7 @@ function DayGroups({
                       row.waiting === true ? 'text-app-muted' : statusClass(row.status)
                     }`}
                   >
-                    {t(row.waiting === true ? 'forum.creditStatusWaiting' : statusKey(row.status))}
+                    {t(lineStatusKey(row))}
                   </span>
                 </span>
               </li>
@@ -473,20 +473,12 @@ function rowsStatus(rows: readonly RepaymentLine[]): RepaymentLine['status'] {
   return 'scheduled';
 }
 
-function sharedStatus(rows: readonly RepaymentLine[]): RepaymentLine['status'] | null {
-  const first = rows[0]!;
-  if (rows.every((row) => row.status === first.status)) {
-    return first.status;
-  }
-  return null;
-}
-
 function monthCountLabel(count: number, rows: readonly RepaymentLine[], t: Translate): string {
-  const status = sharedStatus(rows);
-  if (status === null) {
+  const key = lineStatusKey(rows[0]!);
+  if (!rows.every((row) => lineStatusKey(row) === key)) {
     return t('forum.creditDaysCount', { count });
   }
-  return t('forum.creditMonthDays', { count, status: t(statusKey(status)) });
+  return t('forum.creditMonthDays', { count, status: t(key) });
 }
 
 function uniformDay(groups: readonly DayGroup[], fiat: FiatCode | null): DayGroup | null {
@@ -510,7 +502,9 @@ function dayTotalKey(rows: readonly RepaymentLine[], fiat: FiatCode | null): num
 function daySignature(rows: readonly RepaymentLine[], fiat: FiatCode | null): string {
   return rows
     .map((row) =>
-      fiat !== null ? `${row.accountId}\u0000${row.amount}` : `${row.accountId}\u0000${row.sats}`,
+      fiat !== null
+        ? `${row.accountId}\u0000${row.amount}\u0000${row.waiting === true}`
+        : `${row.accountId}\u0000${row.sats}\u0000${row.waiting === true}`,
     )
     .sort()
     .join('\u0001');
@@ -680,6 +674,10 @@ function giverLabel(name: string, username: string | null, accountId: string): s
     return `@${username}`;
   }
   return accountId.slice(0, 8);
+}
+
+function lineStatusKey(row: RepaymentLine): MessageKey {
+  return row.waiting === true ? 'forum.creditStatusWaiting' : statusKey(row.status);
 }
 
 function statusKey(status: RepaymentLine['status']): MessageKey {
