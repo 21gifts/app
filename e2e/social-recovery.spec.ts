@@ -899,7 +899,7 @@ test.describe('shares kept for others', () => {
     await expect(page.getByRole('listitem')).toHaveCount(2);
   });
 
-  test('Function: useHeldShares — the own share and a second share of one setup are refused', async ({
+  test("Function: useHeldShares — a share of the member's own account is refused and nothing is kept", async ({
     page,
   }) => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE.replace('acc_owner:bob', 'acc_e2e:ada') });
@@ -1043,6 +1043,20 @@ test.describe('the Social Recovery prompt on the forum home', () => {
     await expect(
       page.getByRole('dialog', { name: 'Social Recovery for your grant' }),
     ).toBeVisible();
+  });
+
+  test('Write an introduction opens the writer, and the Social Recovery prompt does not cover it', async ({
+    page,
+  }) => {
+    await signInOwner(page, { hasPosted: false, socialRecoverySetUp: false, funding: ADMITTED });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page
+      .getByRole('dialog', { name: 'Introduce yourself' })
+      .getByRole('button', { name: 'Write an introduction' })
+      .click();
+    await expect(page.getByLabel('Your message')).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
   test('no Social Recovery prompt once it is set up, or without a grant', async ({ page }) => {

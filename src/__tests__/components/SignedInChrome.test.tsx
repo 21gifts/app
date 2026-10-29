@@ -1158,6 +1158,18 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
   });
 
+  it('keeps the Social Recovery prompt off the writer that Write an introduction opens', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
+    const first = renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    first.unmount();
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
   it('closes the Social Recovery prompt for this mount, and the next mount shows it again', () => {
     welcomeAccount({ funding: grant('trial'), socialRecoverySetUp: false });
     const first = renderWithLocale(<SignedInChrome />);

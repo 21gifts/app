@@ -3660,7 +3660,7 @@ Named member with living-room rules agreed and `hasPosted` false. After login on
 
 Admitted grant member who has posted and has no Social Recovery yet (`socialRecoverySetUp` false). On `/welcome`, the only screen that shows it, `SocialRecoveryPromptOverlay` dialog **Social Recovery for your grant** with its body and **Secure my account**. Close (X) is icon-only.
 
-- **Actions:** Close dismisses it for this visit; it shows again on the next visit while Social Recovery is missing. **Secure my account** (`Button` `type="button"` `size="lg"`) closes it and opens `/settings/social-recovery` without a page load. When **Introduce yourself** also applies, that dialog comes first, and this one shows once it is closed.
+- **Actions:** Close dismisses it for this visit; it shows again on the next visit while Social Recovery is missing. **Secure my account** (`Button` `type="button"` `size="lg"`) closes it and opens `/settings/social-recovery` without a page load. When **Introduce yourself** also applies, that dialog comes first, and this one shows once its Close closes it. **Write an introduction** opens the writer instead, and this one waits for the next visit, so it never covers the writer.
 
 ![21.gifts welcome overlay Social Recovery](images/welcome-overlay-social-recovery.png)
 
