@@ -114,6 +114,9 @@ export function parseShareCode(text: string): ShareCode | null {
  * leaves the phone.
  *
  * @param words - The 12-word recovery phrase.
+ * @param random - Source of random bytes for {@link splitRecoverySecret}; the
+ *   browser's cryptographic source by default. Tests and the Playwright
+ *   screenshot fixture pass a fixed one.
  * @returns The set's identifier and shares 1, 2, and 3 (member index 0, 1, 2).
  * @throws Error from `mnemonicToEntropy` for words that are not a valid
  *   phrase; {@link Slip39Error} `length` for a phrase of more than 12 words;
@@ -121,9 +124,10 @@ export function parseShareCode(text: string): ShareCode | null {
  */
 export async function splitPhrase(
   words: string,
+  random?: (length: number) => Uint8Array<ArrayBuffer>,
 ): Promise<{ identifier: number; shares: readonly [string, string, string] }> {
   const entropy = Uint8Array.from(mnemonicToEntropy(words, wordlist));
-  const split = await splitRecoverySecret(entropy);
+  const split = await splitRecoverySecret(entropy, random);
   for (const [first, second] of SHARE_PAIRS) {
     const secret = await combineShares([split.shares[first], split.shares[second]]);
     if (secret.length !== entropy.length || secret.some((byte, index) => byte !== entropy[index])) {

@@ -1488,6 +1488,72 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings/social-recovery:default",
+    "label": "/settings/social-recovery default",
+    "visual": "screen-settings-social-recovery",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:intro-renew",
+    "label": "/settings/social-recovery intro-renew",
+    "visual": "state-social-recovery-intro-renew",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:checking",
+    "label": "/settings/social-recovery checking",
+    "visual": "state-social-recovery-checking",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:share-1",
+    "label": "/settings/social-recovery share-1",
+    "visual": "state-social-recovery-share-1",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:share-2",
+    "label": "/settings/social-recovery share-2",
+    "visual": "state-social-recovery-share-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:saving",
+    "label": "/settings/social-recovery saving",
+    "visual": "state-social-recovery-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:done",
+    "label": "/settings/social-recovery done",
+    "visual": "state-social-recovery-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-mismatch",
+    "label": "/settings/social-recovery wallet-mismatch",
+    "visual": "state-social-recovery-wallet-mismatch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-error",
+    "label": "/settings/social-recovery wallet-error",
+    "visual": "state-social-recovery-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:save-error",
+    "label": "/settings/social-recovery save-error",
+    "visual": "state-social-recovery-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-changed",
+    "label": "/settings/social-recovery wallet-changed",
+    "visual": "state-social-recovery-wallet-changed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",

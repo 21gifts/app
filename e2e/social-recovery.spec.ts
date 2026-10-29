@@ -390,16 +390,25 @@ async function openLoginCard(page: Page): Promise<void> {
 }
 
 /**
- * Opens `/settings` signed in, where social recovery is set up and kept
- * shares are reached, and checks its Wallet section.
+ * Opens **Secure my account** signed in with a verified wallet, on a
+ * screenshot pin that splits the fixture words, and returns the QR of the
+ * person the pin shows.
  *
  * @param page - The page.
+ * @param pin - `sr-share-1` or `sr-share-2`.
+ * @returns The QR image of that person's code.
  */
-async function openSettings(page: Page): Promise<void> {
-  await signInMember(page, 'cred-seed');
-  await page.goto('/settings');
-  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Wallet' })).toBeVisible();
+async function openPinnedShare(
+  page: Page,
+  pin: 'sr-share-1' | 'sr-share-2',
+): Promise<ReturnType<Page['getByRole']>> {
+  await signInOwner(page, { sparkPubkey: OWNER_KEY, sparkWalletVerified: true });
+  await page.goto(`/settings/social-recovery?visual=${pin}`);
+  const person = pin === 'sr-share-1' ? 1 : 2;
+  await expect(page.getByRole('heading', { level: 2, name: `Person ${person}` })).toBeVisible();
+  const qr = page.getByRole('img', { name: `Code for person ${person}` });
+  await expect(qr.locator('svg')).toBeVisible();
+  return qr;
 }
 
 /**
@@ -471,22 +480,26 @@ test.describe('social recovery libraries', () => {
     await openLoginCard(page);
   });
 
-  test('Function: splitRecoverySecret — settings, where recovery is set up, show the wallet', async ({
+  test('Function: splitRecoverySecret — the setup shows the code of person 1 from a split of the words', async ({
     page,
   }) => {
-    await openSettings(page);
+    await openPinnedShare(page, 'sr-share-1');
   });
 
-  test('Function: splitPhrase — settings, where recovery is set up, show the wallet', async ({
+  test('Function: splitPhrase — Start again with new codes splits the same words into a new set', async ({
     page,
   }) => {
-    await openSettings(page);
+    const qr = await openPinnedShare(page, 'sr-share-1');
+    const before = await qr.innerHTML();
+    await page.getByRole('button', { name: 'Start again with new codes' }).click();
+    await expect.poll(() => qr.innerHTML()).not.toBe(before);
+    await expect(page.getByRole('heading', { level: 2, name: 'Person 1' })).toBeVisible();
   });
 
-  test('Function: encodeShareCode — settings, where recovery is set up, show the wallet', async ({
+  test('Function: encodeShareCode — the setup shows the code of person 2 as a QR', async ({
     page,
   }) => {
-    await openSettings(page);
+    await openPinnedShare(page, 'sr-share-2');
   });
 
   test('Function: loadHeldShares — a kept share is listed, and stays in this browser after log out', async ({
@@ -617,6 +630,9 @@ test.describe('social recovery libraries', () => {
       .toEqual(Array.from(createHash('sha256').update('21gifts-nostr-v1').digest()));
   });
 });
+
+/** Ada's verified wallet key. */
+const OWNER_KEY = `02${'e'.repeat(64)}`;
 
 /** Ada's owner account as `GET /me` answers it, with a recovery passkey. */
 const OWNER = {
@@ -982,6 +998,228 @@ test.describe('shares kept for others', () => {
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'No camera found. Use a phone with a camera to scan the code.',
     );
+  });
+});
+
+test.describe('Secure my account', () => {
+  /** Ada with a verified wallet and no Social Recovery yet. */
+  const VERIFIED = {
+    sparkPubkey: OWNER_KEY,
+    sparkWalletVerified: true,
+    socialRecoverySetUp: false,
+  };
+
+  /**
+   * Answers `PUT /me/recovery-share` with the given statuses in turn (the
+   * last one repeats); a 200 answers Ada's account set up.
+   *
+   * @param page - The page.
+   * @param statuses - HTTP status of each answer.
+   * @returns The requests received.
+   */
+  async function answerShareUpload(
+    page: Page,
+    statuses: readonly number[],
+  ): Promise<Array<{ authorization: string | undefined; body: unknown }>> {
+    const received: Array<{ authorization: string | undefined; body: unknown }> = [];
+    await page.route(/\/me\/recovery-share$/, async (route) => {
+      const request = route.request();
+      received.push({
+        authorization: request.headers()['authorization'],
+        body: request.postDataJSON(),
+      });
+      const status = statuses[Math.min(received.length - 1, statuses.length - 1)]!;
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          status === 200
+            ? { ...OWNER, ...VERIFIED, socialRecoverySetUp: true }
+            : { error: status === 409 ? 'Wallet changed' : 'Social recovery is unavailable' },
+        ),
+      });
+    });
+    return received;
+  }
+
+  test('Function: SocialRecoveryPage — /settings/social-recovery explains the setup before anything is split', async ({
+    page,
+  }) => {
+    await signInOwner(page, VERIFIED);
+    await page.goto('/settings/social-recovery');
+    await expect(page.getByRole('heading', { level: 1, name: 'Secure my account' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Both people together can take over your account and your wallet at once, without you. Only choose people you trust with that.',
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        'Both need their own 21.gifts account. They keep their part in their app while signed in.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText(/^A new setup does not cancel/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect(page.getByRole('img')).toHaveCount(0);
+  });
+
+  test('Function: SocialRecoveryScreen — Secure my account opens from the settings, and the arrow returns there', async ({
+    page,
+  }) => {
+    await signInOwner(page, { ...VERIFIED, socialRecoverySetUp: true });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
+    await page.goto('/settings');
+    await page.locator('#social-recovery').getByRole('link', { name: 'Secure my account' }).click();
+    await expect(page).toHaveURL(/\/settings\/social-recovery$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Secure my account' })).toBeVisible();
+    await expect(page.getByText(/^A new setup does not cancel the parts/)).toBeVisible();
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.locator('#social-recovery')).toBeVisible();
+  });
+
+  test('Function: useSocialRecoverySetup — Continue without an open wallet says so, and Try again checks again', async ({
+    page,
+  }) => {
+    await signInOwner(page, VERIFIED);
+    const uploads = await answerShareUpload(page, [200]);
+    await page.goto('/settings/social-recovery');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('Your wallet could not be opened.');
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('Your wallet could not be opened.');
+    await expect(page.getByRole('img')).toHaveCount(0);
+    expect(uploads).toHaveLength(0);
+  });
+
+  test('the codes of person 1 and person 2 differ, and the arrow steps back to the intro', async ({
+    page,
+  }) => {
+    const first = await openPinnedShare(page, 'sr-share-1');
+    await expect(
+      page.getByText(
+        'Ask person 1 to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
+      ),
+    ).toBeVisible();
+    const firstCode = await first.innerHTML();
+    await page.getByRole('button', { name: 'Person 1 has scanned it' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Person 2' })).toBeVisible();
+    await expect(page.getByText('Person 2 must be someone other than person 1.')).toBeVisible();
+    const second = page.getByRole('img', { name: 'Code for person 2' });
+    expect(await second.innerHTML()).not.toBe(firstCode);
+    await page.getByRole('link', { name: 'Back to the forum' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Person 1' })).toBeVisible();
+    await page.getByRole('link', { name: 'Back to the forum' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect(page.getByRole('img')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/settings\/social-recovery\?visual=sr-share-1$/);
+  });
+
+  test('after person 2 the 21.gifts share is stored with the session, and the settings say it is set up', async ({
+    page,
+  }) => {
+    let stored = false;
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...OWNER, ...VERIFIED, socialRecoverySetUp: stored }),
+      });
+    });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
+    const uploads = await answerShareUpload(page, [200]);
+    page.on('requestfinished', (request) => {
+      if (request.method() === 'PUT' && request.url().endsWith('/me/recovery-share')) {
+        stored = true;
+      }
+    });
+    await page.goto('/settings/social-recovery?visual=sr-share-2');
+    await page.getByRole('button', { name: 'Person 2 has scanned it' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is secured' }),
+    ).toBeVisible();
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0]!.authorization).toBe('Bearer sess-e2e');
+    const body = uploads[0]!.body as { sparkPubkey: string; share: string };
+    expect(Object.keys(body).sort()).toEqual(['share', 'sparkPubkey']);
+    expect(body.sparkPubkey).toBe(OWNER_KEY);
+    const words = body.share.split(' ');
+    expect(words).toHaveLength(20);
+    expect(words.slice(2, 4)).toEqual(['academic', 'always']);
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(
+      page.locator('#social-recovery').getByText('Set up for this wallet.'),
+    ).toBeVisible();
+  });
+
+  test('a failed upload says so, and Try again stores the same share', async ({ page }) => {
+    await signInOwner(page, VERIFIED);
+    const uploads = await answerShareUpload(page, [503, 200]);
+    await page.goto('/settings/social-recovery?visual=sr-share-2');
+    await page.getByRole('button', { name: 'Person 2 has scanned it' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The 21.gifts backup could not be saved.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is secured' }),
+    ).toBeVisible();
+    expect(uploads).toHaveLength(2);
+    expect(uploads[1]!.body).toEqual(uploads[0]!.body);
+  });
+
+  test('a changed wallet stops the upload, and Try again returns to the intro', async ({
+    page,
+  }) => {
+    await signInOwner(page, VERIFIED);
+    const uploads = await answerShareUpload(page, [409]);
+    await page.goto('/settings/social-recovery?visual=sr-share-2');
+    await page.getByRole('button', { name: 'Person 2 has scanned it' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet changed during setup. Start again.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    expect(uploads).toHaveLength(1);
+  });
+
+  test('the pinned save error uploads the fixture share on Try again', async ({ page }) => {
+    await signInOwner(page, VERIFIED);
+    const uploads = await answerShareUpload(page, [200]);
+    await page.goto('/settings/social-recovery?visual=sr-save-error');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The 21.gifts backup could not be saved.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is secured' }),
+    ).toBeVisible();
+    expect(uploads).toHaveLength(1);
+  });
+
+  test('words that do not open this account’s wallet stop the setup without Try again', async ({
+    page,
+  }) => {
+    await signInOwner(page, VERIFIED);
+    await page.goto('/settings/social-recovery?visual=sr-mismatch');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These 12 words do not open the wallet of this account. Setup stopped.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+  });
+
+  test('the wallet check shows in place of Continue', async ({ page }) => {
+    await signInOwner(page, VERIFIED);
+    await page.goto('/settings/social-recovery?visual=sr-checking');
+    await expect(
+      page.getByRole('status').filter({ hasText: 'Checking your wallet…' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
   });
 });
 

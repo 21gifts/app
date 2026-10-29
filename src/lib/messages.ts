@@ -690,6 +690,36 @@ const en = {
   'socialRecovery.statusNoWallet': 'Available once your wallet is connected.',
   'socialRecovery.secure': 'Secure my account',
   'socialRecovery.heldLink': 'Shares I keep for others',
+  'secure.title': 'Secure my account',
+  'secure.introBody':
+    'Choose two people you trust. Each of them gets one part of your 12 words as a code. Any two parts together restore your account on a new phone. 21.gifts keeps a third part as a backup.',
+  'secure.introWarning':
+    'Both people together can take over your account and your wallet at once, without you. Only choose people you trust with that.',
+  'secure.introAccounts':
+    'Both need their own 21.gifts account. They keep their part in their app while signed in.',
+  'secure.introRemote':
+    'You can also do this in a video call. Never show both codes in the same call, and do not record it.',
+  'secure.introRenew':
+    'A new setup does not cancel the parts you gave out before: any two old parts still restore your account. Ask people you no longer choose to delete their old part.',
+  'secure.start': 'Continue',
+  'secure.checking': 'Checking your wallet…',
+  'secure.walletMismatch': 'These 12 words do not open the wallet of this account. Setup stopped.',
+  'secure.walletError': 'Your wallet could not be opened.',
+  'secure.shareHeading': 'Person {n}',
+  'secure.shareBody':
+    'Ask person {n} to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
+  'secure.shareDifferent': 'Person 2 must be someone other than person 1.',
+  'secure.shareQr': 'Code for person {n}',
+  'secure.scanned': 'Person {n} has scanned it',
+  'secure.refusedHint': 'Their app refused the code?',
+  'secure.resplit': 'Start again with new codes',
+  'secure.saving': 'Saving the 21.gifts backup…',
+  'secure.saveError': 'The 21.gifts backup could not be saved.',
+  'secure.walletChanged': 'Your wallet changed during setup. Start again.',
+  'secure.doneTitle': 'Your account is secured',
+  'secure.doneBody':
+    'Two people and 21.gifts now each hold one part. Any two parts restore your account.',
+  'secure.done': 'Done',
   'socialRecoveryPrompt.title': 'Social Recovery for your grant',
   'socialRecoveryPrompt.body':
     'Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.',
@@ -2174,6 +2204,37 @@ const de = {
   'socialRecovery.statusNoWallet': 'Verfügbar, sobald deine Wallet verbunden ist.',
   'socialRecovery.secure': 'Mein Konto absichern',
   'socialRecovery.heldLink': 'Anteile, die ich für andere aufbewahre',
+  'secure.title': 'Mein Konto absichern',
+  'secure.introBody':
+    'Wähle zwei Menschen, denen du vertraust. Jede Person bekommt einen Teil deiner 12 Wörter als Code. Zwei Teile zusammen stellen dein Konto auf einem neuen Telefon wieder her. 21.gifts bewahrt einen dritten Teil als Sicherung auf.',
+  'secure.introWarning':
+    'Beide Personen zusammen können dein Konto und deine Wallet sofort übernehmen, auch ohne dich. Wähle nur Menschen, denen du das anvertraust.',
+  'secure.introAccounts':
+    'Beide brauchen ein eigenes 21.gifts-Konto. Sie bewahren ihren Teil angemeldet in ihrer App auf.',
+  'secure.introRemote':
+    'Das geht auch in einem Videoanruf. Zeige nie beide Codes im selben Anruf und nimm den Anruf nicht auf.',
+  'secure.introRenew':
+    'Eine neue Einrichtung macht frühere Teile nicht ungültig: Zwei alte Teile stellen dein Konto weiterhin wieder her. Bitte Personen, die du nicht mehr wählst, ihren alten Teil zu löschen.',
+  'secure.start': 'Weiter',
+  'secure.checking': 'Deine Wallet wird geprüft…',
+  'secure.walletMismatch':
+    'Diese 12 Wörter öffnen nicht die Wallet dieses Kontos. Die Einrichtung wurde abgebrochen.',
+  'secure.walletError': 'Deine Wallet konnte nicht geöffnet werden.',
+  'secure.shareHeading': 'Person {n}',
+  'secure.shareBody':
+    'Bitte Person {n}, 21.gifts zu öffnen, in den Einstellungen „Anteile, die ich für andere aufbewahre“ zu wählen, auf „Anteil aufbewahren“ zu tippen und diesen Code zu scannen.',
+  'secure.shareDifferent': 'Person 2 muss eine andere Person als Person 1 sein.',
+  'secure.shareQr': 'Code für Person {n}',
+  'secure.scanned': 'Person {n} hat gescannt',
+  'secure.refusedHint': 'Ihre App hat den Code abgelehnt?',
+  'secure.resplit': 'Mit neuen Codes neu beginnen',
+  'secure.saving': 'Die 21.gifts-Sicherung wird gespeichert…',
+  'secure.saveError': 'Die 21.gifts-Sicherung konnte nicht gespeichert werden.',
+  'secure.walletChanged': 'Deine Wallet hat sich während der Einrichtung geändert. Beginne neu.',
+  'secure.doneTitle': 'Dein Konto ist abgesichert',
+  'secure.doneBody':
+    'Zwei Personen und 21.gifts halten jetzt je einen Teil. Zwei Teile zusammen stellen dein Konto wieder her.',
+  'secure.done': 'Fertig',
   'socialRecoveryPrompt.title': 'Social Recovery für dein Förderprogramm',
   'socialRecoveryPrompt.body':
     'Auszahlungen aus dem Förderprogramm brauchen Social Recovery. Wähle zwei Menschen, die dir helfen können, dein Konto wiederherzustellen, wenn du deinen Passkey verlierst.',
@@ -3688,6 +3749,37 @@ const es = {
   'socialRecovery.statusNoWallet': 'Disponible en cuanto tu wallet esté conectada.',
   'socialRecovery.secure': 'Proteger mi cuenta',
   'socialRecovery.heldLink': 'Partes que guardo para otros',
+  'secure.title': 'Proteger mi cuenta',
+  'secure.introBody':
+    'Elige a dos personas de tu confianza. Cada una recibe una parte de tus 12 palabras como código. Dos partes cualesquiera juntas restauran tu cuenta en un teléfono nuevo. 21.gifts guarda una tercera parte como respaldo.',
+  'secure.introWarning':
+    'Las dos personas juntas pueden apoderarse de tu cuenta y de tu wallet al instante, sin ti. Elige solo a personas a las que confiarías eso.',
+  'secure.introAccounts':
+    'Ambas necesitan su propia cuenta de 21.gifts. Guardan su parte en su app con la sesión iniciada.',
+  'secure.introRemote':
+    'También puedes hacerlo en una videollamada. Nunca muestres los dos códigos en la misma llamada y no la grabes.',
+  'secure.introRenew':
+    'Una nueva configuración no anula las partes que diste antes: dos partes antiguas cualesquiera siguen restaurando tu cuenta. Pide a las personas que ya no eliges que borren su parte antigua.',
+  'secure.start': 'Continuar',
+  'secure.checking': 'Comprobando tu wallet…',
+  'secure.walletMismatch':
+    'Estas 12 palabras no abren la wallet de esta cuenta. La configuración se detuvo.',
+  'secure.walletError': 'No se pudo abrir tu wallet.',
+  'secure.shareHeading': 'Persona {n}',
+  'secure.shareBody':
+    'Pide a la persona {n} que abra 21.gifts, elija «Partes que guardo para otros» en los ajustes, toque «Guardar una parte» y escanee este código.',
+  'secure.shareDifferent': 'La persona 2 debe ser alguien distinto de la persona 1.',
+  'secure.shareQr': 'Código para la persona {n}',
+  'secure.scanned': 'La persona {n} lo escaneó',
+  'secure.refusedHint': '¿Su app rechazó el código?',
+  'secure.resplit': 'Empezar de nuevo con códigos nuevos',
+  'secure.saving': 'Guardando el respaldo de 21.gifts…',
+  'secure.saveError': 'No se pudo guardar el respaldo de 21.gifts.',
+  'secure.walletChanged': 'Tu wallet cambió durante la configuración. Empieza de nuevo.',
+  'secure.doneTitle': 'Tu cuenta está protegida',
+  'secure.doneBody':
+    'Dos personas y 21.gifts guardan ahora una parte cada una. Dos partes cualesquiera restauran tu cuenta.',
+  'secure.done': 'Listo',
   'socialRecoveryPrompt.title': 'Social Recovery para tu beca',
   'socialRecoveryPrompt.body':
     'Los pagos de la beca requieren Social Recovery. Elige a dos personas que puedan ayudarte a restaurar tu cuenta si pierdes tu passkey.',
@@ -5183,6 +5275,37 @@ const fil = {
   'socialRecovery.statusNoWallet': 'Magagamit kapag nakakonekta na ang wallet mo.',
   'socialRecovery.secure': 'I-secure ang account ko',
   'socialRecovery.heldLink': 'Mga bahaging itinatabi ko para sa iba',
+  'secure.title': 'I-secure ang account ko',
+  'secure.introBody':
+    'Pumili ng dalawang taong pinagkakatiwalaan mo. Bawat isa sa kanila ay makakatanggap ng isang bahagi ng 12 salita mo bilang code. Alinmang dalawang bahagi na magkasama ay nagbabalik ng account mo sa bagong telepono. Nagtatabi ang 21.gifts ng ikatlong bahagi bilang backup.',
+  'secure.introWarning':
+    'Kayang kunin ng dalawang taong ito nang magkasama ang account at wallet mo kaagad, kahit wala ka. Pumili lang ng mga taong pagkakatiwalaan mo nito.',
+  'secure.introAccounts':
+    'Kailangan ng bawat isa sa kanila ang sariling 21.gifts account. Itinatabi nila ang bahagi nila sa app nila habang naka-log in.',
+  'secure.introRemote':
+    'Puwede mo rin itong gawin sa video call. Huwag kailanman ipakita ang dalawang code sa iisang tawag, at huwag itong i-record.',
+  'secure.introRenew':
+    'Hindi kinakansela ng bagong setup ang mga bahaging naibigay mo dati: naibabalik pa rin ng alinmang dalawang lumang bahagi ang account mo. Hilingin sa mga taong hindi mo na pinipili na burahin ang luma nilang bahagi.',
+  'secure.start': 'Magpatuloy',
+  'secure.checking': 'Tinitingnan ang wallet mo…',
+  'secure.walletMismatch':
+    'Hindi binubuksan ng 12 salitang ito ang wallet ng account na ito. Itinigil ang setup.',
+  'secure.walletError': 'Hindi mabuksan ang wallet mo.',
+  'secure.shareHeading': 'Tao {n}',
+  'secure.shareBody':
+    'Hilingin sa tao {n} na buksan ang 21.gifts, piliin ang “Mga bahaging itinatabi ko para sa iba” sa mga setting, i-tap ang “Magtabi ng bahagi”, at i-scan ang code na ito.',
+  'secure.shareDifferent': 'Dapat ibang tao ang tao 2 kaysa sa tao 1.',
+  'secure.shareQr': 'Code para sa tao {n}',
+  'secure.scanned': 'Na-scan na ito ng tao {n}',
+  'secure.refusedHint': 'Tinanggihan ng app nila ang code?',
+  'secure.resplit': 'Magsimula ulit gamit ang mga bagong code',
+  'secure.saving': 'Sine-save ang backup ng 21.gifts…',
+  'secure.saveError': 'Hindi ma-save ang backup ng 21.gifts.',
+  'secure.walletChanged': 'Nagbago ang wallet mo habang nagse-setup. Magsimula ulit.',
+  'secure.doneTitle': 'Naka-secure na ang account mo',
+  'secure.doneBody':
+    'May tig-iisang bahagi na ngayon ang dalawang tao at ang 21.gifts. Naibabalik ng alinmang dalawang bahagi ang account mo.',
+  'secure.done': 'Tapos na',
   'socialRecoveryPrompt.title': 'Social Recovery para sa grant mo',
   'socialRecoveryPrompt.body':
     'Kailangan ng Social Recovery para sa mga payout ng grant. Pumili ng dalawang taong makakatulong na maibalik ang account mo kapag nawala ang passkey mo.',

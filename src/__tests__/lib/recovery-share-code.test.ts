@@ -160,6 +160,20 @@ describe('splitPhrase', () => {
     await expect(phraseFromShareCodes(codes[1]!, codes[2]!)).resolves.toBe(PHRASE);
   });
 
+  it('splits with a given random source', async () => {
+    let next = 0;
+    const fixed = (length: number): Uint8Array<ArrayBuffer> =>
+      Uint8Array.from({ length }, () => {
+        const byte = (next * 37 + 11) & 0xff;
+        next += 1;
+        return byte;
+      });
+    await expect(splitPhrase(PHRASE, fixed)).resolves.toEqual({
+      identifier: 2864,
+      shares: SHARES,
+    });
+  });
+
   it('refuses the split when a pair does not give the same bytes back', async () => {
     vi.mocked(combineShares).mockResolvedValueOnce(new Uint8Array(16));
     await expect(splitPhrase(PHRASE)).rejects.toThrow('Recovery split check failed');

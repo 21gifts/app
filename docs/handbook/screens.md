@@ -1450,6 +1450,79 @@ After **Keep a share** on a device without a camera: **No camera found. Use a ph
 
 ![21.gifts keep a share without a camera](images/held-shares-camera-unavailable.png)
 
+## Screen: /settings/social-recovery
+
+- **URL:** `/settings/social-recovery` — **Secure my account**: the owner gives two people one Social Recovery share each, and 21.gifts keeps the third. Opened from **Secure my account** in the Social Recovery row of `/settings` or in the grant prompt on `/welcome`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Secure my account** on every step. **Intro:** **Choose two people you trust. Each of them gets one part of your 12 words as a code. Any two parts together restore your account on a new phone. 21.gifts keeps a third part as a backup.**, the warning **Both people together can take over your account and your wallet at once, without you. Only choose people you trust with that.** in the body colour, **Both need their own 21.gifts account. They keep their part in their app while signed in.**, and **You can also do this in a video call. Never show both codes in the same call, and do not record it.** When this wallet already has Social Recovery, the intro adds **A new setup does not cancel the parts you gave out before: any two old parts still restore your account. Ask people you no longer choose to delete their old part.** Then **Continue**, which turns into **Checking your wallet…** with a spinner while the open wallet is checked. **Person 1**, then **Person 2**: **Ask person {n} to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.** (person 2 adds **Person 2 must be someone other than person 1.**), that person's code as a QR (**Code for person {n}**, no logo, on the white plate), **Person {n} has scanned it**, and under **Their app refused the code?** the secondary **Start again with new codes**. After person 2, **Saving the 21.gifts backup…** with a spinner, then **Your account is secured**, **Two people and 21.gifts now each hold one part. Any two parts restore your account.**, and **Done**. An error replaces the step with its alert: **These 12 words do not open the wallet of this account. Setup stopped.** with nothing to press, or **Your wallet could not be opened.**, **The 21.gifts backup could not be saved.**, or **Your wallet changed during setup. Start again.**, each with **Try again**. The 12 words and the shares stay in this tab's memory; there is no passkey prompt, and only the 21.gifts share is sent.
+- **Actions:** **Continue** takes the 12 words of the open wallet from tab memory, checks that the open wallet is the account's verified wallet, splits the words into three shares, checks that every two of them give the words back, and shows person 1's code. **Person 1 has scanned it** shows person 2's code. **Person 2 has scanned it** stores the 21.gifts share (`PUT /me/recovery-share`) and shows the done step. **Start again with new codes** splits the same words again into a new set, for a person whose app refused the code (one phone keeps only one share of a setup), and shows person 1's new code. **Try again** checks the wallet again, uploads the same share again, or, after a changed wallet, returns to the intro. **Done** returns to `/settings`, where Social Recovery now says **Set up for this wallet.**, without a page load and without a second copy of `/settings` in the history. The top-left arrow steps from person 2 to person 1, and from person 1 to the intro, which drops the codes; on the intro, while checking or saving, on an error, and on the done step it returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `SocialRecoveryPage`, `SocialRecoveryScreen`, `useSocialRecoverySetup`, `peekSessionPhrase`, `ensureWalletConnected`, `splitPhrase`, `encodeShareCode`, `putRecoveryShare`, `returnToView`, `QrCode`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+Account with a verified wallet and no Social Recovery yet: the title, the four intro lines with the warning in the body colour, and **Continue**.
+
+![21.gifts secure my account](images/settings-social-recovery.png)
+
+### Variant: intro-renew
+
+Account whose wallet already has Social Recovery: the intro adds **A new setup does not cancel the parts you gave out before: any two old parts still restore your account. Ask people you no longer choose to delete their old part.** above **Continue**.
+
+![21.gifts secure my account again](images/social-recovery-intro-renew.png)
+
+### Variant: checking
+
+Pinned fixture (`?visual=sr-checking`, Playwright builds only): the intro while the open wallet is checked and its words are split. **Checking your wallet…** with a spinner stands where **Continue** was.
+
+![21.gifts secure my account checking the wallet](images/social-recovery-checking.png)
+
+### Variant: share-1
+
+Pinned fixture (`?visual=sr-share-1`, Playwright builds only): fixture words split with a fixed random source, not a live wallet. **Person 1**, what person 1 does, the QR **Code for person 1**, **Person 1 has scanned it**, and **Their app refused the code?** with **Start again with new codes**.
+
+![21.gifts secure my account code for person 1](images/social-recovery-share-1.png)
+
+### Variant: share-2
+
+Pinned fixture (`?visual=sr-share-2`, Playwright builds only): the step after **Person 1 has scanned it**. **Person 2**, what person 2 does, **Person 2 must be someone other than person 1.**, the QR **Code for person 2**, **Person 2 has scanned it**, and **Start again with new codes**.
+
+![21.gifts secure my account code for person 2](images/social-recovery-share-2.png)
+
+### Variant: saving
+
+After **Person 2 has scanned it** on the pinned person 2 step, while `PUT /me/recovery-share` has not answered: **Saving the 21.gifts backup…** with a spinner under the title; no code is shown any more.
+
+![21.gifts secure my account saving the backup](images/social-recovery-saving.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=sr-done`, Playwright builds only): the backup is stored. **Your account is secured**, **Two people and 21.gifts now each hold one part. Any two parts restore your account.**, and **Done**.
+
+![21.gifts account secured](images/social-recovery-done.png)
+
+### Variant: wallet-mismatch
+
+Pinned fixture (`?visual=sr-mismatch`, Playwright builds only): the open wallet is not the account's verified wallet. The alert **These 12 words do not open the wallet of this account. Setup stopped.** and nothing to press; the top-left arrow leaves.
+
+![21.gifts secure my account with another wallet](images/social-recovery-wallet-mismatch.png)
+
+### Variant: wallet-error
+
+After **Continue** in this build, which holds no open wallet: the alert **Your wallet could not be opened.** and **Try again**.
+
+![21.gifts secure my account wallet error](images/social-recovery-wallet-error.png)
+
+### Variant: save-error
+
+Pinned fixture (`?visual=sr-save-error`, Playwright builds only): the 21.gifts share could not be stored. The alert **The 21.gifts backup could not be saved.** and **Try again**, which uploads the same share again.
+
+![21.gifts secure my account save error](images/social-recovery-save-error.png)
+
+### Variant: wallet-changed
+
+After **Person 2 has scanned it** on the pinned person 2 step, when `PUT /me/recovery-share` answered 409 because the account's wallet changed: the alert **Your wallet changed during setup. Start again.** and **Try again**, which returns to the intro.
+
+![21.gifts secure my account wallet changed](images/social-recovery-wallet-changed.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.

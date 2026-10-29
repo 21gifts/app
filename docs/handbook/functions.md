@@ -620,7 +620,7 @@
 - **Purpose:** Leave a step for the view it was opened from (the till amount for `/pos`, a grant application for `/grants`, a decided application for the queue) without leaving that step, or a second copy of the view, in this tab's history. The top-left arrow and the browser back on the returned-to view then both continue from the view before it, or `/welcome`.
 - **Inputs:** The in-app path the step was opened from, and the client-side router (`useRouter()`, its `back` and `replace`).
 - **Returns / side effects:** When the current entry was pushed in this document on top of that path, calls `router.back()` once (a client-side step back, no document load). A second call for the same view before the browser has left this one (an effect that runs again) does nothing, so it neither steps back twice nor replaces under the step. Otherwise (a direct link, the first view after a document load, an arrival by the arrow or a browser step) calls `router.replace(path)`; `recordCurrentView` then steps back onto the view before when it is the same path. No network.
-- **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), and every in-app redirect that used `router.replace`: `OnboardingGate` (`/login` and the next onboarding step), `LogoutButton` (`/login`), `ViewProfileClaim` (the next onboarding step), `ForumLoader` (`/login`, `/setup/rules`), and `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen`, `ShopTable` (`/setup/rules`).
+- **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), `SocialRecoveryScreen` (**Done** back to `/settings`), and every in-app redirect that used `router.replace`: `OnboardingGate` (`/login` and the next onboarding step), `LogoutButton` (`/login`), `ViewProfileClaim` (the next onboarding step), `ForumLoader` (`/login`, `/setup/rules`), and `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen`, `ShopTable` (`/setup/rules`).
 
 ## Function: takeStepBack
 
@@ -2134,7 +2134,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`PaySheet` in `ForumBoard`, `ForumReplyPayPage`, `HabitComments`, `InboxScreen`) show no invoice QR and no address QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletOwnAddress` for the member's own-address QR for the top-up on `/loans/repay` or after **Top up your wallet** (`LoanRepayScreen`), also on a smartphone. `WalletScreenView` shows the member's own address QR in the `/wallet` Receive view, on every device. `HeldSharesScreen` shows a kept share's code (**Share code**, no logo) on `/settings/held-shares`, on every device; that code is not a payment QR.
+- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`PaySheet` in `ForumBoard`, `ForumReplyPayPage`, `HabitComments`, `InboxScreen`) show no invoice QR and no address QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletOwnAddress` for the member's own-address QR for the top-up on `/loans/repay` or after **Top up your wallet** (`LoanRepayScreen`), also on a smartphone. `WalletScreenView` shows the member's own address QR in the `/wallet` Receive view, on every device. `HeldSharesScreen` shows a kept share's code (**Share code**, no logo) on `/settings/held-shares`, and `SocialRecoveryScreen` the codes for person 1 and person 2 (**Code for person {n}**, no logo) on `/settings/social-recovery`, on every device; those codes are not payment QRs.
 
 ## Function: QrScanner
 
@@ -4434,7 +4434,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Read tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** String or `null`.
-- **Used by:** `connectWallet`, `listenForWalletPhrase`, `useWallet.retry`, `unlockWalletPhrase`, `useWalletPhrase.showPhrase`; re-exported from `useWalletPhrase`. Implemented in `tab-phrase`.
+- **Used by:** `connectWallet`, `listenForWalletPhrase`, `useWallet.retry`, `unlockWalletPhrase`, `useWalletPhrase.showPhrase`, `useSocialRecoverySetup` (the words split on **Secure my account**, without a passkey prompt); re-exported from `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: clearSessionPhrase
 
@@ -4502,9 +4502,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: splitPhrase
 
 - **Purpose:** Splits the owner's 12 words into the three shares of a new social recovery set, and checks before any share leaves the phone that each pair (shares 1 and 2, 1 and 3, 2 and 3) gives the same 16 bytes back.
-- **Inputs:** The 12-word recovery phrase from tab memory.
+- **Inputs:** The 12-word recovery phrase from tab memory, and optionally a random source for `splitRecoverySecret` (`crypto.getRandomValues` by default; tests and the Playwright screenshot fixture of `useSocialRecoverySetup` pass a fixed one).
 - **Returns / side effects:** `{ identifier, shares }` from `splitRecoverySecret`. Throws the BIP-39 error of `mnemonicToEntropy` for words that are not a valid phrase, `Slip39Error` `length` for a phrase longer than 12 words, and `Recovery split check failed` when a pair does not give the bytes back. The words and bytes stay in memory.
-- **Used by:** `useSocialRecoverySetup` on `/settings/social-recovery` (also for a new split when a holder already keeps a share of the same identifier).
+- **Used by:** `useSocialRecoverySetup` on `/settings/social-recovery`, for **Continue** and for **Start again with new codes** (a new set when a holder's app refused the code because that phone already keeps a share of the same setup).
 
 ## Function: phraseFromShareCodes
 
@@ -4856,7 +4856,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Makes sure the wallet is open from the tab phrase and returns its identity public key. Reuses a ready connection and waits for one in flight; otherwise calls `connectWallet`, also while the wallet is at `error` between automatic retries, which that call supersedes.
 - **Inputs:** Optional `WalletSdkLoader`.
 - **Returns / side effects:** The identity public key. Throws `wallet-connect` without a key or a tab phrase, or when the connection fails.
-- **Used by:** `runWalletSetup`.
+- **Used by:** `runWalletSetup`, `receiveWalletSparkAddress`, and `useSocialRecoverySetup` (**Secure my account** checks that the open wallet is the account's verified wallet).
 
 ## Function: appHost
 
@@ -5997,6 +5997,27 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** `account.id` from `useAuthStore`; uses `loadHeldShares`, `keepHeldShare`, `deleteHeldShare`, and `parseShareCode`.
 - **Returns / side effects:** `{ shares, view, notice, confirmDelete, scan, onScanResult, showQr, askDelete, remove, cancel, back }`. `shares` are newest first. `view` is `list`, `scan`, or `{ qr: share }`. `scan()` clears the notice and a pending confirm and opens the camera. `onScanResult(text)` returns to the list: a payload that does not read gives the notice `invalid`; otherwise it keeps the share with the time now and gives `stored` with the owner's username, or the refusal `own`, `duplicate` (a share of that owner and set under any holder key in this browser), or `storage`, also with the username. `showQr(share)` opens its code. `askDelete(share)` sets `confirmDelete` to its payload, `cancel()` clears it, and `remove(share)` deletes it, reloads the list, and gives the notice `storage` when the share is still there. `back()` returns `true` after stepping from the camera or a code to the list, and `false` on the list. Without an account the list is empty and `scan`, `onScanResult`, and `remove` do nothing.
 - **Used by:** `HeldSharesScreen`.
+
+## Function: SocialRecoveryPage
+
+- **Purpose:** Next.js page for `/settings/social-recovery`, **Secure my account**: the owner gives two people a Social Recovery share each and 21.gifts keeps the third. Opened from the Social Recovery row on `/settings` and from the grant prompt on `/welcome`.
+- **Inputs:** None.
+- **Returns / side effects:** Fill `AppShell` with `ProfileChromeLeft` and `SignedInChrome`, `OnboardingGate screen="profile"` (name, username, and rules agreement, like `/settings`), then `SocialRecoveryScreen`.
+- **Used by:** Route `/settings/social-recovery`.
+
+## Function: SocialRecoveryScreen
+
+- **Purpose:** Body of `/settings/social-recovery`, the owner side of Social Recovery: the steps of `useSocialRecoverySetup` under one page title.
+- **Inputs:** `useSocialRecoverySetup()`, the signed-in account from `useAuthStore` (`socialRecoverySetUp` for the renew note), and the client-side router.
+- **Returns / side effects:** `null` before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Secure my account** (`secure.title`) and one step. **Intro**: the muted `secure.introBody`, the warning `secure.introWarning` in `font-medium text-app-fg`, `secure.introAccounts`, `secure.introRemote`, and `secure.introRenew` only when `socialRecoverySetUp` is true, then a primary `Button size="lg"` **Continue** (`secure.start`); while checking, a `role="status"` line with a spinner, **Checking your wallet…** (`secure.checking`), stands in its place. **Person 1** / **Person 2**: **h2** `secure.shareHeading`, `secure.shareBody`, on person 2 also `secure.shareDifferent`, the `QrCode` of that person's payload labelled `secure.shareQr` (no logo), a primary `Button size="lg"` **Person {n} has scanned it** (`secure.scanned`), and under the muted `secure.refusedHint` a secondary `Button size="lg"` **Start again with new codes** (`secure.resplit`). **Saving**: the status line **Saving the 21.gifts backup…** (`secure.saving`). **Done**: **h2** `secure.doneTitle`, `secure.doneBody`, and a primary `Button size="lg"` **Done** (`secure.done`) that calls `returnToView('/settings', router)`. An error replaces the step with `p[role=alert]` (`secure.walletMismatch`, `secure.walletError`, `secure.saveError`, or `secure.walletChanged`) and, except for the mismatch, **Try again** (`login.retry`) calling `retry`. The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft onBackClick`) runs `back`: person 2 to person 1, person 1 to the intro, otherwise it leaves.
+- **Used by:** `SocialRecoveryPage`.
+
+## Function: useSocialRecoverySetup
+
+- **Purpose:** State and actions of **Secure my account** for the signed-in owner. The 12 words and the shares live only in this component's memory and are dropped when the page is left; only 21.gifts' share reaches the api. There is no passkey prompt: the words come from the open wallet in tab memory.
+- **Inputs:** `peekSessionPhrase`, `ensureWalletConnected`, and the session and account from `useAuthStore` (`id`, `username`, `sparkPubkey`, `sparkWalletVerified`); uses `splitPhrase`, `encodeShareCode`, and `putRecoveryShare`. In a Playwright build only (`visualPin`), `?visual=sr-checking`, `sr-share-1`, `sr-share-2`, `sr-done`, `sr-mismatch`, and `sr-save-error` open that step with a fixed split of the public BIP-39 test phrase of 16 zero bytes; a deployed build ignores them.
+- **Returns / side effects:** `{ step, error, codes, identifier, start, scanned, resplit, retry, back }`. `step` is `intro`, `checking`, `share1`, `share2`, `saving`, or `done`. `start()` (**Continue**) reads the tab phrase (none → error `wallet`), awaits `ensureWalletConnected` (a throw → `wallet`), and stops with `mismatch` unless the account's `sparkWalletVerified` is true and its `sparkPubkey` equals the wallet key in lower case; then it splits the words (`splitPhrase` checks every pair) and builds the payloads of shares 1 and 2 for the account's id and username (a failure → `wallet`), and lands on `share1` with `codes` and the set's `identifier`. `scanned()` moves `share1` to `share2`, and on `share2` uploads share 3 (`PUT /me/recovery-share` with the key checked by `start`): success stores the returned account (`setAccount`, only for the same session) and gives `done`; `RecoveryError` `key_in_use` (409) gives `changed` and drops the words; any other failure gives `save` and keeps share 3. `resplit()` splits the same words again into a new set and shows person 1's new code. `retry()` runs `start` after `wallet`, the same upload after `save`, and returns to the intro after `changed`; it does nothing after `mismatch`. `back()` returns `true` after stepping `share2` → `share1` or `share1` → intro (which drops the words and codes), and `false` on any other step or error, so the arrow leaves. An answer of a superseded step or after unmount is dropped, except that a stored share still updates the account of the same session; leaving the page drops the words and shares.
+- **Used by:** `SocialRecoveryScreen`.
 
 ## Function: GrantsPage
 

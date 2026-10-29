@@ -5814,6 +5814,61 @@
     "es": "Tras Guardar una parte en un dispositivo sin cámara: No se encontró ninguna cámara. Usa un teléfono con cámara para escanear el código. sobre la zona negra de la cámara.",
     "fil": "Pagkatapos ng Magtabi ng bahagi sa device na walang camera: Walang nakitang camera. Gumamit ng teleponong may camera para ma-scan ang code. sa itim na bahagi ng camera."
   },
+  "/settings/social-recovery:default": {
+    "de": "Konto mit verifizierter Wallet und noch ohne Social Recovery: der Titel, die vier Einleitungszeilen mit der Warnung in der Textfarbe und Weiter.",
+    "es": "Cuenta con una wallet verificada y todavía sin Social Recovery: el título, las cuatro líneas de introducción con la advertencia en el color del texto y Continuar.",
+    "fil": "Account na may verified na wallet at wala pang Social Recovery: ang pamagat, ang apat na linya ng intro na nasa kulay ng teksto ang babala, at ang Magpatuloy."
+  },
+  "/settings/social-recovery:intro-renew": {
+    "de": "Konto, dessen Wallet schon Social Recovery hat: Die Einleitung ergänzt über Weiter den Satz Eine neue Einrichtung macht frühere Teile nicht ungültig: Zwei alte Teile stellen dein Konto weiterhin wieder her. Bitte Personen, die du nicht mehr wählst, ihren alten Teil zu löschen.",
+    "es": "Cuenta cuya wallet ya tiene Social Recovery: la introducción añade encima de Continuar Una nueva configuración no anula las partes que diste antes: dos partes antiguas cualesquiera siguen restaurando tu cuenta. Pide a las personas que ya no eliges que borren su parte antigua.",
+    "fil": "Account na may Social Recovery na ang wallet: idinadagdag ng intro sa itaas ng Magpatuloy ang Hindi kinakansela ng bagong setup ang mga bahaging naibigay mo dati: naibabalik pa rin ng alinmang dalawang lumang bahagi ang account mo. Hilingin sa mga taong hindi mo na pinipili na burahin ang luma nilang bahagi."
+  },
+  "/settings/social-recovery:checking": {
+    "de": "Angeheftete Fixture (?visual=sr-checking, nur Playwright-Builds): die Einleitung, während die offene Wallet geprüft und ihre Wörter aufgeteilt werden. Deine Wallet wird geprüft… mit Drehanzeige steht an der Stelle von Weiter.",
+    "es": "Fixture fijado (?visual=sr-checking, solo builds de Playwright): la introducción mientras se comprueba la wallet abierta y se dividen sus palabras. Comprobando tu wallet… con un indicador giratorio ocupa el lugar de Continuar.",
+    "fil": "Naka-pin na fixture (?visual=sr-checking, sa mga Playwright build lang): ang intro habang tinitingnan ang bukas na wallet at hinahati ang mga salita nito. Nasa puwesto ng Magpatuloy ang Tinitingnan ang wallet mo… na may umiikot na palatandaan."
+  },
+  "/settings/social-recovery:share-1": {
+    "de": "Angeheftete Fixture (?visual=sr-share-1, nur Playwright-Builds): Fixture-Wörter, mit einer festen Zufallsquelle aufgeteilt, keine echte Wallet. Person 1, was Person 1 tut, der QR-Code Code für Person 1, Person 1 hat gescannt sowie Ihre App hat den Code abgelehnt? mit Mit neuen Codes neu beginnen.",
+    "es": "Fixture fijado (?visual=sr-share-1, solo builds de Playwright): palabras de fixture divididas con una fuente aleatoria fija, no una wallet real. Persona 1, lo que hace la persona 1, el código QR Código para la persona 1, La persona 1 lo escaneó y ¿Su app rechazó el código? con Empezar de nuevo con códigos nuevos.",
+    "fil": "Naka-pin na fixture (?visual=sr-share-1, sa mga Playwright build lang): mga fixture na salitang hinati gamit ang nakapirming random source, hindi live na wallet. Tao 1, ang gagawin ng tao 1, ang QR na Code para sa tao 1, ang Na-scan na ito ng tao 1, at ang Tinanggihan ng app nila ang code? kasama ang Magsimula ulit gamit ang mga bagong code."
+  },
+  "/settings/social-recovery:share-2": {
+    "de": "Angeheftete Fixture (?visual=sr-share-2, nur Playwright-Builds): der Schritt nach Person 1 hat gescannt. Person 2, was Person 2 tut, Person 2 muss eine andere Person als Person 1 sein., der QR-Code Code für Person 2, Person 2 hat gescannt und Mit neuen Codes neu beginnen.",
+    "es": "Fixture fijado (?visual=sr-share-2, solo builds de Playwright): el paso después de La persona 1 lo escaneó. Persona 2, lo que hace la persona 2, La persona 2 debe ser alguien distinto de la persona 1., el código QR Código para la persona 2, La persona 2 lo escaneó y Empezar de nuevo con códigos nuevos.",
+    "fil": "Naka-pin na fixture (?visual=sr-share-2, sa mga Playwright build lang): ang hakbang pagkatapos ng Na-scan na ito ng tao 1. Tao 2, ang gagawin ng tao 2, Dapat ibang tao ang tao 2 kaysa sa tao 1., ang QR na Code para sa tao 2, ang Na-scan na ito ng tao 2, at ang Magsimula ulit gamit ang mga bagong code."
+  },
+  "/settings/social-recovery:saving": {
+    "de": "Nach Person 2 hat gescannt im angehefteten Schritt für Person 2, solange PUT /me/recovery-share nicht geantwortet hat: Die 21.gifts-Sicherung wird gespeichert… mit Drehanzeige unter dem Titel; kein Code wird mehr gezeigt.",
+    "es": "Tras La persona 2 lo escaneó en el paso fijado de la persona 2, mientras PUT /me/recovery-share no ha respondido: Guardando el respaldo de 21.gifts… con un indicador giratorio bajo el título; ya no se muestra ningún código.",
+    "fil": "Pagkatapos ng Na-scan na ito ng tao 2 sa naka-pin na hakbang ng tao 2, habang hindi pa sumasagot ang PUT /me/recovery-share: Sine-save ang backup ng 21.gifts… na may umiikot na palatandaan sa ilalim ng pamagat; wala nang ipinapakitang code."
+  },
+  "/settings/social-recovery:done": {
+    "de": "Angeheftete Fixture (?visual=sr-done, nur Playwright-Builds): Die Sicherung ist gespeichert. Dein Konto ist abgesichert, Zwei Personen und 21.gifts halten jetzt je einen Teil. Zwei Teile zusammen stellen dein Konto wieder her. und Fertig.",
+    "es": "Fixture fijado (?visual=sr-done, solo builds de Playwright): el respaldo está guardado. Tu cuenta está protegida, Dos personas y 21.gifts guardan ahora una parte cada una. Dos partes cualesquiera restauran tu cuenta. y Listo.",
+    "fil": "Naka-pin na fixture (?visual=sr-done, sa mga Playwright build lang): naka-save na ang backup. Naka-secure na ang account mo, May tig-iisang bahagi na ngayon ang dalawang tao at ang 21.gifts. Naibabalik ng alinmang dalawang bahagi ang account mo., at ang Tapos na."
+  },
+  "/settings/social-recovery:wallet-mismatch": {
+    "de": "Angeheftete Fixture (?visual=sr-mismatch, nur Playwright-Builds): Die offene Wallet ist nicht die verifizierte Wallet des Kontos. Der Hinweis Diese 12 Wörter öffnen nicht die Wallet dieses Kontos. Die Einrichtung wurde abgebrochen. und nichts zu drücken; der Pfeil oben links verlässt die Seite.",
+    "es": "Fixture fijado (?visual=sr-mismatch, solo builds de Playwright): la wallet abierta no es la wallet verificada de la cuenta. La alerta Estas 12 palabras no abren la wallet de esta cuenta. La configuración se detuvo. y nada que pulsar; la flecha de arriba a la izquierda sale de la página.",
+    "fil": "Naka-pin na fixture (?visual=sr-mismatch, sa mga Playwright build lang): hindi ang verified na wallet ng account ang bukas na wallet. Ang alerto Hindi binubuksan ng 12 salitang ito ang wallet ng account na ito. Itinigil ang setup. at walang mapipindot; aalis sa page ang arrow sa kaliwang itaas."
+  },
+  "/settings/social-recovery:wallet-error": {
+    "de": "Nach Weiter in diesem Build, das keine offene Wallet hat: der Hinweis Deine Wallet konnte nicht geöffnet werden. und Erneut versuchen.",
+    "es": "Tras Continuar en este build, que no tiene ninguna wallet abierta: la alerta No se pudo abrir tu wallet. e Intentar de nuevo.",
+    "fil": "Pagkatapos ng Magpatuloy sa build na ito, na walang bukas na wallet: ang alerto Hindi mabuksan ang wallet mo. at ang Subukan ulit."
+  },
+  "/settings/social-recovery:save-error": {
+    "de": "Angeheftete Fixture (?visual=sr-save-error, nur Playwright-Builds): Der 21.gifts-Anteil konnte nicht gespeichert werden. Der Hinweis Die 21.gifts-Sicherung konnte nicht gespeichert werden. und Erneut versuchen, das denselben Anteil noch einmal hochlädt.",
+    "es": "Fixture fijado (?visual=sr-save-error, solo builds de Playwright): no se pudo guardar la parte de 21.gifts. La alerta No se pudo guardar el respaldo de 21.gifts. e Intentar de nuevo, que vuelve a subir la misma parte.",
+    "fil": "Naka-pin na fixture (?visual=sr-save-error, sa mga Playwright build lang): hindi ma-save ang bahagi ng 21.gifts. Ang alerto Hindi ma-save ang backup ng 21.gifts. at ang Subukan ulit, na ina-upload ulit ang parehong bahagi."
+  },
+  "/settings/social-recovery:wallet-changed": {
+    "de": "Nach Person 2 hat gescannt im angehefteten Schritt für Person 2, wenn PUT /me/recovery-share mit 409 antwortet, weil sich die Wallet des Kontos geändert hat: der Hinweis Deine Wallet hat sich während der Einrichtung geändert. Beginne neu. und Erneut versuchen, das zur Einleitung zurückführt.",
+    "es": "Tras La persona 2 lo escaneó en el paso fijado de la persona 2, cuando PUT /me/recovery-share respondió 409 porque la wallet de la cuenta cambió: la alerta Tu wallet cambió durante la configuración. Empieza de nuevo. e Intentar de nuevo, que vuelve a la introducción.",
+    "fil": "Pagkatapos ng Na-scan na ito ng tao 2 sa naka-pin na hakbang ng tao 2, kapag sumagot ng 409 ang PUT /me/recovery-share dahil nagbago ang wallet ng account: ang alerto Nagbago ang wallet mo habang nagse-setup. Magsimula ulit. at ang Subukan ulit, na bumabalik sa intro."
+  },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",
     "es": "Después de Ya lo envié: tres puntos llenos, un indicador de carga, Esperando tus Bitcoin… y Termina de enviar en tu otra billetera. Esta pantalla se actualiza sola. No hay botón Volver en la hoja: la flecha de arriba a la izquierda vuelve al paso de la dirección. Cuando llega el pago, el flujo avanza solo.",
