@@ -209,7 +209,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Ada',
         sats: null,
-        canReceive: true,
+        waiting: false,
       }),
       expect.objectContaining({
         messageId: 'm2',
@@ -217,7 +217,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Cara',
         sats: 100,
-        canReceive: false,
+        waiting: true,
       }),
       expect.objectContaining({
         messageId: 'm2',
@@ -225,7 +225,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Diego',
         sats: 100,
-        canReceive: false,
+        waiting: true,
       }),
       expect.objectContaining({
         messageId: 'm1',
@@ -234,9 +234,27 @@ describe('dueShares', () => {
         name: 'Bruno',
         sats: 90,
         amount: '1.00',
-        canReceive: false,
+        waiting: true,
       }),
     ]);
+  });
+
+  it("takes the api's waiting flag over the giver's availability", () => {
+    const flagged = ledger({
+      repayments: [
+        { ...ledger().repayments[0]!, waiting: false },
+        { ...ledger().repayments[0]!, dayIndex: 3, waiting: true },
+      ],
+    });
+    const listed = ledger({
+      givers: [{ ...ledger().givers[0]!, canReceive: true }],
+      repayments: [{ ...ledger().repayments[0]!, waiting: true }],
+    });
+    expect(
+      dueShares([loan(), loan({ messageId: 'm2' })], [flagged, listed]).map(
+        (share) => share.waiting,
+      ),
+    ).toEqual([false, true, true]);
   });
 
   it('treats a missing matching ledger as empty', () => {

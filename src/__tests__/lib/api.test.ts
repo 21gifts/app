@@ -2326,6 +2326,17 @@ describe('getRepayment', () => {
     stubFetch({ ok: true, status: 200, body });
     await expect(getRepayment('m1')).resolves.toEqual(body);
   });
+
+  it('keeps the waiting lines and their count', async () => {
+    const body = {
+      ...LEDGER,
+      waitingShares: 1,
+      givers: LEDGER.givers.map((giver) => ({ ...giver, canReceive: false })),
+      repayments: LEDGER.repayments.map((row) => ({ ...row, dueSats: 20, waiting: true })),
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(getRepayment('m1')).resolves.toEqual(body);
+  });
 });
 
 const MY_LOAN = {
@@ -2371,6 +2382,22 @@ describe('getMyLoans', () => {
     expect(fetchMock).toHaveBeenCalledWith('/me/loans', {
       headers: { Authorization: 'Bearer sess' },
     });
+  });
+
+  it('keeps the waiting share count and the lender waiting totals', async () => {
+    const body = {
+      sundayRest: false,
+      loans: [{ ...MY_LOAN, due: { ...MY_LOAN.due, waitingShares: 2 } }],
+      lenderWaiting: { shares: 3, loans: 2, sats: null },
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(getMyLoans('sess')).resolves.toEqual(body);
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...body, lenderWaiting: { shares: -1, loans: 0, sats: 0 } },
+    });
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
   });
 
   it('uses one stable error for non-ok, invalid, and rejected reads', async () => {

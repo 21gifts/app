@@ -37,6 +37,8 @@ import {
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
+ * A due line whose giver cannot receive yet (`waiting`) reads **Waiting**, in
+ * muted type, under a line that names that giver.
  * `onLedger` hears every loaded ledger (the first read and
  * each refresh), so the loan block above can show the paid-back share without
  * a second request.
@@ -242,17 +244,28 @@ function DayGroups({
                 key={`${row.dayIndex}:${row.accountId}`}
                 className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
               >
-                <span className="min-w-0 truncate text-sm text-app-fg">
-                  {giverLabel(row.name, row.username, row.accountId)}
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-app-fg">
+                    {giverLabel(row.name, row.username, row.accountId)}
+                  </span>
+                  {row.waiting === true ? (
+                    <span className="block text-xs text-app-muted">
+                      {t('loans.waitingFor', {
+                        name: giverLabel(row.name, row.username, row.accountId),
+                      })}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
                   <span className="text-right text-sm tabular-nums text-app-fg">
                     {rowAmount(row, fiat, numberFormat, spot)}
                   </span>
                   <span
-                    className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
+                    className={`whitespace-nowrap text-right text-xs font-medium ${
+                      row.waiting === true ? 'text-app-muted' : statusClass(row.status)
+                    }`}
                   >
-                    {t(statusKey(row.status))}
+                    {t(row.waiting === true ? 'forum.creditStatusWaiting' : statusKey(row.status))}
                   </span>
                 </span>
               </li>

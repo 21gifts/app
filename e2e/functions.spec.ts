@@ -15765,6 +15765,25 @@ test('Function: LoansCard — the welcome screen renders the loan card', async (
   await expect(page.getByRole('region', { name: 'Your loan' })).toContainText("₿1'000");
 });
 
+test('Function: LenderWaitingCard — the welcome screen asks a lender to open the wallet', async ({
+  page,
+}) => {
+  await openLoanUi(
+    page,
+    '/welcome',
+    { ...myLoans([]), lenderWaiting: { shares: 1, loans: 1, sats: 500 } },
+    false,
+  );
+  const card = page.getByRole('region', {
+    name: '1 repayment is waiting for you — open your wallet to receive it',
+  });
+  await expect(card).toContainText('₿500');
+  await expect(card.getByRole('link', { name: 'Open your wallet' })).toHaveAttribute(
+    'href',
+    '/wallet',
+  );
+});
+
 test('Function: LoanRepayScreen — the repayment screen renders its due heading', async ({
   page,
 }) => {

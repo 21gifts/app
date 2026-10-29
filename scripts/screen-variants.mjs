@@ -3225,6 +3225,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'lender-waiting',
+    image: 'welcome-lender-waiting.png',
+    visual: 'state-welcome-lender-waiting',
+    needle: 'state /welcome lender-waiting',
+  },
+  {
+    route: '/welcome',
     id: 'loans-sunday',
     image: 'welcome-loans-sunday.png',
     visual: 'state-welcome-loans-sunday',
@@ -9355,6 +9362,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-repayment-list-overview.png',
     visual: 'state-messages-id-repayment-list-overview',
     needle: 'state /messages/[id]/repayment-list overview',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'waiting',
+    image: 'messages-id-repayment-list-waiting.png',
+    visual: 'state-messages-id-repayment-list-waiting',
+    needle: 'state /messages/[id]/repayment-list waiting',
   },
   {
     route: '/messages/[id]/author',

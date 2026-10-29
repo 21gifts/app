@@ -116,8 +116,11 @@ export interface DueShare {
   sats: number | null;
   /** row.amount (loan currency) or null. */
   amount: string | null;
-  /** givers[].canReceive of that accountId (true when the giver is not listed). */
-  canReceive: boolean;
+  /**
+   * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
+   * (older api), the giver's givers[].canReceive is false (a giver not listed can receive).
+   */
+  waiting: boolean;
 }
 
 /**
@@ -153,7 +156,7 @@ export function dueShares(
         name: row.name,
         sats: row.sats ?? row.dueSats,
         amount: row.amount,
-        canReceive: canReceive.get(row.accountId) ?? true,
+        waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });
     });

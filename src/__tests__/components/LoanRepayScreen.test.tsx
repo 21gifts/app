@@ -341,7 +341,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText('$1.00')).toBeNull();
   });
 
-  it('puts a shared fiat loan currency first and shows waiting shares as notices', async () => {
+  it('puts a shared fiat loan currency first and shows waiting shares as neutral lines', async () => {
     const phpLoan = loan({
       goalCurrency: 'PHP',
       goalAmount: '900.00',
@@ -371,14 +371,15 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText('₱30.00')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Send ₱30.00 · ₿536' })).toBeTruthy();
     expect(screen.queryByText('$0.54')).toBeNull();
-    const waitingNotice = screen.getByText(/waits for a lender/).parentElement;
-    expect(waitingNotice?.querySelector('svg')?.getAttribute('class')).toContain(
-      'text-app-notice-fg',
-    );
+    const waitingNotice = screen.getByText(/waits for a lender/);
+    expect(waitingNotice.className).toContain('text-app-muted');
+    expect(waitingNotice.querySelector('svg')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
-    const waitingRow = (await screen.findByText('No wallet yet · waits')).closest('li');
-    expect(waitingRow?.querySelector('svg')?.getAttribute('class')).toContain('text-app-notice-fg');
-    expect(screen.getByText('₱10.00')).toBeTruthy();
+    const waitingLine = await screen.findByText('Waiting for Bruno to set up their wallet');
+    expect(waitingLine.className).toContain('text-app-muted');
+    expect(waitingLine.closest('li')?.querySelector('svg')).toBeNull();
+    expect(waitingLine.closest('li')?.className).not.toContain('app-danger');
+    expect(screen.getByText('₱10.00').className).toContain('text-app-muted');
     expect(screen.queryByText('$0.20')).toBeNull();
   });
 
@@ -595,7 +596,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
-  it('shows all waiting without Send and falls back to summary people without ledgers', () => {
+  it('asks for no amount when every due share waits', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({
       sundayRest: false,
@@ -612,8 +613,33 @@ describe('LoanRepayScreen', () => {
       ],
     });
     expect(screen.getByText(/Your lenders haven't set up/)).toBeTruthy();
+    expect(screen.getByText('Nothing to send now').className).toContain('text-app-fg');
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
-    expect(screen.getByText('to 0 people')).toBeTruthy();
+    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.queryByText(/^to \d+ people$/)).toBeNull();
+  });
+
+  it('follows the api days behind and counts the summary people without ledgers', () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 300,
+            payablePeople: 3,
+            waitingSats: 1_000,
+            waitingPeople: 2,
+            waitingShares: 4,
+            behindDays: 0,
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('Due today')).toBeTruthy();
+    expect(screen.queryByText(/behind/)).toBeNull();
+    expect(screen.getByText('to 3 people')).toBeTruthy();
   });
 
   it('uses the singular all-waiting notice and the plural partial-waiting notice', () => {
@@ -902,6 +928,24 @@ describe('LoanRepayScreen', () => {
     );
     expect(screen.getByText('Still due today')).toBeTruthy();
     expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+  });
+
+  it('asks for nothing after a partial send when only waiting shares remain', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: { ...loan().due, payableSats: 0, waitingSats: 500, waitingPeople: 1 },
+          }),
+        ],
+      },
+      repay({ phase: 'idle', sentSats: 500, sentNames: ['Bruno'] }),
+    );
+    expect(screen.getByText('Nothing to send now')).toBeTruthy();
+    expect(screen.queryByText('Still due today')).toBeNull();
+    expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
   it('keeps the last-payment success when the refreshed loan list is empty', () => {

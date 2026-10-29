@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useId, useState, type ReactElement } from 'react';
-import { AlertTriangle, Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -74,6 +74,9 @@ const DUE_BILLS_PER_REQUEST = 60;
  * due (payable or waiting) whose repayment list is missing, the opened Who-gets-paid
  * list shows a muted loading line (with a spinner) while that list is in flight, and
  * a danger error line when it failed to load; each list is applied as it arrives.
+ * A share whose lender cannot receive yet (`waiting`) is a muted line that names the
+ * lender and is left out of the amount to send; when every due share waits, no
+ * amount is asked. Behind follows the api's `behindDays`.
  *
  * @returns The repayment screen body.
  */
@@ -218,7 +221,7 @@ export function LoanRepayScreen(): ReactElement {
   const waiting = summary.waitingSats;
   const payablePeople = ledgersMissing
     ? loans.loans.reduce((sum, loan) => sum + loan.due.payablePeople, 0)
-    : new Set(shares.filter((share) => share.canReceive).map((share) => share.accountId)).size;
+    : new Set(shares.filter((share) => !share.waiting).map((share) => share.accountId)).size;
   const today = localDay(new Date());
 
   const dateLabel = (dueOn: string, long: boolean): string =>
@@ -278,15 +281,14 @@ export function LoanRepayScreen(): ReactElement {
         0n,
       )
     : null;
-  const shownSats = payable === 0 ? waiting : payable;
   const definedDueLabel =
     definedPayable !== null && definedCode !== undefined && isFiatCode(definedCode)
       ? formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)
       : null;
-  const bigAmount = definedDueLabel ?? formatBitcoin(shownSats, numberFormat);
+  const bigAmount = definedDueLabel ?? formatBitcoin(payable, numberFormat);
   const payLabel =
     definedDueLabel !== null ? `${definedDueLabel} · ${bitcoinText(payable)}` : money(payable);
-  const smallAmount = definedPayable !== null ? null : fiatOnly(shownSats);
+  const smallAmount = definedPayable !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
     // `dueShares` creates every share from this exact loan array and preserves its index.
@@ -364,7 +366,7 @@ export function LoanRepayScreen(): ReactElement {
     </div>
   ) : null;
 
-  const payableShares = shares.filter((share) => share.canReceive);
+  const payableShares = shares.filter((share) => !share.waiting);
   const keptByLoan = new Map<string, number>();
   const payableWithinDue = payableShares.filter((share) => {
     const kept = keptByLoan.get(share.messageId) ?? 0;
@@ -509,44 +511,43 @@ export function LoanRepayScreen(): ReactElement {
           summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
         }`}
       >
-        {partial
-          ? t('loans.stillDue')
-          : summary.behindDays > 0
-            ? t(summary.behindDays === 1 ? 'loans.behindOne' : 'loans.behindMany', {
-                days: summary.behindDays,
-              })
-            : summary.lastPayment && loans.loans.length === 1
-              ? t('loans.dueLast')
-              : t('loans.dueToday')}
-      </p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
-        {bigAmount}
-      </p>
-      {smallAmount === null ? null : (
-        <p className="text-sm tabular-nums lining-nums text-app-muted">{smallAmount}</p>
-      )}
-
-      <p className="mt-2 text-sm text-app-muted">
-        {t(payablePeople === 1 ? 'loans.toOne' : 'loans.toMany', { count: payablePeople })}
-        {summary.payableLoans > 1
-          ? ` · ${t('loans.loansCount', { count: summary.payableLoans })}`
-          : ''}
-      </p>
-      {waiting > 0 ? (
-        <div className="mt-3 flex gap-2 rounded-xl bg-app-notice px-3 py-2 text-sm text-app-notice-fg">
-          <AlertTriangle
-            aria-hidden="true"
-            className="mt-0.5 h-4 w-4 shrink-0 text-app-notice-fg"
-          />
-          <p>
-            {payable > 0
-              ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
-                  amount: money(waiting),
-                  count: summary.waitingPeople,
+        {payable === 0
+          ? t('loans.nothingToSend')
+          : partial
+            ? t('loans.stillDue')
+            : summary.behindDays > 0
+              ? t(summary.behindDays === 1 ? 'loans.behindOne' : 'loans.behindMany', {
+                  days: summary.behindDays,
                 })
-              : t(summary.waitingPeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}
+              : summary.lastPayment && loans.loans.length === 1
+                ? t('loans.dueLast')
+                : t('loans.dueToday')}
+      </p>
+      {payable === 0 ? null : (
+        <>
+          <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
+            {bigAmount}
           </p>
-        </div>
+          {smallAmount === null ? null : (
+            <p className="text-sm tabular-nums lining-nums text-app-muted">{smallAmount}</p>
+          )}
+          <p className="mt-2 text-sm text-app-muted">
+            {t(payablePeople === 1 ? 'loans.toOne' : 'loans.toMany', { count: payablePeople })}
+            {summary.payableLoans > 1
+              ? ` · ${t('loans.loansCount', { count: summary.payableLoans })}`
+              : ''}
+          </p>
+        </>
+      )}
+      {waiting > 0 ? (
+        <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
+          {payable > 0
+            ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
+                amount: money(waiting),
+                count: summary.waitingPeople,
+              })
+            : t(summary.waitingPeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}
+        </p>
       ) : null}
       <button
         type="button"
@@ -597,18 +598,8 @@ export function LoanRepayScreen(): ReactElement {
                     {rows.map((share) => (
                       <li
                         key={`${share.dayIndex}-${share.accountId}`}
-                        className={`flex items-center gap-2 py-2 ${
-                          share.canReceive
-                            ? ''
-                            : '-mx-2 rounded-lg bg-app-notice px-2 text-app-notice-fg'
-                        }`}
+                        className="flex items-center gap-2 py-2"
                       >
-                        {share.canReceive ? null : (
-                          <AlertTriangle
-                            aria-hidden="true"
-                            className="h-4 w-4 shrink-0 text-app-notice-fg"
-                          />
-                        )}
                         <span className="min-w-0 flex-1">
                           <span className="text-app-fg">{share.name}</span>
                           {share.dueOn !== null && share.dueOn < today ? (
@@ -617,11 +608,17 @@ export function LoanRepayScreen(): ReactElement {
                               {dateLabel(share.dueOn, false)}
                             </span>
                           ) : null}
-                          {share.canReceive ? null : (
-                            <span className="block text-xs">{t('loans.noWallet')}</span>
-                          )}
+                          {share.waiting ? (
+                            <span className="block text-xs text-app-muted">
+                              {t('loans.waitingFor', { name: share.name })}
+                            </span>
+                          ) : null}
                         </span>
-                        <span className="shrink-0 tabular-nums lining-nums text-app-fg">
+                        <span
+                          className={`shrink-0 tabular-nums lining-nums ${
+                            share.waiting ? 'text-app-muted' : 'text-app-fg'
+                          }`}
+                        >
                           {rowAmount(share)}
                         </span>
                       </li>

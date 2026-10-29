@@ -155,6 +155,24 @@ describe('CreditLedger', () => {
     expect(screen.getByText('Still owed')).toBeTruthy();
   });
 
+  it('marks a due line that waits for the giver wallet in muted type', async () => {
+    ledger({
+      ...btc,
+      repayments: btc.repayments.map((row) =>
+        row.status === 'due' ? { ...row, waiting: true } : row,
+      ),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    const lines = await screen.findAllByText(/^Waiting for .+ to set up their wallet$/);
+    expect(lines.length).toBe(btc.repayments.filter((row) => row.status === 'due').length);
+    for (const line of lines) {
+      expect(line.className).toContain('text-app-muted');
+    }
+    const status = screen.getAllByText('Waiting', { exact: true });
+    expect(status.length).toBe(lines.length);
+    expect(status[0]!.className).toContain('text-app-muted');
+  });
+
   it('shows a repayment list link and hides the day rows', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" />);
