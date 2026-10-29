@@ -10488,7 +10488,15 @@ async function seedChfTill(page: Page): Promise<{ created: number[] }> {
   const created: number[] = [];
   await page.route(/\/pos\/charge$/, async (route) => {
     if (route.request().method() === 'POST') {
-      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      const {
+        amountSats,
+        amountCurrency = null,
+        amount = null,
+      } = route.request().postDataJSON() as {
+        amountSats: number;
+        amountCurrency?: string;
+        amount?: string;
+      };
       created.push(amountSats);
       await route.fulfill({
         status: 201,
@@ -10497,6 +10505,9 @@ async function seedChfTill(page: Page): Promise<{ created: number[] }> {
           charge: {
             id: 'pos-chf',
             amountSats,
+            // The api stores the typed figure with the charge and returns it.
+            amountCurrency,
+            amount,
             status: 'pending',
             createdAt: new Date().toISOString(),
             expiresAt: new Date(Date.now() + 60_000).toISOString(),
@@ -10755,7 +10766,7 @@ test('Function: fetchMemberSparkInvoice — POST /pay/alice/invoice issues a Spa
   expect(refused.status()).toBe(400);
 });
 
-test('Function: PosTill — an open charge turns into Paid ✓ and New payment opens the keypad', async ({
+test('Function: PosTill — an open charge turns into Paid the moment the wallet receives it, and Done returns to this till', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -10802,15 +10813,143 @@ test('Function: PosTill — an open charge turns into Paid ✓ and New payment o
       body: JSON.stringify({ charge, history: [charge] }),
     });
   });
+  // The pin plays this tab's wallet receiving the open amount: Paid shows without waiting for the
+  // api, and one read (not a timer) then checks the payment.
+  await page.goto('/pos?visual=pos-received');
+  const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('₿21')).toBeVisible();
+  await expect.poll(() => loads).toBe(2);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await expect(dialog.getByRole('link')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(page).toHaveURL(/\/pos\?visual=pos-received$/);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+});
+
+/** Signed-in Ada with a verified wallet whose till always returns `charge`. */
+async function routeTillWith(page: Page, charge: Record<string, unknown>): Promise<() => number> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge] }),
+    });
+  });
+  return () => loads;
+}
+
+test('Function: PosPaidOverlay — the whole window turns green with Paid, and Done returns to the till', async ({
+  page,
+}) => {
+  const loads = await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'paid',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: new Date().toISOString(),
+  });
+  await page.goto('/pos');
+  const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+  await expect(dialog).toBeVisible();
+  // Measured once it has grown in: the window starts at 96 % and fills it 360 ms later.
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await expect
+    .poll(async () => {
+      const box = await dialog.boundingBox();
+      return box === null ? null : [Math.round(box.width), Math.round(box.height)];
+    })
+    .toEqual([viewport?.width, viewport?.height]);
+  await expect(dialog.getByText('The amount has arrived in your wallet.')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Done' })).toBeFocused();
+  await expect(dialog.getByRole('link')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect.poll(loads).toBe(2);
+});
+
+test('Function: onPaymentReceived — without a wallet payment an open charge stays open and the till never asks again', async ({
+  page,
+}) => {
+  const loads = await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  });
   await page.goto('/pos');
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-  await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible({
-    timeout: 10_000,
+  await page.waitForTimeout(4_000);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  expect(loads()).toBe(1);
+});
+
+test('Function: onPaymentReceived — the reported payment pays the open charge at once, before the api is asked', async ({
+  page,
+}) => {
+  const loads = await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
   });
+  // The pin reports the charge amount through the wallet listener (announceReceivedForE2e).
+  await page.goto('/pos?visual=pos-received');
+  await expect(page.getByRole('alertdialog', { name: 'Paid' })).toBeVisible();
+  // Then one read checks the payment, and no more.
+  await expect.poll(() => loads()).toBe(2);
+});
+
+test('Function: announceReceivedForE2e — the pos-received pin reports the open amount to the wallet listener', async ({
+  page,
+}) => {
+  await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 42,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  });
+  await page.goto('/pos?visual=pos-received');
+  const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+  await expect(dialog.getByText('₿42')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
-  await page.getByRole('link', { name: 'New payment' }).click();
-  await expect(page).toHaveURL(/\/pos\/amount$/);
-  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
 });
 
 test('Function: PosHistory — the till list gains the charge once it is paid', async ({ page }) => {
@@ -10866,14 +11005,83 @@ test('Function: PosHistory — the till list gains the charge once it is paid', 
       body: JSON.stringify({ charge, history: [charge, earlier] }),
     });
   });
-  await page.goto('/pos');
+  await page.goto('/pos?visual=pos-received');
+  await page
+    .getByRole('alertdialog', { name: 'Paid' })
+    .getByRole('button', { name: 'Done' })
+    .click();
   const history = page.getByRole('region', { name: 'History' });
-  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-  await expect(history.getByRole('listitem')).toHaveCount(1);
   await expect(history.getByText('Expired')).toBeVisible();
-  await expect(history.getByText(/^Paid ✓ /)).toBeVisible({ timeout: 10_000 });
+  await expect(history.getByText(/^Paid ✓ /)).toBeVisible();
   await expect(history.getByRole('listitem')).toHaveCount(2);
   await expect(history.getByRole('listitem').first()).toContainText('₿21');
+});
+
+test('Function: PosHistory — the till lists a cancelled charge with the figure stored for it', async ({
+  page,
+}) => {
+  await fulfillSpot(page, SPOT_RATES);
+  await seedChfTill(page);
+  let charge: Record<string, unknown> | null = null;
+  let cancelled = false;
+  // Registered after seedChfTill, so this handler answers the till.
+  await page.route(/\/pos\/charge$/, async (route) => {
+    const method = route.request().method();
+    if (method === 'POST') {
+      const {
+        amountSats,
+        amountCurrency = null,
+        amount = null,
+      } = route.request().postDataJSON() as {
+        amountSats: number;
+        amountCurrency?: string;
+        amount?: string;
+      };
+      charge = {
+        id: 'pos-chf',
+        amountSats,
+        // The api stores the typed figure with the charge and returns it.
+        amountCurrency,
+        amount,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        paidAt: null,
+      };
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge }),
+      });
+      return;
+    }
+    if (method === 'DELETE') {
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    const body =
+      charge === null
+        ? { charge: null, history: [] }
+        : cancelled
+          ? { charge: null, history: [{ ...charge, status: 'cancelled' }] }
+          : { charge, history: [charge] };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/pos/amount');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  await expect(page.getByText('CHF 68.00')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+  await expect(row.getByText('Cancelled')).toBeVisible();
+  await expect(row).toContainText("₿85'000 · CHF 68.00");
 });
 
 test('Function: PosHistory — Cancel puts the charge in the list as Cancelled', async ({ page }) => {

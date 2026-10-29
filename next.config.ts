@@ -22,10 +22,21 @@ function appVersionForBuild(): string {
  * under `.next/standalone` — that is what the Dockerfile runtime stage ships.
  * `outputFileTracingRoot` pins that layout to this package even when a parent
  * directory also has a lockfile (Next would otherwise nest standalone).
+ *
+ * Actions already runs `tsc --noEmit` in the check job, and Lint is its own job.
+ * Repeating both inside `next build` makes that job miss its 10-minute limit.
+ * Actions sets `GITHUB_ACTIONS`. The image build does not, so it still
+ * typechecks and lints.
  */
+function skipRepeatedBuildChecks(): boolean {
+  return process.env['GITHUB_ACTIONS'] === 'true';
+}
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: appRoot,
+  eslint: { ignoreDuringBuilds: skipRepeatedBuildChecks() },
+  typescript: { ignoreBuildErrors: skipRepeatedBuildChecks() },
   outputFileTracingIncludes: {
     '/handbook': ['./docs/handbook/**/*'],
     '/handbook/screens': ['./docs/handbook/**/*', './scripts/screen-variants.mjs'],

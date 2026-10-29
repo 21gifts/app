@@ -41,7 +41,7 @@ function clockTime(iso: string, locale: string): string | null {
 
 /** Props for {@link PosHistory}. */
 export interface PosHistoryProps {
-  /** `history` of `GET /pos/charge`, newest first, as the api returns it. */
+  /** `history` of `GET /pos/charge`, newest first; a row this tab's wallet saw paid may already be paid. */
   history: readonly PosCharge[];
   /** Id of the charge the till shows as open above the list, or `null`. */
   openChargeId: string | null;

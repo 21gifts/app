@@ -3366,9 +3366,57 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:cancelled",
+    "label": "/pos cancelled",
+    "visual": "state-pos-cancelled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:open-cancel-failed",
+    "label": "/pos open-cancel-failed",
+    "visual": "state-pos-open-cancel-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled-read-failed",
+    "label": "/pos cancelled-read-failed",
+    "visual": "state-pos-cancelled-read-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:open-spot",
+    "label": "/pos open-spot",
+    "visual": "state-pos-open-spot",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled-spot",
+    "label": "/pos cancelled-spot",
+    "visual": "state-pos-cancelled-spot",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:paid",
     "label": "/pos paid",
     "visual": "state-pos-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-closed",
+    "label": "/pos paid-closed",
+    "visual": "state-pos-paid-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-fiat",
+    "label": "/pos paid-fiat",
+    "visual": "state-pos-paid-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-fiat-closed",
+    "label": "/pos paid-fiat-closed",
+    "visual": "state-pos-paid-fiat-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

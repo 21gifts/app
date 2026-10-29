@@ -38,6 +38,9 @@
   /* A new reply easing into its thread. `backwards`, not `both`: once it has arrived nothing of
      the animation stays on the reply (a kept transform would put its text on its own layer). */
   --animate-fade-in: fade-in 280ms var(--ease-glide) backwards;
+  /* The till's full-screen paid confirmation growing in, and its check drawing itself. */
+  --animate-paid-in: paid-in 360ms var(--ease-glide) both;
+  --animate-paid-check: paid-check 520ms 220ms ease-out both;
 
   @keyframes fade-in {
     from {
@@ -47,6 +50,26 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  @keyframes paid-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes paid-check {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
 
@@ -189,6 +212,80 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
 .forum-heart-plus-one {
   pointer-events: none;
   animation: forum-heart-plus-one 700ms ease-out forwards;
+}
+
+/* Rings pulsing out of the paid check. The ring itself is transparent, so a
+   stopped or reduced-motion ring shows nothing instead of a stray circle. */
+@keyframes pos-paid-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+.pos-paid-ring {
+  opacity: 0;
+  animation: pos-paid-ring 1600ms ease-out 400ms infinite;
+}
+
+.pos-paid-ring-late {
+  animation-delay: 1200ms;
+}
+
+/* Reduced motion: the paid confirmation shows at once with its check drawn, no rings. */
+@media (prefers-reduced-motion: reduce) {
+  .pos-paid-ring,
+  .animate-paid-in,
+  .animate-paid-check {
+    animation: none !important;
+  }
+}
+
+/* A short window keeps the paid confirmation inside it. The disc, the title
+   and both amounts shrink together, so the amounts stay the same size and
+   Done stays on screen. The rings pulse less, so they stay inside too.
+   The screen does not scroll. Taller windows keep the full size. */
+@media (max-height: 700px) {
+  .pos-paid-fit {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .pos-paid-mark {
+    height: 3.5rem;
+    width: 3.5rem;
+  }
+
+  .pos-paid-title,
+  .pos-paid-figure {
+    font-size: 1.875rem;
+    line-height: 1.1;
+  }
+
+  .pos-paid-note {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+
+  .pos-paid-ring {
+    animation-name: pos-paid-ring-short;
+  }
+}
+
+@keyframes pos-paid-ring-short {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.2);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

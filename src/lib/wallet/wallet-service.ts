@@ -1,5 +1,5 @@
 import { captureMessage } from '@sentry/nextjs';
-import { getBreezApiKey } from '@/lib/config';
+import { getBreezApiKey, getE2eNow } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet, type WalletSpanAttributes } from '@/lib/sentry';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
@@ -140,12 +140,44 @@ let knownPaymentIds: Set<string> | null = null;
 /** Listeners told about each newly received payment. */
 const incomingListeners = new Set<(payment: WalletPayment) => void>();
 
+/** Listeners told about each newly received payment at once, before the balance is read again. */
+const receivedListeners = new Set<(payment: WalletPayment) => void>();
+
 /**
  * Received payments that completed while the known payments of the current
  * connection were still being read; announced once that list is in, unless
  * it holds them.
  */
 let heldPayments: WalletPayment[] = [];
+
+/**
+ * The received payments the {@link onPaymentReceived} listeners heard, by id
+ * in the order told, with the phrase they belong to: whichever way a payment
+ * is reported or listed, and across reconnects, they hear it once, and a
+ * listener that subscribes later hears them all first. Another phrase starts
+ * it over. A sign-out forgets them only when it is still the latest run.
+ */
+let toldReceived: { mnemonic: string; payments: Map<string, WalletPayment> } | null = null;
+
+/**
+ * Tells every {@link onPaymentReceived} listener about `payment`, unless they
+ * already heard it for this phrase.
+ *
+ * @param mnemonic - Phrase of the connection that reports it.
+ * @param payment - The received, completed payment.
+ */
+function tellReceived(mnemonic: string, payment: WalletPayment): void {
+  if (toldReceived === null || toldReceived.mnemonic !== mnemonic) {
+    toldReceived = { mnemonic, payments: new Map() };
+  }
+  if (toldReceived.payments.has(payment.id)) {
+    return;
+  }
+  toldReceived.payments.set(payment.id, payment);
+  for (const listener of receivedListeners) {
+    listener(payment);
+  }
+}
 
 /**
  * Host the app is served from. The wallet's address lives on this host, and
@@ -442,22 +474,30 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
  * Reads the payments a fresh connection already holds, so that only a payment
  * that completes later is announced. A payment that completed while this list
  * was read is announced once it is in, unless the list holds it. A failed
- * read counts as none known and drops the payments held meanwhile: the SDK
- * announces only payments that change, so nothing old is announced then.
+ * read counts as none known and drops the payments held meanwhile for the
+ * {@link onIncomingPayment} listeners: the SDK announces only payments that
+ * change, so nothing old is announced then. The {@link onPaymentReceived}
+ * listeners heard each of them when it was reported. Every listed payment
+ * is told to the {@link onPaymentReceived} listeners too, oldest first and
+ * once per phrase: one that completed while no connection was open (before
+ * the first, or while the wallet reconnected) reaches a till only this way.
  *
  * @param run - Run number that owns the connection.
  * @param conn - The fresh connection.
+ * @param mnemonic - Phrase the connection was opened with.
  * @returns Resolves once the known ids are set, or when the run is stale.
  */
-async function rememberKnownPayments(run: number, conn: WalletConnection): Promise<void> {
-  let known = new Set<string>();
+async function rememberKnownPayments(
+  run: number,
+  conn: WalletConnection,
+  mnemonic: string,
+): Promise<void> {
+  let listed: WalletPayment[] = [];
   let read = false;
   try {
     const payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
-    known = new Set(
-      payments
-        .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
-        .map((payment) => payment.id),
+    listed = payments.filter(
+      (payment) => payment.direction === 'received' && payment.status === 'completed',
     );
     read = true;
   } catch {
@@ -466,33 +506,51 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
   if (run !== runCounter || connection !== conn) {
     return;
   }
+  const known = new Set(listed.map((payment) => payment.id));
   knownPaymentIds = known;
   const held = heldPayments;
   heldPayments = [];
+  // No event reports a payment that completed while no connection was open: a till waiting for it
+  // hears it from the list (it takes none made before its charge, so an old one does no harm).
+  for (const payment of [...listed].reverse()) {
+    tellReceived(mnemonic, payment);
+  }
   if (read) {
     for (const payment of held) {
-      void announcePayment(known, payment);
+      if (known.has(payment.id)) {
+        // The list holds it: not announced as new. The onPaymentReceived listeners heard it when it
+        // was reported.
+        continue;
+      }
+      void announcePayment(known, mnemonic, payment);
     }
   }
 }
 
 /**
  * Announces a newly received payment once per id: adds it to the known ids,
- * reads the balance again, and once that read and any newer one are done
+ * tells every {@link onPaymentReceived} listener at once, reads the balance again, and once that read and any newer one are done
  * (a newer read makes this one stale, and only the newest writes) tells every
  * {@link onIncomingPayment} listener, so a listener that shows the balance
- * never shows the one from before the payment. Nothing is told when the
- * connection ended meanwhile (sign-out, or a failed read that drops it).
+ * never shows the one from before the payment. Those listeners are not told
+ * when the connection ended meanwhile (sign-out, or a failed read that drops
+ * it); the {@link onPaymentReceived} listeners were told before the read.
  *
  * @param known - The known payment ids of the current connection.
+ * @param mnemonic - Phrase of that connection.
  * @param payment - The received, completed payment.
  * @returns Resolves after the listeners were told, or when the connection ended.
  */
-async function announcePayment(known: Set<string>, payment: WalletPayment): Promise<void> {
+async function announcePayment(
+  known: Set<string>,
+  mnemonic: string,
+  payment: WalletPayment,
+): Promise<void> {
   if (known.has(payment.id)) {
     return;
   }
   known.add(payment.id);
+  tellReceived(mnemonic, payment);
   await refreshWallet();
   while (readsInFlight.size > 0) {
     await Promise.allSettled(readsInFlight);
@@ -513,8 +571,9 @@ async function announcePayment(known: Set<string>, payment: WalletPayment): Prom
  * read is held until that list is in.
  *
  * @param event - The SDK event.
+ * @param mnemonic - Phrase of the connection that sent it.
  */
-function onWalletEvent(event: WalletSdkEvent): void {
+function onWalletEvent(event: WalletSdkEvent, mnemonic: string): void {
   if (event.type === 'synced') {
     void refreshWallet();
     return;
@@ -530,9 +589,12 @@ function onWalletEvent(event: WalletSdkEvent): void {
   }
   if (knownPaymentIds === null) {
     heldPayments.push(payment);
+    // A till waiting for it hears it now, not only once the known payments are read; it takes no
+    // payment made before its charge, so one the wallet already held does no harm.
+    tellReceived(mnemonic, payment);
     return;
   }
-  void announcePayment(knownPaymentIds, payment);
+  void announcePayment(knownPaymentIds, mnemonic, payment);
 }
 
 /**
@@ -548,6 +610,50 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
   return () => {
     incomingListeners.delete(listener);
   };
+}
+
+/**
+ * Subscribes to every received, completed payment of the signed-in wallet,
+ * each id once: the moment the SDK reports it, before the balance is read
+ * again (also while the known payments of the connection are still read),
+ * and each payment a connection lists when it opens, oldest first, so one
+ * that completed while no connection was open is heard too. A new listener
+ * first hears the payments told so far. Unlike {@link onIncomingPayment},
+ * old payments are included: the listener judges which one it waits for. For
+ * a screen that must react to the money arriving without waiting for the
+ * balance read.
+ *
+ * @param listener - Called with each received payment.
+ * @returns Unsubscribe function.
+ */
+export function onPaymentReceived(listener: (payment: WalletPayment) => void): () => void {
+  // Only the payments of the wallet signed in now.
+  if (toldReceived !== null && toldReceived.mnemonic === peekSessionPhrase()) {
+    for (const payment of toldReceived.payments.values()) {
+      listener(payment);
+    }
+  }
+  receivedListeners.add(listener);
+  return () => {
+    receivedListeners.delete(listener);
+  };
+}
+
+/**
+ * In a Playwright build only (`getE2eNow()`), tells every
+ * {@link onPaymentReceived} listener about `payment` as if the wallet had just
+ * reported it, so e2e drives a screen that waits for the money through the
+ * same listener without a wallet. Does nothing in any other build.
+ *
+ * @param payment - The received, completed payment to report.
+ */
+export function announceReceivedForE2e(payment: WalletPayment): void {
+  if (getE2eNow() === null) {
+    return;
+  }
+  for (const listener of receivedListeners) {
+    listener(payment);
+  }
 }
 
 /**
@@ -615,14 +721,14 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       connection = next;
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
-          onWalletEvent(event);
+          onWalletEvent(event, mnemonic);
         }
       });
       if (run !== runCounter) {
         return;
       }
       await traceWallet('wallet.sync.first', () => readBalance(run, next, { ensureSynced: true }));
-      void rememberKnownPayments(run, next);
+      void rememberKnownPayments(run, next, mnemonic);
     } catch {
       if (run === runCounter) {
         reportWalletOpenFailure('error');
@@ -721,16 +827,24 @@ export async function refreshWallet(options?: {
 /**
  * Disconnects the wallet, resets the store to its resting status, and invalidates
  * in-flight work, including the automatic retries after a failed open: their
- * timer and listeners are removed. Never rejects.
+ * timer and listeners are removed. When this sign-out is still the latest run
+ * after the handle drops, it forgets the payments told to the
+ * {@link onPaymentReceived} listeners, so the next sign-in starts over. A
+ * sign-in that already replaced this run keeps the payments it told. Never
+ * rejects.
  *
  * @returns Resolves after the handle is dropped.
  */
 export async function disconnectWallet(): Promise<void> {
-  bumpRun();
+  const run = bumpRun();
   endRetryCycle();
   openFailureReported = false;
   useWalletStore.getState().reset();
   await dropConnection();
+  // A sign-in that overlapped this sign-out already told its payments.
+  if (run === runCounter) {
+    toldReceived = null;
+  }
 }
 
 /**
