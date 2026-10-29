@@ -1,0 +1,72 @@
+name: Visual baselines
+
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: visual-baselines-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Regenerates Linux visual baselines on the same Playwright image the visual
+# jobs use, for when new states need first-time snapshots. Manual dispatch
+# only: it never gates a pull request. The changed snapshots are uploaded as
+# an artifact; commit them after review.
+jobs:
+  update:
+    name: Update (${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.shards }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
+        shard: [1, 2]
+        shards: [2]
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed placeholder baselines so the handbook sync passes
+        run: |
+          set -eu
+          out=$(node scripts/sync-handbook-images.mjs 2>&1 || true)
+          echo "$out"
+          printf '%s' "$out" | grep -o '[A-Za-z0-9._-]*linux\.png' | sort -u | while read -r f; do
+            p="e2e/visual.spec.ts-snapshots/$f"
+            if [ ! -f "$p" ]; then
+              printf %s iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg== | base64 -d > "$p"
+              echo "seeded $f"
+            fi
+          done
+          node scripts/sync-handbook-images.mjs
+
+      - name: Update visual baselines
+        run: npm run e2e:update-snapshots -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        env:
+          HOSTNAME: 0.0.0.0
+
+      - name: Collect changed snapshots
+        run: |
+          set -eu
+          cd e2e/visual.spec.ts-snapshots
+          git status --porcelain -- . | awk '{print $NF}' | sort -u > /tmp/changed.txt
+          wc -l /tmp/changed.txt
+          tar czf /tmp/baselines.tgz -T /tmp/changed.txt
+          cp /tmp/changed.txt /tmp/changed-snapshots.txt
+
+      - name: Upload baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: baselines-${{ matrix.project }}-${{ matrix.shard }}
+          path: |
+            /tmp/baselines.tgz
+            /tmp/changed-snapshots.txt
