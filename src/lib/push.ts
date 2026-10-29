@@ -150,6 +150,90 @@ export function isIosSafari(): boolean {
 let pushOps: Promise<void> = Promise.resolve();
 let pushEpoch = 0;
 
+/**
+ * Set while a resubscription is owed after a VAPID key change or a
+ * browser-reported subscription change.
+ */
+const PUSH_RENEW_KEY = '21gifts-push-renew';
+
+/** Set by turning push off and cleared by turning it on, so no later resync undoes Off. */
+const PUSH_OFF_KEY = '21gifts-push-off';
+
+/**
+ * Whether this browser owes a resubscription after a VAPID key change or a
+ * browser-reported subscription change, with no new subscription stored yet.
+ * The next resync finishes it unless push is turned off, so the device counts
+ * as subscribed until then. Only while notification permission is granted:
+ * without it the resync cannot finish the renewal.
+ *
+ * @returns True while the renewal marker is stored and permission is
+ * `granted`; false otherwise or when storage throws.
+ */
+export function pushRenewalPending(): boolean {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+    return false;
+  }
+  try {
+    return window.localStorage.getItem(PUSH_RENEW_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether the last choice on this browser was Off or log out
+ * (`21gifts-push-off`, stored by {@link disablePush} and removed by
+ * {@link enablePush}). Shared by every tab, so a resync in another tab
+ * respects it too.
+ *
+ * @returns True while the Off flag is stored; false when it is not or storage
+ * throws.
+ */
+export function pushTurnedOff(): boolean {
+  try {
+    return window.localStorage.getItem(PUSH_OFF_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Store or remove one push flag in `localStorage`.
+ *
+ * @returns Whether storage accepted the change.
+ */
+function writePushFlag(key: string, on: boolean): boolean {
+  try {
+    if (on) {
+      window.localStorage.setItem(key, '1');
+    } else {
+      window.localStorage.removeItem(key);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Finish an Off: DELETE the endpoint (failure ignored), unsubscribe locally,
+ * and drop a pending renewal.
+ *
+ * @param sessionToken - Bearer session token.
+ * @param subscription - Local subscription to remove, or `null`.
+ */
+async function finishPushOff(
+  sessionToken: string,
+  subscription: PushSubscription | null,
+): Promise<void> {
+  writePushFlag(PUSH_RENEW_KEY, false);
+  if (subscription === null) {
+    return;
+  }
+  await deletePushSubscription(sessionToken, subscription.endpoint).catch(() => undefined);
+  await subscription.unsubscribe().catch(() => undefined);
+}
+
 function runPushOp(op: () => Promise<void>): Promise<void> {
   const run = pushOps.then(op, op);
   pushOps = run.then(
@@ -157,6 +241,47 @@ function runPushOp(op: () => Promise<void>): Promise<void> {
     () => undefined,
   );
   return run;
+}
+
+/** Endpoint and keys of a browser subscription, or `null` when one is missing. */
+function subscriptionBody(
+  subscription: PushSubscription,
+): { endpoint: string; keys: { p256dh: string; auth: string } } | null {
+  const json = subscription.toJSON();
+  const endpoint = json.endpoint;
+  const p256dh = json.keys?.['p256dh'];
+  const auth = json.keys?.['auth'];
+  if (
+    typeof endpoint !== 'string' ||
+    endpoint === '' ||
+    typeof p256dh !== 'string' ||
+    p256dh === '' ||
+    typeof auth !== 'string' ||
+    auth === ''
+  ) {
+    return null;
+  }
+  return { endpoint, keys: { p256dh, auth } };
+}
+
+/**
+ * Whether a subscription was made with a different application server key.
+ *
+ * @param subscription - Existing browser subscription.
+ * @param currentKey - Current VAPID public key bytes.
+ * @returns False when the browser does not expose the key, so an unknown key
+ * never forces a new subscription on every start.
+ */
+function subscriptionKeyDiffers(subscription: PushSubscription, currentKey: Uint8Array): boolean {
+  const raw = subscription.options?.applicationServerKey;
+  if (raw === null || raw === undefined) {
+    return false;
+  }
+  const stored = new Uint8Array(raw);
+  if (stored.length !== currentKey.length) {
+    return true;
+  }
+  return stored.some((byte, index) => byte !== currentKey[index]);
 }
 
 /**
@@ -172,26 +297,13 @@ async function subscribeAndPost(sessionToken: string): Promise<void> {
     userVisibleOnly: true,
     applicationServerKey,
   });
-  const json = subscription.toJSON();
-  const endpoint = json.endpoint;
-  const p256dh = json.keys?.['p256dh'];
-  const auth = json.keys?.['auth'];
-  if (
-    typeof endpoint !== 'string' ||
-    endpoint === '' ||
-    typeof p256dh !== 'string' ||
-    p256dh === '' ||
-    typeof auth !== 'string' ||
-    auth === ''
-  ) {
+  const body = subscriptionBody(subscription);
+  if (body === null) {
     await subscription.unsubscribe().catch(() => undefined);
     throw new Error('Invalid subscription');
   }
   try {
-    await postPushSubscription(sessionToken, {
-      endpoint,
-      keys: { p256dh, auth },
-    });
+    await postPushSubscription(sessionToken, body);
   } catch (err) {
     await subscription.unsubscribe().catch(() => undefined);
     throw err;
@@ -200,7 +312,7 @@ async function subscribeAndPost(sessionToken: string): Promise<void> {
 
 /**
  * Enable Web Push for the signed-in member: register the worker, subscribe, and
- * POST the subscription to the api.
+ * POST the subscription to the api. Clears the flag a previous Off stored.
  *
  * @param sessionToken - Bearer session token.
  * @throws Error with message `Notification permission denied` when permission is
@@ -220,27 +332,49 @@ export async function enablePush(sessionToken: string): Promise<void> {
     if (epoch !== pushEpoch) {
       return;
     }
+    writePushFlag(PUSH_OFF_KEY, false);
     await subscribeAndPost(sessionToken);
   });
 }
 
 /**
  * Re-POST an existing Web Push subscription when OS permission is already
- * granted. No-op when Push APIs are missing, permission is not `granted`, or
- * there is no local subscription (opt-out). Does not call `requestPermission`
- * or `subscribe()`. POST failure leaves the local subscription in place.
+ * granted. No-op when Push APIs are missing, no service worker is registered,
+ * or there is no local subscription (opt-out). Without granted permission it
+ * only removes a pending renewal, so granting permission later is not an
+ * opt-in. Does not register the worker or call `requestPermission`. When the
+ * subscription was made with a different VAPID key than the api's current one,
+ * unsubscribe, subscribe again with the current key, POST the new
+ * subscription, and DELETE the old endpoint. A renewal that failed after the
+ * old subscription was dropped is finished on the next call even without a
+ * local subscription. When the renewal marker cannot be stored, the old
+ * subscription is kept and re-posted instead. POST failure leaves the local
+ * subscription in place. While the Off flag from {@link disablePush} is set,
+ * a subscription still present is deleted and unsubscribed instead, and
+ * nothing is subscribed.
  *
  * @param sessionToken - Bearer session token.
- * @throws When persisting the existing subscription fails (503
- * `Push is not configured`, or the api error on other non-2xx).
+ * @param subscriptionChanged - True when the service worker reported a
+ * browser-side subscription change. A missing local subscription then means
+ * the worker could not subscribe again, not an opt-out, so subscribe with the
+ * current key.
+ * @throws When fetching the VAPID key or persisting the subscription fails (503
+ * `Push is not configured`, or the api error on other non-2xx), when the
+ * browser's `PushManager.subscribe` rejects, or with `Invalid subscription`
+ * when a new subscription omits endpoint or keys.
  */
-export async function resyncPushSubscription(sessionToken: string): Promise<void> {
+export async function resyncPushSubscription(
+  sessionToken: string,
+  subscriptionChanged = false,
+): Promise<void> {
   const epoch = pushEpoch;
   await runPushOp(async () => {
     if (epoch !== pushEpoch) {
       return;
     }
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+      // Without permission the renewal cannot finish; granting it later is not an opt-in.
+      writePushFlag(PUSH_RENEW_KEY, false);
       return;
     }
     if (
@@ -249,45 +383,115 @@ export async function resyncPushSubscription(sessionToken: string): Promise<void
     ) {
       return;
     }
-    const registration = await registerPushWorker();
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return;
+    }
+    // Off in this tab bumps pushEpoch, and its queued disablePush cleans up.
+    // Off in another tab, or an earlier Off whose log out was cut off, shows
+    // only in the shared flag; finish it here for the subscription held now.
+    const stopped = async (current: PushSubscription | null): Promise<boolean> => {
+      if (epoch !== pushEpoch) {
+        return true;
+      }
+      if (!pushTurnedOff()) {
+        return false;
+      }
+      await finishPushOff(sessionToken, current);
+      return true;
+    };
     const subscription = await registration.pushManager.getSubscription();
+    if (await stopped(subscription)) {
+      return;
+    }
+    if (subscription === null && !subscriptionChanged && !pushRenewalPending()) {
+      return;
+    }
+    const body = subscription === null ? null : subscriptionBody(subscription);
+    if (subscription !== null && body === null) {
+      return;
+    }
     if (subscription === null) {
+      // Owed before the key fetch, so a failed fetch is retried on the next start.
+      writePushFlag(PUSH_RENEW_KEY, true);
+    }
+    const applicationServerKey = new Uint8Array(
+      vapidPublicKeyToBytes(await fetchVapidPublicKey(sessionToken)),
+    );
+    if (await stopped(subscription)) {
       return;
     }
-    if (epoch !== pushEpoch) {
-      return;
-    }
-    const json = subscription.toJSON();
-    const endpoint = json.endpoint;
-    const p256dh = json.keys?.['p256dh'];
-    const auth = json.keys?.['auth'];
     if (
-      typeof endpoint !== 'string' ||
-      endpoint === '' ||
-      typeof p256dh !== 'string' ||
-      p256dh === '' ||
-      typeof auth !== 'string' ||
-      auth === ''
+      subscription !== null &&
+      body !== null &&
+      !subscriptionKeyDiffers(subscription, applicationServerKey)
     ) {
+      await postPushSubscription(sessionToken, body);
+      if (await stopped(subscription)) {
+        return;
+      }
+      writePushFlag(PUSH_RENEW_KEY, false);
       return;
     }
-    await postPushSubscription(sessionToken, {
-      endpoint,
-      keys: { p256dh, auth },
+    // The push service rejects sends signed with the new key for a
+    // subscription bound to the old one, and a browser subscribes with a new
+    // key only after the old subscription is gone. The marker lets the next
+    // start finish a renewal that failed in between; without it, keep the old
+    // subscription rather than risk losing push.
+    if (!writePushFlag(PUSH_RENEW_KEY, true) && body !== null) {
+      await postPushSubscription(sessionToken, body);
+      await stopped(subscription);
+      return;
+    }
+    if (subscription !== null) {
+      await subscription.unsubscribe().catch(() => undefined);
+    }
+    const next = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey,
     });
+    const nextBody = subscriptionBody(next);
+    if (nextBody === null) {
+      await next.unsubscribe().catch(() => undefined);
+      throw new Error('Invalid subscription');
+    }
+    if (await stopped(next)) {
+      return;
+    }
+    await postPushSubscription(sessionToken, nextBody);
+    if (await stopped(next)) {
+      return;
+    }
+    writePushFlag(PUSH_RENEW_KEY, false);
+    if (body !== null && nextBody.endpoint !== body.endpoint) {
+      await deletePushSubscription(sessionToken, body.endpoint).catch(() => undefined);
+    }
   });
 }
 
 /**
  * Disable Web Push for the signed-in member: DELETE the endpoint on the api
- * (when a subscription exists) and unsubscribe locally.
+ * (when a subscription exists) and unsubscribe locally. Clears a pending key
+ * renewal and stores the Off flag that a later resync respects. Never
+ * registers the service worker; no-op when none is registered or Push APIs are
+ * missing.
  *
  * @param sessionToken - Bearer session token.
  */
 export async function disablePush(sessionToken: string): Promise<void> {
   pushEpoch += 1;
+  // Write now as well: log out waits only briefly for the queue.
+  writePushFlag(PUSH_RENEW_KEY, false);
+  writePushFlag(PUSH_OFF_KEY, true);
   await runPushOp(async () => {
-    const registration = await registerPushWorker();
+    writePushFlag(PUSH_RENEW_KEY, false);
+    if (typeof navigator.serviceWorker === 'undefined') {
+      return;
+    }
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return;
+    }
     const subscription = await registration.pushManager.getSubscription();
     if (subscription === null) {
       return;

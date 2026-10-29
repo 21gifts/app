@@ -559,7 +559,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/push/vapid-public` (VAPID application server public key for Web Push subscribe).
 - **Errors:** Upstream 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/profile` and via `enablePush` from the SignedInChrome Notifications click.
+- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/profile`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/push-subscriptions
@@ -685,7 +685,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).
 - **Errors:** Upstream 400, 401, 404, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `deletePushSubscription` via `disablePush` on `/profile`.
+- **Used by:** `deletePushSubscription` via `disablePush` on `/profile` and in `LogoutButton`, and via `resyncPushSubscription` in `SignedInChrome` for the old endpoint after a VAPID key change.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /trust/graph
