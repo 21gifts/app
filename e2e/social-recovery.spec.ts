@@ -1069,13 +1069,31 @@ test.describe('the Social Recovery prompt on the forum home', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('no Social Recovery prompt once it is set up, or without a grant', async ({ page }) => {
+  test('no Social Recovery prompt once it is set up', async ({ page }) => {
     await signInOwner(page, { hasPosted: true, socialRecoverySetUp: true, funding: ADMITTED });
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
+
+  /** A funding object without a grant; each case below sets its status. */
+  const NO_GRANT = { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null };
+
+  for (const [label, funding] of [
+    ['a pending application', { ...NO_GRANT, status: 'pending' }],
+    ['a rejected application', { ...NO_GRANT, status: 'rejected' }],
+    ['no application', NO_GRANT],
+    ['no funding object (basis)', null],
+  ] as const) {
+    test(`no Social Recovery prompt without a grant: ${label}`, async ({ page }) => {
+      await signInOwner(page, { hasPosted: true, socialRecoverySetUp: false, funding });
+      await emptyForum(page);
+      await page.goto('/welcome');
+      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+    });
+  }
 });
 
 test('the phrase screen warns that the 12 words take over the whole account', async ({ page }) => {
