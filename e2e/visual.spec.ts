@@ -37168,4 +37168,14 @@ test.describe('held shares states', () => {
     );
     await shotScreen(page, 'state-held-shares-camera-denied');
   });
+
+  test('held shares camera-unavailable', async ({ page }) => {
+    await seedHolder(page, { kind: 'none' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'No camera found. Use a phone with a camera to scan the code.',
+    );
+    await shotScreen(page, 'state-held-shares-camera-unavailable');
+  });
 });

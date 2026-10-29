@@ -2134,7 +2134,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`PaySheet` in `ForumBoard`, `ForumReplyPayPage`, `HabitComments`, `InboxScreen`) show no invoice QR and no address QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletOwnAddress` for the member's own-address QR for the top-up on `/loans/repay` or after **Top up your wallet** (`LoanRepayScreen`), also on a smartphone. `WalletScreenView` shows the member's own address QR in the `/wallet` Receive view, on every device.
+- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`PaySheet` in `ForumBoard`, `ForumReplyPayPage`, `HabitComments`, `InboxScreen`) show no invoice QR and no address QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletOwnAddress` for the member's own-address QR for the top-up on `/loans/repay` or after **Top up your wallet** (`LoanRepayScreen`), also on a smartphone. `WalletScreenView` shows the member's own address QR in the `/wallet` Receive view, on every device. `HeldSharesScreen` shows a kept share's code (**Share code**, no logo) on `/settings/held-shares`, on every device; that code is not a payment QR.
 
 ## Function: QrScanner
 
@@ -6309,10 +6309,10 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: InlineConfirm
 
-- **Purpose:** Bordered confirm or cancel group shared by post delete, habit archive, and habit comment delete. Callers keep their own idle button. This is only the open question.
+- **Purpose:** Bordered confirm or cancel group shared by post delete, habit archive, habit comment delete, and held-share delete. Callers keep their own idle button. This is only the open question.
 - **Inputs:** `label` (the question and the group's accessible name), `confirmLabel`, `cancelLabel`, `onConfirm`, `onCancel`, optional `busy`, and optional `error`.
 - **Returns / side effects:** A `role="group"` with the question, an optional alert, a check (a spinner while `busy`), and an X. Both actions are disabled while `busy`. It sends no request of its own.
-- **Used by:** `DeletePostControl`, `MemberHabits`, and `HabitComments`.
+- **Used by:** `DeletePostControl`, `MemberHabits`, `HabitComments`, and `HeldSharesScreen` (the delete confirm of a kept share on `/settings/held-shares`).
 
 ## Function: deleteMessage
 

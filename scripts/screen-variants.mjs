@@ -1803,6 +1803,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-held-shares-camera-denied')",
   },
   {
+    route: '/settings/held-shares',
+    id: 'camera-unavailable',
+    image: 'held-shares-camera-unavailable.png',
+    visual: 'state-held-shares-camera-unavailable',
+    needle: "shotScreen(page, 'state-held-shares-camera-unavailable')",
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

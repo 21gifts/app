@@ -973,6 +973,16 @@ test.describe('shares kept for others', () => {
       'Camera access is off. Allow the camera to scan the code.',
     );
   });
+
+  test('a device without a camera says to use a phone with one', async ({ page }) => {
+    await stubCamera(page, { kind: 'none' });
+    await signInOwner(page);
+    await page.goto('/settings/held-shares');
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'No camera found. Use a phone with a camera to scan the code.',
+    );
+  });
 });
 
 test.describe('the Social Recovery prompt on the forum home', () => {

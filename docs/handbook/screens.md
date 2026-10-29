@@ -1444,6 +1444,12 @@ After **Keep a share** with the camera blocked: **Camera access is off. Allow th
 
 ![21.gifts keep a share camera blocked](images/held-shares-camera-denied.png)
 
+### Variant: camera-unavailable
+
+After **Keep a share** on a device without a camera: **No camera found. Use a phone with a camera to scan the code.** on the black camera area.
+
+![21.gifts keep a share without a camera](images/held-shares-camera-unavailable.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.

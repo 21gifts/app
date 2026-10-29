@@ -1482,6 +1482,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings/held-shares:camera-unavailable",
+    "label": "/settings/held-shares camera-unavailable",
+    "visual": "state-held-shares-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",

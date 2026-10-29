@@ -5809,6 +5809,11 @@
     "es": "Tras Guardar una parte con la cámara bloqueada: El acceso a la cámara está desactivado. Permite la cámara para escanear el código. sobre la zona negra de la cámara.",
     "fil": "Pagkatapos ng Magtabi ng bahagi habang naka-block ang camera: Naka-off ang access sa camera. Payagan ang camera para ma-scan ang code. sa itim na bahagi ng camera."
   },
+  "/settings/held-shares:camera-unavailable": {
+    "de": "Nach Anteil aufbewahren auf einem Gerät ohne Kamera: Keine Kamera gefunden. Nutze ein Telefon mit Kamera, um den Code zu scannen. auf der schwarzen Kamerafläche.",
+    "es": "Tras Guardar una parte en un dispositivo sin cámara: No se encontró ninguna cámara. Usa un teléfono con cámara para escanear el código. sobre la zona negra de la cámara.",
+    "fil": "Pagkatapos ng Magtabi ng bahagi sa device na walang camera: Walang nakitang camera. Gumamit ng teleponong may camera para ma-scan ang code. sa itim na bahagi ng camera."
+  },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",
     "es": "Después de Ya lo envié: tres puntos llenos, un indicador de carga, Esperando tus Bitcoin… y Termina de enviar en tu otra billetera. Esta pantalla se actualiza sola. No hay botón Volver en la hoja: la flecha de arriba a la izquierda vuelve al paso de la dirección. Cuando llega el pago, el flujo avanza solo.",
