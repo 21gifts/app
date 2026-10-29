@@ -48,9 +48,11 @@ type VersionBlock = {
  * The idle start view and the account question also offer **Recover account
  * via Social Recovery**, a link to `/recover`, unless `showRecover` is false
  * (inside {@link WalletLoginCard}, which stands in for a member session); the
- * held start view never does. A passkey of a social recovery that is not
- * finished yet shows `login.recoveryPending` on the error view, with that
- * link under **Try again** when `showRecover` is set.
+ * held start view does not either. A passkey of a social recovery that is not
+ * finished yet (it belongs to that recovery, not to a held session) shows
+ * `login.recoveryPending` with that link under the button wherever it
+ * answered: on the error view under **Try again**, and on the held start view
+ * under **Log in**, in place of `login.error`.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
@@ -59,8 +61,8 @@ type VersionBlock = {
  * @param props - `heldProblem`: why the last wallet open of the held-back
  *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
  *   `login.error`), shown on the held start view until its next **Log in**.
- *   `showRecover`: whether the idle and choice views, and the error view of an
- *   unfinished recovery, offer the Social Recovery entry (default `true`).
+ *   `showRecover`: whether the idle and choice views offer the Social Recovery
+ *   entry (default `true`); an unfinished recovery always offers it.
  * @returns The card.
  */
 export function LoginCard({
@@ -126,16 +128,18 @@ export function LoginCard({
     body = (
       <StartView
         held
-        showRecover={false}
+        showRecover={!wrongAccountHint && passkey.recoveryPending}
         greeting={lockedName}
         alert={
           wrongAccountHint
             ? 'login.wrongAccount'
-            : heldTried || heldProblem === 'failed'
-              ? 'login.error'
-              : heldProblem === 'noPrf'
-                ? 'wallet.prfUnsupported'
-                : null
+            : passkey.recoveryPending
+              ? 'login.recoveryPending'
+              : heldTried || heldProblem === 'failed'
+                ? 'login.error'
+                : heldProblem === 'noPrf'
+                  ? 'wallet.prfUnsupported'
+                  : null
         }
         onLogin={() => {
           clearWrongAccount();
@@ -157,7 +161,6 @@ export function LoginCard({
         versionErrorKey={versionErrorKey}
         prfUnsupported={prfUnsupported}
         recoveryPending={passkey.recoveryPending}
-        showRecover={showRecover}
         onRetry={() => {
           clearWrongAccount();
           if (wrongAccountHint) {
@@ -244,7 +247,8 @@ interface StartViewProps {
   /** True for a held-back session: **Confirm to open your wallet** above **Log in**. */
   held?: boolean;
   /** Alert above **Log in**, or null. */
-  alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
+  alert?:
+    'login.error' | 'login.wrongAccount' | 'login.recoveryPending' | 'wallet.prfUnsupported' | null;
   /** Whether **Recover account via Social Recovery** follows **Log in**. */
   showRecover: boolean;
 }
@@ -484,10 +488,11 @@ interface ErrorViewProps {
   versionErrorKey: 'login.iosVersion' | 'login.androidVersion' | null;
   /** When true, the new passkey cannot hold a wallet on this phone or browser. */
   prfUnsupported: boolean;
-  /** When true, the passkey belongs to a social recovery that is not finished yet. */
+  /**
+   * When true, the passkey belongs to a social recovery that is not finished
+   * yet: **Recover account via Social Recovery** follows **Try again**.
+   */
   recoveryPending: boolean;
-  /** Whether **Recover account via Social Recovery** follows **Try again** for that recovery. */
-  showRecover: boolean;
 }
 
 /**
@@ -495,9 +500,9 @@ interface ErrorViewProps {
  * signed in with an account whose session is refused, the new passkey
  * cannot hold a wallet on this phone or browser (no PRF output), or the
  * passkey belongs to a social recovery that is not finished yet. That last
- * alert names **Recover account via Social Recovery**, so the link follows
- * **Try again** when `showRecover` is set: Try again asks the same passkey,
- * which the api refuses the same way until the recovery is finished.
+ * alert names **Recover account via Social Recovery**, so the link always
+ * follows **Try again**: Try again asks the same passkey, which the api
+ * refuses the same way until the recovery is finished.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
@@ -509,7 +514,6 @@ function ErrorView({
   versionErrorKey,
   prfUnsupported,
   recoveryPending,
-  showRecover,
 }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   const pending = !wrongAccount && recoveryPending;
@@ -539,7 +543,7 @@ function ErrorView({
       <Button type="button" onClick={onRetry}>
         {t('login.retry')}
       </Button>
-      {pending && showRecover ? <RecoverLink /> : null}
+      {pending ? <RecoverLink /> : null}
     </>
   );
 }

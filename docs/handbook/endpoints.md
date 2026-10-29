@@ -80,7 +80,7 @@
 ## Endpoint: POST /auth/passkey/authenticate/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins; 409 `{ error: 'Recovery is not finished', code: 'recovery_pending' }` when the passkey belongs to a social recovery that is not finished yet (the app never reports that passkey to the authenticator as unknown).
 - **Used by:** `finishPasskeyAuthentication`.
 - **Auth:** Public.
 

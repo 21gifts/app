@@ -7,11 +7,15 @@ import {
   type RemainingBalanceDeps,
 } from '@/lib/remaining-balance';
 import { traceWallet } from '@/lib/sentry';
+import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
 import { receiveWalletSparkAddress, WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 
 vi.mock('@/lib/sentry', () => ({
   traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
+vi.mock('@/lib/wallet/payment-failure', () => ({
+  reportPaymentFailure: vi.fn(),
 }));
 vi.mock('@/lib/wallet/wallet-sdk', () => ({
   loadWalletSdk: vi.fn(),
@@ -24,6 +28,7 @@ vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
 const WORDS = 'words of a previous wallet';
 const KEY = `02${'c'.repeat(64)}`;
 const OWN_ADDRESS = 'spark1mywallet';
+const SESSION = 'sess-owner';
 
 /** A fake connection: the methods the move uses. */
 interface FakeConnection {
@@ -110,7 +115,7 @@ describe('openPreviousWallet', () => {
     wallet = walletOf([5_000, 5_000, 0]);
     expect(await openPreviousWallet(WORDS, KEY, deps)).toEqual({ balanceSats: 5_000 });
     expect(first.disconnect).toHaveBeenCalled();
-    expect(await transferRemainingBalance()).toBe('sent');
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
     expect(wallet.sendToSparkAddress).toHaveBeenCalledWith(OWN_ADDRESS, 5_000, 'key-2');
   });
 
@@ -127,7 +132,27 @@ describe('openPreviousWallet', () => {
   ])('answers wallet %s', async (_label, arrange) => {
     arrange();
     expect(await openPreviousWallet(WORDS, KEY, deps)).toBe('wallet');
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
+  });
+
+  it.each([
+    ['while the SDK loads', 'loadSdk'],
+    ['while the key is read', 'identityPubkey'],
+  ] as const)('connects nothing when the page closed it %s', async (_label, step) => {
+    if (step === 'loadSdk') {
+      deps.loadSdk.mockImplementationOnce(async () => {
+        await closePreviousWallet();
+        return sdk as unknown as WalletSdk;
+      });
+    } else {
+      sdk.identityPubkey.mockImplementationOnce(async () => {
+        await closePreviousWallet();
+        return KEY;
+      });
+    }
+    expect(await openPreviousWallet(WORDS, KEY, deps)).toBe('wallet');
+    expect(sdk.connect).not.toHaveBeenCalled();
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
   });
 
   it('closes a wallet that opened after the page closed it', async () => {
@@ -137,7 +162,7 @@ describe('openPreviousWallet', () => {
     });
     expect(await openPreviousWallet(WORDS, KEY, deps)).toBe('wallet');
     expect(wallet.disconnect).toHaveBeenCalled();
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
   });
 
   it('uses the real effects by default', async () => {
@@ -151,20 +176,20 @@ describe('openPreviousWallet', () => {
 
 describe('transferRemainingBalance', () => {
   it('without an open wallet is an error', async () => {
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
     expect(receiveWalletSparkAddress).not.toHaveBeenCalled();
   });
 
   it('an empty wallet is sent without a send', async () => {
     wallet = walletOf([0]);
     await openPreviousWallet(WORDS, KEY, deps);
-    expect(await transferRemainingBalance()).toBe('sent');
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
     expect(wallet.sendToSparkAddress).not.toHaveBeenCalled();
   });
 
   it('sends the whole synced balance to the member’s own wallet', async () => {
     await openPreviousWallet(WORDS, KEY, deps);
-    expect(await transferRemainingBalance()).toBe('sent');
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
     expect(wallet.sendToSparkAddress).toHaveBeenCalledWith(OWN_ADDRESS, 21_000, 'key-1');
     expect(traceWallet).toHaveBeenCalledWith('wallet.send', expect.any(Function), {
       route: 'spark',
@@ -172,19 +197,33 @@ describe('transferRemainingBalance', () => {
     expect(wallet.getInfo).toHaveBeenCalledTimes(3);
   });
 
-  it('a send that throws keeps its key for Try again', async () => {
+  it('a send that throws keeps its key for Try again and is reported as a failed payment', async () => {
     wallet = walletOf([21_000, 21_000, 21_000, 0]);
     await openPreviousWallet(WORDS, KEY, deps);
-    wallet.sendToSparkAddress.mockRejectedValueOnce(new Error('unknown outcome'));
-    expect(await transferRemainingBalance()).toBe('error');
-    expect(await transferRemainingBalance()).toBe('sent');
+    const rejection = new Error('Network error: connection reset');
+    wallet.sendToSparkAddress.mockRejectedValueOnce(rejection);
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      {
+        stage: 'send',
+        reason: 'network',
+        method: 'spark',
+        amountSats: 21_000,
+        feeSats: null,
+        error: rejection,
+      },
+      'previous_wallet',
+      { session: SESSION },
+    );
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
     expect(wallet.sendToSparkAddress.mock.calls.map((call) => call[2])).toEqual(['key-1', 'key-1']);
   });
 
   it('funds that arrived during a send get a second send with a new key', async () => {
     wallet = walletOf([21_000, 21_000, 700, 0]);
     await openPreviousWallet(WORDS, KEY, deps);
-    expect(await transferRemainingBalance()).toBe('sent');
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
     expect(wallet.sendToSparkAddress.mock.calls).toEqual([
       [OWN_ADDRESS, 21_000, 'key-1'],
       [OWN_ADDRESS, 700, 'key-2'],
@@ -194,15 +233,18 @@ describe('transferRemainingBalance', () => {
   it(`gives up after ${RECOVERY_SEND_TRIES} sends while funds keep arriving`, async () => {
     wallet = walletOf([100]);
     await openPreviousWallet(WORDS, KEY, deps);
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
     expect(wallet.sendToSparkAddress).toHaveBeenCalledTimes(RECOVERY_SEND_TRIES);
+    // Every send went out; nothing is a failed payment.
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
 
   it('a member wallet that does not open is an error', async () => {
     await openPreviousWallet(WORDS, KEY, deps);
     vi.mocked(receiveWalletSparkAddress).mockRejectedValueOnce(new Error('wallet-connect'));
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
     expect(wallet.sendToSparkAddress).not.toHaveBeenCalled();
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
 });
 
@@ -212,6 +254,6 @@ describe('closePreviousWallet', () => {
     wallet.disconnect.mockRejectedValueOnce(new Error('closed'));
     await closePreviousWallet();
     expect(wallet.disconnect).toHaveBeenCalled();
-    expect(await transferRemainingBalance()).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
   });
 });

@@ -3910,9 +3910,9 @@
     "fil": "Pinangalanang miyembro na sang-ayon sa mga panuntunan ng sala at hasPosted false. Pagkatapos mag-log in sa /welcome (ang tanging screen na nagpapakita nito), ang diyalogo IntroduceYourselfOverlay Ipakilala ang sarili mo na may kopya ng katawan at Sumulat ng pagpapakilala. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Isinasara ng Isara ang pagkakabit na ito lang. Isinasara ng Sumulat ng pagpapakilala (Button type=\"button\" size=\"lg\") ang overlay, binubuksan ang lugar ng pagsulat at itinatakda ang pokus sa text field nito (requestForumCompose / FORUM_COMPOSE_EVENT). Nananatili ito sa /welcome; hindi kailanman nagbubukas ang diyalogo sa /wallet, sa point of sale, sa profile, sa mga mensahe, o sa daloy ng setup."
   },
   "/welcome:overlay-social-recovery": {
-    "de": "Zugelassenes Mitglied des Förderprogramms, das schon gepostet hat und noch keine Social Recovery hat (socialRecoverySetUp false). Auf /welcome, dem einzigen Bildschirm, der ihn zeigt, der Dialog SocialRecoveryPromptOverlay Social Recovery für dein Förderprogramm mit seinem Text und Mein Konto absichern. Schließen (X) ist nur als Symbol sichtbar.\n\n- Aktionen: Schließen blendet ihn für diesen Besuch aus; beim nächsten Besuch erscheint er wieder, solange Social Recovery fehlt. Mein Konto absichern (Button type=\"button\" size=\"lg\") schließt ihn und öffnet /settings/social-recovery ohne Neuladen der Seite. Gilt auch Stell dich vor, kommt jener Dialog zuerst, und dieser erscheint, sobald dessen Schließen ihn schließt. Vorstellung schreiben öffnet stattdessen den Schreibbereich, und dieser Dialog wartet auf den nächsten Besuch, damit er den Schreibbereich nie verdeckt.",
-    "es": "Miembro admitido de la beca que ya publicó y aún no tiene Social Recovery (socialRecoverySetUp false). En /welcome, la única pantalla que lo muestra, el diálogo SocialRecoveryPromptOverlay Social Recovery para tu beca con su texto y Proteger mi cuenta. Cerrar (X) es solo icono.\n\n- Acciones: Cerrar lo oculta durante esta visita; vuelve a aparecer en la siguiente mientras falte Social Recovery. Proteger mi cuenta (Button type=\"button\" size=\"lg\") lo cierra y abre /settings/social-recovery sin recargar la página. Si también aplica Preséntate, ese diálogo va primero y este aparece en cuanto su Cerrar lo cierra. Escribe una presentación abre en cambio el área de redacción, y este espera a la siguiente visita, así que nunca cubre el área de redacción.",
-    "fil": "Tinanggap na miyembro ng grant na nakapag-post na at wala pang Social Recovery (socialRecoverySetUp false). Sa /welcome, ang tanging screen na nagpapakita nito, ang diyalogo SocialRecoveryPromptOverlay Social Recovery para sa grant mo na may kopya nito at I-secure ang account ko. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Itinatago ito ng Isara para sa pagbisitang ito; lilitaw ulit ito sa susunod na pagbisita habang wala pang Social Recovery. Isinasara ito ng I-secure ang account ko (Button type=\"button\" size=\"lg\") at binubuksan ang /settings/social-recovery nang hindi nire-reload ang page. Kapag umaangkop din ang Ipakilala ang sarili mo, iyon ang mauuna, at lalabas ito kapag naisara na iyon ng Isara nito. Ang Sumulat ng pagpapakilala ay binubuksan sa halip ang lugar ng pagsulat, at hihintayin nito ang susunod na pagbisita, kaya hindi nito kailanman natatakpan ang lugar ng pagsulat."
+    "de": "Zugelassenes Mitglied des Förderprogramms, das schon gepostet hat und noch keine Social Recovery hat (socialRecoverySetUp false). Auf /welcome, dem einzigen Bildschirm, der ihn zeigt, der Dialog SocialRecoveryPromptOverlay Social Recovery für dein Förderprogramm mit seinem Text und Mein Konto absichern. Schließen (X) ist nur als Symbol sichtbar.\n\n- Aktionen: Schließen blendet ihn für diesen Besuch aus; beim nächsten Besuch erscheint er wieder, solange Social Recovery fehlt. Mein Konto absichern (Button type=\"button\" size=\"lg\") schließt ihn und öffnet /settings/social-recovery ohne Neuladen der Seite. Gilt auch Stell dich vor, kommt jener Dialog zuerst, und dieser erscheint im selben Besuch, sobald jener geschlossen ist, mit Schließen oder mit Vorstellung schreiben (das auch den Schreibbereich unter diesem Dialog öffnet).",
+    "es": "Miembro admitido de la beca que ya publicó y aún no tiene Social Recovery (socialRecoverySetUp false). En /welcome, la única pantalla que lo muestra, el diálogo SocialRecoveryPromptOverlay Social Recovery para tu beca con su texto y Proteger mi cuenta. Cerrar (X) es solo icono.\n\n- Acciones: Cerrar lo oculta durante esta visita; vuelve a aparecer en la siguiente mientras falte Social Recovery. Proteger mi cuenta (Button type=\"button\" size=\"lg\") lo cierra y abre /settings/social-recovery sin recargar la página. Si también aplica Preséntate, ese diálogo va primero y este aparece en la misma visita en cuanto aquel se cierra, con su Cerrar o con Escribe una presentación (que además abre el área de redacción debajo de este).",
+    "fil": "Tinanggap na miyembro ng grant na nakapag-post na at wala pang Social Recovery (socialRecoverySetUp false). Sa /welcome, ang tanging screen na nagpapakita nito, ang diyalogo SocialRecoveryPromptOverlay Social Recovery para sa grant mo na may kopya nito at I-secure ang account ko. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Itinatago ito ng Isara para sa pagbisitang ito; lilitaw ulit ito sa susunod na pagbisita habang wala pang Social Recovery. Isinasara ito ng I-secure ang account ko (Button type=\"button\" size=\"lg\") at binubuksan ang /settings/social-recovery nang hindi nire-reload ang page. Kapag umaangkop din ang Ipakilala ang sarili mo, iyon ang mauuna, at lalabas ito sa parehong pagbisita kapag naisara na iyon, sa Isara nito o sa Sumulat ng pagpapakilala (na nagbubukas din ng lugar ng pagsulat sa ilalim nito)."
   },
   "/welcome:menu-unread": {
     "de": "Offenes Menü mit unreadCount 3, vorgegeben über GET /forum/notifications → Benachrichtigungen zeigt rechts 3 (nav.notificationsUnread, zugänglicher Name Benachrichtigungen, 3 ungelesen). Posteingang zeigt rechts nur dann eine Zahl, wenn ungelesene Posteingänge > 0 sind; Adas Standard-Posteingang ungelesen ist 0, daher keine Zahl. Die übrigen Menüzeilen entsprechen menu-open. Die installierte PWA-Startbildschirm-Markierung ist die Summe aus ungelesenen Benachrichtigungen, ungelesenem Posteingang und ungelesenem Moderationsraum (0 oder 1). Das Menü trennt die Zählungen weiterhin (Benachrichtigungen gegen Posteingang gegen Moderation).",
@@ -5860,9 +5860,9 @@
     "fil": "Naka-pin na fixture (?visual=sr-mismatch, sa mga Playwright build lang): hindi ang verified na wallet ng account ang bukas na wallet. Ang alerto Hindi binubuksan ng 12 salitang ito ang wallet ng account na ito. Itinigil ang setup. at walang mapipindot; aalis sa page ang arrow sa kaliwang itaas."
   },
   "/settings/social-recovery:wallet-error": {
-    "de": "Nach Weiter in diesem Build, das keine offene Wallet hat: der Hinweis Deine Wallet konnte nicht geöffnet werden. und Erneut versuchen.",
-    "es": "Tras Continuar en este build, que no tiene ninguna wallet abierta: la alerta No se pudo abrir tu wallet. e Intentar de nuevo.",
-    "fil": "Pagkatapos ng Magpatuloy sa build na ito, na walang bukas na wallet: ang alerto Hindi mabuksan ang wallet mo. at ang Subukan ulit."
+    "de": "Nach Weiter in diesem Build, das keine offene Wallet hat: der Hinweis Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
+    "es": "Tras Continuar en este build, que no tiene ninguna wallet abierta: la alerta No se pudo abrir tu wallet. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Pagkatapos ng Magpatuloy sa build na ito, na walang bukas na wallet: ang alerto Hindi mabuksan ang wallet mo. Pakisubukan ulit. at ang Subukan ulit."
   },
   "/settings/social-recovery:save-error": {
     "de": "Angeheftete Fixture (?visual=sr-save-error, nur Playwright-Builds): Der 21.gifts-Anteil konnte nicht gespeichert werden. Der Hinweis Die 21.gifts-Sicherung konnte nicht gespeichert werden. und Erneut versuchen, das denselben Anteil noch einmal hochlädt.",
@@ -5950,9 +5950,9 @@
     "fil": "Naka-pin na fixture (?visual=recover-blocked-closed, sa mga Playwright build lang): sarado ang mga login dahil sa update. Ang abiso ng login card na Nag-a-update ang 21.gifts. Subukan ulit mamaya., pagkatapos ay Subukan ulit, na nagpapatuloy sa pagbawi kung saan ito huminto, at Magsimula ulit."
   },
   "/recover:blocked-outdated": {
-    "de": "Angeheftete Fixture (?visual=recover-blocked-outdated, nur Playwright-Builds): Dieser Tab läuft mit einem älteren Build. Der Hinweis der Anmeldekarte Eine neue Version ist bereit mit Neu laden.",
-    "es": "Fixture fijado (?visual=recover-blocked-outdated, solo builds de Playwright): esta pestaña usa un build anterior. El aviso de la tarjeta de inicio de sesión Hay una nueva versión lista con Recargar.",
-    "fil": "Naka-pin na fixture (?visual=recover-blocked-outdated, sa mga Playwright build lang): mas lumang build ang tumatakbo sa tab na ito. Ang abiso ng login card na May bagong bersyon na kasama ang I-reload."
+    "de": "Angeheftete Fixture (?visual=recover-blocked-outdated, nur Playwright-Builds): Dieser Tab läuft mit einem älteren Build. Der Hinweis der Anmeldekarte Eine neue Version ist bereit, hier ohne Neu laden: Nur die Anmeldekarte und die Profilaktivierung laden die Seite neu.",
+    "es": "Fixture fijado (?visual=recover-blocked-outdated, solo builds de Playwright): esta pestaña usa un build anterior. El aviso de la tarjeta de inicio de sesión Hay una nueva versión lista, aquí sin Recargar: solo la tarjeta de inicio de sesión y la activación del perfil recargan la página.",
+    "fil": "Naka-pin na fixture (?visual=recover-blocked-outdated, sa mga Playwright build lang): mas lumang build ang tumatakbo sa tab na ito. Ang abiso ng login card na May bagong bersyon na, dito nang walang I-reload: ang login card at ang pag-activate ng profile lang ang nagre-reload ng page."
   },
   "/recover:not-found": {
     "de": "Angeheftete Fixture (?visual=recover-not-found, nur Playwright-Builds): Diese Wörter gehören zu keinem 21.gifts-Konto mit verbundener Wallet. und Neu beginnen.",
@@ -5980,9 +5980,9 @@
     "fil": "Naka-pin na fixture (?visual=recover-unavailable, sa mga Playwright build lang): hindi pa rin mahanap ang account pagkatapos ng tatlong subok. Hindi maabot ang serbisyo ng address ngayon. Subukan ulit pagkalipas ng isang minuto., Subukan ulit, at Magsimula ulit."
   },
   "/recover:wallet-error": {
-    "de": "Angeheftete Fixture (?visual=recover-wallet-error, nur Playwright-Builds): Die alte Wallet hat sich nicht geöffnet. Die Wallet konnte nicht geöffnet werden. Versuche es erneut., Erneut versuchen und Neu beginnen.",
-    "es": "Fixture fijado (?visual=recover-wallet-error, solo builds de Playwright): la wallet antigua no se abrió. No se pudo abrir la wallet. Inténtalo de nuevo., Intentar de nuevo y Empezar de nuevo.",
-    "fil": "Naka-pin na fixture (?visual=recover-wallet-error, sa mga Playwright build lang): hindi nabuksan ang lumang wallet. Hindi mabuksan ang wallet. Subukan ulit., Subukan ulit, at Magsimula ulit."
+    "de": "Angeheftete Fixture (?visual=recover-wallet-error, nur Playwright-Builds): Die alte Wallet hat sich nicht geöffnet. Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut., Erneut versuchen und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-wallet-error, solo builds de Playwright): la wallet antigua no se abrió. No se pudo abrir tu wallet. Inténtalo de nuevo., Intentar de nuevo y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-wallet-error, sa mga Playwright build lang): hindi nabuksan ang lumang wallet. Hindi mabuksan ang wallet mo. Pakisubukan ulit., Subukan ulit, at Magsimula ulit."
   },
   "/recover:found": {
     "de": "Angeheftete Fixture (?visual=recover-found, nur Playwright-Builds): Konto @ada gefunden., Erstelle auf diesem Telefon einen neuen Passkey. Er bekommt eigene neue 12 Wörter. und Neuen Passkey erstellen.",
@@ -6000,9 +6000,9 @@
     "fil": "Naka-pin na fixture (?visual=recover-restart, sa mga Playwright build lang): hindi natuloy ang paglipat at nagsimula ulit ang pagbawi. Hindi natuloy ang paglipat. Gawin ulit ang bagong passkey. sa itaas ng text na nakita ang account at Gumawa ng bagong passkey."
   },
   "/recover:passkey-cancelled": {
-    "de": "Angeheftete Fixture (?visual=recover-cancelled, nur Playwright-Builds): Die Passkey-Abfrage wurde geschlossen oder ist fehlgeschlagen. Der Passkey wurde nicht erstellt. Versuche es erneut. über Neuen Passkey erstellen.",
-    "es": "Fixture fijado (?visual=recover-cancelled, solo builds de Playwright): la solicitud del passkey se cerró o falló. No se creó el passkey. Inténtalo de nuevo. encima de Crear un nuevo passkey.",
-    "fil": "Naka-pin na fixture (?visual=recover-cancelled, sa mga Playwright build lang): isinara o nabigo ang passkey prompt. Hindi nagawa ang passkey. Subukan ulit. sa itaas ng Gumawa ng bagong passkey."
+    "de": "Angeheftete Fixture (?visual=recover-cancelled, nur Playwright-Builds): Die Passkey-Abfrage wurde geschlossen oder ist fehlgeschlagen. Passkey konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut. über Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-cancelled, solo builds de Playwright): la solicitud del passkey se cerró o falló. No se pudo configurar la passkey. Inténtalo de nuevo. encima de Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-cancelled, sa mga Playwright build lang): isinara o nabigo ang passkey prompt. Hindi ma-set up ang passkey. Subukan ulit. sa itaas ng Gumawa ng bagong passkey."
   },
   "/recover:passkey-timeout": {
     "de": "Angeheftete Fixture (?visual=recover-timeout, nur Playwright-Builds): Die Passkey-Abfrage ist abgelaufen. Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut. über Neuen Passkey erstellen.",
@@ -6015,9 +6015,9 @@
     "fil": "Naka-pin na fixture (?visual=recover-prf, sa mga Playwright build lang): walang PRF output ang bagong passkey. Hindi kayang maglaman ng 21.gifts wallet ang phone o browser na ito. Gumamit ng updated na phone o browser na sumusuporta sa passkeys. sa itaas ng Gumawa ng bagong passkey."
   },
   "/recover:new-wallet-error": {
-    "de": "Angeheftete Fixture (?visual=recover-new-wallet-error, nur Playwright-Builds): Der neue Passkey wurde erstellt, aber seine Wallet hat sich nicht geöffnet. Die Wallet konnte nicht geöffnet werden. Versuche es erneut. über Neuen Passkey erstellen, das den Passkey erneut erstellt.",
-    "es": "Fixture fijado (?visual=recover-new-wallet-error, solo builds de Playwright): se creó el nuevo passkey, pero su wallet no se abrió. No se pudo abrir la wallet. Inténtalo de nuevo. encima de Crear un nuevo passkey, que vuelve a crear el passkey.",
-    "fil": "Naka-pin na fixture (?visual=recover-new-wallet-error, sa mga Playwright build lang): nagawa ang bagong passkey, pero hindi nabuksan ang wallet nito. Hindi mabuksan ang wallet. Subukan ulit. sa itaas ng Gumawa ng bagong passkey, na gumagawa ulit ng passkey."
+    "de": "Angeheftete Fixture (?visual=recover-new-wallet-error, nur Playwright-Builds): Der neue Passkey wurde erstellt, aber seine Wallet hat sich nicht geöffnet. Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut. über Neuen Passkey erstellen, das den Passkey erneut erstellt.",
+    "es": "Fixture fijado (?visual=recover-new-wallet-error, solo builds de Playwright): se creó el nuevo passkey, pero su wallet no se abrió. No se pudo abrir tu wallet. Inténtalo de nuevo. encima de Crear un nuevo passkey, que vuelve a crear el passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-new-wallet-error, sa mga Playwright build lang): nagawa ang bagong passkey, pero hindi nabuksan ang wallet nito. Hindi mabuksan ang wallet mo. Pakisubukan ulit. sa itaas ng Gumawa ng bagong passkey, na gumagawa ulit ng passkey."
   },
   "/recover:transfer": {
     "de": "Angeheftete Fixture (?visual=recover-transfer, nur Playwright-Builds): Auf dieses Telefon übertragen, was umzieht, die Liste Konto, 21.gifts-Adresse und Guthaben, noch nichts abgehakt, und Übertragen.",
@@ -6135,9 +6135,9 @@
     "fil": "Naka-pin na fixture (?visual=prev-mismatch, sa mga Playwright build lang): ibang wallet ang binubuksan ng mga salita. Hindi binubuksan ng mga salitang ito ang dating wallet na ito. at Subukan ulit, na bumabalik sa simula."
   },
   "/settings/previous-wallets/[sparkPubkey]:wallet-error": {
-    "de": "Gültige Wörter in einem Build ohne Wallet (wie in Playwright): Die Wallet konnte nicht geöffnet werden. Versuche es erneut. und Erneut versuchen, das die Wallet mit denselben Wörtern erneut öffnet.",
-    "es": "Palabras válidas en un build sin wallet (como en Playwright): No se pudo abrir la wallet. Inténtalo de nuevo. e Intentar de nuevo, que vuelve a abrir la wallet con las mismas palabras.",
-    "fil": "Wastong mga salita sa build na walang wallet (gaya sa Playwright): Hindi mabuksan ang wallet. Subukan ulit. at Subukan ulit, na binubuksan ulit ang wallet gamit ang parehong mga salita."
+    "de": "Gültige Wörter in einem Build ohne Wallet (wie in Playwright): Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut. und Erneut versuchen, das die Wallet mit denselben Wörtern erneut öffnet.",
+    "es": "Palabras válidas en un build sin wallet (como en Playwright): No se pudo abrir tu wallet. Inténtalo de nuevo. e Intentar de nuevo, que vuelve a abrir la wallet con las mismas palabras.",
+    "fil": "Wastong mga salita sa build na walang wallet (gaya sa Playwright): Hindi mabuksan ang wallet mo. Pakisubukan ulit. at Subukan ulit, na binubuksan ulit ang wallet gamit ang parehong mga salita."
   },
   "/settings/previous-wallets/[sparkPubkey]:balance": {
     "de": "Angeheftete Fixture (?visual=prev-balance, nur Playwright-Builds): In dieser Wallet mit ihrem synchronisierten Guthaben ₿21'000 · $21.00 (aktueller Kurs) und Übertragen.",

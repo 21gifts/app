@@ -148,6 +148,30 @@ describe('LoginCard', () => {
       },
     );
 
+    it('says that a recovery is not finished yet and links to it, also under the held view, even without the entry elsewhere', () => {
+      const view = renderWithLocale(<LoginCard showRecover={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('error', 'recovery_pending', null, true);
+      view.rerender(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+      );
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      const login = screen.getByRole('button', { name: 'Log in' });
+      const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+      expect(entry.getAttribute('href')).toBe('/recover');
+      expect(login.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      useAuthStore.setState({ wrongAccount: true });
+      view.rerender(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'You signed in with the wrong account. Please try again with the correct account.',
+      );
+      expect(
+        screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
+      ).toBeNull();
+      useAuthStore.setState({ wrongAccount: false });
+    });
+
     it('shows a refused account on the held view and clears it on the next Log in', () => {
       const view = renderWithLocale(<LoginCard />);
       fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
@@ -351,14 +375,18 @@ describe('LoginCard', () => {
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
-  it('offers no Social Recovery entry on an unfinished recovery when a member session stands behind the card', () => {
+  it('links an unfinished recovery under Try again also when the card offers no entry otherwise', () => {
     mockPasskey('error', 'recovery_pending', null, true);
     renderWithLocale(<LoginCard showRecover={false} />);
     expect(screen.getByRole('alert').textContent).toBe(
       'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
     );
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    expect(
+      screen
+        .getByRole('link', { name: 'Recover account via Social Recovery' })
+        .getAttribute('href'),
+    ).toBe('/recover');
   });
 
   it('offers no Social Recovery entry on other errors, and the wrong-account copy wins over an unfinished recovery', () => {

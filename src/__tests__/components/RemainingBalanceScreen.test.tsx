@@ -149,7 +149,7 @@ describe('RemainingBalanceScreen', () => {
 
   it.each([
     ['mismatch', 'These words do not open this previous wallet.'],
-    ['walletError', 'The wallet could not be opened. Try again.'],
+    ['walletError', 'Your wallet could not be opened. Please try again.'],
   ] as const)('%s says so and offers Try again', (step, text) => {
     show({ step });
     expect(screen.getByRole('alert').textContent).toBe(text);

@@ -166,7 +166,7 @@ export function RemainingBalanceScreen({
       body = (
         <>
           <p role="alert" className={ALERT}>
-            {t(wallet.step === 'mismatch' ? 'remaining.mismatch' : 'recover.walletError')}
+            {t(wallet.step === 'mismatch' ? 'remaining.mismatch' : 'wallet.balanceError')}
           </p>
           {retry(wallet.retryOpen)}
         </>

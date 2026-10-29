@@ -257,7 +257,9 @@ describe('SocialRecoveryScreen', () => {
     vi.mocked(ensureWalletConnected).mockRejectedValueOnce(new Error('wallet-connect'));
     renderWithLocale(<SocialRecoveryScreen />);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect((await screen.findByRole('alert')).textContent).toBe('Your wallet could not be opened.');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Your wallet could not be opened. Please try again.',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(backResults.list).toEqual([false]);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));

@@ -2848,11 +2848,33 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // As the api: a strict body with a key it can normalize and a share of 20
+  // lower-case words, then only for the account's verified wallet. The stub
+  // keeps no share, only the owner field it sets.
   if (method === 'PUT' && pathName === '/me/recovery-share') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const parsed = jsonObject(rawBody);
+    if (
+      parsed === null ||
+      !isStrictObject(parsed, ['sparkPubkey', 'share']) ||
+      !isSparkPubkey(parsed.sparkPubkey) ||
+      typeof parsed.share !== 'string' ||
+      !/^[a-z]{4,8}(?: [a-z]{4,8}){19}$/.test(parsed.share)
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with sparkPubkey and a recovery share' });
+      return;
+    }
+    if (account.sparkWalletVerified !== true) {
+      json(res, 409, { error: 'Wallet is not connected' });
+      return;
+    }
+    if (parsed.sparkPubkey.trim().toLowerCase() !== account.sparkPubkey) {
+      json(res, 409, { error: 'Wallet changed' });
       return;
     }
     account.socialRecoverySetUp = true;
@@ -2870,14 +2892,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // No account in Playwright has a previous wallet, so every key is 404, as
+  // the api answers a key that is not one of the account's previous wallets.
   if (method === 'DELETE' && /^\/me\/previous-wallets\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    res.writeHead(204);
-    res.end();
+    json(res, 404, { error: 'Not found' });
     return;
   }
 

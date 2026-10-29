@@ -1148,12 +1148,13 @@ function isQuoteExpired(err: unknown): boolean {
 /**
  * Reason code of an SDK rejection, from the shape of its message. Never
  * returns the text itself. A refused minimum is read by `payFromWallet`
- * itself, since it carries the minimum.
+ * itself, since it carries the minimum. The balance moves of a social
+ * recovery and of a previous wallet report their failed sends with it too.
  *
  * @param err - Rejection from the SDK.
  * @returns The reason.
  */
-function sdkFailureReason(err: unknown): PayReason {
+export function sdkFailureReason(err: unknown): PayReason {
   const text = errorText(err);
   if (isInsufficientFunds(err)) {
     return 'insufficient';

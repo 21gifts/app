@@ -150,10 +150,10 @@ describe('RecoverScreen', () => {
     expect(flow.startOver).toHaveBeenCalledTimes(1);
   });
 
-  it('an outdated build shows the new-version notice with Reload only', () => {
+  it('an outdated build shows the new-version notice without Reload and nothing else to press', () => {
     show({ step: 'blocked', kind: 'outdated' });
     expect(screen.getByRole('status').textContent).toBe('A new version is ready');
-    expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Start over' })).toBeNull();
   });
@@ -183,7 +183,7 @@ describe('RecoverScreen', () => {
 
   it.each([
     ['unavailable', 'The address service is not reachable right now. Try again in a minute.'],
-    ['wallet', 'The wallet could not be opened. Try again.'],
+    ['wallet', 'Your wallet could not be opened. Please try again.'],
   ] as const)('retry %s offers Try again and Start over', (reason, text) => {
     show({ step: 'retry', reason });
     expect(screen.getByRole('alert').textContent).toBe(text);
@@ -222,13 +222,13 @@ describe('RecoverScreen', () => {
   });
 
   it.each([
-    ['cancelled', 'The passkey was not created. Try again.'],
+    ['cancelled', 'Could not set up a passkey. Please try again.'],
     ['timeout', 'The device prompt timed out before you finished. Try again.'],
     [
       'prf',
       'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
     ],
-    ['wallet', 'The wallet could not be opened. Try again.'],
+    ['wallet', 'Your wallet could not be opened. Please try again.'],
   ] as const)('found error %s says %s', (error, text) => {
     show(found({ error }));
     expect(screen.getByRole('alert').textContent).toBe(text);

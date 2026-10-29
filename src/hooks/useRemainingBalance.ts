@@ -119,8 +119,9 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * open the wallet ({@link openPreviousWallet}): words of another wallet are
  * `mismatch`, a wallet that does not open `walletError`, otherwise its synced
  * balance shows. **Transfer** moves it to the member's own wallet
- * ({@link transferRemainingBalance}): `done` once a synced read gives 0,
- * otherwise `error`. Only with a synced read of 0 (`balance` at 0, or `done`)
+ * ({@link transferRemainingBalance}, under the member's session, which a
+ * failed send is reported with): `done` once a synced read gives 0, otherwise
+ * `error`. Only with a synced read of 0 (`balance` at 0, or `done`)
  * can the wallet be removed from the account ({@link deletePreviousWallet},
  * behind a confirm), which closes it and returns to `/settings`. **Done**
  * returns there too. The words stay in component memory until the wallet
@@ -218,7 +219,7 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
     const run = ++runRef.current;
     const balanceSats = state.balanceSats;
     setState({ step: 'sending', balanceSats, removal: 'idle' });
-    void transferRemainingBalance().then((result) => {
+    void transferRemainingBalance(session).then((result) => {
       if (runRef.current === run) {
         setState(
           result === 'sent'

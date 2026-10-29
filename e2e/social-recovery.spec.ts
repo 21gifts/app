@@ -21,6 +21,9 @@ const BEGIN_BODY = {
   lookup: { signature: LOOKUP_SIGNATURE, timestamp: 1_761_700_000 },
 };
 
+/** A share in the form the api accepts: 20 lower-case SLIP-39 words. */
+const SHARE_WORDS = Array.from({ length: 20 }, () => 'academic').join(' ');
+
 /** A well-formed recovery finish without a begun recovery. */
 const FINISH_BODY = {
   challengeId: 'c'.repeat(64),
@@ -255,14 +258,44 @@ test.describe('social recovery endpoints', () => {
     expect(unknown.status()).toBe(401);
   });
 
-  test('Function: putRecoveryShare — a stored share marks the account set up', async ({
+  test('Function: putRecoveryShare — only a share of 20 words for the verified wallet marks the account set up', async ({
     request,
   }) => {
     const token = await newSession(request);
     const auth = { Authorization: `Bearer ${token}` };
+    for (const data of [
+      { sparkPubkey: OLD_KEY, share: 'academic acid' },
+      { sparkPubkey: OLD_KEY, share: SHARE_WORDS.toUpperCase() },
+      { sparkPubkey: `04${'a'.repeat(64)}`, share: SHARE_WORDS },
+      { sparkPubkey: OLD_KEY, share: SHARE_WORDS, extra: true },
+    ]) {
+      const refused = await request.put('/me/recovery-share', { headers: auth, data });
+      expect(refused.status(), JSON.stringify(data)).toBe(400);
+      expect(await refused.json()).toEqual({
+        error: 'Expected a JSON body with sparkPubkey and a recovery share',
+      });
+    }
+    const unconnected = await request.put('/me/recovery-share', {
+      headers: auth,
+      data: { sparkPubkey: OLD_KEY, share: SHARE_WORDS },
+    });
+    expect(unconnected.status()).toBe(409);
+    expect(await unconnected.json()).toEqual({ error: 'Wallet is not connected' });
+    // The stub api's own fixture route (not proxied by Next) verifies a wallet.
+    const verified = await request.post('http://127.0.0.1:3001/e2e/wallet-verified', {
+      headers: auth,
+    });
+    expect(verified.status()).toBe(200);
+    const walletKey = ((await verified.json()) as { sparkPubkey: string }).sparkPubkey;
+    const changed = await request.put('/me/recovery-share', {
+      headers: auth,
+      data: { sparkPubkey: OLD_KEY, share: SHARE_WORDS },
+    });
+    expect(changed.status()).toBe(409);
+    expect(await changed.json()).toEqual({ error: 'Wallet changed' });
     const stored = await request.put('/me/recovery-share', {
       headers: auth,
-      data: { sparkPubkey: OLD_KEY, share: 'academic acid' },
+      data: { sparkPubkey: ` ${walletKey.toUpperCase()} `, share: SHARE_WORDS },
     });
     expect(stored.status()).toBe(200);
     expect(((await stored.json()) as { socialRecoverySetUp?: boolean }).socialRecoverySetUp).toBe(
@@ -295,15 +328,15 @@ test.describe('social recovery endpoints', () => {
     expect((await request.delete('/me/previous-wallets/[sparkPubkey]')).status()).toBe(401);
   });
 
-  test('Function: deletePreviousWallet — a dropped wallet answers 204 with no body', async ({
+  test('Function: deletePreviousWallet — a key that is not one of the account’s previous wallets is not found', async ({
     request,
   }) => {
     const token = await newSession(request);
     const response = await request.delete(`/me/previous-wallets/${OLD_KEY}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(response.status()).toBe(204);
-    expect(await response.text()).toBe('');
+    expect(response.status()).toBe(404);
+    expect(await response.json()).toEqual({ error: 'Not found' });
   });
 });
 
@@ -637,12 +670,6 @@ test.describe('social recovery libraries', () => {
   });
 
   test('Function: appHost — without a wallet key no wallet code loads', async ({ page }) => {
-    await openWalletWithoutKey(page);
-  });
-
-  test('Function: receiveWalletSparkAddress — without a wallet key no wallet code loads', async ({
-    page,
-  }) => {
     await openWalletWithoutKey(page);
   });
 
@@ -1151,9 +1178,13 @@ test.describe('Secure my account', () => {
     const uploads = await answerShareUpload(page, [200]);
     await page.goto('/settings/social-recovery');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('p[role="alert"]')).toHaveText('Your wallet could not be opened.');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
     await page.getByRole('button', { name: 'Try again' }).click();
-    await expect(page.locator('p[role="alert"]')).toHaveText('Your wallet could not be opened.');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
     await expect(page.getByRole('img')).toHaveCount(0);
     expect(uploads).toHaveLength(0);
   });
@@ -1359,7 +1390,7 @@ test.describe('the Social Recovery prompt on the forum home', () => {
     ).toBeVisible();
   });
 
-  test('Write an introduction opens the writer, and the Social Recovery prompt does not cover it', async ({
+  test('Write an introduction opens the writer, and the Social Recovery prompt follows in the same visit', async ({
     page,
   }) => {
     await signInOwner(page, { hasPosted: false, socialRecoverySetUp: false, funding: ADMITTED });
@@ -1369,8 +1400,12 @@ test.describe('the Social Recovery prompt on the forum home', () => {
       .getByRole('dialog', { name: 'Introduce yourself' })
       .getByRole('button', { name: 'Write an introduction' })
       .click();
-    await expect(page.getByLabel('Your message')).toBeFocused();
+    await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+    const prompt = page.getByRole('dialog', { name: 'Social Recovery for your grant' });
+    await expect(prompt).toBeVisible();
+    await prompt.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByLabel('Your message')).toBeVisible();
   });
 
   test('no Social Recovery prompt once it is set up', async ({ page }) => {
@@ -1656,7 +1691,27 @@ test.describe('Recover account via Social Recovery', () => {
     );
   });
 
-  test('Function: transfer — the pinned transfer lists what moves, each part with its check', async ({
+  test('Function: transfer — Transfer without a recovery in memory moves nothing and stays ready', async ({
+    page,
+  }) => {
+    const calls: string[] = [];
+    page.on('request', (request) => {
+      if (/\/(?:auth\/passkey|lnurlpay)\//.test(request.url())) {
+        calls.push(request.url());
+      }
+    });
+    await openRecover(page, 'recover-transfer');
+    const press = page.getByRole('button', { name: 'Transfer' });
+    await expect(press).toBeEnabled();
+    await press.click();
+    await expect(page.getByRole('listitem')).toHaveText(['Account', '21.gifts address', 'Balance']);
+    await expect(page.getByRole('status')).toHaveCount(0);
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    await expect(press).toBeEnabled();
+    expect(calls).toEqual([]);
+  });
+
+  test('the pinned transfer in progress lists what moves, each part with its check', async ({
     page,
   }) => {
     await openRecover(page, 'recover-transfer-progress');
@@ -1723,10 +1778,10 @@ test.describe('Recover account via Social Recovery', () => {
     );
   });
 
-  test('an outdated build shows the new-version notice with Reload', async ({ page }) => {
+  test('an outdated build shows the new-version notice without Reload', async ({ page }) => {
     await openRecover(page, 'recover-blocked-outdated');
     await expect(page.getByRole('status')).toHaveText('A new version is ready');
-    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toHaveCount(0);
   });
 });
 
@@ -1797,8 +1852,51 @@ test.describe('Transfer remaining balance', () => {
     await page.getByLabel('Your 12 words').fill(OLD_PHRASE);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
-      'The wallet could not be opened. Try again.',
+      'Your wallet could not be opened. Please try again.',
     );
+  });
+
+  test('Function: receiveWalletSparkAddress — Transfer on a previous wallet that is not open reads no address and says the move failed', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    const urls: string[] = [];
+    page.on('request', (request) => {
+      urls.push(request.url());
+    });
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-balance`);
+    await page.getByRole('button', { name: 'Transfer' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The balance could not be moved. Try again.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
+  });
+
+  test('Function: sdkFailureReason — a move that sent nothing records no payment_failed', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    const names: string[] = [];
+    await page.route(/\/me\/events$/, async (route) => {
+      const body = route.request().postDataJSON() as { events: Array<{ name: string }> };
+      names.push(...body.events.map((event) => event.name));
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-error`);
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The balance could not be moved. Try again.',
+    );
+    const flushed = page.waitForResponse((response) => response.url().endsWith('/me/events'));
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    await flushed;
+    expect(names).toContain('screen_view');
+    expect(names).not.toContain('payment_failed');
   });
 
   test('codes of another account are refused', async ({ page }) => {

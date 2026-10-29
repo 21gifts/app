@@ -19,7 +19,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /** Catalog key of each error. */
 const ERROR_COPY: Record<SocialRecoverySetupError, MessageKey> = {
   mismatch: 'secure.walletMismatch',
-  wallet: 'secure.walletError',
+  wallet: 'wallet.balanceError',
   save: 'secure.saveError',
   changed: 'secure.walletChanged',
 };

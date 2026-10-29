@@ -111,6 +111,14 @@ describe('getCatalog', () => {
     }
   });
 
+  it('says in the privacy answer that 21.gifts keeps one part of the 12 words after Social Recovery', () => {
+    for (const locale of LOCALES) {
+      const answer = getCatalog(locale)['home.faq3A'];
+      expect(answer, `${locale}.home.faq3A`).toContain('Social Recovery');
+      expect(answer, `${locale}.home.faq3A`).toContain('12');
+    }
+  });
+
   it('says the @21.gifts address ends with the service while the 12 words keep the Bitcoin', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);

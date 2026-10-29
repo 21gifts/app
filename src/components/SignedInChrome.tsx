@@ -43,11 +43,7 @@ import { SocialRecoveryPromptOverlay } from '@/components/SocialRecoveryPromptOv
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { getAppVersion } from '@/lib/config';
-import {
-  FORUM_COMPOSE_EVENT,
-  FORUM_HOME_EVENT,
-  consumeSkipIntroduceOverlay,
-} from '@/lib/forum-feed';
+import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
 import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
@@ -91,11 +87,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * once, so the next mount does not show it again. On the same screen and
  * only there, a grant member (`funding.status` `admitted` or `trial`) whose
  * `socialRecoverySetUp` is false gets {@link SocialRecoveryPromptOverlay}
- * once the introduce dialog is not shown (introduce comes first, and closing it
- * with Close lets this one show in the same visit). Close dismisses it for this
- * mount. Opening the forum writer ({@link FORUM_COMPOSE_EVENT}, as the introduce
- * CTA does) dismisses it for this mount too, so it never covers the writer the
- * member just asked for; the next mount shows it again.
+ * once the introduce dialog is not shown (introduce comes first; once it is
+ * closed, by its Close or by **Write an introduction**, this one shows in the
+ * same visit). Close dismisses it for this mount; the next mount shows it
+ * again.
  *
  * Renders nothing, and starts none of the Menu's reads, while the login card
  * is on screen: a stored session held back until its wallet is open
@@ -172,17 +167,6 @@ function SignedInMenu(): ReactElement {
     account.socialRecoverySetUp === false &&
     !showIntroduce &&
     !recoveryPromptDismissed;
-
-  useEffect(() => {
-    // The writer the member asked for (the introduce CTA) must not end up under the prompt.
-    const onCompose = (): void => {
-      setRecoveryPromptDismissed(true);
-    };
-    window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    return () => {
-      window.removeEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    };
-  }, []);
 
   useEffect(() => {
     if (!open) {

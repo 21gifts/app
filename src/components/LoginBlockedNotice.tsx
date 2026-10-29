@@ -11,14 +11,23 @@ import { Button } from '@/components/ui';
  *
  * `closed` is a calm status line and offers nothing to press: nothing retries
  * on its own, and the visitor comes back later. `outdated` says a new version
- * is ready and offers **Reload**, a full page load, because only that loads the
- * new build. Nobody is signed in on these surfaces, so the reload loses no
- * wallet held in the tab.
+ * is ready and, in the login card and the profile claim, offers **Reload**, a
+ * full page load, because only that loads the new build. Nobody is signed in
+ * on these surfaces, so the reload loses no wallet held in the tab. Without
+ * `reload` (the signed-out recovery on `/recover`, which is not one of the
+ * surfaces that may reload the document) it is the status line only.
  *
- * @param props - `kind`: which refusal to show.
+ * @param props - `kind`: which refusal to show; `reload`: whether `outdated`
+ *   offers **Reload** (default `true`).
  * @returns The notice.
  */
-export function LoginBlockedNotice({ kind }: { kind: 'closed' | 'outdated' }): ReactElement {
+export function LoginBlockedNotice({
+  kind,
+  reload = true,
+}: {
+  kind: 'closed' | 'outdated';
+  reload?: boolean;
+}): ReactElement {
   const { t } = useTranslations();
   if (kind === 'closed') {
     return (
@@ -36,14 +45,16 @@ export function LoginBlockedNotice({ kind }: { kind: 'closed' | 'outdated' }): R
       <p role="status" className="max-w-sm text-center text-sm font-medium text-app-fg">
         {t('login.outdated')}
       </p>
-      <Button
-        type="button"
-        onClick={() => {
-          window.location.reload();
-        }}
-      >
-        {t('login.reload')}
-      </Button>
+      {reload ? (
+        <Button
+          type="button"
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          {t('login.reload')}
+        </Button>
+      ) : null}
     </>
   );
 }

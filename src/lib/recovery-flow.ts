@@ -30,9 +30,10 @@ import { classifyWebAuthnError, mnemonicFromPrfFirst, obtainPrfFirst } from '@/l
 import { recoveryMessage } from '@/lib/recovery-lookup';
 import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
+import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
-import { appHost, WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
+import { appHost, sdkFailureReason, WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -914,7 +915,11 @@ async function finish(f: Flow, old: OldWallet, balanceMissing: boolean): Promise
  * the SDK answers it instead of paying twice. After a send that went out the
  * balance is read again; funds that arrived meanwhile get a send with a new
  * key, up to {@link RECOVERY_SEND_TRIES} sends per press. Only a synced read
- * of 0 ends the recovery; any failure is the `balance` error.
+ * of 0 ends the recovery; any failure is the `balance` error. A send that
+ * throws is also reported as a payment that did not go out
+ * ({@link reportPaymentFailure}: stage `send`, method `spark`, flow
+ * `recovery`, the reason from {@link sdkFailureReason}) under the session the
+ * new passkey signed in with.
  *
  * @param f - The flow.
  * @param old - Its old wallet.
@@ -922,6 +927,7 @@ async function finish(f: Flow, old: OldWallet, balanceMissing: boolean): Promise
  */
 async function moveBalance(f: Flow, old: OldWallet, a: Attempt): Promise<void> {
   const { deps } = f;
+  const session = useAuthStore.getState().session;
   try {
     let balance = (await old.connection.getInfo({ ensureSynced: true })).balanceSats;
     let sends = 0;
@@ -933,11 +939,27 @@ async function moveBalance(f: Flow, old: OldWallet, a: Attempt): Promise<void> {
       const key = a.idempotencyKey ?? deps.randomUUID();
       a.idempotencyKey = key;
       const amount = balance;
-      await traceWallet(
-        'wallet.send',
-        () => old.connection.sendToSparkAddress(a.newSparkAddress, amount, key),
-        { route: 'spark' },
-      );
+      try {
+        await traceWallet(
+          'wallet.send',
+          () => old.connection.sendToSparkAddress(a.newSparkAddress, amount, key),
+          { route: 'spark' },
+        );
+      } catch (error) {
+        reportPaymentFailure(
+          {
+            stage: 'send',
+            reason: sdkFailureReason(error),
+            method: 'spark',
+            amountSats: amount,
+            feeSats: null,
+            error,
+          },
+          'recovery',
+          { session },
+        );
+        throw error;
+      }
       sends += 1;
       a.idempotencyKey = null;
       balance = (await old.connection.getInfo({ ensureSynced: true })).balanceSats;

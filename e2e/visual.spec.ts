@@ -37328,7 +37328,9 @@ test.describe('social recovery setup states', () => {
     await seedOwner(page);
     await openSetup(page);
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.locator('p[role="alert"]')).toHaveText('Your wallet could not be opened.');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-social-recovery-wallet-error');
   });
@@ -37567,7 +37569,7 @@ test.describe('recover states', () => {
     [
       'recover-wallet-error',
       'state-recover-wallet-error',
-      'The wallet could not be opened. Try again.',
+      'Your wallet could not be opened. Please try again.',
     ],
     [
       'recover-found',
@@ -37587,7 +37589,7 @@ test.describe('recover states', () => {
     [
       'recover-cancelled',
       'state-recover-passkey-cancelled',
-      'The passkey was not created. Try again.',
+      'Could not set up a passkey. Please try again.',
     ],
     [
       'recover-timeout',
@@ -37602,7 +37604,7 @@ test.describe('recover states', () => {
     [
       'recover-new-wallet-error',
       'state-recover-new-wallet-error',
-      'The wallet could not be opened. Try again.',
+      'Your wallet could not be opened. Please try again.',
     ],
     [
       'recover-transfer',
@@ -37660,7 +37662,7 @@ test.describe('recover states', () => {
   test('recover blocked-outdated', async ({ page }) => {
     await openRecover(page, pinned[3]![0]);
     await expect(page.getByText(pinned[3]![2])).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toHaveCount(0);
     await shotScreen(page, 'state-recover-blocked-outdated');
   });
 
@@ -38024,7 +38026,7 @@ test.describe('previous wallet states', () => {
   test('previous wallet wallet-error', async ({ page }) => {
     await typeWords(page, RECOVER_PHRASE);
     await expect(page.locator('p[role="alert"]')).toHaveText(
-      'The wallet could not be opened. Try again.',
+      'Your wallet could not be opened. Please try again.',
     );
     await shotScreen(page, 'state-previous-wallet-wallet-error');
   });

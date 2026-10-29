@@ -32,6 +32,7 @@ import {
 } from '@/lib/recovery-flow';
 import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
 import { WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
@@ -72,6 +73,9 @@ vi.mock('@/lib/tab-phrase', async (importOriginal) => ({
 }));
 vi.mock('@/lib/sentry', () => ({
   traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
+vi.mock('@/lib/wallet/payment-failure', () => ({
+  reportPaymentFailure: vi.fn(),
 }));
 vi.mock('@/lib/wallet/wallet-sdk', () => ({
   loadWalletSdk: vi.fn(),
@@ -1426,8 +1430,21 @@ describe('transfer', () => {
     it('a send that throws keeps its key for the next press, which re-reads first', async () => {
       old = connectionOf([21_000, 21_000, 21_000, 0]);
       await toTransfer();
-      old.sendToSparkAddress.mockRejectedValueOnce(new Error('unknown outcome'));
+      const rejection = new Error('unknown outcome');
+      old.sendToSparkAddress.mockRejectedValueOnce(rejection);
       await transfer();
+      expect(reportPaymentFailure).toHaveBeenCalledWith(
+        {
+          stage: 'send',
+          reason: 'sdk_error',
+          method: 'spark',
+          amountSats: 21_000,
+          feeSats: null,
+          error: rejection,
+        },
+        'recovery',
+        { session: 'sess-new' },
+      );
       expect(view()).toEqual({
         step: 'transfer',
         done: { account: true, address: true, signedIn: true, balance: false },
@@ -1462,6 +1479,8 @@ describe('transfer', () => {
       await transfer();
       expect(old.sendToSparkAddress).toHaveBeenCalledTimes(RECOVERY_SEND_TRIES);
       expect(view()).toMatchObject({ step: 'transfer', error: 'balance' });
+      // Every send went out; nothing is a failed payment.
+      expect(reportPaymentFailure).not.toHaveBeenCalled();
     });
 
     it('a balance that cannot be read is the balance error', async () => {
@@ -1469,6 +1488,7 @@ describe('transfer', () => {
       old.getInfo.mockRejectedValueOnce(new Error('sync'));
       await transfer();
       expect(view()).toMatchObject({ step: 'transfer', error: 'balance' });
+      expect(reportPaymentFailure).not.toHaveBeenCalled();
     });
 
     it('Move the balance later ends the recovery with the note', async () => {

@@ -30,10 +30,10 @@ const FOUND_ERROR_COPY: Record<
   NonNullable<Extract<RecoveryView, { step: 'found' }>['error']>,
   MessageKey
 > = {
-  cancelled: 'recover.passkeyCancelled',
+  cancelled: 'view.claimError',
   timeout: 'wallet.timeout',
   prf: 'wallet.prfUnsupported',
-  wallet: 'recover.walletError',
+  wallet: 'wallet.balanceError',
 };
 
 /** The three parts of the move in the checklist, in order. */
@@ -64,7 +64,8 @@ const ALERT = 'text-center text-sm text-app-danger';
  *   minutes.**
  * - **Blocked:** the login card's {@link LoginBlockedNotice}; closed logins
  *   also offer **Try again**, which resumes where they stopped the recovery,
- *   and **Start over**.
+ *   and **Start over**; an outdated build shows the notice without **Reload**,
+ *   since only the login card and the profile claim may reload the document.
  * - **Refused:** the reason as an alert and **Start over**; an account that is
  *   already recovered also offers **Log in**, which returns to `/login`.
  * - **Retry:** the reason, **Try again**, and **Start over**.
@@ -142,7 +143,7 @@ export function RecoverScreen(): ReactElement {
             </Button>
           </>
         ) : (
-          <LoginBlockedNotice kind="outdated" />
+          <LoginBlockedNotice kind="outdated" reload={false} />
         );
       break;
     case 'refused':
@@ -173,7 +174,7 @@ export function RecoverScreen(): ReactElement {
       body = (
         <>
           <p role="alert" className={ALERT}>
-            {t(view.reason === 'unavailable' ? 'recover.unavailable' : 'recover.walletError')}
+            {t(view.reason === 'unavailable' ? 'recover.unavailable' : 'wallet.balanceError')}
           </p>
           <Button type="button" onClick={recovery.retry}>
             {t('login.retry')}

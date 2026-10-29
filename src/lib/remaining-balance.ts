@@ -11,8 +11,9 @@ import {
   type RecoveryDeps,
 } from '@/lib/recovery-flow';
 import { traceWallet } from '@/lib/sentry';
+import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
-import { receiveWalletSparkAddress } from '@/lib/wallet/wallet-service';
+import { receiveWalletSparkAddress, sdkFailureReason } from '@/lib/wallet/wallet-service';
 
 /** Effects of the move: the SDK, the API key, the host, the deadline timer, and keys. */
 export type RemainingBalanceDeps = Pick<
@@ -57,7 +58,8 @@ async function closeQuietly(connection: WalletConnection): Promise<void> {
  * the member's own wallet deadline ({@link openWordsWallet}), and a fresh
  * idempotency key is drawn for its sends, so two wallets never share one.
  * Without a wallet in this build, or when it does not open, the answer is
- * `wallet`.
+ * `wallet`; so it is when the page closed the wallet ({@link closePreviousWallet})
+ * or another open began while this one waited, and nothing connects then.
  *
  * @param words - The previous wallet's 12 words.
  * @param expectedPubkey - The previous wallet's identity key.
@@ -69,6 +71,7 @@ export async function openPreviousWallet(
   expectedPubkey: string,
   deps: RemainingBalanceDeps = defaultRecoveryDeps(),
 ): Promise<{ balanceSats: number } | 'mismatch' | 'wallet'> {
+  const started = generation;
   const apiKey = deps.apiKey();
   if (apiKey === null) {
     return 'wallet';
@@ -87,6 +90,10 @@ export async function openPreviousWallet(
   }
   if (key.toLowerCase() !== expectedPubkey.toLowerCase()) {
     return 'mismatch';
+  }
+  if (generation !== started) {
+    // Closed or opened again while the SDK loaded or read the key.
+    return 'wallet';
   }
   await closePreviousWallet();
   const mine = generation;
@@ -109,14 +116,18 @@ export async function openPreviousWallet(
  * member's wallet (its Spark address, opened from the tab phrase when needed).
  * It reads the synced balance first and sends all of it. A send that throws
  * keeps its key, so **Try again** repeats that send and the SDK answers it
- * instead of paying twice. After a send that went out the balance is read
- * again; funds that arrived meanwhile get a send with a new key, up to
- * {@link RECOVERY_SEND_TRIES} sends per call.
+ * instead of paying twice. A send that throws is also reported as a payment
+ * that did not go out ({@link reportPaymentFailure}: stage `send`, method
+ * `spark`, flow `previous_wallet`, the reason from {@link sdkFailureReason}).
+ * After a send that went out the balance is read again; funds that arrived
+ * meanwhile get a send with a new key, up to {@link RECOVERY_SEND_TRIES} sends
+ * per call.
  *
+ * @param session - Session the move runs under, for the failure report.
  * @returns `sent` once a synced read gives 0, otherwise `error` (also without
  *   an open wallet).
  */
-export async function transferRemainingBalance(): Promise<'sent' | 'error'> {
+export async function transferRemainingBalance(session: string | null): Promise<'sent' | 'error'> {
   const wallet = open;
   if (wallet === null) {
     return 'error';
@@ -131,11 +142,27 @@ export async function transferRemainingBalance(): Promise<'sent' | 'error'> {
       }
       const key = wallet.key;
       const amount = balance;
-      await traceWallet(
-        'wallet.send',
-        () => wallet.connection.sendToSparkAddress(address, amount, key),
-        { route: 'spark' },
-      );
+      try {
+        await traceWallet(
+          'wallet.send',
+          () => wallet.connection.sendToSparkAddress(address, amount, key),
+          { route: 'spark' },
+        );
+      } catch (error) {
+        reportPaymentFailure(
+          {
+            stage: 'send',
+            reason: sdkFailureReason(error),
+            method: 'spark',
+            amountSats: amount,
+            feeSats: null,
+            error,
+          },
+          'previous_wallet',
+          { session },
+        );
+        return 'error';
+      }
       sends += 1;
       wallet.key = wallet.deps.randomUUID();
       balance = (await wallet.connection.getInfo({ ensureSynced: true })).balanceSats;

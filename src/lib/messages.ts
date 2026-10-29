@@ -185,7 +185,7 @@ const en = {
     'Anyone who logs in with a device that can hold a 21.gifts wallet. There is no application and no review process.',
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
-    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the wallet details that let payments to your 21.gifts address reach your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
+    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the wallet details that let payments to your 21.gifts address reach your 21.gifts wallet, and, once you set up Social Recovery, keeps one encrypted part of your 12 words, which alone opens nothing. No password and no seed phrase is ever stored on our servers.',
   'home.faq4Q': 'Can I lose access to my account?',
   'home.faq4A':
     'Only if you lose your login and have neither the 12 words nor Social Recovery set up. Set up Social Recovery in the settings.',
@@ -706,7 +706,6 @@ const en = {
   'secure.start': 'Continue',
   'secure.checking': 'Checking your wallet…',
   'secure.walletMismatch': 'These 12 words do not open the wallet of this account. Setup stopped.',
-  'secure.walletError': 'Your wallet could not be opened.',
   'secure.shareHeading': 'Person {n}',
   'secure.shareBody':
     'Ask person {n} to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
@@ -780,12 +779,10 @@ const en = {
   'recover.operator': 'This account cannot be recovered here. Contact 21.gifts.',
   'recover.noWallet': 'Recovery is not available in this version of the app.',
   'recover.unavailable': 'The address service is not reachable right now. Try again in a minute.',
-  'recover.walletError': 'The wallet could not be opened. Try again.',
   'recover.again': 'Start over',
   'recover.found': 'Account @{username} found.',
   'recover.foundBody': 'Create a new passkey on this phone. It gets its own new 12 words.',
   'recover.createPasskey': 'Create new passkey',
-  'recover.passkeyCancelled': 'The passkey was not created. Try again.',
   'recover.restart': 'The move did not go through. Create the new passkey again.',
   'recover.transferTitle': 'Move to this phone',
   'recover.transferBody':
@@ -1759,7 +1756,7 @@ const de = {
     'Jede Person, die sich mit einem Gerät anmeldet, das eine 21.gifts-Wallet halten kann. Kein Antrag, keine Prüfung.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
-    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und die Wallet-Angaben, mit denen Zahlungen an Ihre 21.gifts-Adresse Ihre 21.gifts-Wallet erreichen. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
+    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und die Wallet-Angaben, mit denen Zahlungen an Ihre 21.gifts-Adresse Ihre 21.gifts-Wallet erreichen, und bewahrt, sobald Sie Social Recovery eingerichtet haben, einen gesicherten Teil Ihrer 12 Wörter auf, der allein nichts öffnet. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
   'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
   'home.faq4A':
     'Nur wenn Sie Ihr Login verlieren und weder die 12 Wörter haben noch Social Recovery eingerichtet ist. Richten Sie Social Recovery in den Einstellungen ein.',
@@ -2284,7 +2281,6 @@ const de = {
   'secure.checking': 'Deine Wallet wird geprüft…',
   'secure.walletMismatch':
     'Diese 12 Wörter öffnen nicht die Wallet dieses Kontos. Die Einrichtung wurde abgebrochen.',
-  'secure.walletError': 'Deine Wallet konnte nicht geöffnet werden.',
   'secure.shareHeading': 'Person {n}',
   'secure.shareBody':
     'Bitte Person {n}, 21.gifts zu öffnen, in den Einstellungen „Anteile, die ich für andere aufbewahre“ zu wählen, auf „Anteil aufbewahren“ zu tippen und diesen Code zu scannen.',
@@ -2368,13 +2364,11 @@ const de = {
   'recover.noWallet': 'Wiederherstellen ist in dieser Version der App nicht verfügbar.',
   'recover.unavailable':
     'Der Adressdienst ist gerade nicht erreichbar. Versuche es in einer Minute erneut.',
-  'recover.walletError': 'Die Wallet konnte nicht geöffnet werden. Versuche es erneut.',
   'recover.again': 'Neu beginnen',
   'recover.found': 'Konto @{username} gefunden.',
   'recover.foundBody':
     'Erstelle auf diesem Telefon einen neuen Passkey. Er bekommt eigene neue 12 Wörter.',
   'recover.createPasskey': 'Neuen Passkey erstellen',
-  'recover.passkeyCancelled': 'Der Passkey wurde nicht erstellt. Versuche es erneut.',
   'recover.restart': 'Der Umzug hat nicht geklappt. Erstelle den neuen Passkey noch einmal.',
   'recover.transferTitle': 'Auf dieses Telefon übertragen',
   'recover.transferBody':
@@ -3383,7 +3377,7 @@ const es = {
     'Cualquiera que entre con un dispositivo que pueda guardar una wallet de 21.gifts. No hay solicitud ni proceso de revisión.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
-    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y los datos de la wallet que permiten que los pagos a tu dirección de 21.gifts lleguen a tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
+    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y los datos de la wallet que permiten que los pagos a tu dirección de 21.gifts lleguen a tu wallet de 21.gifts, y, cuando configuras Social Recovery, guarda una parte cifrada de tus 12 palabras, que por sí sola no abre nada. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
   'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
   'home.faq4A':
     'Solo si pierdes tu acceso y no tienes ni las 12 palabras ni Social Recovery configurada. Configura Social Recovery en los ajustes.',
@@ -3899,7 +3893,6 @@ const es = {
   'secure.checking': 'Comprobando tu wallet…',
   'secure.walletMismatch':
     'Estas 12 palabras no abren la wallet de esta cuenta. La configuración se detuvo.',
-  'secure.walletError': 'No se pudo abrir tu wallet.',
   'secure.shareHeading': 'Persona {n}',
   'secure.shareBody':
     'Pide a la persona {n} que abra 21.gifts, elija «Partes que guardo para otros» en los ajustes, toque «Guardar una parte» y escanee este código.',
@@ -3982,13 +3975,11 @@ const es = {
   'recover.noWallet': 'La recuperación no está disponible en esta versión de la app.',
   'recover.unavailable':
     'El servicio de direcciones no está disponible ahora mismo. Inténtalo de nuevo en un minuto.',
-  'recover.walletError': 'No se pudo abrir la wallet. Inténtalo de nuevo.',
   'recover.again': 'Empezar de nuevo',
   'recover.found': 'Cuenta @{username} encontrada.',
   'recover.foundBody':
     'Crea un nuevo passkey en este teléfono. Recibe sus propias 12 palabras nuevas.',
   'recover.createPasskey': 'Crear un nuevo passkey',
-  'recover.passkeyCancelled': 'No se creó el passkey. Inténtalo de nuevo.',
   'recover.restart': 'El traslado no se completó. Crea el nuevo passkey otra vez.',
   'recover.transferTitle': 'Pasar a este teléfono',
   'recover.transferBody':
@@ -4974,7 +4965,7 @@ const fil = {
     'Sinumang nagla-log in gamit ang device na kayang maglaman ng 21.gifts wallet. Walang application at walang review process.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
-    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang wallet details na kailangan para makarating sa 21.gifts wallet mo ang mga bayad sa 21.gifts address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
+    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang wallet details na kailangan para makarating sa 21.gifts wallet mo ang mga bayad sa 21.gifts address mo, at kapag na-set up mo na ang Social Recovery, nagtatago ito ng isang naka-encrypt na bahagi ng 12 salita mo na walang nabubuksan nang mag-isa. Walang password o seed phrase na nakaimbak sa mga server namin.',
   'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
   'home.faq4A':
     'Kapag nawala lang ang login mo at wala sa iyo ang 12 salita at hindi naka-set up ang Social Recovery. I-set up ang Social Recovery sa mga setting.',
@@ -5495,7 +5486,6 @@ const fil = {
   'secure.checking': 'Tinitingnan ang wallet mo…',
   'secure.walletMismatch':
     'Hindi binubuksan ng 12 salitang ito ang wallet ng account na ito. Itinigil ang setup.',
-  'secure.walletError': 'Hindi mabuksan ang wallet mo.',
   'secure.shareHeading': 'Tao {n}',
   'secure.shareBody':
     'Hilingin sa tao {n} na buksan ang 21.gifts, piliin ang “Mga bahaging itinatabi ko para sa iba” sa mga setting, i-tap ang “Magtabi ng bahagi”, at i-scan ang code na ito.',
@@ -5577,13 +5567,11 @@ const fil = {
   'recover.noWallet': 'Hindi available ang pagbawi sa bersyong ito ng app.',
   'recover.unavailable':
     'Hindi maabot ang serbisyo ng address ngayon. Subukan ulit pagkalipas ng isang minuto.',
-  'recover.walletError': 'Hindi mabuksan ang wallet. Subukan ulit.',
   'recover.again': 'Magsimula ulit',
   'recover.found': 'Nakita ang account na @{username}.',
   'recover.foundBody':
     'Gumawa ng bagong passkey sa teleponong ito. Magkakaroon ito ng sarili nitong bagong 12 salita.',
   'recover.createPasskey': 'Gumawa ng bagong passkey',
-  'recover.passkeyCancelled': 'Hindi nagawa ang passkey. Subukan ulit.',
   'recover.restart': 'Hindi natuloy ang paglipat. Gawin ulit ang bagong passkey.',
   'recover.transferTitle': 'Ilipat sa teleponong ito',
   'recover.transferBody':

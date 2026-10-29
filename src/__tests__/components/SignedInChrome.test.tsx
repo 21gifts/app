@@ -1159,12 +1159,12 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
   });
 
-  it('keeps the Social Recovery prompt off the writer that Write an introduction opens', () => {
+  it('shows the Social Recovery prompt in the same visit after Write an introduction', () => {
     welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
     const first = renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
-    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
     first.unmount();
     renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();

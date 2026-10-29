@@ -200,6 +200,7 @@ describe('useRemainingBalance', () => {
       result.current.transfer();
     });
     expect(transferRemainingBalance).toHaveBeenCalledTimes(1);
+    expect(transferRemainingBalance).toHaveBeenCalledWith('sess-owner');
     await act(async () => {
       sent('sent');
     });
