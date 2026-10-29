@@ -80,6 +80,17 @@ describe('LegalPage', () => {
     expect(container.textContent).not.toMatch(/track visitors/i);
   });
 
+  it('says where a kept Social Recovery share and the recovery words are stored', () => {
+    const { container } = render(<LegalPage />);
+    const text = (container.textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain(
+      'If another member chose you to keep a Social Recovery share for them, the application stores that share in localStorage under your account until you delete it.',
+    );
+    expect(text).toContain(
+      "While recovering an account or moving a balance, the 12 recovery words and the shares stay only in the open tab's memory.",
+    );
+  });
+
   it('points wallet and payment data to the Wallet and data section of the Terms of Use', () => {
     const { container } = render(<LegalPage />);
     expect(screen.getByRole('heading', { name: 'Wallet and payment data', level: 3 })).toBeTruthy();

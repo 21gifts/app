@@ -3507,7 +3507,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets, the session token and a Social Recovery share kept for another member in `localStorage`, and that recovery words and shares stay in the open tab's memory while an account is recovered or a balance moved) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
 - **Inputs:** None.
 - **Returns / side effects:** The legal screen with links to `/contact`, `/terms`, and `/terms#wallet-and-data`.
 - **Used by:** Route `/legal`.
