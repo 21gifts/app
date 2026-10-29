@@ -13327,7 +13327,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Each share is one bitcoin payment to that person.')).toBeVisible();
     await expect(
       page.getByText(
-        'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 1, 2026. Until then this is the plan for what has been given.',
+        'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 10, 2026. Until then this is the plan for what has been given.',
       ),
     ).toBeVisible();
     await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
