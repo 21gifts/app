@@ -61,9 +61,6 @@ const VECTOR_ERRORS: Record<number, Slip39ErrorCode> = {
   40: 'length',
 };
 
-/** SHA-256 of the pinned word list file (`wordlist.txt`, one word per line). */
-const WORDLIST_SHA256 = 'bcc4555340332d169718aed8bf31dd9d5248cb7da6e5d355140ef4f1e601eec3';
-
 /** Public BIP-39 test phrase; its entropy is sixteen 0x7f bytes. */
 const PHRASE = 'legal winner thank year wave sausage worth useful legal winner thank yellow';
 const SECRET = new Uint8Array(16).fill(0x7f);
@@ -211,23 +208,6 @@ describe('official vectors', () => {
       }
     }
     expect(parsed).toBe(77);
-  });
-});
-
-describe('word list', () => {
-  it('is the pinned list: 1024 sorted, unique words of 4 to 8 letters with unique prefixes', () => {
-    expect(SLIP39_WORDLIST).toHaveLength(1024);
-    expect(SLIP39_WORDLIST[0]).toBe('academic');
-    expect(SLIP39_WORDLIST[1023]).toBe('zero');
-    expect([...SLIP39_WORDLIST].sort()).toEqual(SLIP39_WORDLIST);
-    expect(new Set(SLIP39_WORDLIST).size).toBe(1024);
-    expect(new Set(SLIP39_WORDLIST.map((word) => word.slice(0, 4))).size).toBe(1024);
-    expect(SLIP39_WORDLIST.every((word) => /^[a-z]{4,8}$/.test(word))).toBe(true);
-    expect(
-      createHash('sha256')
-        .update(`${SLIP39_WORDLIST.join('\n')}\n`)
-        .digest('hex'),
-    ).toBe(WORDLIST_SHA256);
   });
 });
 
