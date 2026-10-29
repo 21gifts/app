@@ -23,12 +23,13 @@ function appVersionForBuild(): string {
  * `outputFileTracingRoot` pins that layout to this package even when a parent
  * directory also has a lockfile (Next would otherwise nest standalone).
  *
- * The CI check job already runs `tsc --noEmit`, and Lint is its own job.
+ * Actions already runs `tsc --noEmit` in the check job, and Lint is its own job.
  * Repeating both inside `next build` makes that job miss its 10-minute limit.
- * Only that build step sets the variable. Image builds leave it unset.
+ * Actions sets `GITHUB_ACTIONS`. The image build does not, so it still
+ * typechecks and lints.
  */
 function skipRepeatedBuildChecks(): boolean {
-  return process.env['SKIP_NEXT_BUILD_CHECKS'] === '1';
+  return process.env['GITHUB_ACTIONS'] === 'true';
 }
 
 const nextConfig: NextConfig = {
