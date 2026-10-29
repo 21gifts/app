@@ -70,7 +70,7 @@ function localeAt(index: number): Locale {
 }
 
 /**
- * Writes the locale cookie, then loads a public language URL or refreshes app pages.
+ * Writes the locale cookie, then opens a public language URL client-side or refreshes app pages.
  * Also saves it on the account for a stored session, unless that session is
  * held back until its wallet is open or a login is still opening its wallet.
  *
@@ -197,7 +197,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
           () => {
             router.refresh();
           },
-          (path) => globalThis.location.assign(path),
+          (path) => router.push(path),
         );
       }
     };
@@ -246,7 +246,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
       () => {
         router.refresh();
       },
-      (path) => globalThis.location.assign(path),
+      (path) => router.push(path),
     );
     triggerRef.current?.focus();
   };

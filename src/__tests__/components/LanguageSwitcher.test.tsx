@@ -17,7 +17,7 @@ vi.mock('@/lib/api', () => ({ setAccountLocale: vi.fn() }));
 vi.mock('@/lib/wallet/wallet-open', () => ({ isWalletOpen: vi.fn(() => true) }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ refresh }),
+  useRouter: () => ({ refresh, push: navigate }),
 }));
 
 function account(id: string, locale: 'en' | 'de' | 'es' | 'fil' | null): Account {
@@ -53,7 +53,6 @@ beforeEach(() => {
     get protocol() {
       return browserLocation.protocol;
     },
-    assign: navigate,
   });
 });
 
