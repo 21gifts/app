@@ -24933,6 +24933,39 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-loans-waiting-all-open');
   });
 
+  test('state /welcome loans-waiting', async ({ page }) => {
+    const waitingLoan = loanWith(loanA, {
+      due: {
+        payableSats: 800,
+        payablePeople: 2,
+        waitingSats: 200,
+        waitingPeople: 1,
+        waitingShares: 1,
+      },
+    });
+    await openWelcomeLoans(page, myLoans([waitingLoan]));
+    await expect(page.getByRole('region', { name: 'Your loan' })).toContainText('Due today');
+    await expect(page.getByText(/is waiting for a lender to set up their wallet/i)).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting');
+  });
+
+  test('state /welcome loans-waiting-open', async ({ page }) => {
+    const waitingLoan = loanWith(loanA, {
+      due: {
+        payableSats: 800,
+        payablePeople: 2,
+        waitingSats: 200,
+        waitingPeople: 1,
+        waitingShares: 1,
+      },
+    });
+    await openWelcomeLoans(page, myLoans([waitingLoan]));
+    await expect(page.getByText(/is waiting for a lender to set up their wallet/i)).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting-open');
+  });
+
   test('state /welcome lender-waiting', async ({ page }) => {
     await openWelcomeLoans(page, {
       ...myLoans([]),
@@ -24948,6 +24981,20 @@ test.describe('welcome forum variants', () => {
       '/wallet',
     );
     await shotScreen(page, 'state-welcome-lender-waiting');
+  });
+
+  test('state /welcome lender-waiting-unpriced', async ({ page }) => {
+    await openWelcomeLoans(page, {
+      ...myLoans([]),
+      lenderWaiting: { shares: 1, loans: 1, sats: null },
+    });
+    const card = page.getByRole('region', {
+      name: '1 repayment is waiting for you — open your wallet to receive it',
+    });
+    await expect(card).toBeVisible();
+    await expect(card.getByText(/₿/)).toHaveCount(0);
+    await expect(card.getByRole('link', { name: 'Open your wallet' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-lender-waiting-unpriced');
   });
 
   test('state /welcome loans-sunday', async ({ page }) => {

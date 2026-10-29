@@ -2354,11 +2354,29 @@ The waiting-all card after **Show loan** is pressed. It keeps **Fully funded.**,
 
 ![21.gifts welcome loan waiting all open](images/welcome-loans-waiting-all-open.png)
 
+### Variant: loans-waiting
+
+Diego cannot receive yet. The collapsed neutral **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00** with **100%**, **Due today**, **₿800 · $0.80**, and **Send**, and under them the muted line **₿200 · $0.20 is waiting for a lender to set up their wallet**, which is not part of the amount to send. **Show loan** remains closed.
+
+![21.gifts welcome loan waiting](images/welcome-loans-waiting.png)
+
+### Variant: loans-waiting-open
+
+The same card after **Show loan** is pressed. **Due today**, **₿800 · $0.80**, **Send**, and the waiting line stay; the list shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**, and the toggle now says **Hide loan**.
+
+![21.gifts welcome loan waiting open](images/welcome-loans-waiting-open.png)
+
 ### Variant: lender-waiting
 
 Ada has no loan of her own but is owed repayments she cannot receive yet. Under the welcome heading, a neutral card says **3 repayments are waiting for you — open your wallet to receive them**, shows **₿1'500 · $1.50**, and offers **Open your wallet**, which opens `/wallet`. There is no loan card.
 
 ![21.gifts welcome lender waiting](images/welcome-lender-waiting.png)
+
+### Variant: lender-waiting-unpriced
+
+The lender card when the api could not price the waiting repayments (`sats: null`, for example a fiat share without a rate). It says **1 repayment is waiting for you — open your wallet to receive it**, shows no amount, and offers **Open your wallet**. There is no loan card.
+
+![21.gifts welcome lender waiting unpriced](images/welcome-lender-waiting-unpriced.png)
 
 ### Variant: loans-sunday
 

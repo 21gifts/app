@@ -3225,10 +3225,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loans-waiting',
+    image: 'welcome-loans-waiting.png',
+    visual: 'state-welcome-loans-waiting',
+    needle: 'state /welcome loans-waiting',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-waiting-open',
+    image: 'welcome-loans-waiting-open.png',
+    visual: 'state-welcome-loans-waiting-open',
+    needle: 'state /welcome loans-waiting-open',
+  },
+  {
+    route: '/welcome',
     id: 'lender-waiting',
     image: 'welcome-lender-waiting.png',
     visual: 'state-welcome-lender-waiting',
     needle: 'state /welcome lender-waiting',
+  },
+  {
+    route: '/welcome',
+    id: 'lender-waiting-unpriced',
+    image: 'welcome-lender-waiting-unpriced.png',
+    visual: 'state-welcome-lender-waiting-unpriced',
+    needle: 'state /welcome lender-waiting-unpriced',
   },
   {
     route: '/welcome',
