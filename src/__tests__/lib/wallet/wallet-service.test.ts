@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import {
   announceReceivedForE2e,
+  appHost,
   connectWallet,
   disconnectWallet,
   ensureWalletConnected,
@@ -13,6 +14,7 @@ import {
   onPaymentReceived,
   parseWalletInput,
   payFromWallet,
+  receiveWalletSparkAddress,
   refreshWallet,
   registerWalletAddress,
   WALLET_RETRY_BASE_MS,
@@ -47,6 +49,7 @@ const MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
+const SPARK_ADDRESS = 'spark1qexampleaddress';
 
 const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
@@ -59,6 +62,20 @@ vi.mock('@breeztech/breez-sdk-spark/web', () => ({
 }));
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+
+/**
+ * A wallet SDK around a fake `connect`; the offline signer is not used here.
+ *
+ * @param connect - The fake connect.
+ * @returns The SDK.
+ */
+function sdkOf(connect: unknown): WalletSdk {
+  return {
+    connect: connect as WalletSdk['connect'],
+    identityPubkey: vi.fn(),
+    signAddressLookup: vi.fn(),
+  };
+}
 
 function createFakeSdk(overrides?: {
   connect?: WalletSdk['connect'];
@@ -74,6 +91,7 @@ function createFakeSdk(overrides?: {
     listPayments: ReturnType<typeof vi.fn>;
     getPayment: ReturnType<typeof vi.fn>;
     listReportPayments: ReturnType<typeof vi.fn>;
+    receiveSparkAddress: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -99,14 +117,13 @@ function createFakeSdk(overrides?: {
     listPayments: vi.fn(async () => []),
     getPayment: vi.fn(),
     listReportPayments: vi.fn(async () => []),
+    receiveSparkAddress: vi.fn(async () => SPARK_ADDRESS),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
     overrides?.connect ?? (async () => connection as unknown as WalletConnection),
   );
-  const loadSdk: WalletSdkLoader = vi.fn(async () => ({
-    connect: connect as WalletSdk['connect'],
-  }));
+  const loadSdk: WalletSdkLoader = vi.fn(async () => sdkOf(connect));
   return { loadSdk, connection, connect, listeners };
 }
 
@@ -770,7 +787,7 @@ describe('connectWallet', () => {
           }),
       )
       .mockResolvedValueOnce(secondConnection as unknown as WalletConnection);
-    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const loadSdk: WalletSdkLoader = async () => sdkOf(connect);
     const first = connectWallet(loadSdk);
     await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
     const second = connectWallet(loadSdk);
@@ -796,7 +813,7 @@ describe('connectWallet', () => {
           releaseConnect = resolve;
         }),
     );
-    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const loadSdk: WalletSdkLoader = async () => sdkOf(connect);
     const pending = connectWallet(loadSdk);
     await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
     await disconnectWallet();
@@ -824,7 +841,7 @@ describe('connectWallet', () => {
         addEventListener: vi.fn(async () => 'l'),
         disconnect: vi.fn(async () => undefined),
       } as unknown as WalletConnection);
-    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const loadSdk: WalletSdkLoader = async () => sdkOf(connect);
     const first = connectWallet(loadSdk);
     await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
     const second = connectWallet(loadSdk);
@@ -944,7 +961,7 @@ describe('connectWallet', () => {
     const pending = connectWallet(loadSdk);
     await vi.waitFor(() => expect(loadSdk).toHaveBeenCalled());
     await disconnectWallet();
-    releaseLoad({ connect: connect as WalletSdk['connect'] });
+    releaseLoad(sdkOf(connect));
     await expect(pending).resolves.toBeUndefined();
     expect(connect).not.toHaveBeenCalled();
     expect(useWalletStore.getState().status).toBe('locked');
@@ -966,9 +983,7 @@ describe('connectWallet', () => {
           releaseConnect = resolve;
         }),
     );
-    const loadSdk: WalletSdkLoader = async () => ({
-      connect: connect as WalletSdk['connect'],
-    });
+    const loadSdk: WalletSdkLoader = async () => sdkOf(connect);
     const pending = connectWallet(loadSdk);
     await vi.waitFor(() => expect(connect).toHaveBeenCalled());
     await disconnectWallet();
@@ -993,9 +1008,8 @@ describe('connectWallet', () => {
       ),
       disconnect: vi.fn(async () => undefined),
     };
-    const loadSdk: WalletSdkLoader = async () => ({
-      connect: vi.fn(async () => connection as unknown as WalletConnection),
-    });
+    const loadSdk: WalletSdkLoader = async () =>
+      sdkOf(vi.fn(async () => connection as unknown as WalletConnection));
     const pending = connectWallet(loadSdk);
     await vi.waitFor(() => expect(connection.addEventListener).toHaveBeenCalled());
     await disconnectWallet();
@@ -1675,6 +1689,56 @@ describe('ensureWalletConnected', () => {
     useWalletStore.getState().setReady(1, IDENTITY);
     const { loadSdk } = createFakeSdk();
     await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
+  });
+});
+
+describe('appHost', () => {
+  it('is the host the page is served from', () => {
+    expect(appHost()).toBe(window.location.host);
+    expect(appHost()).not.toBe('');
+  });
+});
+
+describe('receiveWalletSparkAddress', () => {
+  it('opens the wallet from the tab phrase on the app host and reads its Spark address', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect, connection } = createFakeSdk();
+    await expect(receiveWalletSparkAddress(loadSdk)).resolves.toBe(SPARK_ADDRESS);
+    expect(connect).toHaveBeenCalledWith(MNEMONIC, API_KEY, window.location.host);
+    expect(connection.receiveSparkAddress).toHaveBeenCalledTimes(1);
+  });
+
+  it('reuses the open wallet', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(receiveWalletSparkAddress()).resolves.toBe(SPARK_ADDRESS);
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when the wallet cannot be opened', async () => {
+    const { loadSdk, connect } = createFakeSdk();
+    await expect(receiveWalletSparkAddress(loadSdk)).rejects.toThrow('wallet-connect');
+    expect(connect).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the wallet closes before the address is read', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    const pending = receiveWalletSparkAddress(loadSdk);
+    // The wallet check has passed one tick later; the address is read on the next.
+    await Promise.resolve();
+    void disconnectWallet();
+    await expect(pending).rejects.toThrow('wallet-connect');
+    expect(connection.receiveSparkAddress).not.toHaveBeenCalled();
+  });
+
+  it('passes an SDK error on', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    connection.receiveSparkAddress.mockRejectedValueOnce(new Error('sdk failed'));
+    await expect(receiveWalletSparkAddress(loadSdk)).rejects.toThrow('sdk failed');
   });
 });
 

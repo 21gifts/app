@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
@@ -325,4 +326,260 @@ test('Function: RecoveryPendingError — the pending passkey is never signalled 
     ),
   ).toEqual([]);
   expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
+});
+
+/** A share of another member's recovery set (20 SLIP-39 words), as a holder keeps it. */
+const HELD_CODE =
+  '21gifts-share:v1:acc_owner:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+
+/** `localStorage` key of the shares the signed-in test member keeps. */
+const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
+
+/**
+ * Signs in a member whose account the api route answers, with or without a
+ * recovery phrase passkey.
+ *
+ * @param page - The page.
+ * @param passkeyCredentialId - The seed passkey id, or `null` for none yet.
+ */
+async function signInMember(page: Page, passkeyCredentialId: string | null): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        ...(passkeyCredentialId === null
+          ? {}
+          : { walletRequired: true, walletBackupSeenAt: 1, passkeyCredentialId }),
+      }),
+    });
+  });
+}
+
+/**
+ * Opens the signed-out login card, where a member who lost the passkey starts
+ * a social recovery, and checks that it shows Log in and no error.
+ *
+ * @param page - The page.
+ */
+async function openLoginCard(page: Page): Promise<void> {
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+}
+
+/**
+ * Opens `/settings` signed in, where social recovery is set up and kept
+ * shares are reached, and checks its Wallet section.
+ *
+ * @param page - The page.
+ */
+async function openSettings(page: Page): Promise<void> {
+  await signInMember(page, 'cred-seed');
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Wallet' })).toBeVisible();
+}
+
+/**
+ * Opens `/wallet` signed in without a wallet key in this build, and checks
+ * that no wallet code is downloaded and no balance is shown.
+ *
+ * @param page - The page.
+ */
+async function openWalletWithoutKey(page: Page): Promise<void> {
+  await signInMember(page, 'cred-seed');
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
+}
+
+test.describe('social recovery libraries', () => {
+  test('Function: Slip39Error — the login card where recovery starts shows no error', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: parseShare — the login card where recovery starts loads', async ({ page }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: isRecoveryShare — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: combineShares — the login card where recovery starts loads', async ({ page }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: parseShareCode — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: phraseFromShareCodes — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: derSignatureHex — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: lnurlRecoverMessage — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: recoveryMessage — the login card where recovery starts loads', async ({
+    page,
+  }) => {
+    await openLoginCard(page);
+  });
+
+  test('Function: splitRecoverySecret — settings, where recovery is set up, show the wallet', async ({
+    page,
+  }) => {
+    await openSettings(page);
+  });
+
+  test('Function: splitPhrase — settings, where recovery is set up, show the wallet', async ({
+    page,
+  }) => {
+    await openSettings(page);
+  });
+
+  test('Function: encodeShareCode — settings, where recovery is set up, show the wallet', async ({
+    page,
+  }) => {
+    await openSettings(page);
+  });
+
+  test('Function: loadHeldShares — a kept share stays in this browser after log out', async ({
+    page,
+  }) => {
+    await openSettings(page);
+    const value = JSON.stringify({ v: 1, shares: [{ code: HELD_CODE, storedAt: 1 }] });
+    await page.evaluate(({ key, kept }) => localStorage.setItem(key, kept), {
+      key: HELD_KEY,
+      kept: value,
+    });
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await expect(page).toHaveURL(/\/login/);
+    expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
+    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBe(value);
+  });
+
+  test('Function: keepHeldShare — settings keep no share until a member keeps one', async ({
+    page,
+  }) => {
+    await openSettings(page);
+    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBeNull();
+  });
+
+  test('Function: deleteHeldShare — settings delete no kept share by themselves', async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ key, code }) => {
+        localStorage.setItem(key, JSON.stringify({ v: 1, shares: [{ code, storedAt: 1 }] }));
+      },
+      { key: HELD_KEY, code: HELD_CODE },
+    );
+    await openSettings(page);
+    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toContain(HELD_CODE);
+  });
+
+  test('Function: appHost — without a wallet key no wallet code loads', async ({ page }) => {
+    await openWalletWithoutKey(page);
+  });
+
+  test('Function: receiveWalletSparkAddress — without a wallet key no wallet code loads', async ({
+    page,
+  }) => {
+    await openWalletWithoutKey(page);
+  });
+
+  test('Function: mergePrfExtension — Add recovery phrase asks the new passkey for PRF output', async ({
+    page,
+  }) => {
+    await signInMember(page, null);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async (options?: CredentialCreationOptions) => {
+            const first = (
+              options?.publicKey?.extensions as { prf?: { eval?: { first?: BufferSource } } }
+            )?.prf?.eval?.first;
+            const bytes =
+              first === undefined
+                ? null
+                : ArrayBuffer.isView(first)
+                  ? new Uint8Array(first.buffer, first.byteOffset, first.byteLength)
+                  : new Uint8Array(first);
+            Object.assign(window, { __prfFirst: bytes === null ? null : Array.from(bytes) });
+            throw new DOMException('cancelled', 'NotAllowedError');
+          },
+          get: async () => {
+            throw new DOMException('cancelled', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/seed\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch-seed',
+          options: {
+            challenge: 'AAEC',
+            rp: { id: 'localhost', name: '21.gifts' },
+            user: { id: 'AQID', name: 'ada', displayName: '21.gifts' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+            authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+          },
+        }),
+      });
+    });
+    await page.goto('/wallet/phrase');
+    await page.getByRole('button', { name: 'Add recovery phrase' }).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { __prfFirst?: unknown }).__prfFirst))
+      .toEqual(Array.from(createHash('sha256').update('21gifts-nostr-v1').digest()));
+  });
 });

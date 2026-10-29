@@ -181,11 +181,12 @@ function tellReceived(mnemonic: string, payment: WalletPayment): void {
 
 /**
  * Host the app is served from. The wallet's address lives on this host, and
- * the app forwards the wallet's address calls to the api.
+ * the app forwards the wallet's address calls to the api. It is the domain
+ * every wallet of this app connects and signs with.
  *
  * @returns `window.location.host`.
  */
-function appHost(): string {
+export function appHost(): string {
   return window.location.host;
 }
 
@@ -922,6 +923,26 @@ export async function ensureWalletConnected(
     throw new Error('wallet-connect');
   }
   return identity;
+}
+
+/**
+ * Reads the Spark address of the signed-in member's wallet, opening the
+ * wallet from the tab phrase first when it is not open yet.
+ *
+ * @param loadSdk - SDK loader forwarded to {@link ensureWalletConnected}.
+ * @returns The wallet's Spark address.
+ * @throws Error `wallet-connect` when the wallet could not be opened or closed
+ *   meanwhile; otherwise the SDK's error.
+ */
+export async function receiveWalletSparkAddress(
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<string> {
+  await ensureWalletConnected(loadSdk);
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.receiveSparkAddress();
 }
 
 /**

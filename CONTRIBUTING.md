@@ -1021,9 +1021,10 @@ What a trace holds:
   their fetch spans, resource timings, and the LCP and CLS web vitals.
 - One transaction per wallet step, timed with `traceWallet` (`op: wallet`):
   `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
-  `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
-  `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
-  `onchain`), `prompt` (`login` or `unlock`), and on every wallet span why the
+  `wallet.prepare`, `wallet.send`, `wallet.address.register`,
+  `wallet.address.transfer`, and `wallet.passkey`. The only attributes are
+  `route` (`spark`, `lightning`, or `onchain`), `prompt` (`login`, `unlock`,
+  or `recovery`), and on every wallet span why the
   page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
   or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
   page load during a client-side navigation, otherwise `other`;
@@ -1056,7 +1057,9 @@ Privacy rules (this app holds wallets):
   username.
 - One scrubber (`beforeSend` / `beforeSendTransaction` / `beforeBreadcrumb` in
   `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
-  12–24-word recovery-phrase runs in any letter case;
+  recovery-phrase runs of 12 or more words in any letter case (they also
+  cover a social recovery share), word arrays of 12 to 24 words and of a
+  share's 20 or 33 words;
   `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
   `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
   addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
@@ -1065,7 +1068,8 @@ Privacy rules (this app holds wallets):
   tokens and `Authorization` headers; the stored session token
   (`21gifts.session`); URL query strings and fragments (the path stays); and
   every value under keys such as `mnemonic`, `phrase`, `words`, `seed`,
-  `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or `fragment`. In a
+  `share`, `slip39`, `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or
+  `fragment`. In a
   transaction that covers its name, every span description, and all span
   data (`/pl/?lightning=…` is sent as `/pl/`). The SDK's own 16- or 32-digit
   hex ids under `event_id`, `trace_id`, `span_id`, and `parent_span_id` stay
@@ -1142,7 +1146,8 @@ only for a signed-in member and both through same-origin proxies:
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
   (`reason` `timeout` or `error`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
-  a group of their own, so an api that does not accept those names yet cannot
+  a group of their own, and `recovery_done` (the sign-in that ends a social
+  recovery) as another, so an api that does not accept those names yet cannot
   drop another event with them.
 
 A payment that did not go out, and a wallet that did not open, are also sent

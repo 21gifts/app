@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchMe, finishPasskeySeed, postPasskeyRenewReport, startPasskeySeed } from '@/lib/api';
-import { renewPasskey } from '@/lib/passkey-renew';
+import { mergePrfExtension, renewPasskey } from '@/lib/passkey-renew';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, peekSessionPhrase } from '@/lib/tab-phrase';
 import { credentialToJSON } from '@/lib/webauthn-browser';
@@ -91,6 +91,31 @@ afterEach(() => {
   }
   vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
+});
+
+describe('mergePrfExtension', () => {
+  const challenge = new Uint8Array([1, 2]).buffer;
+
+  it('asks for PRF output with the salt and keeps the other options and extensions', async () => {
+    const options = {
+      challenge,
+      rp: { name: '21.gifts' },
+      user: { id: new Uint8Array([3]).buffer, name: 'u', displayName: 'u' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      extensions: { credProps: true },
+    } as PublicKeyCredentialCreationOptions;
+    const merged = await mergePrfExtension(options);
+    expect(merged).toEqual({
+      ...options,
+      extensions: { credProps: true, prf: { eval: { first: new Uint8Array(32).fill(1) } } },
+    });
+    expect(options.extensions).toEqual({ credProps: true });
+  });
+
+  it('adds the PRF request to options without extensions', async () => {
+    const merged = await mergePrfExtension({ challenge } as PublicKeyCredentialCreationOptions);
+    expect(merged.extensions).toEqual({ prf: { eval: { first: new Uint8Array(32).fill(1) } } });
+  });
 });
 
 describe('renewPasskey', () => {

@@ -513,10 +513,20 @@ describe('traceWallet', () => {
   it('passes the fixed route or prompt attribute on beside the page load', async () => {
     await traceWallet('wallet.send', async () => undefined, { route: 'spark' });
     await traceWallet('wallet.passkey', async () => undefined, { prompt: 'login' });
+    await traceWallet('wallet.passkey', async () => undefined, { prompt: 'recovery' });
     expect(vi.mocked(startSpan).mock.calls.map(([options]) => options.attributes)).toEqual([
       { ...PAGE_LOAD, route: 'spark' },
       { ...PAGE_LOAD, prompt: 'login' },
+      { ...PAGE_LOAD, prompt: 'recovery' },
     ]);
+  });
+
+  it('names the address move of a social recovery with its own fixed step', async () => {
+    await traceWallet('wallet.address.transfer', async () => undefined);
+    expect(startSpan).toHaveBeenCalledWith(
+      { name: 'wallet.address.transfer', op: 'wallet', attributes: PAGE_LOAD, parentSpan: null },
+      expect.any(Function),
+    );
   });
 
   it('carries only fixed words: no value of the page load is free text', async () => {
@@ -693,6 +703,31 @@ describe('beforeSend scrubber', () => {
       other: ['one', 'two'],
       mixed: [...PHRASE.split(' ', 11), 7],
     });
+  });
+
+  it('redacts recovery shares: 20- and 33-word arrays, share keys, and share payloads', () => {
+    const share =
+      'body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+    const event = on().beforeSend({
+      type: undefined,
+      extra: {
+        list20: share.split(' '),
+        list33: [...share.split(' '), ...share.split(' ', 13)],
+        list19: share.split(' ', 19),
+        shareCode: 'acc_1',
+        slip39Identifier: 2864,
+        payload: `21gifts-share:v1:acc_1:ada:${share}`,
+      },
+    });
+    expect(event.extra).toEqual({
+      list20: '[Filtered]',
+      list33: '[Filtered]',
+      list19: share.split(' ', 19).map(() => expect.any(String)),
+      shareCode: '[Filtered]',
+      slip39Identifier: '[Filtered]',
+      payload: '21gifts-share:v1:acc_1:ada:[Filtered]',
+    });
+    expect(JSON.stringify(event.extra)).not.toContain('academic acid');
   });
 
   it('redacts raw bytes and upper-case phrase word arrays', () => {
