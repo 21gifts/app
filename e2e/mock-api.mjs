@@ -112,6 +112,21 @@ function bearer(req) {
   return token === '' ? null : token;
 }
 
+/**
+ * Parses a request body that must be one JSON object.
+ *
+ * @param {string} rawBody
+ * @returns {Record<string, any> | null} The object, or `null` for anything else.
+ */
+function jsonObject(rawBody) {
+  try {
+    const parsed = JSON.parse(rawBody);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function hasName(account) {
   return account.name !== null && String(account.name).trim() !== '';
 }
@@ -2481,21 +2496,69 @@ const server = http.createServer(async (req, res) => {
   }
 
   // As the api with APP_BUILD_REQUIRED set: every passkey step that leads to
-  // a session needs the Playwright build's id (`dev`) in X-App-Build, checked
-  // before anything else. A missing header or another id (e2e uses
-  // `e2e-old-build` for an outdated tab) is 403 app_outdated.
+  // a session, including the social recovery steps, needs the Playwright
+  // build's id (`dev`) in X-App-Build, checked before anything else. A missing
+  // header or another id (e2e uses `e2e-old-build` for an outdated tab) is
+  // 403 app_outdated.
   if (
     method === 'POST' &&
     (pathName === '/auth/passkey/register/begin' ||
       pathName === '/auth/passkey/register/finish' ||
       pathName === '/auth/passkey/authenticate/begin' ||
-      pathName === '/auth/passkey/authenticate/finish') &&
+      pathName === '/auth/passkey/authenticate/finish' ||
+      pathName === '/auth/passkey/recovery/begin' ||
+      pathName === '/auth/passkey/recovery/finish') &&
     req.headers['x-app-build'] !== 'dev'
   ) {
     json(res, 403, {
       error: 'A new app version is ready. Reload the page.',
       code: 'app_outdated',
     });
+    return;
+  }
+
+  // Social recovery: no old wallet in Playwright holds an account, so a
+  // well-formed begin is 404 and no finish has a challenge. Finish checks
+  // the body, then the origin, then the challenge, in the api's order.
+  if (method === 'POST' && pathName === '/auth/passkey/recovery/begin') {
+    const parsed = jsonObject(rawBody);
+    if (
+      parsed === null ||
+      typeof parsed.sparkPubkey !== 'string' ||
+      parsed.lookup === null ||
+      typeof parsed.lookup !== 'object' ||
+      typeof parsed.lookup.signature !== 'string' ||
+      typeof parsed.lookup.timestamp !== 'number'
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with sparkPubkey and lookup' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/recovery/finish') {
+    const parsed = jsonObject(rawBody);
+    if (
+      parsed === null ||
+      typeof parsed.challengeId !== 'string' ||
+      parsed.credential === undefined ||
+      typeof parsed.newSparkPubkey !== 'string' ||
+      parsed.signature === null ||
+      typeof parsed.signature !== 'object' ||
+      typeof parsed.signature.pubkey !== 'string' ||
+      typeof parsed.signature.signature !== 'string'
+    ) {
+      json(res, 400, {
+        error: 'Expected a JSON body with challengeId, credential, newSparkPubkey and signature',
+      });
+      return;
+    }
+    if (req.headers.origin !== 'http://localhost:3000') {
+      json(res, 400, { error: 'Invalid origin' });
+      return;
+    }
+    json(res, 400, { error: 'Unknown or expired challenge' });
     return;
   }
 
@@ -2747,6 +2810,39 @@ const server = http.createServer(async (req, res) => {
     account.sparkPubkey = parsed.sparkPubkey;
     account.sparkWalletVerified = false;
     json(res, 200, account);
+    return;
+  }
+
+  if (method === 'PUT' && pathName === '/me/recovery-share') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.socialRecoverySetUp = true;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/me/previous-wallets') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { wallets: [] });
+    return;
+  }
+
+  if (method === 'DELETE' && /^\/me\/previous-wallets\/[^/]+$/.test(pathName)) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    res.writeHead(204);
+    res.end();
     return;
   }
 

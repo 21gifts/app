@@ -115,10 +115,10 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.jpg`), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/me/loans` which re-exports `proxyMeLoansGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, `/funding/daily-roster` which re-exports `proxyFundingDailyRosterGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/grants/payments/comment` and `/grants/payments/amounts` are the daily payment pages, not GET proxies. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.jpg`), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/me/loans` which re-exports `proxyMeLoansGet`, `/me/previous-wallets` which re-exports `proxyMePreviousWalletsGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, `/funding/daily-roster` which re-exports `proxyFundingDailyRosterGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/grants/payments/comment` and `/grants/payments/amounts` are the daily payment pages, not GET proxies. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.jpg`), `/conversations/[id]/messages/[messageId]/photo` (`id` + `messageId`), `/conversations/[id]/messages/[messageId]/photo/[file]` (`id` + `messageId` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/maps/key`; `/translate` takes the incoming `Request`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/maps/key` is always 200 `{ key: string | null }`; `/translate` is 200 `{ available: boolean }` or 502; proxies return the upstream api response (JSON or raw photo/video bytes).
-- **Used by:** Container probes, browser/wallet same-origin calls, `getMyLoans` via `GET /me/loans`, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16. `GET /lnurlpay/[pubkey]/metadata` (async `pubkey`) calls `proxyLnurlpayMetadataGet` for the in-app wallet; `GET /lnurlp/[username]/invoice` (async `username`, query unchanged) and `GET /verify/[paymentHash]` (async `paymentHash`) call `proxyLnurlpInvoiceGet` and `proxyVerifyGet` for payers' wallets and answer with `Access-Control-Allow-Origin: *`.
+- **Used by:** Container probes, browser/wallet same-origin calls, `getMyLoans` via `GET /me/loans`, `fetchPreviousWallets` via `GET /me/previous-wallets`, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16. `GET /lnurlpay/[pubkey]/metadata` (async `pubkey`) calls `proxyLnurlpayMetadataGet` for the in-app wallet; `GET /lnurlp/[username]/invoice` (async `username`, query unchanged) and `GET /verify/[paymentHash]` (async `paymentHash`) call `proxyLnurlpInvoiceGet` and `proxyVerifyGet` for payers' wallets and answer with `Access-Control-Allow-Origin: *`.
 
 ## Function: OPTIONS
 
@@ -1199,21 +1199,21 @@
 - **Purpose:** Typed accessor for the build id of this bundle (`NEXT_PUBLIC_BUILD_ID`): the deployed commit, or `dev`. Passkey begin and finish send it as `X-App-Build`, so the api can refuse a tab that still runs an older build.
 - **Inputs:** None.
 - **Returns / side effects:** The baked string. Throws if unset or empty. `next.config.ts` bakes it at `next build` from Docker ARG `NEXT_PUBLIC_BUILD_ID` (unset or empty → `dev`). Not an `entrypoint.sh` placeholder.
-- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`.
+- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `startPasskeyRecovery`, `finishPasskeyRecovery`.
 
 ## Function: LoginsClosedError
 
-- **Purpose:** Typed error for the api's HTTP 503 answer with `code` `logins_closed` (`LOGINS_CLOSED_CODE`) on register begin, register finish, or authenticate finish: operators closed new logins for an update. Recognised by the body's `code` and that status, never by text; screens show catalog copy.
+- **Purpose:** Typed error for the api's HTTP 503 answer with `code` `logins_closed` (`LOGINS_CLOSED_CODE`) on register begin, register finish, authenticate finish, or social recovery begin or finish: operators closed new logins for an update. Recognised by the body's `code` and that status, never by text; screens show catalog copy.
 - **Inputs:** None. The message is `logins_closed`.
 - **Returns / side effects:** Error instance named `LoginsClosedError`. `usePasskeyLogin` maps it to status `closed`.
-- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `finishPasskeyAuthentication`, `usePasskeyLogin`.
+- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `finishPasskeyAuthentication`, `startPasskeyRecovery`, `finishPasskeyRecovery`, `usePasskeyLogin`.
 
 ## Function: AppOutdatedError
 
 - **Purpose:** Typed error for the api's HTTP 403 answer with `code` `app_outdated` (`APP_OUTDATED_CODE`) on a passkey begin or finish: a newer app build is live and this tab must reload. Recognised by the body's `code` and that status, never by text; screens show catalog copy.
 - **Inputs:** None. The message is `app_outdated`.
 - **Returns / side effects:** Error instance named `AppOutdatedError`. `usePasskeyLogin` maps it to status `outdated`.
-- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `usePasskeyLogin`.
+- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `startPasskeyRecovery`, `finishPasskeyRecovery`, `usePasskeyLogin`.
 
 ## Function: LoginBlockedNotice
 
@@ -1923,6 +1923,20 @@ First post free: while the signed-in member is below verified and has no missing
 - **Inputs:** `error` unknown.
 - **Returns / side effects:** `true` for that instance or exact message; `false` otherwise.
 - **Used by:** `usePasskeyLogin`.
+
+## Function: RecoveryError
+
+- **Purpose:** Typed rejection of a social recovery request (`startPasskeyRecovery`, `finishPasskeyRecovery`, `putRecoveryShare`), so the recovery screens choose catalog copy without reading English api text. A kind is recognised by the status together with the body's `code` or exact `error`.
+- **Inputs:** `kind`: `not_found` (the old wallet holds no account), `done` (already recovered; sign in with the new passkey), `operator` (only an operator can recover the account), `unavailable` (5xx or 429, which can pass), `invalid` (any other non-2xx), `challenge` (unknown, expired, or used finish challenge; the account did not move), `pending` (another recovery is pending), or `key_in_use` (the new wallet key is in use; on the share upload, the wallet is not connected or changed).
+- **Returns / side effects:** Error named `RecoveryError` with a readonly `kind` and the message `recovery_<kind>`.
+- **Used by:** `startPasskeyRecovery`, `finishPasskeyRecovery`, `putRecoveryShare`, the recovery flow on `/recover`, and `useSocialRecoverySetup`.
+
+## Function: RecoveryPendingError
+
+- **Purpose:** Typed error for the api's HTTP 409 answer with `code` `recovery_pending` on authenticate finish: the passkey belongs to a social recovery that is not finished yet. Recognised by that status together with the body's `code`, never by text. Unlike `UnknownCredentialError`, the authenticator must not be told that this passkey is unknown, or a recovery that still commits would lose its only passkey.
+- **Inputs:** None. The message is `recovery_pending`.
+- **Returns / side effects:** Error instance named `RecoveryPendingError`.
+- **Used by:** `finishPasskeyAuthentication`, `usePasskeyLogin`, and the recovery flow's sign-in with the new passkey.
 
 ## Function: nextPostRequirement
 
@@ -3465,10 +3479,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DELETE
 
-- **Purpose:** Shared App Router DELETE export name. `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`; `/forum/messages/[id]` re-exports `proxyMessagesDelete`; `/pos/charge` re-exports `proxyPosDelete`.
-- **Inputs:** Incoming `Request`. For `/forum/messages/[id]`, also async route `params` with the message id.
+- **Purpose:** Shared App Router DELETE export name. `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsDelete`; `/forum/messages/[id]` re-exports `proxyMessagesDelete`; `/pos/charge` re-exports `proxyPosDelete`; `/me/previous-wallets/[sparkPubkey]` calls `proxyMePreviousWalletDelete` with the async `sparkPubkey`.
+- **Inputs:** Incoming `Request`. For `/forum/messages/[id]`, also async route `params` with the message id; for `/me/previous-wallets/[sparkPubkey]`, the wallet key.
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin `deletePushSubscription` / `disablePush`, and same-origin forum moderation delete (`deleteMessage`).
+- **Used by:** Same-origin `deletePushSubscription` / `disablePush`, same-origin forum moderation delete (`deleteMessage`), and dropping a previous wallet (`deletePreviousWallet`).
 
 ## Function: PATCH
 
@@ -3528,17 +3542,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/wallet-intro-seen` re-exports `proxyMeWalletIntroSeenPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/heart-notifications` re-exports `proxyMeHeartNotificationsPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/wallet/report` re-exports `proxyMeWalletReportPost`; `/me/wallet/hearts` re-exports `proxyMeWalletHeartsPost`; `/me/events` re-exports `proxyMeEventsPost`; `/lnurlpay/[pubkey]` calls `proxyLnurlpayRegisterPost` and `/lnurlpay/[pubkey]/recover` calls `proxyLnurlpayRecoverPost` with the async `pubkey`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/messages/[id]/repayment/due` re-exports `proxyMessagesRepaymentDuePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/read-visible` re-exports `proxyNotificationsReadVisiblePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/lnurl/pay-request` re-exports `proxyLnurlPayRequestPost`; `/lnurl/invoice` re-exports `proxyLnurlInvoicePost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`; `/funding/daily-roster/comment` re-exports `proxyFundingDailyRosterCommentPost`; `/funding/daily-roster/payments` re-exports `proxyFundingDailyRosterPaymentsPost`; `/funding/daily-roster/recipients` re-exports `proxyFundingDailyRosterRecipientsPost`; `/funding/daily-roster/recipients/update` re-exports `proxyFundingDailyRosterRecipientsUpdatePost`; `/funding/daily-roster/recipients/delete` re-exports `proxyFundingDailyRosterRecipientsDeletePost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/wallet-intro-seen` re-exports `proxyMeWalletIntroSeenPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/heart-notifications` re-exports `proxyMeHeartNotificationsPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/wallet/report` re-exports `proxyMeWalletReportPost`; `/me/wallet/hearts` re-exports `proxyMeWalletHeartsPost`; `/me/events` re-exports `proxyMeEventsPost`; `/lnurlpay/[pubkey]` calls `proxyLnurlpayRegisterPost` and `/lnurlpay/[pubkey]/recover` calls `proxyLnurlpayRecoverPost` with the async `pubkey`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed,recovery}/{begin,finish}` re-export the ten passkey proxy POSTs; `/lnurlpay/[pubkey]/transfer` calls `proxyLnurlpayTransferPost` with the async `pubkey`; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/messages/[id]/repayment/due` re-exports `proxyMessagesRepaymentDuePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/read-visible` re-exports `proxyNotificationsReadVisiblePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/lnurl/pay-request` re-exports `proxyLnurlPayRequestPost`; `/lnurl/invoice` re-exports `proxyLnurlInvoicePost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`; `/funding/daily-roster/comment` re-exports `proxyFundingDailyRosterCommentPost`; `/funding/daily-roster/payments` re-exports `proxyFundingDailyRosterPaymentsPost`; `/funding/daily-roster/recipients` re-exports `proxyFundingDailyRosterRecipientsPost`; `/funding/daily-roster/recipients/update` re-exports `proxyFundingDailyRosterRecipientsUpdatePost`; `/funding/daily-roster/recipients/delete` re-exports `proxyFundingDailyRosterRecipientsDeletePost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText, cached }` or 400/404/503/502 from the 21.gifts api.
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, wallet tour seen (`POST /me/wallet-intro-seen`), notification-level save (`POST /me/notification-level`), heart-notification save (`POST /me/heart-notifications`), living-room rules agreement (`POST /me/rules-agreement`), Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), wallet data report (`POST /me/wallet/report`), heart lookup (`POST /me/wallet/hearts`), interaction log batch (`POST /me/events`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), `postRepaymentDue` (`POST /messages/[id]/repayment/due`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`), mark-by-message (`POST /forum/notifications/read-by-message`), mark-visible (`POST /forum/notifications/read-visible`), and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), the outside-address pay request and invoice of the wallet send flow (`POST /lnurl/pay-request`, `POST /lnurl/invoice`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`), and daily-roster saves (`POST /funding/daily-roster/comment`, `POST /funding/daily-roster/payments`, `POST /funding/daily-roster/recipients`, `POST /funding/daily-roster/recipients/update`, `POST /funding/daily-roster/recipients/delete`). The in-app wallet's address registration (`POST /lnurlpay/[pubkey]`, async `pubkey`, `proxyLnurlpayRegisterPost`) and address lookup (`POST /lnurlpay/[pubkey]/recover`, `proxyLnurlpayRecoverPost`) forward its signed JSON body and signature headers.
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, wallet tour seen (`POST /me/wallet-intro-seen`), notification-level save (`POST /me/notification-level`), heart-notification save (`POST /me/heart-notifications`), living-room rules agreement (`POST /me/rules-agreement`), Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), wallet data report (`POST /me/wallet/report`), heart lookup (`POST /me/wallet/hearts`), interaction log batch (`POST /me/events`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, seed, and social recovery), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), `postRepaymentDue` (`POST /messages/[id]/repayment/due`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`), mark-by-message (`POST /forum/notifications/read-by-message`), mark-visible (`POST /forum/notifications/read-visible`), and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), the outside-address pay request and invoice of the wallet send flow (`POST /lnurl/pay-request`, `POST /lnurl/invoice`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`), and daily-roster saves (`POST /funding/daily-roster/comment`, `POST /funding/daily-roster/payments`, `POST /funding/daily-roster/recipients`, `POST /funding/daily-roster/recipients/update`, `POST /funding/daily-roster/recipients/delete`). The in-app wallet's address registration (`POST /lnurlpay/[pubkey]`, async `pubkey`, `proxyLnurlpayRegisterPost`) and address lookup (`POST /lnurlpay/[pubkey]/recover`, `proxyLnurlpayRecoverPost`) forward its signed JSON body and signature headers; the new wallet's address claim during a social recovery (`POST /lnurlpay/[pubkey]/transfer`, `proxyLnurlpayTransferPost`) forwards its JSON body signed by both wallets.
 
 ## Function: PUT
 
-- **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`; `/me/wallet` re-exports `proxyMeWalletPut`.
-- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }` (`/me/about`) or `{ sparkPubkey }` (`/me/wallet`).
+- **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`; `/me/wallet` re-exports `proxyMeWalletPut`; `/me/recovery-share` re-exports `proxyMeRecoverySharePut`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }` (`/me/about`), `{ sparkPubkey }` (`/me/wallet`), or `{ sparkPubkey, share }` (`/me/recovery-share`).
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`) and the wallet key claim (`PUT /me/wallet` / `putWallet`).
+- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`), the wallet key claim (`PUT /me/wallet` / `putWallet`), and the social recovery share upload (`PUT /me/recovery-share` / `putRecoveryShare`).
 
 ## Function: proxyApiRequest
 
@@ -4083,8 +4097,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/authenticate/finish` and parse the session.
 - **Inputs:** `challengeId` and credential JSON.
-- **Returns / side effects:** `{ token, account }`. Throws `WrongAccountError` on 403 with the duplicate-account api string. A 400 body exactly `Unknown credential` throws `UnknownCredentialError`. Other non-2xx stay status fallbacks. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError` (checked before the wrong-account 403).
-- **Used by:** `usePasskeyLogin.authenticate`.
+- **Returns / side effects:** `{ token, account }`. A 409 with `code` `recovery_pending` throws `RecoveryPendingError` before any other check. Throws `WrongAccountError` on 403 with the duplicate-account api string. A 400 body exactly `Unknown credential` throws `UnknownCredentialError`. Other non-2xx stay status fallbacks. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError` (checked before the wrong-account 403).
+- **Used by:** `usePasskeyLogin.authenticate`, and the recovery flow's sign-in with the new passkey.
 
 ## Function: finishPasskeyRegistration
 
@@ -4155,6 +4169,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** None.
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx. Sends `X-App-Build` (`getBuildId`). 403 `code` `app_outdated` throws `AppOutdatedError`; the api checks closed logins on authenticate finish, not here.
 - **Used by:** `usePasskeyLogin.authenticate`.
+
+## Function: startPasskeyRecovery
+
+- **Purpose:** POST `/auth/passkey/recovery/begin` to start the social recovery of the account the old wallet belongs to, and parse the answer with `recoveryBeginSchema`.
+- **Inputs:** `{ sparkPubkey, lookup: { signature, timestamp } }`: the old wallet's identity key and its signed address lookup (lowercase DER hex, timestamp in seconds). Only these fields are sent, whatever else the object holds.
+- **Returns / side effects:** `{ challengeId, options, accountId, username }`. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError`; 403 with the duplicate-account api string throws `WrongAccountError`. Then `RecoveryError`: `not_found` on 404, `done` or `operator` on 409 with `code` `recovery_done` or `recovery_operator`, `unavailable` on 5xx or 429, `invalid` on any other non-2xx. A body that fails the schema throws.
+- **Used by:** The recovery flow on `/recover`, for its first begin and every begin again.
+
+## Function: finishPasskeyRecovery
+
+- **Purpose:** POST `/auth/passkey/recovery/finish` to store the new passkey and the new wallet key as the account's pending social recovery, signed by the old wallet. A repeat of the same finish after a lost answer succeeds again and changes nothing.
+- **Inputs:** `{ challengeId, credential, newSparkPubkey, signature: { pubkey, signature } }`: the begin's challenge id, the new passkey's attestation JSON (without PRF output), the new wallet key, and the old wallet's signature over the recovery message. Only these fields are sent.
+- **Returns / side effects:** Resolves on any 2xx. Sends `X-App-Build` (`getBuildId`). Login refusals and the wrong account throw as in `startPasskeyRecovery`. Then `RecoveryError`: `challenge` on 400 `Unknown or expired challenge`, `Challenge expired`, or `Challenge already used` (the account did not move); `pending` on 409 `A recovery is already pending`; `key_in_use` on 409 `Wallet key is already in use`; `unavailable` on 5xx or 429; `invalid` on any other non-2xx, including a known text with another status.
+- **Used by:** The recovery flow on `/recover`, as the first step of the transfer (the account).
 
 ## Function: startPasskeyReplace
 
@@ -4295,6 +4323,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with Bearer and JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/auth/passkey/seed/finish`.
+
+## Function: proxyAuthPasskeyRecoveryBeginPost
+
+- **Purpose:** Proxies POST `/auth/passkey/recovery/begin` (social recovery) to the api.
+- **Inputs:** Incoming `Request` with JSON `{ sparkPubkey, lookup }`; no session. `X-App-Build` is passed through unchanged.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/recovery/begin`.
+
+## Function: proxyAuthPasskeyRecoveryFinishPost
+
+- **Purpose:** Proxies POST `/auth/passkey/recovery/finish` (social recovery) to the api.
+- **Inputs:** Incoming `Request` with JSON `{ challengeId, credential, newSparkPubkey, signature }`; no session. `X-App-Build` and `Origin` are passed through unchanged.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/auth/passkey/recovery/finish`.
 
 ## Function: proxyMeWalletBackupSeenPost
 
@@ -4578,6 +4620,48 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route PUT `/me/wallet`.
 
+## Function: putRecoveryShare
+
+- **Purpose:** PUT `/me/recovery-share` with Bearer to store 21.gifts' share of the owner's social recovery for the account's verified wallet.
+- **Inputs:** Session token and `{ sparkPubkey, share }`: the verified wallet key and the raw share with index 2 (20 lowercase words), never a holder's code. Only these fields are sent.
+- **Returns / side effects:** The updated `Account`, with `socialRecoverySetUp` true. Throws `RecoveryError` `key_in_use` on 409 (the wallet is not connected or changed), `unavailable` on 5xx or 429, and `invalid` on any other non-2xx. A body that fails `accountSchema` throws.
+- **Used by:** `useSocialRecoverySetup` on `/settings/social-recovery`.
+
+## Function: proxyMeRecoverySharePut
+
+- **Purpose:** Proxies PUT `/me/recovery-share` to the api.
+- **Inputs:** Incoming `Request` with Bearer and JSON `{ sparkPubkey, share }`.
+- **Returns / side effects:** Upstream `Response`. Does not read or log the body.
+- **Used by:** Route PUT `/me/recovery-share`.
+
+## Function: fetchPreviousWallets
+
+- **Purpose:** GET `/me/previous-wallets` with Bearer: the wallets the account used before a social recovery.
+- **Inputs:** Session token.
+- **Returns / side effects:** `PreviousWallet[]` (`sparkPubkey`, `sparkAddress`, `replacedAt`, `balanceSats`), where `balanceSats` is the public explorer balance the api read or `null` when unknown; it is information only. Throws `Unauthorized` on 401 and `Previous wallets are unavailable` on any other non-2xx. A body that fails `previousWalletsSchema` throws.
+- **Used by:** `usePreviousWallets` (the previous wallets on `/settings`) and `useRemainingBalance` (the previous wallet's page checks that its key is listed).
+
+## Function: proxyMePreviousWalletsGet
+
+- **Purpose:** Proxies GET `/me/previous-wallets` to the api.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/me/previous-wallets`.
+
+## Function: deletePreviousWallet
+
+- **Purpose:** DELETE `/me/previous-wallets/:sparkPubkey` with Bearer: drops one previous wallet of the account, together with the 21.gifts share stored for it.
+- **Inputs:** Session token and the previous wallet's identity key (URL-encoded into the path).
+- **Returns / side effects:** Resolves on 204. Any other status throws `Could not remove the previous wallet`.
+- **Used by:** The remove action of `RemainingBalanceScreen`, only after a synced read of that wallet gave 0.
+
+## Function: proxyMePreviousWalletDelete
+
+- **Purpose:** Proxies DELETE `/me/previous-wallets/:sparkPubkey` to the api.
+- **Inputs:** Incoming `Request` with Bearer, path `sparkPubkey` (URL-encoded upstream).
+- **Returns / side effects:** Upstream `Response` (204 with no body when dropped).
+- **Used by:** Route DELETE `/me/previous-wallets/[sparkPubkey]`.
+
 ## Function: proxyLnurlpayRegisterPost
 
 - **Purpose:** Proxies the in-app wallet's address registration (POST `/lnurlpay/:pubkey`) to the api, which accepts it only for the account's own username and claimed key and then marks the wallet verified.
@@ -4591,6 +4675,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (signed JSON body), path `pubkey`.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/lnurlpay/[pubkey]/recover`.
+
+## Function: proxyLnurlpayTransferPost
+
+- **Purpose:** Proxies the new in-app wallet's address claim during a social recovery (POST `/lnurlpay/:pubkey/transfer`) to the api, which admits it only for the account's pending recovery and the old wallet's authorization.
+- **Inputs:** Incoming `Request` (JSON body signed by both wallets), path `pubkey` (the new wallet key, URL-encoded upstream).
+- **Returns / side effects:** Upstream `Response`. Default proxy options, like its `/lnurlpay` siblings.
+- **Used by:** Route POST `/lnurlpay/[pubkey]/transfer`.
 
 ## Function: proxyLnurlpayMetadataGet
 

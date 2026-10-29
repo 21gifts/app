@@ -148,6 +148,20 @@
 - **Used by:** `finishPasskeySeed`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /auth/passkey/recovery/begin
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/recovery/begin`. Starts a social recovery on a phone without the account's passkey. JSON `{ sparkPubkey, lookup: { signature, timestamp } }`: the old wallet's identity key and its own signed address lookup (lowercase DER hex, timestamp in seconds), which the api forwards to the address server. 200 is `{ challengeId, options, accountId, username }`, the creation options for the new passkey and the account the old wallet belongs to.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 400 for a bad body; 403 `{ error, code: 'app_outdated' }` when the api requires another build; 404 when the old wallet holds no account; 409 `code` `recovery_done` (already recovered, sign in with the new passkey) or `recovery_operator` (only an operator can recover it); 429; 503 while the address service is unavailable or a forwarded recovery is still settling, or `{ error, code: 'logins_closed' }` while operators closed logins.
+- **Used by:** `startPasskeyRecovery`.
+- **Auth:** Public. Signed by the old wallet.
+
+## Endpoint: POST /auth/passkey/recovery/finish
+
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/recovery/finish`. JSON `{ challengeId, credential, newSparkPubkey, signature: { pubkey, signature } }`: the new passkey's attestation, the new wallet's key, and the old wallet's signature over the recovery message. 200 `{ status: 'pending' }` stores the pending recovery; the account moves only once the address moved. A repeat of the same finish after a lost answer is 200 again and changes nothing.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` and `Origin` are passed through unchanged. 400 for a bad body, origin, passkey, or signature, and `Unknown or expired challenge`, `Challenge expired`, or `Challenge already used` when the account did not move; 403 `{ error, code: 'app_outdated' }`; 409 `A recovery is already pending` or `Wallet key is already in use`; 429; 503, or `{ error, code: 'logins_closed' }` while operators closed logins.
+- **Used by:** `finishPasskeyRecovery`.
+- **Auth:** Public. Signed by the old wallet.
+
 ## Endpoint: GET /gifts
 
 - **Purpose:** Same-origin proxy of api `GET /gifts?day=YYYY-MM-DD` (individual outbound gifts that UTC day).
@@ -335,6 +349,27 @@
 - **Used by:** `putWallet`.
 - **Auth:** Bearer.
 
+## Endpoint: PUT /me/recovery-share
+
+- **Purpose:** Same-origin proxy of api `PUT /me/recovery-share`. Stores 21.gifts' share of the owner's social recovery for the account's verified wallet. JSON `{ sparkPubkey, share }`: the verified wallet key and the raw share with index 2 (20 lowercase words). 200 is the owner account with `socialRecoverySetUp: true`.
+- **Errors:** Upstream 400 for a bad body, 401, 404 (feature off), 409 `Wallet is not connected` or `Wallet changed`, 503 `Social recovery is unavailable`, or 502 if the api is unreachable.
+- **Used by:** `putRecoveryShare`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /me/previous-wallets
+
+- **Purpose:** Same-origin proxy of api `GET /me/previous-wallets`. Lists the wallets the account used before a social recovery: `{ wallets: [{ sparkPubkey, sparkAddress, replacedAt, balanceSats }] }`. `balanceSats` is the public explorer balance the api read, or `null` when unknown; it is information only.
+- **Errors:** Upstream 401, 404 (feature off), 503 `Wallet data is unavailable`, or 502 if the api is unreachable.
+- **Used by:** `fetchPreviousWallets`.
+- **Auth:** Bearer.
+
+## Endpoint: DELETE /me/previous-wallets/[sparkPubkey]
+
+- **Purpose:** Same-origin proxy of api `DELETE /me/previous-wallets/:sparkPubkey`. Drops one previous wallet of the account, together with the 21.gifts share stored for it. 204 with no body.
+- **Errors:** Upstream 401, 404 `Not found` (not a previous wallet of the account, or feature off), 503 `Wallet data is unavailable`, or 502 if the api is unreachable.
+- **Used by:** `deletePreviousWallet`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /lnurlpay/[pubkey]
 
 - **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey`. The in-app wallet registers the account's username as its address on the app's own host; success marks the wallet verified.
@@ -348,6 +383,13 @@
 - **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
 - **Used by:** The in-app wallet.
 - **Auth:** Signed by the wallet.
+
+## Endpoint: POST /lnurlpay/[pubkey]/transfer
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey/transfer`. During a social recovery the new in-app wallet (path key) claims the account's address that the old wallet authorized for it. The body is the wallet's own `{ username, description, from_pubkey, from_signature, to_signature, timestamp }`, signed by both wallets.
+- **Errors:** Upstream 2xx and 4xx of the address server passed through, 404 (feature off, or no pending recovery admits the claim), 409 when the registration could not be confirmed, 413, 429, 503, or 502 if the api is unreachable.
+- **Used by:** The new in-app wallet during a social recovery; no app `fetch` calls it.
+- **Auth:** Signed by both wallets.
 
 ## Endpoint: GET /lnurlpay/[pubkey]/metadata
 

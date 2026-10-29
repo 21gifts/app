@@ -68,9 +68,15 @@ import {
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
+  fetchPreviousWallets,
+  deletePreviousWallet,
   finishPasskeyAuthentication,
+  finishPasskeyRecovery,
   finishPasskeyRegistration,
   finishPasskeySeed,
+  putRecoveryShare,
+  RecoveryError,
+  RecoveryPendingError,
   isUnknownCredentialError,
   isWrongAccountError,
   UNKNOWN_CREDENTIAL_ERROR,
@@ -128,6 +134,7 @@ import {
   putWallet,
   skipSetup,
   startPasskeyAuthentication,
+  startPasskeyRecovery,
   startPasskeyRegistration,
   startPasskeySeed,
 } from '@/lib/api';
@@ -5321,6 +5328,17 @@ const passkeyAccount = { ...account, linkingKey: null };
 const passkeyBegin = { challengeId: 'ch'.repeat(16), options: { challenge: 'aa' } };
 const passkeySession = { token: 'tok', account: passkeyAccount };
 
+const recoveryBeginBody = {
+  sparkPubkey: `02${'a'.repeat(64)}`,
+  lookup: { signature: '3044', timestamp: 1_761_700_000 },
+};
+const recoveryFinishBody = {
+  challengeId: 'ch'.repeat(16),
+  credential: { id: 'cred-new', type: 'public-key' },
+  newSparkPubkey: `03${'b'.repeat(64)}`,
+  signature: { pubkey: `02${'a'.repeat(64)}`, signature: 'c'.repeat(128) },
+};
+
 describe('startPasskeyRegistration', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
@@ -5533,6 +5551,32 @@ describe('finishPasskeyAuthentication', () => {
     expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
     expect(isUnknownCredentialError(error)).toBe(false);
   });
+
+  it('throws RecoveryPendingError on 409 recovery_pending, before any other check', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'Recovery is not finished', code: 'recovery_pending' },
+    });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(RecoveryPendingError);
+    expect((error as Error).name).toBe('RecoveryPendingError');
+    expect((error as Error).message).toBe('recovery_pending');
+    expect(isUnknownCredentialError(error)).toBe(false);
+  });
+
+  it('keeps the generic finish error on 409 with another code', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Conflict', code: 'other' } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toEqual(new Error('Failed to finish passkey authentication: 409'));
+  });
+
+  it('keeps the generic finish error for recovery_pending on another status', async () => {
+    stubFetch({ ok: false, status: 400, body: { code: 'recovery_pending' } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).not.toBeInstanceOf(RecoveryPendingError);
+    expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
+  });
 });
 
 describe('passkey login refusals', () => {
@@ -5541,6 +5585,8 @@ describe('passkey login refusals', () => {
     ['finishPasskeyRegistration', () => finishPasskeyRegistration('ch', {})],
     ['startPasskeyAuthentication', () => startPasskeyAuthentication()],
     ['finishPasskeyAuthentication', () => finishPasskeyAuthentication('ch', {})],
+    ['startPasskeyRecovery', () => startPasskeyRecovery(recoveryBeginBody)],
+    ['finishPasskeyRecovery', () => finishPasskeyRecovery(recoveryFinishBody)],
   ];
 
   /** The api answers `logins_closed` on these steps only, never on authenticate begin. */
@@ -5607,6 +5653,37 @@ describe('passkey login refusals', () => {
   it('finishPasskeyAuthentication still reads the wrong-account 403 after the check', async () => {
     stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('startPasskeyRecovery still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(startPasskeyRecovery(recoveryBeginBody)).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('finishPasskeyRecovery still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyRecovery(recoveryFinishBody)).rejects.toBeInstanceOf(
+      WrongAccountError,
+    );
+  });
+
+  it('finishPasskeyRecovery still reads a challenge 400 after the check', async () => {
+    stubRealResponse(400, { error: 'Challenge expired' });
+    await expect(finishPasskeyRecovery(recoveryFinishBody)).rejects.toMatchObject({
+      kind: 'challenge',
+    });
+  });
+
+  it('startPasskeyRecovery still reads the recovery_done 409 code', async () => {
+    stubRealResponse(409, { error: 'Already recovered', code: 'recovery_done' });
+    await expect(startPasskeyRecovery(recoveryBeginBody)).rejects.toMatchObject({ kind: 'done' });
+  });
+
+  it('finishPasskeyAuthentication still reads the recovery_pending 409 code', async () => {
+    stubRealResponse(409, { error: 'Recovery is not finished', code: 'recovery_pending' });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(
+      RecoveryPendingError,
+    );
   });
 
   it.each(closedSteps)(
@@ -5680,6 +5757,208 @@ describe('passkey login refusals', () => {
       headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
     });
+  });
+});
+
+describe('RecoveryError', () => {
+  it('carries its kind in a fixed message', () => {
+    const error = new RecoveryError('key_in_use');
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('RecoveryError');
+    expect(error.kind).toBe('key_in_use');
+    expect(error.message).toBe('recovery_key_in_use');
+  });
+});
+
+/** Resolves the rejection of a call, or `null` when it resolved. */
+async function rejection(run: Promise<unknown>): Promise<unknown> {
+  return run.then(
+    () => null,
+    (err: unknown) => err,
+  );
+}
+
+describe('startPasskeyRecovery', () => {
+  const begin = { ...passkeyBegin, accountId: 'acc_1', username: 'ada' };
+
+  it('posts only the key and the lookup with X-App-Build and returns the begin', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: begin });
+    await expect(
+      startPasskeyRecovery({ ...recoveryBeginBody, words: 'secret' } as typeof recoveryBeginBody),
+    ).resolves.toEqual(begin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/recovery/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
+      body: JSON.stringify(recoveryBeginBody),
+    });
+  });
+
+  it('throws on a begin without the account', async () => {
+    stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRecovery(recoveryBeginBody)).rejects.toThrow();
+  });
+
+  it.each([
+    [404, { error: 'Not found' }, 'not_found'],
+    [409, { error: 'Already recovered', code: 'recovery_done' }, 'done'],
+    [409, { error: 'Needs an operator', code: 'recovery_operator' }, 'operator'],
+    [409, { error: 'Conflict', code: 'other' }, 'invalid'],
+    [409, null, 'invalid'],
+    [400, { error: 'Expected a JSON body with sparkPubkey and lookup' }, 'invalid'],
+    [403, { error: 'forbidden' }, 'invalid'],
+    [503, { error: 'Lightning address service is unavailable' }, 'unavailable'],
+    [502, { error: 'Upstream api unreachable' }, 'unavailable'],
+    [500, { error: 'Server auth is not configured' }, 'unavailable'],
+    [429, { error: 'Too many requests' }, 'unavailable'],
+  ])('maps %i %j to RecoveryError %s', async (status, body, kind) => {
+    stubFetch({ ok: false, status, body });
+    const error = await rejection(startPasskeyRecovery(recoveryBeginBody));
+    expect(error).toBeInstanceOf(RecoveryError);
+    expect((error as RecoveryError).kind).toBe(kind);
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(startPasskeyRecovery(recoveryBeginBody)).rejects.toBeInstanceOf(WrongAccountError);
+  });
+});
+
+describe('finishPasskeyRecovery', () => {
+  it('posts only the documented fields with X-App-Build and resolves on 200', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { status: 'pending' } });
+    await expect(
+      finishPasskeyRecovery({
+        ...recoveryFinishBody,
+        prfFirst: 'secret',
+      } as typeof recoveryFinishBody),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/recovery/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
+      body: JSON.stringify(recoveryFinishBody),
+    });
+  });
+
+  it.each([
+    [400, { error: 'Unknown or expired challenge' }, 'challenge'],
+    [400, { error: 'Challenge expired' }, 'challenge'],
+    [400, { error: 'Challenge already used' }, 'challenge'],
+    [400, { error: 'Invalid recovery signature' }, 'invalid'],
+    [400, { error: 'A recovery is already pending' }, 'invalid'],
+    [400, null, 'invalid'],
+    [409, { error: 'A recovery is already pending' }, 'pending'],
+    [409, { error: 'Wallet key is already in use' }, 'key_in_use'],
+    [409, { error: 'Challenge already used' }, 'invalid'],
+    [409, { error: 'Conflict' }, 'invalid'],
+    [403, { error: 'forbidden' }, 'invalid'],
+    [503, { error: 'Lightning address service is unavailable' }, 'unavailable'],
+    [502, { error: 'Upstream api unreachable' }, 'unavailable'],
+    [500, { error: 'Server auth is not configured' }, 'unavailable'],
+    [429, { error: 'Too many requests' }, 'unavailable'],
+  ])('maps %i %j to RecoveryError %s', async (status, body, kind) => {
+    stubFetch({ ok: false, status, body });
+    const error = await rejection(finishPasskeyRecovery(recoveryFinishBody));
+    expect(error).toBeInstanceOf(RecoveryError);
+    expect((error as RecoveryError).kind).toBe(kind);
+  });
+
+  it('throws WrongAccountError on 403 with the duplicate-account body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: WRONG_ACCOUNT_ERROR } });
+    await expect(finishPasskeyRecovery(recoveryFinishBody)).rejects.toBeInstanceOf(
+      WrongAccountError,
+    );
+  });
+});
+
+describe('putRecoveryShare', () => {
+  const share = { sparkPubkey: `02${'a'.repeat(64)}`, share: 'academic acid '.repeat(10).trim() };
+
+  it('puts only the key and the share with the Bearer and returns the account', async () => {
+    const updated = { ...account, socialRecoverySetUp: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+    await expect(
+      putRecoveryShare('sess', { ...share, phrase: 'secret' } as typeof share),
+    ).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/recovery-share', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify(share),
+    });
+  });
+
+  it.each([
+    [409, { error: 'Wallet changed' }, 'key_in_use'],
+    [409, { error: 'Wallet is not connected' }, 'key_in_use'],
+    [503, { error: 'Social recovery is unavailable' }, 'unavailable'],
+    [502, { error: 'Upstream api unreachable' }, 'unavailable'],
+    [429, { error: 'Too many requests' }, 'unavailable'],
+    [400, { error: 'Expected a JSON body with sparkPubkey and a recovery share' }, 'invalid'],
+    [401, { error: 'Unauthorized' }, 'invalid'],
+    [404, { error: 'Not found' }, 'invalid'],
+  ])('maps %i %j to RecoveryError %s', async (status, body, kind) => {
+    stubFetch({ ok: false, status, body });
+    const error = await rejection(putRecoveryShare('sess', share));
+    expect(error).toBeInstanceOf(RecoveryError);
+    expect((error as RecoveryError).kind).toBe(kind);
+  });
+
+  it('throws on a body that is not an account', async () => {
+    stubFetch({ ok: true, status: 200, body: { id: 'x' } });
+    const error = await rejection(putRecoveryShare('sess', share));
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(RecoveryError);
+  });
+});
+
+describe('fetchPreviousWallets', () => {
+  const wallet = {
+    sparkPubkey: `02${'a'.repeat(64)}`,
+    sparkAddress: 'spark1abc',
+    replacedAt: 1_761_700_000_000,
+    balanceSats: null,
+  };
+
+  it('reads the list with the Bearer', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { wallets: [wallet] } });
+    await expect(fetchPreviousWallets('sess')).resolves.toEqual([wallet]);
+    expect(fetchMock).toHaveBeenCalledWith('/me/previous-wallets', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws Unauthorized on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: { error: 'Unauthorized' } });
+    await expect(fetchPreviousWallets('sess')).rejects.toThrow('Unauthorized');
+  });
+
+  it('throws the unavailable error on any other failure', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Wallet data is unavailable' } });
+    await expect(fetchPreviousWallets('sess')).rejects.toThrow('Previous wallets are unavailable');
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchPreviousWallets('sess')).rejects.toThrow('Previous wallets are unavailable');
+  });
+
+  it('throws on a body that fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { wallets: [{ ...wallet, balanceSats: -1 }] } });
+    await expect(fetchPreviousWallets('sess')).rejects.toThrow();
+  });
+});
+
+describe('deletePreviousWallet', () => {
+  it('deletes the encoded key with the Bearer and resolves on 204', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 204, body: null });
+    await expect(deletePreviousWallet('sess', 'a/b')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/previous-wallets/a%2Fb', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it.each([200, 401, 404, 503])('throws on status %i', async (status) => {
+    stubFetch({ ok: status === 200, status, body: {} });
+    await expect(deletePreviousWallet('sess', 'key')).rejects.toThrow(
+      'Could not remove the previous wallet',
+    );
   });
 });
 
