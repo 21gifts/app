@@ -32,7 +32,7 @@ import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
-import { appHost } from '@/lib/wallet/wallet-service';
+import { appHost, WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 import {
   creationOptionsFromJSON,
   credentialToJSON,
@@ -72,12 +72,6 @@ export const RECOVERY_BEGIN_TRIES = 3;
 
 /** Sends in one go while the sending wallet still holds a balance after a send. */
 export const RECOVERY_SEND_TRIES = 3;
-
-/**
- * Deadline to connect a wallet from words and read its synced balance: the
- * deadline of the member's own wallet (`WALLET_CONNECT_TIMEOUT_MS`).
- */
-export const RECOVERY_CONNECT_TIMEOUT_MS = 30_000;
 
 /** The old wallet once open: the SDK, the key it connected with, the connection, and its identity key. */
 interface OldWallet {
@@ -192,8 +186,9 @@ async function closeQuietly(connection: WalletConnection): Promise<void> {
 /**
  * Opens a wallet from its words beside the member's own wallet (the SDK keeps
  * each wallet's state apart by its key) and reads its balance once synced.
- * Both share the {@link RECOVERY_CONNECT_TIMEOUT_MS} deadline. A connection
- * that opens after the deadline, or whose read fails, is closed again.
+ * Both share the member's own wallet deadline,
+ * {@link WALLET_CONNECT_TIMEOUT_MS}. A connection that opens after the
+ * deadline, or whose read fails, is closed again.
  *
  * @param sdk - The started SDK.
  * @param words - The wallet's 12 words.
@@ -221,7 +216,7 @@ export async function openWordsWallet(
   const timedOut = Symbol('timed out');
   const first = await Promise.race([
     opening,
-    deps.sleep(RECOVERY_CONNECT_TIMEOUT_MS).then((): typeof timedOut => timedOut),
+    deps.sleep(WALLET_CONNECT_TIMEOUT_MS).then((): typeof timedOut => timedOut),
   ]);
   if (first === timedOut) {
     void opening.then(
@@ -434,7 +429,7 @@ export async function rememberOldWords(
 /**
  * Opens the old wallet, unless it is open, and finds its account. Without a
  * wallet in this build the view is `refused` `noWallet`. The wallet connects
- * and reads its synced balance within {@link RECOVERY_CONNECT_TIMEOUT_MS},
+ * and reads its synced balance within {@link WALLET_CONNECT_TIMEOUT_MS},
  * which also lets the SDK look up the address it holds; a failure is `retry`
  * `wallet`. The account is begun with a fresh signed lookup; while the api
  * cannot look it up yet, the view waits (`opening` with `waiting`) and asks
@@ -504,7 +499,7 @@ export async function openAndBegin(): Promise<void> {
  * **Create new passkey** on `found` (a user gesture). Creates the passkey from
  * the begin's options with the PRF request, derives its 12 words from the PRF
  * output (never into the tab phrase), opens its wallet within
- * {@link RECOVERY_CONNECT_TIMEOUT_MS}, and reads the wallet's key and Spark
+ * {@link WALLET_CONNECT_TIMEOUT_MS}, and reads the wallet's key and Spark
  * address. Only when all of that worked does it keep the new passkey and
  * wallet, with nothing of the move done, and show `transfer`. A dismissed or
  * failed prompt is `found` with `cancelled`, a prompt that timed out

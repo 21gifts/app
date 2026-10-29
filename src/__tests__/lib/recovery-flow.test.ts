@@ -22,7 +22,6 @@ import {
   openAndBegin,
   openWordsWallet,
   RECOVERY_BEGIN_TRIES,
-  RECOVERY_CONNECT_TIMEOUT_MS,
   RECOVERY_SEND_TRIES,
   RECOVERY_SETTLE_WAIT_MS,
   rememberOldWords,
@@ -34,6 +33,7 @@ import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
+import { WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 import { credentialToJSON, requestOptionsFromJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRecoveryStore, type RecoveryView } from '@/stores/recovery-store';
@@ -218,7 +218,7 @@ beforeEach(async () => {
     host: () => HOST,
     now: () => clock,
     sleep: vi.fn((ms: number) => {
-      if (ms === RECOVERY_CONNECT_TIMEOUT_MS) {
+      if (ms === WALLET_CONNECT_TIMEOUT_MS) {
         return never();
       }
       clock += ms;
@@ -323,7 +323,7 @@ describe('openWordsWallet', () => {
     await expect(
       openWordsWallet(sdk as unknown as WalletSdk, OLD_WORDS, 'k', deps),
     ).rejects.toThrow('wallet-connect-timeout');
-    expect(deps.sleep).toHaveBeenCalledWith(RECOVERY_CONNECT_TIMEOUT_MS);
+    expect(deps.sleep).toHaveBeenCalledWith(WALLET_CONNECT_TIMEOUT_MS);
     open(old);
     await vi.waitFor(() => {
       expect(old.disconnect).toHaveBeenCalled();
@@ -520,7 +520,7 @@ describe('rememberOldWords and openAndBegin', () => {
   it('stops waiting after Start over', async () => {
     vi.mocked(startPasskeyRecovery).mockRejectedValueOnce(new RecoveryError('unavailable'));
     deps.sleep.mockImplementation(async (ms: number) => {
-      if (ms === RECOVERY_CONNECT_TIMEOUT_MS) {
+      if (ms === WALLET_CONNECT_TIMEOUT_MS) {
         return never();
       }
       await resetRecovery();
@@ -1376,7 +1376,7 @@ describe('transfer', () => {
       await toTransfer();
       vi.mocked(finishPasskeyAuthentication).mockRejectedValueOnce(new RecoveryPendingError());
       deps.sleep.mockImplementation(async (ms: number) => {
-        if (ms === RECOVERY_CONNECT_TIMEOUT_MS) {
+        if (ms === WALLET_CONNECT_TIMEOUT_MS) {
           return never();
         }
         await resetRecovery();

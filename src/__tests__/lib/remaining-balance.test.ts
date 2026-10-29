@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RECOVERY_CONNECT_TIMEOUT_MS, RECOVERY_SEND_TRIES } from '@/lib/recovery-flow';
+import { RECOVERY_SEND_TRIES } from '@/lib/recovery-flow';
 import {
   closePreviousWallet,
   openPreviousWallet,
@@ -8,7 +8,7 @@ import {
 } from '@/lib/remaining-balance';
 import { traceWallet } from '@/lib/sentry';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
-import { receiveWalletSparkAddress } from '@/lib/wallet/wallet-service';
+import { receiveWalletSparkAddress, WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 
 vi.mock('@/lib/sentry', () => ({
   traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
@@ -16,10 +16,10 @@ vi.mock('@/lib/sentry', () => ({
 vi.mock('@/lib/wallet/wallet-sdk', () => ({
   loadWalletSdk: vi.fn(),
 }));
-vi.mock('@/lib/wallet/wallet-service', () => ({
-  appHost: vi.fn(() => 'app.test'),
-  receiveWalletSparkAddress: vi.fn(),
-}));
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, appHost: vi.fn(() => 'app.test'), receiveWalletSparkAddress: vi.fn() };
+});
 
 const WORDS = 'words of a previous wallet';
 const KEY = `02${'c'.repeat(64)}`;
@@ -105,7 +105,7 @@ describe('openPreviousWallet', () => {
     expect(await openPreviousWallet(WORDS, KEY, deps)).toEqual({ balanceSats: 21_000 });
     expect(sdk.connect).toHaveBeenCalledWith(WORDS, 'breez-key', 'app.test');
     expect(wallet.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
-    expect(deps.sleep).toHaveBeenCalledWith(RECOVERY_CONNECT_TIMEOUT_MS);
+    expect(deps.sleep).toHaveBeenCalledWith(WALLET_CONNECT_TIMEOUT_MS);
     const first = wallet;
     wallet = walletOf([5_000, 5_000, 0]);
     expect(await openPreviousWallet(WORDS, KEY, deps)).toEqual({ balanceSats: 5_000 });

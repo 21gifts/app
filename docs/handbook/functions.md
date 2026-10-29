@@ -6065,7 +6065,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Opens a wallet from its 12 words beside the member's own wallet (the SDK keeps each wallet's state apart by its key), for the old and new wallets of a social recovery and for a previous wallet.
 - **Inputs:** The started `WalletSdk`, the words, the Breez API key, and `deps` (`host`, `sleep`).
-- **Returns / side effects:** `{ connection, balanceSats }` after `connect(words, apiKey, host)` and a synced `getInfo({ ensureSynced: true })`, both within `RECOVERY_CONNECT_TIMEOUT_MS` (30 s, the deadline of the member's own wallet). A failed synced read closes the connection and rejects. At the deadline it rejects with `wallet-connect-timeout`, and a connection that opens later is closed (a later failure is ignored). Closing is best effort.
+- **Returns / side effects:** `{ connection, balanceSats }` after `connect(words, apiKey, host)` and a synced `getInfo({ ensureSynced: true })`, both within `WALLET_CONNECT_TIMEOUT_MS` (30 s, the same deadline as the member's own wallet). A failed synced read closes the connection and rejects. At the deadline it rejects with `wallet-connect-timeout`, and a connection that opens later is closed (a later failure is ignored). Closing is best effort.
 - **Used by:** `openAndBegin` (the old wallet), `createNewPasskey` and `transfer` (the new wallet, and opening it again for a later address claim), and `openPreviousWallet`.
 
 ## Function: rememberOldWords
