@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import type { ForumMessage } from '@/lib/api-types';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import {
-  DEFAULT_OG_ALT,
   loadPublicMessageForOg,
   ogDescriptionText,
   publicMessageOgMetadata,
@@ -45,10 +45,6 @@ function stubFetch(response: Response): Mock {
 }
 
 describe('ogDescriptionText', () => {
-  it('exports the default preview alt text', () => {
-    expect(DEFAULT_OG_ALT).toBe('21.gifts — peer-to-peer Bitcoin gifts');
-  });
-
   it('trims text, falls back to the name, and cuts above 300 code units', () => {
     expect(ogDescriptionText('  Coffee  ', 'Cafe Luna')).toBe('Coffee');
     expect(ogDescriptionText(' \n ', 'Cafe Luna')).toBe('Cafe Luna on 21.gifts');
@@ -155,13 +151,13 @@ describe('publicMessageOgMetadata', () => {
       siteName: '21.gifts',
       title: 'Ada',
       description: 'Hello from Ada',
-      images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: OG_IMAGE_ALT }],
     });
     expect(meta.twitter).toEqual({
       card: 'summary_large_image',
       title: 'Ada',
       description: 'Hello from Ada',
-      images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
     });
   });
 
@@ -188,10 +184,10 @@ describe('publicMessageOgMetadata', () => {
   it('uses the default og.png image when hasPhoto is false', () => {
     const meta = publicMessageOgMetadata(MESSAGE_ID, sample);
     expect(meta.openGraph).toMatchObject({
-      images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: OG_IMAGE_ALT }],
     });
     expect(meta.twitter).toMatchObject({
-      images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
     });
   });
 
@@ -255,13 +251,13 @@ describe('publicMessageOgMetadata', () => {
       siteName: '21.gifts',
       title: 'External author on 21.gifts',
       description: 'A reply from someone outside 21.gifts who sent bitcoin to a post.',
-      images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: OG_IMAGE_ALT }],
     });
     expect(meta.twitter).toEqual({
       card: 'summary_large_image',
       title: 'External author on 21.gifts',
       description: 'A reply from someone outside 21.gifts who sent bitcoin to a post.',
-      images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+      images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
     });
     const authorName = '21.gifts Support';
     const noteText = 'Official announcement https://example.com';

@@ -50,9 +50,9 @@
     "fil": "API 503. Alert na Hindi ma-load ang shop na ito. Subukan ulit. at may label na pindutang Subukan ulit; hindi kailanman blangkong page."
   },
   "/:default": {
-    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
-    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre nosotros, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",
-    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa amin, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger."
+    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über 21.gifts, Statistik, Handbuch, Anmelden). Happyland verweist auf /{locale}#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
+    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre 21.gifts, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /{locale}#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",
+    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa 21.gifts, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /{locale}#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger."
   },
   "/welcome:goal-credit": {
     "de": "Bei Alle: oberste Ada-Notiz mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in bitcoin definiert, daher zeigt die Leiste Anfragen ₿21'000 · $21.00 und den Notizbetrag ₿10'500 · $10.50. Ein Darlehen-Tag neben dem Namen erklärt den Kredit, wenn er gedrückt wird. Unter der Anfrage: Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Fortschrittsbalken bei 50 %. Die Tagesliste steht nicht auf dieser Karte. Rückzahlungsliste öffnet /messages/<id>/repayment-list. Verfasser-Kapsel Post senden / Um Geld bitten sichtbar.",
@@ -155,9 +155,9 @@
     "fil": "Walang nodo. Wala pang nasa Trust Chain."
   },
   "/donate:default": {
-    "de": "Überschrift Hilfe senden, erklärender Vorspann, Forum öffnen.",
-    "es": "Encabezado Enviar ayuda, texto introductorio, Abrir el foro.",
-    "fil": "Pamagat Magpadala ng tulong, pambungad na paliwanag, Buksan ang forum."
+    "de": "Überschrift Jemandem helfen, erklärender Vorspann, Zum Wohnzimmer.",
+    "es": "Encabezado Ayuda a alguien, texto introductorio, Ir al foro.",
+    "fil": "Pamagat Tumulong sa kapwa, pambungad na paliwanag, Buksan ang forum."
   },
   "/grants/apply:translate-done": {
     "de": "Der Rundgang zeigt die englische Notiz und Original anzeigen.",
@@ -240,9 +240,9 @@
     "fil": "Isang publikasyon sa sala na Aleman sa lakad ay nag-aalok ng Isalin."
   },
   "/stats/[day]:default": {
-    "de": "Geladener Tag mit mindestens einer Geschenkezeile (Empfängerin alice).",
-    "es": "Día cargado con al menos una fila de regalo (destinataria alice).",
-    "fil": "Naikargang araw na may kahit isang hilera ng regalo (tatanggap na si alice)."
+    "de": "Geladener Tag mit mindestens einer Spendenzeile (Empfängerin alice).",
+    "es": "Día cargado con al menos una fila de donación (destinataria alice).",
+    "fil": "Naikargang araw na may kahit isang hanay ng donasyon (tatanggap na si alice)."
   },
   "/welcome:ask-preview-video-text-daily": {
     "de": "Anfragen, Schritt 4 von 4, Täglich gedrückt, ein Video und die Bildunterschrift.",
@@ -265,9 +265,9 @@
     "fil": "Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
   "/stats/[day]:empty": {
-    "de": "Keine Geschenke an diesem UTC-Tag. Text No gifts recorded on this day.",
-    "es": "No hay regalos ese día UTC. Texto No gifts recorded on this day.",
-    "fil": "Walang mga regalo sa araw na UTC na iyon. Teksto No gifts recorded on this day."
+    "de": "Keine Spenden an diesem UTC-Tag. Text No donations recorded on this day.",
+    "es": "No hay donaciones ese día UTC. Texto No donations recorded on this day.",
+    "fil": "Walang mga donasyon sa araw na UTC na iyon. Teksto No donations recorded on this day."
   },
   "/welcome:ask-preview-several-daily": {
     "de": "Anfragen, Schritt 4 von 4, Täglich gedrückt, zwei Fotos und keine Bildunterschrift.",
@@ -685,9 +685,9 @@
     "fil": "Pinindot ang 1 reaksyon. Ipinapakita ng daloy sa ilalim ng kard ang Naglo-load…. Wala pang teksto ng nota."
   },
   "/stats:error": {
-    "de": "Abruf fehlgeschlagen. Text Could not load gift stats. Please try again. und Try again.",
-    "es": "Falló la obtención. Texto Could not load gift stats. Please try again. y Try again.",
-    "fil": "Nabigo ang pagkuha. Teksto Could not load gift stats. Please try again. at Try again."
+    "de": "Abruf fehlgeschlagen. Text Could not load donation stats. Please try again. und Try again.",
+    "es": "Falló la obtención. Texto Could not load donation stats. Please try again. y Try again.",
+    "fil": "Nabigo ang pagkuha. Teksto Could not load donation stats. Please try again. at Try again."
   },
   "/welcome:mention-suggest": {
     "de": "Das Beitragsfeld enthält @ und die Liste Personen ist geöffnet, mit @ada und @adam.",
@@ -1000,9 +1000,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: ang icon ng Mga wika ay may pangalang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/stats:empty": {
-    "de": "Keine Geschenke und keine Beiträge. Posts zeigt 0 ohne Balken. KPI-Nullen und No gifts recorded yet.",
-    "es": "Cero regalos y cero publicaciones. Posts muestra 0 sin barras. Ceros de KPI y No gifts recorded yet.",
-    "fil": "Walang mga regalo at walang mga post. Ipinapakita ng Posts ang 0 na walang mga bar. Mga sero ng KPI at No gifts recorded yet."
+    "de": "Keine Spenden und keine Beiträge. Posts zeigt 0 ohne Balken. KPI-Nullen und No donations recorded yet.",
+    "es": "Cero donaciones y cero publicaciones. Posts muestra 0 sin barras. Ceros de KPI y No donations recorded yet.",
+    "fil": "Walang mga donasyon at walang mga post. Ipinapakita ng Posts ang 0 na walang mga bar. Mga sero ng KPI at No donations recorded yet."
   },
   "/welcome:mention-inserted-reply": {
     "de": "Die Auswahl von @ada aus dieser offenen Liste schreibt @ada  in das Reaktionsfeld und schließt die Liste.",
@@ -2265,9 +2265,9 @@
     "fil": "Klik Lahat — nakikita ang hindi pa nabayarang nota ni Bob (Does anyone have spare sats this week?) kasama sina Ada at Carol; ayos ng listahan pinakabago muna (Ada, Carol, Bob)."
   },
   "/grants/applications/[accountId]:truth": {
-    "de": "Ja auf die Grundsätze-Frage. Text Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit? Der Link Über uns ist verschwunden. Ja lässt zu. Nein lehnt ab.",
-    "es": "Sí en la pregunta de principios. Texto ¿Estos mensajes, según tu conocimiento, corresponden a la verdad? El enlace Sobre nosotros ha desaparecido. Sí admite. No rechaza.",
-    "fil": "Oo sa tanong sa mga prinsipyo. Teksto Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan? Wala na ang link na Tungkol sa amin. Oo ay tumatanggap. Hindi ay tumatanggi."
+    "de": "Ja auf die Grundsätze-Frage. Text Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit? Der Link Über 21.gifts ist verschwunden. Ja lässt zu. Nein lehnt ab.",
+    "es": "Sí en la pregunta de principios. Texto ¿Estos mensajes, según tu conocimiento, corresponden a la verdad? El enlace Sobre 21.gifts ha desaparecido. Sí admite. No rechaza.",
+    "fil": "Oo sa tanong sa mga prinsipyo. Teksto Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan? Wala na ang link na Tungkol sa 21.gifts. Oo ay tumatanggap. Hindi ay tumatanggi."
   },
   "/messages/[id]:reply": {
     "de": "Derselbe Verlauf geöffnet auf der Antwort-UUID. Übergeordnet + Geschenk; Permalink-Zielring (data-permalink-target=\"true\", ring-1 ring-app-fg) auf der Geschenk-Antwort.",
@@ -2318,6 +2318,51 @@
     "de": "Der Sprachumschalter im Marketing-Kopfbereich ist geöffnet. Eigenes Listenfeld (abgerundetes Feld, Endonym-Zeilen mit einem Häkchen bei der aktuellen Sprache) — nicht die Betriebssystem-Oberfläche.",
     "es": "El selector de idioma del encabezado publicitario está abierto. Cuadro de lista personalizado (panel redondeado, filas de endónimos con una marca en la configuración regional actual) — no la interfaz del sistema.",
     "fil": "Bukas ang pampalit ng wika sa pampromosyong ulo. Pasadyang listahan (bilugang panid, mga hanay ng endonym na may tsek sa kasalukuyang wika) — hindi ang mukha ng sistema."
+  },
+  "/:faq-account-open": {
+    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du das Wohnzimmer ohne Konto lesen kannst. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an. Um selbst Bitcoin-Spenden zu empfangen, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.",
+    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que puedes leer el foro sin una cuenta, pero debes iniciar sesión para reaccionar con un importe o escribir algo. Para recibir donaciones en Bitcoin, añades además una dirección de Wallet of Satoshi.",
+    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mababasa mo ang forum nang walang account, pero kailangan mong mag-log in para magbigay ng reaksyon gamit ang halaga o magsulat ng sarili mong post. Para tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address."
+  },
+  "/:faq-share-open": {
+    "de": "Die zweite Frage ist geöffnet: Behält 21.gifts etwas von meiner Spende? Die Antwort sagt, dass 21.gifts keinen Anteil behält. Deine Wallet oder das Zahlungsnetzwerk kann trotzdem eigene Gebühren verlangen.",
+    "es": "La segunda pregunta está abierta: ¿Se queda 21.gifts con algo de mi donación? La respuesta dice que 21.gifts no se queda con ninguna parte. Una cartera o la red de pago pueden cobrar sus propias comisiones.",
+    "fil": "Bukas ang pangalawang tanong: May kinukuha ba ang 21.gifts sa donasyon ko? Sinasabi ng sagot na walang bahaging kinukuha ang 21.gifts. Maaaring maningil pa rin ng sariling bayarin ang wallet mo o ang payment network."
+  },
+  "/:faq-password-open": {
+    "de": "Die dritte Frage ist geöffnet: Speichert 21.gifts mein Passwort? Die Antwort sagt, dass du kein Passwort für 21.gifts anlegst. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.",
+    "es": "La tercera pregunta está abierta: ¿Guarda 21.gifts mi contraseña? La respuesta dice que no creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.",
+    "fil": "Bukas ang ikatlong tanong: Iniimbak ba ng 21.gifts ang password ko? Sinasabi ng sagot na hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word."
+  },
+  "/:faq-device-open": {
+    "de": "Die vierte Frage ist geöffnet: Was passiert, wenn ich mein Gerät verliere? Die Antwort sagt, dass wir dein Konto derzeit nicht wiederherstellen können, wenn der Zugang auf deinem Gerät und in jeder Synchronisierung verloren ist. Prüfe, wie dein Gerät den Zugang sichert.",
+    "es": "La cuarta pregunta está abierta: ¿Y si pierdo mi dispositivo? La respuesta dice que todavía no podemos recuperar tu cuenta si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas. Comprueba cómo guarda tu dispositivo el acceso.",
+    "fil": "Bukas ang ikaapat na tanong: Paano kung mawala ang device ko? Sinasabi ng sagot na hindi pa maibabalik ang account kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya. Alamin kung paano bina-back up ng device mo ang pag-log in."
+  },
+  "/:faq-recipient-open": {
+    "de": "Die fünfte Frage ist geöffnet: Wer bekommt den Bitcoin? Die Antwort sagt, die Person, die den Beitrag geschrieben hat. Eine Reaktion mit einem Betrag schickt den Bitcoin an ihre Wallet-Adresse.",
+    "es": "La quinta pregunta está abierta: ¿Quién recibe el Bitcoin? La respuesta dice que quien escribió la publicación. Una reacción con un importe envía el Bitcoin a la dirección de cartera de esa persona.",
+    "fil": "Bukas ang ikalimang tanong: Sino ang tatanggap ng Bitcoin? Sinasabi ng sagot na ang sumulat ng post. Ang reaksyon na may halaga ay nagpapadala ng Bitcoin sa wallet address niya."
+  },
+  "/:faq-bitcoin-open": {
+    "de": "Die sechste Frage ist geöffnet: Warum Bitcoin? Die Antwort sagt, dass du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt die Spende nicht. Dein Wallet-Anbieter kann Gebühren berechnen.",
+    "es": "La sexta pregunta está abierta: ¿Por qué Bitcoin? La respuesta dice que puedes enviar incluso cantidades pequeñas directamente a la dirección de cartera elegida. 21.gifts no guarda la donación. Tu proveedor de cartera puede cobrar comisiones.",
+    "fil": "Bukas ang ikaanim na tanong: Bakit Bitcoin? Sinasabi ng sagot na makakapagpadala ka ng kahit maliit na halaga direkta sa napiling wallet address. Hindi hinahawakan ng 21.gifts ang donasyon. Maaaring maningil ang wallet provider mo."
+  },
+  "/:faq-taxes-open": {
+    "de": "Die siebte Frage ist geöffnet: Ist das reguliert, und wie sieht es mit Steuern aus? Die Antwort sagt, dass 21.gifts die Spende nicht verwahrt. Welche Regeln und Steuern gelten, hängt von deinem Wohnort und deiner Situation ab.",
+    "es": "La séptima pregunta está abierta: ¿Está regulado y cómo funcionan los impuestos? La respuesta dice que 21.gifts no guarda la donación. Las normas y los impuestos que se aplican dependen de dónde vives y de tu situación.",
+    "fil": "Bukas ang ikapitong tanong: Regulado ba ito, at paano ang buwis? Sinasabi ng sagot na hindi hinahawakan ng 21.gifts ang donasyon. Nakadepende sa tinitirhan at sitwasyon mo kung aling mga tuntunin at buwis ang naaangkop."
+  },
+  "/:faq-sat-open": {
+    "de": "Die achte Frage ist geöffnet: Was bedeutet ₿1 hier? Die Antwort sagt, dass ₿1 auf 21.gifts für einen Sat steht, die kleinste Bitcoin-Einheit. 100 Millionen Sats ergeben einen Bitcoin.",
+    "es": "La octava pregunta está abierta: ¿Qué significa ₿1 aquí? La respuesta dice que en 21.gifts ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.",
+    "fil": "Bukas ang ikawalong tanong: Ano ang ibig sabihin ng ₿1 dito? Sinasabi ng sagot na sa 21.gifts ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin."
+  },
+  "/:install-open": {
+    "de": "Auf dem iPhone öffnest du über App installieren in der Hero-Platzierung den Dialog 21.gifts auf den Home-Bildschirm.",
+    "es": "En el iPhone, el botón Instalar app del héroe abre el diálogo Añadir 21.gifts a la pantalla de inicio.",
+    "fil": "Sa iPhone, binubuksan ng pindutang I-install ang app sa hero ang diyalogong Idagdag ang 21.gifts sa Home Screen."
   },
   "/:shops-table": {
     "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Tabelle listet nur Läden, deren Tech-Anbieter genau 21.gifts ist, und zeigt Name, Ort, Land, Shop, Tech-Anbieter und Aktivität.",
@@ -2824,6 +2869,11 @@
     "es": "Apartado de notificaciones con role=\"alert\" tras pulsar Activado en la pastilla Este dispositivo cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
     "fil": "Seksiyon ng mga notification na may role=\"alert\" pagkatapos i-click ang Naka-on sa pilduras na Device na ito kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
   },
+  "/profile:location-edit": {
+    "de": "Über Ort bearbeiten öffnest du das Feld mit dem Platzhalter Stadt oder Land.",
+    "es": "Editar ubicación abre el campo con el marcador Ciudad o país.",
+    "fil": "Binubuksan ng I-edit ang lugar ang patlang na may placeholder na Lungsod o bansa."
+  },
   "/messages/[id]:quoted-note": {
     "de": "Öffentlicher Permalink der Notiz von Riana Rosello. Cyrills Antwort zeigt just for information: plus denselben verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift, Gründerin, ₿43). Die rohe URL ist nicht sichtbar.",
     "es": "Enlace permanente público de la nota de Riana Rosello. La respuesta de Cyrill muestra just for information: más la misma publicación anidada de nota técnica (foto, pie de foto, Fundadora, ₿43). La URL en bruto no es visible.",
@@ -3088,6 +3138,16 @@
     "de": "Benanntes Mitglied mit akzeptierten Wohnzimmerregeln und ohne Benutzernamen. Composer ausgefüllt, Senden angeklickt. RequirementsOverlay-Dialog 21.gifts-Namen hinzufügen mit UsernameForm variant=overlay. Kein Überspringen. Schließen (X) ist vorhanden.",
     "es": "Miembro con nombre, con las reglas del salón aceptadas y sin nombre de usuario. Cuadro de redacción relleno, se pulsó Publicar. Diálogo RequirementsOverlay Añade tu nombre en 21.gifts con UsernameForm variant=overlay. Sin Omitir. Cerrar (X) está presente.",
     "fil": "Pinangalanang miyembro na umayon sa mga patakaran ng sala at walang username. Napunan ang kahon ng pagsulat, na-click ang I-post. Diyalogo RequirementsOverlay Idagdag ang 21.gifts name mo na may UsernameForm variant=overlay. Walang Laktawan. Nandiyan ang Isara (X)."
+  },
+  "/welcome:overlay-username-invalid": {
+    "de": "Wenn du .alice im Dialog 21.gifts-Namen hinzufügen eingibst, siehst du sofort unter dem Feld den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. Weiter bleibt deaktiviert.",
+    "es": "Al escribir .alice en el diálogo Añade tu nombre en 21.gifts, aparece inmediatamente debajo del campo De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número. Continuar permanece deshabilitado.",
+    "fil": "Kapag inilagay mo ang .alice sa diyalogong Idagdag ang 21.gifts name mo, agad na lumalabas sa ilalim ng field ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero. Naka-disable ang Magpatuloy."
+  },
+  "/welcome:install-open": {
+    "de": "Auf dem iPhone öffnest du über Menü und App installieren den Dialog 21.gifts auf den Home-Bildschirm.",
+    "es": "En el iPhone, Menú y luego Instalar app abre el diálogo Añadir 21.gifts a la pantalla de inicio.",
+    "fil": "Sa iPhone, binubuksan ng Menu at saka I-install ang app ang diyalogong Idagdag ang 21.gifts sa Home Screen."
   },
   "/welcome:empty-unpaid": {
     "de": "In der geladenen Liste sind keine Notizen mit null sats mehr. Alle geladenen Beiträge haben bereits Bitcoin erhalten. erscheint; die Filter und der Composer bleiben verfügbar. Ein völlig leeres Forum verwendet weiterhin den allgemeinen Leerzustand.",
@@ -3474,6 +3534,11 @@
     "es": "Visitante con nombre, normas del salón aceptadas y sin nombre de usuario. Feed de publicaciones abierto, nota listada expandida, respuesta rellenada con el campo Importe visible, Publicar pulsado. Diálogo RequirementsOverlay Añade tu nombre en 21.gifts con UsernameForm variant=overlay. Sin Omitir. Cerrar (X) está presente.",
     "fil": "Pinangalanang bisita na may sang-ayon sa mga panuntunan ng living room at walang username. Bukas ang feed ng mga post, naka-expand ang nakalistang tala, napunan ang sagot na may nakikitang field na Halaga, na-click ang I-post. Dialog ng RequirementsOverlay Idagdag ang 21.gifts name mo na may UsernameForm variant=overlay. Walang Laktawan. Naroon ang Isara (X)."
   },
+  "/members/[accountId]:overlay-username-invalid": {
+    "de": "Wenn du .alice im Dialog 21.gifts-Namen hinzufügen auf einer offenen Mitgliedsnotiz eingibst, siehst du sofort unter dem Feld den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. Weiter bleibt deaktiviert.",
+    "es": "Al escribir .alice en el diálogo Añade tu nombre en 21.gifts, en una nota abierta del miembro, aparece inmediatamente debajo del campo De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número. Continuar permanece deshabilitado.",
+    "fil": "Kapag inilagay mo ang .alice sa diyalogong Idagdag ang 21.gifts name mo sa isang bukas na tala ng miyembro, agad na lumalabas sa ilalim ng field ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero. Naka-disable ang Magpatuloy."
+  },
   "/profile:about-filled": {
     "de": "Besitzerkarte mit einer echten Biografie, die nicht dem Anzeigenamen entspricht. Seed GET /me mit name: 'Ada', aboutMe: 'I build on Bitcoin', Einrichtung abgeschlossen. Zeigt ausgefüllten Über-mich-Text plus den nur aus einem Symbol bestehenden Bleistift (Über mich bearbeiten), nicht den leeren Aufruf (Erzähl anderen, wer du bist. / Schreib dein Über mich).",
     "es": "Tarjeta del propietario con una biografía real distinta del nombre visible. Seed GET /me con name: 'Ada', aboutMe: 'I build on Bitcoin', configuración completa. Muestra el texto Sobre mí rellenado más el lápiz solo de icono (Editar Sobre mí), no la llamada a la acción vacía (Cuéntales a los demás quién eres. / Escribe tu Sobre mí).",
@@ -3575,9 +3640,9 @@
     "fil": "Utang, hakbang 4 sa 9, para sa 1000 dolyar ng Estados Unidos sa loob ng 30 araw. Parehong pamagat at parehong tuntunin ng simula na hindi kailanman bago ang Nobyembre 1, 2026, at ang dalawang halimbawa sa Nobyembre. Ang pang-araw-araw na linya ay Ibabalik bawat araw: $33.33 bawat araw sa loob ng 29 araw, tapos $33.43 sa huling araw. Ipinapakita ng parehong grapiko ang pang-araw-araw na mga bar at ang utang na bumababa mula araw 1 hanggang sa huling araw. Ang pindutan ay Magpatuloy."
   },
   "/:mobile-nav": {
-    "de": "Aufgenommen am Desktop und mobil. Unter 1024px zeigt der Kopfbereich die Schaltfläche Menü; beim Öffnen erscheinen dieselben Links gestapelt, mit Happyland unmittelbar nach So funktioniert's. Tippen auf Happyland schließt das Menü und scrollt zum vorhandenen Fotoessay. Am Desktop ist dies die Startseite ohne das Hamburger-Symbol.",
-    "es": "Capturado en escritorio y móvil. Por debajo de 1024px el encabezado muestra el botón Menú; al abrirlo se revelan los mismos enlaces apilados, con Happyland inmediatamente después de Cómo funciona. Al pulsar Happyland se cierra el menú y se desplaza al ensayo fotográfico existente. En escritorio es la página de inicio sin el icono de hamburguesa.",
-    "fil": "Nakunan sa kompyuter at sa mobile. Sa ibaba ng 1024px, ipinapakita ng pangkataasang bahagi ang pindutang Menu; sa pagbukas nito, lumilitaw ang parehong mga link na nakasalansan, na ang Happyland ay kaagad pagkatapos ng Paano ito gumagana. Ang pag-tap sa Happyland ay nagsasara ng menu at nag-i-scroll sa umiiral na sanaysay ng mga litrato. Sa kompyuter ito ang landing nang walang hamburger."
+    "de": "Aufgenommen am Desktop und mobil. Unter 1024px zeigt der Kopfbereich die Schaltfläche Menü; beim Öffnen erscheinen dieselben Links gestapelt, mit Happyland unmittelbar nach So funktioniert's. Tippen auf Happyland schließt das Menü und scrollt zum vorhandenen Ortsporträt. Am Desktop ist dies die Startseite ohne das Hamburger-Symbol.",
+    "es": "Capturado en escritorio y móvil. Por debajo de 1024px el encabezado muestra el botón Menú; al abrirlo se revelan los mismos enlaces apilados, con Happyland inmediatamente después de Cómo funciona. Al pulsar Happyland se cierra el menú y se desplaza al retrato del lugar existente. En escritorio es la página de inicio sin el icono de hamburguesa.",
+    "fil": "Nakunan sa kompyuter at sa mobile. Sa ibaba ng 1024px, ipinapakita ng pangkataasang bahagi ang pindutang Menu; sa pagbukas nito, lumilitaw ang parehong mga link na nakasalansan, na ang Happyland ay kaagad pagkatapos ng Paano ito gumagana. Ang pag-tap sa Happyland ay nagsasara ng menu at nag-i-scroll sa umiiral na larawan ng lugar. Sa kompyuter ito ang landing nang walang hamburger."
   },
   "/grants:open-applications": {
     "de": "Moderator auf /grants mit zwei offenen Förderbewerbungen. Die Förderkarte wird gezeigt, und Offene Bewerbungen (2) verweist auf /grants/applications. Wenn die Liste leer ist, ist dieses Steuerelement der Satz Keine offenen Bewerbungen. und kein Link; dieser Zustand ist no-applications. Nadel state-grants-open-applications.",
@@ -3730,7 +3795,7 @@
     "fil": "Pahina ng staff (moderator) na may pamagat na Mga istatistika, laging bukas ang panel na Mga taong nabayaran (bilang kahapon, talata ng sukat, tsart ng 30 araw na UTC). Nakasara ang Mga tungkulin ng moderator sa pagitan ng tsart ng tao at ng tsart ng tindahan; hindi pa nakikita ang Ipakita ang bayad bawat tao. Ang tsart ng tindahan ay nasa ilalim ng pagbubukas na iyon (Mga tindahan ayon sa araw na UTC). Ang panel ng tao ay hindi toggle."
   },
   "/login:name-invalid": {
-    "de": "Das Drücken von Weiter mit leerem Namen, oder einem Namen, der nach Trim und Kleinschreibung nicht /^[a-z0-9][a-z0-9._-]{0,31}$/ entspricht (ein einzelner Unterstrich und ein führender Punkt werden abgelehnt), bleibt auf diesem Formular. Hinweis: Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. (login.nameInvalid). Der Passkey-Dialog öffnet sich nicht. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
+    "de": "Das Drücken von Weiter mit leerem Namen, oder einem Namen, der nach Trim und Kleinschreibung nicht /^[a-z0-9][a-z0-9._-]{0,31}$/ entspricht (ein einzelner Unterstrich und ein führender Punkt werden abgelehnt), bleibt auf diesem Formular. Hinweis: 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. (login.nameInvalid). Der Passkey-Dialog öffnet sich nicht. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
     "es": "Pulsar Continuar con un nombre vacío, o un nombre que tras recortar y minúsculas no coincide con /^[a-z0-9][a-z0-9._-]{0,31}$/ (se rechazan un guion bajo solo y un punto inicial), permanece en este formulario. Alerta: Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. (login.nameInvalid). El diálogo de passkey no se abre. La línea atenuada de iOS o Android no se muestra.",
     "fil": "Ang pagpindot ng Magpatuloy na walang pangalan, o pangalang pagkatapos ng trim at lowercase ay hindi tumutugma sa /^[a-z0-9][a-z0-9._-]{0,31}$/ (tinatanggihan ang mag-isang underscore at ang tuldok sa umpisa), ay nananatili sa form na ito. Alerto: Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. (login.nameInvalid). Hindi bumubukas ang dialog ng passkey. Hindi ipinapakita ang faded na linya ng iOS o Android."
   },
@@ -3780,14 +3845,14 @@
     "fil": "Wasto at kilalang UUID. Ang talakayan ay maaaring magulang lang kapag walang laman ang mga sagot. Kard na may pangalan ng may-akda, tatak ng oras, teksto (Hello from Ada), sats sa pamamagitan ng formatBitcoin plus opsyonal na ninanais na fiat · formatFiatDisplay ng halagang naka-imbak noong ginawa ang bayad (kung hindi, ang rate ng araw ng regalo; walang  · — kapag hindi magamit ang rate na iyon), opsyonal na larawan o <video> na sukat ng clip. CTA ng pagpapatunay sa ilalim ng kard."
   },
   "/grants:default": {
-    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über uns und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
-    "es": "Propietario verificado con funding.status none. h1 de la página Beca 21 gifts, la frase en pausa Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., el enlace https://21.gifts/statistics y Objetivos. Sin enlace Sobre nosotros y sin botón Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
-    "fil": "Na-verify na may-ari na may funding.status none. h1 ng pahina na 21 gifts grant, ang naka-pause na pangungusap Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., ang link na https://21.gifts/statistics, at Mga layunin. Walang link na Tungkol sa amin at walang pindutang Mag-apply. Hindi nagbabago ang mga naka-pause na pampublikong kuha dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
+    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über 21.gifts und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
+    "es": "Propietario verificado con funding.status none. h1 de la página Beca 21 gifts, la frase en pausa Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., el enlace https://21.gifts/statistics y Objetivos. Sin enlace Sobre 21.gifts y sin botón Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
+    "fil": "Na-verify na may-ari na may funding.status none. h1 ng pahina na 21 gifts grant, ang naka-pause na pangungusap Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., ang link na https://21.gifts/statistics, at Mga layunin. Walang link na Tungkol sa 21.gifts at walang pindutang Mag-apply. Hindi nagbabago ang mga naka-pause na pampublikong kuha dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
   },
   "/login:wrong-account": {
-    "de": "GET /me 403 mit dem api-Text wrong-account, oder Passkey-Abschluss mit derselben Zeichenkette. Hinweis Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto. (login.wrongAccount) und Erneut versuchen. Telefonbilder zeigen auch die gedämpfte Zeile für installiertes iOS. Die restliche Sitzung wird gelöscht, damit die Besuchenden nicht angemeldet bleiben. Erneut versuchen startet die Anmeldung mit Authentifizierung zuerst.",
-    "es": "GET /me 403 con el texto de api wrong-account, o finalización de passkey con la misma cadena. Alerta Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta. (login.wrongAccount) e Intentar de nuevo. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. La sesión restante se borra para que quien visita no quede con sesión iniciada. Intentar de nuevo inicia el inicio de sesión con autenticación primero.",
-    "fil": "GET /me 403 na may api na teksto na wrong-account, o tapos ng passkey na may parehong string. Alerto Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account. (login.wrongAccount) at Subukan ulit. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Nililinis ang natitirang session para hindi maiwang naka-sign in ang bisita. Ang Subukan ulit ay nagsisimula ng pag-login na authenticate-first."
+    "de": "GET /me 403 mit dem api-Text wrong-account, oder Passkey-Abschluss mit derselben Zeichenkette. Hinweis Du hast dich mit einem anderen Konto angemeldet. Versuch es noch einmal mit dem richtigen. (login.wrongAccount) und Erneut versuchen. Telefonbilder zeigen auch die gedämpfte Zeile für installiertes iOS. Die restliche Sitzung wird gelöscht, damit die Besuchenden nicht angemeldet bleiben. Erneut versuchen startet die Anmeldung mit Authentifizierung zuerst.",
+    "es": "GET /me 403 con el texto de api wrong-account, o finalización de passkey con la misma cadena. Alerta Iniciaste sesión con otra cuenta. Vuelve a intentarlo con la correcta. (login.wrongAccount) e Intentar de nuevo. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. La sesión restante se borra para que quien visita no quede con sesión iniciada. Intentar de nuevo inicia el inicio de sesión con autenticación primero.",
+    "fil": "GET /me 403 na may api na teksto na wrong-account, o tapos ng passkey na may parehong string. Alerto Nag-sign in ka gamit ang ibang account. Subukan ulit gamit ang tama. (login.wrongAccount) at Subukan ulit. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Nililinis ang natitirang session para hindi maiwang naka-sign in ang bisita. Ang Subukan ulit ay nagsisimula ng pag-login na authenticate-first."
   },
   "/grants:funding-admitted": {
     "de": "Verifizierter Inhaber mit funding.status admitted. Text Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen. plus Nimmt seit {date} am 21.gifts Förderprogramm teil. Wenn reviewedByName gesetzt ist, nennt dieser Satz die prüfende Person. Trial, pending und rejected zeigen keinen Namen. Das Symbol des Förderprogramms auf den öffentlichen Fakten ist hier geschlossen. Das gedrückte Ergebnis ist funding-program-open.",
@@ -4820,7 +4885,7 @@
     "fil": "Bukas sa Welcome ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in Willkommen mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Bienvenida con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Welcome ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4830,7 +4895,7 @@
     "fil": "Bukas sa profile ng member ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/members/[accountId]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Mitgliederprofil mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el perfil de miembro con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado.",
     "fil": "Bukas sa profile ng member ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod."
   },
@@ -4840,7 +4905,7 @@
     "fil": "Bukas sa public message ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/messages/[id]:shop-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist in der öffentlichen Nachricht mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en el mensaje público con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa public message ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4905,7 +4970,7 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Mapa at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Karte mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Mapa con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Mapa ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4970,7 +5035,7 @@
     "fil": "Binuksan ng moderator ang Baguhin ang entry sa shop sa Talahanayan at binuksan ang Lugar at address ng shop mula sa 2 sa 5 · Lugar. Hindi pa bumabalik ang susi ng mapa. Nasa lugar ng mapa ang Ikinakarga ang mapa. Hindi ipinapakita ang Hindi available ang mapa. Napili pa ang Talahanayan. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/shops:table-edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu @_ geändert wurde. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist auf Tabelle geöffnet, nachdem der Benutzername von luna zu @_ geändert wurde. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Tabla después de cambiar el nombre de usuario de luna a @_. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Talahanayan ang hakbang 4 sa 5 · User ng 21.gifts matapos baguhin ang username mula luna patungong @_. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
@@ -4990,17 +5055,17 @@
     "fil": "Bukas sa Post ang Lugar at address ng shop mula sa hakbang 2 sa 5 · Lugar nang walang available na mapa. Nakikita ang Hindi available ang mapa. kung saan dapat naroon ang mapa at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:edit-user-invalid": {
-    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit @_ im Feld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
+    "de": "Schritt 4 von 5 · 21.gifts-Nutzer ist im Post mit @_ im Feld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Weiter ist deaktiviert. Unter Historie steht weiterhin Noch keine Bearbeitung.",
     "es": "El paso 4 de 5 · Usuario de 21.gifts está abierto en Publicación con @_ en el campo. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Siguiente está deshabilitado. En Historial sigue apareciendo Todavía no hay cambios.",
     "fil": "Bukas sa Post ang hakbang 4 sa 5 · User ng 21.gifts na may @_ sa field. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang Susunod. Makikita pa rin ang Wala pang binago sa Kasaysayan."
   },
   "/shops:staff-account-invalid": {
-    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
+    "de": "Eine Moderatorsitzung mit einer Shop-Notiz Cafe Luna. Konto hinzufügen ist mit @_ im Benutzernamenfeld geöffnet. 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer. ist sichtbar und Konto speichern ist deaktiviert.",
     "es": "Una sesión de moderador con una nota de tienda Cafe Luna. Añadir una cuenta está abierto con @_ en el campo del nombre de usuario. Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. está visible y Guardar la cuenta está deshabilitado.",
     "fil": "Sesyon ng moderator na may tala ng shop na Cafe Luna. Bukas ang Magdagdag ng account at @_ ang nasa field ng username. Nakikita ang Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. at disabled ang I-save ang account."
   },
   "/setup/name:empty": {
-    "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "de": "Unschärfe oder Weiter bei einem leeren Namen zeigt Gib deinen Namen ein (name.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
     "es": "Desenfocar o Continuar con un nombre vacío muestra Introduce tu nombre (name.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
     "fil": "Ang blur o Magpatuloy sa walang laman na pangalan ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
   },
@@ -5020,27 +5085,27 @@
     "fil": "Kapag ang POST /me/name ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang pangalan (name.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
   },
   "/setup/username:empty": {
-    "de": "Unschärfe oder Weiter bei einem leeren Benutzernamen zeigt Bitte einen Benutzernamen eingeben (setup.usernameEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "de": "Unschärfe oder Weiter bei einem leeren Benutzernamen zeigt Gib einen Benutzernamen ein (setup.usernameEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
     "es": "Desenfocar o Continuar con un usuario vacío muestra Escribe un nombre de usuario (setup.usernameEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. ",
     "fil": "Ang blur o Magpatuloy sa walang laman na username ay nagpapakita ng Maglagay ng username (setup.usernameEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
   },
   "/setup/username:invalid": {
-    "de": "Ein Benutzername außerhalb der Handle-Regel, einschließlich desselben Satzes vom Server zeigt Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. (setup.usernameInvalid). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
-    "es": "Un usuario fuera de la regla del identificador, incluida la misma frase del servidor muestra Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito. (setup.usernameInvalid). Continuar permanece deshabilitado hasta que el borrador cambie. ",
-    "fil": "Ang username na labas sa tuntunin ng handle, kasama ang parehong pangungusap mula sa server ay nagpapakita ng Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit. (setup.usernameInvalid). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
+    "de": "Ein Benutzername außerhalb der Handle-Regel, einschließlich desselben Satzes vom Server zeigt 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer (setup.usernameInvalid). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. ",
+    "es": "Un usuario fuera de la regla del identificador, incluida la misma frase del servidor muestra De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número (setup.usernameInvalid). Continuar permanece deshabilitado hasta que el borrador cambie. ",
+    "fil": "Ang username na labas sa tuntunin ng handle, kasama ang parehong pangungusap mula sa server ay nagpapakita ng 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero (setup.usernameInvalid). Naka-disable ang Magpatuloy hanggang magbago ang draft. "
   },
   "/setup/username:taken": {
-    "de": "Wenn POST /me/username mit 409 Username is already in use antwortet, zeigt das Formular Dieser Benutzername ist schon vergeben (setup.usernameTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut.",
+    "de": "Wenn POST /me/username mit 409 Username is already in use antwortet, zeigt das Formular Dieser Name ist schon vergeben (setup.usernameTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut.",
     "es": "Cuando POST /me/username responde 409 Username is already in use, el formulario muestra Ese nombre de usuario ya está en uso (setup.usernameTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear.",
     "fil": "Kapag ang POST /me/username ay sumasagot ng 409 Username is already in use, ipinapakita ng form ang Nakuha na ang username na iyan (setup.usernameTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock."
   },
   "/setup/username:request": {
-    "de": "Wenn POST /me/username mit 500 antwortet, zeigt das Formular Benutzername konnte nicht gespeichert werden (setup.usernameRequest). Weiter bleibt verfügbar. ",
+    "de": "Wenn POST /me/username mit 500 antwortet, zeigt das Formular Dein Benutzername konnte nicht gespeichert werden (setup.usernameRequest). Weiter bleibt verfügbar. ",
     "es": "Cuando POST /me/username responde 500, el formulario muestra No se pudo guardar el nombre de usuario (setup.usernameRequest). Continuar permanece disponible. ",
     "fil": "Kapag ang POST /me/username ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang username (setup.usernameRequest). Nananatiling available ang Magpatuloy. "
   },
   "/setup/address:empty": {
-    "de": "Unschärfe oder Weiter bei einer leeren Wallet of Satoshi address zeigt Bitte geben Sie Ihre Wallet of Satoshi address ein (la.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
+    "de": "Unschärfe oder Weiter bei einer leeren Wallet of Satoshi-Adresse zeigt Gib deine Wallet of Satoshi-Adresse ein (la.errorEmpty). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
     "es": "Desenfocar o Continuar con una Wallet of Satoshi address vacía muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",
     "fil": "Ang blur o Magpatuloy sa walang laman na Wallet of Satoshi address ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
   },
@@ -5055,27 +5120,27 @@
     "fil": "Ang address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang Magpatuloy hanggang magbago ang draft. Nananatiling available ang Laktawan."
   },
   "/setup/address:taken": {
-    "de": "Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi address ist schon vergeben. (la.errorTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "de": "Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse ist schon vergeben. (la.errorTaken). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
     "es": "Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
     "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
   },
   "/setup/address:not-found": {
-    "de": "Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi address wurde nicht gefunden (la.errorNotFound). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
+    "de": "Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse wurde nicht gefunden (la.errorNotFound). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Überspringen bleibt verfügbar.",
     "es": "Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. Omitir permanece disponible.",
     "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nananatiling available ang Laktawan."
   },
   "/setup/address:not-zap": {
-    "de": "Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Überspringen bleibt verfügbar.",
+    "de": "Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Überspringen bleibt verfügbar.",
     "es": "Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Continuar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. Omitir permanece disponible.",
     "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang Magpatuloy hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nananatiling available ang Laktawan."
   },
   "/setup/address:request": {
-    "de": "Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Wallet of Satoshi address konnte nicht aktualisiert werden (la.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
+    "de": "Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Deine Wallet of Satoshi-Adresse konnte nicht aktualisiert werden (la.errorRequest). Weiter bleibt verfügbar. Überspringen bleibt verfügbar.",
     "es": "Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Continuar permanece disponible. Omitir permanece disponible.",
     "fil": "Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang Magpatuloy. Nananatiling available ang Laktawan."
   },
   "/profile:name-empty": {
-    "de": "Der Namenseditor ist offen und das Feld ist geleert zeigt Bitte geben Sie Ihren Namen ein (name.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "de": "Der Namenseditor ist offen und das Feld ist geleert zeigt Gib deinen Namen ein (name.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
     "es": "El editor del nombre está abierto y el campo está vacío muestra Introduce tu nombre (name.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng pangalan at walang laman ang field ay nagpapakita ng Maglagay ng pangalan (name.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
   },
@@ -5110,7 +5175,7 @@
     "fil": "Bukas ang editor ng lugar. Kapag ang POST /me/location ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-save ang lugar (location.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
   },
   "/profile:address-empty": {
-    "de": "Der Adresseditor ist offen und das Feld ist geleert zeigt Bitte geben Sie Ihre Wallet of Satoshi address ein (la.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
+    "de": "Der Adresseditor ist offen und das Feld ist geleert zeigt Gib deine Wallet of Satoshi-Adresse ein (la.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto y el campo está vacío muestra Introduce tu Wallet of Satoshi address (la.errorEmpty). Guardar permanece deshabilitado hasta que el borrador cambie. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address at walang laman ang field ay nagpapakita ng Ilagay ang iyong Wallet of Satoshi address (la.errorEmpty). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
   },
@@ -5125,22 +5190,22 @@
     "fil": "Bukas ang editor ng address na may address na hindi name@domain.tld ay nagpapakita ng Gumamit ng address na gaya ng name@domain.tld, hanggang 255 character. (la.errorFormat). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
   },
   "/profile:address-taken": {
-    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi address ist schon vergeben. (la.errorTaken). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 409 Lightning Address is already in use antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse ist schon vergeben. (la.errorTaken). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 409 Lightning Address is already in use, el formulario muestra Esa dirección de Wallet of Satoshi ya está en uso. (la.errorTaken). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 409 Lightning Address is already in use, ipinapakita ng form ang Ginagamit na ang Wallet of Satoshi address na iyan. (la.errorTaken). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
   },
   "/profile:address-not-found": {
-    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi address wurde nicht gefunden (la.errorNotFound). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 Lightning Address could not be resolved antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse wurde nicht gefunden (la.errorNotFound). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dasselbe wieder einsetzen sperrt nicht erneut. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 Lightning Address could not be resolved, el formulario muestra No se pudo encontrar esa Wallet of Satoshi address (la.errorNotFound). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar ese valor no vuelve a bloquear. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 Lightning Address could not be resolved, ipinapakita ng form ang Hindi mahanap ang Wallet of Satoshi address na iyon (la.errorNotFound). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng value na iyon ay hindi muling nagla-lock. Nasa window ang alerto."
   },
   "/profile:address-not-zap": {
-    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Der Hinweis liegt im Fenster.",
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 400 und dem Satz, dass die Adresse nicht empfangen kann antwortet, zeigt das Formular Diese Wallet of Satoshi-Adresse kann diese Bitcoin-Zahlungen nicht empfangen (la.errorNotZap). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Dieselbe gesperrte Adresse wieder einsetzen sperrt erneut. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 400 con la frase de que no puede recibir, el formulario muestra Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin (la.errorNotZap). Guardar permanece deshabilitado hasta que el borrador cambie. Restaurar la dirección bloqueada vuelve a bloquear. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 400 na may pangungusap na hindi makatanggap, ipinapakita ng form ang Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito (la.errorNotZap). Naka-disable ang I-save hanggang magbago ang draft. Ang pagbabalik ng naka-block na address ay nagla-lock muli. Nasa window ang alerto."
   },
   "/profile:address-request": {
-    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Wallet of Satoshi address konnte nicht aktualisiert werden (la.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
+    "de": "Der Adresseditor ist offen. Wenn POST /me/lightning-address mit 500 antwortet, zeigt das Formular Deine Wallet of Satoshi-Adresse konnte nicht aktualisiert werden (la.errorRequest). Speichern bleibt verfügbar. Der Hinweis liegt im Fenster.",
     "es": "El editor de la dirección está abierto. Cuando POST /me/lightning-address responde 500, el formulario muestra No se pudo actualizar la Wallet of Satoshi address (la.errorRequest). Guardar permanece disponible. La alerta está en la ventana.",
     "fil": "Bukas ang editor ng address. Kapag ang POST /me/lightning-address ay sumasagot ng 500, ipinapakita ng form ang Hindi ma-update ang Wallet of Satoshi address (la.errorRequest). Nananatiling available ang I-save. Nasa window ang alerto."
   },

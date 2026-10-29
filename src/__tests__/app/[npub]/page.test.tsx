@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ShopPage, { generateMetadata } from '@/app/[npub]/page';
 import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 
 /**
  * Client React's `cache` is a pass-through; the server build memoises per
@@ -322,7 +323,7 @@ describe('shop generateMetadata', () => {
           url: '/og.png',
           width: 1200,
           height: 630,
-          alt: '21.gifts — peer-to-peer Bitcoin gifts',
+          alt: OG_IMAGE_ALT,
         },
       ],
     });

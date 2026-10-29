@@ -18,7 +18,7 @@ test('rules page shows the living-room rules and CTAs', async ({ page }) => {
   );
   await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
     'href',
-    '/',
+    '/en',
   );
 });
 

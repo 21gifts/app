@@ -54,11 +54,11 @@ afterEach(() => {
 describe('RulesPageChrome', () => {
   it('renders unsigned chrome when there is no session', () => {
     renderWithLocale(
-      <RulesPageChrome>
+      <RulesPageChrome homeHref="/de">
         <div>rules body</div>
       </RulesPageChrome>,
     );
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/de');
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
@@ -88,7 +88,7 @@ describe('RulesPageChrome', () => {
       },
     });
     renderWithLocale(
-      <RulesPageChrome>
+      <RulesPageChrome homeHref="/de">
         <div>rules body</div>
       </RulesPageChrome>,
     );
@@ -122,11 +122,11 @@ describe('RulesPageChrome', () => {
       },
     });
     renderWithLocale(
-      <RulesPageChrome>
+      <RulesPageChrome homeHref="/de">
         <div>rules body</div>
       </RulesPageChrome>,
     );
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/de');
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );

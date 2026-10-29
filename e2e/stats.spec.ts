@@ -188,7 +188,7 @@ test('stats page empty copy', async ({ page }) => {
     });
   });
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
 });
 
 test('stats page loading copy', async ({ page }) => {
