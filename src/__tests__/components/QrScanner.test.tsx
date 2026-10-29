@@ -187,6 +187,41 @@ describe('QrScanner', () => {
     expect(alert.className).not.toContain('text-app-danger');
   });
 
+  it('uses the wording it is given for the hint, the region, and both alerts', async () => {
+    const copy = {
+      hint: 'heldShares.scanHint',
+      denied: 'heldShares.cameraDenied',
+      unavailable: 'heldShares.cameraUnavailable',
+    } as const;
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const live = renderWithLocale(<QrScanner onResult={vi.fn()} copy={copy} />);
+    await flush();
+    expect(
+      screen.getByRole('region', { name: 'Point the camera at the code on the other phone' }),
+    ).toBeTruthy();
+    expect(screen.getByText('Point the camera at the code on the other phone')).toBeTruthy();
+    expect(screen.queryByText('Point the camera at a Bitcoin QR code')).toBeNull();
+    live.unmount();
+
+    setCamera(() => Promise.reject(new DOMException('blocked', 'NotAllowedError')));
+    const denied = renderWithLocale(<QrScanner onResult={vi.fn()} copy={copy} />);
+    await flush();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Camera access is off. Allow the camera to scan the code.',
+    );
+    denied.unmount();
+
+    setCamera(() => Promise.reject(new DOMException('none', 'NotFoundError')));
+    renderWithLocale(<QrScanner onResult={vi.fn()} copy={copy} />);
+    await flush();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'No camera found. Use a phone with a camera to scan the code.',
+    );
+    expect(
+      screen.getByRole('region', { name: 'Point the camera at the code on the other phone' }),
+    ).toBeTruthy();
+  });
+
   it('says no camera was found when the browser has no media devices', async () => {
     renderWithLocale(<QrScanner onResult={vi.fn()} />);
     await flush();

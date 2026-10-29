@@ -2,12 +2,32 @@
 
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import type { MessageKey } from '@/lib/messages';
+
+/** Catalog keys of the scanner's hint and its two camera alerts. */
+export interface QrScannerCopy {
+  /** Hint over the picture, also the region's accessible name. */
+  hint: MessageKey;
+  /** Alert when the camera is blocked. */
+  denied: MessageKey;
+  /** Alert when there is no usable camera or decoder. */
+  unavailable: MessageKey;
+}
 
 /** Props for {@link QrScanner}. */
 export interface QrScannerProps {
   /** Called once with the first decoded QR text, after the camera has stopped. */
   onResult: (text: string) => void;
+  /** Hint and alert wording. Default: the wallet Send payment wording. */
+  copy?: QrScannerCopy;
 }
+
+/** The wallet Send wording: a Bitcoin QR code, and pasting the payment request instead. */
+const PAYMENT_COPY: QrScannerCopy = {
+  hint: 'wallet.scanHint',
+  denied: 'wallet.cameraDenied',
+  unavailable: 'wallet.cameraUnavailable',
+};
 
 type FrameDecoder = (video: HTMLVideoElement) => Promise<string | null>;
 
@@ -69,12 +89,14 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * parent (`absolute inset-0`, black): the preview covers it (`object-cover`)
  * under a viewfinder square that only shows where to aim, with the hint over
  * the top of the picture; the whole frame is read. `container-type: size`
- * lets the viewfinder take 68% of the smaller side.
+ * lets the viewfinder take 68% of the smaller side. The hint and the two
+ * alerts are the wallet Send payment wording unless `copy` names other
+ * catalog keys, as for a scan that is not a payment.
  *
- * @param props - Result callback.
+ * @param props - Result callback and optional wording.
  * @returns The scanner region.
  */
-export function QrScanner({ onResult }: QrScannerProps): ReactElement {
+export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): ReactElement {
   const { t } = useTranslations();
   const videoRef = useRef<HTMLVideoElement>(null);
   const onResultRef = useRef(onResult);
@@ -170,7 +192,7 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
 
   return (
     <section
-      aria-label={t('wallet.scanHint')}
+      aria-label={t(copy.hint)}
       className="absolute inset-0 overflow-hidden bg-black [container-type:size]"
     >
       {error === null ? (
@@ -192,7 +214,7 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
             <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-3xl border-b-[6px] border-r-[6px] border-white" />
           </div>
           <p className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent px-6 pb-12 pt-5 text-center text-lg font-medium text-white sm:text-xl">
-            {t('wallet.scanHint')}
+            {t(copy.hint)}
           </p>
         </>
       ) : (
@@ -200,7 +222,7 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
           role="alert"
           className="absolute inset-x-0 top-1/3 -translate-y-1/2 px-8 text-center text-lg font-medium text-white sm:text-xl"
         >
-          {error === 'denied' ? t('wallet.cameraDenied') : t('wallet.cameraUnavailable')}
+          {error === 'denied' ? t(copy.denied) : t(copy.unavailable)}
         </p>
       )}
     </section>

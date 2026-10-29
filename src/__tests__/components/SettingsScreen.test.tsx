@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsScreen } from '@/components/SettingsScreen';
 import { saveAmountUnit } from '@/lib/amount-unit';
-import { setUsername } from '@/lib/api';
+import { fetchPreviousWallets, setUsername } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -36,6 +36,7 @@ vi.mock('@/lib/amount-unit', () => ({
 vi.mock('@/lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api')>()),
   setUsername: vi.fn(),
+  fetchPreviousWallets: vi.fn(),
 }));
 
 const account: Account = {
@@ -64,6 +65,7 @@ const ADD_HINT =
 
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '42');
+  vi.mocked(fetchPreviousWallets).mockReset().mockResolvedValue([]);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -130,6 +132,47 @@ describe('SettingsScreen', () => {
       expect(screen.queryByRole('link', { name: 'Recovery phrase' })).toBeNull();
     },
   );
+
+  it('puts Social Recovery and the previous wallets between the recovery entry and the address', async () => {
+    useAuthStore.setState({
+      account: { ...account, passkeyCredentialId: 'cred-seed', sparkWalletVerified: true },
+    });
+    vi.mocked(fetchPreviousWallets).mockResolvedValue([
+      {
+        sparkPubkey: `02${'a'.repeat(64)}`,
+        sparkAddress: 'spark1old',
+        replacedAt: 1_767_268_800_000,
+        balanceSats: 0,
+      },
+    ]);
+    renderWithLocale(<SettingsScreen />);
+    const previous = await screen.findByRole('link', { name: 'Transfer remaining balance' });
+    const section = screen.getByRole('region', { name: 'Wallet' });
+    const rows = Array.from(section.children).map((node) => node.id);
+    expect(rows).toEqual([
+      'wallet-heading',
+      'recovery',
+      'social-recovery',
+      'previous-wallets',
+      'address',
+      '',
+    ]);
+    expect(section.querySelector('#previous-wallets')?.contains(previous)).toBe(true);
+    expect(
+      within(section.querySelector('#social-recovery') as HTMLElement).getByRole('link', {
+        name: 'Secure my account',
+      }),
+    ).toBeTruthy();
+    expect(fetchPreviousWallets).toHaveBeenCalledWith('sess');
+  });
+
+  it('shows the Social Recovery row without previous wallets for an account without a verified wallet', () => {
+    renderWithLocale(<SettingsScreen />);
+    expect(screen.getByText('Available once your wallet is connected.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Shares I keep for others' })).toBeTruthy();
+    expect(document.getElementById('previous-wallets')).toBeNull();
+    expect(fetchPreviousWallets).not.toHaveBeenCalled();
+  });
 
   it('shows the 21.gifts address with an icon-only Copy that says Copied for two seconds', async () => {
     vi.useFakeTimers();
@@ -255,6 +298,15 @@ describe('SettingsScreen', () => {
     expect(scrollIntoView.mock.contexts[0]).toBe(
       screen.getByRole('region', { name: 'Notifications' }),
     );
+  });
+
+  it('scrolls to the Social Recovery row named by the address hash', () => {
+    const scrollIntoView = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    window.history.replaceState(null, '', '/settings#social-recovery');
+    renderWithLocale(<SettingsScreen />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('social-recovery'));
   });
 
   it('scrolls nothing without a hash, for an unknown one, or for a malformed one', () => {

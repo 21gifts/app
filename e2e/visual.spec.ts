@@ -28151,6 +28151,44 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-overlay-introduce');
   });
 
+  test('welcome overlay-social-recovery', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          hasPosted: true,
+          socialRecoverySetUp: false,
+          funding: {
+            status: 'admitted',
+            trialUtcDate: null,
+            admittedAt: 1_700_000_000_000,
+            reviewedByName: 'Mod',
+          },
+        }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    const dialog = page.getByRole('dialog', { name: 'Social Recovery for your grant' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Secure my account' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-overlay-social-recovery');
+  });
+
   test('welcome overlay-external-link', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -36844,5 +36882,290 @@ test.describe('settings states', () => {
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-settings-push-enable-error');
+  });
+
+  /**
+   * Answers `GET /me/previous-wallets`.
+   *
+   * @param page - Page under test.
+   * @param status - HTTP status.
+   * @param body - JSON body.
+   */
+  async function fulfillPreviousWallets(page: Page, status: number, body: unknown): Promise<void> {
+    await page.route(/\/me\/previous-wallets$/, async (route) => {
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+  }
+
+  test('settings social-recovery-off', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillPreviousWallets(page, 200, { wallets: [] });
+    await openSettings(page);
+    const row = page.locator('#social-recovery');
+    await expect(
+      row.getByText('Not set up yet. Two people you trust can help you get your account back.'),
+    ).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Shares I keep for others' })).toBeVisible();
+    await expect(page.locator('#previous-wallets')).toHaveCount(0);
+    await shotScreen(page, 'state-settings-social-recovery-off');
+  });
+
+  test('settings social-recovery-on', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillPreviousWallets(page, 200, { wallets: [] });
+    await openSettings(page);
+    const row = page.locator('#social-recovery');
+    await expect(row.getByText('Set up for this wallet.')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
+    await expect(page.locator('#previous-wallets')).toHaveCount(0);
+    await shotScreen(page, 'state-settings-social-recovery-on');
+  });
+
+  test('settings previous-wallets', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillSpot(page);
+    await fulfillPreviousWallets(page, 200, {
+      wallets: [
+        {
+          sparkPubkey: `02${'a'.repeat(64)}`,
+          sparkAddress: 'spark1old',
+          replacedAt: 1_767_268_800_000,
+          balanceSats: 21_000,
+        },
+        {
+          sparkPubkey: `03${'b'.repeat(64)}`,
+          sparkAddress: 'spark1older',
+          replacedAt: 1_764_590_400_000,
+          balanceSats: 0,
+        },
+        {
+          sparkPubkey: `02${'c'.repeat(64)}`,
+          sparkAddress: 'spark1oldest',
+          replacedAt: 1_761_998_400_000,
+          balanceSats: null,
+        },
+      ],
+    });
+    await page.goto('/settings#previous-wallets');
+    const row = page.locator('#previous-wallets');
+    await expect(row.getByText("₿21'000 · $21.00")).toBeVisible();
+    await expect(row.getByText('Empty')).toBeVisible();
+    await expect(row.getByText('Balance unknown')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Transfer remaining balance' })).toHaveCount(3);
+    await expect(row.getByRole('button')).toHaveCount(0);
+    await expect(row).toBeInViewport();
+    await shotScreen(page, 'state-settings-previous-wallets');
+  });
+
+  test('settings previous-wallets-error', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillPreviousWallets(page, 503, { error: 'Wallet data is unavailable' });
+    await page.goto('/settings#previous-wallets');
+    const row = page.locator('#previous-wallets');
+    await expect(row.getByRole('alert')).toHaveText('Previous wallets could not be loaded.');
+    await expect(row.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(row).toBeInViewport();
+    await shotScreen(page, 'state-settings-previous-wallets-error');
+  });
+});
+
+test.describe('held shares states', () => {
+  /** Bob's share: official SLIP-39 vector 43, the first member of its set. */
+  const HELD_BOB =
+    '21gifts-share:v1:acc_bob:bob:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  /** Cara's share, of another set. */
+  const HELD_CARA =
+    '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** A share of the signed-in member's own account. */
+  const HELD_OWN =
+    '21gifts-share:v1:acc_e2e:ada:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  /** Where the signed-in member keeps shares. */
+  const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
+
+  /**
+   * Signs in Ada with her stubbed camera.
+   *
+   * @param page - Page under test.
+   * @param camera - Camera behaviour.
+   */
+  async function seedHolder(page: Page, camera: CameraStub = { kind: 'blank' }): Promise<void> {
+    await stubCamera(page, camera);
+    await page.clock.install({ time: new Date('2026-01-07T12:00:00.000Z') });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+  }
+
+  /**
+   * Keeps shares under Ada's key before the page loads.
+   *
+   * @param page - Page under test.
+   * @param codes - Payloads, oldest first.
+   */
+  async function seedKept(page: Page, codes: readonly string[]): Promise<void> {
+    await page.addInitScript(
+      ({ key, value }) => {
+        localStorage.setItem(key, value);
+      },
+      {
+        key: HELD_KEY,
+        value: JSON.stringify({
+          v: 1,
+          shares: codes.map((code, index) => ({
+            code,
+            storedAt: 1_767_268_800_000 + index * 86_400_000,
+          })),
+        }),
+      },
+    );
+  }
+
+  /**
+   * Opens the kept-shares page.
+   *
+   * @param page - Page under test.
+   */
+  async function openHeldShares(page: Page): Promise<void> {
+    await page.goto('/settings/held-shares');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
+    ).toBeVisible();
+  }
+
+  test('screen /settings/held-shares', async ({ page }) => {
+    await seedHolder(page);
+    await openHeldShares(page);
+    await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
+    await shotScreen(page, 'screen-settings-held-shares');
+  });
+
+  test('held shares list', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Show code for @cara' })).toBeVisible();
+    await expect(page.getByText('Kept since Jan 1, 2026')).toBeVisible();
+    await shotScreen(page, 'state-held-shares-list');
+  });
+
+  test('held shares scan', async ({ page }) => {
+    await seedHolder(page);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByText('Point the camera at the code on the other phone')).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await shotScreen(page, 'state-held-shares-scan');
+  });
+
+  test('held shares stored', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
+    await expect(page.getByText('Kept since Jan 7, 2026')).toBeVisible();
+    await shotScreen(page, 'state-held-shares-stored');
+  });
+
+  test('held shares refused-own', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_OWN });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This is a share of your own account. Only other people can keep it.',
+    );
+    await shotScreen(page, 'state-held-shares-refused-own');
+  });
+
+  test('held shares refused-duplicate', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await seedKept(page, [HELD_BOB]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.',
+    );
+    await expect(page.getByRole('listitem')).toHaveCount(1);
+    await shotScreen(page, 'state-held-shares-refused-duplicate');
+  });
+
+  test('held shares refused-storage', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await page.addInitScript(() => {
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string): void {
+        if (key.startsWith('21gifts.recoveryShares.')) {
+          throw new DOMException('Storage is full', 'QuotaExceededError');
+        }
+        setItem.call(this, key, value);
+      };
+    });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This browser cannot keep shares. Allow site data and try again.',
+    );
+    await shotScreen(page, 'state-held-shares-refused-storage');
+  });
+
+  test('held shares invalid', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
+    await shotScreen(page, 'state-held-shares-invalid');
+  });
+
+  test('held shares qr', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Show code for @bob' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Share of @bob' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Share code' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-qr');
+  });
+
+  test('held shares delete-confirm', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Delete the share of @bob? Only do this when they ask.' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-held-shares-delete-confirm');
+  });
+
+  test('held shares camera-denied', async ({ page }) => {
+    await seedHolder(page, { kind: 'denied' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Camera access is off. Allow the camera to scan the code.',
+    );
+    await shotScreen(page, 'state-held-shares-camera-denied');
   });
 });

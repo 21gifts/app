@@ -188,7 +188,7 @@ const en = {
     'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the wallet details that let payments to your 21.gifts address reach your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
   'home.faq4Q': 'Can I lose access to my account?',
   'home.faq4A':
-    'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
+    'Only if you lose your login and have neither the 12 words nor Social Recovery set up. Set up Social Recovery in the settings.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
     'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay from your 21.gifts wallet — the Bitcoin goes straight to the author.',
@@ -683,6 +683,48 @@ const en = {
     'Write a short post in the forum so people know who you are. Gifts are only sent to members who have introduced themselves.',
   'introduce.cta': 'Write an introduction',
   'introduce.close': 'Close',
+  'socialRecovery.heading': 'Social Recovery',
+  'socialRecovery.statusOn': 'Set up for this wallet.',
+  'socialRecovery.statusOff':
+    'Not set up yet. Two people you trust can help you get your account back.',
+  'socialRecovery.statusNoWallet': 'Available once your wallet is connected.',
+  'socialRecovery.secure': 'Secure my account',
+  'socialRecovery.heldLink': 'Shares I keep for others',
+  'socialRecoveryPrompt.title': 'Social Recovery for your grant',
+  'socialRecoveryPrompt.body':
+    'Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.',
+  'socialRecoveryPrompt.close': 'Close',
+  'previousWallets.heading': 'Previous wallets',
+  'previousWallets.replaced': 'Replaced on {date}',
+  'previousWallets.balanceUnknown': 'Balance unknown',
+  'previousWallets.empty': 'Empty',
+  'previousWallets.transfer': 'Transfer remaining balance',
+  'previousWallets.loadError': 'Previous wallets could not be loaded.',
+  'heldShares.title': 'Shares I keep for others',
+  'heldShares.intro':
+    'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+  'heldShares.empty': 'You keep no shares for others yet.',
+  'heldShares.keep': 'Keep a share',
+  'heldShares.scanHint': 'Point the camera at the code on the other phone',
+  'heldShares.cameraDenied': 'Camera access is off. Allow the camera to scan the code.',
+  'heldShares.cameraUnavailable': 'No camera found. Use a phone with a camera to scan the code.',
+  'heldShares.stored': 'You now keep a share for @{username}.',
+  'heldShares.own': 'This is a share of your own account. Only other people can keep it.',
+  'heldShares.duplicate':
+    'This phone already keeps a share of this setup for @{username}. One phone keeps only one share of a setup.',
+  'heldShares.storageError': 'This browser cannot keep shares. Allow site data and try again.',
+  'heldShares.owner': '@{username}',
+  'heldShares.storedAt': 'Kept since {date}',
+  'heldShares.show': 'Show code for @{username}',
+  'heldShares.delete': 'Delete share of @{username}',
+  'heldShares.deleteConfirm': 'Delete the share of @{username}? Only do this when they ask.',
+  'heldShares.deleteYes': 'Delete',
+  'heldShares.deleteNo': 'Keep',
+  'heldShares.qrTitle': 'Share of @{username}',
+  'heldShares.qrBody':
+    'Show this code only to @{username} in person, so they can restore their account.',
+  'heldShares.qrLabel': 'Share code',
+  'shareCode.invalid': 'This is not a Social Recovery code.',
 
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Add recovery phrase',
@@ -700,8 +742,8 @@ const en = {
   'passkeyRenew.failedBody':
     'The renewal did not work. You can try again later. You do not need to do anything now.',
   'passkeyRenew.ok': 'OK',
-  'wallet.onlyBackup':
-    'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
+  'wallet.phraseWarning':
+    'Keep these 12 words secret. Whoever has them can take over your whole account, not only the wallet.',
   'wallet.showPhrase': 'Show recovery phrase',
   'wallet.setAmount': 'Set an amount',
   'wallet.prfUnsupported':
@@ -1627,7 +1669,7 @@ const de = {
     'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und die Wallet-Angaben, mit denen Zahlungen an Ihre 21.gifts-Adresse Ihre 21.gifts-Wallet erreichen. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
   'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
   'home.faq4A':
-    'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
+    'Nur wenn Sie Ihr Login verlieren und weder die 12 Wörter haben noch Social Recovery eingerichtet ist. Richten Sie Social Recovery in den Einstellungen ein.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
     'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie aus Ihrer 21.gifts-Wallet — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
@@ -2125,6 +2167,53 @@ const de = {
     'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
   'introduce.cta': 'Vorstellung schreiben',
   'introduce.close': 'Schließen',
+  'socialRecovery.heading': 'Social Recovery',
+  'socialRecovery.statusOn': 'Für diese Wallet eingerichtet.',
+  'socialRecovery.statusOff':
+    'Noch nicht eingerichtet. Zwei Menschen, denen du vertraust, können dir helfen, dein Konto zurückzubekommen.',
+  'socialRecovery.statusNoWallet': 'Verfügbar, sobald deine Wallet verbunden ist.',
+  'socialRecovery.secure': 'Mein Konto absichern',
+  'socialRecovery.heldLink': 'Anteile, die ich für andere aufbewahre',
+  'socialRecoveryPrompt.title': 'Social Recovery für dein Förderprogramm',
+  'socialRecoveryPrompt.body':
+    'Auszahlungen aus dem Förderprogramm brauchen Social Recovery. Wähle zwei Menschen, die dir helfen können, dein Konto wiederherzustellen, wenn du deinen Passkey verlierst.',
+  'socialRecoveryPrompt.close': 'Schließen',
+  'previousWallets.heading': 'Frühere Wallets',
+  'previousWallets.replaced': 'Ersetzt am {date}',
+  'previousWallets.balanceUnknown': 'Guthaben unbekannt',
+  'previousWallets.empty': 'Leer',
+  'previousWallets.transfer': 'Restguthaben übertragen',
+  'previousWallets.loadError': 'Frühere Wallets konnten nicht geladen werden.',
+  'heldShares.title': 'Anteile, die ich für andere aufbewahre',
+  'heldShares.intro':
+    'Jemand hat dich gewählt, um beim Wiederherstellen seines Kontos zu helfen. Bewahre den Anteil hier auf. Zeige ihn nur dieser Person, persönlich, wenn sie darum bittet.',
+  'heldShares.empty': 'Du bewahrst noch keine Anteile für andere auf.',
+  'heldShares.keep': 'Anteil aufbewahren',
+  'heldShares.scanHint': 'Richte die Kamera auf den Code auf dem anderen Telefon',
+  'heldShares.cameraDenied':
+    'Der Kamerazugriff ist aus. Erlaube die Kamera, um den Code zu scannen.',
+  'heldShares.cameraUnavailable':
+    'Keine Kamera gefunden. Nutze ein Telefon mit Kamera, um den Code zu scannen.',
+  'heldShares.stored': 'Du bewahrst jetzt einen Anteil für @{username} auf.',
+  'heldShares.own':
+    'Das ist ein Anteil deines eigenen Kontos. Nur andere Personen können ihn aufbewahren.',
+  'heldShares.duplicate':
+    'Dieses Telefon bewahrt schon einen Anteil dieser Einrichtung für @{username} auf. Ein Telefon bewahrt nur einen Anteil einer Einrichtung auf.',
+  'heldShares.storageError':
+    'Dieser Browser kann keine Anteile aufbewahren. Erlaube Websitedaten und versuche es erneut.',
+  'heldShares.owner': '@{username}',
+  'heldShares.storedAt': 'Aufbewahrt seit {date}',
+  'heldShares.show': 'Code für @{username} zeigen',
+  'heldShares.delete': 'Anteil von @{username} löschen',
+  'heldShares.deleteConfirm':
+    'Anteil von @{username} löschen? Tu das nur, wenn die Person darum bittet.',
+  'heldShares.deleteYes': 'Löschen',
+  'heldShares.deleteNo': 'Behalten',
+  'heldShares.qrTitle': 'Anteil von @{username}',
+  'heldShares.qrBody':
+    'Zeige diesen Code nur @{username} persönlich, damit die Person ihr Konto wiederherstellen kann.',
+  'heldShares.qrLabel': 'Anteil-Code',
+  'shareCode.invalid': 'Das ist kein Social-Recovery-Code.',
 
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
@@ -2142,8 +2231,8 @@ const de = {
   'passkeyRenew.failedBody':
     'Die Erneuerung ist nicht gelungen. Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
   'passkeyRenew.ok': 'OK',
-  'wallet.onlyBackup':
-    'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
+  'wallet.phraseWarning':
+    'Halten Sie diese 12 Wörter geheim. Wer sie hat, kann Ihr ganzes Konto übernehmen, nicht nur die Wallet.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
   'wallet.setAmount': 'Betrag festlegen',
   'wallet.prfUnsupported':
@@ -3103,7 +3192,7 @@ const es = {
     'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y los datos de la wallet que permiten que los pagos a tu dirección de 21.gifts lleguen a tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
   'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
   'home.faq4A':
-    'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
+    'Solo si pierdes tu acceso y no tienes ni las 12 palabras ni Social Recovery configurada. Configura Social Recovery en los ajustes.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
     'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga desde tu wallet de 21.gifts — el Bitcoin va directamente a quien escribió la reacción.',
@@ -3592,6 +3681,52 @@ const es = {
     'Escribe una nota breve en el foro para que la gente sepa quién eres. Los regalos solo se envían a los miembros que se han presentado.',
   'introduce.cta': 'Escribe una presentación',
   'introduce.close': 'Cerrar',
+  'socialRecovery.heading': 'Social Recovery',
+  'socialRecovery.statusOn': 'Configurada para esta wallet.',
+  'socialRecovery.statusOff':
+    'Aún no está configurada. Dos personas de tu confianza pueden ayudarte a recuperar tu cuenta.',
+  'socialRecovery.statusNoWallet': 'Disponible en cuanto tu wallet esté conectada.',
+  'socialRecovery.secure': 'Proteger mi cuenta',
+  'socialRecovery.heldLink': 'Partes que guardo para otros',
+  'socialRecoveryPrompt.title': 'Social Recovery para tu beca',
+  'socialRecoveryPrompt.body':
+    'Los pagos de la beca requieren Social Recovery. Elige a dos personas que puedan ayudarte a restaurar tu cuenta si pierdes tu passkey.',
+  'socialRecoveryPrompt.close': 'Cerrar',
+  'previousWallets.heading': 'Wallets anteriores',
+  'previousWallets.replaced': 'Sustituida el {date}',
+  'previousWallets.balanceUnknown': 'Saldo desconocido',
+  'previousWallets.empty': 'Vacía',
+  'previousWallets.transfer': 'Transferir el saldo restante',
+  'previousWallets.loadError': 'No se pudieron cargar las wallets anteriores.',
+  'heldShares.title': 'Partes que guardo para otros',
+  'heldShares.intro':
+    'Alguien te eligió para ayudar a restaurar su cuenta. Guarda aquí su parte. Muéstrasela solo a esa persona, en persona, cuando te la pida.',
+  'heldShares.empty': 'Todavía no guardas partes para otros.',
+  'heldShares.keep': 'Guardar una parte',
+  'heldShares.scanHint': 'Apunta la cámara al código del otro teléfono',
+  'heldShares.cameraDenied':
+    'El acceso a la cámara está desactivado. Permite la cámara para escanear el código.',
+  'heldShares.cameraUnavailable':
+    'No se encontró ninguna cámara. Usa un teléfono con cámara para escanear el código.',
+  'heldShares.stored': 'Ahora guardas una parte para @{username}.',
+  'heldShares.own': 'Esta es una parte de tu propia cuenta. Solo otras personas pueden guardarla.',
+  'heldShares.duplicate':
+    'Este teléfono ya guarda una parte de esta configuración para @{username}. Un teléfono guarda solo una parte de cada configuración.',
+  'heldShares.storageError':
+    'Este navegador no puede guardar partes. Permite los datos del sitio e inténtalo de nuevo.',
+  'heldShares.owner': '@{username}',
+  'heldShares.storedAt': 'Guardada desde el {date}',
+  'heldShares.show': 'Mostrar el código para @{username}',
+  'heldShares.delete': 'Borrar la parte de @{username}',
+  'heldShares.deleteConfirm':
+    '¿Borrar la parte de @{username}? Hazlo solo cuando esa persona te lo pida.',
+  'heldShares.deleteYes': 'Borrar',
+  'heldShares.deleteNo': 'Conservar',
+  'heldShares.qrTitle': 'Parte de @{username}',
+  'heldShares.qrBody':
+    'Muestra este código solo a @{username} en persona, para que pueda restaurar su cuenta.',
+  'heldShares.qrLabel': 'Código de la parte',
+  'shareCode.invalid': 'Este no es un código de Social Recovery.',
 
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Añadir frase de recuperación',
@@ -3610,8 +3745,8 @@ const es = {
   'passkeyRenew.failedBody':
     'La renovación no ha funcionado. Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
   'passkeyRenew.ok': 'OK',
-  'wallet.onlyBackup':
-    'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
+  'wallet.phraseWarning':
+    'Mantén en secreto estas 12 palabras. Quien las tenga puede apoderarse de toda tu cuenta, no solo de la wallet.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
   'wallet.setAmount': 'Fijar un importe',
   'wallet.prfUnsupported':
@@ -4547,7 +4682,7 @@ const fil = {
     'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang wallet details na kailangan para makarating sa 21.gifts wallet mo ang mga bayad sa 21.gifts address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
   'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
   'home.faq4A':
-    'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',
+    'Kapag nawala lang ang login mo at wala sa iyo ang 12 salita at hindi naka-set up ang Social Recovery. I-set up ang Social Recovery sa mga setting.',
   'home.faq5Q': 'Paano ako magpapadala ng regalo?',
   'home.faq5A':
     'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad mula sa 21.gifts wallet mo — diretso sa sumulat ng reaksyon ang Bitcoin.',
@@ -5041,6 +5176,52 @@ const fil = {
     'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
   'introduce.cta': 'Sumulat ng pagpapakilala',
   'introduce.close': 'Isara',
+  'socialRecovery.heading': 'Social Recovery',
+  'socialRecovery.statusOn': 'Naka-set up para sa wallet na ito.',
+  'socialRecovery.statusOff':
+    'Hindi pa naka-set up. Dalawang taong pinagkakatiwalaan mo ang makakatulong na mabawi mo ang account mo.',
+  'socialRecovery.statusNoWallet': 'Magagamit kapag nakakonekta na ang wallet mo.',
+  'socialRecovery.secure': 'I-secure ang account ko',
+  'socialRecovery.heldLink': 'Mga bahaging itinatabi ko para sa iba',
+  'socialRecoveryPrompt.title': 'Social Recovery para sa grant mo',
+  'socialRecoveryPrompt.body':
+    'Kailangan ng Social Recovery para sa mga payout ng grant. Pumili ng dalawang taong makakatulong na maibalik ang account mo kapag nawala ang passkey mo.',
+  'socialRecoveryPrompt.close': 'Isara',
+  'previousWallets.heading': 'Mga dating wallet',
+  'previousWallets.replaced': 'Pinalitan noong {date}',
+  'previousWallets.balanceUnknown': 'Hindi alam ang balanse',
+  'previousWallets.empty': 'Walang laman',
+  'previousWallets.transfer': 'Ilipat ang natitirang balanse',
+  'previousWallets.loadError': 'Hindi ma-load ang mga dating wallet.',
+  'heldShares.title': 'Mga bahaging itinatabi ko para sa iba',
+  'heldShares.intro':
+    'May pumili sa iyo para tumulong na maibalik ang account niya. Itabi rito ang bahagi niya. Ipakita mo lang ito sa kanya, nang personal, kapag hiningi niya.',
+  'heldShares.empty': 'Wala ka pang itinatabing bahagi para sa iba.',
+  'heldShares.keep': 'Magtabi ng bahagi',
+  'heldShares.scanHint': 'Itutok ang camera sa code sa kabilang telepono',
+  'heldShares.cameraDenied':
+    'Naka-off ang access sa camera. Payagan ang camera para ma-scan ang code.',
+  'heldShares.cameraUnavailable':
+    'Walang nakitang camera. Gumamit ng teleponong may camera para ma-scan ang code.',
+  'heldShares.stored': 'May itinatabi ka nang bahagi para kay @{username}.',
+  'heldShares.own': 'Bahagi ito ng sarili mong account. Ibang tao lang ang puwedeng magtabi nito.',
+  'heldShares.duplicate':
+    'May itinatabi na ang teleponong ito na bahagi ng setup na ito para kay @{username}. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang telepono.',
+  'heldShares.storageError':
+    'Hindi makapagtabi ng mga bahagi ang browser na ito. Payagan ang site data at subukan ulit.',
+  'heldShares.owner': '@{username}',
+  'heldShares.storedAt': 'Itinatabi mula {date}',
+  'heldShares.show': 'Ipakita ang code para kay @{username}',
+  'heldShares.delete': 'Burahin ang bahagi ni @{username}',
+  'heldShares.deleteConfirm':
+    'Burahin ang bahagi ni @{username}? Gawin lang ito kapag hiniling niya.',
+  'heldShares.deleteYes': 'Burahin',
+  'heldShares.deleteNo': 'Panatilihin',
+  'heldShares.qrTitle': 'Bahagi ni @{username}',
+  'heldShares.qrBody':
+    'Ipakita lang ang code na ito kay @{username} nang personal, para maibalik niya ang account niya.',
+  'heldShares.qrLabel': 'Code ng bahagi',
+  'shareCode.invalid': 'Hindi ito Social Recovery code.',
 
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Magdagdag ng recovery phrase',
@@ -5059,8 +5240,8 @@ const fil = {
   'passkeyRenew.failedBody':
     'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
   'passkeyRenew.ok': 'OK',
-  'wallet.onlyBackup':
-    'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
+  'wallet.phraseWarning':
+    'Itago nang lihim ang 12 salitang ito. Sinumang may hawak nito ay puwedeng kunin ang buong account mo, hindi lang ang wallet.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
   'wallet.setAmount': 'Magtakda ng halaga',
   'wallet.prfUnsupported':

@@ -3909,6 +3909,11 @@
     "es": "Miembro con nombre, con las reglas del salón aceptadas y hasPosted false. Tras iniciar sesión en /welcome (la única pantalla que lo muestra), el diálogo IntroduceYourselfOverlay Preséntate con el texto del cuerpo y Escribe una presentación. Cerrar (X) es solo icono.\n\n- Acciones: Cerrar cierra solo esta montura. Escribe una presentación (Button type=\"button\" size=\"lg\") cierra la superposición, abre el área de redacción y enfoca su campo de texto (requestForumCompose / FORUM_COMPOSE_EVENT). Se queda en /welcome; el diálogo nunca se abre en /wallet, la caja, el perfil, los mensajes ni el flujo de configuración.",
     "fil": "Pinangalanang miyembro na sang-ayon sa mga panuntunan ng sala at hasPosted false. Pagkatapos mag-log in sa /welcome (ang tanging screen na nagpapakita nito), ang diyalogo IntroduceYourselfOverlay Ipakilala ang sarili mo na may kopya ng katawan at Sumulat ng pagpapakilala. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Isinasara ng Isara ang pagkakabit na ito lang. Isinasara ng Sumulat ng pagpapakilala (Button type=\"button\" size=\"lg\") ang overlay, binubuksan ang lugar ng pagsulat at itinatakda ang pokus sa text field nito (requestForumCompose / FORUM_COMPOSE_EVENT). Nananatili ito sa /welcome; hindi kailanman nagbubukas ang diyalogo sa /wallet, sa point of sale, sa profile, sa mga mensahe, o sa daloy ng setup."
   },
+  "/welcome:overlay-social-recovery": {
+    "de": "Zugelassenes Mitglied des Förderprogramms, das schon gepostet hat und noch keine Social Recovery hat (socialRecoverySetUp false). Auf /welcome, dem einzigen Bildschirm, der ihn zeigt, der Dialog SocialRecoveryPromptOverlay Social Recovery für dein Förderprogramm mit seinem Text und Mein Konto absichern. Schließen (X) ist nur als Symbol sichtbar.\n\n- Aktionen: Schließen blendet ihn für diesen Besuch aus; beim nächsten Besuch erscheint er wieder, solange Social Recovery fehlt. Mein Konto absichern (Button type=\"button\" size=\"lg\") schließt ihn und öffnet /settings/social-recovery ohne Neuladen der Seite. Gilt auch Stell dich vor, kommt jener Dialog zuerst, und dieser erscheint, sobald er geschlossen ist.",
+    "es": "Miembro admitido de la beca que ya publicó y aún no tiene Social Recovery (socialRecoverySetUp false). En /welcome, la única pantalla que lo muestra, el diálogo SocialRecoveryPromptOverlay Social Recovery para tu beca con su texto y Proteger mi cuenta. Cerrar (X) es solo icono.\n\n- Acciones: Cerrar lo oculta durante esta visita; vuelve a aparecer en la siguiente mientras falte Social Recovery. Proteger mi cuenta (Button type=\"button\" size=\"lg\") lo cierra y abre /settings/social-recovery sin recargar la página. Si también aplica Preséntate, ese diálogo va primero y este aparece en cuanto se cierra.",
+    "fil": "Tinanggap na miyembro ng grant na nakapag-post na at wala pang Social Recovery (socialRecoverySetUp false). Sa /welcome, ang tanging screen na nagpapakita nito, ang diyalogo SocialRecoveryPromptOverlay Social Recovery para sa grant mo na may kopya nito at I-secure ang account ko. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Itinatago ito ng Isara para sa pagbisitang ito; lilitaw ulit ito sa susunod na pagbisita habang wala pang Social Recovery. Isinasara ito ng I-secure ang account ko (Button type=\"button\" size=\"lg\") at binubuksan ang /settings/social-recovery nang hindi nire-reload ang page. Kapag umaangkop din ang Ipakilala ang sarili mo, iyon ang mauuna, at lalabas ito kapag naisara na iyon."
+  },
   "/welcome:menu-unread": {
     "de": "Offenes Menü mit unreadCount 3, vorgegeben über GET /forum/notifications → Benachrichtigungen zeigt rechts 3 (nav.notificationsUnread, zugänglicher Name Benachrichtigungen, 3 ungelesen). Posteingang zeigt rechts nur dann eine Zahl, wenn ungelesene Posteingänge > 0 sind; Adas Standard-Posteingang ungelesen ist 0, daher keine Zahl. Die übrigen Menüzeilen entsprechen menu-open. Die installierte PWA-Startbildschirm-Markierung ist die Summe aus ungelesenen Benachrichtigungen, ungelesenem Posteingang und ungelesenem Moderationsraum (0 oder 1). Das Menü trennt die Zählungen weiterhin (Benachrichtigungen gegen Posteingang gegen Moderation).",
     "es": "Menú abierto con unreadCount 3 simulado en GET /forum/notifications → Notificaciones muestra 3 a la derecha (nav.notificationsUnread, nombre accesible Notificaciones, 3 no leídas). Bandeja muestra un recuento a la derecha solo cuando el buzón no leído > 0; el buzón no leído predeterminado de Ada es 0, así que no hay número. Las demás filas del menú coinciden con menu-open. La insignia de pantalla de inicio de la PWA instalada es la suma de no leídas de notificaciones, no leídas del buzón y no leídas de la sala de personal (0 o 1). El menú sigue separando los recuentos (Notificaciones frente a Bandeja frente a Moderación).",
@@ -4700,9 +4705,9 @@
     "fil": "Pareho sa phone o browser na hindi kayang maglaman ng wallet (pin ?visual=balance-locked-prf-unsupported): nananatili ang karaniwang login card sa halip na ang bayad, na may alerto para sa walang PRF sa itaas ng Mag-log in."
   },
   "/settings:default": {
-    "de": "Konto mit einem Wiederherstellungs-Passkey und einem Benutzernamen. Wallet zeigt Wiederherstellungssatz, die Adresse ada@21.gifts mit ihrem Kopier-Symbol und Standardbetrag mit gedrücktem ₿; danach Anzeige, Benachrichtigungen, Konto sowie Über 21.gifts & Rechtliches wie oben beschrieben.",
-    "es": "Cuenta con una passkey de recuperación y un nombre de usuario. Wallet muestra Frase de recuperación, la dirección ada@21.gifts con su icono de copiar e Importe predeterminado con ₿ pulsado; luego Pantalla, Notificaciones, Cuenta y Acerca de y aviso legal, como se describe arriba.",
-    "fil": "Account na may recovery passkey at username. Ipinapakita ng Wallet ang Recovery phrase, ang address na ada@21.gifts kasama ang icon nitong pangkopya, at ang Default na halaga na nakapindot ang ₿; pagkatapos ang Display, Mga abiso, Account, at Tungkol at legal gaya ng inilarawan sa itaas."
+    "de": "Konto mit einem Wiederherstellungs-Passkey und einem Benutzernamen, ohne verifizierte Wallet in diesem Build. Wallet zeigt Wiederherstellungssatz, dann Social Recovery mit Verfügbar, sobald deine Wallet verbunden ist. und Anteile, die ich für andere aufbewahre, die Adresse ada@21.gifts mit ihrem Kopier-Symbol und Standardbetrag mit gedrücktem ₿; danach Anzeige, Benachrichtigungen, Konto sowie Über 21.gifts & Rechtliches wie oben beschrieben.",
+    "es": "Cuenta con una passkey de recuperación y un nombre de usuario, sin wallet verificada en este build. Wallet muestra Frase de recuperación, luego Social Recovery con Disponible en cuanto tu wallet esté conectada. y Partes que guardo para otros, la dirección ada@21.gifts con su icono de copiar e Importe predeterminado con ₿ pulsado; luego Pantalla, Notificaciones, Cuenta y Acerca de y aviso legal, como se describe arriba.",
+    "fil": "Account na may recovery passkey at username, at walang verified na wallet sa build na ito. Ipinapakita ng Wallet ang Recovery phrase, tapos ang Social Recovery na may Magagamit kapag nakakonekta na ang wallet mo. at Mga bahaging itinatabi ko para sa iba, ang address na ada@21.gifts kasama ang icon nitong pangkopya, at ang Default na halaga na nakapindot ang ₿; pagkatapos ang Display, Mga abiso, Account, at Tungkol at legal gaya ng inilarawan sa itaas."
   },
   "/settings:activate": {
     "de": "Bestehendes Mitglied ohne Wiederherstellungssatz. Der Abschnitt Wallet zeigt den Hinweis zum Hinzufügen und Wiederherstellungssatz hinzufügen; der Rest der Seite ist wie beim Standard.",
@@ -5728,6 +5733,81 @@
     "de": "Abschnitt Auf diesem Gerät mit role=\"alert\" nach dem Klick auf An bei Mitteilungen, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
     "es": "Apartado En este dispositivo con role=\"alert\" tras pulsar Activado en Avisos cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
     "fil": "Seksiyon ng Sa device na ito na may role=\"alert\" pagkatapos i-click ang Naka-on sa Mga abiso kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
+  },
+  "/settings:social-recovery-off": {
+    "de": "Konto mit verifizierter Wallet, noch ohne Social Recovery und ohne frühere Wallets. Unter Wiederherstellungssatz sagt Social Recovery Noch nicht eingerichtet. Zwei Menschen, denen du vertraust, können dir helfen, dein Konto zurückzubekommen. über dem primären Mein Konto absichern und dem sekundären Anteile, die ich für andere aufbewahre.",
+    "es": "Cuenta con una wallet verificada, aún sin Social Recovery y sin wallets anteriores. Bajo Frase de recuperación, Social Recovery dice Aún no está configurada. Dos personas de tu confianza pueden ayudarte a recuperar tu cuenta. sobre el botón principal Proteger mi cuenta y el secundario Partes que guardo para otros.",
+    "fil": "Account na may verified na wallet, wala pang Social Recovery, at walang dating wallet. Sa ilalim ng Recovery phrase, sinasabi ng Social Recovery ang Hindi pa naka-set up. Dalawang taong pinagkakatiwalaan mo ang makakatulong na mabawi mo ang account mo. sa itaas ng pangunahing I-secure ang account ko at ng pangalawang Mga bahaging itinatabi ko para sa iba."
+  },
+  "/settings:social-recovery-on": {
+    "de": "Konto, für dessen verifizierte Wallet Social Recovery eingerichtet ist. Social Recovery sagt Für diese Wallet eingerichtet.; Mein Konto absichern ist sekundär wie Anteile, die ich für andere aufbewahre, und richtet es mit neuen Codes erneut ein.",
+    "es": "Cuenta cuya wallet verificada tiene Social Recovery configurada. Social Recovery dice Configurada para esta wallet.; Proteger mi cuenta es secundario como Partes que guardo para otros, y la vuelve a configurar con códigos nuevos.",
+    "fil": "Account na naka-set up ang Social Recovery para sa verified na wallet nito. Sinasabi ng Social Recovery ang Naka-set up para sa wallet na ito.; pangalawa ang I-secure ang account ko gaya ng Mga bahaging itinatabi ko para sa iba, at muli nitong sine-set up ito gamit ang mga bagong code."
+  },
+  "/settings:previous-wallets": {
+    "de": "Als /settings#previous-wallets nach einer Social Recovery geöffnet, sodass die Liste nach dem Laden ins Bild scrollt. Drei frühere Wallets: Ersetzt am 01.01.2026 mit ₿21'000 · $21.00, eine am 01.12.2025 ersetzte, die Leer ist, und eine vom 01.11.2025 mit Guthaben unbekannt. Jede Karte hat Restguthaben übertragen; keine bietet Entfernen an, weil das öffentliche Guthaben hinter der Wallet zurückliegen kann.",
+    "es": "Abierta como /settings#previous-wallets tras una Social Recovery, así que la lista se desplaza a la vista en cuanto se carga. Tres wallets anteriores: Sustituida el 1 ene 2026 con ₿21'000 · $21.00, una sustituida el 1 dic 2025 que está Vacía y una del 1 nov 2025 con Saldo desconocido. Cada tarjeta tiene Transferir el saldo restante; ninguna ofrece quitarla, porque el saldo público puede ir por detrás de la wallet.",
+    "fil": "Binuksan bilang /settings#previous-wallets pagkatapos ng Social Recovery, kaya nag-i-scroll ang listahan papunta sa view kapag na-load na. Tatlong dating wallet: Pinalitan noong Ene 1, 2026 na may ₿21'000 · $21.00, isang pinalitan noong Dis 1, 2025 na Walang laman, at isa mula Nob 1, 2025 na Hindi alam ang balanse. May Ilipat ang natitirang balanse ang bawat card; walang nag-aalok na alisin ito, dahil puwedeng mahuli ang pampublikong balanse kumpara sa wallet."
+  },
+  "/settings:previous-wallets-error": {
+    "de": "Als /settings#previous-wallets geöffnet, während GET /me/previous-wallets fehlschlägt: unter Frühere Wallets der Hinweis Frühere Wallets konnten nicht geladen werden. und Erneut versuchen.",
+    "es": "Abierta como /settings#previous-wallets mientras GET /me/previous-wallets falla: bajo Wallets anteriores, el aviso No se pudieron cargar las wallets anteriores. e Intentar de nuevo.",
+    "fil": "Binuksan bilang /settings#previous-wallets habang pumapalya ang GET /me/previous-wallets: sa ilalim ng Mga dating wallet, ang alerto Hindi ma-load ang mga dating wallet. at Subukan ulit."
+  },
+  "/settings/held-shares:default": {
+    "de": "Ein Mitglied, das keine Anteile aufbewahrt: Titel, Einleitung, Anteil aufbewahren und Du bewahrst noch keine Anteile für andere auf.",
+    "es": "Un miembro que no guarda partes: el título, la introducción, Guardar una parte y Todavía no guardas partes para otros.",
+    "fil": "Miyembrong walang itinatabing bahagi: ang pamagat, ang intro, ang Magtabi ng bahagi, at Wala ka pang itinatabing bahagi para sa iba."
+  },
+  "/settings/held-shares:list": {
+    "de": "Zwei aufbewahrte Anteile, der neueste zuerst: @cara (Aufbewahrt seit 02.01.2026) und @bob (Aufbewahrt seit 01.01.2026), jeweils mit den Symbol-Schaltflächen für QR und Papierkorb.",
+    "es": "Dos partes guardadas, la más reciente primero: @cara (Guardada desde el 2 ene 2026) y @bob (Guardada desde el 1 ene 2026), cada una con sus controles de icono de QR y papelera.",
+    "fil": "Dalawang itinatabing bahagi, pinakabago muna: @cara (Itinatabi mula Ene 2, 2026) at @bob (Itinatabi mula Ene 1, 2026), bawat isa may icon-only na kontrol ng QR at basurahan."
+  },
+  "/settings/held-shares:scan": {
+    "de": "Nach Anteil aufbewahren: Die Kamera füllt die Seite mit dem Sucher und Richte die Kamera auf den Code auf dem anderen Telefon über dem Bild (eine leere Testkamera).",
+    "es": "Tras Guardar una parte: la cámara llena la página con el visor y Apunta la cámara al código del otro teléfono sobre la imagen (una cámara de prueba en blanco).",
+    "fil": "Pagkatapos ng Magtabi ng bahagi: pinupuno ng camera ang page ng viewfinder at ng Itutok ang camera sa code sa kabilang telepono sa ibabaw ng larawan (isang blangkong test camera)."
+  },
+  "/settings/held-shares:stored": {
+    "de": "Die Kamera hat Bobs Code gelesen: zurück in der Liste, Du bewahrst jetzt einen Anteil für @bob auf. und Bobs Karte, aufbewahrt seit dem 07.01.2026.",
+    "es": "La cámara leyó el código de Bob: de vuelta en la lista, Ahora guardas una parte para @bob. y la tarjeta de Bob, guardada desde el 7 ene 2026.",
+    "fil": "Nabasa ng camera ang code ni Bob: balik sa listahan, May itinatabi ka nang bahagi para kay @bob. at ang card ni Bob, itinatabi mula Ene 7, 2026."
+  },
+  "/settings/held-shares:refused-own": {
+    "de": "Die Kamera hat einen Anteil des eigenen Kontos gelesen: der Hinweis Das ist ein Anteil deines eigenen Kontos. Nur andere Personen können ihn aufbewahren.; nichts wird aufbewahrt.",
+    "es": "La cámara leyó una parte de la propia cuenta: el aviso Esta es una parte de tu propia cuenta. Solo otras personas pueden guardarla.; no se guarda nada.",
+    "fil": "Nabasa ng camera ang bahagi ng sariling account: ang alerto Bahagi ito ng sarili mong account. Ibang tao lang ang puwedeng magtabi nito.; walang itinatabi."
+  },
+  "/settings/held-shares:refused-duplicate": {
+    "de": "Die Kamera hat Bobs Code gelesen, während dieses Telefon ihn schon aufbewahrt: der Hinweis Dieses Telefon bewahrt schon einen Anteil dieser Einrichtung für @bob auf. Ein Telefon bewahrt nur einen Anteil einer Einrichtung auf.; Bobs eine Karte bleibt.",
+    "es": "La cámara leyó el código de Bob mientras este teléfono ya lo guarda: el aviso Este teléfono ya guarda una parte de esta configuración para @bob. Un teléfono guarda solo una parte de cada configuración.; la única tarjeta de Bob se queda.",
+    "fil": "Nabasa ng camera ang code ni Bob habang itinatabi na ito ng teleponong ito: ang alerto May itinatabi na ang teleponong ito na bahagi ng setup na ito para kay @bob. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang telepono.; nananatili ang iisang card ni Bob."
+  },
+  "/settings/held-shares:refused-storage": {
+    "de": "Der Browser verweigert das Speichern des gescannten Anteils: der Hinweis Dieser Browser kann keine Anteile aufbewahren. Erlaube Websitedaten und versuche es erneut.",
+    "es": "El navegador se niega a guardar la parte escaneada: el aviso Este navegador no puede guardar partes. Permite los datos del sitio e inténtalo de nuevo.",
+    "fil": "Tumatanggi ang browser na i-store ang na-scan na bahagi: ang alerto Hindi makapagtabi ng mga bahagi ang browser na ito. Payagan ang site data at subukan ulit."
+  },
+  "/settings/held-shares:invalid": {
+    "de": "Die Kamera hat einen Code gelesen, der kein Anteil ist: der Hinweis Das ist kein Social-Recovery-Code.",
+    "es": "La cámara leyó un código que no es una parte: el aviso Este no es un código de Social Recovery.",
+    "fil": "Nabasa ng camera ang code na hindi bahagi: ang alerto Hindi ito Social Recovery code."
+  },
+  "/settings/held-shares:qr": {
+    "de": "Nach Code für @bob zeigen: Anteil von @bob, Zeige diesen Code nur @bob persönlich, damit die Person ihr Konto wiederherstellen kann. und der QR-Code des Anteils.",
+    "es": "Tras Mostrar el código para @bob: Parte de @bob, Muestra este código solo a @bob en persona, para que pueda restaurar su cuenta. y el código QR de la parte.",
+    "fil": "Pagkatapos ng Ipakita ang code para kay @bob: Bahagi ni @bob, Ipakita lang ang code na ito kay @bob nang personal, para maibalik niya ang account niya., at ang QR ng bahagi."
+  },
+  "/settings/held-shares:delete-confirm": {
+    "de": "Nach Anteil von @bob löschen: die Rückfrage Anteil von @bob löschen? Tu das nur, wenn die Person darum bittet. mit Haken und X als Symbol unter Bobs Namen; sein Papierkorb-Symbol ist ausgeblendet, solange sie offen ist.",
+    "es": "Tras Borrar la parte de @bob: la confirmación ¿Borrar la parte de @bob? Hazlo solo cuando esa persona te lo pida. con una marca y una X solo de icono bajo el nombre de Bob; su icono de papelera se oculta mientras está abierta.",
+    "fil": "Pagkatapos ng Burahin ang bahagi ni @bob: ang kumpirmasyon Burahin ang bahagi ni @bob? Gawin lang ito kapag hiniling niya. na may icon-only na check at X sa ilalim ng pangalan ni Bob; nakatago ang icon ng basurahan niya habang bukas ito."
+  },
+  "/settings/held-shares:camera-denied": {
+    "de": "Nach Anteil aufbewahren bei blockierter Kamera: Der Kamerazugriff ist aus. Erlaube die Kamera, um den Code zu scannen. auf der schwarzen Kamerafläche.",
+    "es": "Tras Guardar una parte con la cámara bloqueada: El acceso a la cámara está desactivado. Permite la cámara para escanear el código. sobre la zona negra de la cámara.",
+    "fil": "Pagkatapos ng Magtabi ng bahagi habang naka-block ang camera: Naka-off ang access sa camera. Payagan ang camera para ma-scan ang code. sa itim na bahagi ng camera."
   },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",

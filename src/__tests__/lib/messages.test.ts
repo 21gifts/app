@@ -122,6 +122,27 @@ describe('getCatalog', () => {
     expect(getCatalog('en')['about.conv2Body']).toContain('address would stop working');
   });
 
+  it('answers in the home FAQ that a lost passkey can be recovered with the words or Social Recovery', () => {
+    expect(getCatalog('en')['home.faq4A']).not.toMatch(/cannot be recovered/);
+    expect(getCatalog('de')['home.faq4A']).not.toMatch(/nicht wiederherstellen/);
+    expect(getCatalog('es')['home.faq4A']).not.toMatch(/no se puede recuperar/);
+    expect(getCatalog('fil')['home.faq4A']).not.toMatch(/hindi pa mababawi/);
+    for (const locale of LOCALES) {
+      const answer = getCatalog(locale)['home.faq4A'];
+      expect(answer, `${locale}.home.faq4A`).toContain('Social Recovery');
+      expect(answer, `${locale}.home.faq4A`).toContain('12');
+    }
+  });
+
+  it('warns under the 12 words that they take over the whole account', () => {
+    for (const locale of LOCALES) {
+      const catalog = getCatalog(locale) as Record<string, string>;
+      expect(catalog['wallet.onlyBackup'], `${locale}.wallet.onlyBackup`).toBeUndefined();
+      expect(catalog['wallet.phraseWarning'], `${locale}.wallet.phraseWarning`).toContain('12');
+    }
+    expect(getCatalog('en')['wallet.phraseWarning']).toContain('whole account');
+  });
+
   it('prefixes home.step2BodyAfter with a period in every locale', () => {
     for (const locale of LOCALES) {
       expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
