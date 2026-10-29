@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '@/app/l/[code]/route';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 
 const redirect = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`);
@@ -59,7 +60,7 @@ describe('/l/[code]', () => {
     expect(init.cache).toBe('no-store');
     expect(init.headers).toEqual({ Accept: 'application/json' });
     expect(init.signal).toBeInstanceOf(AbortSignal);
-    expect(timeoutSpy).toHaveBeenCalledWith(2500);
+    expect(timeoutSpy).toHaveBeenCalledWith(API_FETCH_TIMEOUT_MS);
     expect(notFound).not.toHaveBeenCalled();
   });
 

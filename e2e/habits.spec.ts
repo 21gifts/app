@@ -177,12 +177,12 @@ async function openHabitPay(
 test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
   await openHabitPay(page, null);
   await page.getByLabel('Amount').fill('0');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(
     page.getByRole('alert').filter({
       hasText: 'Expected a JSON body with an integer "amountSats"',
     }),
   ).toHaveText('Expected a JSON body with an integer "amountSats"');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
 });
 
 test('screen /habit-tracker donate-request', async ({ page }) => {
@@ -408,10 +408,16 @@ test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   await page.unroute('**/fx/spot');
   await page.route('**/fx/spot', () => new Promise(() => undefined));
   await stubHabits(page, PUBLIC_LIST);
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
+  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
-  await expect(cont).toBeDisabled();
+  await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeEnabled();
+  await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
+  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
   await cont.scrollIntoViewIfNeeded();
   await expect(cont).toBeInViewport();
 });
@@ -535,10 +541,10 @@ test('screen /habit-tracker edit-save-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The habit name is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -605,10 +611,10 @@ test('screen /habit-tracker add-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Add habit' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The habit name is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.locator('#habit-add-name')).toHaveValue('Stretch');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -621,7 +627,7 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Invalid name' }),
+        body: JSON.stringify({ error: 'Invalid comment' }),
       });
       return;
     }
@@ -649,10 +655,10 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The comment is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The comment is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(draft).toHaveValue('still here');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -1055,10 +1061,34 @@ test('Function: postMemberHabit — the owner logs the open period through the p
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: useSpotRateState — Continue stays disabled until the spot rate read settles', async ({
+test('Function: useSpotRateState — a fiat Gift stays quiet until the spot rate read settles', async ({
   page,
 }) => {
   await seedAda(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
   let release!: () => void;
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -1072,12 +1102,23 @@ test('Function: useSpotRateState — Continue stays disabled until the spot rate
     });
   });
   await stubHabits(page, PUBLIC_LIST);
+  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
+  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeEnabled();
+  await page.getByLabel('Amount').fill('1.00');
+  await expect(cont).toBeEnabled();
+  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await cont.click();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
   await expect(cont).toBeDisabled();
   release();
-  await expect(cont).toBeEnabled();
+  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
+  await expect(cont).toBeDisabled();
 });
 
 test('Function: HabitTrackerTopRight — Log in without a session and the menu with one', async ({

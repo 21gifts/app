@@ -9,6 +9,7 @@ vi.mock('next/font/google', () => ({
 
 import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
+import { LocaleRouteSync } from '@/components/LocaleRouteSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
 import { InteractionLog } from '@/components/InteractionLog';
@@ -23,6 +24,7 @@ import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { WalletSync } from '@/components/WalletSync';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
 
@@ -52,15 +54,17 @@ beforeEach(() => {
 
 describe('metadata', () => {
   it('exposes the product title', () => {
-    expect(metadata.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
-    expect(metadata.openGraph?.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
-    expect(metadata.twitter?.title).toBe('21.gifts — peer-to-peer Bitcoin gifts');
+    expect(metadata.title).toBe('Help people with Bitcoin | 21.gifts');
+    expect(metadata.openGraph?.title).toBe('Help people with Bitcoin | 21.gifts');
+    expect(metadata.twitter?.title).toBe('Help people with Bitcoin | 21.gifts');
   });
 
   it('describes the product without charity-speak', () => {
-    expect(metadata.description).toBe(
-      'Direct human-to-human giving in Bitcoin. People helping people — no middleman.',
-    );
+    const description =
+      "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.";
+    expect(metadata.description).toBe(description);
+    expect(metadata.openGraph?.description).toBe(description);
+    expect(metadata.twitter?.description).toBe(description);
   });
 
   it('pins metadataBase to the production origin', () => {
@@ -101,7 +105,7 @@ describe('metadata', () => {
     expect(openGraph.images[0]?.url).toBe('/og.png');
     expect(openGraph.images[0]?.width).toBe(1200);
     expect(openGraph.images[0]?.height).toBe(630);
-    expect(openGraph.images[0]?.alt).toBe('21.gifts — peer-to-peer Bitcoin gifts');
+    expect(openGraph.images[0]?.alt).toBe(OG_IMAGE_ALT);
   });
 
   it('exposes Twitter summary_large_image preview metadata', () => {
@@ -112,6 +116,7 @@ describe('metadata', () => {
 
     expect(twitter.card).toBe('summary_large_image');
     expect(twitter.images[0]?.url).toBe('/og.png');
+    expect(twitter.images[0]?.alt).toBe(OG_IMAGE_ALT);
   });
 });
 
@@ -124,6 +129,9 @@ describe('SITE_JSON_LD', () => {
     expect(organization.alternateName).toContain('21gifts');
     expect(organization.alternateName).not.toContain('21 gifts');
     expect(website.url).toBe('https://21.gifts/');
+    expect(website.description).toBe(
+      "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.",
+    );
   });
 });
 
@@ -280,24 +288,25 @@ describe('RootLayout', () => {
     const themeChildren = themeProvider.props.children as ReactNode[];
     expect(Array.isArray(themeChildren)).toBe(true);
     expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
-    expect((themeChildren[1] as ReactElement).type).toBe(PushOpenListener);
-    expect((themeChildren[2] as ReactElement).type).toBe(WalletSync);
-    expect((themeChildren[3] as ReactElement).type).toBe(InteractionLog);
-    const suspense = themeChildren[4] as ReactElement<{
+    expect((themeChildren[1] as ReactElement).type).toBe(LocaleRouteSync);
+    expect((themeChildren[2] as ReactElement).type).toBe(PushOpenListener);
+    expect((themeChildren[3] as ReactElement).type).toBe(WalletSync);
+    expect((themeChildren[4] as ReactElement).type).toBe(InteractionLog);
+    const suspense = themeChildren[5] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const moveSuspense = themeChildren[5] as ReactElement<{
+    const moveSuspense = themeChildren[6] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(moveSuspense.type).toBe(Suspense);
     expect(moveSuspense.props.fallback).toBe(null);
     expect(moveSuspense.props.children.type).toBe(MoveFundsLink);
-    const viewHistory = themeChildren[6] as ReactElement<{ children: ReactNode }>;
+    const viewHistory = themeChildren[7] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

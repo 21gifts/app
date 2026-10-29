@@ -23,15 +23,19 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { useHeartTip } from '@/lib/heart-tip';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useSpotRate } from '@/hooks/useSpotRate';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import {
   attachTypedFigure,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
+  shownPaySheetError,
   typedFiatFigure,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -225,7 +229,8 @@ export function PublicMessageThread(props: {
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
-  const rateDay = useSpotRate();
+  const { rateDay, loading: rateLoading } = useSpotRateState();
+  const rateSettled = !rateLoading;
   /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
   const replyRateRef = useRef(rateDay);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -690,13 +695,8 @@ export function PublicMessageThread(props: {
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-            ? 'tooLong'
-            : isRateLimitError(err)
-              ? 'rateLimit'
-              : 'request',
-        );
+        // This invoice was sent only after the draft fit the stored limit.
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       if (!awaitingPay) {
@@ -788,14 +788,9 @@ export function PublicMessageThread(props: {
         setReplyFormError('deleted');
         return;
       }
+      // This invoice was sent only after the draft fit the stored limit.
       setReplyFormError(
-        err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-          ? 'tooLong'
-          : isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
+        isRateLimitError(err) ? 'rateLimit' : isAuthorWalletError(err) ? 'authorWallet' : 'request',
       );
     } finally {
       setReplyPosting(false);
@@ -837,6 +832,19 @@ export function PublicMessageThread(props: {
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     /* v8 ignore next 3 -- Continue unmounts without a session; busy clicks are ignored */
     if (session === null || payMessageId === null || payBusy) {
+      return;
+    }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
@@ -1014,11 +1022,10 @@ export function PublicMessageThread(props: {
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
-    const trimmed = replyDraft.trim();
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
-      setReplyFormError('tooLong');
+    if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
+    const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     replyRateRef.current = rateDay;
     const token = session;
@@ -1027,6 +1034,32 @@ export function PublicMessageThread(props: {
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
     const blocked = authorCannotReceive(note, account?.id);
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSettled,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
+      return;
+    }
+    if (replyProblem === 'no-rate') {
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -1127,6 +1160,31 @@ export function PublicMessageThread(props: {
     }));
   };
 
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
+  const replyExempt = isReplyPaymentExempt(account, note.accountId);
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
+
   return (
     <>
       {overlayRequirement !== null ? (
@@ -1182,7 +1240,7 @@ export function PublicMessageThread(props: {
         payHost={payHost}
         payDraft={payDraft}
         payBusy={payBusy}
-        payError={payError}
+        payError={shownPayError}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
         onPayOpen={handlePayOpen}
@@ -1192,7 +1250,7 @@ export function PublicMessageThread(props: {
         heartTipViews={heartTipViews}
         onPayDraftChange={(value: string): void => {
           setPayDraft(value);
-          setPayError(null);
+          setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
         }}
         onPayUnitChange={setPayShownUnit}
         onReplyUnitChange={setReplyShownUnit}
@@ -1206,15 +1264,25 @@ export function PublicMessageThread(props: {
         replyDraft={replyDraft}
         onReplyDraftChange={(value: string): void => {
           setReplyDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyAmountDraft={replyAmountDraft}
         onReplyAmountDraftChange={(value: string): void => {
           setReplyAmountDraft(value);
-          setReplyFormError(null);
+          setReplyFormError((current) => (current === 'loading' ? current : null));
         }}
         replyPosting={replyPosting}
-        replyFormError={replyFormError}
+        replyFormError={shownReplyFormError}
+        replyTextTooLong={replyTextIsTooLong(
+          replyDraft,
+          expandedId,
+          replyExempt,
+          replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+            !replyExempt &&
+            note.accountId !== undefined,
+        )}
+        replyAmountNoRate={shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate'}
+        replyAmountInvalid={shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid'}
         onReplyPost={handleReplyPost}
         onRetryReplies={handleRetryReplies}
         onDeleted={handleDeleted}

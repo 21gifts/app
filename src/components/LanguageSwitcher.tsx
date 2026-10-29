@@ -11,8 +11,10 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setAccountLocale } from '@/lib/api';
-import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { LOCALES, type Locale } from '@/lib/locale';
+import { writeLocaleCookie } from '@/lib/locale-cookie';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
+import { localizedPublicPath, publicPathFromUrl } from '@/lib/public-locale-path';
 import { loadSession } from '@/lib/session-storage';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { isWalletOpen } from '@/lib/wallet/wallet-open';
@@ -68,49 +70,65 @@ function localeAt(index: number): Locale {
 }
 
 /**
- * Writes the locale cookie and refreshes when `next` differs from `current`.
+ * Writes the locale cookie, then loads a public language URL or refreshes app pages.
  * Also saves it on the account for a stored session, unless that session is
  * held back until its wallet is open or a login is still opening its wallet.
  *
  * @param next - Locale the visitor chose.
  * @param current - Locale currently active in the tree.
  * @param refresh - App Router refresh callback.
+ * @param navigate - App Router navigation callback for public pages.
  */
-async function persistLocale(next: Locale, current: Locale, refresh: () => void): Promise<void> {
-  if (next === current) {
+async function persistLocale(
+  next: Locale,
+  current: Locale,
+  refresh: () => void,
+  navigate: (path: string) => void,
+): Promise<void> {
+  let publicPath = publicPathFromUrl(globalThis.location.pathname);
+  let target = publicPath === null ? null : localizedPublicPath(next, publicPath);
+  if (next === current && (target === null || target === globalThis.location.pathname)) {
     return;
   }
-  // A session held back until its wallet is open, or a login whose wallet is
-  // still opening, counts as signed out: only the cookie changes.
-  const { lockedSession, account } = useAuthStore.getState();
-  const opening = account !== null && !isWalletOpen(account, peekSessionPhrase() !== null);
-  const session = lockedSession === null && !opening ? loadSession() : null;
-  if (session !== null) {
-    const generation = bumpLocaleGeneration();
-    try {
-      const updated = await setAccountLocale(session, next, false);
-      if (localeGeneration() !== generation) {
+  if (next !== current) {
+    // A session held back until its wallet is open, or a login whose wallet is
+    // still opening, counts as signed out: only the cookie changes.
+    const { lockedSession, account } = useAuthStore.getState();
+    const opening = account !== null && !isWalletOpen(account, peekSessionPhrase() !== null);
+    const session = lockedSession === null && !opening ? loadSession() : null;
+    if (session !== null) {
+      const generation = bumpLocaleGeneration();
+      try {
+        const updated = await setAccountLocale(session, next, false);
+        if (localeGeneration() !== generation) {
+          return;
+        }
+        const account = useAuthStore.getState().account;
+        if (account !== null && account.id !== updated.id) {
+          return;
+        }
+        if (account !== null) {
+          useAuthStore.getState().setAccount({ ...account, locale: updated.locale });
+        }
+      } catch {
         return;
       }
-      const current = useAuthStore.getState().account;
-      if (current !== null && current.id !== updated.id) {
-        return;
-      }
-      if (current !== null) {
-        useAuthStore.getState().setAccount({ ...current, locale: updated.locale });
-      }
-    } catch {
-      return;
+      publicPath = publicPathFromUrl(globalThis.location.pathname);
+      target = publicPath === null ? null : localizedPublicPath(next, publicPath);
     }
   }
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
-  refresh();
+  writeLocaleCookie(next);
+  if (target !== null) {
+    document.documentElement.lang = next;
+    navigate(`${target}${publicPath === '/' ? globalThis.location.hash : ''}`);
+  } else {
+    refresh();
+  }
 }
 
 /**
  * Custom listbox that persists the visitor's language choice in a cookie and
- * refreshes the App Router tree so server components re-negotiate locale.
+ * navigates to the matching public URL, or refreshes other unsigned app screens.
  *
  * Public / unsigned chrome only: Globe pill trigger + absolute popover listbox.
  * Signed-in language lives on Settings (`LanguagePreferenceSwitcher`).
@@ -173,9 +191,14 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         setOpen(false);
-        void persistLocale(highlight, locale, () => {
-          router.refresh();
-        });
+        void persistLocale(
+          highlight,
+          locale,
+          () => {
+            router.refresh();
+          },
+          (path) => globalThis.location.assign(path),
+        );
       }
     };
     const onMouseDown = (event: MouseEvent): void => {
@@ -217,9 +240,14 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
 
   const selectLocale = (code: Locale): void => {
     setOpen(false);
-    void persistLocale(code, locale, () => {
-      router.refresh();
-    });
+    void persistLocale(
+      code,
+      locale,
+      () => {
+        router.refresh();
+      },
+      (path) => globalThis.location.assign(path),
+    );
     triggerRef.current?.focus();
   };
 

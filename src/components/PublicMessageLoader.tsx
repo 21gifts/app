@@ -28,6 +28,7 @@ import {
 } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { forumPhotoSrc } from '@/lib/forum-photo';
+import { formatPlacePinText } from '@/lib/forum-shop';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
@@ -187,7 +188,7 @@ function PublicThreadCard({
           className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
         >
           <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {note.place.label ?? `${note.place.lat.toFixed(5)}, ${note.place.lng.toFixed(5)}`}
+          {formatPlacePinText(note.place, locale)}
         </Link>
       ) : null}
       {note.parentId !== undefined && (note.receivedSats ?? 0) > 0 ? (

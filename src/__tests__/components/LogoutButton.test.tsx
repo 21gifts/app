@@ -40,6 +40,7 @@ beforeEach(() => {
     retry: vi.fn(),
     cancel,
     error: null,
+    clearNameError: vi.fn(),
     nameError: null,
   });
   useAuthStore.setState({

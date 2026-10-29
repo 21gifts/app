@@ -5,7 +5,8 @@ import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SegmentedControl } from '@/components/ui';
 import { setAccountLocale } from '@/lib/api';
-import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { LOCALES, type Locale } from '@/lib/locale';
+import { writeLocaleCookie } from '@/lib/locale-cookie';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
@@ -59,8 +60,7 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
       return;
     }
   }
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+  writeLocaleCookie(next);
   refresh();
 }
 

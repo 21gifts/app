@@ -700,12 +700,31 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: 'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('drops the empty-message error when another thread opens', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    const view = renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    searchParams.set('c', 'conv-2');
+    view.rerender(<InboxLoader />);
+    expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+    expect(screen.queryByText('Enter a message')).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
   });
 
   it('rejects invalid and unsafe amount drafts', async () => {
@@ -716,7 +735,8 @@ describe('InboxLoader', () => {
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.5' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Amount').closest('form')!);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Still here' } });
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number greater than zero');
     fireEvent.change(screen.getByLabelText('Amount'), {
       target: { value: '999999999999999999999999' },

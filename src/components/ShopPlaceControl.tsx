@@ -13,13 +13,14 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface ShopPlaceControlProps {
   /** Top-level shop note to pin. */
   message: ForumMessage;
-  /** Apply the saved pin (or `null` when cleared) to the listed row. */
+  /** Apply the saved pin to the listed row. A shop place is not cleared. */
   onUpdated: (messageId: string, place: ForumPlacePin | null) => void;
 }
 
 /**
  * Moderator-only place editor on a shop note. Absent on replies, hidden
- * notes, non-shop text, and ranks below moderator.
+ * notes, non-shop text, and ranks below moderator. The stored note text is
+ * passed into the place editor so name/description rules are checked live.
  *
  * @param props - Note and successful-save callback.
  * @returns The compact place control, or null when it must not edit.
@@ -53,9 +54,10 @@ export function ShopPlaceControl({
       <PlaceField
         place={message.place ?? null}
         disabled={false}
-        showPreview={false}
         buttonSize="sm"
         buttonVariant="ghost"
+        shopDetails
+        shopText={message.text}
         ariaLabel={hasPlace ? t('forum.editPlace') : t('forum.addPlace')}
         onChange={
           /* v8 ignore next -- PlaceField calls onChange only when onCommit is omitted; this control always commits */

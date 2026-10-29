@@ -14,9 +14,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * Client loader for in-app contact on `/contact`.
  *
  * Reads the session from the auth store and owns composer draft/post state.
- * After a successful send, opens the official 21.gifts thread in the inbox
- * (`/messages?c=`) and keeps Send disabled until unmount. A failed post
- * clears `posting` so Send can retry. Missing name/rules open
+ * After a successful send, the emptied draft stays quiet and Send stays
+ * available until the next blur or submit. The official 21.gifts thread
+ * then opens in the inbox (`/messages?c=`). A failed post clears `posting`
+ * so Send can retry. Missing name/rules open
  * {@link RequirementsOverlay} and retry the same send after the field is
  * added. A wallet is not required for contact. Renders nothing when
  * there is no session.
@@ -50,6 +51,7 @@ export function ContactLoader(): ReactElement | null {
 
   const finishContactSuccess = async (): Promise<void> => {
     setDraft('');
+    setPosting(false);
     let href = '/messages';
     try {
       const threads = await fetchConversations(session);

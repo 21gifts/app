@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactElement, type ReactNode } from 'react';
+import { HomeWordmark } from '@/components/HomeWordmark';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
@@ -10,12 +11,19 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Public `/rules` chrome: signed-in shell when a session is hydrated, else
- * marketing-like unsigned chrome.
+ * marketing-like unsigned chrome. The unsigned wordmark opens `homeHref`.
  *
  * @param children - Heading and rules document from {@link RulesPage}.
+ * @param homeHref - Language home for the unsigned wordmark (`/{locale}`).
  * @returns The page chrome around `children`.
  */
-export function RulesPageChrome({ children }: { children: ReactNode }): ReactElement {
+export function RulesPageChrome({
+  children,
+  homeHref,
+}: {
+  children: ReactNode;
+  homeHref: string;
+}): ReactElement {
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
   const signedIn = ready && session !== null;
@@ -30,7 +38,7 @@ export function RulesPageChrome({ children }: { children: ReactNode }): ReactEle
 
   return (
     <PageChrome
-      topLeft={<ProfileChromeLeft wordmarkHref="/" />}
+      topLeft={<ProfileChromeLeft wordmark={<HomeWordmark publicHref={homeHref} />} />}
       topRight={<LanguageSwitcher tone="light" />}
     >
       {children}

@@ -62,13 +62,17 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { replyTextIsTooLong } from '@/lib/entry-text';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useSpotRate } from '@/hooks/useSpotRate';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import {
   attachTypedFigure,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
+  shownPaySheetError,
   typedFiatFigure,
 } from '@/lib/stats-money';
 import { returnToView } from '@/lib/view-history';
@@ -453,7 +457,8 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const rateDay = useSpotRate();
+  const { rateDay, loading: rateLoading } = useSpotRateState();
+  const rateSettled = !rateLoading;
   /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
   const replyRateRef = useRef(rateDay);
   const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
@@ -1122,14 +1127,9 @@ export function MemberProfileScreen({
         setReplyFormError('deleted');
         return;
       }
+      // This invoice was sent only after the draft fit the stored limit.
       setReplyFormError(
-        err instanceof Error && /1[-–]8000 characters/i.test(err.message)
-          ? 'tooLong'
-          : isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
+        isRateLimitError(err) ? 'rateLimit' : isAuthorWalletError(err) ? 'authorWallet' : 'request',
       );
     } finally {
       setReplyPosting(false);
@@ -1211,6 +1211,19 @@ export function MemberProfileScreen({
   const handlePaySubmit = (): void | Promise<ForumPayInvoice | null> => {
     /* v8 ignore next 3 -- Continue is disabled while payBusy; feed pay is session-gated */
     if (session === null || payMessageId === null || payBusy) {
+      return;
+    }
+    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
+    if (payError === 'loading' && !rateSettled) {
+      return;
+    }
+    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    if (payProblem === 'quiet') {
+      setPayError('loading');
+      return;
+    }
+    if (payProblem === 'no-rate') {
+      setPayError('noRate');
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
@@ -1369,11 +1382,10 @@ export function MemberProfileScreen({
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
-    const trimmed = replyDraft.trim();
-    if (trimmed.length > FORUM_MESSAGE_MAX_LENGTH) {
-      setReplyFormError('tooLong');
+    if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
+    const trimmed = replyDraft.trim();
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
     replyRateRef.current = rateDay;
     const token = session;
@@ -1385,6 +1397,32 @@ export function MemberProfileScreen({
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
     const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
+    if (
+      replyTextIsTooLong(
+        replyDraft,
+        parentId,
+        exempt,
+        parsed === 'empty' && !exempt && !authorUnknown,
+      )
+    ) {
+      setReplyFormError('tooLong');
+      return;
+    }
+    const replyProblem = replyDraftProblem(
+      replyShownUnit,
+      replyAmountDraft,
+      rateDay,
+      fiat,
+      rateSettled,
+    );
+    // A fiat amount with no settled rate is not "at least 1 sat".
+    if (replyProblem === 'quiet') {
+      setReplyFormError('loading');
+      return;
+    }
+    if (replyProblem === 'no-rate') {
+      return;
+    }
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -1463,6 +1501,36 @@ export function MemberProfileScreen({
     })();
   };
 
+  const replyAmountProblem = replyDraftProblem(
+    replyShownUnit,
+    replyAmountDraft,
+    rateDay,
+    fiat,
+    rateSettled,
+  );
+  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const shownPayError = shownPaySheetError(
+    payError,
+    livePayProblem,
+    'amount',
+    'noRate',
+    rateSettled,
+  );
+  const shownReplyFormError: ForumReplyFormError =
+    replyFormError !== 'loading'
+      ? replyFormError
+      : rateSettled
+        ? replyAmountProblem === 'invalid'
+          ? 'amount'
+          : null
+        : 'loading';
+  const replyParentInPosts =
+    expandedId === null ? undefined : posts?.find((message) => message.id === expandedId);
+  let replyParentAccountId = replyParentInPosts?.accountId;
+  /* v8 ignore next 3 -- reactions open the parent note, so the composer id is always a loaded post */
+  if (replyParentInPosts === undefined && expandedId !== null) {
+    replyParentAccountId = activityReplies?.find((message) => message.id === expandedId)?.accountId;
+  }
   const sharedForumProps = {
     photoUrls: {},
     photoVersions,
@@ -1471,13 +1539,13 @@ export function MemberProfileScreen({
     payHost,
     payDraft,
     payBusy,
-    payError,
+    payError: shownPayError,
     payInvoice,
     replyPayPreview,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
-      setPayError(null);
+      setPayError((current) => (current === 'amount' || current === 'noRate' ? null : current));
     },
     onPayUnitChange: setPayShownUnit,
     onReplyUnitChange: setReplyShownUnit,
@@ -1497,15 +1565,25 @@ export function MemberProfileScreen({
     replyDraft,
     onReplyDraftChange: (value: string): void => {
       setReplyDraft(value);
-      setReplyFormError(null);
+      setReplyFormError((current) => (current === 'loading' ? current : null));
     },
     replyAmountDraft,
     onReplyAmountDraftChange: (value: string): void => {
       setReplyAmountDraft(value);
-      setReplyFormError(null);
+      setReplyFormError((current) => (current === 'loading' ? current : null));
     },
     replyPosting,
-    replyFormError,
+    replyFormError: shownReplyFormError,
+    replyTextTooLong: replyTextIsTooLong(
+      replyDraft,
+      expandedId,
+      isReplyPaymentExempt(account, replyParentAccountId),
+      replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+        !isReplyPaymentExempt(account, replyParentAccountId) &&
+        replyParentAccountId !== undefined,
+    ),
+    replyAmountNoRate: shownReplyFormError !== 'loading' && replyAmountProblem === 'no-rate',
+    replyAmountInvalid: shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid',
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
     heartViewerId: account?.id ?? null,

@@ -709,6 +709,25 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
  */
 export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
+/** Nostr npub accepted by public shop identities. */
+export const SHOP_NPUB_RE = /^npub1[02-9ac-hj-np-z]{58}$/;
+
+/**
+ * Runtime schema for a structured postal address on a forum pin.
+ */
+export const forumPlaceAddressSchema = z.object({
+  street: z.string(),
+  houseNumber: z.string(),
+  postalCode: z.string(),
+  city: z.string(),
+  country: z.string(),
+});
+
+/**
+ * Structured postal address on a forum pin.
+ */
+export type ForumPlaceAddress = z.infer<typeof forumPlaceAddressSchema>;
+
 /**
  * Runtime schema for an optional forum place pin.
  */
@@ -716,10 +735,11 @@ export const forumPlacePinSchema = z.object({
   lat: z.number().gte(-90).lte(90),
   lng: z.number().gte(-180).lte(180),
   label: z.string().max(80).nullish(),
+  address: forumPlaceAddressSchema.optional().nullable(),
 });
 
 /**
- * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ * A confirmed forum place pin (`lat`, `lng`, optional `label`, optional `address`).
  */
 export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
 
@@ -733,40 +753,38 @@ export type ForumGoalCurrency = (typeof FORUM_GOAL_CURRENCIES)[number];
 export const FORUM_GOAL_AMOUNT_RE = /^\d+(\.\d{1,8})?$/;
 
 /**
+ * Runtime schema for one row of `GET /forum/messages/places`.
+ */
+export const forumPlaceRowSchema = forumPlacePinSchema.extend({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  createdAt: z.string().min(1),
+  accountId: z.string().min(1).optional(),
+  /** True when the note is a shop. Omitted by an older api. */
+  shop: z.boolean().optional(),
+  /** Listed-shop identity; omitted by an older api and normalized to null. */
+  shopNpub: z.string().regex(SHOP_NPUB_RE).nullable().optional().default(null),
+  /**
+   * ISO 3166-1 alpha-2 code of the country that contains the pin, read by the
+   * api from the coordinates. Null in the open sea; omitted by an older api.
+   */
+  countryCode: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullish(),
+});
+
+/**
  * Runtime schema for `GET /forum/messages/places`.
  */
 export const forumPlacesResponseSchema = z.object({
-  places: z.array(
-    forumPlacePinSchema.extend({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      createdAt: z.string().min(1),
-      accountId: z.string().min(1).optional(),
-      shop: z.boolean().optional(),
-      countryCode: z
-        .string()
-        .regex(/^[A-Z]{2}$/)
-        .nullish(),
-    }),
-  ),
+  places: z.array(forumPlaceRowSchema),
 });
 
 /**
  * One live top-level forum pin, including the note id and author name.
  */
-export type ForumPlaceRow = ForumPlacePin & {
-  id: string;
-  name: string;
-  createdAt: string;
-  accountId?: string | undefined;
-  /** True when the note is a shop. Omitted by an older api. */
-  shop?: boolean | undefined;
-  /**
-   * ISO 3166-1 alpha-2 code of the country that contains the pin, read by the
-   * api from the coordinates. Null in the open sea; omitted by an older api.
-   */
-  countryCode?: string | null | undefined;
-};
+export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
 
 /**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.
@@ -806,6 +824,8 @@ export type ForumPlaceRow = ForumPlacePin & {
  * payloads omit them.
  * `place` is optional and is not a body.
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
+ * `shopNpub` is the listed shop identity, null for every other note, and
+ * optional only so a rolling api deployment still parses.
  * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
@@ -874,6 +894,7 @@ export const forumMessageSchema = z
         name: z.string(),
       })
       .optional(),
+    shopNpub: z.string().regex(SHOP_NPUB_RE).nullable().optional(),
     /** Present on a signed-in payload when the body marks members. Omitted with no session. */
     mentions: z
       .array(
@@ -1002,6 +1023,74 @@ export const forumRepliesSchema = z.object({
  * One public forum message from the api.
  */
 export type ForumMessage = z.infer<typeof forumMessageSchema>;
+
+/** Runtime schema for one public shop photo. */
+export const shopPhotoSchema = z.object({
+  url: z.string().min(1),
+  width: z.number().int().positive().nullable(),
+  height: z.number().int().positive().nullable(),
+});
+
+/** Pin on a public shop. `address` is null until every structured part is set. */
+const shopPlaceSchema = z.object({
+  lat: z.number().gte(-90).lte(90),
+  lng: z.number().gte(-180).lte(180),
+  label: z.string(),
+  address: z
+    .object({
+      street: z.string(),
+      houseNumber: z.string(),
+      postalCode: z.string(),
+      city: z.string(),
+      country: z.string(),
+    })
+    .nullable(),
+});
+
+/** Runtime schema for `GET /shops/:npub` shop data. `place` is null without coordinates. */
+export const shopSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  messageId: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string(),
+  place: shopPlaceSchema.nullable(),
+  photos: z.array(shopPhotoSchema).max(10),
+  payUsername: z.string().min(1).nullable(),
+  nip05: z.string().min(1).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+/** Runtime schema for the successful `GET /shops/:npub` envelope. */
+export const shopResponseSchema = z.object({ shop: shopSchema });
+
+/** Public listed shop returned by `GET /shops/:npub`. */
+export type Shop = z.infer<typeof shopSchema>;
+
+/** One directory row from `GET /shops`. `place` and `address` may be null. */
+export const shopListItemSchema = z.object({
+  npub: z.string().regex(SHOP_NPUB_RE),
+  name: z.string(),
+  place: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+      label: z.string(),
+      address: forumPlaceAddressSchema.nullable(),
+    })
+    .nullable(),
+});
+
+/** One public shop in the directory. */
+export type ShopListItem = z.infer<typeof shopListItemSchema>;
+
+/**
+ * Runtime schema for `GET /shops`.
+ * `nextCursor` is omitted on the last page. Null is not accepted.
+ */
+export const shopListResponseSchema = z.object({
+  shops: z.array(shopListItemSchema),
+  nextCursor: z.string().optional(),
+});
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.

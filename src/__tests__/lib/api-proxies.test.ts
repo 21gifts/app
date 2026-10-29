@@ -69,6 +69,7 @@ import {
   proxyNotificationReadPost,
   proxyNotificationsGet,
   proxyForumMentionsGet,
+  proxyForumAccountByUsernameGet,
   proxyNotificationsReadAllPost,
   proxyNotificationsReadByMessagePost,
   proxyNotificationsReadVisiblePost,
@@ -876,6 +877,15 @@ describe('api proxy wrappers', () => {
     const target = fetchMock.mock.calls[0]?.[0] as URL;
     expect(target.pathname).toBe('/mentions');
     expect(target.search).toBe('?q=as');
+  });
+
+  it('proxyForumAccountByUsernameGet encodes the username on /accounts/by-username/', async () => {
+    const fetchMock = stubApi();
+    await proxyForumAccountByUsernameGet(
+      new Request('http://localhost/forum/accounts/by-username/a%2Fb'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/accounts/by-username/a%2Fb');
   });
 
   it('proxyNotificationsGet hits /notifications', async () => {

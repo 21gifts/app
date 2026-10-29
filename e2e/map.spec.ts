@@ -37,6 +37,45 @@ async function seedSignedIn(page: Page, mapsKey: string | null = null): Promise<
   });
 }
 
+async function stubPlaceMap(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    class MapShim {
+      readonly el: HTMLElement;
+
+      constructor(el: HTMLElement) {
+        this.el = el;
+      }
+
+      setCenter(): void {}
+
+      addListener(
+        event: string,
+        handler: (event: { latLng: { lat: () => number; lng: () => number } }) => void,
+      ): void {
+        if (event === 'click') {
+          this.el.addEventListener('click', () => {
+            handler({ latLng: { lat: () => 14.5, lng: () => 120.9 } });
+          });
+        }
+      }
+    }
+
+    class MarkerShim {
+      setPosition(): void {}
+
+      getPosition(): null {
+        return null;
+      }
+
+      addListener(): void {}
+    }
+
+    (window as unknown as { google?: unknown }).google = {
+      maps: { Map: MapShim, Marker: MarkerShim },
+    };
+  });
+}
+
 test('Function: proxyMessagesPlacesGet — GET /forum/messages/places without bearer is 401', async ({
   request,
 }) => {
@@ -110,6 +149,48 @@ test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {
   await page.goto('/shops#map');
   await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+});
+
+test('shop map pins use the shop page only when shopNpub exists', async ({ page }) => {
+  await seedSignedIn(page);
+  const npub = `npub1${'2'.repeat(58)}`;
+  await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        places: [
+          {
+            id: 'm-shop',
+            name: 'Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Cafe Luna',
+            shopNpub: npub,
+          },
+          {
+            id: 'm-pending',
+            name: 'Bea',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.61,
+            lng: 120.99,
+            label: 'Pending Shop',
+            shopNpub: null,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/shops#map');
+  await expect(page.getByRole('link', { name: 'Ada · Cafe Luna' })).toHaveAttribute(
+    'href',
+    `/${npub}`,
+  );
+  await expect(page.getByRole('link', { name: 'Bea · Pending Shop' })).toHaveAttribute(
+    'href',
+    '/messages/m-pending',
+  );
 });
 
 test('Function: PlacesMapScreen — frames every pin', async ({ page }) => {
@@ -230,8 +311,43 @@ test('Function: PlaceField — add a place is on the shop composer', async ({ pa
       body: JSON.stringify({ messages: [] }),
     });
   });
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  const unavailable = page.getByText('The map is not available.');
+  await expect(unavailable).toHaveCount(1);
+  await expect(unavailable).toBeVisible();
+  await expect(page.getByLabel('Shop name', { exact: true })).toBeVisible();
+});
+
+test('Function: PlacePinChip — confirmed composer place stays in flow and can be removed', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page, 'e2e');
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await page.getByLabel('Place name').fill('Stall');
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  const chip = page.getByText('Stall', { exact: true }).locator('..');
+  await expect(chip).toBeVisible();
+  await expect.poll(() => chip.evaluate((node) => getComputedStyle(node).position)).toBe('static');
+  await page.getByRole('button', { name: 'Remove place' }).click();
+  await expect(page.getByText('Stall', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
 });

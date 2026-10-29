@@ -39,3 +39,36 @@ export async function searchMentionAccounts(
   }
   return accounts;
 }
+
+const accountByUsernameSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  name: z.string(),
+});
+
+/**
+ * Exact account lookup for one shop username.
+ *
+ * 404 is a missing account. The stored spelling is accepted as-is.
+ *
+ * @param sessionToken - Bearer session.
+ * @param username - Username to look up.
+ * @returns `found` when the account exists, or `missing` on 404.
+ * @throws Error on any other status, a 200 body without string `id`, `username`, and `name`, or a fetch failure.
+ */
+export async function lookupAccountByUsername(
+  sessionToken: string,
+  username: string,
+): Promise<'found' | 'missing'> {
+  const response = await fetch(`/forum/accounts/by-username/${encodeURIComponent(username)}`, {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 404) {
+    return 'missing';
+  }
+  if (response.status !== 200) {
+    throw new Error(`Failed to look up account: ${String(response.status)}`);
+  }
+  accountByUsernameSchema.parse(await response.json());
+  return 'found';
+}

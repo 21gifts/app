@@ -61,12 +61,12 @@ describe('MarketingHeader', () => {
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
   });
 
-  it('links the wordmark home and Log in to /login', () => {
+  it('links the wordmark to /en and Log in to /login', () => {
     renderWithLocale(<MarketingHeader />);
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
@@ -76,9 +76,9 @@ describe('MarketingHeader', () => {
     expect(screen.getByRole('link', { name: 'Stats', hidden: true }).getAttribute('href')).toBe(
       '/stats',
     );
-    expect(screen.getByRole('link', { name: 'About', hidden: true }).getAttribute('href')).toBe(
-      '/about',
-    );
+    expect(
+      screen.getByRole('link', { name: 'About 21.gifts', hidden: true }).getAttribute('href'),
+    ).toBe('/en/about');
     expect(screen.queryByRole('link', { name: 'Trust Chain', hidden: true })).toBeNull();
     expect(screen.getByRole('link', { name: 'Handbook', hidden: true }).getAttribute('href')).toBe(
       '/handbook',

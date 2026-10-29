@@ -14,7 +14,7 @@ import {
   revealReplyForm,
   type ForumBoardProps,
 } from '@/components/ForumBoard';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import {
   FORUM_COMPOSE_EVENT,
@@ -624,7 +624,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Add a place')).toBeNull();
     expect(photo.compareDocumentPosition(place) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(place.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(field.getAttribute('maxLength')).toBe(String(FORUM_MESSAGE_MAX_LENGTH));
+    expect(field.getAttribute('maxLength')).toBeNull();
     expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     expect(screen.queryByText('Dismiss')).toBeNull();
   });
@@ -650,16 +650,148 @@ describe('ForumBoard', () => {
     expect(screen.queryByLabelText('Add a place')).toBeNull();
   });
 
-  it('sets the new-post textarea maxLength from composerMaxLength', () => {
+  it('shows live shop guidance under the living-room composer and disables Post', () => {
+    const onPlaceDraftChange = vi.fn();
+    const onPost = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[]}
         error={false}
         loading={false}
         posting={false}
-        draft=""
+        draft="Cafe Luna #21GiftsShop"
+        onDraftChange={() => undefined}
+        onPost={onPost}
+        onRetry={() => undefined}
+        formError={null}
+        placeDraft={{ lat: 14.6, lng: 120.98, label: 'Cafe Luna' }}
+        {...idleProps}
+        onPlaceDraftChange={onPlaceDraftChange}
+        {...modeProps('active')}
+      />,
+    );
+    const composer = screen.getByLabelText('Your message');
+    const composerRow = composer.closest('.flex.items-center');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    const chipText = screen.getByText('Cafe Luna');
+    const post = screen.getByRole('button', { name: /^Post$/ });
+    expect(composerRow).not.toBeNull();
+    expect(composerRow!.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    // The chosen place sits on its own line above the text field, so the feedback follows it.
+    expect(chipText.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(feedback.getAttribute('role')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(post).toHaveProperty('disabled', true);
+    fireEvent.click(post);
+    expect(onPost).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    expect(onPlaceDraftChange).toHaveBeenCalledWith(null);
+  });
+
+  it('focuses the composer after removing its place chip', () => {
+    function BoardWithPlace(): ReactElement {
+      const [place, setPlace] = useState<ForumPlacePin | null>({
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Cafe Luna',
+      });
+      return (
+        <ForumBoard
+          messages={[]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          placeDraft={place}
+          {...idleProps}
+          onPlaceDraftChange={setPlace}
+          {...modeProps('active')}
+        />
+      );
+    }
+
+    renderWithLocale(<BoardWithPlace />);
+    const composer = screen.getByLabelText('Your message');
+    const remove = screen.getByRole('button', { name: 'Remove place' });
+    remove.focus();
+    fireEvent.click(remove);
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    expect(document.activeElement).toBe(composer);
+  });
+
+  it('passes live shop guidance into the Ask text step', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Cafe Luna #21GiftsShop"
         onDraftChange={() => undefined}
         onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="ask"
+        askStep={3}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    const composer = screen.getByLabelText('Your message');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows the shop guard alert on an Ask step without the live hint', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Cafe Luna #21GiftsShop"
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="shopElsewhere"
+        composeIntent="ask"
+        askStep={2}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+  });
+
+  it('shows the composer limit while the draft is still over it', () => {
+    const onPost = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH - 13)}
+        onDraftChange={() => undefined}
+        onPost={onPost}
         onRetry={() => undefined}
         formError={null}
         composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
@@ -667,9 +799,14 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
-      String(FORUM_MESSAGE_MAX_LENGTH - 14),
+    const field = screen.getByLabelText('Your message');
+    expect(field.getAttribute('maxLength')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(
+      true,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    expect(onPost).not.toHaveBeenCalled();
   });
 
   it('hides the composer and mode control when composerHidden', () => {
@@ -3399,6 +3536,113 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
   });
 
+  it('shows tooMany photo feedback inside the shop composer', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooMany"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
+  });
+
+  it('shows format-or-size feedback inside the shop composer', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="formatOrSize"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Use a JPEG, PNG, or WebP photo under 1 MB, or an MP4, WebM, or MOV video under 32 MB.',
+    );
+  });
+
+  it('shows empty and too-long alerts for the shop composer and after blur', () => {
+    const view = renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="empty"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    view.rerender(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooLong"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    view.rerender(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
   it('shows formError ask alert', () => {
     renderWithLocale(
       <ForumBoard
@@ -3416,6 +3660,100 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
+  });
+
+  it.each([
+    [
+      'shopDescription',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
+    ],
+  ] as const)('shows formError %s alert', (formError, copy) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={formError}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(copy);
+  });
+
+  it.each([
+    'shopElsewhere',
+    'shopName',
+    'shopNameAddress',
+    'shopNameLong',
+    'shopNameControls',
+    'shopAddress',
+    'placeAddress',
+  ] as const)('points formError %s to Shops outside the shop composer', (formError) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={formError}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+  });
+
+  it('shows a shop address on a labeled pin', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: "Kiki's Bakery",
+              address: {
+                street: 'Bahnhofstrasse',
+                houseNumber: '12',
+                postalCode: '8001',
+                city: 'Zürich',
+                country: 'CH',
+              },
+            },
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen
+        .getByRole('link', {
+          name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+        })
+        .getAttribute('href'),
+    ).toBe('/shops?pin=m1#map');
   });
 
   it('renders ForumGoalBar 110% on a top-level note with a goal', () => {
@@ -3459,6 +3797,53 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('110%')).toBeNull();
   });
 
+  it('stays quiet when the draft is cleared while a post is still in flight', () => {
+    const board = (posting: boolean, draft: string) => (
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={posting}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />
+    );
+    const view = renderWithLocale(board(true, 'Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+    view.rerender(board(true, ''));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+    view.rerender(board(false, ''));
+    expect(screen.queryByText('Enter a message or add a photo or video')).toBeNull();
+  });
+
+  it('keeps the empty message when the person deletes the draft', () => {
+    const board = (draft: string) => (
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />
+    );
+    const view = renderWithLocale(board('Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    view.rerender(board(''));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
   it('disables submit and shows a spinner while posting', () => {
     renderWithLocale(
       <ForumBoard
@@ -3500,6 +3885,28 @@ describe('ForumBoard', () => {
     );
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
     expect(onDraftChange).toHaveBeenCalledWith('Hi');
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    expect(onPost).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+  });
+
+  it('calls onPost when the draft already has text', () => {
+    const onPost = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Hi"
+        onDraftChange={() => undefined}
+        onPost={onPost}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(onPost).toHaveBeenCalledTimes(1);
   });

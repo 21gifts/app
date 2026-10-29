@@ -349,6 +349,26 @@ function SignedInMenu(): ReactElement {
       return;
     }
     void resyncPushSubscription(session).catch(() => undefined);
+    if (typeof navigator.serviceWorker === 'undefined') {
+      return;
+    }
+    // The worker cannot post a changed subscription without a session.
+    const worker = navigator.serviceWorker;
+    const onMessage = (event: MessageEvent): void => {
+      const data: unknown = event.data;
+      if (
+        data !== null &&
+        typeof data === 'object' &&
+        'type' in data &&
+        data.type === '21gifts-push-subscription-change'
+      ) {
+        void resyncPushSubscription(session, true).catch(() => undefined);
+      }
+    };
+    worker.addEventListener('message', onMessage);
+    return () => {
+      worker.removeEventListener('message', onMessage);
+    };
   }, [session]);
 
   // Stay in the sheet host while closed. Moving the portal back to the

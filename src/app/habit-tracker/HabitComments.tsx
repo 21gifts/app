@@ -32,13 +32,16 @@ type HabitCommentsProps = {
   payError: ForumPayError;
   payInvoice: ForumPayInvoice | null;
   rateDay: FiatRateDay | null;
-  ratePending: boolean;
+
   onPayOpen: (commentId: string) => void;
   onPayDraftChange: (value: string) => void;
   onPayUnitChange: (unit: AmountUnit) => void;
   onPaySubmit: () => void;
   onPayCancel: () => void;
   onCommentText: (value: string) => void;
+  onCommentBlur?: () => void;
+  commentError?: string;
+  commentBlocked?: boolean;
   onPostComment: () => void;
   onDeleteComment: (commentId: string) => void;
 };
@@ -75,13 +78,16 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
     payError,
     payInvoice,
     rateDay,
-    ratePending,
+
     onPayOpen,
     onPayDraftChange,
     onPayUnitChange,
     onPaySubmit,
     onPayCancel,
     onCommentText,
+    onCommentBlur,
+    commentError,
+    commentBlocked = false,
     onPostComment,
     onDeleteComment,
   } = props;
@@ -190,7 +196,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                       onPaySubmit={onPaySubmit}
                       onPayCancel={onPayCancel}
                       rateDay={rateDay}
-                      ratePending={ratePending}
+
                       onInteract={() => undefined}
                     />
                   </SundayWritingGate>
@@ -209,6 +215,10 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                 label={t('habit.writeComment')}
                 multiline
                 value={commentText}
+                {...(commentError === undefined
+                  ? {}
+                  : { error: commentError, errorAnnounce: true })}
+                {...(onCommentBlur === undefined ? {} : { onBlur: onCommentBlur })}
                 onChange={(event) => {
                   onCommentText(event.target.value);
                 }}
@@ -219,6 +229,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
               size="lg"
               variant="primary"
               aria-label={t('habit.post')}
+              disabled={commentBlocked}
               onClick={onPostComment}
             >
               <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />

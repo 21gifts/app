@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Suspense, useLayoutEffect, useState, type ReactElement } from 'react';
 import { ForumLoader } from '@/components/ForumLoader';
 import { PlacesMapScreen } from '@/components/PlacesMapScreen';
+import { ShopList } from '@/components/ShopList';
 import { ShopTable } from '@/components/ShopTable';
 import { ShopsCountryFilter } from '@/components/ShopsCountryFilter';
 import { ShopsViewSwitch, type ShopsView } from '@/components/ShopsViewSwitch';
@@ -12,22 +13,22 @@ import { Card } from '@/components/ui';
 import { shopCountryFromQuery } from '@/lib/shop-country';
 
 /**
- * View named by `/shops#map`, `/shops#table`, or `/shops#post`.
+ * View named by `/shops#list`, `/shops#post`, `/shops#map`, or `/shops#table`.
  *
- * @param hash - `location.hash`, with or without `#`.
+ * @param hash - `location.hash`, with or without one leading `#`.
  * @returns The view, or null when the hash is empty or unknown.
  */
 function shopsViewFromHash(hash: string): ShopsView | null {
   const name = hash.replace(/^#/, '').trim().toLowerCase();
-  if (name === 'post' || name === 'map' || name === 'table') {
+  if (name === 'list' || name === 'post' || name === 'map' || name === 'table') {
     return name;
   }
   return null;
 }
 
-/** Write the shops view into the URL without adding a history entry. Post clears the hash. */
+/** Write the shops view into the URL without adding a history entry. List clears the hash. */
 function writeShopsHash(view: ShopsView): void {
-  const hash = view === 'post' ? '' : `#${view}`;
+  const hash = view === 'list' ? '' : `#${view}`;
   const next = `${window.location.pathname}${window.location.search}${hash}`;
   window.history.replaceState(window.history.state, '', next);
 }
@@ -50,20 +51,24 @@ function shopsCountryHref(country: string | null): string {
 }
 
 /**
- * Shops page body: heading, lead, a country filter in the top bar, and a Post / Map / Table pill.
+ * Shops page body: heading, lead, a country filter in the top bar, and a List / Map / Table /
+ * Post pill.
  *
- * `/shops?country=PH` shows only the shops pinned in that country on every view: the
- * post list and the table load only those shops, and the map keeps only those pins and
- * fits them. A missing or unknown code is All countries. Choosing a country pushes a new
- * history entry with the client-side router, so browser Back and Forward (`popstate`)
- * return to the previous choice. The post list and the table are remounted per country.
+ * `/shops?country=PH` shows only the shops pinned in that country on the post, map, and table
+ * views: the post list and the table load only those shops, and the map keeps only those pins
+ * and fits them. The List view is the shop directory of keyed shops; it has no country and
+ * shows no country filter. A missing or unknown code is All countries. Choosing a country
+ * pushes a new history entry with the client-side router, so browser Back and Forward
+ * (`popstate`) return to the previous choice. The post list and the table are remounted per
+ * country.
  *
- * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
- * A plain click on a link to a view of this same page (a place opens `/shops?pin=…#map`)
- * shows that view (no or an unknown hash is Post, as on load), since the client-side push
- * fires no `hashchange`. The push keeps the entry the link was clicked from for browser
- * Back (`popstate`). Links with `target` or `download` are ignored.
- * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
+ * `/shops#post`, `/shops#map`, and `/shops#table` open that view. A missing or unknown hash
+ * opens List. A plain click on a link to a view of this same page (a place opens
+ * `/shops?pin=…#map`) shows that view (no or an unknown hash is List, as on load), since the
+ * client-side push fires no `hashchange`. The push keeps the entry the link was clicked from
+ * for browser Back (`popstate`). Links with `target` or `download` are ignored.
+ * The view stays unset until the hash is read, so the list, post feed, map, and table mount
+ * only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
  */
@@ -82,7 +87,7 @@ export function ShopsScreen(): ReactElement {
 
   useLayoutEffect(() => {
     const apply = (): void => {
-      setView(shopsViewFromHash(window.location.hash) ?? 'post');
+      setView(shopsViewFromHash(window.location.hash) ?? 'list');
       setCountry(shopCountryFromQuery(new URLSearchParams(window.location.search).get('country')));
     };
     apply();
@@ -117,9 +122,9 @@ export function ShopsScreen(): ReactElement {
       if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
         return;
       }
-      // Same rule as the hash on load: none or an unknown one is Post. The
+      // Same rule as the hash on load: none or an unknown one is List. The
       // top-left arrow back to `/shops` carries no hash.
-      const next = shopsViewFromHash(url.hash) ?? 'post';
+      const next = shopsViewFromHash(url.hash) ?? 'list';
       const nextCountry = shopCountryFromQuery(url.searchParams.get('country'));
       // The router push carries the hash and keeps the entry being left for Back.
       // Switch after this click is dispatched: unmounting the link first would
@@ -153,10 +158,11 @@ export function ShopsScreen(): ReactElement {
         {t('shops.heading')}
       </h1>
       <p className="text-center text-sm text-app-fg">{t('shops.lead')}</p>
-      {view !== null ? (
+      {view !== null && view !== 'list' ? (
         <ShopsCountryFilter key={revision} value={country} onChange={selectCountry} />
       ) : null}
       {view !== null ? <ShopsViewSwitch value={view} onChange={selectView} /> : null}
+      {view === 'list' ? <ShopList /> : null}
       {view === 'post' ? (
         <ForumLoader key={viewKey} feed="shops" country={country} onShopsChanged={onShopsChanged} />
       ) : null}

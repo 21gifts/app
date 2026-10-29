@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import { getApiUrl } from '@/lib/config';
 import { shortLinkPath } from '@/lib/short-link';
 
@@ -33,7 +34,7 @@ export async function GET(_request: Request, context: ShortLinkRouteContext): Pr
     response = await fetch(`${getApiUrl()}/links/${encodeURIComponent(code.toLowerCase())}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(API_FETCH_TIMEOUT_MS),
     });
   } catch {
     notFound();

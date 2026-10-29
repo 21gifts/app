@@ -9,10 +9,32 @@ import { Button, IconButton } from '@/components/ui';
 import { setName, skipSetup } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { hasDisplayName } from '@/lib/onboarding';
+import { DISPLAY_NAME_LENGTH_MESSAGE, displayNameProblem } from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Validation or request failure shown on the name form. */
-type NameError = { type: 'empty' } | { type: 'request' };
+/** Shown under the name field once a rule or an unknown save failure is visible. */
+type NameVisible = 'empty' | 'long' | 'controls' | 'request';
+
+/**
+ * Catalog key for a visible name-field message.
+ *
+ * @param kind - The problem currently shown under the field.
+ * @returns The message key.
+ */
+function nameErrorKey(
+  kind: NameVisible,
+): 'name.errorEmpty' | 'name.errorLength' | 'name.errorControls' | 'name.errorRequest' {
+  switch (kind) {
+    case 'empty':
+      return 'name.errorEmpty';
+    case 'long':
+      return 'name.errorLength';
+    case 'controls':
+      return 'name.errorControls';
+    case 'request':
+      return 'name.errorRequest';
+  }
+}
 
 /**
  * Lets a signed-in giver set or edit the display name shown on their account.
@@ -25,6 +47,11 @@ type NameError = { type: 'empty' } | { type: 'request' };
  *
  * Treats a missing or whitespace-only name the same as `hasDisplayName`: the
  * prompt and input stay up until a non-empty trimmed name is saved.
+ *
+ * An untouched field stays quiet. After a change, blur, or submit, a broken
+ * rule is shown under the field and Continue or Save is disabled. Skip stays
+ * available. A known api length sentence uses the length key, not the generic
+ * save failure.
  *
  * @param props - `onboarding` shows the field at the top and **Continue** plus
  *   **Skip** at the bottom; `profile` centers the saved name and puts the
@@ -50,8 +77,10 @@ export function NameForm(
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<NameError | null>(null);
+  const [touched, setTouched] = useState(false);
+  const [serverError, setServerError] = useState<'long' | 'request' | null>(null);
   const formId = useId();
+  const errorId = `${formId}-error`;
 
   if (account === null || session === null) {
     return null;
@@ -60,6 +89,25 @@ export function NameForm(
   const name = account.name;
   const named = hasDisplayName(account);
   const variant = props.variant ?? (named ? 'profile' : 'onboarding');
+  const problem = displayNameProblem(draft);
+  let visibleKind: NameVisible | null = null;
+  if (touched && problem !== null) {
+    visibleKind = problem;
+  } else if (serverError !== null) {
+    visibleKind = serverError;
+  }
+  const submitDisabled =
+    busy || visibleKind === 'empty' || visibleKind === 'long' || visibleKind === 'controls';
+
+  const onDraftChange = (value: string): void => {
+    setDraft(value);
+    setTouched(true);
+    setServerError(null);
+  };
+
+  const onDraftBlur = (): void => {
+    setTouched(true);
+  };
 
   /**
    * Runs an api action with shared busy/error handling and a stale-session guard.
@@ -73,15 +121,20 @@ export function NameForm(
     onFresh: (result: Account) => void,
   ): Promise<void> => {
     setBusy(true);
-    setError(null);
+    setServerError(null);
     try {
       const result = await action(session);
       if (useAuthStore.getState().session !== session) {
         return;
       }
       onFresh(result);
-    } catch {
-      setError({ type: 'request' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message === DISPLAY_NAME_LENGTH_MESSAGE) {
+        setServerError('long');
+      } else {
+        setServerError('request');
+      }
     } finally {
       setBusy(false);
     }
@@ -89,11 +142,11 @@ export function NameForm(
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const trimmed = draft.trim();
-    if (trimmed === '') {
-      setError({ type: 'empty' });
+    setTouched(true);
+    if (displayNameProblem(draft) !== null) {
       return;
     }
+    const trimmed = draft.trim();
     void runGuarded(
       (token) => setName(token, trimmed, variant === 'onboarding' ? 'setup' : 'enforce'),
       (updated) => {
@@ -139,6 +192,16 @@ export function NameForm(
     <Check aria-hidden="true" className="h-4 w-4" />
   );
 
+  const nameAlert =
+    visibleKind === null ? null : (
+      <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
+        {t(nameErrorKey(visibleKind))}
+      </p>
+    );
+
+  const fieldAria =
+    visibleKind === null ? {} : { 'aria-invalid': true as const, 'aria-describedby': errorId };
+
   if (variant === 'onboarding') {
     return (
       <form
@@ -154,22 +217,22 @@ export function NameForm(
           placeholder={t('name.placeholder')}
           aria-label={t('name.aria')}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            onDraftChange(event.target.value);
+          }}
+          onBlur={onDraftBlur}
           disabled={busy}
+          {...fieldAria}
           className="w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
         />
-        {error !== null ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
-          </p>
-        ) : null}
+        {nameAlert}
         <AppShellFooter>
           <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-3">
             <Button
               type="submit"
               form={formId}
               size="lg"
-              disabled={busy}
+              disabled={submitDisabled}
               icon={
                 busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
               }
@@ -212,15 +275,19 @@ export function NameForm(
                   placeholder={t('name.placeholder')}
                   aria-label={t('name.aria')}
                   value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
+                  onChange={(event) => {
+                    onDraftChange(event.target.value);
+                  }}
+                  onBlur={onDraftBlur}
                   disabled={busy}
+                  {...fieldAria}
                   className="min-h-11 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
                 />
                 <IconButton
                   type="submit"
                   variant="primary"
                   size="md"
-                  disabled={busy}
+                  disabled={submitDisabled}
                   aria-label={editing ? t('name.save') : t('name.saveName')}
                 >
                   {submitIcon}
@@ -234,13 +301,15 @@ export function NameForm(
                     aria-label={t('name.cancel')}
                     onClick={() => {
                       setEditing(false);
-                      setError(null);
+                      setServerError(null);
+                      setTouched(false);
                     }}
                   >
                     <X aria-hidden="true" className="h-4 w-4" />
                   </IconButton>
                 ) : null}
               </div>
+              {nameAlert}
             </form>
           </SundayWritingGate>
           {props.besideName ? (
@@ -266,7 +335,8 @@ export function NameForm(
                   /* v8 ignore next — display branch only mounts when hasDisplayName; name is non-null */
                   setDraft(name ?? '');
                   setEditing(true);
-                  setError(null);
+                  setServerError(null);
+                  setTouched(false);
                 }}
               >
                 <Pencil aria-hidden="true" className="h-4 w-4" />
@@ -276,12 +346,6 @@ export function NameForm(
           {props.belowName}
         </>
       )}
-
-      {error !== null ? (
-        <p role="alert" className="sunday-write-field text-center text-sm text-app-danger">
-          {error.type === 'empty' ? t('name.errorEmpty') : t('name.errorRequest')}
-        </p>
-      ) : null}
     </div>
   );
 }

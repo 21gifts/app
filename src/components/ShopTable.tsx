@@ -8,7 +8,7 @@ import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button } from '@/components/ui';
 import { fetchMessages } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,12 +17,20 @@ import { useAuthStore } from '@/stores/auth-store';
 const PAGE_LIMIT = 20;
 
 /**
- * Shop name for the table: the first real line of the note, else the stored name.
+ * Shop name for the table: the place label when the pin is a structured shop,
+ * otherwise the first real line of the note, else the stored name.
  *
  * @param message - Shop note.
  * @returns Display name.
  */
 function shopDisplayName(message: ForumMessage): string {
+  const place = message.place;
+  if (place !== undefined) {
+    const label = place.label?.trim() ?? '';
+    if (label !== '' && place.address !== undefined && place.address !== null) {
+      return label;
+    }
+  }
   const line = stripShopHashtag(message.text)
     .split('\n')
     .map((part) => part.trim())
@@ -36,15 +44,12 @@ function shopDisplayName(message: ForumMessage): string {
  * @param message - Shop note.
  * @returns Link text, or null when the note has no pin.
  */
-function placeText(message: ForumMessage): string | null {
+function placeText(message: ForumMessage, locale: string): string | null {
   const place = message.place;
   if (place === undefined) {
     return null;
   }
-  if (typeof place.label === 'string' && place.label.trim() !== '') {
-    return place.label;
-  }
-  return `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+  return formatPlacePinText(place, locale);
 }
 
 /**
@@ -67,7 +72,7 @@ export function ShopTable({
   // next/navigation's identity is not stable, so the load effect reads it here.
   const routerRef = useRef(router);
   routerRef.current = router;
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [rows, setRows] = useState<ForumMessage[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -167,7 +172,7 @@ export function ShopTable({
           </thead>
           <tbody>
             {rows.map((row) => {
-              const place = placeText(row);
+              const place = placeText(row, locale);
               const operator = row.shopAccount;
               return (
                 <tr key={row.id} className="border-t border-app-border">

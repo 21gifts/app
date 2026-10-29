@@ -3,6 +3,7 @@
 import { Loader2, X } from 'lucide-react';
 import { type FormEvent, type MouseEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Collapse } from '@/components/Collapse';
 import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
@@ -15,7 +16,15 @@ import type { FiatRateDay } from '@/lib/stats-money';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
-  'amount' | 'habitAmount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
+  | 'amount'
+  | 'habitAmount'
+  | 'noRate'
+  | 'loading'
+  | 'request'
+  | 'rateLimit'
+  | 'authorWallet'
+  | 'deleted'
+  | null;
 
 /** Active pay invoice shown under a forum card or a habit comment. */
 export interface ForumPayInvoice {
@@ -60,7 +69,7 @@ export function ForumPaySheet({
   onPaySubmit,
   onPayCancel,
   rateDay,
-  ratePending = false,
+
   onInteract,
   loan,
   recipient,
@@ -75,8 +84,7 @@ export function ForumPaySheet({
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
-  /** When true, Continue does not submit. The rate request is still loading. */
-  ratePending?: boolean;
+
   onInteract: (event: MouseEvent) => void;
   /** Set when the paid note is a loan: borrower, term, and whether it is already fully funded. */
   loan?: LoanPayTarget | undefined;
@@ -84,16 +92,23 @@ export function ForumPaySheet({
   recipient?: string | undefined;
 }): ReactElement {
   const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
   const postsOnPay = invoiceForCard?.postsOnPay === true;
   const typedFigure = invoiceForCard?.figure;
   const typedStored = storedTypedFiat(typedFigure);
   const lending = loan !== undefined && !loan.full && !postsOnPay;
+  // Amount and rate problems sit under the amount; the rest fold in above Continue.
+  const requestError =
+    payError === 'request' ||
+    payError === 'rateLimit' ||
+    payError === 'authorWallet' ||
+    payError === 'deleted';
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (payBusy || ratePending) {
+    if (payBusy || payError === 'loading') {
       return;
     }
     void Promise.resolve(onPaySubmit());
@@ -125,18 +140,15 @@ export function ForumPaySheet({
         rateDay={rateDay}
         onValueChange={onPayDraftChange}
         {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
+        {...(payError === 'amount'
+          ? { error: t('forum.payErrorAmount') }
+          : payError === 'habitAmount'
+            ? { error: t('habit.payErrorAmount') }
+            : payError === 'noRate'
+              ? { error: t('pos.noRate', { code: fiat }) }
+              : {})}
       />
-      <Collapse show={payError !== null}>
-        {payError === 'amount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('forum.payErrorAmount')}
-          </p>
-        ) : null}
-        {payError === 'habitAmount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('habit.payErrorAmount')}
-          </p>
-        ) : null}
+      <Collapse show={requestError}>
         {payError === 'request' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorRequest')}
@@ -161,11 +173,23 @@ export function ForumPaySheet({
       {loan === undefined ? null : <LoanPayNotice {...loan} />}
       <Button
         type="submit"
-        disabled={payBusy || ratePending || invoiceForCard !== null}
+        disabled={
+          payBusy ||
+          invoiceForCard !== null ||
+          payError === 'loading' ||
+          payError === 'amount' ||
+          payError === 'habitAmount' ||
+          payError === 'noRate'
+        }
         icon={payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
       >
         {t('forum.payContinue')}
       </Button>
+      {payError === 'loading' ? (
+        <p role="alert" className="text-sm text-app-danger">
+          {t('pos.rateLoading', { code: fiat })}
+        </p>
+      ) : null}
     </form>
   );
 

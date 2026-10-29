@@ -15,6 +15,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: (href: string) => void } => ({ push: vi.fn() }),
+  usePathname: (): string => '/',
 }));
 
 const ADA = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
@@ -101,6 +102,21 @@ describe('PayLinkScreen', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('shows an empty amount after the field is left', async () => {
+    mockFetch(async () => Response.json(profile));
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.blur(screen.getByLabelText('Amount'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+  });
+
   it('shows the name and rejects an amount outside the window', async () => {
     mockFetch(async () => Response.json(profile));
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
@@ -111,10 +127,11 @@ describe('PayLinkScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '101' } });
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount from ₿1 to ₿100.');
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 

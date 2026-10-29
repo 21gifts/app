@@ -286,7 +286,7 @@ async function openShopPosts(feedNote: ForumMessage): Promise<void> {
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
   }
-  await screen.findByText('Cafe Luna');
+  await screen.findByText('Cafe Luna is open every morning.');
 }
 
 function stubShopPhotoFetch(): void {
@@ -1840,7 +1840,7 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: 'x' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(within(replyCard).getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
@@ -2960,7 +2960,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -3047,8 +3047,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('opens the wallet overlay when a compose-pay invoice requires a wallet', async () => {
@@ -3088,7 +3089,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('maps a compose-pay length error onto the reply error', async () => {
+  it('keeps the generic post error when a compose reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
@@ -3101,8 +3102,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
@@ -3117,8 +3119,30 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
+  it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalled();
+      expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    });
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
@@ -3318,6 +3342,42 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('posts 8000 characters unpaid when someone else’s note omits accountId', async () => {
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await expandNote(noteWithoutAccount);
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text, inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+  });
+
+  it('rejects 8001 characters when someone else’s note omits accountId', async () => {
+    const noteWithoutAccount = { ...note, accountId: undefined };
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await expandNote(noteWithoutAccount);
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('lets the profile owner reply unpaid when the note omits accountId', async () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
     vi.mocked(postMessage).mockResolvedValue({
@@ -3356,7 +3416,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fillPaidReply('reply', 'abc');
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
@@ -3388,7 +3448,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fillPaidReply('reply', '9007199254740992');
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Send at least ₿1 with your reaction');
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
@@ -3578,7 +3638,7 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('Could not post your message')).toBeNull();
   });
 
-  it('maps an over-long invoice comment onto the reply length error', async () => {
+  it('keeps the generic post error when a paid reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
       <MemberProfileScreen
@@ -3591,8 +3651,9 @@ describe('MemberProfileScreen', () => {
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/8000 characters/i);
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('shows a request error when an unpaid staff reply fails', async () => {
@@ -4940,11 +5001,25 @@ describe('MemberProfileScreen', () => {
   });
 
   it('shows the shop pencil on a moderator’s post list and applies a saved note', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
+      place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(
@@ -4966,8 +5041,8 @@ describe('MemberProfileScreen', () => {
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 1, lng: 2, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: shopPlace,
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     vi.mocked(fetchMemberPosts).mockResolvedValue([
@@ -4984,7 +5059,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     await screen.findByText('Other note');
     const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
@@ -4992,13 +5067,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
@@ -5010,7 +5085,20 @@ describe('MemberProfileScreen', () => {
   it('applies a moderator shop-note edit to the shops list', async () => {
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
       sats: 0,
       payable: false,
     };
@@ -5019,33 +5107,46 @@ describe('MemberProfileScreen', () => {
     vi.mocked(fetchMemberShops).mockResolvedValue([shopPost]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
     expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
   });
 
   it('keeps a shop-note edit on the posts list after the shops list was open', async () => {
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
       sats: 0,
       payable: false,
     };
@@ -5055,7 +5156,7 @@ describe('MemberProfileScreen', () => {
     vi.mocked(fetchMemberShops).mockResolvedValue([shopPost]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     renderWithLocale(
       <MemberProfileScreen
@@ -5065,26 +5166,26 @@ describe('MemberProfileScreen', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 post' }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
     expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: '1 post' }));
-    await screen.findByText('Cafe Sol');
-    expect(screen.queryByText('Cafe Luna')).toBeNull();
+    await screen.findByText('Cafe Sol is open every morning.');
+    expect(screen.queryByText('Cafe Luna is open every morning.')).toBeNull();
   });
 
   it('does not offer shop-note editing on the credits feed', async () => {
@@ -5104,20 +5205,87 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
   });
 
+  it('drops the shop pin and account when a saved note omits them', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const shopPost: ForumMessage = {
+      ...note,
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    };
+    const withoutPlace: ForumMessage = {
+      ...shopPost,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    };
+    delete withoutPlace.place;
+    delete withoutPlace.shopAccount;
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await openShopPosts(shopPost);
+    const pinName = "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland";
+    expect(screen.getByRole('link', { name: pinName })).toBeTruthy();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: pinName })).toBeNull();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).toBeNull();
+  });
+
   it('drops stored photo addresses when a shop post’s pictures change', async () => {
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
       hasPhoto: true,
       photoCount: 1,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     stubShopPhotoFetch();
     let photoUrl = 0;
@@ -5138,7 +5306,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     const shopCard = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     const otherCard = document.querySelector(
       '[data-message-id="44444444-4444-4444-8444-444444444444"]',
@@ -5159,7 +5327,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(shopCard).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));

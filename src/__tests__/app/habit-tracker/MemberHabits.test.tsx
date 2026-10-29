@@ -367,29 +367,25 @@ describe('MemberHabits', () => {
     if (comment === undefined) {
       throw new Error('missing comment field');
     }
-    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
-    await waitFor(() => {
-      expect(bodies[4]).toEqual({ action: 'comment', habitId: 'h-owner', text: '' });
-    });
     fireEvent.change(comment, { target: { value: 'nice' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
     await waitFor(() => {
-      expect(bodies[5]).toEqual({ action: 'comment', habitId: 'h-owner', text: 'nice' });
+      expect(bodies[4]).toEqual({ action: 'comment', habitId: 'h-owner', text: 'nice' });
     });
     await waitFor(() => {
       expect((comment as HTMLTextAreaElement).value).toBe('');
     });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
-    expect(bodies).toHaveLength(6);
+    expect(bodies).toHaveLength(5);
     expect(screen.getByText('Archive this habit? Its history stays visible.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
     expect(screen.queryByText('Archive this habit? Its history stays visible.')).toBeNull();
-    expect(bodies).toHaveLength(6);
+    expect(bodies).toHaveLength(5);
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
     );
-    expect(bodies).toHaveLength(6);
+    expect(bodies).toHaveLength(5);
     expect(screen.getByText('Delete this comment from the Habit-Tracker?')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel deletion' }));
     expect(screen.queryByText('Delete this comment from the Habit-Tracker?')).toBeNull();
@@ -398,12 +394,12 @@ describe('MemberHabits', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
-      expect(bodies[6]).toEqual({ action: 'deleteComment', id: 'c-own' });
+      expect(bodies[5]).toEqual({ action: 'deleteComment', id: 'c-own' });
     });
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[1] as HTMLButtonElement);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
     await waitFor(() => {
-      expect(bodies[7]).toEqual({ action: 'archive', id: 'h-blank' });
+      expect(bodies[6]).toEqual({ action: 'archive', id: 'h-blank' });
     });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1] as HTMLButtonElement);
@@ -429,7 +425,7 @@ describe('MemberHabits', () => {
     }
     fireEvent.submit(addForm);
     await waitFor(() => {
-      expect(bodies[8]).toMatchObject({
+      expect(bodies[7]).toMatchObject({
         action: 'add',
         name: 'Vorsatz',
         description: 'public',
@@ -653,6 +649,7 @@ describe('MemberHabits', () => {
     if (settledForm === undefined) {
       throw new Error('missing add form');
     }
+    fireEvent.change(settledName, { target: { value: 'Again' } });
     fireEvent.submit(settledForm);
     await waitFor(() => {
       expect(posts).toBe(2);
@@ -1956,7 +1953,7 @@ describe('MemberHabits', () => {
           if (posts === 1) {
             return json({ ok: true });
           }
-          return json({ error: 'Invalid name' }, 400);
+          return json({ error: 'nope' }, 400);
         }
         gets += 1;
         if (gets === 2) {
@@ -2053,6 +2050,42 @@ describe('MemberHabits', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Walk')).toBeTruthy();
     expect(screen.queryByText('Loading…')).toBeNull();
+  });
+
+  it('shows the habit name rule under the field and does not post', async () => {
+    const posts: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          posts.push(String(init.body));
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    const addName = screen.getAllByLabelText('Name').at(-1);
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    expect(screen.queryByText('Enter a habit name')).toBeNull();
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('Enter a habit name')).toBeTruthy();
+    expect(posts).toEqual([]);
+    fireEvent.change(addName, { target: { value: 'a'.repeat(81) } });
+    expect(screen.getByText('Keep the habit name to 80 characters')).toBeTruthy();
+    expect(screen.queryByText('Enter a habit name')).toBeNull();
+    expect(posts).toEqual([]);
   });
 
   it('sends Time-Zone on add, comment, delete, and invoice only', async () => {
@@ -2255,6 +2288,7 @@ describe('MemberHabits', () => {
     expect(posts[0]?.zone.length).toBeGreaterThan(0);
 
     fireEvent.change(amount, { target: { value: '0' } });
+    fireEvent.submit(amount.closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByText('Expected a JSON body with an integer "amountSats"'),
@@ -2712,8 +2746,7 @@ describe('MemberHabits', () => {
     expect(document.querySelector('[data-pay-sheet]')).toBeNull();
   });
 
-  it('does not invoice until the spot rate read has settled', async () => {
-    let releaseStats!: (value: Response) => void;
+  it('invoices a blank 21-sat Gift before the gift-day rate settles', async () => {
     const posts: string[] = [];
     vi.stubGlobal(
       'fetch',
@@ -2721,9 +2754,7 @@ describe('MemberHabits', () => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         if (url.includes('/fx/spot')) {
-          return new Promise<Response>((resolve) => {
-            releaseStats = resolve;
-          });
+          return new Promise<Response>(() => undefined);
         }
         if (init?.method === 'POST') {
           posts.push(String(init.body));
@@ -2741,20 +2772,9 @@ describe('MemberHabits', () => {
     }
     fireEvent.click(gift);
     const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
-    expect(cont.disabled).toBe(true);
+    expect(cont.disabled).toBe(false);
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
     fireEvent.click(cont);
-    fireEvent.submit(cont.closest('form') as HTMLFormElement);
-    expect(posts).toEqual([]);
-
-    await act(async () => {
-      releaseStats(json({ asOf: null, source: null, rates: {} }));
-    });
-    await waitFor(() => {
-      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
-        false,
-      );
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(posts.some((body) => body.includes('"amountSats":21'))).toBe(true);
     });
@@ -2927,5 +2947,442 @@ describe('MemberHabits', () => {
     });
     expect(screen.queryByText('Older')).toBeNull();
     expect(screen.getByText('Newer')).toBeTruthy();
+  });
+
+  it('maps habit api limits onto the field and clears them when the text changes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          const body = JSON.parse(String(init.body)) as {
+            action?: string;
+            name?: string;
+            description?: string;
+            notes?: string;
+            text?: string;
+          };
+          if (body.action === 'add' && body.description === 'too') {
+            return json({ error: 'Invalid description' }, 400);
+          }
+          if (body.action === 'add' && body.notes === 'too') {
+            return json({ error: 'Invalid notes' }, 400);
+          }
+          if (body.action === 'add' && body.name === 'Nope') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'edit' && body.description === 'too-desc') {
+            return json({ error: 'Invalid description' }, 400);
+          }
+          if (body.action === 'edit' && body.notes === 'too-notes') {
+            return json({ error: 'Invalid notes' }, 400);
+          }
+          if (body.action === 'edit' && body.name === 'Walk') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'comment' && body.text === 'not this field') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'comment') {
+            return json({ error: 'Invalid comment' }, 400);
+          }
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    const add = within(addForm);
+    fireEvent.blur(add.getByLabelText('Name'));
+    expect(screen.getByText('Enter a habit name')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Description'), { target: { value: 'd'.repeat(2001) } });
+    expect(screen.getByText('Keep it to 2000 characters')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Description'), { target: { value: '' } });
+    fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: 'n'.repeat(2001) } });
+    expect(screen.getByText('Keep it to 2000 characters')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: '' } });
+    expect(screen.queryByText('Keep it to 2000 characters')).toBeNull();
+
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Ok' } });
+    fireEvent.change(add.getByLabelText('Description'), { target: { value: 'too' } });
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('The description is not valid')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Description'), { target: { value: 'fine' } });
+    expect(screen.queryByText('The description is not valid')).toBeNull();
+    fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: 'too' } });
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('The notes are not valid')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Internal notes'), { target: { value: 'fine' } });
+    expect(screen.queryByText('The notes are not valid')).toBeNull();
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Nope' } });
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Yep' } });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    const edit = within(saveForm);
+    fireEvent.blur(edit.getByLabelText('Name'));
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: '' } });
+    fireEvent.submit(saveForm);
+    expect(screen.getByText('Enter a habit name')).toBeTruthy();
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Walk' } });
+    fireEvent.submit(saveForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Ran' } });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    fireEvent.change(edit.getByLabelText('Description'), { target: { value: 'too-desc' } });
+    fireEvent.submit(saveForm);
+    expect(await screen.findByText('The description is not valid')).toBeTruthy();
+    fireEvent.change(edit.getByLabelText('Description'), { target: { value: 'Outside' } });
+    expect(screen.queryByText('The description is not valid')).toBeNull();
+    fireEvent.change(edit.getByLabelText('Internal notes'), { target: { value: 'too-notes' } });
+    fireEvent.submit(saveForm);
+    expect(await screen.findByText('The notes are not valid')).toBeTruthy();
+    fireEvent.change(edit.getByLabelText('Internal notes'), { target: { value: 'secret' } });
+    expect(screen.queryByText('The notes are not valid')).toBeNull();
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(screen.getByText('Enter a comment')).toBeTruthy();
+    fireEvent.change(comment, { target: { value: 'c'.repeat(2001) } });
+    expect(screen.getByText('Keep the comment to 2000 characters')).toBeTruthy();
+    fireEvent.change(comment, { target: { value: 'hello' } });
+    fireEvent.blur(comment);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(await screen.findByText('The comment is not valid')).toBeTruthy();
+    fireEvent.change(comment, { target: { value: 'hello!' } });
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
+    fireEvent.change(comment, { target: { value: 'not this field' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(
+      await screen.findByText('Could not load or save the tracker. Please try again.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
+    expect(screen.queryByText('Keep the comment to 2000 characters')).toBeNull();
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
+    );
+    const amount = await screen.findByLabelText('Amount');
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(amount, { target: { value: 'nope' } });
+    fireEvent.submit(amount.closest('form')!);
+    expect(screen.getByText('Expected a JSON body with an integer "amountSats"')).toBeTruthy();
+  });
+
+  it('shows an over-max Gift on the amount field before the api', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
+    );
+    const amount = await screen.findByLabelText('Amount');
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(amount, { target: { value: '10000001' } });
+    expect(screen.getByText('Expected a JSON body with an integer "amountSats"')).toBeTruthy();
+    const button = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.submit(button.closest('form')!);
+    expect(screen.getByText('Expected a JSON body with an integer "amountSats"')).toBeTruthy();
+  });
+
+  it('clears an edit rejection when cancel closes the draft', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          return json({ error: 'Invalid name' }, 400);
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.change(within(saveForm).getByLabelText('Name'), { target: { value: 'Still fine' } });
+    fireEvent.submit(saveForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it('drops a habit rejection when the draft changed before the answer', async () => {
+    const pending: Array<(value: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    const add = within(addForm);
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Nope' } });
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(1);
+    });
+    fireEvent.change(add.getByLabelText('Name'), { target: { value: 'Yep' } });
+    await act(async () => {
+      pending[0]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('Could not load or save the tracker. Please try again.')).toBeNull();
+    expect((add.getByRole('button', { name: 'Add habit' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    const edit = within(saveForm);
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Walk' } });
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(2);
+    });
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Ran' } });
+    await act(async () => {
+      pending[1]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect((edit.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false);
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.change(comment, { target: { value: 'hello' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(pending).toHaveLength(3);
+    });
+    fireEvent.change(comment, { target: { value: 'hello!' } });
+    await act(async () => {
+      pending[2]?.(json({ error: 'Invalid comment' }, 400));
+    });
+    expect(screen.queryByText('The comment is not valid')).toBeNull();
+    expect((screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+
+    fireEvent.change(edit.getByLabelText('Name'), { target: { value: 'Later' } });
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(4);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await act(async () => {
+      pending[3]?.(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it('drops a cancelled edit when that habit is open again with the same name', async () => {
+    const pending: Array<(value: Response) => void> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          return new Promise<Response>((resolve) => {
+            pending.push(resolve);
+          });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(pending).toHaveLength(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const reopened = formsNamed('Save')[0];
+    if (reopened === undefined) {
+      throw new Error('missing reopened save form');
+    }
+    await act(async () => {
+      pending[0]?.(json({ error: 'Invalid name' }, 400));
+    });
+    const reopenedName = within(reopened).getByLabelText('Name');
+    if (!(reopenedName instanceof HTMLInputElement)) {
+      throw new Error('missing reopened name');
+    }
+    expect(reopenedName.value).toBe('Walk');
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
+    expect(screen.queryByText('Could not load or save the tracker. Please try again.')).toBeNull();
+    expect(
+      (within(reopened).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
+
+  it('shows the tracker error when a save throws a non-error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          throw 'down';
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    expect(
+      await screen.findByText('Could not load or save the tracker. Please try again.'),
+    ).toBeTruthy();
+  });
+
+  it('keeps only the latest habit result when a field rejection and the tracker alert follow each other', async () => {
+    const tracker = 'Could not load or save the tracker. Please try again.';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return json({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
+        }
+        if (init?.method === 'POST') {
+          const body = JSON.parse(String(init.body)) as {
+            action?: string;
+            name?: string;
+            text?: string;
+          };
+          if (body.action === 'add' && body.name === 'Nope') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          if (body.action === 'comment' && body.text === 'not this field') {
+            return json({ error: 'Invalid name' }, 400);
+          }
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.change(comment, { target: { value: 'not this field' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(await screen.findByText(tracker)).toBeTruthy();
+
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.change(within(addForm).getByLabelText('Name'), { target: { value: 'Nope' } });
+    fireEvent.submit(addForm);
+    expect(await screen.findByText('The habit name is not valid')).toBeTruthy();
+    expect(screen.queryByText(tracker)).toBeNull();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    expect(await screen.findByText(tracker)).toBeTruthy();
+    expect(screen.queryByText('The habit name is not valid')).toBeNull();
   });
 });

@@ -166,9 +166,55 @@ describe('ForumAskWizard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(3);
-    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
+    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} draft="Hello" />);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onStepChange).toHaveBeenCalledWith(4);
+  });
+
+  it('shows shop guidance under Ask text and disables Continue and preview Post', () => {
+    const onStepChange = vi.fn();
+    const onPost = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={3}
+        onStepChange={onStepChange}
+        {...idle}
+        draft="Cafe Luna #21GiftsShop"
+        shopElsewhere
+      />,
+    );
+    const composer = screen.getByLabelText('Your message');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    const next = screen.getByRole('button', { name: 'Continue' });
+    expect(feedback.getAttribute('role')).toBeNull();
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(next).toHaveProperty('disabled', true);
+    fireEvent.click(next);
+    expect(onStepChange).not.toHaveBeenCalled();
+
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        draft="Cafe Luna #21GiftsShop"
+        shopElsewhere
+        onPost={onPost}
+      />,
+    );
+    const post = screen.getByRole('button', { name: /^Post$/ });
+    expect(
+      screen
+        .getByText('Shop notes need the shop name and full address. Post this shop from Shops.')
+        .getAttribute('role'),
+    ).toBeNull();
+    expect(post).toHaveProperty('disabled', true);
+    fireEvent.click(post);
+    expect(onPost).not.toHaveBeenCalled();
   });
 
   it('disables preview Post without text or media', () => {
@@ -178,18 +224,23 @@ describe('ForumAskWizard', () => {
     );
   });
 
-  it('caps the text step at composerMaxLength', () => {
+  it('shows the text-step limit while the draft is still over it', () => {
+    const onStepChange = vi.fn();
     renderWithLocale(
       <ForumAskWizard
         step={3}
-        onStepChange={() => undefined}
+        onStepChange={onStepChange}
         {...idle}
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH - 13)}
         composerMaxLength={FORUM_MESSAGE_MAX_LENGTH - 14}
       />,
     );
-    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBe(
-      String(FORUM_MESSAGE_MAX_LENGTH - 14),
-    );
+    expect(screen.getByLabelText('Your message').getAttribute('maxLength')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(cont.disabled).toBe(true);
+    fireEvent.click(cont);
+    expect(onStepChange).not.toHaveBeenCalled();
   });
 
   it('picks files and previews one photo, many photos, and video', () => {
@@ -366,7 +417,7 @@ describe('ForumAskWizard', () => {
     expect(screen.queryByRole('button', { name: 'Daily' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Credit' })).toBeNull();
-    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} />);
+    rerender(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} draft="Hello" />);
     expect(screen.queryByRole('button', { name: 'One-time' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Donation' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -643,5 +694,32 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.getByText('No exchange rate yet')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+  });
+
+  it('asks for ask text after blur or Continue and shows a too-long preview', () => {
+    const onStepChange = vi.fn();
+    renderWithLocale(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} draft="" />);
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    cleanup();
+
+    renderWithLocale(<ForumAskWizard step={3} onStepChange={onStepChange} {...idle} draft="" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onStepChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    cleanup();
+
+    renderWithLocale(
+      <ForumAskWizard
+        step={4}
+        onStepChange={() => undefined}
+        {...idle}
+        draft={'a'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1)}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 });

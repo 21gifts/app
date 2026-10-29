@@ -12,8 +12,14 @@ interface FieldShellProps {
   label: string;
   /** Optional id; generated from label when omitted. */
   id?: string;
-  /** Extra classes on the outer label wrapper. */
+  /** Extra classes on the outer wrapper `div`. */
   className?: string;
+  /** Supporting copy shown under the control. */
+  hint?: string;
+  /** Validation copy shown under the control. */
+  error?: string;
+  /** Announce the error with `role="alert"`; use for errors that arrive after an action, not while typing. */
+  errorAnnounce?: boolean;
 }
 
 /** Props for a single-line {@link Field}. */
@@ -40,7 +46,7 @@ export type FieldProps = FieldInputProps | FieldTextareaProps;
  * @returns The labeled field.
  */
 export function Field(props: FieldProps): ReactElement {
-  const { label, id, className, multiline, ...rest } = props;
+  const { label, id, className, multiline, hint, error, errorAnnounce, ...rest } = props;
   const fieldId =
     id ??
     `field-${label
@@ -48,6 +54,14 @@ export function Field(props: FieldProps): ReactElement {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')}`;
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
+  const nativeDescribedBy = rest['aria-describedby'];
+  const hintId = hint === undefined ? null : `${fieldId}-hint`;
+  const errorId = error === undefined ? null : `${fieldId}-error`;
+  const describedBy = [nativeDescribedBy, hintId, errorId].filter(Boolean).join(' ') || undefined;
+  const validationProps = {
+    ...(describedBy === undefined ? {} : { 'aria-describedby': describedBy }),
+    ...(error === undefined ? {} : { 'aria-invalid': true as const }),
+  };
   let control: ReactNode;
   if (multiline === true) {
     const textareaProps = rest as TextareaHTMLAttributes<HTMLTextAreaElement>;
@@ -56,19 +70,31 @@ export function Field(props: FieldProps): ReactElement {
         id={fieldId}
         className={`${CONTROL_CLASS} min-h-11 resize-none`}
         {...textareaProps}
+        {...validationProps}
       />
     );
   } else {
     const inputProps = rest as InputHTMLAttributes<HTMLInputElement>;
-    control = <input id={fieldId} className={CONTROL_CLASS} {...inputProps} />;
+    control = <input id={fieldId} className={CONTROL_CLASS} {...inputProps} {...validationProps} />;
   }
   return (
-    <label
-      htmlFor={fieldId}
-      className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}
-    >
-      {label}
+    <div className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}>
+      <label htmlFor={fieldId}>{label}</label>
       {control}
-    </label>
+      {hint === undefined ? null : (
+        <span id={hintId!} className="text-sm text-app-muted">
+          {hint}
+        </span>
+      )}
+      {error === undefined ? null : (
+        <span
+          id={errorId!}
+          className="text-sm text-app-danger"
+          role={errorAnnounce === true ? 'alert' : undefined}
+        >
+          {error}
+        </span>
+      )}
+    </div>
   );
 }

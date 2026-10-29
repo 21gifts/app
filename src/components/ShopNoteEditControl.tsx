@@ -17,7 +17,17 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { ensureShopHashtag, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  apiMediaProblem,
+  formatPlacePinText,
+  isShopNote,
+  shopApiProblem,
+  shopDescriptionProblem,
+  shopPlaceComplete,
+  shopProblemField,
+  stripShopHashtag,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
@@ -50,7 +60,12 @@ export interface ShopNoteEditControlProps {
  * @param none - Copy used when the value is empty or not the expected shape.
  * @returns Visible text for that value.
  */
-function editValueText(field: ShopNoteEdit['field'], value: unknown, none: string): string {
+function editValueText(
+  field: ShopNoteEdit['field'],
+  value: unknown,
+  none: string,
+  locale: string,
+): string {
   if (value === null || value === undefined) {
     return none;
   }
@@ -61,12 +76,48 @@ function editValueText(field: ShopNoteEdit['field'], value: unknown, none: strin
     return none;
   }
   if (field === 'place') {
-    const place = value as { lat?: unknown; lng?: unknown; label?: unknown };
-    if (typeof place.label === 'string' && place.label.trim() !== '') {
-      return place.label;
-    }
-    if (typeof place.lat === 'number' && typeof place.lng === 'number') {
-      return `${place.lat}, ${place.lng}`;
+    const place = value as {
+      lat?: unknown;
+      lng?: unknown;
+      label?: unknown;
+      address?: {
+        street?: unknown;
+        houseNumber?: unknown;
+        postalCode?: unknown;
+        city?: unknown;
+        country?: unknown;
+      } | null;
+    };
+    if (
+      typeof place.lat === 'number' &&
+      typeof place.lng === 'number' &&
+      (typeof place.label === 'string' || place.label === null || place.label === undefined)
+    ) {
+      const address =
+        place.address !== undefined &&
+        place.address !== null &&
+        typeof place.address.street === 'string' &&
+        typeof place.address.houseNumber === 'string' &&
+        typeof place.address.postalCode === 'string' &&
+        typeof place.address.city === 'string' &&
+        typeof place.address.country === 'string'
+          ? {
+              street: place.address.street,
+              houseNumber: place.address.houseNumber,
+              postalCode: place.address.postalCode,
+              city: place.address.city,
+              country: place.address.country,
+            }
+          : null;
+      return formatPlacePinText(
+        {
+          lat: place.lat,
+          lng: place.lng,
+          label: typeof place.label === 'string' ? place.label : null,
+          ...(address === null ? {} : { address }),
+        },
+        locale,
+      );
     }
     return none;
   }
@@ -78,15 +129,51 @@ function placeStamp(place: ForumPlacePin | null): string {
   if (place === null) {
     return '';
   }
-  return `${place.lat},${place.lng},${place.label ?? ''}`;
+  const address = place.address;
+  return JSON.stringify([
+    place.lat,
+    place.lng,
+    place.label ?? null,
+    address === undefined || address === null
+      ? null
+      : [address.street, address.houseNumber, address.postalCode, address.city, address.country],
+  ]);
 }
 
 function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): boolean {
   return placeStamp(left) === placeStamp(right);
 }
 
+/**
+ * Place captured when the editor opened.
+ * A later parent render must not share this object.
+ */
+function copyOpenedPlace(place: ForumPlacePin | null | undefined): ForumPlacePin | null {
+  if (place === null || place === undefined) {
+    return null;
+  }
+  const copy: ForumPlacePin = {
+    lat: place.lat,
+    lng: place.lng,
+    label: place.label === undefined ? null : place.label,
+  };
+  if (place.address !== undefined) {
+    copy.address =
+      place.address === null
+        ? null
+        : {
+            street: place.address.street,
+            houseNumber: place.address.houseNumber,
+            postalCode: place.address.postalCode,
+            city: place.address.city,
+            country: place.address.country,
+          };
+  }
+  return copy;
+}
+
 function usernameOf(value: string): string {
-  return value.trim().replace(/^@/, '');
+  return value.trim().replace(/^@/, '').trim().toLowerCase();
 }
 
 const KEPT_STILL_TYPES = new Set(['image/png', 'image/webp']);
@@ -189,15 +276,10 @@ export function ShopNoteEditControl({
   const [username, setUsername] = useState('');
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
-  // The lists a pick appends to. Two picks can overlap while photos are
-  // prepared, so room and the too-many sentence read these, not the render.
-  const keptRef = useRef<ShopKeptMedia[]>([]);
-  const photoDraftsRef = useRef<ForumPhotoPayload[]>([]);
-  // Opening or closing the editor starts a new session; a pick still being
-  // prepared from an earlier session is dropped. Picks in flight keep the
-  // steps busy so Save cannot run before their stills land.
-  const pickSession = useRef(0);
-  const [picking, setPicking] = useState(0);
+  // New photos the API rejected for format or size; they block the editor while still attached.
+  const [rejectedPhotos, setRejectedPhotos] = useState<readonly ForumPhotoPayload[]>([]);
+  // A pick still preparing keeps the steps put, like the Add a shop composer.
+  const [preparing, setPreparing] = useState(false);
   const [saving, setSaving] = useState(false);
   // Written parts not reported to `onSaved` yet. A complete save reports at once;
   // a save that stopped part-way reports when the editor closes or unmounts (for
@@ -241,7 +323,10 @@ export function ShopNoteEditControl({
     [],
   );
   const [saveError, setSaveError] = useState(false);
-  const [pickError, setPickError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
+  const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
+  const [photoError, setPhotoError] = useState<
+    'unsupported' | 'tooLarge' | 'tooMany' | 'formatOrSize' | null
+  >(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
@@ -252,21 +337,20 @@ export function ShopNoteEditControl({
   // Bytes read before the feed revokes preview URLs. A later step can fail
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
-
-  function endPickSession(): void {
-    pickSession.current += 1;
-    setPicking(0);
-  }
-
-  function replaceKept(next: ShopKeptMedia[]): void {
-    keptRef.current = next;
-    setKept(next);
-  }
-
-  function replacePhotoDrafts(next: ForumPhotoPayload[]): void {
-    photoDraftsRef.current = next;
-    setPhotoDrafts(next);
-  }
+  // Photos kept plus picked; a pick reads it after preparing, when another
+  // pick or a removal may already have changed the rendered count.
+  const photoCountRef = useRef(0);
+  // Opening values, not the live message props. A parent quick-edit must not
+  // be written back unless this editor changed that field.
+  const openedTextRef = useRef('');
+  const openedPlaceRef = useRef<ForumPlacePin | null>(null);
+  const openedUsernameRef = useRef('');
+  // Bumped when a pick must be ignored: cancel, the open pencil, or a new open.
+  const prepareGenerationRef = useRef(0);
+  useEffect(() => {
+    photoCountRef.current =
+      kept.filter((item) => item.kind === 'photo').length + photoDrafts.length;
+  }, [kept, photoDrafts]);
 
   function revokeOwnedPhotos(): void {
     for (const url of ownedPhotoUrls.current) {
@@ -306,20 +390,41 @@ export function ShopNoteEditControl({
       return;
     }
     openingRef.current = true;
-    endPickSession();
+    prepareGenerationRef.current += 1;
+    setPreparing(false);
+    setPhotoDrafts([]);
     try {
       keptStillBytes.current.clear();
-      setDraft(stripShopHashtag(message.text));
-      setPlace(message.place ?? null);
-      setUsername(message.shopAccount?.username ?? '');
-      replacePhotoDrafts([]);
+      const openedText = stripShopHashtag(message.text);
+      const openedPlace = copyOpenedPlace(message.place);
+      const storedUsername = message.shopAccount?.username ?? '';
+      const openedUsername =
+        storedUsername === ''
+          ? '@'
+          : storedUsername.startsWith('@')
+            ? storedUsername
+            : `@${storedUsername}`;
+      openedTextRef.current = openedText;
+      openedPlaceRef.current = openedPlace;
+      openedUsernameRef.current = openedUsername;
+      setDraft(openedText);
+      setPlace(copyOpenedPlace(message.place));
+      setUsername(openedUsername);
       setSaveError(false);
-      setPickError(null);
+      setSaveProblem(null);
+      setPhotoError(null);
       setHistory(null);
       setHistoryError(false);
+      void fetchShopNoteEdits(token, message.id)
+        .then((rows) => {
+          setHistory(rows);
+        })
+        .catch(() => {
+          setHistoryError(true);
+        });
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
       if (photos.length < message.photoCount) {
-        replaceKept([]);
+        setKept([]);
         setPhotoBaseline([]);
         revokeOwnedPhotos();
         try {
@@ -332,7 +437,7 @@ export function ShopNoteEditControl({
           }
           photos = loaded;
         } catch {
-          replaceKept([]);
+          setKept([]);
           setPhotoBaseline([]);
           revokeOwnedPhotos();
           setPhotosReady(false);
@@ -344,7 +449,7 @@ export function ShopNoteEditControl({
         try {
           photos = await ownFeedStills(photos, ownedPhotoUrls.current, keptStillBytes.current);
         } catch {
-          replaceKept([]);
+          setKept([]);
           setPhotoBaseline([]);
           setPhotosReady(false);
           setSaveError(true);
@@ -357,18 +462,11 @@ export function ShopNoteEditControl({
         existingVideoUrl ??
         (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
       setPhotoBaseline(photos);
-      replaceKept([
+      setKept([
         ...photos.map((url) => ({ url, kind: 'photo' as const })),
         ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
       ]);
       setOpen(true);
-      void fetchShopNoteEdits(token, message.id)
-        .then((rows) => {
-          setHistory(rows);
-        })
-        .catch(() => {
-          setHistoryError(true);
-        });
     } finally {
       openingRef.current = false;
     }
@@ -380,68 +478,64 @@ export function ShopNoteEditControl({
 
   /* v8 ignore start -- edit mode never has a pending video to clear */
   function clearPendingPhotos(): void {
-    replacePhotoDrafts([]);
+    setPhotoDrafts([]);
   }
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
-    const session = pickSession.current;
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setPhotoError(null);
+    const generation = prepareGenerationRef.current;
+    setPreparing(true);
     const prepared: ForumPhotoPayload[] = [];
-    let error: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
-    setPicking((count) => count + 1);
-    try {
-      for (const file of files) {
-        try {
-          const result = await prepareForumPhoto(file);
-          if (result.ok) {
-            prepared.push(result.photo);
-          } else {
-            error = result.error;
-          }
-        } catch {
-          error = 'unsupported';
+    let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
+    for (const file of files) {
+      let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+      try {
+        result = await prepareForumPhoto(file);
+      } catch {
+        if (prepareGenerationRef.current !== generation) {
+          return;
         }
+        if (nextError === null) nextError = 'unsupported';
+        continue;
       }
-    } finally {
-      if (session === pickSession.current) {
-        setPicking((count) => count - 1);
+      if (prepareGenerationRef.current !== generation) {
+        return;
+      }
+      if (result.ok) {
+        prepared.push(result.photo);
+      } else if (nextError === null) {
+        nextError = result.error;
       }
     }
-    if (session !== pickSession.current) {
-      return;
+    if (prepared.length > 0) {
+      const room = 10 - photoCountRef.current;
+      if (room <= 0) nextError = 'tooMany';
+      else {
+        if (prepared.length > room) nextError = 'tooMany';
+        photoCountRef.current += Math.min(prepared.length, room);
+        setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
+      }
     }
-    const keptCount = keptRef.current.filter((item) => item.kind === 'photo').length;
-    const current = photoDraftsRef.current;
-    const room = Math.max(0, 10 - keptCount - current.length);
-    if (prepared.length > room) {
-      error = 'tooMany';
-    }
-    setPickError(error);
-    if (prepared.length > 0 && room > 0) {
-      replacePhotoDrafts(current.concat(prepared.slice(0, room)));
-    }
+    setPhotoError(nextError);
+    setPreparing(false);
   }
 
   async function save(): Promise<void> {
+    if (preparing) {
+      return;
+    }
     setSaving(true);
     saveInFlight.current = true;
     setSaveError(false);
+    setSaveProblem(null);
+    setPhotoError(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
-      const hasMedia =
-        keptPhotos.length > 0 ||
-        photoDrafts.length > 0 ||
-        message.hasVideo ||
-        kept.some((item) => item.kind === 'video');
-      if (draft.trim() === '' && !hasMedia) {
-        setSaveError(true);
-        return;
-      }
-      const textChanged = draft !== stripShopHashtag(message.text);
-      if (textChanged && ensureShopHashtag(draft).length > FORUM_MESSAGE_MAX_LENGTH) {
-        setSaveError(true);
-        return;
-      }
+      const textChanged = draft !== openedTextRef.current;
+      const openedPlace = openedPlaceRef.current;
+      const placeChanged = !placesEqual(place, openedPlace);
       const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged && !photosReady) {
         setSaveError(true);
@@ -470,20 +564,33 @@ export function ShopNoteEditControl({
         }
       }
       let latest = message;
+      // The open snapshot decides whether this editor changed the place.
+      // Write order uses the place still on the message: a parent rename can
+      // make the new text invalid until that place is written.
+      const stored = message.place ?? null;
+      const placeFirst =
+        textChanged &&
+        placeChanged &&
+        shopPlaceComplete(stored) &&
+        shopDescriptionProblem(draft, stored.label) !== null;
+      if (placeChanged && placeFirst) {
+        latest = await setMessagePlace(token, message.id, place);
+        onUpdated(latest);
+      }
       if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
         unreportedSave.current = true;
       }
-      if (!placesEqual(place, message.place ?? null)) {
+      if (placeChanged && !placeFirst) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);
         unreportedSave.current = true;
       }
       const nextUser = usernameOf(username);
-      const prevUser = message.shopAccount?.username ?? '';
-      if (nextUser !== prevUser) {
-        latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
+      const prevUser = usernameOf(openedUsernameRef.current);
+      if (nextUser !== prevUser && nextUser !== '') {
+        latest = await setMessageShopAccount(token, message.id, nextUser);
         onUpdated(latest);
         unreportedSave.current = true;
       }
@@ -496,8 +603,21 @@ export function ShopNoteEditControl({
       unreportedSave.current = true;
       setOpen(false);
       reportSave();
-    } catch {
-      setSaveError(true);
+    } catch (error) {
+      const photoProblem = error instanceof Error ? apiMediaProblem(error.message) : null;
+      const problem = error instanceof Error ? shopApiProblem(error.message, true) : null;
+      if (photoProblem !== null) {
+        setSaveError(false);
+        setSaveProblem(null);
+        setPhotoError(photoProblem);
+        if (photoProblem === 'formatOrSize') {
+          // Stored photos were accepted before; only the new ones can be the rejected files.
+          setRejectedPhotos(photoDrafts);
+        }
+      } else {
+        setSaveError(true);
+        setSaveProblem(problem);
+      }
     } finally {
       saveInFlight.current = false;
       if (reportWhenSettled.current) {
@@ -527,7 +647,8 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
-            endPickSession();
+            prepareGenerationRef.current += 1;
+            setPreparing(false);
             closeEditor();
             return;
           }
@@ -541,31 +662,65 @@ export function ShopNoteEditControl({
           <SundayWritingGate>
             <ShopAddWizard
               mode="edit"
-              posting={saving || picking > 0}
+              posting={saving || preparing}
+              allowStepsWhilePosting={preparing && !saving}
+              {...(preparing
+                ? { busyLabel: t('shops.photoPreparing') }
+                : saving
+                  ? { busyLabel: t('shops.saving') }
+                  : {})}
+              cancelDisabled={saving}
               draft={draft}
-              onDraftChange={setDraft}
+              onDraftChange={(value) => {
+                setDraft(value);
+                setSaveError(false);
+                setSaveProblem((current) =>
+                  current !== null && shopProblemField(current) === 'text' ? null : current,
+                );
+              }}
               photoDrafts={photoDrafts}
               videoDraft={null}
               onPickFiles={(files) => {
                 void onPickFiles(files);
               }}
               onRemovePhoto={(index) => {
-                setPickError(null);
-                replacePhotoDrafts(
-                  photoDraftsRef.current.filter((_, photoIndex) => photoIndex !== index),
+                setPhotoDrafts((current) =>
+                  current.filter((_, photoIndex) => photoIndex !== index),
                 );
+                setPhotoError(null);
               }}
               onClearPhoto={clearPendingPhotos}
               place={place}
-              onPlaceChange={setPlace}
+              onPlaceChange={(next) => {
+                // The shop text must be longer than the name, so a new name may fix a text rejection.
+                /* v8 ignore next -- the shop wizard offers no Remove place, so next is never null */
+                const nameChanged = (next?.label ?? '') !== (place?.label ?? '');
+                setPlace(next);
+                setSaveError(false);
+                setSaveProblem((current) =>
+                  current !== null &&
+                  (shopProblemField(current) === 'place' ||
+                    (current === 'shopDescription' && nameChanged))
+                    ? null
+                    : current,
+                );
+              }}
               username={username}
-              onUsernameChange={setUsername}
+              onUsernameChange={(value) => {
+                setUsername(value);
+                setSaveError(false);
+                setSaveProblem((current) =>
+                  current !== null && shopProblemField(current) === 'username' ? null : current,
+                );
+              }}
               onSubmit={() => {
                 void save();
               }}
               onCancel={() => {
-                endPickSession();
+                prepareGenerationRef.current += 1;
+                setPreparing(false);
                 setSaveError(false);
+                setSaveProblem(null);
                 closeEditor();
               }}
               resetToken={0}
@@ -573,28 +728,16 @@ export function ShopNoteEditControl({
               submitLabel={t('shops.saveChanges')}
               keptMedia={kept}
               onRemoveKept={(index) => {
-                setPickError(null);
-                replaceKept(keptRef.current.filter((_, keptIndex) => keptIndex !== index));
+                setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
+                setPhotoError(null);
               }}
               imagesOnly
+              photoError={photoError}
+              rejectedMedia={rejectedPhotos}
+              serverProblem={saveProblem}
             />
           </SundayWritingGate>
-          {pickError === 'unsupported' ? (
-            <p role="alert" className="text-xs text-app-danger">
-              {t('inbox.errorUnsupported')}
-            </p>
-          ) : null}
-          {pickError === 'tooLarge' ? (
-            <p role="alert" className="text-xs text-app-danger">
-              {t('inbox.errorTooLarge')}
-            </p>
-          ) : null}
-          {pickError === 'tooMany' ? (
-            <p role="alert" className="text-xs text-app-danger">
-              {t('forum.errorTooMany')}
-            </p>
-          ) : null}
-          {saveError ? (
+          {saveError && saveProblem === null ? (
             <p role="alert" className="text-xs text-app-danger">
               {t('forum.editShopNoteFailed')}
             </p>
@@ -604,11 +747,11 @@ export function ShopNoteEditControl({
             <p role="alert" className="text-xs text-app-danger">
               {t('forum.editHistoryFailed')}
             </p>
-          ) : null}
-          {history !== null && history.length === 0 ? (
+          ) : history === null ? (
+            <p className="text-xs text-app-muted">{t('forum.editHistoryLoading')}</p>
+          ) : history.length === 0 ? (
             <p className="text-xs text-app-muted">{t('forum.editHistoryEmpty')}</p>
-          ) : null}
-          {history !== null && history.length > 0 ? (
+          ) : (
             <ul className="flex flex-col gap-2">
               {history.map((edit) => {
                 const who = edit.actor.name?.trim() ? edit.actor.name : edit.actor.id;
@@ -624,15 +767,15 @@ export function ShopNoteEditControl({
                       {who} · {formatForumTime(edit.createdAt, locale)} · {fieldLabel}
                     </p>
                     <p className="whitespace-pre-wrap">
-                      {editValueText(edit.field, edit.before, t('forum.editNone'))}
+                      {editValueText(edit.field, edit.before, t('forum.editNone'), locale)}
                       {' → '}
-                      {editValueText(edit.field, edit.after, t('forum.editNone'))}
+                      {editValueText(edit.field, edit.after, t('forum.editNone'), locale)}
                     </p>
                   </li>
                 );
               })}
             </ul>
-          ) : null}
+          )}
         </div>
       ) : null}
     </div>

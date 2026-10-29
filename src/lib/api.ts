@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { getBuildId } from '@/lib/config';
+import { USERNAME_FORMAT_MESSAGE, USERNAME_TAKEN_MESSAGE } from '@/lib/profile-fields';
 import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
@@ -24,6 +25,7 @@ import {
   giftStatsSchema,
   fxSpotSchema,
   shopActivitySchema,
+  shopListResponseSchema,
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
@@ -64,6 +66,7 @@ import {
   type GiftStats,
   type FxSpot,
   type ShopActivityDay,
+  type ShopListItem,
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
@@ -485,8 +488,10 @@ export async function setLocation(sessionToken: string, location: string): Promi
  * @param photo - JPEG payload to set, `null` to clear, omitted to keep the stored photo.
  * @returns The updated {@link Account}.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error `'Could not save. Please try again.'` on any other non-2xx
- * status or a 409 body that is not `missing_requirements`.
+ * @throws Error with the api string on 400 when the body has one. The About me
+ * length sentence passes through {@link toUserFacingError} unchanged.
+ * @throws Error `'Could not save. Please try again.'` on a 400 without an error
+ * string, a 409 that is not `missing_requirements`, or any other non-2xx status.
  * @throws when the 2xx body fails {@link accountSchema} validation.
  */
 export async function putAboutMe(
@@ -531,6 +536,12 @@ export async function putAboutMe(
       throw missing;
     }
     throw new Error('Could not save. Please try again.');
+  }
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    if (raw !== null) {
+      throw new Error(toUserFacingError(raw));
+    }
   }
   if (!response.ok) {
     throw new Error('Could not save. Please try again.');
@@ -945,7 +956,12 @@ export async function fetchViewForumList(
  * @param username - Handle (`a-z0-9-_.`).
  * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
  * @returns The updated {@link Account}.
- * @throws Error with visitor-facing copy on 400/409 or other failures.
+ * @throws Error `Username is already in use` when a 409 body is that sentence,
+ * otherwise `'username-taken'` on 409.
+ * @throws Error `Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot`
+ * when a 400 body is that sentence, `'username-invalid'` when a 400 body has no
+ * error string, and the raw api string for any other 400.
+ * @throws Error `'username-request'` on any other failure.
  */
 export async function setUsername(
   sessionToken: string,
@@ -962,10 +978,15 @@ export async function setUsername(
     body: JSON.stringify({ username }),
   });
   if (response.status === 409) {
-    throw new Error('username-taken');
+    const raw = await readApiError(response);
+    throw new Error(raw === USERNAME_TAKEN_MESSAGE ? USERNAME_TAKEN_MESSAGE : 'username-taken');
   }
   if (response.status === 400) {
-    throw new Error('username-invalid');
+    const raw = await readApiError(response);
+    if (raw === null) {
+      throw new Error('username-invalid');
+    }
+    throw new Error(raw === USERNAME_FORMAT_MESSAGE ? USERNAME_FORMAT_MESSAGE : raw);
   }
   if (!response.ok) {
     throw new Error('username-request');
@@ -1211,11 +1232,11 @@ export async function fetchGiftDay(day: string): Promise<GiftDay> {
   try {
     const response = await fetch(`/gifts?day=${encodeURIComponent(day)}`);
     if (!response.ok) {
-      throw new Error('Could not load gift stats. Please try again.');
+      throw new Error('Could not load donation stats. Please try again.');
     }
     return giftDaySchema.parse(await response.json());
   } catch {
-    throw new Error('Could not load gift stats. Please try again.');
+    throw new Error('Could not load donation stats. Please try again.');
   }
 }
 
@@ -1235,11 +1256,11 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
       trimmed === '' ? '/gifts/stats' : `/gifts/stats?recipient=${encodeURIComponent(trimmed)}`;
     const response = await fetch(path);
     if (!response.ok) {
-      throw new Error('Could not load gift stats. Please try again.');
+      throw new Error('Could not load donation stats. Please try again.');
     }
     return giftStatsSchema.parse(await response.json());
   } catch {
-    throw new Error('Could not load gift stats. Please try again.');
+    throw new Error('Could not load donation stats. Please try again.');
   }
 }
 
@@ -1299,6 +1320,35 @@ export async function fetchGrantPlaces(): Promise<GrantPlaces> {
     return grantPlacesSchema.parse(await response.json());
   } catch {
     throw new Error(GRANT_PLACES_LOAD_ERROR);
+  }
+}
+
+const SHOPS_LOAD_ERROR = 'Could not load shops. Please try again.';
+
+/**
+ * Fetches one page of the public shop directory. No Authorization header.
+ *
+ * @param cursor - Page cursor from the previous response. Omit for the first page.
+ * @returns The shops and the next cursor, or null when that key is absent.
+ * @throws Error with visitor-facing copy when the response is not ok or the
+ * body fails {@link shopListResponseSchema}.
+ */
+export async function fetchListedShops(
+  cursor?: string,
+): Promise<{ shops: ShopListItem[]; nextCursor: string | null }> {
+  try {
+    const params = new URLSearchParams({ limit: '20' });
+    if (cursor !== undefined) {
+      params.set('cursor', cursor);
+    }
+    const response = await fetch(`/shops/list?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(SHOPS_LOAD_ERROR);
+    }
+    const body = shopListResponseSchema.parse(await response.json());
+    return { shops: body.shops, nextCursor: body.nextCursor ?? null };
+  } catch {
+    throw new Error(SHOPS_LOAD_ERROR);
   }
 }
 
@@ -2837,6 +2887,14 @@ export async function postMessageVideo(
     if (typeof input.place.label === 'string') {
       form.set('placeLabel', input.place.label);
     }
+    const address = input.place.address;
+    if (address !== undefined && address !== null) {
+      form.set('placeStreet', address.street);
+      form.set('placeHouseNumber', address.houseNumber);
+      form.set('placePostalCode', address.postalCode);
+      form.set('placeCity', address.city);
+      form.set('placeCountry', address.country);
+    }
   }
   const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
   if (shopUsername !== '') {
@@ -4304,8 +4362,8 @@ export async function deleteMessage(sessionToken: string, messageId: string): Pr
  * @param messageId - Forum message UUID.
  * @param place - Pin to store, or `null` to clear.
  * @returns The updated {@link ForumMessage}. Cleared pins are omitted.
- * @throws Error on a non-2xx status (`Could not save place`) or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save place` on any other
+ * non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessagePlace(
   sessionToken: string,
@@ -4322,6 +4380,10 @@ export async function setMessagePlace(
     body: JSON.stringify({ place }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save place' : toUserFacingError(raw));
+    }
     throw new Error('Could not save place');
   }
   return forumMessageSchema.parse(await response.json());
@@ -4334,9 +4396,10 @@ export async function setMessagePlace(
  * @param messageId - Forum message UUID.
  * @param username - 21.gifts username to attach, or `null` to clear.
  * @returns The updated {@link ForumMessage}. Cleared accounts are omitted.
- * @throws Error `No account with that username` on HTTP 404.
- * @throws Error `Could not save account` on any other non-2xx status or a body
- * that fails {@link forumMessageSchema}.
+ * @throws Error `No account with that username` when an HTTP 404 carries that
+ * exact API reason. Throws the API reason on HTTP 400, or
+ * `Could not save account` on any other non-2xx status or a body that fails
+ * {@link forumMessageSchema}.
  */
 export async function setMessageShopAccount(
   sessionToken: string,
@@ -4353,9 +4416,14 @@ export async function setMessageShopAccount(
     body: JSON.stringify({ username }),
   });
   if (response.status === 404) {
-    throw new Error('No account with that username');
+    const raw = await readApiError(response);
+    throw new Error(raw === 'No account with that username' ? raw : 'Could not save account');
   }
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save account' : toUserFacingError(raw));
+    }
     throw new Error('Could not save account');
   }
   return forumMessageSchema.parse(await response.json());
@@ -4370,8 +4438,8 @@ export async function setMessageShopAccount(
  * @param messageId - Forum message UUID.
  * @param photos - JPEG, PNG, or WebP stills, at most 10.
  * @returns The updated {@link ForumMessage}.
- * @throws Error `Could not save shop note` on a non-2xx status or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save shop note` on any
+ * other non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessageShopPhotos(
   sessionToken: string,
@@ -4396,6 +4464,10 @@ export async function setMessageShopPhotos(
     }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save shop note' : toUserFacingError(raw));
+    }
     throw new Error('Could not save shop note');
   }
   return forumMessageSchema.parse(await response.json());
@@ -4429,8 +4501,8 @@ const shopNoteEditsSchema = z.object({ edits: z.array(shopNoteEditSchema) });
  * @param messageId - Forum message UUID.
  * @param text - New visible body. The shop tag may be omitted.
  * @returns The updated {@link ForumMessage}.
- * @throws Error `Could not save shop note` on a non-2xx status or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save shop note` on any
+ * other non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessageShopText(
   sessionToken: string,
@@ -4447,6 +4519,10 @@ export async function setMessageShopText(
     body: JSON.stringify({ text }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save shop note' : toUserFacingError(raw));
+    }
     throw new Error('Could not save shop note');
   }
   return forumMessageSchema.parse(await response.json());

@@ -57,6 +57,16 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Input feedback
+
+Reject a pull request when an API-enforced input rule appears only after submit
+or Next, when a known API reason is replaced with generic copy, or when a step
+or submit button is disabled without a visible reason. Check that field-level
+messages are live, adjacent (under the field, or under its row with the field
+named when two fields share a row), and linked through `aria-invalid` and
+`aria-describedby`. A pull request that touches one of these forms must meet
+the rule in full.
+
 ## Shown amounts
 
 Reject the PR when a committed amount shows a fiat figure that was not fixed when that amount was created. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A till charge is the exception for both: the shop and the payer, signed in or signed out, both show the currency the operator typed, and that exact figure. `useFiatPreference` and `defaultFiatForLocale` do not replace it. A typed 12.00 shown as 12.01 or 11.99 is rejected. A typed amount shows that exact string. A frozen string for another currency shows that string. Every amount also shows bitcoin. When no fiat string was stored, the fiat beside the bitcoin is the current spot, and that spot is not written onto the amount. Replacing a stored figure with a recomputed one, or filling a missing string from a daily close, is rejected. What a holding is worth right now may use the current spot. A fee of ₿0 on the wallet send confirm step shows no fiat, the **Pay {amount} and post** button on the posting fee shows its amount without fiat, and a pay sheet's `WalletPay` slot shows no fee row for a fee of ₿0; none of these is a reason to reject. See CONTRIBUTING.md “Shown amounts” and `docs/fiat-amounts.md`.

@@ -377,7 +377,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: 'nope' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
@@ -389,7 +389,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '0' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
@@ -401,7 +401,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     await openNestedPaySheet();
     fireEvent.change(payAmountInput(), { target: { value: '9007199254740993' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Continue' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(screen.getByText('Enter a whole number greater than zero')).toBeTruthy();
   });
@@ -958,7 +958,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps an explicit-amount length error onto the reply error', async () => {
+  it('keeps the generic post error when a paid reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
@@ -967,8 +967,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(replyAmountInput(), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('maps an explicit-amount failure onto the reply error', async () => {
@@ -1045,7 +1046,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps a compose-pay length error onto the reply error', async () => {
+  it('keeps the generic post error when a compose reply the form accepted is rejected as too long', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     signIn();
     renderThread();
@@ -1053,8 +1054,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('rejects a compose-pay reply that exceeds 8000 characters with the prefix', async () => {
@@ -1064,8 +1066,24 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
+  it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    signIn({ role: 'founder' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH) },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalled();
+      expect(screen.getByRole('alert').textContent).toMatch(/8000/);
+    });
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
@@ -1217,6 +1235,38 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('posts 8000 characters unpaid when the public note omits accountId', async () => {
+    const text = 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH);
+    signIn();
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: text } });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text, inReplyTo: MESSAGE_ID });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
+  });
+
+  it('rejects 8001 characters when the public note omits accountId', async () => {
+    signIn();
+    renderThread({ root: { ...root, accountId: undefined } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), {
+      target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('invoices 1 sat when an unpaid reply on a note without accountId is 403', async () => {
     signIn();
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
@@ -1295,7 +1345,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: '999999999999999999999' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -1314,7 +1364,7 @@ describe('PublicMessageThread', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.change(replyAmountInput(), { target: { value: 'x' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(postMessage).not.toHaveBeenCalled();
   });
@@ -1326,7 +1376,7 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), {
       target: { value: 'x'.repeat(FORUM_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    fireEvent.submit(screen.getByRole('button', { name: 'Post' }).closest('form')!);
     expect(postMessage).not.toHaveBeenCalled();
   });
 
@@ -2149,7 +2199,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('maps an over-long invoice comment onto the reply length error', async () => {
+  it('keeps the generic post error when a short invoice comment is rejected as too long', async () => {
     signIn();
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderThread();
@@ -2157,8 +2207,9 @@ describe('PublicMessageThread', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
+    expect(screen.queryByText('Keep it to 8000 characters')).toBeNull();
   });
 
   it('does not post a second reply while posting', async () => {
@@ -2339,11 +2390,25 @@ describe('PublicMessageThread', () => {
   });
 
   it('shows the shop pencil to a moderator and applies a saved note', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     const shopRoot: ForumMessage = {
       ...root,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
+      place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     renderThread({ root: shopRoot });
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
@@ -2358,8 +2423,8 @@ describe('PublicMessageThread', () => {
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopRoot,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 1, lng: 2, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: shopPlace,
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     renderThread({ root: shopRoot });
@@ -2368,25 +2433,89 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(screen.getByText('Cafe Sol')).toBeTruthy();
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
+  });
+
+  it('drops the shop pin and account when a saved note omits them', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const shopRoot: ForumMessage = {
+      ...root,
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      place: shopPlace,
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    };
+    const withoutPlace: ForumMessage = {
+      ...shopRoot,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    };
+    delete withoutPlace.place;
+    delete withoutPlace.shopAccount;
+    signIn({ role: 'moderator' });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
+    renderThread({ root: shopRoot });
+    const pinName = "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland";
+    expect(screen.getByRole('link', { name: pinName })).toBeTruthy();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: pinName })).toBeNull();
+    expect(document.querySelector('a[href="/members/shop-acc"]')).toBeNull();
   });
 
   it('drops the public note’s photo address after a shop edit', async () => {
     const shopRoot: ForumMessage = {
       ...root,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
       hasPhoto: true,
       photoCount: 1,
       replyCount: 1,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     signIn({ role: 'moderator' });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -2409,7 +2538,7 @@ describe('PublicMessageThread', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1_714_000_000_000);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopRoot,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     renderThread({ root: shopRoot });
     expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
@@ -2421,13 +2550,13 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(screen.getByText('Cafe Sol')).toBeTruthy();
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
     expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
       `/messages/${MESSAGE_ID}/photo.jpg?v=1714000000000`,

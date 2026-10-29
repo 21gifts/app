@@ -9,18 +9,23 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
+import { localizedPublicPath, parseLocalizedPublicPath } from '@/lib/public-locale-path';
 
 /**
  * Sticky dark header for marketing pages: the top-left back arrow and wordmark, section nav
  * including Happyland, optional PWA install control, language switcher, login CTA, and a mobile
- * menu toggle. The root info page `/` shows no back arrow, whatever this tab's view stack holds.
+ * menu toggle. The root info page `/` and its language URLs such as `/de` show no back arrow,
+ * whatever this tab's view stack holds.
  *
  * @returns The header element.
  */
 export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
-  const { t } = useTranslations();
-  const isRoot = usePathname() === '/';
+  const { locale, t } = useTranslations();
+  const home = localizedPublicPath(locale, '/');
+  const pathname = usePathname();
+  // A language URL of the home page, such as `/de`, is the root page too.
+  const isRoot = pathname === '/' || parseLocalizedPublicPath(pathname)?.path === '/';
 
   const closeMenu = (): void => {
     setOpen(false);
@@ -31,7 +36,7 @@ export function MarketingHeader(): ReactElement {
       <div className="flex items-center">
         <ProfileChromeLeft
           tone="dark"
-          wordmark={<HomeWordmark tone="dark" />}
+          wordmark={<HomeWordmark tone="dark" publicHref={home} />}
           hideHistoryArrow={isRoot}
           hideOverride={isRoot}
         />
@@ -41,19 +46,19 @@ export function MarketingHeader(): ReactElement {
           aria-label={t('aria.primary')}
           className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden lg:flex'}`}
         >
-          <Link href="/#how" onClick={closeMenu}>
+          <Link href={`${home}#how`} onClick={closeMenu}>
             {t('nav.how')}
           </Link>
-          <Link href="/#happyland" onClick={closeMenu}>
+          <Link href={`${home}#happyland`} onClick={closeMenu}>
             {t('nav.happyland')}
           </Link>
-          <Link href="/#why" onClick={closeMenu}>
+          <Link href={`${home}#why`} onClick={closeMenu}>
             {t('nav.why')}
           </Link>
-          <Link href="/#faq" onClick={closeMenu}>
+          <Link href={`${home}#faq`} onClick={closeMenu}>
             {t('nav.faq')}
           </Link>
-          <Link href="/about" onClick={closeMenu}>
+          <Link href={localizedPublicPath(locale, '/about')} onClick={closeMenu}>
             {t('nav.about')}
           </Link>
           <Link href="/stats" onClick={closeMenu}>

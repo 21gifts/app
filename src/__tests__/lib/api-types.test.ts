@@ -23,9 +23,11 @@ import {
   forumMessageSchema,
   externalAuthorProfileSchema,
   forumRepliesSchema,
+  forumPlacesResponseSchema,
   hiddenMessageSchema,
   giftStatsSchema,
   shopActivitySchema,
+  shopResponseSchema,
   memberProfileSchema,
   moderatorProposalSchema,
   moderatorProposalsResponseSchema,
@@ -1229,6 +1231,14 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse(base).deletedBy).toBeUndefined();
   });
 
+  it('accepts a listed shop npub or null', () => {
+    const npub = `npub1${'2'.repeat(58)}`;
+    expect(forumMessageSchema.parse({ ...base, shopNpub: npub }).shopNpub).toBe(npub);
+    expect(forumMessageSchema.parse({ ...base, shopNpub: null }).shopNpub).toBeNull();
+    expect(forumMessageSchema.parse(base).shopNpub).toBeUndefined();
+    expect(() => forumMessageSchema.parse({ ...base, shopNpub: 'npub1bad' })).toThrow();
+  });
+
   it('omits goalSats when the payload has no key', () => {
     const parsed = forumMessageSchema.parse(base);
     expect(parsed.goalSats).toBeUndefined();
@@ -1434,6 +1444,90 @@ describe('forumMessageSchema', () => {
   });
 });
 
+describe('forumPlacesResponseSchema', () => {
+  it('accepts shopNpub as an npub or null and normalizes an omitted field to null', () => {
+    const row = {
+      id: 'm1',
+      name: 'Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      lat: 47.37,
+      lng: 8.54,
+      label: 'Zurich',
+    };
+    const npub = `npub1${'2'.repeat(58)}`;
+    expect(
+      forumPlacesResponseSchema.parse({ places: [{ ...row, shopNpub: npub }] }).places[0]?.shopNpub,
+    ).toBe(npub);
+    expect(
+      forumPlacesResponseSchema.parse({ places: [{ ...row, shopNpub: null }] }).places[0]?.shopNpub,
+    ).toBeNull();
+    expect(forumPlacesResponseSchema.parse({ places: [row] }).places[0]?.shopNpub).toBeNull();
+    expect(() =>
+      forumPlacesResponseSchema.parse({ places: [{ ...row, shopNpub: 'npub1bad' }] }),
+    ).toThrow();
+  });
+});
+
+describe('shopResponseSchema', () => {
+  const npub = `npub1${'2'.repeat(58)}`;
+  const shop = {
+    npub,
+    messageId: '11111111-1111-4111-8111-111111111111',
+    name: 'Cafe Luna',
+    description: 'Coffee and bitcoin',
+    place: {
+      lat: 47.37,
+      lng: 8.54,
+      label: 'Zurich',
+      address: {
+        street: 'Moon Street',
+        houseNumber: '21',
+        postalCode: '8000',
+        city: 'Zurich',
+        country: 'CH',
+      },
+    },
+    photos: [{ url: '/messages/111/photo.jpg', width: 1280, height: 960 }],
+    payUsername: 'luna',
+    nip05: 'luna@21.gifts',
+    createdAt: '2026-08-28T12:00:00.000Z',
+  };
+
+  it('parses the complete public shop envelope', () => {
+    expect(shopResponseSchema.parse({ shop })).toEqual({ shop });
+  });
+
+  it('accepts null photo dimensions, payment username, and NIP-05', () => {
+    const parsed = shopResponseSchema.parse({
+      shop: {
+        ...shop,
+        photos: [{ url: '/messages/111/photo.jpg', width: null, height: null }],
+        payUsername: null,
+        nip05: null,
+      },
+    });
+    expect(parsed.shop.photos[0]).toMatchObject({ width: null, height: null });
+    expect(parsed.shop.payUsername).toBeNull();
+    expect(parsed.shop.nip05).toBeNull();
+  });
+
+  it('accepts a shop with no pin and a pin with no address', () => {
+    expect(shopResponseSchema.parse({ shop: { ...shop, place: null } }).shop.place).toBeNull();
+    expect(
+      shopResponseSchema.parse({
+        shop: { ...shop, place: { ...shop.place, address: null } },
+      }).shop.place?.address,
+    ).toBeNull();
+  });
+
+  it('rejects an invalid npub and invalid coordinates', () => {
+    expect(() => shopResponseSchema.parse({ shop: { ...shop, npub: 'npub1bad' } })).toThrow();
+    expect(() =>
+      shopResponseSchema.parse({ shop: { ...shop, place: { ...shop.place, lat: 91 } } }),
+    ).toThrow();
+  });
+});
+
 describe('forumMessageSchema place', () => {
   const base = {
     id: 'm1',
@@ -1503,6 +1597,47 @@ describe('forumMessageSchema place', () => {
 
   it('leaves omitted place undefined', () => {
     expect(forumMessageSchema.parse(base).place).toBeUndefined();
+  });
+
+  it('accepts a structured address and a null address', () => {
+    const address = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address },
+      }).place,
+    ).toEqual({ lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address });
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        place: { lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address: null },
+      }).place,
+    ).toEqual({ lat: 47.3769, lng: 8.5417, label: "Kiki's Bakery", address: null });
+  });
+
+  it('throws when an address field is missing', () => {
+    expect(() =>
+      forumMessageSchema.parse({
+        ...base,
+        place: {
+          lat: 47.3769,
+          lng: 8.5417,
+          label: "Kiki's Bakery",
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+          },
+        },
+      }),
+    ).toThrow();
   });
 
   it('throws when empty text has a place but no photo, video, or sats', () => {

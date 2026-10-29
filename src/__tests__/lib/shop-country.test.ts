@@ -10,6 +10,7 @@ const PIN: ForumPlaceRow = {
   lng: 120.98,
   label: null,
   shop: true,
+  shopNpub: null,
   countryCode: 'PH',
 };
 
