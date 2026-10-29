@@ -1335,6 +1335,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'waiting-fiat-who-open',
+    image: 'loans-repay-waiting-fiat-who-open.png',
+    visual: 'state-loans-repay-waiting-fiat-who-open',
+    needle: 'state /loans/repay waiting-fiat-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'behind',
     image: 'loans-repay-behind.png',
     visual: 'state-loans-repay-behind',
@@ -3264,6 +3271,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loans-lender-waiting.png',
     visual: 'state-welcome-loans-lender-waiting',
     needle: 'state /welcome loans-lender-waiting',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-lender-waiting-open',
+    image: 'welcome-loans-lender-waiting-open.png',
+    visual: 'state-welcome-loans-lender-waiting-open',
+    needle: 'state /welcome loans-lender-waiting-open',
   },
   {
     route: '/welcome',

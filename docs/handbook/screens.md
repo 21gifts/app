@@ -1015,6 +1015,12 @@ The PHP loan while Farid cannot receive yet. The box shows **Due today**, large 
 
 ![21.gifts loans repay waiting fiat](images/loans-repay-waiting-fiat.png)
 
+### Variant: waiting-fiat-who-open
+
+The PHP waiting state with **Who gets paid** open: Elena **₱18.00** is an ordinary row; Farid **₱12.00** is a muted row with **Waiting for Farid to set up their wallet** under the name, without a warning icon. The button is still **Send ₱18.00 · ₿720**.
+
+![21.gifts loans repay waiting fiat recipient](images/loans-repay-waiting-fiat-who-open.png)
+
 ### Variant: behind
 
 Loan A is overdue. The danger-colour heading says **You're 2 days behind**, with large **₿3'000** and muted **$3.00** under it, **to 3 people**, and **Send ₿3'000 · $3.00**. **Who gets paid** is closed (see `behind-who-open`).
@@ -2389,6 +2395,12 @@ The lender card when the api could not price the waiting repayments (`sats: null
 Ada repays a PHP loan and is also owed repayments she cannot receive yet. The **Your loan** card says **Fully funded.**, shows **Ask ₱300.00 · ₿12'000** with **100%**, **Due today**, **₿720 · $0.72**, and **Send**, and under them the muted line **₱12.00 · ₿480 is waiting for a lender to set up their wallet**: the stored fiat figure of the waiting share with its bitcoin. Below the loan card, the lender card says **2 repayments are waiting for you — open your wallet to receive them**, shows **₿900 · $0.90**, and offers **Open your wallet**.
 
 ![21.gifts welcome loan and lender waiting](images/welcome-loans-lender-waiting.png)
+
+### Variant: loans-lender-waiting-open
+
+The same two cards after **Show loan** is pressed. **Due today**, **₿720 · $0.72**, **Send**, and the waiting line **₱12.00 · ₿480 is waiting for a lender to set up their wallet** stay; the list shows the linked loan text **Small loan for school books for my daughter. Paid back daily over 10 days.** with **100%**, and the toggle now says **Hide loan**. The lender card below is unchanged.
+
+![21.gifts welcome loan and lender waiting open](images/welcome-loans-lender-waiting-open.png)
 
 ### Variant: loans-sunday
 

@@ -1080,6 +1080,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:waiting-fiat-who-open",
+    "label": "/loans/repay waiting-fiat-who-open",
+    "visual": "state-loans-repay-waiting-fiat-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:behind",
     "label": "/loans/repay behind",
     "visual": "state-loans-repay-behind",
@@ -2733,6 +2739,12 @@
     "id": "/welcome:loans-lender-waiting",
     "label": "/welcome loans-lender-waiting",
     "visual": "state-welcome-loans-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting-open",
+    "label": "/welcome loans-lender-waiting-open",
+    "visual": "state-welcome-loans-lender-waiting-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

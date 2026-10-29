@@ -4737,6 +4737,28 @@ test.describe('loans repay screens', () => {
     waitingShares: 3,
     repayments: ledgerA.repayments.map((row) => ({ ...row, waiting: row.status === 'due' })),
   });
+  const waitingFiatLoan = loanWith(loanB, {
+    due: {
+      payableSats: 720,
+      payablePeople: 1,
+      waitingSats: 480,
+      waitingPeople: 1,
+      waitingShares: 1,
+      payableAmount: '18.00',
+      waitingAmount: '12.00',
+    },
+  });
+  const waitingFiatLedger = ledgerWith(ledgerB, {
+    givers: ledgerB.givers.map((giver) => ({
+      ...giver,
+      canReceive: giver.accountId !== 'acc_farid',
+    })),
+    waitingShares: 1,
+    repayments: ledgerB.repayments.map((row) => ({
+      ...row,
+      waiting: row.status === 'due' && row.accountId === 'acc_farid',
+    })),
+  });
   const behindLoan = loanWith(loanA, {
     daysPaid: 9,
     repaidSats: 9_000,
@@ -5078,36 +5100,24 @@ test.describe('loans repay screens', () => {
 
   test('state /loans/repay waiting-fiat', async ({ page }) => {
     await loanShot(page, {
-      loans: [
-        loanWith(loanB, {
-          due: {
-            payableSats: 720,
-            payablePeople: 1,
-            waitingSats: 480,
-            waitingPeople: 1,
-            waitingShares: 1,
-            payableAmount: '18.00',
-            waitingAmount: '12.00',
-          },
-        }),
-      ],
-      ledgers: {
-        'loan-b': ledgerWith(ledgerB, {
-          givers: ledgerB.givers.map((giver) => ({
-            ...giver,
-            canReceive: giver.accountId !== 'acc_farid',
-          })),
-          waitingShares: 1,
-          repayments: ledgerB.repayments.map((row) => ({
-            ...row,
-            waiting: row.status === 'due' && row.accountId === 'acc_farid',
-          })),
-        }),
-      },
+      loans: [waitingFiatLoan],
+      ledgers: { 'loan-b': waitingFiatLedger },
       visual: 'repay-ready',
       text: /₱12\.00 · ₿480.*waits for a lender/i,
     });
     await shotScreen(page, 'state-loans-repay-waiting-fiat');
+  });
+
+  test('state /loans/repay waiting-fiat-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [waitingFiatLoan],
+      ledgers: { 'loan-b': waitingFiatLedger },
+      visual: 'repay-ready',
+      text: 'Waiting for Farid to set up their wallet',
+      pressWho: true,
+    });
+    await expect(page.getByText('Elena')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-waiting-fiat-who-open');
   });
 
   test('state /loans/repay behind', async ({ page }) => {
@@ -25056,6 +25066,33 @@ test.describe('welcome forum variants', () => {
       }),
     ).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-lender-waiting');
+  });
+
+  test('state /welcome loans-lender-waiting-open', async ({ page }) => {
+    const waitingLoan = loanWith(loanB, {
+      due: {
+        payableSats: 720,
+        payablePeople: 1,
+        waitingSats: 480,
+        waitingPeople: 1,
+        waitingShares: 1,
+        payableAmount: '18.00',
+        waitingAmount: '12.00',
+      },
+    });
+    await openWelcomeLoans(page, {
+      ...myLoans([waitingLoan]),
+      lenderWaiting: { shares: 2, loans: 1, sats: 900 },
+    });
+    await expect(page.getByText(/₱12\.00 · ₿480 is waiting for a lender/)).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanB.text })).toBeVisible();
+    await expect(
+      page.getByRole('region', {
+        name: '2 repayments are waiting for you — open your wallet to receive them',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-lender-waiting-open');
   });
 
   test('state /welcome loans-sunday', async ({ page }) => {
