@@ -13,6 +13,14 @@ import { parseLocalizedPublicPath } from '@/lib/public-locale-path';
 
 const LOCALE_COOKIE_MAX_AGE = 31536000;
 
+/**
+ * Query key the language rewrite adds to the rewritten page URL. The browser
+ * URL keeps no query. The App Router keys a page by its query, so `/de/about`
+ * and `/es/about` become two pages instead of one `/about` page that still
+ * remembers `/de/about` as its refresh address after a client-side switch.
+ */
+const PUBLIC_LOCALE_QUERY = 'public-locale';
+
 /** True when the request URL or the first `x-forwarded-proto` value is https. */
 function requestIsHttps(request: NextRequest): boolean {
   if (request.nextUrl.protocol === 'https:') return true;
@@ -42,7 +50,9 @@ function opensDocument(request: NextRequest): boolean {
  *
  * A `/:locale(en|de|es|fil)` path for `/`, `/about`, `/donate`, or `/rules`
  * is rewritten onto the existing page. The locale is passed as the
- * `x-21gifts-public-locale` request header. The `locale` cookie is set when
+ * `x-21gifts-public-locale` request header and as the {@link PUBLIC_LOCALE_QUERY}
+ * query of the rewritten URL, so a client-side language switch followed by a
+ * refresh renders the new language in the layouts too. The `locale` cookie is set when
  * the browser opens that language URL as a page (`sec-fetch-dest` is
  * `document`, or the header is absent), including a prerender (`purpose` or
  * `sec-purpose` contains `prerender`, any case). A prefetch that is not a
@@ -82,6 +92,7 @@ export function middleware(request: NextRequest): NextResponse {
   } else {
     const destination = request.nextUrl.clone();
     destination.pathname = match.path;
+    destination.searchParams.set(PUBLIC_LOCALE_QUERY, match.locale);
     requestHeaders.set('x-21gifts-public-locale', match.locale);
     response = NextResponse.rewrite(destination, { request: { headers: requestHeaders } });
     if (opensDocument(request)) {

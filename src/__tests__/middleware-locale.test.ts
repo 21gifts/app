@@ -42,8 +42,17 @@ describe('public language middleware', () => {
       { request: { headers: Headers } },
     ];
     expect(destination.pathname).toBe('/about');
+    expect(destination.searchParams.get('public-locale')).toBe('de');
     expect(options.request.headers.get('x-21gifts-public-locale')).toBe('de');
     expect(options.request.headers.get('cookie')).toBe('locale=fil');
+  });
+
+  it('keys the rewritten page by its language and keeps the query of the request', () => {
+    middleware(requestFor('https://21.gifts/es?ref=x'));
+    const [destination] = responses.rewrite.mock.lastCall as unknown as [URL];
+    expect(destination.pathname).toBe('/');
+    expect(destination.searchParams.get('public-locale')).toBe('es');
+    expect(destination.searchParams.get('ref')).toBe('x');
   });
 
   it('leaves other routes to the normal router', () => {
