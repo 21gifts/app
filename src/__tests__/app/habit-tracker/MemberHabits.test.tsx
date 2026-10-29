@@ -2746,7 +2746,8 @@ describe('MemberHabits', () => {
     expect(document.querySelector('[data-pay-sheet]')).toBeNull();
   });
 
-  it('invoices a blank 21-sat Gift before the gift-day rate settles', async () => {
+  it('does not invoice until the spot rate read has settled', async () => {
+    let releaseStats!: (value: Response) => void;
     const posts: string[] = [];
     vi.stubGlobal(
       'fetch',
@@ -2754,7 +2755,9 @@ describe('MemberHabits', () => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         if (url.includes('/fx/spot')) {
-          return new Promise<Response>(() => undefined);
+          return new Promise<Response>((resolve) => {
+            releaseStats = resolve;
+          });
         }
         if (init?.method === 'POST') {
           posts.push(String(init.body));
@@ -2772,9 +2775,20 @@ describe('MemberHabits', () => {
     }
     fireEvent.click(gift);
     const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
-    expect(cont.disabled).toBe(false);
-    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+    expect(cont.disabled).toBe(true);
     fireEvent.click(cont);
+    fireEvent.submit(cont.closest('form') as HTMLFormElement);
+    expect(posts).toEqual([]);
+
+    await act(async () => {
+      releaseStats(json({ asOf: null, source: null, rates: {} }));
+    });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(posts.some((body) => body.includes('"amountSats":21'))).toBe(true);
     });
