@@ -50,7 +50,7 @@ function shopsCountryHref(country: string | null): string {
 }
 
 /**
- * Shops page body: heading, lead, a country filter, and a Post / Map / Table pill.
+ * Shops page body: heading, lead, a country filter in the top bar, and a Post / Map / Table pill.
  *
  * `/shops?country=PH` shows only the shops pinned in that country on every view: the
  * post list and the table load only those shops, and the map keeps only those pins and

@@ -646,7 +646,7 @@ export interface PageChromeProps {
 }
 ```
 
-Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child registration wins over page `topLeft`). `useAppShellScroller` returns the inner `[data-scrollport]` node, or `null` outside AppShell.
+Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child registration wins over page `topLeft`), `AppShellTopLeftExtra` (extra chrome right of the top-left cluster; the host is `empty:hidden`). `useAppShellScroller` returns the inner `[data-scrollport]` node, or `null` outside AppShell.
 
 ### `Wordmark`
 
@@ -794,7 +794,7 @@ Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-
 
 ### ForumModeSelect
 
-Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. The shops feed has no view filter; `/shops` mounts this control once, above the Post / Map / Table pill, as the country filter (`ShopsCountryFilter`: **All countries** plus each country that has a shop, labeled with its name and shop count, no chip). Post/Ask stays a SegmentedControl.
+Closed combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. The default `field` variant is the full-width select; the `chip` variant is a compact rounded pill for the app chrome row. The shops feed has no view filter; `/shops` mounts this control once as the country filter (`ShopsCountryFilter`), in the top bar right of the wordmark (`AppShellTopLeftExtra`) as the `chip`: **All countries** plus each country that has a shop, labeled with its name and shop count, no badge chip. Post/Ask stays a SegmentedControl.
 
 ```tsx
 export function ForumModeSelect<T extends string>(props: {
@@ -807,6 +807,7 @@ export function ForumModeSelect<T extends string>(props: {
   }[];
   onChange: (value: T) => void;
   ariaLabel: string;
+  variant?: 'field' | 'chip';
 }): ReactElement;
 ```
 
@@ -816,13 +817,23 @@ export function ForumModeSelect<T extends string>(props: {
 flex w-full min-h-11 items-center justify-between gap-2 rounded-2xl border border-app-border bg-app-card px-4 py-2 text-left text-base text-app-fg
 ```
 
-Visible text is the selected label. `ChevronDown` is `h-4 w-4 shrink-0 text-app-muted`, aria-hidden. Not `rounded-full` and not `bg-app-btn` on the whole control.
+Visible text is the selected label. `ChevronDown` is `h-4 w-4 shrink-0 text-app-muted`, aria-hidden. The `field` trigger is not `rounded-full` and not `bg-app-btn` on the whole control.
+
+**Chip trigger** (`variant="chip"`): the label sits in a `truncate` span on the pill
+
+```
+flex min-h-11 max-w-48 items-center gap-1.5 rounded-full border border-app-border bg-app-card px-3 py-1 text-left text-sm text-app-fg hover:bg-app-hover
+```
+
+The chip trigger is `rounded-full` by design (still not `bg-app-btn`). Below `sm` the trigger shows a globe icon instead of the label and badge.
 
 **Panel** (only while open, `role="listbox"` `id="forum-mode-listbox"`):
 
 ```
 absolute left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg
 ```
+
+The `chip` panel falls back to `absolute left-0 z-50 mt-2 w-80 …` without an `AppShell`; inside one it renders as a fixed portal placed by `fitBoxInFrame` — measured `left`/`width`/`top`/`bottom` against the frame box, `overflow-clip`, no scroller of its own, re-measured on resize and scroll.
 
 **Option row** (`type="button"` `role="option"` `tabIndex={-1}` `aria-selected`):
 
@@ -1299,7 +1310,7 @@ There is no map page. `/map` redirects to `/shops#map`. A query string is kept, 
 
 ### `/shops`
 
-Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → **Country** select (`ShopsCountryFilter`, the full-width `ForumModeSelect`: **All countries** plus each country that has a shop as `{name} ({count})`; the choice is `?country=` in the address and narrows **Post**, **Map**, and **Table** to that country's shops) → **Post** / **Map** / **Table** `SegmentedControl` `tone="neutral"` (**Post** selected) → a closed **Add a shop** button under the pill (photos, place, text, an optional user, then summary). A moderator also sees **Edit shop note** on a shop post, on a shop pin in **Map**, and beside the name in **Table**. `/shops#map` opens **Map**, `/shops#table` opens **Table**, and `/shops#post` or a missing hash opens **Post**. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again. On `/shops` a moderator (minimum rank) gets an icon on each shop note, **Add a place** or **Edit place** beside **Add an account** (User icon), reusing the composer map panel. Opening **Add an account** puts `@` in the field and shows the People list at once, at most eight people, with no scroller of its own. The panel is fixed to the window so the page does not scroll sideways. It stays under the app chrome and inside the window, dropping rows until it fits, and hiding the list rather than covering the chrome. Choosing a person fills `@username` and keeps the People list on that prefix (`staff-account-chosen`). A click chooses the same row as a pointer press. **Save account** still sends the name without `@`. Opening **Edit place** on a note that already has a pin shows **Remove place**. A failed save shows the error in the panel. **Map** and **Table** hide the composer. **Map** empty, loading, and error use the place-map copy. **Table** **Show more** appends the next page. An empty page that still has another page keeps **Show more** and does not use the empty sentence. A failed next page keeps the rows and offers **Try again**.
+Flow `AppShell` `align="start"`; `ProfileChromeLeft` + **Country** chip (`ShopsCountryFilter`, the compact `ForumModeSelect` `variant="chip"` via `AppShellTopLeftExtra`, right of the wordmark: **All countries** plus each country that has a shop as `{name} ({count})`; the choice is `?country=` in the address and narrows **Post**, **Map**, and **Table** to that country's shops) + `SignedInChrome`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** Shops → lead `shops.lead` → **Post** / **Map** / **Table** `SegmentedControl` `tone="neutral"` (**Post** selected) → a closed **Add a shop** button under the pill (photos, place, text, an optional user, then summary). A moderator also sees **Edit shop note** on a shop post, on a shop pin in **Map**, and beside the name in **Table**. `/shops#map` opens **Map**, `/shops#table` opens **Table**, and `/shops#post` or a missing hash opens **Post**. There is no **Ask for money** pill and no Active / No gifts yet / All / Most popular control. The list is every top-level shop note, newest first, including notes with zero sats. Laws hint absent. Shop cards: `#Shop` pill. Listing is `GET /messages?hashtag=21GiftsShop&mode=all` (`ForumLoader feed="shops"`, `modeSelector` false). Empty `shops.empty` immediately when that page is empty. Error + Try again. On `/shops` a moderator (minimum rank) gets an icon on each shop note, **Add a place** or **Edit place** beside **Add an account** (User icon), reusing the composer map panel. Opening **Add an account** puts `@` in the field and shows the People list at once, at most eight people, with no scroller of its own. The panel is fixed to the window so the page does not scroll sideways. It stays under the app chrome and inside the window, dropping rows until it fits, and hiding the list rather than covering the chrome. Choosing a person fills `@username` and keeps the People list on that prefix (`staff-account-chosen`). A click chooses the same row as a pointer press. **Save account** still sends the name without `@`. Opening **Edit place** on a note that already has a pin shows **Remove place**. A failed save shows the error in the panel. **Map** and **Table** hide the composer. **Map** empty, loading, and error use the place-map copy. **Table** **Show more** appends the next page. An empty page that still has another page keeps **Show more** and does not use the empty sentence. A failed next page keeps the rows and offers **Try again**.
 
 A missing-requirements response on **Table** opens `/setup/rules`, the same as the post list. **Map** with a key draws the map frame and still has no second Map heading.
 

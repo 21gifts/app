@@ -49,19 +49,23 @@ interface AppShellContextValue {
   bodyEl: HTMLElement | null;
   overlayEl: HTMLElement | null;
   topLeftEl: HTMLElement | null;
+  topLeftExtraEl: HTMLElement | null;
   setTopLeftEl: (el: HTMLElement | null) => void;
   setHasTopLeftPortal: (value: boolean) => void;
   hasTopLeftPortal: boolean;
   scrollerEl: HTMLElement | null;
   frameWidth: number | null;
+  /** The frame element (`data-app-frame`), so popovers can bound to the frame box. */
+  frameEl: HTMLElement | null;
   topLeft?: ReactNode;
   topRight?: ReactNode;
 }
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
 /**
- * Slot hosts for header, footer, overlay, top-left, the frame body under the
- * header row, and the inner scroller. Null outside AppShell.
+ * Slot hosts for header, footer, overlay, top-left chrome, extra top-left
+ * chrome, the frame body under the header row, and the inner scroller. Null
+ * outside AppShell.
  */
 export { AppShellContext };
 
@@ -103,6 +107,7 @@ export function AppShell({
   const [bodyEl, setBodyEl] = useState<HTMLElement | null>(null);
   const [overlayEl, setOverlayEl] = useState<HTMLElement | null>(null);
   const [topLeftEl, setTopLeftEl] = useState<HTMLElement | null>(null);
+  const [topLeftExtraEl, setTopLeftExtraEl] = useState<HTMLElement | null>(null);
   const [hasTopLeftPortal, setHasTopLeftPortal] = useState(false);
   const [scrollerEl, setScrollerEl] = useState<HTMLElement | null>(null);
   const [frameEl, setFrameEl] = useState<HTMLElement | null>(null);
@@ -134,11 +139,13 @@ export function AppShell({
       bodyEl,
       overlayEl,
       topLeftEl,
+      topLeftExtraEl,
       setTopLeftEl,
       setHasTopLeftPortal,
       hasTopLeftPortal,
       scrollerEl,
       frameWidth,
+      frameEl,
       topLeft,
       topRight,
     }),
@@ -148,9 +155,11 @@ export function AppShell({
       bodyEl,
       overlayEl,
       topLeftEl,
+      topLeftExtraEl,
       hasTopLeftPortal,
       scrollerEl,
       frameWidth,
+      frameEl,
       topLeft,
       topRight,
     ],
@@ -180,6 +189,11 @@ export function AppShell({
             <div ref={setTopLeftEl} className="flex min-w-0 items-center gap-2 empty:hidden">
               {showPageTopLeft ? topLeft : null}
             </div>
+            <div
+              ref={setTopLeftExtraEl}
+              data-top-left-extra
+              className="flex min-w-0 items-center empty:hidden"
+            />
             <div className="ml-auto flex shrink-0 items-center gap-2 empty:hidden">
               {hasRight ? topRight : null}
             </div>
@@ -326,4 +340,23 @@ export function AppShellTopLeft(props: { children: ReactNode }): ReactElement | 
     return null;
   }
   return createPortal(props.children, ctx.topLeftEl);
+}
+
+/**
+ * Registers extra chrome right of the top-left cluster. Without an
+ * {@link AppShell} ancestor, renders children inline. The host is the frame
+ * chrome row, not a Card.
+ *
+ * @param props - Extra chrome content.
+ * @returns Portal into the shell extra host, inline children, or `null` before the host mounts.
+ */
+export function AppShellTopLeftExtra(props: { children: ReactNode }): ReactElement | null {
+  const ctx = useContext(AppShellContext);
+  if (ctx === null) {
+    return <>{props.children}</>;
+  }
+  if (ctx.topLeftExtraEl === null) {
+    return null;
+  }
+  return createPortal(props.children, ctx.topLeftExtraEl);
 }
