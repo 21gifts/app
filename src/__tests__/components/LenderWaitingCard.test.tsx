@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { act, cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LenderWaitingCard } from '@/components/LenderWaitingCard';
 import { useMyLoans } from '@/hooks/useMyLoans';
@@ -6,6 +6,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoans } from '@/lib/api';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/hooks/useMyLoans', () => ({ useMyLoans: vi.fn() }));
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
@@ -18,9 +19,15 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-function show(loans: MyLoans | null): void {
-  vi.mocked(useMyLoans).mockReturnValue({ loans, reload: vi.fn() });
-  renderWithLocale(<LenderWaitingCard />);
+function show(loans: MyLoans | null, reload = vi.fn()): ReturnType<typeof renderWithLocale> {
+  vi.mocked(useMyLoans).mockReturnValue({ loans, reload });
+  return renderWithLocale(<LenderWaitingCard />);
+}
+
+function setVerified(verified: boolean): void {
+  useAuthStore.setState({
+    account: { sparkWalletVerified: verified } as never,
+  });
 }
 
 beforeEach(() => {
@@ -29,6 +36,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ account: null });
 });
 
 describe('LenderWaitingCard', () => {
@@ -60,5 +68,27 @@ describe('LenderWaitingCard', () => {
       }),
     ).toBeTruthy();
     expect(screen.queryByText(/₿/)).toBeNull();
+  });
+
+  it('reads the loans again once the wallet is verified while it shows', () => {
+    const reload = vi.fn().mockResolvedValue(null);
+    const body: MyLoans = {
+      sundayRest: false,
+      loans: [],
+      lenderWaiting: { shares: 2, loans: 1, sats: 400 },
+    };
+    setVerified(false);
+    const view = show(body, reload);
+    expect(reload).not.toHaveBeenCalled();
+    act(() => setVerified(true));
+    view.rerender(<LenderWaitingCard />);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not read again for a verified wallet when nothing waits', () => {
+    const reload = vi.fn();
+    setVerified(true);
+    show({ sundayRest: false, loans: [], lenderWaiting: { shares: 0, loans: 0, sats: 0 } }, reload);
+    expect(reload).not.toHaveBeenCalled();
   });
 });

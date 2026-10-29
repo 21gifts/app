@@ -31,7 +31,15 @@ import {
   typedFiatFigure,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
-import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
+import {
+  fulfillLedger,
+  fulfillMyLoans,
+  ledgerA,
+  loanA,
+  loanB,
+  loanWith,
+  myLoans,
+} from './loan-fixtures';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
 const APP_BUILD = { 'x-app-build': 'dev' };
@@ -15733,6 +15741,25 @@ test('Function: dueShares — Who gets paid lists every due lender', async ({ pa
   for (const name of ['Bruno', 'Carla', 'Diego']) {
     await expect(page.getByText(name, { exact: true })).toBeVisible();
   }
+});
+
+test('Function: definedDueLabel — a fiat waiting share keeps its stored figure', async ({
+  page,
+}) => {
+  const fiatWaiting = loanWith(loanB, {
+    due: { waitingSats: 480, waitingPeople: 1, waitingAmount: '12.00', waitingShares: 1 },
+  });
+  await openLoanUi(page, '/welcome', myLoans([fiatWaiting]), false);
+  await expect(
+    page.getByText('₱12.00 is waiting for a lender to set up their wallet'),
+  ).toBeVisible();
+});
+
+test('Function: centsString — the fiat due amount is written with two decimals', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
 });
 
 test('Function: fittingPrefix — a short wallet offers the ordered fitting prefix', async ({

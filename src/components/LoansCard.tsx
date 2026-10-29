@@ -12,7 +12,7 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { forumGoalPercent } from '@/lib/forum-goal';
-import { summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
@@ -177,7 +177,9 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           {summary.waitingSats > 0 ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
               {t(summary.waitingPeople === 1 ? 'loans.waitingOne' : 'loans.waitingMany', {
-                amount: money(summary.waitingSats),
+                amount:
+                  definedDueLabel(loans.loans, 'waiting', numberFormat) ??
+                  money(summary.waitingSats),
                 count: summary.waitingPeople,
               })}
             </p>

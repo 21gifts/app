@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -9,12 +9,15 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { formatBitcoin } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Card on the welcome screen for a lender who is owed repayments but cannot
  * receive them yet (`lenderWaiting` of `GET /me/loans`): how many are waiting,
  * their sum in bitcoin with the current spot when the api could price it, and
  * **Open your wallet** to `/wallet`, the same action as the wallet requirement.
+ * When the account's wallet becomes verified while the card shows, the shared
+ * loans body is read again, so the card leaves once the api counts nothing.
  *
  * @returns The card, or `null` while unavailable or when nothing waits.
  */
@@ -23,9 +26,16 @@ export function LenderWaitingCard(): ReactElement | null {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const rateDay = useSpotRate();
-  const { loans } = useMyLoans();
+  const { loans, reload } = useMyLoans();
+  const walletVerified = useAuthStore((state) => state.account?.sparkWalletVerified === true);
   const waiting = loans?.lenderWaiting;
-  if (waiting === undefined || waiting.shares === 0) {
+  const shown = waiting !== undefined && waiting.shares > 0;
+  useEffect(() => {
+    if (walletVerified && shown) {
+      void reload();
+    }
+  }, [walletVerified, shown, reload]);
+  if (!shown) {
     return null;
   }
   const title =

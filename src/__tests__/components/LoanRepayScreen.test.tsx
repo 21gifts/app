@@ -596,6 +596,29 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
+  it('names a waiting fiat share by its stored figure', () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: 536,
+            payableAmount: '30.00',
+            waitingSats: 200,
+            waitingPeople: 1,
+            waitingAmount: '10.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText(/^₱10\.00 waits for a lender/)).toBeTruthy();
+    expect(screen.queryByText(/₿200 · \$0\.20 waits/)).toBeNull();
+  });
+
   it('asks for no amount when every due share waits', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({

@@ -17965,7 +17965,7 @@ test.describe('onboarding screens', () => {
           startsOn: '2026-11-01',
           termDays: 2,
           daysDue: 1,
-          daysPaid: 1,
+          daysPaid: 0,
           waitingShares: 1,
           unassignedSats: 0,
           givers: [

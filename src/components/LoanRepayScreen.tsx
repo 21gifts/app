@@ -17,7 +17,14 @@ import { committedFiatFigure } from '@/lib/committed-fiat';
 import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
-import { dueShares, fittingPrefix, summarizeLoans, type DueShare } from '@/lib/loan-repay';
+import {
+  centsString,
+  definedDueLabel,
+  dueShares,
+  fittingPrefix,
+  summarizeLoans,
+  type DueShare,
+} from '@/lib/loan-repay';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -41,12 +48,6 @@ function localDay(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-function centsString(cents: bigint): string {
-  const whole = cents / 100n;
-  const fraction = String(cents % 100n).padStart(2, '0');
-  return `${whole}.${fraction}`;
 }
 
 function shortLoanText(text: string): string {
@@ -266,29 +267,14 @@ export function LoanRepayScreen(): ReactElement {
     return t(nextPeople === 1 ? 'loans.nextOnPerson' : 'loans.nextOnPeople', variables);
   };
 
-  const activeCurrencyLoans = loans.loans.filter((loan) => loan.due.payableSats > 0);
-  const definedCode = activeCurrencyLoans[0]?.goalCurrency;
-  const sameDefinedCurrency =
-    definedCode !== undefined &&
-    isFiatCode(definedCode) &&
-    activeCurrencyLoans.length > 0 &&
-    activeCurrencyLoans.every(
-      (loan) => loan.goalCurrency === definedCode && loan.due.payableAmount !== null,
-    );
-  const definedPayable = sameDefinedCurrency
-    ? activeCurrencyLoans.reduce(
-        (sum, loan) => sum + (creditSmallestUnits(loan.due.payableAmount as string, false) ?? 0n),
-        0n,
-      )
-    : null;
-  const definedDueLabel =
-    definedPayable !== null && definedCode !== undefined && isFiatCode(definedCode)
-      ? formatDefinedGoalAmount(centsString(definedPayable), definedCode, numberFormat)
-      : null;
-  const bigAmount = definedDueLabel ?? formatBitcoin(payable, numberFormat);
+  const definedPayableLabel = definedDueLabel(loans.loans, 'payable', numberFormat);
+  const waitingLabel = definedDueLabel(loans.loans, 'waiting', numberFormat) ?? money(waiting);
+  const bigAmount = definedPayableLabel ?? formatBitcoin(payable, numberFormat);
   const payLabel =
-    definedDueLabel !== null ? `${definedDueLabel} · ${bitcoinText(payable)}` : money(payable);
-  const smallAmount = definedPayable !== null ? null : fiatOnly(payable);
+    definedPayableLabel !== null
+      ? `${definedPayableLabel} · ${bitcoinText(payable)}`
+      : money(payable);
+  const smallAmount = definedPayableLabel !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
     // `dueShares` creates every share from this exact loan array and preserves its index.
@@ -357,7 +343,7 @@ export function LoanRepayScreen(): ReactElement {
       )}
       {summary.waitingSats > 0 ? (
         <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
-          {t('loans.waitsLater', { amount: money(summary.waitingSats) })}
+          {t('loans.waitsLater', { amount: waitingLabel })}
         </p>
       ) : null}
       {nextLine() === null ? null : (
@@ -468,7 +454,7 @@ export function LoanRepayScreen(): ReactElement {
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {t('loans.sending', {
             amount:
-              definedDueLabel !== null && (sendingSats === null || sendingSats === payable)
+              definedPayableLabel !== null && (sendingSats === null || sendingSats === payable)
                 ? payLabel
                 : money(sendingSats ?? payable),
           })}
@@ -543,7 +529,7 @@ export function LoanRepayScreen(): ReactElement {
         <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
           {payable > 0
             ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
-                amount: money(waiting),
+                amount: waitingLabel,
                 count: summary.waitingPeople,
               })
             : t(summary.waitingPeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}

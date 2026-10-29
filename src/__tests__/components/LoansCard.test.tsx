@@ -248,6 +248,25 @@ describe('LoansCard', () => {
     expect(screen.queryByText('Nothing due today')).toBeNull();
   });
 
+  it('names waiting fiat shares by their stored figure', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '1680.00',
+          due: {
+            ...loan().due,
+            waitingSats: 200,
+            waitingPeople: 1,
+            waitingAmount: '11.20',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('₱11.20 is waiting for a lender to set up their wallet')).toBeTruthy();
+  });
+
   it('uses the singular waiting sentence and omits a missing next line', () => {
     show(
       {
