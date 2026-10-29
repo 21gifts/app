@@ -511,8 +511,13 @@ function daySignature(rows: readonly RepaymentLine[], fiat: FiatCode | null): st
 }
 
 function usualGroupIndex(groups: readonly DayGroup[], fiat: FiatCode | null): number {
+  const waits = (group: DayGroup): boolean => group.rows.some((row) => row.waiting === true);
+  const skipWaiting = groups.some((group) => !waits(group));
   const counts = new Map<string, { count: number; index: number }>();
   groups.forEach((group, index) => {
+    if (skipWaiting && waits(group)) {
+      return;
+    }
     const key = daySignature(group.rows, fiat);
     const seen = counts.get(key);
     if (seen === undefined) {

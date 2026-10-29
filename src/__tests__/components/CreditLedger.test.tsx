@@ -759,6 +759,25 @@ describe('CreditLedger', () => {
     ).toHaveLength(2);
   });
 
+  it('lists the waiting days of a month apart even when most of its days wait', async () => {
+    const plan = longPlan({
+      status: (day) => (day < 6 ? 'due' : 'scheduled'),
+      cyrillAmount: () => '40.00',
+    });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet').length,
+    ).toBeGreaterThanOrEqual(6);
+  });
+
   it('names a month waiting when every share of it waits', async () => {
     const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
     ledger({ ...plan, repayments: plan.repayments.map((row) => ({ ...row, waiting: true })) });
