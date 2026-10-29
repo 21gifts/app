@@ -488,9 +488,9 @@ const ADA_CODES = [
   '21gifts-share:v1:acc_ada:ada:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
 ] as const;
 
-/** A share of `@ada`'s account from another setup (official SLIP-39 vector 43). */
+/** A share of `@ada`'s account from another setup (a share of another recovery set, identifier 7506). */
 const ADA_OTHER_SET =
-  '21gifts-share:v1:acc_ada:ada:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  '21gifts-share:v1:acc_ada:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
 /** Public BIP-39 test phrase: valid old 12 words. */
 const OLD_PHRASE = 'legal winner thank year wave sausage worth useful legal winner thank yellow';
@@ -1007,9 +1007,9 @@ test.describe('social recovery in the settings', () => {
 });
 
 test.describe('shares kept for others', () => {
-  /** A share of another set (official SLIP-39 vector 43), kept for Cara. */
+  /** A share of another set (a share of another recovery set, identifier 7506), kept for Cara. */
   const CARA_CODE =
-    '21gifts-share:v1:acc_cara:cara:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+    '21gifts-share:v1:acc_cara:cara:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
   test('Function: HeldSharesPage — /settings/held-shares lists no shares for a new holder', async ({
     page,

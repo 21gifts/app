@@ -37016,15 +37016,15 @@ test.describe('settings states', () => {
 });
 
 test.describe('held shares states', () => {
-  /** Bob's share: official SLIP-39 vector 43, the first member of its set. */
+  /** Bob's share: a share of another recovery set (identifier 7506), member 0. */
   const HELD_BOB =
-    '21gifts-share:v1:acc_bob:bob:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+    '21gifts-share:v1:acc_bob:bob:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
   /** Cara's share, of another set. */
   const HELD_CARA =
     '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
   /** A share of the signed-in member's own account. */
   const HELD_OWN =
-    '21gifts-share:v1:acc_e2e:ada:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+    '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
   /** Where the signed-in member keeps shares. */
   const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
 
@@ -37392,13 +37392,13 @@ const RECOVER_CODES = [
   '21gifts-share:v1:acc_e2e:ada:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
 ] as const;
 
-/** A share of `@ada`'s account from another setup (official SLIP-39 vector 43). */
+/** A share of `@ada`'s account from another setup (a share of another recovery set, identifier 7506). */
 const RECOVER_OTHER_SET =
-  '21gifts-share:v1:acc_e2e:ada:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
-/** A share of another account (official SLIP-39 vector 43). */
+/** A share of another account (a share of another recovery set, identifier 7506). */
 const RECOVER_OTHER_ACCOUNT =
-  '21gifts-share:v1:acc_bob:bob:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  '21gifts-share:v1:acc_bob:bob:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
 /** Public BIP-39 test phrase: valid 12 words. */
 const RECOVER_PHRASE =

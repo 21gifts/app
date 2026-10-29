@@ -35,9 +35,9 @@ const SHARES = [
   'body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
 ] as const;
 
-/** A share of another set (official SLIP-39 vector 43). */
+/** A share of another set (a share of another recovery set, identifier 7506). */
 const OTHER_SET =
-  'enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  'domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
 const HOLDER = 'acc_holder';
 const HOLDER_KEY = `${HELD_SHARES_KEY_PREFIX}${HOLDER}`;

@@ -12,9 +12,9 @@ const SHARES = [
   'body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
 ] as const;
 
-/** A share of another set (official SLIP-39 vector 43, identifier 9066). */
+/** A share of another set (a share of another recovery set, identifier 7506). */
 const OTHER_SET =
-  'enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+  'domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
 const HOLDER = 'acc_holder';
 const OWNER = 'acc_owner';
@@ -153,7 +153,7 @@ describe('loadHeldShares', () => {
         code: code(OTHER_SET, 'acc_other'),
         ownerAccountId: 'acc_other',
         ownerUsername: 'ada',
-        identifier: 9066,
+        identifier: 7506,
         memberIndex: 0,
         storedAt: 7,
       },
@@ -189,15 +189,15 @@ describe('deleteHeldShare', () => {
     keepHeldShare(HOLDER, code(SHARES[0]), 1);
     keepHeldShare(HOLDER, code(OTHER_SET), 2);
     expect(deleteHeldShare(HOLDER, OWNER, 2864)).toBe(true);
-    expect(loadHeldShares(HOLDER).map((share) => share.identifier)).toEqual([9066]);
-    expect(deleteHeldShare(HOLDER, OWNER, 9066)).toBe(true);
+    expect(loadHeldShares(HOLDER).map((share) => share.identifier)).toEqual([7506]);
+    expect(deleteHeldShare(HOLDER, OWNER, 7506)).toBe(true);
     expect(stored()).toBeNull();
   });
 
   it('deletes nothing for another owner, another set, or another keeping member', () => {
     keepHeldShare(HOLDER, code(SHARES[0]), 1);
     expect(deleteHeldShare(HOLDER, 'acc_other', 2864)).toBe(false);
-    expect(deleteHeldShare(HOLDER, OWNER, 9066)).toBe(false);
+    expect(deleteHeldShare(HOLDER, OWNER, 7506)).toBe(false);
     expect(deleteHeldShare('acc_second', OWNER, 2864)).toBe(false);
     expect(loadHeldShares(HOLDER)).toHaveLength(1);
   });
