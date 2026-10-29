@@ -80,6 +80,12 @@ describe('DonatePage', () => {
       alternates: { canonical: '/es/donate' },
       openGraph: { ...preview.openGraph, url: '/es/donate' },
     });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('fil');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/fil/donate' },
+      openGraph: { ...preview.openGraph, url: '/fil/donate' },
+    });
   });
 
   it('renders the page heading', async () => {

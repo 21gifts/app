@@ -51,6 +51,12 @@ describe('RulesPage', () => {
       alternates: { canonical: '/es/rules' },
       openGraph: { ...preview.openGraph, url: '/es/rules' },
     });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('fil');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/fil/rules' },
+      openGraph: { ...preview.openGraph, url: '/fil/rules' },
+    });
   });
 
   it('renders the page heading and the rules document', async () => {

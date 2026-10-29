@@ -49,6 +49,12 @@ describe('AboutPage', () => {
       alternates: { canonical: '/de/about', languages: { es: '/es/about' } },
       openGraph: { ...preview.openGraph, url: '/de/about' },
     });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('es');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/es/about', languages: { es: '/es/about' } },
+      openGraph: { ...preview.openGraph, url: '/es/about' },
+    });
     vi.mocked(getRequestLocale).mockResolvedValueOnce('fil');
     expect(await generateMetadata()).toMatchObject({
       ...preview,

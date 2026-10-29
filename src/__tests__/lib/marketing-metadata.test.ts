@@ -38,7 +38,8 @@ describe('marketingMetadata', () => {
     const english = marketingMetadata('/about', TITLE, DESCRIPTION, 'en');
     const german = marketingMetadata('/about', TITLE, DESCRIPTION, 'de');
     const spanish = marketingMetadata('/about', TITLE, DESCRIPTION, 'es');
-    for (const meta of [english, german, spanish]) {
+    const filipino = marketingMetadata('/about', TITLE, DESCRIPTION, 'fil');
+    for (const meta of [english, german, spanish, filipino]) {
       expect(meta.title).toBe(TITLE);
       expect(meta.description).toBe(DESCRIPTION);
       expect(meta.openGraph).toMatchObject({
@@ -56,6 +57,7 @@ describe('marketingMetadata', () => {
     expect(english.alternates?.canonical).toBe('/en/about');
     expect(german.alternates?.canonical).toBe('/de/about');
     expect(spanish.alternates?.canonical).toBe('/es/about');
+    expect(filipino.alternates?.canonical).toBe('/fil/about');
     expect(HREFLANG_BY_LOCALE.fil).toBe('tl');
     expect(german.alternates?.languages).toEqual({
       en: '/en/about',
@@ -65,6 +67,7 @@ describe('marketingMetadata', () => {
       'x-default': '/about',
     });
     expect(german.openGraph).toMatchObject({ url: '/de/about' });
+    expect(filipino.openGraph).toMatchObject({ url: '/fil/about' });
   });
 
   it('builds home, donate, and rules language URLs with the same English preview', () => {
