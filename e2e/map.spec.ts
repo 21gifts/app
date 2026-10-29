@@ -340,6 +340,8 @@ test('Function: PlacePinChip — confirmed composer place stays in flow and can 
     });
   });
   await page.goto('/welcome');
+  // The forum home writer opens from the floating +; the composer is not on the page.
+  await page.getByRole('button', { name: 'Write a post' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
   await page.getByLabel('Place name').fill('Stall');

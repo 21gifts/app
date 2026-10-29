@@ -6221,10 +6221,11 @@ test('Function: AutoHeight — the open reaction box glides to the height its co
   });
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
-  // An amount that is not a number brings the amount error line in without a request.
+  // An amount that is not a number brings the amount error line in as it is typed,
+  // without a request, and keeps Post off.
   await form.getByLabel('Amount').fill('abc');
-  await form.getByRole('button', { name: 'Post' }).click();
   await expect(form.getByRole('alert')).toHaveText('Send at least ₿1 with your reaction');
+  await expect(form.getByRole('button', { name: 'Post' })).toBeDisabled();
   // While the height moved, a box glided and clipped; at rest it clips no more (below).
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { glideLog: string[] }).glideLog))
@@ -14003,9 +14004,9 @@ test('Function: pushRenewalPending — a pending key renewal shows this device a
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'granted' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'On' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'On' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -14017,9 +14018,9 @@ test('Function: pushRenewalPending — a stored marker without notification perm
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'denied' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -14030,9 +14031,9 @@ test('Function: pushTurnedOff — an earlier Off shows this device as Off', asyn
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'granted' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -16858,6 +16859,7 @@ test('Function: composerTextProblem — a living-room draft over 8000 keeps Post
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   const draft = page.getByRole('textbox', { name: 'Your message' });
   const post = page.getByRole('button', { name: 'Post', exact: true });
   await expect(post).toBeEnabled();
@@ -16877,6 +16879,7 @@ test('Function: optionalTextProblem — a long place name shows the limit', asyn
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Add a place' }).click();
   const name = page.getByRole('textbox', { name: 'Place name' });
   await name.fill('a'.repeat(81));
@@ -16897,6 +16900,7 @@ test('Function: placeLabelProblem — a control in a short place name names the 
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Add a place' }).click();
   const name = page.getByRole('textbox', { name: 'Place name' });
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
@@ -17031,7 +17035,7 @@ test('Function: shownDraftPayError — a fixed pay amount clears the field messa
   await expect(reply.getByRole('button', { name: 'Continue' })).toBeEnabled();
 });
 
-test('Function: shownPaySheetError — a loading submit stays until the rate request settles', async ({
+test('Function: shownPaySheetError — a loading submit stays until the rate request settles; a held Gift never shows it', async ({
   page,
 }) => {
   expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate', false)).toBe('loading');
@@ -17072,12 +17076,12 @@ test('Function: shownPaySheetError — a loading submit stays until the rate req
   const pending = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await pending;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: '{"spendOverTime":[]}',
+      body: '{"asOf":null,"source":null,"rates":{}}',
     });
   });
   await page.route('**/habits', async (route) => {
@@ -17127,25 +17131,16 @@ test('Function: shownPaySheetError — a loading submit stays until the rate req
   await page.goto('/habit-tracker');
   await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  // The habit Gift holds Continue until the spot rate read settles, so a submit
+  // can never store the loading error and its line never shows.
   const cont = page.getByRole('button', { name: 'Continue' });
-  await expect(cont).toBeEnabled();
-  await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeEnabled();
+  await expect(cont).toBeDisabled();
   await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
-  await cont.click();
-  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
-  await expect(cont).toBeDisabled();
-  await page.getByLabel('Amount').fill('');
-  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
-  await expect(cont).toBeDisabled();
   await cont.click({ force: true });
-  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
-  await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeDisabled();
-  release();
-  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
   await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
-  await expect(cont).toBeDisabled();
+  release();
+  await expect(cont).toBeEnabled();
+  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
 });
 
 test('Function: fitBoxInFrame — a wide panel is pulled inside the frame', async ({ page }) => {

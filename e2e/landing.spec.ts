@@ -40,14 +40,16 @@ test('Function: MarketingHeader — the root info page shows no back arrow, the 
   await page.goto('/about');
   const header = page.locator('header');
   await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
-  await header.getByRole('link', { name: '21.gifts' }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  // Exact: the navigation also has an About 21.gifts link.
+  await header.getByRole('link', { name: '21.gifts', exact: true }).click();
+  // The wordmark opens the root info page in the page language (`/en` for English).
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeVisible();
   await expect(header.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
   await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
   await expect(header.getByRole('button', { name: 'Back' })).toHaveCount(0);
   await page.goto('/');
-  await expect(header.getByRole('link', { name: '21.gifts' })).toBeVisible();
+  await expect(header.getByRole('link', { name: '21.gifts', exact: true })).toBeVisible();
   await expect(header.getByRole('link', { name: /^Back/ })).toHaveCount(0);
 });
 

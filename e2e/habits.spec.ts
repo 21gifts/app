@@ -408,16 +408,10 @@ test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   await page.unroute('**/fx/spot');
   await page.route('**/fx/spot', () => new Promise(() => undefined));
   await stubHabits(page, PUBLIC_LIST);
-  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
-  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
-  await expect(cont).toBeEnabled();
-  await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeEnabled();
-  await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
-  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
+  await expect(cont).toBeDisabled();
   await cont.scrollIntoViewIfNeeded();
   await expect(cont).toBeInViewport();
 });
@@ -1061,34 +1055,10 @@ test('Function: postMemberHabit — the owner logs the open period through the p
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: useSpotRateState — a fiat Gift stays quiet until the spot rate read settles', async ({
+test('Function: useSpotRateState — Continue stays disabled until the spot rate read settles', async ({
   page,
 }) => {
   await seedAda(page);
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: `02${'a'.repeat(62)}`,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        username: 'alice',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: true,
-        forumLawsDismissed: true,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
-        amountUnit: 'fiat',
-      }),
-    });
-  });
   let release!: () => void;
   const pending = new Promise<void>((resolve) => {
     release = resolve;
@@ -1102,23 +1072,12 @@ test('Function: useSpotRateState — a fiat Gift stays quiet until the spot rate
     });
   });
   await stubHabits(page, PUBLIC_LIST);
-  const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
   await page.goto('/habit-tracker');
-  await meDone;
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   const cont = page.getByRole('button', { name: 'Continue' });
-  await expect(cont).toBeEnabled();
-  await page.getByLabel('Amount').fill('1.00');
-  await expect(cont).toBeEnabled();
-  await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
-  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
-  await cont.click();
-  await expect(page.getByText('The USD exchange rate is still loading.')).toBeVisible();
   await expect(cont).toBeDisabled();
   release();
-  await expect(page.getByText('No USD exchange rate yet.')).toBeVisible();
-  await expect(page.getByText('The USD exchange rate is still loading.')).toHaveCount(0);
-  await expect(cont).toBeDisabled();
+  await expect(cont).toBeEnabled();
 });
 
 test('Function: HabitTrackerTopRight — Log in without a session and the menu with one', async ({

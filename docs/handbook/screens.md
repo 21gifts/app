@@ -5800,7 +5800,7 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ### Variant: donate-rate-pending
 
-Ada's session on someone else's comment. **Send Bitcoin** is open while the spot rate is still loading. The amount is **1.00** in USD. Under the amount is **No exchange rate yet**. **Continue** stays available. The payment error for a settled missing rate is not shown, and no bitcoin equivalent line is shown.
+Ada's session on someone else's comment. **Send Bitcoin** is open while the spot rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
 

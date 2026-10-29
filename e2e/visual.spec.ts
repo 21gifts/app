@@ -40996,39 +40996,14 @@ test.describe('habit tracker baselines', () => {
   test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
     await seedHabitAda(page);
     await page.route('**/fx/spot', () => new Promise(() => undefined));
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          aboutMe: null,
-          setup: null,
-          missing: [],
-          amountUnit: 'fiat',
-        }),
-      });
-    });
     await stubHabitList(page, HABIT_PUBLIC);
-    const meDone = page.waitForResponse((res) => res.url().endsWith('/me') && res.ok());
     await page.goto('/habit-tracker');
-    await meDone;
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     const cont = page.getByRole('button', { name: 'Continue' });
-    await expect(cont).toBeEnabled();
-    await page.getByLabel('Amount').fill('1.00');
-    await expect(cont).toBeEnabled();
-    await expect(page.getByText('No exchange rate yet', { exact: true })).toBeVisible();
-    await expect(page.getByText('No USD exchange rate yet.')).toHaveCount(0);
+    await expect(cont).toBeDisabled();
     await cont.scrollIntoViewIfNeeded();
     await expect(cont).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-rate-pending');
