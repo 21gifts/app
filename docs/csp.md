@@ -78,6 +78,7 @@ JavaScript API, because the local run had no valid map key.
 | `style-src`       | `'self'`                       | The app's CSS files (Tailwind, `next/font`)                                                                  | run       |
 | `style-src`       | `'unsafe-inline'`              | Server-rendered `style` attributes; `<style>` elements the map script inserts                                | run       |
 | `style-src`       | `https://fonts.googleapis.com` | Font stylesheet the map script loads for its labels                                                          | vendor    |
+| `style-src`       | `https://unpkg.com`            | MapLibre stylesheet of the public shop map on `/` (`maplibre-gl.css`, pinned version)                        | run, code |
 | `img-src`         | `'self'`                       | Icons, handbook images, and every member photo (same-origin proxies)                                         | run       |
 | `img-src`         | `data:`                        | QR codes (profile, till, pay link, wallet) and other images the app draws itself                             | run       |
 | `img-src`         | `blob:`                        | Photos held in the browser as object URLs: the menu's account photo, previews before upload                  | run       |
@@ -124,6 +125,9 @@ where a script could send data. The hosts the app is known to reach:
 | `https://cloudflare-dns.com`              | Wallet SDK: DNS lookup of `₿name@domain` addresses       | SDK      |
 | `https://<receiver domain>`               | Wallet SDK: the receiver's Lightning-address server      | SDK      |
 | `https://maps.googleapis.com`             | Map script: map data and its load check                  | run      |
+| `https://tiles.openfreemap.org`           | Public shop map on `/`: MapLibre style, tiles, and fonts | code     |
+| `https://api.opencryptopay.io`            | Public shop map on `/`: shop places and their filters    | code     |
+| `https://dev-api.opencryptopay.io`        | Public shop map on `/` outside 21.gifts: the same data   | code     |
 
 ## How the list was built
 
