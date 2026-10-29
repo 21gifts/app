@@ -63,7 +63,7 @@ export function CreditLedger({
     messageId: string;
     ledger: RepaymentLedger;
   } | null>(null);
-  const ledger = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
+  const current = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
   useEffect(() => {
     let cancel = false;
     void getRepayment(messageId).then((row) => {
@@ -76,12 +76,12 @@ export function CreditLedger({
     };
   }, [messageId]);
   useEffect(() => {
-    if (ledger !== null) {
-      onLedger?.(ledger);
+    if (current !== null) {
+      onLedger?.(current);
     }
-  }, [ledger, onLedger]);
+  }, [current, onLedger]);
   useEffect(() => {
-    if (ledger === null || !ledger.repayments.some((row) => row.status === 'due')) {
+    if (current === null || !current.repayments.some((row) => row.status === 'due')) {
       return;
     }
     let cancel = false;
@@ -96,10 +96,11 @@ export function CreditLedger({
       cancel = true;
       clearInterval(timer);
     };
-  }, [ledger, messageId]);
-  if (ledger === null) {
+  }, [current, messageId]);
+  if (current === null) {
     return null;
   }
+  const ledger = withWaiting(current);
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
   const spot: SpotPair = { rateDay, visitorFiat };
   return (
@@ -648,6 +649,24 @@ function monthsOf(groups: readonly DayGroup[]): { key: string; groups: DayGroup[
     }
   }
   return months;
+}
+
+/**
+ * Marks a due line whose giver cannot receive as waiting when the api did not
+ * send `waiting` (the rule of `dueShares`).
+ */
+function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
+  const cannotReceive = new Set(
+    ledger.givers.filter((giver) => !giver.canReceive).map((giver) => giver.accountId),
+  );
+  return {
+    ...ledger,
+    repayments: ledger.repayments.map((row) =>
+      row.waiting !== undefined || row.status !== 'due'
+        ? row
+        : { ...row, waiting: cannotReceive.has(row.accountId) },
+    ),
+  };
 }
 
 function giverLabel(name: string, username: string | null, accountId: string): string {

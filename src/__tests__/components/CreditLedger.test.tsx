@@ -173,6 +173,18 @@ describe('CreditLedger', () => {
     expect(status[0]!.className).toContain('text-app-muted');
   });
 
+  it('marks a due line as waiting from the giver when the api sends no waiting flag', async () => {
+    ledger({
+      ...btc,
+      givers: btc.givers.map((giver) => ({ ...giver, canReceive: giver.name !== 'Bea' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Waiting for Bea @bea to set up their wallet')).toBeTruthy();
+    expect(screen.getAllByText('Waiting', { exact: true })).toHaveLength(1);
+    expect(screen.queryByText('Due', { exact: true })).toBeNull();
+    expect(document.body.textContent).toContain('Scheduled');
+  });
+
   it('shows a repayment list link and hides the day rows', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" />);

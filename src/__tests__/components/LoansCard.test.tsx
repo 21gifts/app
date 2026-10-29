@@ -264,7 +264,9 @@ describe('LoansCard', () => {
         }),
       ],
     });
-    expect(screen.getByText('₱11.20 is waiting for a lender to set up their wallet')).toBeTruthy();
+    expect(
+      screen.getByText('₱11.20 · ₿200 is waiting for a lender to set up their wallet'),
+    ).toBeTruthy();
   });
 
   it('uses the singular waiting sentence and omits a missing next line', () => {

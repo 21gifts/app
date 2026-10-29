@@ -15751,7 +15751,7 @@ test('Function: definedDueLabel — a fiat waiting share keeps its stored figure
   });
   await openLoanUi(page, '/welcome', myLoans([fiatWaiting]), false);
   await expect(
-    page.getByText('₱12.00 is waiting for a lender to set up their wallet'),
+    page.getByText('₱12.00 · ₿480 is waiting for a lender to set up their wallet'),
   ).toBeVisible();
 });
 

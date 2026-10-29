@@ -48,6 +48,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return null;
   }
   const summary = summarizeLoans(loans);
+  const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
@@ -178,8 +179,9 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
               {t(summary.waitingPeople === 1 ? 'loans.waitingOne' : 'loans.waitingMany', {
                 amount:
-                  definedDueLabel(loans.loans, 'waiting', numberFormat) ??
-                  money(summary.waitingSats),
+                  definedWaiting === null
+                    ? money(summary.waitingSats)
+                    : `${definedWaiting} · ${formatBitcoin(summary.waitingSats, numberFormat)}`,
                 count: summary.waitingPeople,
               })}
             </p>

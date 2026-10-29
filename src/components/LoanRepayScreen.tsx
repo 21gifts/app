@@ -268,7 +268,9 @@ export function LoanRepayScreen(): ReactElement {
   };
 
   const definedPayableLabel = definedDueLabel(loans.loans, 'payable', numberFormat);
-  const waitingLabel = definedDueLabel(loans.loans, 'waiting', numberFormat) ?? money(waiting);
+  const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
+  const waitingLabel =
+    definedWaiting === null ? money(waiting) : `${definedWaiting} · ${bitcoinText(waiting)}`;
   const bigAmount = definedPayableLabel ?? formatBitcoin(payable, numberFormat);
   const payLabel =
     definedPayableLabel !== null

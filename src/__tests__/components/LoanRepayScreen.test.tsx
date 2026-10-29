@@ -615,8 +615,8 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(screen.getByText(/^₱10\.00 waits for a lender/)).toBeTruthy();
-    expect(screen.queryByText(/₿200 · \$0\.20 waits/)).toBeNull();
+    expect(screen.getByText(/^₱10\.00 · ₿200 waits for a lender/)).toBeTruthy();
+    expect(screen.queryByText(/\$0\.20 waits/)).toBeNull();
   });
 
   it('asks for no amount when every due share waits', () => {
