@@ -2,6 +2,11 @@ name: Visual baselines
 
 on:
   workflow_dispatch: {}
+  push:
+    # workflow_dispatch only reaches workflows on the default branch, so a
+    # branch run is dispatched by pushing any change to this file.
+    branches: ['**']
+    paths: ['.github/workflows/visual-baselines.yaml']
 
 concurrency:
   group: visual-baselines-${{ github.ref }}
