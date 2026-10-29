@@ -317,7 +317,9 @@ test('Function: RecoveryPendingError — the pending passkey is never signalled 
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   expect((await finished).status()).toBe(409);
-  await expect(page.locator('p[role="alert"]')).toBeVisible();
+  await expect(page.locator('p[role="alert"]')).toHaveText(
+    'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+  );
   await expect(page.getByRole('heading', { name: 'This passkey is not an account' })).toHaveCount(
     0,
   );
@@ -377,16 +379,46 @@ async function signInMember(page: Page, passkeyCredentialId: string | null): Pro
   });
 }
 
+/** Two shares of one recovery set of `@ada` (identifier 2864), as their holders show them. */
+const ADA_CODES = [
+  '21gifts-share:v1:acc_ada:ada:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel',
+  '21gifts-share:v1:acc_ada:ada:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
+] as const;
+
+/** A share of `@ada`'s account from another setup (official SLIP-39 vector 43). */
+const ADA_OTHER_SET =
+  '21gifts-share:v1:acc_ada:ada:enemy favorite academic acid cowboy phrase havoc level response walnut budget painting inside trash adjust froth kitchen learn tidy punish';
+
+/** Public BIP-39 test phrase: valid old 12 words. */
+const OLD_PHRASE = 'legal winner thank year wave sausage worth useful legal winner thank yellow';
+
+/** What `/recover` says when this build has no wallet (no Breez key in Playwright). */
+const NO_WALLET = 'Recovery is not available in this version of the app.';
+
 /**
- * Opens the signed-out login card, where a member who lost the passkey starts
- * a social recovery, and checks that it shows Log in and no error.
+ * Opens `/recover` signed out, optionally on a screenshot pin, and checks
+ * that it shows the recovery title.
  *
  * @param page - The page.
+ * @param pin - The `?visual=` pin, if any.
  */
-async function openLoginCard(page: Page): Promise<void> {
-  await page.goto('/login');
-  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
-  await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+async function openRecover(page: Page, pin?: string): Promise<void> {
+  await page.goto(pin === undefined ? '/recover' : `/recover?visual=${pin}`);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Recover your account' }),
+  ).toBeAttached();
+}
+
+/**
+ * Scans codes on `/recover` with the stubbed camera, one per camera start.
+ *
+ * @param page - The page.
+ * @param codes - The QR texts in turn.
+ */
+async function scanOnRecover(page: Page, codes: readonly string[]): Promise<void> {
+  await stubCamera(page, { kind: 'qrs', texts: codes });
+  await openRecover(page);
+  await page.getByRole('button', { name: 'Scan two codes' }).click();
 }
 
 /**
@@ -430,54 +462,69 @@ async function openWalletWithoutKey(page: Page): Promise<void> {
 }
 
 test.describe('social recovery libraries', () => {
-  test('Function: Slip39Error — the login card where recovery starts shows no error', async ({
+  test('Function: Slip39Error — the same code twice is refused on /recover', async ({ page }) => {
+    await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      "That was the same code twice. Scan the other person's code.",
+    );
+  });
+
+  test('Function: parseShare — a scanned code is read on /recover', async ({ page }) => {
+    await scanOnRecover(page, [ADA_CODES[0]]);
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+  });
+
+  test('Function: isRecoveryShare — a scanned code is read as a recovery share on /recover', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await scanOnRecover(page, [ADA_CODES[0]]);
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
   });
 
-  test('Function: parseShare — the login card where recovery starts loads', async ({ page }) => {
-    await openLoginCard(page);
-  });
-
-  test('Function: isRecoveryShare — the login card where recovery starts loads', async ({
+  test('Function: combineShares — two codes of one setup are combined on /recover', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await scanOnRecover(page, ADA_CODES);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
   });
 
-  test('Function: combineShares — the login card where recovery starts loads', async ({ page }) => {
-    await openLoginCard(page);
-  });
-
-  test('Function: parseShareCode — the login card where recovery starts loads', async ({
+  test('Function: parseShareCode — a text that is not a share code is refused on /recover', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await scanOnRecover(page, ['https://example.com/not-a-share']);
+    await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
   });
 
-  test('Function: phraseFromShareCodes — the login card where recovery starts loads', async ({
+  test('Function: phraseFromShareCodes — codes of two setups do not belong together on /recover', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await scanOnRecover(page, [ADA_CODES[0], ADA_OTHER_SET]);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These two codes do not belong together.',
+    );
   });
 
-  test('Function: derSignatureHex — the login card where recovery starts loads', async ({
+  test('Function: derSignatureHex — /recover, where the old wallet signs its lookup, starts', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await openRecover(page);
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
   });
 
-  test('Function: lnurlRecoverMessage — the login card where recovery starts loads', async ({
+  test('Function: lnurlRecoverMessage — /recover, where the old wallet signs its lookup, starts', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await openRecover(page);
+    await expect(page.getByRole('button', { name: 'Type my 12 words' })).toBeVisible();
   });
 
-  test('Function: recoveryMessage — the login card where recovery starts loads', async ({
+  test('Function: recoveryMessage — /recover, where the old wallet signs the recovery, starts', async ({
     page,
   }) => {
-    await openLoginCard(page);
+    await openRecover(page);
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
   });
 
   test('Function: splitRecoverySecret — the setup shows the code of person 1 from a split of the words', async ({
@@ -1344,4 +1391,444 @@ test('the phrase screen warns that the 12 words take over the whole account', as
     ),
   ).toBeVisible();
   await expect(page.getByText(/21\.gifts cannot recover/)).toHaveCount(0);
+});
+
+test.describe('Recover account via Social Recovery', () => {
+  /**
+   * Counts the wallet code downloads of the page.
+   *
+   * @param page - The page.
+   * @returns How many `.wasm` files were requested so far.
+   */
+  function countWasm(page: Page): () => number {
+    let wasm = 0;
+    page.on('request', (request) => {
+      if (request.url().endsWith('.wasm')) {
+        wasm += 1;
+      }
+    });
+    return () => wasm;
+  }
+
+  /**
+   * Types the old words on `/recover`.
+   *
+   * @param page - The page.
+   * @param words - The typed words.
+   */
+  async function typeWords(page: Page, words: string): Promise<void> {
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await page.getByLabel('Your 12 words').fill(words);
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
+  test('Function: RecoverPage — the login card offers the Social Recovery entry, which opens /recover', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+    await expect(page).toHaveURL(/\/recover$/);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Recover your account' }),
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('Function: RecoverScreen — /recover starts with what to have ready and the two ways in', async ({
+    page,
+  }) => {
+    await page.goto('/recover');
+    await expect(
+      page.getByText('Meet the two people who keep your shares, or have your old 12 words ready.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Type my 12 words' })).toBeVisible();
+    await expect(page.getByLabel('Language')).toBeVisible();
+  });
+
+  test('Function: OldWordsInput — two codes of one setup rebuild the words, and this build without a wallet says so', async ({
+    page,
+  }) => {
+    const wasm = countWasm(page);
+    await scanOnRecover(page, ADA_CODES);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+    await expect(page.getByRole('button', { name: 'Start over' })).toBeVisible();
+    expect(wasm()).toBe(0);
+  });
+
+  test('the first code stays named while the camera asks for the second', async ({ page }) => {
+    await scanOnRecover(page, [ADA_CODES[0]]);
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => (window as unknown as { __cameraStub: { requests: number } }).__cameraStub.requests,
+        ),
+      )
+      .toBe(2);
+  });
+
+  test('a refused code stops the camera, and Try again starts it again', async ({ page }) => {
+    await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      "That was the same code twice. Scan the other person's code.",
+    );
+    const stats = (): Promise<{ requests: number; live: number }> =>
+      page.evaluate(
+        () =>
+          (window as unknown as { __cameraStub: { requests: number; live: number } }).__cameraStub,
+      );
+    await expect.poll(async () => (await stats()).live).toBe(0);
+    const before = (await stats()).requests;
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect.poll(async () => (await stats()).requests).toBeGreaterThan(before);
+  });
+
+  test('a blocked camera says to allow it or type the words', async ({ page }) => {
+    await stubCamera(page, { kind: 'denied' });
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Camera access is off. Allow the camera, or type your 12 words.',
+    );
+  });
+
+  test('Function: rememberOldWords — typed words start the recovery, which this build without a wallet refuses', async ({
+    page,
+  }) => {
+    await openRecover(page);
+    await typeWords(page, OLD_PHRASE);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+    await page.getByRole('button', { name: 'Start over' }).click();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+  });
+
+  test('typed words that are not 12 valid words are refused', async ({ page }) => {
+    await openRecover(page);
+    await typeWords(page, 'legal winner thank year');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These are not 12 valid words. Check the spelling.',
+    );
+  });
+
+  test('Function: useRecoveryStore — leaving /recover and coming back resumes the recovery', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+    await typeWords(page, OLD_PHRASE);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+  });
+
+  test('Function: useRecoveryFlow — the arrow steps from the words field back to the start', async ({
+    page,
+  }) => {
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await expect(page.getByLabel('Your 12 words')).toBeVisible();
+    await page.getByRole('link', { name: 'Back to the forum' }).click();
+    await expect(page).toHaveURL(/\/recover$/);
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+  });
+
+  test('Function: defaultRecoveryDeps — without a wallet key in this build no wallet code loads', async ({
+    page,
+  }) => {
+    const wasm = countWasm(page);
+    await openRecover(page);
+    await typeWords(page, OLD_PHRASE);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+    expect(wasm()).toBe(0);
+  });
+
+  test('Function: openWordsWallet — without a wallet key the old wallet is never connected', async ({
+    page,
+  }) => {
+    const wasm = countWasm(page);
+    await scanOnRecover(page, ADA_CODES);
+    await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
+    await expect(page.getByText('Opening the old wallet…')).toHaveCount(0);
+    expect(wasm()).toBe(0);
+  });
+
+  test('Function: BusyLine — the pinned opening step says the old wallet opens', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-opening');
+    await expect(page.getByRole('status')).toHaveText('Opening the old wallet…');
+  });
+
+  test('Function: openAndBegin — the pinned retry offers Try again and Start over', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-unavailable');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The address service is not reachable right now. Try again in a minute.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.locator('p[role="alert"]')).toBeVisible();
+    await page.getByRole('button', { name: 'Start over' }).click();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+  });
+
+  test('Function: createNewPasskey — the pinned found step asks for a new passkey on this phone', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      Object.assign(window, { __created: 0 });
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            (window as unknown as { __created: number }).__created += 1;
+            return null;
+          },
+          get: async () => null,
+        },
+      });
+    });
+    await openRecover(page, 'recover-found');
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Account @ada found.' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Create new passkey' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Account @ada found.' }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { __created: number }).__created)).toBe(
+      0,
+    );
+  });
+
+  test('Function: transfer — the pinned transfer lists what moves, each part with its check', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-transfer-progress');
+    const rows = page.getByRole('listitem');
+    await expect(rows).toHaveText(['Account', '21.gifts address', 'Balance']);
+    await expect(rows.nth(0).getByRole('img', { name: 'done' })).toBeVisible();
+    await expect(rows.nth(2).getByRole('img')).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveText(
+      'Confirming the move. This can take a few minutes.',
+    );
+    await expect(page.getByRole('button', { name: 'Transfer' })).toBeDisabled();
+  });
+
+  test('Function: finishWithoutBalance — the pinned balance error offers Move the balance later', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-balance-error');
+    await expect(page.locator('p[role="alert"]')).toHaveText('The balance could not be moved yet.');
+    await expect(page.getByRole('button', { name: 'Start over' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Move the balance later' }).click();
+    await expect(page.locator('p[role="alert"]')).toBeVisible();
+  });
+
+  test('Function: resetRecovery — Start over after a transfer error shows the start', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-transfer-error');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Not everything was moved yet. Tap Transfer again to continue.',
+    );
+    await page.getByRole('button', { name: 'Start over' }).click();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+  });
+
+  test('an account recovered before offers Log in, which returns to the login', async ({
+    page,
+  }) => {
+    await page.goto('/login');
+    await page.goto('/recover?visual=recover-done');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This account was already recovered. Log in with your new passkey.',
+    );
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test('the pinned done step links to the new 12 words and to the setup', async ({ page }) => {
+    await openRecover(page, 'recover-complete-missing');
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is back' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        'Some balance stayed in the previous wallet. You can move it later in the settings.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show new 12 words' })).toHaveAttribute(
+      'href',
+      '/wallet/phrase',
+    );
+    await expect(page.getByRole('link', { name: 'Secure my account' })).toHaveAttribute(
+      'href',
+      '/settings/social-recovery',
+    );
+  });
+
+  test('an outdated build shows the new-version notice with Reload', async ({ page }) => {
+    await openRecover(page, 'recover-blocked-outdated');
+    await expect(page.getByRole('status')).toHaveText('A new version is ready');
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+  });
+});
+
+test.describe('Transfer remaining balance', () => {
+  /** The previous wallet of the page, listed on the account. */
+  const PREVIOUS_KEY = PREVIOUS_WALLETS[0]!.sparkPubkey;
+
+  test('Function: PreviousWalletPage — a key that is not one of the account’s previous wallets says so, and Done returns to the settings', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
+    await page.goto('/settings/previous-wallets/[sparkPubkey]');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This previous wallet is not on your account.',
+    );
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+  });
+
+  test('Function: RemainingBalanceScreen — the settings link opens the previous wallet, which asks for its words', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
+    await page.goto('/settings');
+    await page
+      .locator('#previous-wallets')
+      .getByRole('link', { name: 'Transfer remaining balance' })
+      .first()
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/settings/previous-wallets/${PREVIOUS_KEY}$`));
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Transfer remaining balance' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Scan the two codes of this wallet or type its 12 words.'),
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+  });
+
+  test('Function: useRemainingBalance — a list that cannot be read offers Try again', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    const reads = await answerPreviousWallets(page, [
+      { status: 503, body: { error: 'Wallet data is unavailable' } },
+      { status: 200, body: { wallets: PREVIOUS_WALLETS } },
+    ]);
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}`);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Previous wallets could not be loaded.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+    expect(reads()).toBe(2);
+  });
+
+  test('Function: openPreviousWallet — typed words; without a wallet key in this build the wallet does not open', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}`);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await page.getByLabel('Your 12 words').fill(OLD_PHRASE);
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be opened. Try again.',
+    );
+  });
+
+  test('codes of another account are refused', async ({ page }) => {
+    await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}`);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These codes belong to another account.',
+    );
+  });
+
+  test('Function: transferRemainingBalance — the pinned error tries the move again', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-error`);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The balance could not be moved. Try again.',
+    );
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The balance could not be moved. Try again.',
+    );
+  });
+
+  test('Function: closePreviousWallet — removing an empty wallet asks to confirm, deletes it, and returns to the settings', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
+    const deleted: string[] = [];
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      deleted.push(route.request().method());
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await page.goto('/settings');
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-empty`);
+    await expect(
+      page.getByText('This wallet is empty. You can remove it from your account.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Remove this previous wallet from your account?',
+    });
+    await confirm.getByRole('button', { name: 'Keep' }).click();
+    await expect(confirm).toHaveCount(0);
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(page).toHaveURL(/\/settings$/);
+    expect(deleted).toEqual(['DELETE']);
+    await expect(page.locator('#previous-wallets')).toHaveCount(0);
+  });
+
+  test('a removal that fails says so and keeps the confirm', async ({ page }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillSpot(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet data is unavailable' }),
+      });
+    });
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-done`);
+    await expect(page.getByRole('status')).toHaveText('Moved to your wallet.');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await page
+      .getByRole('group', { name: 'Remove this previous wallet from your account?' })
+      .getByRole('button', { name: 'Remove' })
+      .click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be removed. Try again.',
+    );
+    await expect(page).toHaveURL(new RegExp(`/settings/previous-wallets/${PREVIOUS_KEY}`));
+  });
 });

@@ -222,6 +222,24 @@ describe('QrScanner', () => {
     ).toBeTruthy();
   });
 
+  it('fills the placeholders of the hint it is given', async () => {
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    renderWithLocale(
+      <QrScanner
+        onResult={vi.fn()}
+        copy={{
+          hint: 'recover.scanHint',
+          hintVars: { n: 2 },
+          denied: 'recover.cameraDenied',
+          unavailable: 'recover.cameraUnavailable',
+        }}
+      />,
+    );
+    await flush();
+    expect(screen.getByRole('region', { name: 'Scan code 2 of 2' })).toBeTruthy();
+    expect(screen.getByText('Scan code 2 of 2')).toBeTruthy();
+  });
+
   it('says no camera was found when the browser has no media devices', async () => {
     renderWithLocale(<QrScanner onResult={vi.fn()} />);
     await flush();

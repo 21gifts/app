@@ -8,6 +8,8 @@ import type { MessageKey } from '@/lib/messages';
 export interface QrScannerCopy {
   /** Hint over the picture, also the region's accessible name. */
   hint: MessageKey;
+  /** Placeholder values of `hint`, such as which of two codes to scan. */
+  hintVars?: Readonly<Record<string, string | number>>;
   /** Alert when the camera is blocked. */
   denied: MessageKey;
   /** Alert when there is no usable camera or decoder. */
@@ -91,7 +93,8 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * the top of the picture; the whole frame is read. `container-type: size`
  * lets the viewfinder take 68% of the smaller side. The hint and the two
  * alerts are the wallet Send payment wording unless `copy` names other
- * catalog keys, as for a scan that is not a payment.
+ * catalog keys, as for a scan that is not a payment; `copy.hintVars` fills
+ * the hint's placeholders.
  *
  * @param props - Result callback and optional wording.
  * @returns The scanner region.
@@ -192,7 +195,7 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
 
   return (
     <section
-      aria-label={t(copy.hint)}
+      aria-label={t(copy.hint, copy.hintVars)}
       className="absolute inset-0 overflow-hidden bg-black [container-type:size]"
     >
       {error === null ? (
@@ -214,7 +217,7 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
             <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-3xl border-b-[6px] border-r-[6px] border-white" />
           </div>
           <p className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent px-6 pb-12 pt-5 text-center text-lg font-medium text-white sm:text-xl">
-            {t(copy.hint)}
+            {t(copy.hint, copy.hintVars)}
           </p>
         </>
       ) : (

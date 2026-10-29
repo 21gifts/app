@@ -176,6 +176,7 @@ beforeEach(() => {
     retry: vi.fn(),
     cancel,
     error: null,
+    recoveryPending: false,
     nameError: null,
   });
   useAuthStore.setState({

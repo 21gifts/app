@@ -3650,9 +3650,9 @@
     "fil": "Walang laman na forum, nagpo-post ang basis account ng Hello gifts. Ang 1-sat na resibo sa pagsulat ay nananatili sa kahon ng pagsulat (payHost 'composer'), hindi sa nakalistang tala. Dumudulas pataas ang pay sheet sa ibabaw ng kahon ng pagsulat, na nananatiling bukas sa likod ng pinadilim na pahina: Magbayad para mag-post, malaking ₿1 na may katumbas nitong fiat sa ilalim, at sa bawat aparato ang puwesto ng bayad ng in-app wallet (dito Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran., dahil walang naka-configure na wallet ang build na ito), walang QR ng resibo at walang linya ng paghihintay."
   },
   "/login:idle": {
-    "de": "Abgemeldet. Überschrift Mit Ihrem Gerät anmelden und als einziger primärer Knopf Anmelden; kein Ein neues Konto eröffnen auf dieser Karte (ein neues Konto beginnt bei der Kontoauswahl nach Anmelden). Unter iOS unter 18 nennt eine gedämpfte Zeile unter der Überschrift die installierte Version und das iOS-18-Minimum. Desktop-Bilder lassen diese Zeile weg. Telefonbilder enthalten sie. Android unter 9 zeigt dieselbe Art gedämpfter Zeile im Produkt, während diese Bilder die iPhone-Baselines bleiben.",
-    "es": "Sesión cerrada. Encabezado Inicia sesión con tu dispositivo y como único botón principal Iniciar sesión; sin Abrir una cuenta nueva en esta tarjeta (una cuenta nueva empieza en la elección de cuenta después de Iniciar sesión). En iOS por debajo de 18 una línea atenuada bajo el encabezado nombra la versión instalada y el mínimo de iOS 18. Las imágenes de escritorio omiten esa línea. Las de teléfono la incluyen. Android por debajo de 9 muestra el mismo tipo de línea atenuada en el producto, mientras estas imágenes siguen siendo las bases de iPhone.",
-    "fil": "Naka-log out. Pamagat Mag-log in gamit ang device mo at iisang pangunahing button na Mag-log in; walang Magbukas ng bagong account sa card na ito (nagsisimula ang bagong account sa pagpili ng account pagkatapos ng Mag-log in). Sa iOS na mas mababa sa 18, may faded na linya sa ilalim ng pamagat na nagsasabi ng naka-install na bersyon at ng minimum na iOS 18. Hindi kasama ang linyang iyon sa mga larawan sa computer. Kasama ito sa mga larawan sa telepono. Ang Android na mas mababa sa 9 ay nagpapakita ng gayong faded na linya sa produkto, habang ang mga larawang ito ay nananatiling iPhone baseline."
+    "de": "Abgemeldet. Überschrift Mit Ihrem Gerät anmelden, der primäre Knopf Anmelden und darunter der sekundäre Link Account über Social Recovery wiederherstellen; kein Ein neues Konto eröffnen auf dieser Karte (ein neues Konto beginnt bei der Kontoauswahl nach Anmelden). Unter iOS unter 18 nennt eine gedämpfte Zeile unter der Überschrift die installierte Version und das iOS-18-Minimum. Desktop-Bilder lassen diese Zeile weg. Telefonbilder enthalten sie. Android unter 9 zeigt dieselbe Art gedämpfter Zeile im Produkt, während diese Bilder die iPhone-Baselines bleiben.",
+    "es": "Sesión cerrada. Encabezado Inicia sesión con tu dispositivo, el botón principal Iniciar sesión y debajo el enlace secundario Recuperar la cuenta con Social Recovery; sin Abrir una cuenta nueva en esta tarjeta (una cuenta nueva empieza en la elección de cuenta después de Iniciar sesión). En iOS por debajo de 18 una línea atenuada bajo el encabezado nombra la versión instalada y el mínimo de iOS 18. Las imágenes de escritorio omiten esa línea. Las de teléfono la incluyen. Android por debajo de 9 muestra el mismo tipo de línea atenuada en el producto, mientras estas imágenes siguen siendo las bases de iPhone.",
+    "fil": "Naka-log out. Pamagat Mag-log in gamit ang device mo, ang pangunahing button na Mag-log in, at sa ilalim nito ang pangalawang link na Bawiin ang account gamit ang Social Recovery; walang Magbukas ng bagong account sa card na ito (nagsisimula ang bagong account sa pagpili ng account pagkatapos ng Mag-log in). Sa iOS na mas mababa sa 18, may faded na linya sa ilalim ng pamagat na nagsasabi ng naka-install na bersyon at ng minimum na iOS 18. Hindi kasama ang linyang iyon sa mga larawan sa computer. Kasama ito sa mga larawan sa telepono. Ang Android na mas mababa sa 9 ay nagpapakita ng gayong faded na linya sa produkto, habang ang mga larawang ito ay nananatiling iPhone baseline."
   },
   "/login:name-taken": {
     "de": "Ein gültiger Name, dessen Benutzername schon vergeben ist, bleibt auf diesem Formular. Hinweis: Dieser Benutzername ist schon vergeben. (login.nameTaken). Wenn registration begin das meldet, öffnet sich der Passkey-Dialog nicht. Wenn registration finish denselben Text nach dem Dialog meldet, zeigt dieses Formular denselben Hinweis. Die gedämpfte iOS- oder Android-Zeile wird nicht gezeigt.",
@@ -3925,9 +3925,9 @@
     "fil": "Utang, hakbang 4 sa 9, para sa 21000 bitcoin sa loob ng 30 araw. Heading Paano ang pagbabayad. Sinasabi ng screen: Araw-araw dapat magbayad. Magsisimula ito sa araw pagkatapos maibigay nang buo ang pautang, pero hindi kailanman bago ang Nobyembre 1, 2026. Ang pautang na naibigay nang buo bago ang Nobyembre ay magsisimulang bayaran sa Nobyembre 1. Ang pautang na naibigay nang buo sa Nobyembre 10 ay magsisimulang bayaran sa Nobyembre 11. Pagkatapos: Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Gumuguhit ang tsart ng bawat araw bilang bar at ang utang bilang linya mula sa araw 1 pababa hanggang sa huling araw. Ang pindutan ay Magpatuloy. Anumang natitira na hindi pantay na mahahati ay idinadagdag sa huling araw. Walang checkbox."
   },
   "/login:choice": {
-    "de": "Nach Anmelden meldet der Browser NotAllowedError (kein auffindbarer Passkey, oder die Besucherin hat die Auswahl geschlossen). Überschrift Haben Sie schon ein Konto? mit beschriftetem Mit bestehendem Konto einloggen und Ein neues Konto eröffnen. Das Anlegen eines Kontos beginnt erst nach dem Namensformular, nicht beim Klick auf die Auswahl. Ein neues Konto eröffnen öffnet das Namensformular. Telefonfotos zeigen ausserdem die gedämpfte installierte-iOS-Zeile. Unter iOS unter 18 öffnet sich das Namensformular weiterhin, und das Absenden eines gültigen Namens schließt create nicht ab; die Karte zeigt dann den Versionssatz als Warnung.",
-    "es": "Tras Iniciar sesión, el navegador informa NotAllowedError (no hay passkey detectable, o la visita cerró el selector). Encabezado ¿Ya tienes una cuenta? con etiquetas Iniciar sesión con una cuenta existente y Abrir una cuenta nueva. Crear una cuenta empieza solo después del formulario de nombre, no al pulsar la elección. Abrir una cuenta nueva abre el formulario de nombre. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. En iOS por debajo de 18 el formulario de nombre sigue abriéndose, y enviar un nombre válido no completa create; la tarjeta muestra entonces la frase de versión como alerta.",
-    "fil": "Pagkatapos ng Mag-log in, iniulat ng browser ang NotAllowedError (walang matutuklasang passkey, o tinanggihan ng bisita ang pumili). Heading May account ka na ba? na may etiketa Mag-log in gamit ang existing account at Magbukas ng bagong account. Nagsisimula ang paglikha ng account pagkatapos lang ng form ng pangalan, hindi sa pag-click sa pagpili. Binubuksan ng Magbukas ng bagong account ang form ng pangalan. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Sa iOS na mas mababa sa 18 bubukas pa rin ang form ng pangalan, at ang pagsusumite ng wastong pangalan ay hindi nagtatapos ng create; ipinapakita ng kard ang pangungusap ng bersyon bilang alerto."
+    "de": "Nach Anmelden meldet der Browser NotAllowedError (kein auffindbarer Passkey, oder die Besucherin hat die Auswahl geschlossen). Überschrift Haben Sie schon ein Konto? mit beschriftetem Mit bestehendem Konto einloggen, Ein neues Konto eröffnen und dem sekundären Link Account über Social Recovery wiederherstellen. Das Anlegen eines Kontos beginnt erst nach dem Namensformular, nicht beim Klick auf die Auswahl. Ein neues Konto eröffnen öffnet das Namensformular. Telefonfotos zeigen ausserdem die gedämpfte installierte-iOS-Zeile. Unter iOS unter 18 öffnet sich das Namensformular weiterhin, und das Absenden eines gültigen Namens schließt create nicht ab; die Karte zeigt dann den Versionssatz als Warnung.",
+    "es": "Tras Iniciar sesión, el navegador informa NotAllowedError (no hay passkey detectable, o la visita cerró el selector). Encabezado ¿Ya tienes una cuenta? con etiquetas Iniciar sesión con una cuenta existente, Abrir una cuenta nueva y el enlace secundario Recuperar la cuenta con Social Recovery. Crear una cuenta empieza solo después del formulario de nombre, no al pulsar la elección. Abrir una cuenta nueva abre el formulario de nombre. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. En iOS por debajo de 18 el formulario de nombre sigue abriéndose, y enviar un nombre válido no completa create; la tarjeta muestra entonces la frase de versión como alerta.",
+    "fil": "Pagkatapos ng Mag-log in, iniulat ng browser ang NotAllowedError (walang matutuklasang passkey, o tinanggihan ng bisita ang pumili). Heading May account ka na ba? na may etiketa Mag-log in gamit ang existing account, Magbukas ng bagong account, at ang pangalawang link na Bawiin ang account gamit ang Social Recovery. Nagsisimula ang paglikha ng account pagkatapos lang ng form ng pangalan, hindi sa pag-click sa pagpili. Binubuksan ng Magbukas ng bagong account ang form ng pangalan. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Sa iOS na mas mababa sa 18 bubukas pa rin ang form ng pangalan, at ang pagsusumite ng wastong pangalan ay hindi nagtatapos ng create; ipinapakita ng kard ang pangungusap ng bersyon bilang alerto."
   },
   "/welcome:ask-credit-currency-fiat": {
     "de": "Kredit, Schritt 2 von 9, nachdem die Betragsumschaltung USD ist und 1000 eingegeben wurde. Überschrift Wie der Betrag festgelegt ist. Der Bildschirm sagt: Dieser Kredit ist in US-Dollar festgelegt. Die Zahlungen sind Bitcoin und bleiben Bitcoin. Jede Zahlung wird nur zum Kurs in diesem Moment in US-Dollar umgerechnet. Es wird nichts gewechselt. Dann: Du erhältst den Betrag in Bitcoin. Fällt der Bitcoin-Kurs, bevor du ihn für deine geplanten Ausgaben ausgegeben hast, trägst du das volle Kursrisiko. Die Schaltfläche ist Weiter. Schweizer Franken, Euro und philippinische Pesos verwenden dieselben Sätze mit diesem Währungsnamen. Es gibt kein Kontrollkästchen.",
@@ -5680,9 +5680,14 @@
     "fil": "Ang /wallet variant na receive-setup-failed sa ibabaw ng home ng forum (pin na ?visual=balance-setup-failed, pagkatapos Tanggapin; sa mga Playwright build lang): ang parehong view na Tanggapin gaya ng sa /wallet, may palaso sa itaas-kaliwa, walang feed o mga button sa ibaba."
   },
   "/login:held-session": {
-    "de": "Eine gespeicherte Sitzung wird zurückgehalten (nach einem Neuladen, in einem neuen Tab oder in einer wieder geöffneten App; fixiert mit ?visual=held-session, nur Playwright-Builds). Die Karte ist die gewöhnliche Anmeldung mit dem gedämpften Gruß Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, dann die gedämpfte Zeile Bestätigen Sie, um Ihre Wallet zu öffnen, Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen. Es gibt kein Abmelden: Anmelden ist eine Passkey-Abfrage, die Sitzung und Wallet öffnet, und antwortet der Passkey eines anderen Kontos, ersetzt dieses Konto die zurückgehaltene Sitzung. Eine abgebrochene Abfrage oder ein anderer Fehler bleibt auf dieser Karte mit Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut. über Anmelden.",
-    "es": "Una sesión guardada queda retenida (tras recargar, en una pestaña nueva o en una app reabierta; fijado con ?visual=held-session, solo builds de Playwright). La tarjeta es el inicio de sesión normal con el saludo atenuado Hola de nuevo, Ada encima de Inicia sesión con tu dispositivo, luego la línea atenuada Confirma para abrir tu wallet, Iniciar sesión, ¿Primera vez en 21.gifts? y Abrir una cuenta nueva. No hay Cerrar sesión: Iniciar sesión es un solo aviso de passkey que abre la sesión y la wallet, y si responde la passkey de otra cuenta, esa cuenta reemplaza la sesión retenida. Un aviso cancelado u otro fallo se queda en esta tarjeta con Algo salió mal. Inténtalo de nuevo. encima de Iniciar sesión.",
-    "fil": "May naka-store na session na pinipigilan (pagkatapos mag-reload, sa bagong tab, o sa muling binuksang app; naka-pin gamit ang ?visual=held-session, Playwright builds lang). Ang card ay ang karaniwang login na may mahinang bati na Maligayang pagbabalik, Ada sa itaas ng Mag-log in gamit ang device mo, pagkatapos ay ang mahinang linya na Kumpirmahin para mabuksan ang wallet mo, Mag-log in, Bago ka sa 21.gifts? at Magbukas ng bagong account. Walang Mag-log out: ang Mag-log in ay isang passkey prompt na nagbubukas ng session at wallet, at kung sumagot ang passkey ng ibang account, papalitan ng account na iyon ang pinipigilang session. Ang kinanselang prompt o ibang pagkabigo ay nananatili sa card na ito na may May nangyaring mali. Subukan ulit. sa itaas ng Mag-log in."
+    "de": "Eine gespeicherte Sitzung wird zurückgehalten (nach einem Neuladen, in einem neuen Tab oder in einer wieder geöffneten App; fixiert mit ?visual=held-session, nur Playwright-Builds). Die Karte ist die gewöhnliche Anmeldung mit dem gedämpften Gruß Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, dann die gedämpfte Zeile Bestätigen Sie, um Ihre Wallet zu öffnen, Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen, aber keinen Social-Recovery-Eintrag. Es gibt kein Abmelden: Anmelden ist eine Passkey-Abfrage, die Sitzung und Wallet öffnet, und antwortet der Passkey eines anderen Kontos, ersetzt dieses Konto die zurückgehaltene Sitzung. Eine abgebrochene Abfrage oder ein anderer Fehler bleibt auf dieser Karte mit Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut. über Anmelden.",
+    "es": "Una sesión guardada queda retenida (tras recargar, en una pestaña nueva o en una app reabierta; fijado con ?visual=held-session, solo builds de Playwright). La tarjeta es el inicio de sesión normal con el saludo atenuado Hola de nuevo, Ada encima de Inicia sesión con tu dispositivo, luego la línea atenuada Confirma para abrir tu wallet, Iniciar sesión, ¿Primera vez en 21.gifts? y Abrir una cuenta nueva, sin la entrada de Social Recovery. No hay Cerrar sesión: Iniciar sesión es un solo aviso de passkey que abre la sesión y la wallet, y si responde la passkey de otra cuenta, esa cuenta reemplaza la sesión retenida. Un aviso cancelado u otro fallo se queda en esta tarjeta con Algo salió mal. Inténtalo de nuevo. encima de Iniciar sesión.",
+    "fil": "May naka-store na session na pinipigilan (pagkatapos mag-reload, sa bagong tab, o sa muling binuksang app; naka-pin gamit ang ?visual=held-session, Playwright builds lang). Ang card ay ang karaniwang login na may mahinang bati na Maligayang pagbabalik, Ada sa itaas ng Mag-log in gamit ang device mo, pagkatapos ay ang mahinang linya na Kumpirmahin para mabuksan ang wallet mo, Mag-log in, Bago ka sa 21.gifts? at Magbukas ng bagong account, at walang Social Recovery entry. Walang Mag-log out: ang Mag-log in ay isang passkey prompt na nagbubukas ng session at wallet, at kung sumagot ang passkey ng ibang account, papalitan ng account na iyon ang pinipigilang session. Ang kinanselang prompt o ibang pagkabigo ay nananatili sa card na ito na may May nangyaring mali. Subukan ulit. sa itaas ng Mag-log in."
+  },
+  "/login:recovery-pending": {
+    "de": "Nach Anmelden gehört der Passkey, der geantwortet hat, zu einer Social Recovery, die noch nicht abgeschlossen ist (authenticate finish antwortet 409 recovery_pending). Die Fehlerkarte zeigt Die Wiederherstellung Ihres Kontos ist noch nicht abgeschlossen. Öffnen Sie „Account über Social Recovery wiederherstellen“, um sie abzuschließen. und Erneut versuchen. Es wird keine Sitzung gespeichert, und der Passkey wird dem Authenticator nicht als unbekannt gemeldet.",
+    "es": "Tras Iniciar sesión, el passkey que respondió pertenece a una Social Recovery que aún no ha terminado (authenticate finish responde 409 recovery_pending). La tarjeta de error muestra La recuperación de tu cuenta aún no ha terminado. Abre «Recuperar la cuenta con Social Recovery» para terminarla. e Intentar de nuevo. No se guarda ninguna sesión, y el passkey no se notifica al autenticador como desconocido.",
+    "fil": "Pagkatapos ng Mag-log in, ang passkey na sumagot ay kabilang sa Social Recovery na hindi pa tapos (sumasagot ang authenticate finish ng 409 recovery_pending). Ipinapakita ng error card ang Hindi pa tapos ang pagbawi ng account mo. Buksan ang “Bawiin ang account gamit ang Social Recovery” para tapusin ito. at Subukan ulit. Walang session na sine-save, at hindi iniuulat sa authenticator na hindi kilala ang passkey."
   },
   "/welcome:held-session": {
     "de": "Ein angemeldetes Mitglied hat die Seite neu geladen (fixiert mit ?visual=held-session, nur Playwright-Builds): Die gespeicherte Sitzung wird zurückgehalten, bis die Wallet wieder offen ist, also zeigt die Forum-Startseite die Anmeldekarte anstelle des Feeds, nicht die Gastansicht. Die Karte grüßt Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, mit der gedämpften Zeile Bestätigen Sie, um Ihre Wallet zu öffnen über Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen, und ohne Abmelden. Oben rechts steht weder Anmelden noch das Menü. Ein Tipp auf Anmelden, eine Passkey-Abfrage, und das Mitglied ist zurück auf /welcome, angemeldet und mit offener Wallet. Ein Besucher ohne gespeicherte Sitzung sieht weiterhin das Gast-Forum mit Anmelden oben rechts.",
@@ -5868,6 +5873,296 @@
     "de": "Nach Person 2 hat gescannt im angehefteten Schritt für Person 2, wenn PUT /me/recovery-share mit 409 antwortet, weil sich die Wallet des Kontos geändert hat: der Hinweis Deine Wallet hat sich während der Einrichtung geändert. Beginne neu. und Erneut versuchen, das zur Einleitung zurückführt.",
     "es": "Tras La persona 2 lo escaneó en el paso fijado de la persona 2, cuando PUT /me/recovery-share respondió 409 porque la wallet de la cuenta cambió: la alerta Tu wallet cambió durante la configuración. Empieza de nuevo. e Intentar de nuevo, que vuelve a la introducción.",
     "fil": "Pagkatapos ng Na-scan na ito ng tao 2 sa naka-pin na hakbang ng tao 2, kapag sumagot ng 409 ang PUT /me/recovery-share dahil nagbago ang wallet ng account: ang alerto Nagbago ang wallet mo habang nagse-setup. Magsimula ulit. at ang Subukan ulit, na bumabalik sa intro."
+  },
+  "/recover:default": {
+    "de": "Abgemeldet, geöffnet über Account über Social Recovery wiederherstellen auf /login. Titel Konto wiederherstellen, Triff die zwei Personen, die deine Anteile aufbewahren, oder halte deine alten 12 Wörter bereit., der primäre Knopf Zwei Codes scannen und der sekundäre Knopf Meine 12 Wörter eingeben.",
+    "es": "Sesión cerrada, abierta desde Recuperar la cuenta con Social Recovery en /login. Título Recupera tu cuenta, Reúnete con las dos personas que guardan tus partes, o ten a mano tus 12 palabras antiguas., el botón principal Escanear dos códigos y el secundario Escribir mis 12 palabras.",
+    "fil": "Naka-log out, binuksan mula sa Bawiin ang account gamit ang Social Recovery sa /login. Pamagat na Bawiin ang account mo, Makipagkita sa dalawang taong nagtatabi ng mga bahagi mo, o ihanda ang luma mong 12 salita., ang pangunahing Mag-scan ng dalawang code, at ang pangalawang I-type ang 12 salita ko."
+  },
+  "/recover:scan": {
+    "de": "Nach Zwei Codes scannen: Die Kamera füllt die Seite, mit dem Hinweis Code 1 von 2 scannen über dem Bild.",
+    "es": "Tras Escanear dos códigos: la cámara llena la página con la indicación Escanea el código 1 de 2 sobre la imagen.",
+    "fil": "Pagkatapos ng Mag-scan ng dalawang code: pinupuno ng camera ang page, may hint na I-scan ang code 1 ng 2 sa ibabaw ng larawan."
+  },
+  "/recover:scan-second": {
+    "de": "Der erste Code wurde gelesen: Code 1 von 2 gescannt (@ada). bleibt unten stehen, und die Kamera startet neu mit dem Hinweis Code 2 von 2 scannen.",
+    "es": "Se leyó el primer código: Código 1 de 2 escaneado (@ada). queda abajo, y la cámara vuelve a empezar con la indicación Escanea el código 2 de 2.",
+    "fil": "Nabasa ang unang code: nananatili sa ibaba ang Na-scan ang code 1 ng 2 (@ada)., at nagsimula ulit ang camera na may hint na I-scan ang code 2 ng 2."
+  },
+  "/recover:code-invalid": {
+    "de": "Die Kamera hat einen Text gelesen, der kein Anteil-Code ist: Die Kamera stoppt, und der Hinweis Das ist kein Social-Recovery-Code. erscheint über der schwarzen Fläche mit Erneut versuchen, das die Kamera neu startet.",
+    "es": "La cámara leyó un texto que no es un código de parte: la cámara se detiene, y la alerta Este no es un código de Social Recovery. aparece sobre la capa negra con Intentar de nuevo, que vuelve a iniciar la cámara.",
+    "fil": "Nakabasa ang camera ng text na hindi share code: humihinto ang camera, at lumalabas ang alerto na Hindi ito Social Recovery code. sa itim na layer kasama ang Subukan ulit, na nagsisimula ulit ng camera."
+  },
+  "/recover:code-same": {
+    "de": "Der zweite gelesene Code ist wieder der erste: Das war zweimal derselbe Code. Scanne den Code der anderen Person. mit Erneut versuchen; der erste Code bleibt unten genannt.",
+    "es": "El segundo código leído es otra vez el primero: Era el mismo código dos veces. Escanea el código de la otra persona. con Intentar de nuevo; el primer código sigue nombrado abajo.",
+    "fil": "Ang pangalawang nabasang code ay ang una ulit: Iisang code ang na-scan nang dalawang beses. I-scan ang code ng isa pang tao. kasama ang Subukan ulit; nananatiling nakasaad sa ibaba ang unang code."
+  },
+  "/recover:code-other-set": {
+    "de": "Der zweite Code gehört zu einer anderen Einrichtung: Diese zwei Codes gehören nicht zusammen. mit Erneut versuchen; der erste Code bleibt unten genannt.",
+    "es": "El segundo código pertenece a otra configuración: Estos dos códigos no van juntos. con Intentar de nuevo; el primer código sigue nombrado abajo.",
+    "fil": "Sa ibang setup ang pangalawang code: Hindi magkasama ang dalawang code na ito. kasama ang Subukan ulit; nananatiling nakasaad sa ibaba ang unang code."
+  },
+  "/recover:camera-denied": {
+    "de": "Die Kamera ist blockiert: Der Kamerazugriff ist aus. Erlaube die Kamera oder gib deine 12 Wörter ein. anstelle des Bildes.",
+    "es": "La cámara está bloqueada: El acceso a la cámara está desactivado. Permite la cámara o escribe tus 12 palabras. en lugar de la imagen.",
+    "fil": "Naka-block ang camera: Naka-off ang access sa camera. Payagan ang camera, o i-type ang 12 salita mo. sa halip na ang larawan."
+  },
+  "/recover:camera-unavailable": {
+    "de": "Das Gerät hat keine Kamera: Keine Kamera gefunden. Gib stattdessen deine 12 Wörter ein. anstelle des Bildes.",
+    "es": "El dispositivo no tiene cámara: No se encontró ninguna cámara. Escribe tus 12 palabras en su lugar. en lugar de la imagen.",
+    "fil": "Walang camera ang device: Walang nakitang camera. I-type na lang ang 12 salita mo. sa halip na ang larawan."
+  },
+  "/recover:type": {
+    "de": "Nach Meine 12 Wörter eingeben: das Feld Deine 12 Wörter, der Hinweis Trenne die Wörter mit Leerzeichen. und Weiter.",
+    "es": "Tras Escribir mis 12 palabras: el campo Tus 12 palabras, la indicación Separa las palabras con espacios. y Continuar.",
+    "fil": "Pagkatapos ng I-type ang 12 salita ko: ang field na Ang 12 salita mo, ang hint na Paghiwalayin ang mga salita gamit ang space., at Magpatuloy."
+  },
+  "/recover:words-invalid": {
+    "de": "Die eingegebenen Wörter sind keine 12 gültigen Wörter: der Hinweis Das sind keine 12 gültigen Wörter. Prüfe die Schreibweise. über Weiter.",
+    "es": "Las palabras escritas no son 12 palabras válidas: la alerta Estas no son 12 palabras válidas. Revisa la ortografía. encima de Continuar.",
+    "fil": "Hindi 12 wastong salita ang na-type: ang alerto na Hindi ito 12 wastong salita. Suriin ang baybay. sa itaas ng Magpatuloy."
+  },
+  "/recover:no-wallet": {
+    "de": "Gültige Wörter in einem Build ohne Wallet (wie in Playwright): Wiederherstellen ist in dieser Version der App nicht verfügbar. und Neu beginnen. Es wird kein Wallet-Code heruntergeladen.",
+    "es": "Palabras válidas en un build sin wallet (como en Playwright): La recuperación no está disponible en esta versión de la app. y Empezar de nuevo. No se descarga código de la wallet.",
+    "fil": "Wastong mga salita sa build na walang wallet (gaya sa Playwright): Hindi available ang pagbawi sa bersyong ito ng app. at Magsimula ulit. Walang dina-download na code ng wallet."
+  },
+  "/recover:opening": {
+    "de": "Angeheftete Fixture (?visual=recover-opening, nur Playwright-Builds): Die alte Wallet öffnet sich, und das Konto wird gesucht. Die alte Wallet wird geöffnet… mit einem Spinner.",
+    "es": "Fixture fijado (?visual=recover-opening, solo builds de Playwright): la wallet antigua se abre y se busca la cuenta. Abriendo la wallet antigua… con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=recover-opening, sa mga Playwright build lang): binubuksan ang lumang wallet at hinahanap ang account. Binubuksan ang lumang wallet… na may spinner."
+  },
+  "/recover:opening-wait": {
+    "de": "Angeheftete Fixture (?visual=recover-opening-wait, nur Playwright-Builds): Das Konto konnte noch nicht gesucht werden, nach einer Pause wird erneut gefragt. Das Konto wird geprüft. Das kann einige Minuten dauern. mit einem Spinner.",
+    "es": "Fixture fijado (?visual=recover-opening-wait, solo builds de Playwright): todavía no se pudo buscar la cuenta, y se vuelve a preguntar tras una pausa. Comprobando la cuenta. Esto puede tardar unos minutos. con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=recover-opening-wait, sa mga Playwright build lang): hindi pa mahanap ang account, at itatanong ulit pagkatapos ng pahinga. Tinitingnan ang account. Maaaring tumagal ito nang ilang minuto. na may spinner."
+  },
+  "/recover:blocked-closed": {
+    "de": "Angeheftete Fixture (?visual=recover-blocked-closed, nur Playwright-Builds): Anmeldungen sind für ein Update geschlossen. Der Hinweis der Anmeldekarte 21.gifts wird gerade aktualisiert. Bitte versuchen Sie es etwas später erneut. ohne etwas zum Drücken.",
+    "es": "Fixture fijado (?visual=recover-blocked-closed, solo builds de Playwright): los inicios de sesión están cerrados por una actualización. El aviso de la tarjeta de inicio de sesión 21.gifts se está actualizando. Inténtalo de nuevo un poco más tarde. sin nada que pulsar.",
+    "fil": "Naka-pin na fixture (?visual=recover-blocked-closed, sa mga Playwright build lang): sarado ang mga login dahil sa update. Ang abiso ng login card na Nag-a-update ang 21.gifts. Subukan ulit mamaya. na walang pipindutin."
+  },
+  "/recover:blocked-outdated": {
+    "de": "Angeheftete Fixture (?visual=recover-blocked-outdated, nur Playwright-Builds): Dieser Tab läuft mit einem älteren Build. Der Hinweis der Anmeldekarte Eine neue Version ist bereit mit Neu laden.",
+    "es": "Fixture fijado (?visual=recover-blocked-outdated, solo builds de Playwright): esta pestaña usa un build anterior. El aviso de la tarjeta de inicio de sesión Hay una nueva versión lista con Recargar.",
+    "fil": "Naka-pin na fixture (?visual=recover-blocked-outdated, sa mga Playwright build lang): mas lumang build ang tumatakbo sa tab na ito. Ang abiso ng login card na May bagong bersyon na kasama ang I-reload."
+  },
+  "/recover:not-found": {
+    "de": "Angeheftete Fixture (?visual=recover-not-found, nur Playwright-Builds): Diese Wörter gehören zu keinem 21.gifts-Konto mit verbundener Wallet. und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-not-found, solo builds de Playwright): Estas palabras no pertenecen a ninguna cuenta de 21.gifts con una wallet conectada. y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-not-found, sa mga Playwright build lang): Hindi kabilang ang mga salitang ito sa isang 21.gifts account na may nakakonektang wallet. at Magsimula ulit."
+  },
+  "/recover:already-done": {
+    "de": "Angeheftete Fixture (?visual=recover-done, nur Playwright-Builds): Dieses Konto wurde bereits wiederhergestellt. Melde dich mit deinem neuen Passkey an., Anmelden, das zu /login zurückführt, und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-done, solo builds de Playwright): Esta cuenta ya se recuperó. Inicia sesión con tu nuevo passkey., Iniciar sesión, que vuelve a /login, y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-done, sa mga Playwright build lang): Nabawi na ang account na ito. Mag-log in gamit ang bago mong passkey., Mag-log in, na bumabalik sa /login, at Magsimula ulit."
+  },
+  "/recover:operator": {
+    "de": "Angeheftete Fixture (?visual=recover-operator, nur Playwright-Builds): Dieses Konto lässt sich hier nicht wiederherstellen. Wende dich an 21.gifts. und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-operator, solo builds de Playwright): Esta cuenta no se puede recuperar aquí. Contacta con 21.gifts. y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-operator, sa mga Playwright build lang): Hindi mababawi rito ang account na ito. Makipag-ugnayan sa 21.gifts. at Magsimula ulit."
+  },
+  "/recover:other-account": {
+    "de": "Angeheftete Fixture (?visual=recover-other-account, nur Playwright-Builds): Die gescannten Codes nennen ein anderes Konto als das, das die alte Wallet öffnet. Diese Codes gehören zu einem anderen Konto. und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-other-account, solo builds de Playwright): los códigos escaneados nombran otra cuenta que la que abre la wallet antigua. Estos códigos pertenecen a otra cuenta. y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-other-account, sa mga Playwright build lang): ibang account ang nakasaad sa mga na-scan na code kaysa sa binubuksan ng lumang wallet. Sa ibang account ang mga code na ito. at Magsimula ulit."
+  },
+  "/recover:unavailable": {
+    "de": "Angeheftete Fixture (?visual=recover-unavailable, nur Playwright-Builds): Das Konto konnte auch nach drei Versuchen nicht gesucht werden. Der Adressdienst ist gerade nicht erreichbar. Versuche es in einer Minute erneut., Erneut versuchen und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-unavailable, solo builds de Playwright): la cuenta tampoco se pudo buscar tras tres intentos. El servicio de direcciones no está disponible ahora mismo. Inténtalo de nuevo en un minuto., Intentar de nuevo y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-unavailable, sa mga Playwright build lang): hindi pa rin mahanap ang account pagkatapos ng tatlong subok. Hindi maabot ang serbisyo ng address ngayon. Subukan ulit pagkalipas ng isang minuto., Subukan ulit, at Magsimula ulit."
+  },
+  "/recover:wallet-error": {
+    "de": "Angeheftete Fixture (?visual=recover-wallet-error, nur Playwright-Builds): Die alte Wallet hat sich nicht geöffnet. Die Wallet konnte nicht geöffnet werden. Versuche es erneut., Erneut versuchen und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-wallet-error, solo builds de Playwright): la wallet antigua no se abrió. No se pudo abrir la wallet. Inténtalo de nuevo., Intentar de nuevo y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-wallet-error, sa mga Playwright build lang): hindi nabuksan ang lumang wallet. Hindi mabuksan ang wallet. Subukan ulit., Subukan ulit, at Magsimula ulit."
+  },
+  "/recover:found": {
+    "de": "Angeheftete Fixture (?visual=recover-found, nur Playwright-Builds): Konto @ada gefunden., Erstelle auf diesem Telefon einen neuen Passkey. Er bekommt eigene neue 12 Wörter. und Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-found, solo builds de Playwright): Cuenta @ada encontrada., Crea un nuevo passkey en este teléfono. Recibe sus propias 12 palabras nuevas. y Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-found, sa mga Playwright build lang): Nakita ang account na @ada., Gumawa ng bagong passkey sa teleponong ito. Magkakaroon ito ng sarili nitong bagong 12 salita., at Gumawa ng bagong passkey."
+  },
+  "/recover:found-busy": {
+    "de": "Angeheftete Fixture (?visual=recover-found-busy, nur Playwright-Builds): Die Passkey-Abfrage ist offen. Neuen Passkey erstellen ist deaktiviert und zeigt einen Spinner.",
+    "es": "Fixture fijado (?visual=recover-found-busy, solo builds de Playwright): la solicitud del passkey está abierta. Crear un nuevo passkey está desactivado con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=recover-found-busy, sa mga Playwright build lang): bukas ang passkey prompt. Naka-disable ang Gumawa ng bagong passkey na may spinner."
+  },
+  "/recover:restart": {
+    "de": "Angeheftete Fixture (?visual=recover-restart, nur Playwright-Builds): Der Umzug hat nicht geklappt, und die Wiederherstellung hat neu begonnen. Der Umzug hat nicht geklappt. Erstelle den neuen Passkey noch einmal. über dem Gefunden-Text und Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-restart, solo builds de Playwright): el traslado no se completó y la recuperación volvió a empezar. El traslado no se completó. Crea el nuevo passkey otra vez. encima del texto de cuenta encontrada y Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-restart, sa mga Playwright build lang): hindi natuloy ang paglipat at nagsimula ulit ang pagbawi. Hindi natuloy ang paglipat. Gawin ulit ang bagong passkey. sa itaas ng text na nakita ang account at Gumawa ng bagong passkey."
+  },
+  "/recover:passkey-cancelled": {
+    "de": "Angeheftete Fixture (?visual=recover-cancelled, nur Playwright-Builds): Die Passkey-Abfrage wurde geschlossen oder ist fehlgeschlagen. Der Passkey wurde nicht erstellt. Versuche es erneut. über Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-cancelled, solo builds de Playwright): la solicitud del passkey se cerró o falló. No se creó el passkey. Inténtalo de nuevo. encima de Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-cancelled, sa mga Playwright build lang): isinara o nabigo ang passkey prompt. Hindi nagawa ang passkey. Subukan ulit. sa itaas ng Gumawa ng bagong passkey."
+  },
+  "/recover:passkey-timeout": {
+    "de": "Angeheftete Fixture (?visual=recover-timeout, nur Playwright-Builds): Die Passkey-Abfrage ist abgelaufen. Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut. über Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-timeout, solo builds de Playwright): la solicitud del passkey caducó. La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo. encima de Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-timeout, sa mga Playwright build lang): nag-timeout ang passkey prompt. Nag-timeout ang device prompt bago ka matapos. Subukan ulit. sa itaas ng Gumawa ng bagong passkey."
+  },
+  "/recover:prf-unsupported": {
+    "de": "Angeheftete Fixture (?visual=recover-prf, nur Playwright-Builds): Der neue Passkey hat keine PRF-Ausgabe geliefert. Dieses Telefon oder dieser Browser kann keine 21.gifts-Wallet halten. Bitte verwenden Sie ein aktuelles Telefon oder einen aktuellen Browser, der Passkeys unterstützt. über Neuen Passkey erstellen.",
+    "es": "Fixture fijado (?visual=recover-prf, solo builds de Playwright): el nuevo passkey no dio salida PRF. Este teléfono o navegador no puede guardar una wallet de 21.gifts. Usa un teléfono o navegador actualizado que admita passkeys. encima de Crear un nuevo passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-prf, sa mga Playwright build lang): walang PRF output ang bagong passkey. Hindi kayang maglaman ng 21.gifts wallet ang phone o browser na ito. Gumamit ng updated na phone o browser na sumusuporta sa passkeys. sa itaas ng Gumawa ng bagong passkey."
+  },
+  "/recover:new-wallet-error": {
+    "de": "Angeheftete Fixture (?visual=recover-new-wallet-error, nur Playwright-Builds): Der neue Passkey wurde erstellt, aber seine Wallet hat sich nicht geöffnet. Die Wallet konnte nicht geöffnet werden. Versuche es erneut. über Neuen Passkey erstellen, das den Passkey erneut erstellt.",
+    "es": "Fixture fijado (?visual=recover-new-wallet-error, solo builds de Playwright): se creó el nuevo passkey, pero su wallet no se abrió. No se pudo abrir la wallet. Inténtalo de nuevo. encima de Crear un nuevo passkey, que vuelve a crear el passkey.",
+    "fil": "Naka-pin na fixture (?visual=recover-new-wallet-error, sa mga Playwright build lang): nagawa ang bagong passkey, pero hindi nabuksan ang wallet nito. Hindi mabuksan ang wallet. Subukan ulit. sa itaas ng Gumawa ng bagong passkey, na gumagawa ulit ng passkey."
+  },
+  "/recover:transfer": {
+    "de": "Angeheftete Fixture (?visual=recover-transfer, nur Playwright-Builds): Auf dieses Telefon übertragen, was umzieht, die Liste Konto, 21.gifts-Adresse und Guthaben, noch nichts abgehakt, und Übertragen.",
+    "es": "Fixture fijado (?visual=recover-transfer, solo builds de Playwright): Pasar a este teléfono, lo que se traslada, la lista Cuenta, Dirección 21.gifts y Saldo sin nada marcado todavía, y Transferir.",
+    "fil": "Naka-pin na fixture (?visual=recover-transfer, sa mga Playwright build lang): Ilipat sa teleponong ito, kung ano ang lilipat, ang listahang Account, 21.gifts address, at Balanse na wala pang check, at Ilipat."
+  },
+  "/recover:transfer-progress": {
+    "de": "Angeheftete Fixture (?visual=recover-transfer-progress, nur Playwright-Builds): Ein Drücken, das auf die Bestätigung des Umzugs wartet. Konto und 21.gifts-Adresse sind abgehakt, Der Umzug wird bestätigt. Das kann einige Minuten dauern., und Übertragen ist deaktiviert und zeigt einen Spinner.",
+    "es": "Fixture fijado (?visual=recover-transfer-progress, solo builds de Playwright): una pulsación que espera la confirmación del traslado. Cuenta y Dirección 21.gifts están marcadas, Confirmando el traslado. Esto puede tardar unos minutos., y Transferir está desactivado con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=recover-transfer-progress, sa mga Playwright build lang): isang pindot na naghihintay na makumpirma ang paglipat. Naka-check ang Account at 21.gifts address, Kinukumpirma ang paglipat. Maaaring tumagal ito nang ilang minuto., at naka-disable ang Ilipat na may spinner."
+  },
+  "/recover:transfer-error": {
+    "de": "Angeheftete Fixture (?visual=recover-transfer-error, nur Playwright-Builds): Konto ist abgehakt, Noch nicht alles wurde übertragen. Tippe erneut auf Übertragen, um fortzufahren., Übertragen und Neu beginnen.",
+    "es": "Fixture fijado (?visual=recover-transfer-error, solo builds de Playwright): Cuenta está marcada, Todavía no se ha transferido todo. Toca Transferir de nuevo para continuar., Transferir y Empezar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=recover-transfer-error, sa mga Playwright build lang): naka-check ang Account, Hindi pa nailipat ang lahat. I-tap ulit ang Ilipat para magpatuloy., Ilipat, at Magsimula ulit."
+  },
+  "/recover:balance-error": {
+    "de": "Angeheftete Fixture (?visual=recover-balance-error, nur Playwright-Builds): Das Konto ist umgezogen und angemeldet, aber das Guthaben nicht. Das Guthaben konnte noch nicht übertragen werden., Übertragen und Guthaben später übertragen.",
+    "es": "Fixture fijado (?visual=recover-balance-error, solo builds de Playwright): la cuenta se trasladó y la sesión está iniciada, pero el saldo no. Todavía no se pudo transferir el saldo., Transferir y Transferir el saldo más tarde.",
+    "fil": "Naka-pin na fixture (?visual=recover-balance-error, sa mga Playwright build lang): lumipat at naka-log in na ang account, pero hindi ang balanse. Hindi pa mailipat ang balanse., Ilipat, at Ilipat ang balanse mamaya."
+  },
+  "/recover:done": {
+    "de": "Angeheftete Fixture (?visual=recover-complete, nur Playwright-Builds): Dein Konto ist wiederhergestellt, was die neuen Wörter bedeuten, Richte Social Recovery für die neuen Wörter neu ein. Alte Anteile öffnen nur noch die frühere Wallet., Neue 12 Wörter anzeigen und Mein Konto absichern.",
+    "es": "Fixture fijado (?visual=recover-complete, solo builds de Playwright): Tu cuenta ha vuelto, lo que significan las palabras nuevas, Vuelve a configurar Social Recovery para las palabras nuevas. Las partes antiguas ahora solo abren la wallet anterior., Mostrar las 12 palabras nuevas y Proteger mi cuenta.",
+    "fil": "Naka-pin na fixture (?visual=recover-complete, sa mga Playwright build lang): Bumalik na ang account mo, ang ibig sabihin ng mga bagong salita, I-set up ulit ang Social Recovery para sa mga bagong salita. Ang mga lumang bahagi ay nagbubukas na lang ng dating wallet., Ipakita ang bagong 12 salita, at I-secure ang account ko."
+  },
+  "/recover:done-balance-missing": {
+    "de": "Angeheftete Fixture (?visual=recover-complete-missing, nur Playwright-Builds): Der Fertig-Schritt nach Guthaben später übertragen, mit Ein Teil des Guthabens blieb in der früheren Wallet. Du kannst ihn später in den Einstellungen übertragen.",
+    "es": "Fixture fijado (?visual=recover-complete-missing, solo builds de Playwright): el paso final tras Transferir el saldo más tarde, con Parte del saldo se quedó en la wallet anterior. Puedes transferirlo más tarde en los ajustes.",
+    "fil": "Naka-pin na fixture (?visual=recover-complete-missing, sa mga Playwright build lang): ang huling hakbang pagkatapos ng Ilipat ang balanse mamaya, na may May bahagi ng balanse na naiwan sa dating wallet. Puwede mo itong ilipat mamaya sa mga setting."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:default": {
+    "de": "Ada mit einer früheren Wallet, geöffnet über ihren Link Restguthaben übertragen auf /settings. Titel Restguthaben übertragen, Scanne die zwei Codes dieser Wallet oder gib ihre 12 Wörter ein., Zwei Codes scannen und Meine 12 Wörter eingeben.",
+    "es": "Ada con una wallet anterior, abierta desde su enlace Transferir el saldo restante en /settings. Título Transferir el saldo restante, Escanea los dos códigos de esta wallet o escribe sus 12 palabras., Escanear dos códigos y Escribir mis 12 palabras.",
+    "fil": "Si Ada na may dating wallet, binuksan mula sa link nitong Ilipat ang natitirang balanse sa /settings. Pamagat na Ilipat ang natitirang balanse, I-scan ang dalawang code ng wallet na ito o i-type ang 12 salita nito., Mag-scan ng dalawang code, at I-type ang 12 salita ko."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:not-found": {
+    "de": "Der Schlüssel in der Adresse ist keine frühere Wallet des Kontos: Diese frühere Wallet gehört nicht zu deinem Konto. und Fertig, das zu /settings zurückführt.",
+    "es": "La clave de la dirección no es una wallet anterior de la cuenta: Esta wallet anterior no pertenece a tu cuenta. y Listo, que vuelve a /settings.",
+    "fil": "Hindi dating wallet ng account ang key sa address: Hindi kabilang sa account mo ang dating wallet na ito. at Tapos na, na bumabalik sa /settings."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:load-error": {
+    "de": "GET /me/previous-wallets ist fehlgeschlagen: Frühere Wallets konnten nicht geladen werden. und Erneut versuchen.",
+    "es": "GET /me/previous-wallets falló: No se pudieron cargar las wallets anteriores. e Intentar de nuevo.",
+    "fil": "Nabigo ang GET /me/previous-wallets: Hindi ma-load ang mga dating wallet. at Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:scan": {
+    "de": "Nach Zwei Codes scannen: Die Kamera füllt die Seite mit dem Hinweis Code 1 von 2 scannen.",
+    "es": "Tras Escanear dos códigos: la cámara llena la página con la indicación Escanea el código 1 de 2.",
+    "fil": "Pagkatapos ng Mag-scan ng dalawang code: pinupuno ng camera ang page na may hint na I-scan ang code 1 ng 2."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:scan-second": {
+    "de": "Der erste Code wurde gelesen: Code 1 von 2 gescannt (@ada). unten, und die Kamera startet neu für Code 2.",
+    "es": "Se leyó el primer código: Código 1 de 2 escaneado (@ada). abajo, y la cámara vuelve a empezar para el código 2.",
+    "fil": "Nabasa ang unang code: Na-scan ang code 1 ng 2 (@ada). sa ibaba, at nagsimula ulit ang camera para sa code 2."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:code-invalid": {
+    "de": "Die Kamera hat einen Text gelesen, der kein Anteil-Code ist: Das ist kein Social-Recovery-Code. über der gestoppten Kamera mit Erneut versuchen.",
+    "es": "La cámara leyó un texto que no es un código de parte: Este no es un código de Social Recovery. sobre la cámara detenida con Intentar de nuevo.",
+    "fil": "Nakabasa ang camera ng text na hindi share code: Hindi ito Social Recovery code. sa ibabaw ng nakahintong camera kasama ang Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:code-same": {
+    "de": "Der zweite gelesene Code ist wieder der erste: Das war zweimal derselbe Code. Scanne den Code der anderen Person. mit Erneut versuchen.",
+    "es": "El segundo código leído es otra vez el primero: Era el mismo código dos veces. Escanea el código de la otra persona. con Intentar de nuevo.",
+    "fil": "Ang pangalawang nabasang code ay ang una ulit: Iisang code ang na-scan nang dalawang beses. I-scan ang code ng isa pang tao. kasama ang Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:code-other-set": {
+    "de": "Der zweite Code gehört zu einer anderen Einrichtung: Diese zwei Codes gehören nicht zusammen. mit Erneut versuchen.",
+    "es": "El segundo código pertenece a otra configuración: Estos dos códigos no van juntos. con Intentar de nuevo.",
+    "fil": "Sa ibang setup ang pangalawang code: Hindi magkasama ang dalawang code na ito. kasama ang Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:code-other-account": {
+    "de": "Der Code gehört zum Konto eines anderen Mitglieds: Diese Codes gehören zu einem anderen Konto. mit Erneut versuchen.",
+    "es": "El código pertenece a la cuenta de otro miembro: Estos códigos pertenecen a otra cuenta. con Intentar de nuevo.",
+    "fil": "Sa account ng ibang miyembro ang code: Sa ibang account ang mga code na ito. kasama ang Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:camera-denied": {
+    "de": "Die Kamera ist blockiert: Der Kamerazugriff ist aus. Erlaube die Kamera oder gib deine 12 Wörter ein.",
+    "es": "La cámara está bloqueada: El acceso a la cámara está desactivado. Permite la cámara o escribe tus 12 palabras.",
+    "fil": "Naka-block ang camera: Naka-off ang access sa camera. Payagan ang camera, o i-type ang 12 salita mo."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:camera-unavailable": {
+    "de": "Das Gerät hat keine Kamera: Keine Kamera gefunden. Gib stattdessen deine 12 Wörter ein.",
+    "es": "El dispositivo no tiene cámara: No se encontró ninguna cámara. Escribe tus 12 palabras en su lugar.",
+    "fil": "Walang camera ang device: Walang nakitang camera. I-type na lang ang 12 salita mo."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:type": {
+    "de": "Nach Meine 12 Wörter eingeben: das Feld Deine 12 Wörter, sein Hinweis und Weiter.",
+    "es": "Tras Escribir mis 12 palabras: el campo Tus 12 palabras, su indicación y Continuar.",
+    "fil": "Pagkatapos ng I-type ang 12 salita ko: ang field na Ang 12 salita mo, ang hint nito, at Magpatuloy."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:words-invalid": {
+    "de": "Die eingegebenen Wörter sind keine 12 gültigen Wörter: Das sind keine 12 gültigen Wörter. Prüfe die Schreibweise.",
+    "es": "Las palabras escritas no son 12 palabras válidas: Estas no son 12 palabras válidas. Revisa la ortografía.",
+    "fil": "Hindi 12 wastong salita ang na-type: Hindi ito 12 wastong salita. Suriin ang baybay."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:opening": {
+    "de": "Angeheftete Fixture (?visual=prev-opening, nur Playwright-Builds): Die frühere Wallet öffnet sich und liest ihr Guthaben. Die alte Wallet wird geöffnet… mit einem Spinner.",
+    "es": "Fixture fijado (?visual=prev-opening, solo builds de Playwright): la wallet anterior se abre y lee su saldo. Abriendo la wallet antigua… con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=prev-opening, sa mga Playwright build lang): binubuksan ang dating wallet at binabasa ang balanse nito. Binubuksan ang lumang wallet… na may spinner."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:mismatch": {
+    "de": "Angeheftete Fixture (?visual=prev-mismatch, nur Playwright-Builds): Die Wörter öffnen eine andere Wallet. Diese Wörter öffnen diese frühere Wallet nicht. und Erneut versuchen, das zum Anfang zurückführt.",
+    "es": "Fixture fijado (?visual=prev-mismatch, solo builds de Playwright): las palabras abren otra wallet. Estas palabras no abren esta wallet anterior. e Intentar de nuevo, que vuelve al inicio.",
+    "fil": "Naka-pin na fixture (?visual=prev-mismatch, sa mga Playwright build lang): ibang wallet ang binubuksan ng mga salita. Hindi binubuksan ng mga salitang ito ang dating wallet na ito. at Subukan ulit, na bumabalik sa simula."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:wallet-error": {
+    "de": "Gültige Wörter in einem Build ohne Wallet (wie in Playwright): Die Wallet konnte nicht geöffnet werden. Versuche es erneut. und Erneut versuchen, das die Wallet mit denselben Wörtern erneut öffnet.",
+    "es": "Palabras válidas en un build sin wallet (como en Playwright): No se pudo abrir la wallet. Inténtalo de nuevo. e Intentar de nuevo, que vuelve a abrir la wallet con las mismas palabras.",
+    "fil": "Wastong mga salita sa build na walang wallet (gaya sa Playwright): Hindi mabuksan ang wallet. Subukan ulit. at Subukan ulit, na binubuksan ulit ang wallet gamit ang parehong mga salita."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:balance": {
+    "de": "Angeheftete Fixture (?visual=prev-balance, nur Playwright-Builds): In dieser Wallet mit ihrem synchronisierten Guthaben ₿21'000 · $21.00 (aktueller Kurs) und Übertragen.",
+    "es": "Fixture fijado (?visual=prev-balance, solo builds de Playwright): En esta wallet con su saldo sincronizado ₿21'000 · $21.00 (precio actual) y Transferir.",
+    "fil": "Naka-pin na fixture (?visual=prev-balance, sa mga Playwright build lang): Nasa wallet na ito kasama ang naka-sync na balanse nitong ₿21'000 · $21.00 (kasalukuyang presyo) at Ilipat."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:sending": {
+    "de": "Angeheftete Fixture (?visual=prev-sending, nur Playwright-Builds): Das Guthaben wird übertragen. Übertragen ist deaktiviert und zeigt einen Spinner.",
+    "es": "Fixture fijado (?visual=prev-sending, solo builds de Playwright): se está transfiriendo el saldo. Transferir está desactivado con un indicador de carga.",
+    "fil": "Naka-pin na fixture (?visual=prev-sending, sa mga Playwright build lang): inililipat ang balanse. Naka-disable ang Ilipat na may spinner."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:error": {
+    "de": "Angeheftete Fixture (?visual=prev-error, nur Playwright-Builds): Das Guthaben ist nicht umgezogen. Das Guthaben, Das Guthaben konnte nicht übertragen werden. Versuche es erneut. und Erneut versuchen.",
+    "es": "Fixture fijado (?visual=prev-error, solo builds de Playwright): el saldo no se transfirió. El saldo, No se pudo transferir el saldo. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Naka-pin na fixture (?visual=prev-error, sa mga Playwright build lang): hindi nailipat ang balanse. Ang balanse, Hindi mailipat ang balanse. Subukan ulit., at Subukan ulit."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:empty": {
+    "de": "Angeheftete Fixture (?visual=prev-empty, nur Playwright-Builds): Das synchronisierte Lesen ergab 0. ₿0 · $0.00, Diese Wallet ist leer. Du kannst sie aus deinem Konto entfernen., das sekundäre Frühere Wallet entfernen und Fertig.",
+    "es": "Fixture fijado (?visual=prev-empty, solo builds de Playwright): la lectura sincronizada dio 0. ₿0 · $0.00, Esta wallet está vacía. Puedes quitarla de tu cuenta., el secundario Quitar la wallet anterior y Listo.",
+    "fil": "Naka-pin na fixture (?visual=prev-empty, sa mga Playwright build lang): 0 ang naka-sync na pagbasa. ₿0 · $0.00, Walang laman ang wallet na ito. Puwede mo itong alisin sa account mo., ang pangalawang Alisin ang dating wallet, at Tapos na."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:remove-confirm": {
+    "de": "Bei der angehefteten leeren Wallet nach Frühere Wallet entfernen: die Bestätigung Diese frühere Wallet aus deinem Konto entfernen? mit den Symbolknöpfen Entfernen (Haken) und Behalten (X).",
+    "es": "En la wallet vacía fijada, tras Quitar la wallet anterior: la confirmación ¿Quitar esta wallet anterior de tu cuenta? con los botones de icono Quitar (marca) y Conservar (X).",
+    "fil": "Sa naka-pin na walang lamang wallet, pagkatapos ng Alisin ang dating wallet: ang kumpirmasyon na Alisin ang dating wallet na ito sa account mo? na may mga icon button na Alisin (check) at Panatilihin (X)."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:removing": {
+    "de": "Bei der angehefteten leeren Wallet nach der Bestätigung, solange DELETE /me/previous-wallets/<key> nicht geantwortet hat: Der Haken zeigt einen Spinner, und beide Knöpfe sind deaktiviert.",
+    "es": "En la wallet vacía fijada, tras la confirmación, mientras DELETE /me/previous-wallets/<key> no ha respondido: la marca muestra un indicador de carga y ambos botones están desactivados.",
+    "fil": "Sa naka-pin na walang lamang wallet, pagkatapos ng kumpirmasyon, habang hindi pa sumasagot ang DELETE /me/previous-wallets/<key>: may spinner ang check at naka-disable ang dalawang button."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:remove-error": {
+    "de": "Bei der angehefteten leeren Wallet nach der Bestätigung, wenn DELETE fehlgeschlagen ist: Die Wallet konnte nicht entfernt werden. Versuche es erneut. in der offenen Bestätigung.",
+    "es": "En la wallet vacía fijada, tras la confirmación, cuando DELETE falló: No se pudo quitar la wallet. Inténtalo de nuevo. dentro de la confirmación abierta.",
+    "fil": "Sa naka-pin na walang lamang wallet, pagkatapos ng kumpirmasyon, kapag nabigo ang DELETE: Hindi maalis ang wallet. Subukan ulit. sa loob ng bukas na kumpirmasyon."
+  },
+  "/settings/previous-wallets/[sparkPubkey]:done": {
+    "de": "Angeheftete Fixture (?visual=prev-done, nur Playwright-Builds): Der Umzug endete mit einem synchronisierten Lesen von 0. In deine Wallet übertragen., Frühere Wallet entfernen und Fertig.",
+    "es": "Fixture fijado (?visual=prev-done, solo builds de Playwright): el traslado terminó con una lectura sincronizada de 0. Transferido a tu wallet., Quitar la wallet anterior y Listo.",
+    "fil": "Naka-pin na fixture (?visual=prev-done, sa mga Playwright build lang): natapos ang paglipat na may naka-sync na pagbasang 0. Nailipat na sa wallet mo., Alisin ang dating wallet, at Tapos na."
   },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",

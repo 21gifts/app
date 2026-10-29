@@ -1,9 +1,9 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { AppShellTopLeft } from '@/components/AppShell';
+import { BusyLine } from '@/components/BusyLine';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { QrCode } from '@/components/QrCode';
@@ -29,21 +29,6 @@ const BODY = 'text-center text-sm text-app-muted';
 
 /** Step heading under the page title. */
 const STEP_HEADING = 'text-center text-xl font-semibold tracking-tight text-app-fg';
-
-/**
- * Spinner line in place of the step's action while it runs.
- *
- * @param props - `label`, the translated sentence.
- * @returns The status line.
- */
-function BusyLine({ label }: { label: string }): ReactElement {
-  return (
-    <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
-      <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-      {label}
-    </p>
-  );
-}
 
 /**
  * `/settings/social-recovery`, **Secure my account**: the owner splits the

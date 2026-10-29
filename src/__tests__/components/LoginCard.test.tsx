@@ -42,6 +42,7 @@ function mockPasskey(
   status: PasskeyStatus = 'idle',
   error: string | null = null,
   nameError: 'invalid' | 'taken' | null = null,
+  recoveryPending = false,
 ): void {
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status,
@@ -52,6 +53,7 @@ function mockPasskey(
     retry: retrySpy,
     cancel: cancelPasskeySpy,
     error: status === 'error' ? error : null,
+    recoveryPending: status === 'error' && recoveryPending,
     nameError: status === 'name' ? nameError : null,
   });
 }
@@ -105,6 +107,9 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
+      expect(
+        screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
+      ).toBeNull();
     });
 
     it('asks to confirm the wallet open directly above Log in', () => {
@@ -292,10 +297,12 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows only Log in when logged out and idle', () => {
+  it('shows Log in and the Social Recovery entry when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((button) => button.textContent)).toEqual(['Log in']);
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
     expect(screen.queryByText('New to 21.gifts?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);
@@ -312,6 +319,32 @@ describe('LoginCard', () => {
     expect(registerSpy).toHaveBeenCalledTimes(1);
     expect(registerSpy).toHaveBeenCalledWith();
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+    expect(
+      screen
+        .getByRole('link', { name: 'Recover account via Social Recovery' })
+        .getAttribute('href'),
+    ).toBe('/recover');
+  });
+
+  it('offers no Social Recovery entry when a member session stands behind the card', () => {
+    const idle = renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    idle.unmount();
+    mockPasskey('choice');
+    renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+  });
+
+  it('says that a recovery is not finished yet, and Try again logs in again', () => {
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows the unknown-passkey heading and create button', () => {
@@ -704,6 +737,7 @@ describe('LoginCard', () => {
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         error: null,
+        recoveryPending: false,
         nameError: null,
       });
       return <LoginCard />;
@@ -728,6 +762,7 @@ describe('LoginCard', () => {
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         error: null,
+        recoveryPending: false,
         nameError: null,
       });
       return <LoginCard />;

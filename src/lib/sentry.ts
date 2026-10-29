@@ -868,6 +868,7 @@ const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
   'profile',
   'public-messages',
   'push',
+  'recover',
   'rules',
   'settings',
   'setup',

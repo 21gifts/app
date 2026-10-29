@@ -138,6 +138,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:recovery-pending",
+    "label": "/login recovery-pending",
+    "visual": "state-login-recovery-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/donate:default",
     "label": "/donate default",
     "visual": "screen-donate",
@@ -1551,6 +1557,354 @@
     "id": "/settings/social-recovery:wallet-changed",
     "label": "/settings/social-recovery wallet-changed",
     "visual": "state-social-recovery-wallet-changed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:default",
+    "label": "/recover default",
+    "visual": "screen-recover",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:scan",
+    "label": "/recover scan",
+    "visual": "state-recover-scan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:scan-second",
+    "label": "/recover scan-second",
+    "visual": "state-recover-scan-second",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-invalid",
+    "label": "/recover code-invalid",
+    "visual": "state-recover-code-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-same",
+    "label": "/recover code-same",
+    "visual": "state-recover-code-same",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-other-set",
+    "label": "/recover code-other-set",
+    "visual": "state-recover-code-other-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:camera-denied",
+    "label": "/recover camera-denied",
+    "visual": "state-recover-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:camera-unavailable",
+    "label": "/recover camera-unavailable",
+    "visual": "state-recover-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:type",
+    "label": "/recover type",
+    "visual": "state-recover-type",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:words-invalid",
+    "label": "/recover words-invalid",
+    "visual": "state-recover-words-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:no-wallet",
+    "label": "/recover no-wallet",
+    "visual": "state-recover-no-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:opening",
+    "label": "/recover opening",
+    "visual": "state-recover-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:opening-wait",
+    "label": "/recover opening-wait",
+    "visual": "state-recover-opening-wait",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:blocked-closed",
+    "label": "/recover blocked-closed",
+    "visual": "state-recover-blocked-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:blocked-outdated",
+    "label": "/recover blocked-outdated",
+    "visual": "state-recover-blocked-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:not-found",
+    "label": "/recover not-found",
+    "visual": "state-recover-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:already-done",
+    "label": "/recover already-done",
+    "visual": "state-recover-already-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:operator",
+    "label": "/recover operator",
+    "visual": "state-recover-operator",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:other-account",
+    "label": "/recover other-account",
+    "visual": "state-recover-other-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:unavailable",
+    "label": "/recover unavailable",
+    "visual": "state-recover-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:wallet-error",
+    "label": "/recover wallet-error",
+    "visual": "state-recover-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:found",
+    "label": "/recover found",
+    "visual": "state-recover-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:found-busy",
+    "label": "/recover found-busy",
+    "visual": "state-recover-found-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:restart",
+    "label": "/recover restart",
+    "visual": "state-recover-restart",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:passkey-cancelled",
+    "label": "/recover passkey-cancelled",
+    "visual": "state-recover-passkey-cancelled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:passkey-timeout",
+    "label": "/recover passkey-timeout",
+    "visual": "state-recover-passkey-timeout",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:prf-unsupported",
+    "label": "/recover prf-unsupported",
+    "visual": "state-recover-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:new-wallet-error",
+    "label": "/recover new-wallet-error",
+    "visual": "state-recover-new-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer",
+    "label": "/recover transfer",
+    "visual": "state-recover-transfer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer-progress",
+    "label": "/recover transfer-progress",
+    "visual": "state-recover-transfer-progress",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer-error",
+    "label": "/recover transfer-error",
+    "visual": "state-recover-transfer-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:balance-error",
+    "label": "/recover balance-error",
+    "visual": "state-recover-balance-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done",
+    "label": "/recover done",
+    "visual": "state-recover-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done-balance-missing",
+    "label": "/recover done-balance-missing",
+    "visual": "state-recover-done-balance-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:default",
+    "label": "/settings/previous-wallets/[sparkPubkey] default",
+    "visual": "screen-settings-previous-wallets-sparkPubkey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:not-found",
+    "label": "/settings/previous-wallets/[sparkPubkey] not-found",
+    "visual": "state-previous-wallet-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:load-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] load-error",
+    "visual": "state-previous-wallet-load-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan",
+    "visual": "state-previous-wallet-scan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan-second",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan-second",
+    "visual": "state-previous-wallet-scan-second",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-invalid",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-invalid",
+    "visual": "state-previous-wallet-code-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-same",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-same",
+    "visual": "state-previous-wallet-code-same",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-other-set",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-other-set",
+    "visual": "state-previous-wallet-code-other-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-other-account",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-other-account",
+    "visual": "state-previous-wallet-code-other-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:camera-denied",
+    "label": "/settings/previous-wallets/[sparkPubkey] camera-denied",
+    "visual": "state-previous-wallet-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:camera-unavailable",
+    "label": "/settings/previous-wallets/[sparkPubkey] camera-unavailable",
+    "visual": "state-previous-wallet-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:type",
+    "label": "/settings/previous-wallets/[sparkPubkey] type",
+    "visual": "state-previous-wallet-type",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:words-invalid",
+    "label": "/settings/previous-wallets/[sparkPubkey] words-invalid",
+    "visual": "state-previous-wallet-words-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:opening",
+    "label": "/settings/previous-wallets/[sparkPubkey] opening",
+    "visual": "state-previous-wallet-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:mismatch",
+    "label": "/settings/previous-wallets/[sparkPubkey] mismatch",
+    "visual": "state-previous-wallet-mismatch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:wallet-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] wallet-error",
+    "visual": "state-previous-wallet-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:balance",
+    "label": "/settings/previous-wallets/[sparkPubkey] balance",
+    "visual": "state-previous-wallet-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:sending",
+    "label": "/settings/previous-wallets/[sparkPubkey] sending",
+    "visual": "state-previous-wallet-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:error",
+    "label": "/settings/previous-wallets/[sparkPubkey] error",
+    "visual": "state-previous-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:empty",
+    "label": "/settings/previous-wallets/[sparkPubkey] empty",
+    "visual": "state-previous-wallet-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:remove-confirm",
+    "label": "/settings/previous-wallets/[sparkPubkey] remove-confirm",
+    "visual": "state-previous-wallet-remove-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:removing",
+    "label": "/settings/previous-wallets/[sparkPubkey] removing",
+    "visual": "state-previous-wallet-removing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:remove-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] remove-error",
+    "visual": "state-previous-wallet-remove-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done",
+    "label": "/settings/previous-wallets/[sparkPubkey] done",
+    "visual": "state-previous-wallet-done",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

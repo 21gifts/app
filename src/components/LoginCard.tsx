@@ -5,7 +5,7 @@ import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { LoginBlockedNotice } from '@/components/LoginBlockedNotice';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, Field } from '@/components/ui';
+import { Button, ButtonLink, Card, Field } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { androidPasskeyBlock } from '@/lib/android-passkey';
@@ -45,6 +45,12 @@ type VersionBlock = {
  * held start view adds **Open a new account** under **New to 21.gifts?**: it
  * is registration, and a new account replaces the held session as well.
  *
+ * The idle start view and the account question also offer **Recover account
+ * via Social Recovery**, a link to `/recover`, unless `showRecover` is false
+ * (inside {@link WalletLoginCard}, which stands in for a member session); the
+ * held start view never does. A passkey of a social recovery that is not
+ * finished yet shows `login.recoveryPending` on the error view.
+ *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
  * or `/welcome`.
@@ -52,11 +58,14 @@ type VersionBlock = {
  * @param props - `heldProblem`: why the last wallet open of the held-back
  *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
  *   `login.error`), shown on the held start view until its next **Log in**.
+ *   `showRecover`: whether the idle and choice views offer the Social Recovery
+ *   entry (default `true`).
  * @returns The card.
  */
 export function LoginCard({
   heldProblem = null,
-}: { heldProblem?: 'noPrf' | 'failed' | null } = {}): ReactElement {
+  showRecover = true,
+}: { heldProblem?: 'noPrf' | 'failed' | null; showRecover?: boolean } = {}): ReactElement {
   const account = useAuthStore((state) => state.account);
   const lockedSession = useAuthStore((state) => state.lockedSession);
   const lockedName = useAuthStore((state) => state.lockedName);
@@ -116,6 +125,7 @@ export function LoginCard({
     body = (
       <StartView
         held
+        showRecover={false}
         greeting={lockedName}
         alert={
           wrongAccountHint
@@ -145,6 +155,7 @@ export function LoginCard({
         versionBlock={versionBlock}
         versionErrorKey={versionErrorKey}
         prfUnsupported={prfUnsupported}
+        recoveryPending={passkey.recoveryPending}
         onRetry={() => {
           clearWrongAccount();
           if (wrongAccountHint) {
@@ -186,12 +197,15 @@ export function LoginCard({
     body = (
       <ChoiceView
         versionBlock={versionBlock}
+        showRecover={showRecover}
         onAuthenticate={passkey.authenticate}
         onRegister={() => passkey.register()}
       />
     );
   } else {
-    body = <StartView onLogin={passkey.login} versionBlock={versionBlock} />;
+    body = (
+      <StartView onLogin={passkey.login} versionBlock={versionBlock} showRecover={showRecover} />
+    );
   }
 
   return <Card surface={false}>{body}</Card>;
@@ -229,10 +243,27 @@ interface StartViewProps {
   held?: boolean;
   /** Alert above **Log in**, or null. */
   alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
+  /** Whether **Recover account via Social Recovery** follows **Log in**. */
+  showRecover: boolean;
 }
 
 /**
- * The initial logged-out state: a single **Log in** button.
+ * **Recover account via Social Recovery**: a secondary link to `/recover`.
+ *
+ * @returns The link.
+ */
+function RecoverLink(): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <ButtonLink href="/recover" variant="secondary">
+      {t('recover.entry')}
+    </ButtonLink>
+  );
+}
+
+/**
+ * The initial logged-out state: **Log in**, then **Recover account via Social
+ * Recovery** when `showRecover` is set.
  * For a held-back session, a greeting above the heading, an alert,
  * **Confirm to open your wallet** above **Log in**, and **Open a new account**
  * under a short line.
@@ -247,6 +278,7 @@ function StartView({
   greeting = null,
   held = false,
   alert = null,
+  showRecover,
 }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
@@ -272,6 +304,7 @@ function StartView({
       >
         {t('login.submit')}
       </Button>
+      {showRecover ? <RecoverLink /> : null}
       {onRegister === null ? null : (
         <>
           <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
@@ -292,15 +325,24 @@ interface ChoiceViewProps {
   onRegister: () => void;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
+  /** Whether **Recover account via Social Recovery** is the third control. */
+  showRecover: boolean;
 }
 
 /**
- * After login `NotAllowedError`: ask whether the visitor already has an account.
+ * After login `NotAllowedError`: ask whether the visitor already has an
+ * account, with **Recover account via Social Recovery** as the third control
+ * when `showRecover` is set.
  *
  * @param props - See {@link ChoiceViewProps}.
  * @returns The choice view.
  */
-function ChoiceView({ onAuthenticate, onRegister, versionBlock }: ChoiceViewProps): ReactElement {
+function ChoiceView({
+  onAuthenticate,
+  onRegister,
+  versionBlock,
+  showRecover,
+}: ChoiceViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -317,6 +359,7 @@ function ChoiceView({ onAuthenticate, onRegister, versionBlock }: ChoiceViewProp
       <Button type="button" variant="secondary" onClick={onRegister}>
         {t('login.create')}
       </Button>
+      {showRecover ? <RecoverLink /> : null}
     </>
   );
 }
@@ -439,12 +482,15 @@ interface ErrorViewProps {
   versionErrorKey: 'login.iosVersion' | 'login.androidVersion' | null;
   /** When true, the new passkey cannot hold a wallet on this phone or browser. */
   prfUnsupported: boolean;
+  /** When true, the passkey belongs to a social recovery that is not finished yet. */
+  recoveryPending: boolean;
 }
 
 /**
  * The error state: a request failed, a response was malformed, the visitor
- * signed in with an account whose session is refused, or the new passkey
- * cannot hold a wallet on this phone or browser (no PRF output).
+ * signed in with an account whose session is refused, the new passkey
+ * cannot hold a wallet on this phone or browser (no PRF output), or the
+ * passkey belongs to a social recovery that is not finished yet.
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
@@ -455,6 +501,7 @@ function ErrorView({
   versionBlock,
   versionErrorKey,
   prfUnsupported,
+  recoveryPending,
 }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   const matchingBlock =
@@ -463,14 +510,16 @@ function ErrorView({
       : null;
   const alert = wrongAccount
     ? t('login.wrongAccount')
-    : prfUnsupported
-      ? t('wallet.prfUnsupported')
-      : matchingBlock !== null
-        ? t(matchingBlock.messageKey, {
-            version: matchingBlock.installed,
-            required: matchingBlock.required,
-          })
-        : t('login.error');
+    : recoveryPending
+      ? t('login.recoveryPending')
+      : prfUnsupported
+        ? t('wallet.prfUnsupported')
+        : matchingBlock !== null
+          ? t(matchingBlock.messageKey, {
+              version: matchingBlock.installed,
+              required: matchingBlock.required,
+            })
+          : t('login.error');
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />

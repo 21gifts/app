@@ -398,15 +398,15 @@
 ## Function: LoginCard
 
 - **Purpose:** Login UI used both on `/login` and in place of a signed-in screen through `WalletLoginCard`: an idle card with the single primary **Log in** (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), an unknown-passkey card after authenticate finish `Unknown credential` (heading `login.unknownHeading`, muted `login.unknownBody`, **Open a new account** and secondary **Try again** that calls `passkey.login`; dismissing the Try again login prompt stays on this card and does not open the account-choice card), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`; in `WalletLoginCard`, the same successful prompt refreshes the session and begins deriving the wallet phrase before the held-back screen appears. While a session is held back (`lockedSession`), the idle card adds the muted greeting `login.heldGreeting` (**Welcome back, {name}**, from `lockedName`) above the heading, the muted line `login.heldConfirm` (**Confirm to open your wallet**) directly above **Log in**, and, below **Log in**, the muted line `login.newHere` (**New to 21.gifts?**) with secondary **Open a new account** (opens the name form without a passkey prompt); its **Log in** calls `passkey.authenticate` (one prompt, never the account-choice card), and whichever passkey answers decides the account. A dismissed prompt, an unknown passkey, or another failure of that prompt stays on this card with `login.error` above **Log in** (a refused account shows `login.wrongAccount` and keeps the held session, and the next **Log in** clears that hint); `heldProblem` from `WalletLoginCard` shows `wallet.prfUnsupported` (`noPrf`) or `login.error` (`failed`) there until the next **Log in**. **Open a new account** leaves that state for the ordinary name form and sign-up errors. **Open a new account** opens the name form. Passkey and account exist only after a valid name is submitted and the create ceremony is finished. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`. When a new account's passkey gives no PRF output (`passkey.error` is `wallet.prfUnsupported`), the alert is `wallet.prfUnsupported` (**This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.**) instead of `login.error`; **Try again** still calls `passkey.retry`. A dismissed prompt, a network error, or any other failure keeps its own copy. When the mounted user agent is iOS below 18, Start, Choice, and Unknown show a muted `login.iosVersion` line (installed version and minimum iOS 18). When the mounted user agent is Android below 9, Start, Choice, and Unknown show a muted `login.androidVersion` line (installed version and minimum Android 9). iOS is chosen when both would match. The alert is that same sentence when `passkey.error` is `login.iosVersion` or `login.androidVersion`, and the muted line is then hidden. Other errors keep their own copy and still show the muted line. The line is absent until after mount. Desktop pictures omit it. Phone pictures include it, because those baselines use an iPhone user agent below iOS 18.
-- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore` (`account`, `lockedSession`, `lockedName`, `wrongAccount`), `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, and `InAppBrowserView`. Optional `heldProblem` (`noPrf` / `failed` / `null`) from `WalletLoginCard`.
-- **Returns / side effects:** React element covering idle (with the held greeting, alert, and confirm line while a session is held back)/choice/unknown/name/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card. Status `closed` (api `logins_closed`) or `outdated` (api `app_outdated`) shows `LoginBlockedNotice` instead of every other view, also over a held-back session, which stays held.
+- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore` (`account`, `lockedSession`, `lockedName`, `wrongAccount`), `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, and `InAppBrowserView`. Optional `heldProblem` (`noPrf` / `failed` / `null`) from `WalletLoginCard`. Optional `showRecover` (default `true`; `WalletLoginCard` passes `false`).
+- **Returns / side effects:** React element covering idle (with the held greeting, alert, and confirm line while a session is held back)/choice/unknown/name/starting/error/wrong-account/in-app. The idle card adds, under **Log in**, a secondary `ButtonLink` **Recover account via Social Recovery** (`recover.entry`) to `/recover`, and the account-choice card adds the same link as its third control, both only while `showRecover` is true; the held start view never shows it. When `passkey.recoveryPending` is set (authenticate finish answered 409 `recovery_pending`), the error view shows `login.recoveryPending` with **Try again** (`passkey.retry`). A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card. Status `closed` (api `logins_closed`) or `outdated` (api `app_outdated`) shows `LoginBlockedNotice` instead of every other view, also over a held-back session, which stays held.
 - **Used by:** Screen `/login` and `WalletLoginCard`.
 
 ## Function: WalletLoginCard
 
 - **Purpose:** Shows the ordinary `LoginCard` in place of a signed-in screen, on that screen's existing path, while its valid stored session is held back or a fresh login is still opening the wallet in this tab. It also stands in after **Log in instead** on the public profile (`ViewProfileClaim`).
 - **Inputs:** Auth-store `session` and `lockedSession`, `visualPin`, and `finishWalletOpen`.
-- **Returns / side effects:** A `LoginCard`, given the last wallet-open problem as `heldProblem`. After login it waits for the phrase derivation from that passkey prompt; only when another passkey signed in does wallet opening ask for the seed passkey. Success lets `OnboardingGate` reveal the screen and background setup proceeds independently. Failure calls `lockSession`: `noPrf` shows `wallet.prfUnsupported`, another failure or a cancelled prompt shows `login.error`, inside the held card above **Log in**. Playwright-only balance gate pins can force either alert. There is no **Log out** under the card: logging in with any passkey decides the account, and a different account replaces the held session. The outcome of the last wallet open is kept per held-back session in the tab, so a card that mounts later for that session (the visitor moved to another screen) still shows its alert.
+- **Returns / side effects:** A `LoginCard`, given the last wallet-open problem as `heldProblem` and `showRecover={false}` (a member session stands behind it, so it offers no Social Recovery entry). After login it waits for the phrase derivation from that passkey prompt; only when another passkey signed in does wallet opening ask for the seed passkey. Success lets `OnboardingGate` reveal the screen and background setup proceeds independently. Failure calls `lockSession`: `noPrf` shows `wallet.prfUnsupported`, another failure or a cancelled prompt shows `login.error`, inside the held card above **Log in**. Playwright-only balance gate pins can force either alert. There is no **Log out** under the card: logging in with any passkey decides the account, and a different account replaces the held session. The outcome of the last wallet open is kept per held-back session in the tab, so a card that mounts later for that session (the visitor moved to another screen) still shows its alert.
 - **Used by:** `OnboardingGate` (signed-in screens and `/login` while the wallet is not open) and `ViewProfileClaim` (after **Log in instead** on the public profile).
 
 ## Function: LoginPage
@@ -620,7 +620,7 @@
 - **Purpose:** Leave a step for the view it was opened from (the till amount for `/pos`, a grant application for `/grants`, a decided application for the queue) without leaving that step, or a second copy of the view, in this tab's history. The top-left arrow and the browser back on the returned-to view then both continue from the view before it, or `/welcome`.
 - **Inputs:** The in-app path the step was opened from, and the client-side router (`useRouter()`, its `back` and `replace`).
 - **Returns / side effects:** When the current entry was pushed in this document on top of that path, calls `router.back()` once (a client-side step back, no document load). A second call for the same view before the browser has left this one (an effect that runs again) does nothing, so it neither steps back twice nor replaces under the step. Otherwise (a direct link, the first view after a document load, an arrival by the arrow or a browser step) calls `router.replace(path)`; `recordCurrentView` then steps back onto the view before when it is the same path. No network.
-- **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), `SocialRecoveryScreen` (**Done** back to `/settings`), and every in-app redirect that used `router.replace`: `OnboardingGate` (`/login` and the next onboarding step), `LogoutButton` (`/login`), `ViewProfileClaim` (the next onboarding step), `ForumLoader` (`/login`, `/setup/rules`), and `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen`, `ShopTable` (`/setup/rules`).
+- **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), `SocialRecoveryScreen` (**Done** back to `/settings`), `RecoverScreen` (**Log in** back to `/login` after a recovery done before), `useRemainingBalance` (**Done** and the removal back to `/settings`), and every in-app redirect that used `router.replace`: `OnboardingGate` (`/login` and the next onboarding step), `LogoutButton` (`/login`), `ViewProfileClaim` (the next onboarding step), `ForumLoader` (`/login`, `/setup/rules`), and `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen`, `ShopTable` (`/setup/rules`).
 
 ## Function: takeStepBack
 
@@ -1121,7 +1121,7 @@
 - **Purpose:** Session-aware header wordmark: linked `21.gifts` to `/welcome` when `useHydrateSession` is ready and `useAuthStore` has a session, otherwise `/`. Real navigation (no `preventDefault`, unlike `ForumHomeWordmark`).
 - **Inputs:** Optional `tone`, `size`, `className`, `onClick` forwarded to `Wordmark` when set. Uses `useHydrateSession` and `useAuthStore`.
 - **Returns / side effects:** A client `Wordmark` link. Hydrates the session; no other network of its own.
-- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`, `PayLinkScreen`.
+- **Used by:** `MarketingHeader`, `LoginPage`, `DonatePage`, `ViewProfilePage`, `PayLinkScreen`, `RecoverPage`, and `RecoverScreen`.
 
 ## Function: PublicMessageChrome
 
@@ -1220,7 +1220,7 @@
 - **Purpose:** The card body when the api refused to create a session: `closed` is the calm status line **21.gifts is updating. Please try again a little later.** (`login.closed`) with nothing to press; `outdated` is **A new version is ready** (`login.outdated`) with **Reload** (`login.reload`).
 - **Inputs:** `kind`: `closed` or `outdated`.
 - **Returns / side effects:** React fragment (icon, `role="status"` line, and for `outdated` a labeled `Button`). **Reload** calls `window.location.reload()`: only a full page load loads the new build. Nobody is signed in on these surfaces, so the reload loses no wallet held in the tab. Nothing retries on its own.
-- **Used by:** `LoginCard`, `ViewProfileClaim`.
+- **Used by:** `LoginCard`, `ViewProfileClaim`, and `RecoverScreen` (the `blocked` step on `/recover`).
 
 ## Function: ViewProfileClaim
 
@@ -2139,9 +2139,9 @@ First post free: while the signed-in member is below verified and has no missing
 ## Function: QrScanner
 
 - **Purpose:** Live camera QR reader for the wallet Send view (on `/wallet` and over `/welcome`) and for keeping a share on `/settings/held-shares`. Asks once per mount for the camera, rear camera preferred (`facingMode: { ideal: 'environment' }`, no audio), and fills its positioned parent (`absolute inset-0`, black, `[container-type:size]`), which `WalletSend` makes the whole visible page port. The picture covers it (`object-cover`) under a centred viewfinder square of 68% of the smaller side (white border with corner marks, the rest dimmed; it does not take taps), and the hint sits in large white type over the top of the picture on a `from-black/80` gradient: by default **Point the camera at a Bitcoin QR code**, or the hint key in `copy`. The viewfinder only shows where to aim: every frame is read whole. Reads about eight frames a second: with the browser's `BarcodeDetector` when it lists `qr_code` among its formats, otherwise with `jsqr` on a canvas copy at most 640 pixels on its long edge. A single frame that cannot be decoded is skipped and scanning continues. The first non-blank text stops every camera track and is reported. A blocked camera (`NotAllowedError`, `SecurityError`) shows, by default, **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** (`copy.denied` otherwise) in large white type on the black area, a third of the way down, so the floating buttons below stay where they are; no camera, any other failure of the camera request, a page without a secure context, a browser without media devices, or a QR decoder that cannot load (the camera is stopped then) shows, by default, **No camera found. Paste the payment request instead.** (`copy.unavailable` otherwise). Both are `role="alert"`, and the hint line is hidden then. Unmounting stops the tracks and the frame loop, and a stream or frame result that arrives after unmount is stopped or dropped.
-- **Inputs:** `onResult(text)`, called once with the first QR text, after the camera has stopped. The latest callback is used. Optional `copy` (`QrScannerCopy`: catalog keys `hint`, `denied`, `unavailable`) for a scan that is not a payment; the default is the wallet Send wording (`wallet.scanHint`, `wallet.cameraDenied`, `wallet.cameraUnavailable`).
+- **Inputs:** `onResult(text)`, called once with the first QR text, after the camera has stopped. The latest callback is used. Optional `copy` (`QrScannerCopy`: catalog keys `hint`, `denied`, `unavailable`, and optional `hintVars`, the placeholder values of `hint`) for a scan that is not a payment; the default is the wallet Send wording (`wallet.scanHint`, `wallet.cameraDenied`, `wallet.cameraUnavailable`).
 - **Returns / side effects:** A region named by the hint, holding the preview or the alert. Requests camera access; never stores or sends a frame.
-- **Used by:** `WalletSend` (input step, default wording) and `HeldSharesScreen` (the camera of **Keep a share**, with the `heldShares.*` wording).
+- **Used by:** `WalletSend` (input step, default wording), `HeldSharesScreen` (the camera of **Keep a share**, with the `heldShares.*` wording), and `OldWordsInput` (two share codes on `/recover` and `/settings/previous-wallets/[sparkPubkey]`, with **Scan code {n} of 2** and the `recover.*` camera wording).
 
 ## Function: RootLayout
 
@@ -2889,7 +2889,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The current price of 1 BTC for every amount that is entered or converted live: the amount field (₿ ↔ fiat), the point-of-sale keypad while digits are still being typed, gift and reaction amounts, the wallet and payment fiat suffixes, and the fiat stored with a new payment that is not a till charge. A committed till charge is not priced from this rate. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and again every five minutes (`SPOT_REFRESH_MS`) while mounted, and resolves `spotRateDay` of its rates. An answer with a usable price replaces the rate. An answer without any price (the api has no quote) and a failed request keep the last rate, as the api keeps its last good quote. A refresh does not start while the previous request is still open. Never throws into the caller. Drops answers after unmount. There is no fallback to a gift day: the statistics pages keep each day's own rate from `GET /gifts/stats`, and nothing else uses it.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the hook returns `null`, also after a rate was loaded.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill` (the shared till state still loads this rate for the amount page; the open and paid charge use `committedFiatFigure`, not this rate), `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletSend`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`, `LoansCard`, `LoanRepayScreen`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill` (the shared till state still loads this rate for the amount page; the open and paid charge use `committedFiatFigure`, not this rate), `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletSend`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`, `LoansCard`, `LoanRepayScreen`, and `RemainingBalanceScreen` (the synced balance of a previous wallet).
 
 ## Function: shownFiatForSats
 
@@ -3076,7 +3076,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The one helper that times a wallet step as a performance span, so slow steps of the in-app wallet on phones show up. Each step is its own transaction (`op: wallet`, `parentSpan: null`) in the page's trace, so a long connect does not stretch the page load around it, and all steps of one page share its sampling decision.
 - **Inputs:** A fixed name (`wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`, `wallet.prepare`, `wallet.send`, `wallet.address.register`, `wallet.address.transfer`, `wallet.passkey`), the step as an async function, and optionally `route` (`spark`, `lightning`, or `onchain`) or `prompt` (`login`, `unlock`, or `recovery` for the passkey a social recovery creates and signs in with). The types allow nothing else: no amount, invoice, address, key, recovery word, PRF output, or token. Every span also carries why this document was loaded, from `capturePageLoad`: `load` (`navigate`, `reload`, `back_forward`, `prerender`, or `unknown`) and `load_trigger` (`app` for App Router's fallback to a full page load, otherwise `other`), so passkey prompts can be counted per page load and cause.
 - **Returns / side effects:** What the step resolves to; a rejection marks the span as failed and is passed on unchanged. Without a DSN, or when the trace is not sampled, it only runs the step and nothing is sent. The browser never creates a receive invoice: the api issues it, and the browser's request for it is an automatic fetch span.
-- **Used by:** `connectWallet` (SDK load, connect, first synced balance read), `refreshWallet` (balance read), `registerWalletAddress`, `payFromWallet` (prepare and send, with the route), `usePasskeyLogin` (the login passkey prompt that returns the PRF bytes), and `unlockWalletPhrase` (the seed passkey prompt).
+- **Used by:** `connectWallet` (SDK load, connect, first synced balance read), `refreshWallet` (balance read), `registerWalletAddress`, `payFromWallet` (prepare and send, with the route), `usePasskeyLogin` (the login passkey prompt that returns the PRF bytes), `unlockWalletPhrase` (the seed passkey prompt), the recovery flow (`createNewPasskey` and its sign-in, `wallet.passkey` with `prompt: recovery`; the address claim, `wallet.address.transfer`; the balance send, `wallet.send` with `route: spark`), and `transferRemainingBalance` (`wallet.send`).
 
 ## Function: register
 
@@ -4091,14 +4091,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present and client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/register/begin` or `POST /auth/passkey/seed/begin`.
 - **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`, and `createNewPasskey` (the new passkey of a social recovery).
 
 ## Function: credentialToJSON
 
 - **Purpose:** Serialise a `PublicKeyCredential` for the api finish body. Drops `clientExtensionResults.prf` so PRF bytes never leave the tab.
 - **Inputs:** Browser credential from create/get.
 - **Returns / side effects:** JSON record without `prf` results. Uses native `toJSON` when present, then strips `prf`.
-- **Used by:** `usePasskeyLogin`, `renewPasskey`.
+- **Used by:** `usePasskeyLogin`, `renewPasskey`, and the recovery flow (`createNewPasskey`, `transfer`).
 
 ## Function: finishPasskeyAuthentication
 
@@ -4168,14 +4168,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Turn api request-options JSON into `navigator.credentials.get` input. Empty `allowCredentials` is omitted (discoverable credentials). When discoverable, sets `hints: ['client-device']`. Copies client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/authenticate/begin`.
 - **Returns / side effects:** `PublicKeyCredentialRequestOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.authenticate`.
+- **Used by:** `usePasskeyLogin.authenticate`, and the recovery flow's sign-in with the new passkey (`transfer`).
 
 ## Function: startPasskeyAuthentication
 
 - **Purpose:** POST `/auth/passkey/authenticate/begin` and parse options.
 - **Inputs:** None.
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx. Sends `X-App-Build` (`getBuildId`). 403 `code` `app_outdated` throws `AppOutdatedError`; the api checks closed logins on authenticate finish, not here.
-- **Used by:** `usePasskeyLogin.authenticate`.
+- **Used by:** `usePasskeyLogin.authenticate`, and the recovery flow's sign-in with the new passkey (`transfer`).
 
 ## Function: startPasskeyRecovery
 
@@ -4189,7 +4189,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/auth/passkey/recovery/finish` to store the new passkey and the new wallet key as the account's pending social recovery, signed by the old wallet. A repeat of the same finish after a lost answer succeeds again and changes nothing.
 - **Inputs:** `{ challengeId, credential, newSparkPubkey, signature: { pubkey, signature } }`: the begin's challenge id, the new passkey's attestation JSON (without PRF output), the new wallet key, and the old wallet's signature over the recovery message. Only these fields are sent.
 - **Returns / side effects:** Resolves on any 2xx. Sends `X-App-Build` (`getBuildId`). Login refusals and the wrong account throw as in `startPasskeyRecovery`. Then `RecoveryError`: `challenge` on 400 `Unknown or expired challenge`, `Challenge expired`, or `Challenge already used` (the account did not move); `pending` on 409 `A recovery is already pending`; `key_in_use` on 409 `Wallet key is already in use`; `unavailable` on 5xx or 429; `invalid` on any other non-2xx, including a known text with another status.
-- **Used by:** The recovery flow on `/recover`, as the first step of the transfer (the account).
+- **Used by:** `transfer` on `/recover`, as the first part of the move (the account).
 
 ## Function: startPasskeyReplace
 
@@ -4399,14 +4399,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** HKDF-SHA-256 then BIP-39 English 12 words.
 - **Inputs:** PRF eval.first bytes.
 - **Returns / side effects:** Space-separated mnemonic. Never sent to the api.
-- **Used by:** `useWalletPhrase`, `rememberPhraseFromPrf`.
+- **Used by:** `useWalletPhrase`, `rememberPhraseFromPrf`, and `createNewPasskey` (the new wallet's words of a social recovery).
 
 ## Function: obtainPrfFirst
 
 - **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
 - **Inputs:** The new `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `null`.
-- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`, and `createNewPasskey` (the new passkey of a social recovery).
 
 ## Function: obtainPrfFirstFromGet
 
@@ -4420,7 +4420,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
 - **Inputs:** Unknown rejection.
 - **Returns / side effects:** Discriminant string.
-- **Used by:** `useWalletPhrase`, `renewPasskey`, `unlockWalletPhrase`.
+- **Used by:** `useWalletPhrase`, `renewPasskey`, `unlockWalletPhrase`, and `createNewPasskey`.
 
 ## Function: rememberSessionPhrase
 
@@ -4441,7 +4441,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable. Dispatches `SESSION_PHRASE_EVENT`, which disconnects the wallet.
-- **Used by:** `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+- **Used by:** `clearAuth`, `login`, `authenticate`, and the recovery flow's sign-in with the new passkey (`transfer`). Implemented in `tab-phrase`.
 
 ## Function: sessionPhraseGeneration
 
@@ -4455,7 +4455,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Typed refusal of a SLIP-39 share or set of shares, so the social recovery screens choose catalog copy by its code and never read a text.
 - **Inputs:** `code`: `empty` (no share), `word` (a word not in the list), `length` (fewer than 20 words, a word count no secret fits, or a wrong secret length), `checksum`, `padding` (non-zero padding bits), `params` (group threshold above group count), `set` (shares of different sets or owners), `groups` (not the groups the set needs), `members` (not the shares a group needs, or one share twice), `digest` (shares that do not fit together), or `passphrase` (not printable ASCII).
 - **Returns / side effects:** Error named `Slip39Error` with a readonly `code` and the message `slip39_<code>`. Neither ever holds a share word or a byte.
-- **Used by:** `parseShare`, `splitRecoverySecret`, `combineShares`, `phraseFromShareCodes`, and the recovery flow on `/recover` (the scan errors).
+- **Used by:** `parseShare`, `splitRecoverySecret`, `combineShares`, `phraseFromShareCodes`, and `OldWordsInput` (the same code twice).
 
 ## Function: parseShare
 
@@ -4497,7 +4497,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads a scanned or pasted share payload. The text is trimmed and read only up to 400 characters; it must match the payload format (owner id of up to 64 letters, digits, `_` or `-`; a username as the app allows it; exactly 20 lower-case words separated by single spaces), and its words must be a valid recovery share (`parseShare`, then `isRecoveryShare`).
 - **Inputs:** Scanned or pasted text.
 - **Returns / side effects:** `ShareCode` (`ownerAccountId`, `ownerUsername`, `share`, `identifier`, `memberIndex`), or `null` for anything else. Pure.
-- **Used by:** `encodeShareCode`, `loadHeldShares`, `keepHeldShare`, `useHeldShares` (the owner's username of a scanned code), and the scan step of the recovery flow on `/recover`.
+- **Used by:** `encodeShareCode`, `loadHeldShares`, `keepHeldShare`, `useHeldShares` (the owner's username of a scanned code), and `OldWordsInput` (the codes scanned on `/recover` and `/settings/previous-wallets/[sparkPubkey]`).
 
 ## Function: splitPhrase
 
@@ -4511,7 +4511,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Rebuilds the old 12 words from two scanned shares of one set. The 16 bytes go back through BIP-39 (`entropyToMnemonic`) and the wallet opens with those words, never with the bytes as raw entropy, which would open a different wallet.
 - **Inputs:** Two `ShareCode`s.
 - **Returns / side effects:** The 12 words, in memory only. Throws `Slip39Error` `set` for shares of another owner or identifier, `members` for the same share twice, `digest` when they do not fit together, and `length` when they do not give 16 bytes.
-- **Used by:** The scan step of the recovery flow on `/recover`.
+- **Used by:** `OldWordsInput` (two scanned codes rebuild the old 12 words on `/recover` and `/settings/previous-wallets/[sparkPubkey]`).
 
 ## Function: loadHeldShares
 
@@ -4553,7 +4553,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The recovery message the old wallet signs to hand its account to the new passkey and wallet, identical to the api's: `21gifts-account-recovery-v1`, the account id, the challenge as issued, the new credential id, and the new wallet key, joined by line feeds, with no line feed at the end.
 - **Inputs:** `{ accountId, challenge, credentialId, newSparkPubkey }`.
 - **Returns / side effects:** The message text. Pure.
-- **Used by:** The transfer step of the recovery flow on `/recover`, which signs it with the old wallet's `signMessage` before `finishPasskeyRecovery`.
+- **Used by:** `transfer` on `/recover`, which signs it with the old wallet's `signMessage` before `finishPasskeyRecovery`.
 
 ## Function: resetWalletCeremonyLock
 
@@ -4653,7 +4653,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends the bytes or the phrase and never stores them persistently (tab memory only). A derivation overtaken by a later remember or clear (`sessionPhraseGeneration`) remembers nothing. While a derivation runs, `settlePhraseDerivations` waits for it.
 - **Inputs:** `PhraseSource` (`prfFirst`, `credentialId`, `account`, `sessionToken`).
 - **Returns / side effects:** `true` when the phrase was remembered, else `false`. When the account's own seed passkey answered without PRF output, or its PRF output could not be turned into a phrase, it records that for the session (until the next phrase change), so `unlockWalletPhrase` answers `noPrf` or `failed` without asking that passkey a second time.
-- **Used by:** `usePasskeyLogin` (login and registration, started before the new session is stored so background setup can wait for it), `renewPasskey`, `unlockWalletPhrase`, and `useWalletPhrase.showPhrase`.
+- **Used by:** `usePasskeyLogin` (login and registration, started before the new session is stored so background setup can wait for it), `renewPasskey`, `unlockWalletPhrase`, `useWalletPhrase.showPhrase`, and the recovery flow's sign-in with the new passkey (`transfer`).
 
 ## Function: walletGateApplies
 
@@ -5163,7 +5163,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The one reader of the `?visual=` screenshot pin. Honoured only in a Playwright build (`getE2eNow()` set); every deployed build gets `null`.
 - **Inputs:** None. Reads `window.location.search`.
 - **Returns / side effects:** The pin name, or `null` (also during server rendering). No network.
-- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `useLoanRepay`, `WalletLoginCard`, `walletGateApplies`, `hydratesLocked` (`held-session`), `paymentHref`, `sendHeartTip`, `useHeartTip`.
+- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `useLoanRepay`, `WalletLoginCard`, `walletGateApplies`, `hydratesLocked` (`held-session`), `paymentHref`, `sendHeartTip`, `useHeartTip`, `useRecoveryFlow` (`recover-…`), and `useRemainingBalance` (`prev-…`).
 
 ## Function: paymentTitle
 
@@ -5288,7 +5288,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Client hook for passkey login. The api's authentication options already carry `extensions.prf.eval.first`, so the login prompt can return PRF output; the hook adds nothing to the request. Login PRF output is used only when that request's `prf.eval.first` equals the app's own `prfEvalFirstSalt`; a missing, unreadable, or different salt counts as absent. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) sets status `name` and starts neither `startPasskeyRegistration` nor `credentials.create`. `submitName` normalizes and, when valid, calls `startPasskeyRegistration(undefined, normalized)` then the existing create ceremony. `register(viewKey)` starts the claim immediately and does not show `name`. User cancel (`NotAllowedError` or `AbortError`) after a named create returns to `name`, not `choice`. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. Status `unknown` is authenticate finish `Unknown credential`: the hook calls `signalUnknownCredential` best-effort with the ceremony `rpId` and `credential.id` before showing it, and a later user-cancel returns to `unknown` while that flag is set. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session (a held-back `lockedSession` stays, so its login card stays and shows `login.wrongAccount`), sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. Registration and login now hand the PRF output they already hold to `rememberPhraseFromPrf` just before the session is stored with `setAuth` (no extra prompt; what is sent to the api is unchanged); with the wallet configured, a login reports `client.passkey.login.prf` with `prfPresent` as a boolean only; without PRF output nothing happens. `login` / `authenticate` call `clearSessionPhrase`. On iPhone, iPad, or iPod below iOS 18, a named create still does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `iOS <installed> below 18 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `iOS <installed> below 18 at prf.absent`. Both throw `login.iosVersion` instead of a silent cancel or `wallet.prfUnsupported`. On Android below 9, a named create does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `Android <installed> below 9 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `Android <installed> below 9 at prf.absent`. Both throw `login.androidVersion` instead of a silent cancel or `wallet.prfUnsupported`. Every failed login posts `client.passkey.login.fail` before the card changes, even when no account id exists: the browser `name`, the allowlisted `message` when that text fits, and the begin `challengeId` when it is 64 hex. That row is written when `credentials.get` throws, when the assertion is missing, and when an in-app browser stops the ceremony first (stage `login` or `authenticate`, message `in-app browser`). A dismissed register that is not an old-iOS or old-Android stop posts `client.passkey.register.fail` with those fields, and `accountId` only when `user.id` decodes as a UUID. A failed login row and a dismissed register that is not an old-iOS or old-Android stop prefix the allowlisted message with `iOS <installed>` or `Android <installed>` when the user agent parses (iOS preferred), including versions new enough to pass the gate. Desktop and a user agent with no version token stay unprefixed. A cancelled named create stays on `name`; claim and paths before the name stay `choice`, `idle`, or `unsupported`. Begin and finish failures keep their own rows and do not need an account id.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`, `iosPasskeyBlock` and `androidPasskeyBlock` on register, and `iosInstalledVersion` and `androidInstalledVersion` when a failed attempt is reported).
-- **Returns / side effects:** `{ status, login, register, submitName, authenticate, retry, cancel, error, nameError }` with `status` in `idle | starting | error | unsupported | choice | unknown | name | closed | outdated`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `nameError` is `invalid`, `taken`, or `null` while `status === 'name'`, else `null`. After a named create, `retry` returns to the name form and does not start create again. `retry` after `register(viewKey)` sends the same key again. `retry` after `authenticate` repeats authenticate. The single login button repeats login. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag. A successful login or registration starts `rememberPhraseFromPrf` before `setAuth`, so listeners reacting to the new session wait for that derivation. For a new registration, the same sign-up passkey therefore supplies the phrase that background wallet setup uses after the username is saved; there is no extra prompt. Times the login passkey prompt (the assertion that also returns the PRF bytes) as the wallet span `wallet.passkey` with `prompt: login` (`traceWallet`). `LoginsClosedError` from any begin or finish sets `closed` and `AppOutdatedError` sets `outdated`, both with `error` `null`; neither retries on its own, clears a held-back session, or opens another card.
+- **Returns / side effects:** `{ status, login, register, submitName, authenticate, retry, cancel, error, recoveryPending, nameError }` with `status` in `idle | starting | error | unsupported | choice | unknown | name | closed | outdated`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `nameError` is `invalid`, `taken`, or `null` while `status === 'name'`, else `null`. After a named create, `retry` returns to the name form and does not start create again. `retry` after `register(viewKey)` sends the same key again. `retry` after `authenticate` repeats authenticate. The single login button repeats login. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag. A successful login or registration starts `rememberPhraseFromPrf` before `setAuth`, so listeners reacting to the new session wait for that derivation. For a new registration, the same sign-up passkey therefore supplies the phrase that background wallet setup uses after the username is saved; there is no extra prompt. Times the login passkey prompt (the assertion that also returns the PRF bytes) as the wallet span `wallet.passkey` with `prompt: login` (`traceWallet`). `LoginsClosedError` from any begin or finish sets `closed` and `AppOutdatedError` sets `outdated`, both with `error` `null`; neither retries on its own, clears a held-back session, or opens another card. `RecoveryPendingError` from authenticate finish (409 `recovery_pending`: the passkey belongs to a social recovery that is not finished yet) sets `error` with `recoveryPending` true and never calls `signalUnknownCredential`, because that passkey may become the account's only one; `recoveryPending` is a typed marker, true only while `status === 'error'`, and every new run or `cancel` clears it.
 - **Interaction log:** After the session is stored, a completed registration is recorded as `signup_completed` and a completed login as `login`.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
@@ -6009,7 +6009,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Body of `/settings/social-recovery`, the owner side of Social Recovery: the steps of `useSocialRecoverySetup` under one page title.
 - **Inputs:** `useSocialRecoverySetup()`, the signed-in account from `useAuthStore` (`socialRecoverySetUp` for the renew note), and the client-side router.
-- **Returns / side effects:** `null` before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Secure my account** (`secure.title`) and one step. **Intro**: the muted `secure.introBody`, the warning `secure.introWarning` in `font-medium text-app-fg`, `secure.introAccounts`, `secure.introRemote`, and `secure.introRenew` only when `socialRecoverySetUp` is true, then a primary `Button size="lg"` **Continue** (`secure.start`); while checking, a `role="status"` line with a spinner, **Checking your wallet…** (`secure.checking`), stands in its place. **Person 1** / **Person 2**: **h2** `secure.shareHeading`, `secure.shareBody`, on person 2 also `secure.shareDifferent`, the `QrCode` of that person's payload labelled `secure.shareQr` (no logo), a primary `Button size="lg"` **Person {n} has scanned it** (`secure.scanned`), and under the muted `secure.refusedHint` a secondary `Button size="lg"` **Start again with new codes** (`secure.resplit`). **Saving**: the status line **Saving the 21.gifts backup…** (`secure.saving`). **Done**: **h2** `secure.doneTitle`, `secure.doneBody`, and a primary `Button size="lg"` **Done** (`secure.done`) that calls `returnToView('/settings', router)`. An error replaces the step with `p[role=alert]` (`secure.walletMismatch`, `secure.walletError`, `secure.saveError`, or `secure.walletChanged`) and, except for the mismatch, **Try again** (`login.retry`) calling `retry`. The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft onBackClick`) runs `back`: person 2 to person 1, person 1 to the intro, otherwise it leaves.
+- **Returns / side effects:** `null` before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Secure my account** (`secure.title`) and one step. **Intro**: the muted `secure.introBody`, the warning `secure.introWarning` in `font-medium text-app-fg`, `secure.introAccounts`, `secure.introRemote`, and `secure.introRenew` only when `socialRecoverySetUp` is true, then a primary `Button size="lg"` **Continue** (`secure.start`); while checking, a `BusyLine` with **Checking your wallet…** (`secure.checking`) stands in its place. **Person 1** / **Person 2**: **h2** `secure.shareHeading`, `secure.shareBody`, on person 2 also `secure.shareDifferent`, the `QrCode` of that person's payload labelled `secure.shareQr` (no logo), a primary `Button size="lg"` **Person {n} has scanned it** (`secure.scanned`), and under the muted `secure.refusedHint` a secondary `Button size="lg"` **Start again with new codes** (`secure.resplit`). **Saving**: the `BusyLine` **Saving the 21.gifts backup…** (`secure.saving`). **Done**: **h2** `secure.doneTitle`, `secure.doneBody`, and a primary `Button size="lg"` **Done** (`secure.done`) that calls `returnToView('/settings', router)`. An error replaces the step with `p[role=alert]` (`secure.walletMismatch`, `secure.walletError`, `secure.saveError`, or `secure.walletChanged`) and, except for the mismatch, **Try again** (`login.retry`) calling `retry`. The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft onBackClick`) runs `back`: person 2 to person 1, person 1 to the intro, otherwise it leaves.
 - **Used by:** `SocialRecoveryPage`.
 
 ## Function: useSocialRecoverySetup
@@ -6018,6 +6018,146 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** `peekSessionPhrase`, `ensureWalletConnected`, and the session and account from `useAuthStore` (`id`, `username`, `sparkPubkey`, `sparkWalletVerified`); uses `splitPhrase`, `encodeShareCode`, and `putRecoveryShare`. In a Playwright build only (`visualPin`), `?visual=sr-checking`, `sr-share-1`, `sr-share-2`, `sr-done`, `sr-mismatch`, and `sr-save-error` open that step with a fixed split of the public BIP-39 test phrase of 16 zero bytes; a deployed build ignores them.
 - **Returns / side effects:** `{ step, error, codes, identifier, start, scanned, resplit, retry, back }`. `step` is `intro`, `checking`, `share1`, `share2`, `saving`, or `done`. `start()` (**Continue**) reads the tab phrase (none → error `wallet`), awaits `ensureWalletConnected` (a throw → `wallet`), and stops with `mismatch` unless the account's `sparkWalletVerified` is true and its `sparkPubkey` equals the wallet key in lower case; then it splits the words (`splitPhrase` checks every pair) and builds the payloads of shares 1 and 2 for the account's id and username (a failure → `wallet`), and lands on `share1` with `codes` and the set's `identifier`. `scanned()` moves `share1` to `share2`, and on `share2` uploads share 3 (`PUT /me/recovery-share` with the key checked by `start`): success stores the returned account (`setAccount`, only for the same session) and gives `done`; `RecoveryError` `key_in_use` (409) gives `changed` and drops the words; any other failure gives `save` and keeps share 3. `resplit()` splits the same words again into a new set and shows person 1's new code. `retry()` runs `start` after `wallet`, the same upload after `save`, and returns to the intro after `changed`; it does nothing after `mismatch`. `back()` returns `true` after stepping `share2` → `share1` or `share1` → intro (which drops the words and codes), and `false` on any other step or error, so the arrow leaves. An answer of a superseded step or after unmount is dropped, except that a stored share still updates the account of the same session; leaving the page drops the words and shares.
 - **Used by:** `SocialRecoveryScreen`.
+
+## Function: RecoverPage
+
+- **Purpose:** Next.js page for `/recover`, the signed-out social recovery of an account whose passkey is lost, opened from **Recover account via Social Recovery** on the `/login` card.
+- **Inputs:** None.
+- **Returns / side effects:** Fill `AppShell` with `align="center"`, `ProfileChromeLeft` with `HomeWordmark`, and the light `LanguageSwitcher` (the `/login` chrome), then `RecoverScreen`. Not behind `OnboardingGate`: its login gate would leave the page once the recovered account signs in, before the balance moved.
+- **Used by:** Route `/recover`.
+
+## Function: RecoverScreen
+
+- **Purpose:** Body of `/recover`: the views of `useRecoveryFlow` under one title, **Recover your account** (`recover.title`, the **h1** of every view; `sr-only` over the camera).
+- **Inputs:** `useRecoveryFlow()` and the client-side router.
+- **Returns / side effects:** A `Card surface={false}` with one view, or, for `scan`, the camera layer of `OldWordsInput`. **start**: `recover.intro`, a primary **Scan two codes** (`recover.scan`) and a secondary **Type my 12 words** (`recover.type`). **type**: `OldWordsInput mode="type"`. **opening**: a `BusyLine` with `recover.opening`, or `recover.openingWait` while `waiting`. **blocked**: `LoginBlockedNotice` (`closed`, or `outdated` with **Reload**). **refused**: `p[role=alert]` with `recover.notFound`, `recover.alreadyDone` (plus a primary **Log in**, `login.submit`, which drops the recovery and calls `returnToView('/login', router)`), `recover.operator`, `shareCode.otherAccount`, or `recover.noWallet`, then a secondary **Start over** (`recover.again`). **retry**: `recover.unavailable` or `recover.walletError`, a primary **Try again** (`login.retry`), and **Start over**. **found**: **h2** `recover.found`, `recover.restart` after a restart, `recover.foundBody`, the alert of the last try (`recover.passkeyCancelled`, `wallet.timeout`, `wallet.prfUnsupported`, or `recover.walletError`), and a primary **Create new passkey** (`recover.createPasskey`), disabled with a spinner while busy. **transfer**: **h2** `recover.transferTitle`, `recover.transferBody`, an `ol` of **Account** (`recover.stepAccount`), **21.gifts address** (`profile.giftsHeading`), and **Balance** (`wallet.balanceHeading`), each with a `Check` image named `recover.stepDone` when done, the status line `recover.transferWait` while waiting, the alert `recover.transferError` or `recover.balanceError`, a primary **Transfer** (`recover.transfer`, disabled with a spinner while busy), and after `generic` a secondary **Start over**, after `balance` a secondary **Move the balance later** (`recover.balanceLater`). **done**: **h2** `recover.doneTitle`, `recover.doneBody`, `recover.doneShares`, `recover.balanceMissing` when the balance stayed, a primary `ButtonLink` **Show new 12 words** (`recover.showWords`) to `/wallet/phrase`, and a secondary `ButtonLink` **Secure my account** to `/settings/social-recovery`. The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft` and `HomeWordmark`) runs `back`: from the camera or the words field to the start, otherwise it leaves.
+- **Used by:** `RecoverPage`.
+
+## Function: OldWordsInput
+
+- **Purpose:** Reads the old 12 words of a wallet, for a social recovery on `/recover` or a previous wallet on `/settings/previous-wallets/[sparkPubkey]`: two share codes scanned, or the words typed. They stay in component memory and are handed over once.
+- **Inputs:** `mode` (`scan` or `type`), `onWords(words, ownerAccountId)`, and optional `expectedOwnerAccountId`.
+- **Returns / side effects:** **scan**: a `section` named **Scan two codes** with `data-port-fill` that fills its positioned parent (the camera layer of the wallet Send view), holding `QrScanner` with **Scan code {n} of 2** (`recover.scanHint`, `hintVars`) and the `recover.cameraDenied` / `recover.cameraUnavailable` alerts. Each code goes through `parseShareCode`. After the first, **Code 1 of 2 scanned (@username).** (`recover.scanFirstDone`, `role="status"`) stays at the bottom and the scanner starts again for the second; the two are combined with `phraseFromShareCodes`, and the words go to `onWords` with the owner they name. A text that is not a share code (`shareCode.invalid`), the same code twice (`Slip39Error` `members`, `shareCode.same`), codes of different setups or that do not combine (`shareCode.otherSet`), or a code of an account other than `expectedOwnerAccountId` (`shareCode.otherAccount`) stops the camera and shows its alert in white over the black layer with an `overlay` **Try again** that starts the camera again, as the wallet Send camera does. **type**: a `form` with a multiline `Field` **Your 12 words** (no autocomplete, autocorrect, or spellcheck), the hint `recover.wordsHint` (its `aria-describedby`), and **Continue** (`recover.wordsSubmit`); the words are trimmed, lower-cased, and single-spaced, and anything but 12 valid BIP-39 words shows `recover.wordsInvalid` (`aria-invalid`) until the field changes; valid words go to `onWords` with owner `null`. Nothing is handed over after unmount.
+- **Used by:** `RecoverScreen` and `RemainingBalanceScreen`.
+
+## Function: useRecoveryFlow
+
+- **Purpose:** State and actions of `/recover`: the view of `useRecoveryStore` and the presses that drive the recovery flow.
+- **Inputs:** `useRecoveryStore`, the recovery-flow functions, and, in a Playwright build only (`visualPin`), the `?visual=` pins `recover-opening`, `recover-opening-wait`, `recover-blocked-closed`, `recover-blocked-outdated`, `recover-not-found`, `recover-done`, `recover-operator`, `recover-other-account`, `recover-unavailable`, `recover-wallet-error`, `recover-found`, `recover-found-busy`, `recover-restart`, `recover-cancelled`, `recover-timeout`, `recover-prf`, `recover-new-wallet-error`, `recover-transfer`, `recover-transfer-progress`, `recover-transfer-error`, `recover-balance-error`, `recover-complete`, and `recover-complete-missing`, each a fixture view for `@ada`; a deployed build ignores them.
+- **Returns / side effects:** `{ view, scan, type, onWords, retry, createPasskey, transfer, balanceLater, startOver, back }`. `scan` and `type` show those steps; `onWords` calls `rememberOldWords`; `retry` calls `openAndBegin`; `createPasskey` calls `createNewPasskey`; `transfer` calls `transfer`; `balanceLater` calls `finishWithoutBalance`; `startOver` calls `resetRecovery`. `back()` returns `true` after stepping from `scan` or `type` to `start`, otherwise `false`, so the arrow leaves. The recovery stays in memory when the page closes, so coming back resumes it; leaving the done step calls `resetRecovery`.
+- **Used by:** `RecoverScreen`.
+
+## Function: useRecoveryStore
+
+- **Purpose:** Zustand store of the view on `/recover`, outside React, so a later visit to the page in this tab resumes the recovery. It holds the view only; the words, PRF bytes, and wallet connections stay in the recovery flow module's memory.
+- **Inputs:** Hook. Action `setView(view)`.
+- **Returns / side effects:** `{ view, setView }`. `view` (`RecoveryView`) is `start`, `scan`, `type`, `opening` (`waiting`), `blocked` (`closed` / `outdated`), `refused` (`not_found`, `done`, `operator`, `otherAccount`, `noWallet`), `retry` (`unavailable` / `wallet`), `found` (`username`, `restart`, `error`: `cancelled`, `prf`, `timeout`, `wallet`, or `null`; `busy`), `transfer` (`done` of `account`, `address`, `signedIn`, `balance`; `busy`; `waiting`; `error`: `generic`, `balance`, or `null`), or `done` (`balanceMissing`). Starts at `start`.
+- **Used by:** `useRecoveryFlow` and the recovery flow (`rememberOldWords`, `openAndBegin`, `createNewPasskey`, `transfer`, `finishWithoutBalance`, `resetRecovery`).
+
+## Function: defaultRecoveryDeps
+
+- **Purpose:** The real effects of a social recovery, each replaceable in tests (`RecoveryDeps`).
+- **Inputs:** None.
+- **Returns / side effects:** `{ loadSdk, apiKey, host, now, sleep, randomUUID, createCredential, getCredential }`: `loadWalletSdk`, `getBreezApiKey` (`null` disables the recovery), `appHost`, `Date.now`, a `setTimeout` pause, `crypto.randomUUID`, and `navigator.credentials.create` / `get`.
+- **Used by:** `rememberOldWords` and `openPreviousWallet` (their default `deps`).
+
+## Function: openWordsWallet
+
+- **Purpose:** Opens a wallet from its 12 words beside the member's own wallet (the SDK keeps each wallet's state apart by its key), for the old and new wallets of a social recovery and for a previous wallet.
+- **Inputs:** The started `WalletSdk`, the words, the Breez API key, and `deps` (`host`, `sleep`).
+- **Returns / side effects:** `{ connection, balanceSats }` after `connect(words, apiKey, host)` and a synced `getInfo({ ensureSynced: true })`, both within `RECOVERY_CONNECT_TIMEOUT_MS` (30 s, the deadline of the member's own wallet). A failed synced read closes the connection and rejects. At the deadline it rejects with `wallet-connect-timeout`, and a connection that opens later is closed (a later failure is ignored). Closing is best effort.
+- **Used by:** `openAndBegin` (the old wallet), `createNewPasskey` and `transfer` (the new wallet, and opening it again for a later address claim), and `openPreviousWallet`.
+
+## Function: rememberOldWords
+
+- **Purpose:** Starts a social recovery on `/recover` with the old 12 words, typed or rebuilt from two share codes. The words stay in the module's memory only, never in the tab phrase.
+- **Inputs:** `words`, `ownerAccountId` (named in the scanned codes, or `null` for typed words), and optional `deps` (`defaultRecoveryDeps()` by default).
+- **Returns / side effects:** Replaces a recovery already in progress in this tab (its wallets are closed in the background) and runs `openAndBegin`. Resolves when the view shows the result.
+- **Used by:** `useRecoveryFlow` (`onWords`, from `OldWordsInput`).
+
+## Function: openAndBegin
+
+- **Purpose:** Opens the old wallet, unless it is open, and finds its account, the app side of the concept's rule that the app asks again after the forward window.
+- **Inputs:** The recovery in progress (none → no-op; a found account → no-op).
+- **Returns / side effects:** Without a wallet in this build (`apiKey` `null`) the view is `refused` `noWallet` and no wallet code loads. Otherwise `opening`; the old wallet's key is worked out offline (`identityPubkey`), the wallet connects with `openWordsWallet` (which also lets the SDK look up the address it holds), and a failure is `retry` `wallet`. Each begin signs a fresh lookup (`signAddressLookup` with the app host and the current second; a signing failure is `retry` `wallet`) and calls `startPasskeyRecovery`. While it answers `unavailable` the view is `opening` with `waiting`, the flow waits `RECOVERY_SETTLE_WAIT_MS` (31 s), and asks again, up to `RECOVERY_BEGIN_TRIES` (3) calls; then `retry` `unavailable`. `not_found`, `done`, and `operator` are `refused`; `LoginsClosedError` and `AppOutdatedError` are `blocked`; `WrongAccountError` is `refused` `operator`; any other failure is `retry` `unavailable`. An account other than the scanned codes' owner is `refused` `otherAccount`; otherwise the begin is kept and the view is `found` with the account's username. Results of a recovery that was replaced meanwhile are dropped, and a wallet that opens after that is closed.
+- **Used by:** `rememberOldWords` and **Try again** on `retry` (`useRecoveryFlow`).
+
+## Function: createNewPasskey
+
+- **Purpose:** **Create new passkey** on `found` (a user gesture): makes the new passkey and its wallet.
+- **Inputs:** The recovery in progress; no-op unless `found` is shown, idle, with an open old wallet and a begin.
+- **Returns / side effects:** `found` turns busy. The begin's creation options (`creationOptionsFromJSON`) get the PRF request (`mergePrfExtension`) and go to `createCredential`, timed as `wallet.passkey` with `prompt: recovery`. No credential, a dismissed or failed prompt is `found` error `cancelled`, a prompt that timed out `timeout` (`classifyWebAuthnError`), and no PRF output (`obtainPrfFirst` `null`) `prf`. The 12 words come from `mnemonicFromPrfFirst` (never `rememberSessionPhrase`), the wallet opens with `openWordsWallet`, and its key (`identityPubkey`) and Spark address (`receiveSparkAddress`) are read; any failure there closes a half-open wallet and is `found` error `wallet`, and nothing of the attempt is kept. Only then are the connection, words, PRF bytes, credential JSON (`credentialToJSON`, without PRF), credential id, key, and address kept together, with nothing of the move done, and the view is `transfer`.
+- **Used by:** `useRecoveryFlow` (`createPasskey`).
+
+## Function: transfer
+
+- **Purpose:** **Transfer** on `transfer`: one press moves the account to the new passkey and wallet, resuming at the first part not done.
+- **Inputs:** The recovery in progress; no-op unless `transfer` is shown and idle with an attempt.
+- **Returns / side effects:** The view is busy throughout. **Account:** the old wallet signs `recoveryMessage` (account id, the begin's challenge, the new credential id, the new key) with `signMessage`; a failure or another key ends the press with `generic`. `finishPasskeyRecovery` stores the pending recovery; `RecoveryError` `challenge` (the account did not move) begins again at once, which on a new begin restarts the attempt (`found` with `restart`, the new wallet closed, every part of the attempt dropped); any other refusal ends the press (`generic`, or `blocked` / `refused`). **Address:** when the old wallet holds an address (`hasAddress`), it authorizes the move (`authorizeAddressTransfer`) and the new wallet (opened again if the sign-in closed it) claims it, timed as `wallet.address.transfer`; the moment the claim settled (resolved, threw, or was not needed) is kept, and a failure does not stop the press. **Sign-in:** the new wallet is closed, then `startPasskeyAuthentication`, `getCredential` limited to the new credential (`wallet.passkey`, `prompt: recovery`), and `finishPasskeyAuthentication`, without `signalUnknownCredential`. Success clears the tab phrase, starts `rememberPhraseFromPrf` with the new PRF bytes, stores the session (`setAuth`), logs `login` and `recovery_done`, and marks the account, address, and sign-in done. `RecoveryPendingError` waits until `RECOVERY_SETTLE_WAIT_MS` after the claim settled and begins again; `UnknownCredentialError` begins again at once. A begin again that answers `done` signs in once more (an unknown passkey then means `refused` `done`); `operator` and `not_found` are `refused`; `unavailable` three times, a dismissed prompt, or another failure ends the press with `generic`. **Balance:** reads the old wallet's synced balance and sends all of it to the new Spark address (`sendToSparkAddress`, `wallet.send` with `route: spark`). A send that throws keeps its idempotency key for the next press; after a send that went out the key is dropped and the balance read again; up to `RECOVERY_SEND_TRIES` (3) sends per press; any failure is `balance`. A synced read of 0 closes the old wallet, drops every word and connection, and shows `done`.
+- **Used by:** `useRecoveryFlow` (`transfer`).
+
+## Function: finishWithoutBalance
+
+- **Purpose:** **Move the balance later** after the `balance` error: the account has moved and is signed in, so the recovery ends without the balance.
+- **Inputs:** The recovery in progress; no-op unless `transfer` with error `balance` is shown and idle.
+- **Returns / side effects:** Closes the old wallet, shows `done` with `balanceMissing`, and drops every word and connection. The balance stays in the previous wallet, movable from `/settings`.
+- **Used by:** `useRecoveryFlow` (`balanceLater`).
+
+## Function: resetRecovery
+
+- **Purpose:** **Start over**, and leaving the done step: drops the recovery in progress.
+- **Inputs:** None.
+- **Returns / side effects:** Shows `start` at once, drops the words, PRF bytes, begin, and attempt, and closes the old and new wallets (best effort). An answer of the dropped recovery that arrives later changes nothing.
+- **Used by:** `useRecoveryFlow` (`startOver`, and the unmount of the done step), and `RecoverScreen` (**Log in** after a recovery done before).
+
+## Function: PreviousWalletPage
+
+- **Purpose:** Next.js page for `/settings/previous-wallets/[sparkPubkey]`, **Transfer remaining balance** for one wallet the account used before a social recovery.
+- **Inputs:** Dynamic route `params` (`sparkPubkey`).
+- **Returns / side effects:** Fill `AppShell` with `ProfileChromeLeft` and `SignedInChrome`, `OnboardingGate screen="profile"` (like `/settings`), then `RemainingBalanceScreen` for that key.
+- **Used by:** Route `/settings/previous-wallets/[sparkPubkey]`.
+
+## Function: RemainingBalanceScreen
+
+- **Purpose:** Body of the previous wallet's page: the steps of `useRemainingBalance` under the title **Transfer remaining balance**.
+- **Inputs:** `sparkPubkey`, the signed-in account (`id` for the codes), `useRemainingBalance`, `useSpotRate` (while a balance shows), `useFiatPreference`, and `useNumberFormat`.
+- **Returns / side effects:** `null` before the account and the list have loaded. Otherwise a `Card surface={false}` with **h1** `remaining.title` (`sr-only` over the camera) and one step: **loadError** `previousWallets.loadError` with **Try again**; **notFound** `remaining.notFound` with **Done** (`secure.done`); **start** `remaining.intro`, **Scan two codes**, **Type my 12 words**; **scan** / **type** `OldWordsInput` (scan with `expectedOwnerAccountId` = the account); **opening** `BusyLine` `recover.opening`; **mismatch** `remaining.mismatch` and **walletError** `recover.walletError`, each with **Try again**; **balance** / **sending** the overline `remaining.balance` with ₿ and one fiat figure at the current spot (`formatBitcoin`, `satsToFiatAmount`, `formatFiatDisplay`), then **Transfer** (`recover.transfer`, disabled with a spinner while sending) above 0, or at 0 `remaining.emptyBody`, the removal, and **Done**; **error** the balance, `remaining.error`, and **Try again**; **done** `remaining.done` (`role="status"`), the removal, and **Done**. The removal is a secondary **Remove previous wallet** (`previousWallets.remove`), or the open `InlineConfirm` (`previousWallets.removeConfirm`, icon buttons `previousWallets.removeYes` / `removeNo`, busy spinner, `previousWallets.removeError`). The one top-left arrow runs `back`. No key or address is shown.
+- **Used by:** `PreviousWalletPage`.
+
+## Function: useRemainingBalance
+
+- **Purpose:** State and actions of **Transfer remaining balance** for one previous wallet of the signed-in account.
+- **Inputs:** `sparkPubkey` (lower-cased for the checks), the session from `useAuthStore`, and the client-side router. In a Playwright build only (`visualPin`), `?visual=prev-opening`, `prev-mismatch`, `prev-balance`, `prev-empty`, `prev-sending`, `prev-error`, and `prev-done` open that step (₿21'000, or 0) without reading the list or opening a wallet; a deployed build ignores them.
+- **Returns / side effects:** `{ step, balanceSats, removal, removable, reload, scan, type, onWords, retryOpen, transfer, askRemove, cancelRemove, confirmRemove, leave, back }`. Reads `fetchPreviousWallets` once per session and `reload`: the key not listed is `notFound`, a failure `loadError`, otherwise `start`. `onWords` opens the wallet (`openPreviousWallet`): `mismatch`, `walletError` (the words stay for `retryOpen`, which opens again; after `mismatch` it returns to `start` and drops them), or `balance` with the synced balance. `transfer` (on `balance` or `error`) runs `transferRemainingBalance`: `done` (balance 0) or `error`. `removable` is true only with a synced read of 0 (`balance` at 0, or `done`); then `askRemove` opens the confirm, `cancelRemove` closes it, and `confirmRemove` calls `deletePreviousWallet` (busy meanwhile), then `closePreviousWallet` and `returnToView('/settings', router)`, or `error`. `leave` (**Done**) calls `returnToView('/settings', router)`. `back()` steps from `scan` or `type` to `start`, otherwise returns `false`. Unmount drops the words and calls `closePreviousWallet`; answers after that are dropped.
+- **Used by:** `RemainingBalanceScreen`.
+
+## Function: openPreviousWallet
+
+- **Purpose:** Opens a previous wallet of the signed-in account from its old 12 words, beside the member's own wallet.
+- **Inputs:** `words`, `expectedPubkey` (the previous wallet's key), and optional `deps` (`loadSdk`, `apiKey`, `host`, `sleep`, `randomUUID`; `defaultRecoveryDeps()` by default).
+- **Returns / side effects:** `wallet` without a wallet in this build (no SDK loads) or when the SDK does not load. Words whose key (`identityPubkey`, offline; compared without letter case) is not `expectedPubkey`, or that are no phrase, are `mismatch` before anything connects. Otherwise a wallet still open from an earlier call is closed, the wallet opens with `openWordsWallet` (`wallet` on failure), a fresh idempotency key is drawn for its sends (two wallets never share one), and it answers `{ balanceSats }`, a synced read. A wallet that opens after the page closed it is closed and answers `wallet`.
+- **Used by:** `useRemainingBalance`.
+
+## Function: transferRemainingBalance
+
+- **Purpose:** Moves the whole balance of the open previous wallet to the signed-in member's own wallet.
+- **Inputs:** The wallet opened by `openPreviousWallet`.
+- **Returns / side effects:** `error` without an open wallet. Reads the member's Spark address (`receiveWalletSparkAddress`, opening the member's wallet from the tab phrase when needed) and the synced balance; while it is above 0, sends all of it (`sendToSparkAddress`, `wallet.send` with `route: spark`) and reads again, with a new idempotency key after each send that went out, up to `RECOVERY_SEND_TRIES` (3) sends. A send that throws keeps its key, so **Try again** repeats that send and the SDK answers it instead of paying twice. Answers `sent` only once a synced read gives 0; any failure, or funds still arriving after the last send, answers `error`.
+- **Used by:** `useRemainingBalance` (**Transfer** and **Try again**).
+
+## Function: closePreviousWallet
+
+- **Purpose:** Closes the open previous wallet and drops its connection and idempotency key.
+- **Inputs:** None.
+- **Returns / side effects:** Disconnects (best effort). A wallet still connecting from an earlier `openPreviousWallet` is closed once it opens.
+- **Used by:** `useRemainingBalance` (unmount, and after a removal) and `openPreviousWallet` (before another wallet opens).
+
+## Function: BusyLine
+
+- **Purpose:** A centred status line with a spinner, in place of a step's action while it runs.
+- **Inputs:** `label`, the translated sentence.
+- **Returns / side effects:** `p[role="status"]` (`text-sm text-app-muted`) with a hidden spinning `Loader2` and the label.
+- **Used by:** `SocialRecoveryScreen` (checking, saving), `RecoverScreen` (opening), and `RemainingBalanceScreen` (opening).
 
 ## Function: GrantsPage
 
@@ -6333,7 +6473,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Bordered confirm or cancel group shared by post delete, habit archive, habit comment delete, and held-share delete. Callers keep their own idle button. This is only the open question.
 - **Inputs:** `label` (the question and the group's accessible name), `confirmLabel`, `cancelLabel`, `onConfirm`, `onCancel`, optional `busy`, and optional `error`.
 - **Returns / side effects:** A `role="group"` with the question, an optional alert, a check (a spinner while `busy`), and an X. Both actions are disabled while `busy`. It sends no request of its own.
-- **Used by:** `DeletePostControl`, `MemberHabits`, `HabitComments`, and `HeldSharesScreen` (the delete confirm of a kept share on `/settings/held-shares`).
+- **Used by:** `DeletePostControl`, `MemberHabits`, `HabitComments`, `HeldSharesScreen` (the delete confirm of a kept share on `/settings/held-shares`), and `RemainingBalanceScreen` (the removal of an empty previous wallet).
 
 ## Function: deleteMessage
 

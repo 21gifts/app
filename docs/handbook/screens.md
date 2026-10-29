@@ -1523,16 +1523,378 @@ After **Person 2 has scanned it** on the pinned person 2 step, when `PUT /me/rec
 
 ![21.gifts secure my account wallet changed](images/social-recovery-wallet-changed.png)
 
+## Screen: /recover
+
+- **URL:** `/recover` — the signed-out social recovery of an account whose passkey is lost. Opened from **Recover account via Social Recovery** on the `/login` card (idle and the account question). Same chrome as `/login`, and not behind `OnboardingGate`, so the page stays open after the recovered account signs in, while its balance moves.
+- **What the user sees:** Fill `AppShell` with the page-frame header (`ProfileChromeLeft` with `HomeWordmark`, the light language switcher) and the card **Recover your account** on every step. **Start:** **Meet the two people who keep your shares, or have your old 12 words ready.**, **Scan two codes**, and **Type my 12 words**. **Scan:** the camera fills the page (the wallet Send camera layer) with **Scan code 1 of 2**, then **Code 1 of 2 scanned (@username).** at the bottom and **Scan code 2 of 2**; a refused code stops the camera and shows its alert with **Try again**. **Type:** the field **Your 12 words** with **Separate the words with spaces.** and **Continue**. Then **Opening the old wallet…** (or **Checking the account. This can take a few minutes.** while the address service is asked again after a pause). **Account @username found.** with **Create a new passkey on this phone. It gets its own new 12 words.** and **Create new passkey**. **Move to this phone** with what moves, the checklist **Account**, **21.gifts address**, and **Balance** (a check for each part done), and **Transfer**. **Your account is back** with what the new words mean, that Social Recovery must be set up again, **Show new 12 words**, and **Secure my account**. Refusals, closed logins, an outdated build, a wallet that does not open, and passkey problems show their alert or the login card's notice, with **Try again** or **Start over** where they help. The old words, the new words, and the PRF bytes stay in this tab's memory.
+- **Actions:** **Scan two codes** reads two share codes and rebuilds the old 12 words; **Type my 12 words** takes them typed. The old wallet then opens beside any other wallet and proves the account with its signed address lookup (`POST /auth/passkey/recovery/begin`), which is asked again up to three times, 31 s apart, while the api cannot look it up yet. **Create new passkey** makes the passkey with its PRF request, derives its 12 words, and opens its wallet. **Transfer** moves, from the first part not done: the account (`POST /auth/passkey/recovery/finish`, signed by the old wallet), the 21.gifts address (claimed by the new wallet through `POST /lnurlpay/[pubkey]/transfer`), the sign-in with the new passkey (`POST /auth/passkey/authenticate/begin` and `finish`, limited to that passkey, logged as `login` and `recovery_done`), and the whole balance (a Spark send from the old wallet). While the api has not committed the move it waits for the settle window and begins again, which may ask for the passkey once more. **Move the balance later** ends with the balance left in the previous wallet (movable from `/settings`). **Start over** drops everything and returns to the start. **Log in** after a recovery done before returns to `/login`. **Show new 12 words** opens `/wallet/phrase`; **Secure my account** opens `/settings/social-recovery`. The top-left arrow steps from the camera or the words field back to the start; otherwise it returns to the previous in-app view, or `/welcome` when this tab has none, without a page load, and the recovery stays in memory, so coming back resumes it. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `RecoverPage`, `RecoverScreen`, `useRecoveryFlow`, `useRecoveryStore`, `OldWordsInput`, `QrScanner`, `parseShareCode`, `phraseFromShareCodes`, `rememberOldWords`, `openAndBegin`, `openWordsWallet`, `createNewPasskey`, `transfer`, `finishWithoutBalance`, `resetRecovery`, `startPasskeyRecovery`, `finishPasskeyRecovery`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `rememberPhraseFromPrf`, `LoginBlockedNotice`, `BusyLine`, `returnToView`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`.
+
+### Variant: default
+
+Signed out, opened from **Recover account via Social Recovery** on `/login`. Title **Recover your account**, **Meet the two people who keep your shares, or have your old 12 words ready.**, the primary **Scan two codes**, and the secondary **Type my 12 words**.
+
+![21.gifts recover your account](images/recover.png)
+
+### Variant: scan
+
+After **Scan two codes**: the camera fills the page with the hint **Scan code 1 of 2** over the picture.
+
+![21.gifts recovery scanning code 1](images/recover-scan.png)
+
+### Variant: scan-second
+
+The first code was read: **Code 1 of 2 scanned (@ada).** stays at the bottom, and the camera started again with the hint **Scan code 2 of 2**.
+
+![21.gifts recovery scanning code 2](images/recover-scan-second.png)
+
+### Variant: code-invalid
+
+The camera read a text that is not a share code: the camera stops, and the alert **This is not a Social Recovery code.** shows over the black layer with **Try again**, which starts the camera again.
+
+![21.gifts recovery with a code that is not a share](images/recover-code-invalid.png)
+
+### Variant: code-same
+
+The second code read is the first one again: **That was the same code twice. Scan the other person's code.** with **Try again**; the first code stays named at the bottom.
+
+![21.gifts recovery with the same code twice](images/recover-code-same.png)
+
+### Variant: code-other-set
+
+The second code belongs to another setup: **These two codes do not belong together.** with **Try again**; the first code stays named at the bottom.
+
+![21.gifts recovery with codes of two setups](images/recover-code-other-set.png)
+
+### Variant: camera-denied
+
+The camera is blocked: **Camera access is off. Allow the camera, or type your 12 words.** in place of the picture.
+
+![21.gifts recovery with a blocked camera](images/recover-camera-denied.png)
+
+### Variant: camera-unavailable
+
+The device has no camera: **No camera found. Type your 12 words instead.** in place of the picture.
+
+![21.gifts recovery without a camera](images/recover-camera-unavailable.png)
+
+### Variant: type
+
+After **Type my 12 words**: the field **Your 12 words**, the hint **Separate the words with spaces.**, and **Continue**.
+
+![21.gifts recovery typing the 12 words](images/recover-type.png)
+
+### Variant: words-invalid
+
+The typed words are not 12 valid words: the alert **These are not 12 valid words. Check the spelling.** above **Continue**.
+
+![21.gifts recovery with invalid words](images/recover-words-invalid.png)
+
+### Variant: no-wallet
+
+Valid words in a build without a wallet (as in Playwright): **Recovery is not available in this version of the app.** and **Start over**. No wallet code is downloaded.
+
+![21.gifts recovery without a wallet in this build](images/recover-no-wallet.png)
+
+### Variant: opening
+
+Pinned fixture (`?visual=recover-opening`, Playwright builds only): the old wallet opens and the account is looked up. **Opening the old wallet…** with a spinner.
+
+![21.gifts recovery opening the old wallet](images/recover-opening.png)
+
+### Variant: opening-wait
+
+Pinned fixture (`?visual=recover-opening-wait`, Playwright builds only): the account could not be looked up yet, and it is asked again after a pause. **Checking the account. This can take a few minutes.** with a spinner.
+
+![21.gifts recovery waiting for the account](images/recover-opening-wait.png)
+
+### Variant: blocked-closed
+
+Pinned fixture (`?visual=recover-blocked-closed`, Playwright builds only): logins are closed for an update. The login card's notice **21.gifts is updating. Please try again a little later.** with nothing to press.
+
+![21.gifts recovery while logins are closed](images/recover-blocked-closed.png)
+
+### Variant: blocked-outdated
+
+Pinned fixture (`?visual=recover-blocked-outdated`, Playwright builds only): this tab runs an older build. The login card's notice **A new version is ready** with **Reload**.
+
+![21.gifts recovery with a new version ready](images/recover-blocked-outdated.png)
+
+### Variant: not-found
+
+Pinned fixture (`?visual=recover-not-found`, Playwright builds only): **These words do not belong to a 21.gifts account with a connected wallet.** and **Start over**.
+
+![21.gifts recovery without an account](images/recover-not-found.png)
+
+### Variant: already-done
+
+Pinned fixture (`?visual=recover-done`, Playwright builds only): **This account was already recovered. Log in with your new passkey.**, **Log in**, which returns to `/login`, and **Start over**.
+
+![21.gifts recovery of an account recovered before](images/recover-already-done.png)
+
+### Variant: operator
+
+Pinned fixture (`?visual=recover-operator`, Playwright builds only): **This account cannot be recovered here. Contact 21.gifts.** and **Start over**.
+
+![21.gifts recovery that needs an operator](images/recover-operator.png)
+
+### Variant: other-account
+
+Pinned fixture (`?visual=recover-other-account`, Playwright builds only): the scanned codes name another account than the old wallet opens. **These codes belong to another account.** and **Start over**.
+
+![21.gifts recovery with codes of another account](images/recover-other-account.png)
+
+### Variant: unavailable
+
+Pinned fixture (`?visual=recover-unavailable`, Playwright builds only): the account could still not be looked up after three tries. **The address service is not reachable right now. Try again in a minute.**, **Try again**, and **Start over**.
+
+![21.gifts recovery while the address service is not reachable](images/recover-unavailable.png)
+
+### Variant: wallet-error
+
+Pinned fixture (`?visual=recover-wallet-error`, Playwright builds only): the old wallet did not open. **The wallet could not be opened. Try again.**, **Try again**, and **Start over**.
+
+![21.gifts recovery when the old wallet does not open](images/recover-wallet-error.png)
+
+### Variant: found
+
+Pinned fixture (`?visual=recover-found`, Playwright builds only): **Account @ada found.**, **Create a new passkey on this phone. It gets its own new 12 words.**, and **Create new passkey**.
+
+![21.gifts recovery account found](images/recover-found.png)
+
+### Variant: found-busy
+
+Pinned fixture (`?visual=recover-found-busy`, Playwright builds only): the passkey prompt is open. **Create new passkey** is disabled with a spinner.
+
+![21.gifts recovery creating the new passkey](images/recover-found-busy.png)
+
+### Variant: restart
+
+Pinned fixture (`?visual=recover-restart`, Playwright builds only): the move did not go through and the recovery began again. **The move did not go through. Create the new passkey again.** above the found text and **Create new passkey**.
+
+![21.gifts recovery started again](images/recover-restart.png)
+
+### Variant: passkey-cancelled
+
+Pinned fixture (`?visual=recover-cancelled`, Playwright builds only): the passkey prompt was dismissed or failed. **The passkey was not created. Try again.** above **Create new passkey**.
+
+![21.gifts recovery with a cancelled passkey](images/recover-passkey-cancelled.png)
+
+### Variant: passkey-timeout
+
+Pinned fixture (`?visual=recover-timeout`, Playwright builds only): the passkey prompt timed out. **The device prompt timed out before you finished. Try again.** above **Create new passkey**.
+
+![21.gifts recovery with a passkey prompt that timed out](images/recover-passkey-timeout.png)
+
+### Variant: prf-unsupported
+
+Pinned fixture (`?visual=recover-prf`, Playwright builds only): the new passkey gave no PRF output. **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** above **Create new passkey**.
+
+![21.gifts recovery on a phone that cannot hold the wallet](images/recover-prf-unsupported.png)
+
+### Variant: new-wallet-error
+
+Pinned fixture (`?visual=recover-new-wallet-error`, Playwright builds only): the new passkey was made, but its wallet did not open. **The wallet could not be opened. Try again.** above **Create new passkey**, which makes the passkey again.
+
+![21.gifts recovery when the new wallet does not open](images/recover-new-wallet-error.png)
+
+### Variant: transfer
+
+Pinned fixture (`?visual=recover-transfer`, Playwright builds only): **Move to this phone**, what moves, the checklist **Account**, **21.gifts address**, and **Balance** with nothing checked yet, and **Transfer**.
+
+![21.gifts recovery move to this phone](images/recover-transfer.png)
+
+### Variant: transfer-progress
+
+Pinned fixture (`?visual=recover-transfer-progress`, Playwright builds only): a press that waits for the move to be confirmed. **Account** and **21.gifts address** are checked, **Confirming the move. This can take a few minutes.**, and **Transfer** is disabled with a spinner.
+
+![21.gifts recovery confirming the move](images/recover-transfer-progress.png)
+
+### Variant: transfer-error
+
+Pinned fixture (`?visual=recover-transfer-error`, Playwright builds only): **Account** is checked, **Not everything was moved yet. Tap Transfer again to continue.**, **Transfer**, and **Start over**.
+
+![21.gifts recovery move not finished](images/recover-transfer-error.png)
+
+### Variant: balance-error
+
+Pinned fixture (`?visual=recover-balance-error`, Playwright builds only): the account moved and signed in, but the balance did not move. **The balance could not be moved yet.**, **Transfer**, and **Move the balance later**.
+
+![21.gifts recovery balance not moved](images/recover-balance-error.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=recover-complete`, Playwright builds only): **Your account is back**, what the new words mean, **Set up Social Recovery again for the new words. Old shares now only open the previous wallet.**, **Show new 12 words**, and **Secure my account**.
+
+![21.gifts account recovered](images/recover-done.png)
+
+### Variant: done-balance-missing
+
+Pinned fixture (`?visual=recover-complete-missing`, Playwright builds only): the done step after **Move the balance later**, with **Some balance stayed in the previous wallet. You can move it later in the settings.**
+
+![21.gifts account recovered with balance left behind](images/recover-done-balance-missing.png)
+
+## Screen: /settings/previous-wallets/[sparkPubkey]
+
+- **URL:** `/settings/previous-wallets/<key>` — **Transfer remaining balance** for one wallet the account used before a social recovery. Opened from that wallet's **Transfer remaining balance** link in the previous wallets on `/settings`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Nothing shows while the account's previous wallets are read. The title **Transfer remaining balance**, then **Scan the two codes of this wallet or type its 12 words.** with **Scan two codes** and **Type my 12 words** (the same camera and words field as `/recover`; codes of another account are refused). **Opening the old wallet…** while it opens. **In this wallet** with its synced balance in ₿ and the member's fiat at the current spot, and **Transfer** (a spinner while it moves). At 0: **This wallet is empty. You can remove it from your account.**, the secondary **Remove previous wallet**, and **Done**. After the move: **Moved to your wallet.**, **Remove previous wallet**, and **Done**. **Remove previous wallet** opens a confirm (**Remove this previous wallet from your account?**, check removes, X keeps). Errors show their alert with **Try again**, or **Done** for a wallet that is not the account's. No key or address is shown.
+- **Actions:** Reads the previous wallets (`GET /me/previous-wallets`). The words open the wallet beside the member's own (offline key check first: words of another wallet are refused before anything connects) and read its synced balance. **Transfer** sends the whole balance to the member's own wallet (its Spark address) and reads again until a synced read gives 0, with a new idempotency key only after a send that went out. Only after a synced read of 0 can the wallet be removed: the confirmed removal calls `DELETE /me/previous-wallets/<key>` (which also drops the 21.gifts share of that wallet), closes the wallet, and returns to `/settings`, where the list loads again without it. **Done** returns to `/settings` too, without a page load and without a second copy of it in the history. The top-left arrow steps from the camera or the words field back to the start; otherwise it returns to the previous in-app view, or `/welcome` when this tab has none. Leaving the page closes the wallet. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `PreviousWalletPage`, `RemainingBalanceScreen`, `useRemainingBalance`, `fetchPreviousWallets`, `openPreviousWallet`, `transferRemainingBalance`, `closePreviousWallet`, `deletePreviousWallet`, `OldWordsInput`, `InlineConfirm`, `BusyLine`, `useSpotRate`, `returnToView`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+Ada with a previous wallet, opened from its **Transfer remaining balance** link on `/settings`. Title **Transfer remaining balance**, **Scan the two codes of this wallet or type its 12 words.**, **Scan two codes**, and **Type my 12 words**.
+
+![21.gifts transfer remaining balance](images/previous-wallet.png)
+
+### Variant: not-found
+
+The key in the address is not one of the account's previous wallets: **This previous wallet is not on your account.** and **Done**, which returns to `/settings`.
+
+![21.gifts previous wallet not on the account](images/previous-wallet-not-found.png)
+
+### Variant: load-error
+
+`GET /me/previous-wallets` failed: **Previous wallets could not be loaded.** and **Try again**.
+
+![21.gifts previous wallets not loaded](images/previous-wallet-load-error.png)
+
+### Variant: scan
+
+After **Scan two codes**: the camera fills the page with the hint **Scan code 1 of 2**.
+
+![21.gifts previous wallet scanning code 1](images/previous-wallet-scan.png)
+
+### Variant: scan-second
+
+The first code was read: **Code 1 of 2 scanned (@ada).** at the bottom, and the camera started again for code 2.
+
+![21.gifts previous wallet scanning code 2](images/previous-wallet-scan-second.png)
+
+### Variant: code-invalid
+
+The camera read a text that is not a share code: **This is not a Social Recovery code.** over the stopped camera with **Try again**.
+
+![21.gifts previous wallet with a code that is not a share](images/previous-wallet-code-invalid.png)
+
+### Variant: code-same
+
+The second code read is the first one again: **That was the same code twice. Scan the other person's code.** with **Try again**.
+
+![21.gifts previous wallet with the same code twice](images/previous-wallet-code-same.png)
+
+### Variant: code-other-set
+
+The second code belongs to another setup: **These two codes do not belong together.** with **Try again**.
+
+![21.gifts previous wallet with codes of two setups](images/previous-wallet-code-other-set.png)
+
+### Variant: code-other-account
+
+The code belongs to another member's account: **These codes belong to another account.** with **Try again**.
+
+![21.gifts previous wallet with codes of another account](images/previous-wallet-code-other-account.png)
+
+### Variant: camera-denied
+
+The camera is blocked: **Camera access is off. Allow the camera, or type your 12 words.**
+
+![21.gifts previous wallet with a blocked camera](images/previous-wallet-camera-denied.png)
+
+### Variant: camera-unavailable
+
+The device has no camera: **No camera found. Type your 12 words instead.**
+
+![21.gifts previous wallet without a camera](images/previous-wallet-camera-unavailable.png)
+
+### Variant: type
+
+After **Type my 12 words**: the field **Your 12 words**, its hint, and **Continue**.
+
+![21.gifts previous wallet typing the 12 words](images/previous-wallet-type.png)
+
+### Variant: words-invalid
+
+The typed words are not 12 valid words: **These are not 12 valid words. Check the spelling.**
+
+![21.gifts previous wallet with invalid words](images/previous-wallet-words-invalid.png)
+
+### Variant: opening
+
+Pinned fixture (`?visual=prev-opening`, Playwright builds only): the previous wallet opens and reads its balance. **Opening the old wallet…** with a spinner.
+
+![21.gifts previous wallet opening](images/previous-wallet-opening.png)
+
+### Variant: mismatch
+
+Pinned fixture (`?visual=prev-mismatch`, Playwright builds only): the words open another wallet. **These words do not open this previous wallet.** and **Try again**, which returns to the start.
+
+![21.gifts previous wallet with other words](images/previous-wallet-mismatch.png)
+
+### Variant: wallet-error
+
+Valid words in a build without a wallet (as in Playwright): **The wallet could not be opened. Try again.** and **Try again**, which opens the wallet again with the same words.
+
+![21.gifts previous wallet that does not open](images/previous-wallet-wallet-error.png)
+
+### Variant: balance
+
+Pinned fixture (`?visual=prev-balance`, Playwright builds only): **In this wallet** with its synced balance **₿21'000 · $21.00** (current spot) and **Transfer**.
+
+![21.gifts previous wallet balance](images/previous-wallet-balance.png)
+
+### Variant: sending
+
+Pinned fixture (`?visual=prev-sending`, Playwright builds only): the balance is being moved. **Transfer** is disabled with a spinner.
+
+![21.gifts previous wallet moving the balance](images/previous-wallet-sending.png)
+
+### Variant: error
+
+Pinned fixture (`?visual=prev-error`, Playwright builds only): the balance did not move. The balance, **The balance could not be moved. Try again.**, and **Try again**.
+
+![21.gifts previous wallet balance not moved](images/previous-wallet-error.png)
+
+### Variant: empty
+
+Pinned fixture (`?visual=prev-empty`, Playwright builds only): the synced read gave 0. **₿0 · $0.00**, **This wallet is empty. You can remove it from your account.**, the secondary **Remove previous wallet**, and **Done**.
+
+![21.gifts empty previous wallet](images/previous-wallet-empty.png)
+
+### Variant: remove-confirm
+
+On the pinned empty wallet, after **Remove previous wallet**: the confirm **Remove this previous wallet from your account?** with the icon buttons **Remove** (check) and **Keep** (X).
+
+![21.gifts remove previous wallet confirm](images/previous-wallet-remove-confirm.png)
+
+### Variant: removing
+
+On the pinned empty wallet, after the confirm, while `DELETE /me/previous-wallets/<key>` has not answered: the check shows a spinner and both buttons are disabled.
+
+![21.gifts removing the previous wallet](images/previous-wallet-removing.png)
+
+### Variant: remove-error
+
+On the pinned empty wallet, after the confirm, when `DELETE` failed: **The wallet could not be removed. Try again.** inside the open confirm.
+
+![21.gifts previous wallet not removed](images/previous-wallet-remove-error.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=prev-done`, Playwright builds only): the move ended with a synced read of 0. **Moved to your wallet.**, **Remove previous wallet**, and **Done**.
+
+![21.gifts remaining balance moved](images/previous-wallet-done.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in** only. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in** and **Open a new account**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
-- **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link. After **Log in** the screen stays on `/login` until the wallet is open, then moves on as before; meanwhile, and while a stored session is held back, `OnboardingGate` shows `WalletLoginCard` (the same card, with any no-PRF or error alert; for a held-back session with the greeting and without **Log out**).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**, then the secondary link **Recover account via Social Recovery** (to `/recover`). After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account**, **Open a new account**, and **Recover account via Social Recovery**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in** and **Open a new account**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **Actions:** Change language. Log in with an existing passkey. **Recover account via Social Recovery** opens `/recover` client-side. After `NotAllowedError`, choose an existing account or open a new one. A passkey whose social recovery is not finished yet (authenticate finish answers 409 `recovery_pending`) shows **Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.** with **Try again**; that passkey is never reported to the authenticator as unknown. In an in-app browser: open the page in the system browser or copy the link. After **Log in** the screen stays on `/login` until the wallet is open, then moves on as before; meanwhile, and while a stored session is held back, `OnboardingGate` shows `WalletLoginCard` (the same card, with any no-PRF or error alert; for a held-back session with the greeting and without **Log out**).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, `openInSystemBrowser`.
 
 ### Variant: idle
 
-Logged out. Heading **Log in with your device** and the single primary **Log in**; no **Open a new account** on this card (a new account starts from the account choice after **Log in**). On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
+Logged out. Heading **Log in with your device**, the primary **Log in**, and under it the secondary link **Recover account via Social Recovery**; no **Open a new account** on this card (a new account starts from the account choice after **Log in**). On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
 
 ![21.gifts login idle](images/login.png)
 
@@ -1580,7 +1942,7 @@ Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **T
 
 ### Variant: choice
 
-After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. Creating an account starts only after the name form, not on the choice click. **Open a new account** opens the name form. Phone pictures also show the muted installed-iOS line. On iOS below 18 the name form still opens, and submitting a valid name does not complete create; the card then shows the version sentence as the alert.
+After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account**, **Open a new account**, and the secondary link **Recover account via Social Recovery**. Creating an account starts only after the name form, not on the choice click. **Open a new account** opens the name form. Phone pictures also show the muted installed-iOS line. On iOS below 18 the name form still opens, and submitting a valid name does not complete create; the card then shows the version sentence as the alert.
 
 ![21.gifts login choice](images/login-choice.png)
 
@@ -1628,9 +1990,15 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 
 ### Variant: held-session
 
-A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then the muted line **Confirm to open your wallet**, **Log in**, **New to 21.gifts?**, and **Open a new account**. There is no **Log out**: **Log in** is one passkey prompt that opens the session and the wallet, and if another account's passkey answers, that account replaces the held session. A dismissed prompt or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
+A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then the muted line **Confirm to open your wallet**, **Log in**, **New to 21.gifts?**, and **Open a new account**, and no Social Recovery entry. There is no **Log out**: **Log in** is one passkey prompt that opens the session and the wallet, and if another account's passkey answers, that account replaces the held session. A dismissed prompt or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
 
 ![21.gifts login for a held-back session](images/login-held-session.png)
+
+### Variant: recovery-pending
+
+After **Log in**, the passkey that answered belongs to a social recovery that is not finished yet (authenticate finish answers 409 `recovery_pending`). The error card shows **Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.** and **Try again**. No session is stored, and the passkey is not reported to the authenticator as unknown.
+
+![21.gifts login while a recovery is not finished](images/login-recovery-pending.png)
 
 ## Screen: /donate
 
