@@ -69,10 +69,11 @@ function readShares(holderAccountId: string | null): HeldShare[] {
  * a share** opens the camera; a scanned payload is kept with
  * {@link keepHeldShare} and the list comes back with a notice: kept for the
  * owner's username, or refused as not a share, the member's own, a second
- * share of one setup in this browser, or storage that cannot be written. The QR icon shows a share's code for its owner; the trash icon asks
- * to confirm, and the confirmed delete uses {@link deleteHeldShare} (a share
- * that could not be deleted stays and gives the storage notice). The top-left
- * arrow steps from the camera or a code back to the list, otherwise it leaves.
+ * share of one setup in this browser, or storage that cannot be written.
+ * The QR icon shows a share's code for its owner; the trash icon asks to
+ * confirm, and the confirmed delete uses {@link deleteHeldShare} (a share that
+ * could not be deleted stays and gives the storage notice). The top-left arrow
+ * steps from the camera or a code back to the list, otherwise it leaves.
  * Nothing is sent to the api, and without an account every action does
  * nothing.
  *
