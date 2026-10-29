@@ -524,7 +524,10 @@ export function parseShare(mnemonic: string): Slip39Share {
 
 /**
  * Whether a share has the shape of a social recovery share: one group of
- * threshold 1, member threshold 2, a 16-byte value, and member index 0, 1, or 2.
+ * threshold 1, member threshold 2, a 16-byte value, member index 0, 1, or 2,
+ * and the flag and iteration exponent the app mints (extendable, exponent 1).
+ * Without the exponent bound, a hostile scanned share with a larger exponent
+ * would spend minutes of PBKDF2 in {@link combineShares} on combine.
  *
  * @param share - Fields from {@link parseShare}.
  * @returns `true` for a recovery share.
@@ -535,7 +538,9 @@ export function isRecoveryShare(share: Slip39Share): boolean {
     share.groupCount === 1 &&
     share.memberThreshold === RECOVERY_THRESHOLD &&
     share.value.length === RECOVERY_SECRET_LENGTH &&
-    share.memberIndex < RECOVERY_MEMBERS.length
+    share.memberIndex < RECOVERY_MEMBERS.length &&
+    share.extendable &&
+    share.iterationExponent === RECOVERY_ITERATION_EXPONENT
   );
 }
 

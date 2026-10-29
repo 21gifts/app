@@ -4468,7 +4468,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Whether a share has the shape of a social recovery share, so a scanned code of another SLIP-39 backup is not taken as one.
 - **Inputs:** A `Slip39Share` from `parseShare`.
-- **Returns / side effects:** `true` for one group (group threshold 1, group count 1), member threshold 2, a 16-byte value, and member index 0, 1, or 2. Pure.
+- **Returns / side effects:** `true` for one group (group threshold 1, group count 1), member threshold 2, a 16-byte value, member index 0, 1, or 2, the extendable flag, and iteration exponent 1 — the shape the app mints, so a hostile share with a larger exponent cannot raise the combine cost. Pure.
 - **Used by:** `parseShareCode`.
 
 ## Function: splitRecoverySecret

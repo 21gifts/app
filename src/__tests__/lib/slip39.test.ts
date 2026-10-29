@@ -262,7 +262,9 @@ describe('parseShare', () => {
 });
 
 describe('isRecoveryShare', () => {
-  const base = parseShare(VECTORS[42]![1][0]!);
+  // The reference vector is extendable with exponent 0; the app mints
+  // exponent 1, and only the app's own shares may count as recovery shares.
+  const base = { ...parseShare(VECTORS[42]![1][0]!), iterationExponent: 1 };
 
   it('accepts one group of threshold 1, member threshold 2, 16 bytes, member 0 to 2', () => {
     expect(isRecoveryShare(base)).toBe(true);
@@ -275,6 +277,8 @@ describe('isRecoveryShare', () => {
     expect(isRecoveryShare({ ...base, memberThreshold: 3 })).toBe(false);
     expect(isRecoveryShare({ ...base, value: new Uint8Array(32) })).toBe(false);
     expect(isRecoveryShare({ ...base, memberIndex: 3 })).toBe(false);
+    expect(isRecoveryShare({ ...base, extendable: false })).toBe(false);
+    expect(isRecoveryShare({ ...base, iterationExponent: 15 })).toBe(false);
   });
 });
 

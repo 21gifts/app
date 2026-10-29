@@ -74,7 +74,8 @@ export function encodeShareCode(
 /**
  * Reads a scanned or pasted share payload. The text is trimmed; it must have
  * the payload format, and its words must be a valid recovery share (checksum,
- * one group of threshold 1, member threshold 2, 16 bytes, member 0 to 2).
+ * one group of threshold 1, member threshold 2, 16 bytes, member 0 to 2,
+ * extendable, iteration exponent 1).
  *
  * @param text - Scanned or pasted text.
  * @returns The payload's fields, or `null` for anything else.
