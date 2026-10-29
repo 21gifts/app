@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import Link from 'next/link';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import { fetchListedShops } from '@/lib/api';
@@ -83,9 +84,9 @@ export function ShopList(): ReactElement {
         <ul className="flex w-full min-w-0 list-none flex-col gap-3 p-0 text-sm text-app-fg">
           {rows.map((row) => (
             <li key={row.npub} className="flex min-w-0 flex-col gap-1 break-words">
-              <a href={`/${row.npub}`} className="underline">
+              <Link href={`/${row.npub}`} className="underline">
                 {row.name.trim()}
-              </a>
+              </Link>
               {row.place === null ? null : (
                 <p className="text-sm text-app-muted">{formatPlacePinText(row.place, locale)}</p>
               )}

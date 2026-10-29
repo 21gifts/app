@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ChangeEvent, ReactElement } from 'react';
 import { CircleHelp } from 'lucide-react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
@@ -546,7 +548,7 @@ function frameMap(map: MapHandle, lib: MapLibreNamespace, positions: readonly Ln
   map.setZoom(SINGLE_ZOOM);
 }
 
-function popupContent(row: ShopRow): HTMLElement {
+function popupContent(row: ShopRow, navigate: (href: string) => void): HTMLElement {
   const content = document.createElement('div');
   if (row.coverPhotoUrl !== null) {
     const image = document.createElement('img');
@@ -563,8 +565,18 @@ function popupContent(row: ShopRow): HTMLElement {
     content.appendChild(name);
   } else {
     const name = document.createElement('a');
-    name.href = row.href;
+    const href = row.href;
+    name.href = href;
     name.className = 'font-medium underline underline-offset-2';
+    // A plain click stays in this document (no document load inside the app);
+    // a modified or middle click keeps the browser's own handling.
+    name.addEventListener('click', (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      navigate(href);
+    });
     name.textContent = row.name;
     content.appendChild(name);
   }
@@ -609,6 +621,7 @@ function isAbortError(error: unknown): boolean {
  * @returns The interactive homepage shop section.
  */
 export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
+  const router = useRouter();
   const [country, setCountry] = useState('');
   const [shopName, setShopName] = useState('');
   const [blockchain, setBlockchain] = useState('');
@@ -684,7 +697,11 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         });
         const marker = new session.lib.Marker({ element });
         marker.setLngLat(row.position);
-        marker.setPopup(new session.lib.Popup({ offset: 16 }).setDOMContent(popupContent(row)));
+        marker.setPopup(
+          new session.lib.Popup({ offset: 16 }).setDOMContent(
+            popupContent(row, (href) => router.push(href)),
+          ),
+        );
         marker.addTo(session.map);
         markersRef.current.push(marker);
       }
@@ -1128,9 +1145,9 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
                       {row.href === null ? (
                         row.name
                       ) : (
-                        <a href={row.href} className="font-medium underline underline-offset-2">
+                        <Link href={row.href} className="font-medium underline underline-offset-2">
                           {row.name}
-                        </a>
+                        </Link>
                       )}
                     </td>
                     <td className="min-w-0 break-words align-top">{row.location}</td>

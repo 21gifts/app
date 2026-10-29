@@ -69,7 +69,7 @@ export function ForumPaySheet({
   onPaySubmit,
   onPayCancel,
   rateDay,
-
+  ratePending = false,
   onInteract,
   loan,
   recipient,
@@ -84,7 +84,8 @@ export function ForumPaySheet({
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
-
+  /** When true, Continue does not submit. The rate request is still loading. */
+  ratePending?: boolean;
   onInteract: (event: MouseEvent) => void;
   /** Set when the paid note is a loan: borrower, term, and whether it is already fully funded. */
   loan?: LoanPayTarget | undefined;
@@ -108,7 +109,7 @@ export function ForumPaySheet({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (payBusy || payError === 'loading') {
+    if (payBusy || ratePending || payError === 'loading') {
       return;
     }
     void Promise.resolve(onPaySubmit());
@@ -175,6 +176,7 @@ export function ForumPaySheet({
         type="submit"
         disabled={
           payBusy ||
+          ratePending ||
           invoiceForCard !== null ||
           payError === 'loading' ||
           payError === 'amount' ||

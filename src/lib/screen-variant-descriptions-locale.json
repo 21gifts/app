@@ -6485,9 +6485,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan dahil hindi available ang server. Bukas pa ang buod at nakikita ang pangkalahatang error na Hindi ma-post ang mensahe."
   },
   "/:faq-account-open": {
-    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du das Wohnzimmer ohne Konto lesen kannst. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an. Um selbst Bitcoin-Spenden zu empfangen, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.",
-    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que puedes leer el foro sin una cuenta, pero debes iniciar sesión para reaccionar con un importe o escribir algo. Para recibir donaciones en Bitcoin, añades además una dirección de Wallet of Satoshi.",
-    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mababasa mo ang forum nang walang account, pero kailangan mong mag-log in para magbigay ng reaksyon gamit ang halaga o magsulat ng sarili mong post. Para tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address."
+    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du das Wohnzimmer ohne Konto lesen kannst. Um mit einem Betrag zu reagieren oder selbst etwas zu schreiben, meldest du dich an. Um selbst Bitcoin-Spenden zu empfangen, richtest du zusätzlich deine 21.gifts-Wallet ein.",
+    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que puedes leer el foro sin una cuenta, pero debes iniciar sesión para reaccionar con un importe o escribir algo. Para recibir donaciones en Bitcoin, configuras además tu cartera de 21.gifts.",
+    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mababasa mo ang forum nang walang account, pero kailangan mong mag-log in para magbigay ng reaksyon gamit ang halaga o magsulat ng sarili mong post. Para tumanggap ng Bitcoin donation, i-set up mo rin ang 21.gifts wallet mo."
   },
   "/:faq-share-open": {
     "de": "Die zweite Frage ist geöffnet: Behält 21.gifts etwas von meiner Spende? Die Antwort sagt, dass 21.gifts keinen Anteil behält. Deine Wallet oder das Zahlungsnetzwerk kann trotzdem eigene Gebühren verlangen.",

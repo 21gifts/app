@@ -2529,7 +2529,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('Do I need an account to see the forum?').click();
     await expect(
       faq.getByText(
-        'No. You can read the forum without an account. To react with an amount or write something yourself, you sign in. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+        'No. You can read the forum without an account. To react with an amount or write something yourself, you sign in. If you want to receive Bitcoin donations yourself, also set up your 21.gifts wallet.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-account-open', true, {

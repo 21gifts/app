@@ -520,15 +520,11 @@ export function MemberHabits(): ReactElement {
   }
 
   function onPaySubmit(): void {
-    /* v8 ignore start -- the sheet is not mounted without a session and comment, and Continue is disabled while busy */
-    if (session === null || session === '' || payCommentId === null || payBusy) {
+    /* v8 ignore start -- the sheet is not mounted without a session and comment, and Continue is disabled while busy or while the rate is still loading */
+    if (session === null || session === '' || payCommentId === null || payBusy || !rateSettled) {
       return;
     }
     /* v8 ignore stop */
-    /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
-    if (payError === 'loading' && !rateSettled) {
-      return;
-    }
     const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
     /* v8 ignore start -- staging's AmountEntry keeps the unit at ₿ until a rate prices the fiat, so a draft is never 'quiet' or 'no-rate' */
     if (payProblem === 'quiet') {
@@ -957,7 +953,7 @@ export function MemberHabits(): ReactElement {
                     payError={shownHabitPayError}
                     payInvoice={payInvoice}
                     rateDay={rateDay}
-
+                    ratePending={!rateSettled}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {
                       setPayDraft(value);

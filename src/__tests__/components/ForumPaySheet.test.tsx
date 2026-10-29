@@ -31,7 +31,7 @@ const DAY: FiatRateDay = {
 function sheet(
   error: ForumPayError,
   invoice: boolean,
-  extra?: { payBusy?: boolean },
+  extra?: { payBusy?: boolean; ratePending?: boolean },
 ): {
   onPaySubmit: ReturnType<typeof vi.fn>;
   onPayCancel: ReturnType<typeof vi.fn>;
@@ -52,7 +52,7 @@ function sheet(
       onPaySubmit={onPaySubmit}
       onPayCancel={onPayCancel}
       rateDay={DAY}
-
+      {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
       onInteract={vi.fn()}
       recipient="Ana"
     />,
@@ -160,6 +160,13 @@ describe('ForumPaySheet', () => {
     expect(pendingButton.disabled).toBe(true);
     fireEvent.submit(pendingButton.closest('form') as HTMLFormElement);
     expect(pending.onPaySubmit).not.toHaveBeenCalled();
+    cleanup();
+
+    const held = sheet(null, false, { ratePending: true });
+    const heldButton = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(heldButton.disabled).toBe(true);
+    fireEvent.submit(heldButton.closest('form') as HTMLFormElement);
+    expect(held.onPaySubmit).not.toHaveBeenCalled();
   });
 
   it.each([

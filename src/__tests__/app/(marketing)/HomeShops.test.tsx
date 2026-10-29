@@ -3,6 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { getCatalog } from '@/lib/messages';
 
+const routerPush = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
+
 const messages = getCatalog('en');
 
 const copy = {
@@ -1728,6 +1733,20 @@ describe('HomeShops', () => {
     );
     expect(plain.content.querySelector('a')).toBeNull();
     expect(plain.content.querySelector('strong')?.textContent).toBe('Plain');
+    routerPush.mockClear();
+    for (const key of ['metaKey', 'ctrlKey', 'shiftKey', 'altKey'] as const) {
+      const modified = new MouseEvent('click', { bubbles: true, cancelable: true, [key]: true });
+      popupLink?.dispatchEvent(modified);
+      expect(modified.defaultPrevented).toBe(false);
+    }
+    expect(routerPush).not.toHaveBeenCalled();
+    const middle = new MouseEvent('click', { bubbles: true, cancelable: true, button: 1 });
+    popupLink?.dispatchEvent(middle);
+    expect(middle.defaultPrevented).toBe(false);
+    const plainClick = new MouseEvent('click', { bubbles: true, cancelable: true });
+    popupLink?.dispatchEvent(plainClick);
+    expect(plainClick.defaultPrevented).toBe(true);
+    expect(routerPush).toHaveBeenCalledWith(`/${npub('p')}`);
     expect(plain.content.querySelector('img')).toBeNull();
     expect(plain.content.innerHTML).not.toContain('opencryptopay.io');
   });
