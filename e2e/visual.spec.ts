@@ -5076,6 +5076,40 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-fiat-who-open');
   });
 
+  test('state /loans/repay waiting-fiat', async ({ page }) => {
+    await loanShot(page, {
+      loans: [
+        loanWith(loanB, {
+          due: {
+            payableSats: 720,
+            payablePeople: 1,
+            waitingSats: 480,
+            waitingPeople: 1,
+            waitingShares: 1,
+            payableAmount: '18.00',
+            waitingAmount: '12.00',
+          },
+        }),
+      ],
+      ledgers: {
+        'loan-b': ledgerWith(ledgerB, {
+          givers: ledgerB.givers.map((giver) => ({
+            ...giver,
+            canReceive: giver.accountId !== 'acc_farid',
+          })),
+          waitingShares: 1,
+          repayments: ledgerB.repayments.map((row) => ({
+            ...row,
+            waiting: row.status === 'due' && row.accountId === 'acc_farid',
+          })),
+        }),
+      },
+      visual: 'repay-ready',
+      text: /₱12\.00 · ₿480.*waits for a lender/i,
+    });
+    await shotScreen(page, 'state-loans-repay-waiting-fiat');
+  });
+
   test('state /loans/repay behind', async ({ page }) => {
     await loanShot(page, {
       loans: [behindLoan],
@@ -24995,6 +25029,33 @@ test.describe('welcome forum variants', () => {
     await expect(card.getByText(/₿/)).toHaveCount(0);
     await expect(card.getByRole('link', { name: 'Open your wallet' })).toBeVisible();
     await shotScreen(page, 'state-welcome-lender-waiting-unpriced');
+  });
+
+  test('state /welcome loans-lender-waiting', async ({ page }) => {
+    const waitingLoan = loanWith(loanB, {
+      due: {
+        payableSats: 720,
+        payablePeople: 1,
+        waitingSats: 480,
+        waitingPeople: 1,
+        waitingShares: 1,
+        payableAmount: '18.00',
+        waitingAmount: '12.00',
+      },
+    });
+    await openWelcomeLoans(page, {
+      ...myLoans([waitingLoan]),
+      lenderWaiting: { shares: 2, loans: 1, sats: 900 },
+    });
+    await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
+      '₱12.00 · ₿480 is waiting for a lender to set up their wallet',
+    );
+    await expect(
+      page.getByRole('region', {
+        name: '2 repayments are waiting for you — open your wallet to receive them',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-lender-waiting');
   });
 
   test('state /welcome loans-sunday', async ({ page }) => {

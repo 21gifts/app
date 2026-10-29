@@ -1074,6 +1074,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:waiting-fiat",
+    "label": "/loans/repay waiting-fiat",
+    "visual": "state-loans-repay-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:behind",
     "label": "/loans/repay behind",
     "visual": "state-loans-repay-behind",
@@ -2721,6 +2727,12 @@
     "id": "/welcome:lender-waiting-unpriced",
     "label": "/welcome lender-waiting-unpriced",
     "visual": "state-welcome-lender-waiting-unpriced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting",
+    "label": "/welcome loans-lender-waiting",
+    "visual": "state-welcome-loans-lender-waiting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

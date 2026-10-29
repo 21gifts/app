@@ -1009,6 +1009,12 @@ The PHP loan with **Who gets paid** open. The box still leads with **Due today**
 
 ![21.gifts loans repay fiat who open](images/loans-repay-fiat-who-open.png)
 
+### Variant: waiting-fiat
+
+The PHP loan while Farid cannot receive yet. The box shows **Due today**, large **₱18.00**, **to 1 person**, and the muted note **₱12.00 · ₿480 waits for a lender who hasn't set up their wallet yet. You'll be able to send it once they do.**, which gives the stored fiat figure of the waiting share with its bitcoin. The button is **Send ₱18.00 · ₿720**.
+
+![21.gifts loans repay waiting fiat](images/loans-repay-waiting-fiat.png)
+
 ### Variant: behind
 
 Loan A is overdue. The danger-colour heading says **You're 2 days behind**, with large **₿3'000** and muted **$3.00** under it, **to 3 people**, and **Send ₿3'000 · $3.00**. **Who gets paid** is closed (see `behind-who-open`).
@@ -2377,6 +2383,12 @@ Ada has no loan of her own but is owed repayments she cannot receive yet. Under 
 The lender card when the api could not price the waiting repayments (`sats: null`, for example a fiat share without a rate). It says **1 repayment is waiting for you — open your wallet to receive it**, shows no amount, and offers **Open your wallet**. There is no loan card.
 
 ![21.gifts welcome lender waiting unpriced](images/welcome-lender-waiting-unpriced.png)
+
+### Variant: loans-lender-waiting
+
+Ada repays a PHP loan and is also owed repayments she cannot receive yet. The **Your loan** card says **Fully funded.**, shows **Ask ₱300.00 · ₿12'000** with **100%**, **Due today**, **₿720 · $0.72**, and **Send**, and under them the muted line **₱12.00 · ₿480 is waiting for a lender to set up their wallet**: the stored fiat figure of the waiting share with its bitcoin. Below the loan card, the lender card says **2 repayments are waiting for you — open your wallet to receive them**, shows **₿900 · $0.90**, and offers **Open your wallet**.
+
+![21.gifts welcome loan and lender waiting](images/welcome-loans-lender-waiting.png)
 
 ### Variant: loans-sunday
 
