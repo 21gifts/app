@@ -1873,7 +1873,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** Typed error for api 403 when the visitor signed in with an account whose session is refused.
 - **Inputs:** None; message is the exact api English string.
 - **Returns / side effects:** Error instance named `WrongAccountError`. Callers clear the session and show `login.wrongAccount`.
-- **Used by:** `fetchMe`, `finishPasskeyAuthentication`, `finishPasskeyRegistration`, `useHydrateSession`, `usePasskeyLogin`.
+- **Used by:** `fetchMe`, `finishPasskeyAuthentication`, `finishPasskeyRegistration`, `startPasskeyRecovery`, `finishPasskeyRecovery`, `useHydrateSession`, `usePasskeyLogin`.
 
 ## Function: NoteDeletedError
 
