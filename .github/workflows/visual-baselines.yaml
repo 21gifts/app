@@ -62,9 +62,16 @@ jobs:
       - name: Collect changed snapshots
         run: |
           set -eu
+          # The container runs as root while the checkout belongs to the
+          # runner user; without the -c override git status dies on
+          # "dubious ownership" and the pipeline below hides it (pipeline
+          # status is awk's). $GITHUB_WORKSPACE is set inside the container.
           cd e2e/visual.spec.ts-snapshots
-          git status --porcelain -- . | awk '{print $NF}' | sort -u > /tmp/changed.txt
+          git -c safe.directory="$GITHUB_WORKSPACE" status --porcelain -- . \
+            | awk '{print $NF}' | sort -u > /tmp/changed.txt
           wc -l /tmp/changed.txt
+          # Seeded placeholders can only stay unchanged if nothing ran.
+          test -s /tmp/changed.txt
           tar czf /tmp/baselines.tgz -T /tmp/changed.txt
           cp /tmp/changed.txt /tmp/changed-snapshots.txt
 
