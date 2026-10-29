@@ -6881,10 +6881,10 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: useMyLoans
 
-- **Purpose:** Keeps one shared, session-keyed `GET /me/loans` body for every mounted loans card, Menu row, and repayment screen.
+- **Purpose:** Keeps one shared, session-keyed `GET /me/loans` body for every mounted loans card, lender waiting card, Menu row, and repayment screen.
 - **Inputs:** No argument; reads the active Bearer session from `useAuthStore`.
 - **Returns / side effects:** Returns `{ loans, reload }` through `useSyncExternalStore` (server snapshot `null`). The first mounted consumer reads only while that session has no loaded body; later consumers reuse it. Every explicit `reload` performs a read, and a successful answer updates every consumer. A new session or sign-out resets the body to null. A failed read resolves null but preserves the last good body; a stale-session response or a request older than the latest applied response resolves null and cannot replace shared state.
-- **Used by:** `LoansCard`, `MenuAccountHeader`, and `LoanRepayScreen`.
+- **Used by:** `LoansCard`, `LenderWaitingCard`, `MenuAccountHeader`, and `LoanRepayScreen`.
 
 ## Function: useLoanRepay
 
