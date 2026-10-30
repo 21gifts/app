@@ -140,6 +140,8 @@ export function useHeldShares(): UseHeldSharesResult {
   const openRef = useRef(0);
   /** Whether the boxes that do not open are being deleted, so a second delete waits. */
   const lockedDeletingRef = useRef(false);
+  /** Epoch the last passkey prompt was started in; its error shows only in that epoch. */
+  const promptEpochRef = useRef<number | null>(null);
 
   /** Reads the boxes with `key`; an answer of an older read is dropped. */
   const read = useCallback(
@@ -181,7 +183,7 @@ export function useHeldShares(): UseHeldSharesResult {
       try {
         key = await heldShareBoxKey(words);
       } catch {
-        if (epochRef.current === epoch) {
+        if (epochRef.current === epoch && openRef.current === opening) {
           setLoad('loadError');
         }
         return;
@@ -257,6 +259,7 @@ export function useHeldShares(): UseHeldSharesResult {
       return;
     }
     unlockRef.current = { epoch: epochRef.current, accountId: holderAccountId };
+    promptEpochRef.current = epochRef.current;
     void phrase.showPhrase();
   }, [holderAccountId, phrase]);
 
@@ -300,9 +303,11 @@ export function useHeldShares(): UseHeldSharesResult {
         if (result.ok) {
           keptRef.current.set(result.share.boxId, result.share);
           setShares((current) =>
-            [...current, result.share].sort((a, b) =>
-              a.ownerUsername.localeCompare(b.ownerUsername),
-            ),
+            current.some((kept) => kept.boxId === result.share.boxId)
+              ? current
+              : [...current, result.share].sort((a, b) =>
+                  a.ownerUsername.localeCompare(b.ownerUsername),
+                ),
           );
           setNotice({ kind: 'stored', username: result.share.ownerUsername });
           return;
@@ -408,7 +413,10 @@ export function useHeldShares(): UseHeldSharesResult {
   return {
     load,
     unlocking: phrase.status === 'busy',
-    unlockError: phrase.error,
+    unlockError:
+      promptEpochRef.current === null || promptEpochRef.current === epochRef.current
+        ? phrase.error
+        : null,
     shares,
     lockedCount: lockedIds.length,
     saving,
