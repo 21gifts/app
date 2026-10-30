@@ -136,6 +136,10 @@ export function useHeldShares(): UseHeldSharesResult {
   const unlockRef = useRef<{ epoch: number; accountId: string } | null>(null);
   /** Whether a scanned share is being kept, set before the state so a second scan waits. */
   const savingRef = useRef(false);
+  /** Advanced by every key derivation; a derivation overtaken by a newer one reads nothing. */
+  const openRef = useRef(0);
+  /** Whether the boxes that do not open are being deleted, so a second delete waits. */
+  const lockedDeletingRef = useRef(false);
 
   /** Reads the boxes with `key`; an answer of an older read is dropped. */
   const read = useCallback(
@@ -172,6 +176,7 @@ export function useHeldShares(): UseHeldSharesResult {
   const open = useCallback(
     async (words: string, accountId: string): Promise<void> => {
       const epoch = epochRef.current;
+      const opening = ++openRef.current;
       let key: CryptoKey;
       try {
         key = await heldShareBoxKey(words);
@@ -181,7 +186,7 @@ export function useHeldShares(): UseHeldSharesResult {
         }
         return;
       }
-      if (epochRef.current !== epoch) {
+      if (epochRef.current !== epoch || openRef.current !== opening) {
         return;
       }
       keyRef.current = { accountId, key };
@@ -353,9 +358,10 @@ export function useHeldShares(): UseHeldSharesResult {
   }, []);
 
   const removeLocked = useCallback((): void => {
-    if (session === null) {
+    if (session === null || lockedDeletingRef.current) {
       return;
     }
+    lockedDeletingRef.current = true;
     setConfirmDeleteLocked(false);
     setNotice(null);
     const epoch = epochRef.current;
@@ -368,6 +374,7 @@ export function useHeldShares(): UseHeldSharesResult {
           () => false,
         );
         if (epochRef.current !== epoch) {
+          lockedDeletingRef.current = false;
           return;
         }
         if (deleted) {
@@ -377,6 +384,7 @@ export function useHeldShares(): UseHeldSharesResult {
           left.push(id);
         }
       }
+      lockedDeletingRef.current = false;
       setLockedIds((current) => current.filter((id) => !done.includes(id)));
       if (left.length > 0) {
         setNotice({ kind: 'deleteError' });

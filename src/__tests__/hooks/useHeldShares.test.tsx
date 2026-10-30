@@ -441,6 +441,53 @@ describe('useHeldShares', () => {
     expect(result.current.shares).toEqual([BOB, CARA]);
   });
 
+  it('reads with the newest key derivation when the session changes for the same account', async () => {
+    mocks.loadHeldShares.mockResolvedValue({ shares: [CARA], lockedIds: [] });
+    let first: (value: CryptoKey) => void = () => undefined;
+    mocks.heldShareBoxKey.mockReturnValueOnce(
+      new Promise<CryptoKey>((resolve) => {
+        first = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    await act(async () => {
+      first(KEY);
+      await Promise.resolve();
+    });
+    expect(mocks.loadHeldShares).toHaveBeenCalledTimes(1);
+    expect(mocks.loadHeldShares).toHaveBeenCalledWith('sess-2', 'acc_hal', KEY);
+  });
+
+  it('deletes the boxes that do not open once at a time', async () => {
+    const { result } = await ready({ shares: [], lockedIds: ['x'.repeat(32)] });
+    let gone: () => void = () => undefined;
+    mocks.deleteHeldShareBox.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        gone = resolve;
+      }),
+    );
+    act(() => {
+      result.current.removeLocked();
+      result.current.removeLocked();
+    });
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      gone();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.lockedCount).toBe(0);
+    expect(result.current.notice).toBeNull();
+  });
+
   it('ignores the tab-memory lookup of an unmounted page', async () => {
     let settle: () => void = () => undefined;
     mocks.settlePhraseDerivations.mockReturnValue(
