@@ -620,6 +620,49 @@ describe('useHeldShares', () => {
     expect(result.current.shares).toEqual([CARA]);
   });
 
+  it('lets the next account delete its locked boxes while an older delete is still running', async () => {
+    const { result } = await ready({ shares: [], lockedIds: ['x'.repeat(32)] });
+    let oldGone: () => void = () => undefined;
+    mocks.deleteHeldShareBox.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        oldGone = resolve;
+      }),
+    );
+    act(() => {
+      result.current.removeLocked();
+    });
+    mocks.loadHeldShares.mockResolvedValue({ shares: [], lockedIds: ['z'.repeat(32)] });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
+    });
+    await waitFor(() => {
+      expect(result.current.lockedCount).toBe(1);
+    });
+    let newGone: () => void = () => undefined;
+    mocks.deleteHeldShareBox.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        newGone = resolve;
+      }),
+    );
+    act(() => {
+      result.current.removeLocked();
+    });
+    expect(mocks.deleteHeldShareBox).toHaveBeenLastCalledWith('sess-2', 'z'.repeat(32));
+    await act(async () => {
+      oldGone();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    act(() => {
+      result.current.removeLocked();
+    });
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      newGone();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.lockedCount).toBe(0);
+  });
+
   it('ignores the tab-memory lookup of an unmounted page', async () => {
     let settle: () => void = () => undefined;
     mocks.settlePhraseDerivations.mockReturnValue(
