@@ -49,8 +49,9 @@ function visualProject(
  *
  * Starts the local api protocol stub on :3001, then the standalone production
  * server (`node .next/standalone/server.js`, the Docker artifact) on :3000
- * with NEXT_PUBLIC_API_URL pointing at the stub. Locally an already-running
- * pair is reused; CI (`CI=1`) always builds and starts both processes fresh.
+ * with NEXT_PUBLIC_API_URL pointing at the stub and the Content-Security-Policy
+ * enforced (`CSP_MODE=enforce`). Locally an already-running pair is reused;
+ * CI (`CI=1`) always builds and starts both processes fresh.
  *
  * Behavioral specs run once (`chromium`). Visual baselines run in four
  * projects: desktop/mobile × light/dark.
@@ -101,6 +102,7 @@ export default defineConfig({
         ...process.env,
         HOSTNAME: '0.0.0.0',
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
+        CSP_MODE: 'enforce',
         NEXT_PUBLIC_APP_VERSION: 'dev',
         NEXT_PUBLIC_BUILD_ID: 'dev',
         NEXT_PUBLIC_E2E_NOW: '2026-01-07T12:00:00.000Z',
