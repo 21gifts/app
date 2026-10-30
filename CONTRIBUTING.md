@@ -1165,7 +1165,8 @@ Rules:
   otherwise.
 - The Playwright server starts with `CSP_MODE=enforce` (CI always starts it
   fresh), so a spec fails when the policy blocks something the app needs.
-  `e2e/csp.spec.ts` fails on any violation the public pages report.
+  `e2e/csp.spec.ts` fails on any violation a public route reports; a new
+  public route belongs in its `PUBLIC_PAGES`.
 - A CDN or proxy feature that adds a script to the HTML (such as email
   address obfuscation) stays off; that script has no nonce
   ([`docs/csp.md`](docs/csp.md)).

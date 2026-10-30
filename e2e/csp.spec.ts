@@ -14,17 +14,25 @@ const ENFORCED = 'content-security-policy';
 /** Header the default mode sends instead. */
 const REPORT_ONLY = 'content-security-policy-report-only';
 
-/** Public pages, signed out. */
+/** Routes without a URL parameter that a signed-out visitor can open. */
 const PUBLIC_PAGES = [
   '/',
-  '/handbook',
-  '/login',
-  '/welcome',
   '/about',
-  '/stats',
   '/donate',
+  '/habit-tracker',
+  '/handbook',
+  '/handbook/endpoints',
+  '/handbook/functions',
+  '/handbook/screens',
   '/legal',
+  '/login',
+  '/pl',
+  '/recover',
+  '/rules',
+  '/statistics',
+  '/stats',
   '/terms',
+  '/welcome',
 ];
 
 /** Signed-in member, enough for the signed-in screens to render. */
@@ -142,19 +150,20 @@ test('Function: buildCsp — landing, welcome, and shops load without a violatio
     .toEqual([expect.stringMatching(/^img-src http:\/\/csp-check\.invalid/)]);
 });
 
-test('Function: buildCsp — public pages run under the enforced policy without a violation', async ({
-  page,
-}) => {
-  test.setTimeout(90_000);
-  const violations = await recordViolations(page);
-  for (const path of PUBLIC_PAGES) {
+for (const path of PUBLIC_PAGES) {
+  test(`Function: buildCsp — ${path} runs signed out under the enforced policy without a violation`, async ({
+    page,
+  }) => {
+    test.slow(path.startsWith('/handbook/'), 'renders every handbook section');
+    const violations = await recordViolations(page);
     const response = await page.goto(path);
-    expect(response?.headers()[ENFORCED], path).toContain("'strict-dynamic'");
-    await expect(page.locator('main').first(), path).toBeVisible();
+    expect(response?.headers()[ENFORCED]).toContain("'strict-dynamic'");
+    await expect(page).toHaveURL(path);
+    await expect(page.locator('main').first()).toBeVisible();
     await page.waitForLoadState('networkidle');
-    expect(await violations(), path).toEqual([]);
-  }
-});
+    expect(await violations()).toEqual([]);
+  });
+}
 
 test('Function: forwardCspReport — POST /monitoring/csp is 404 while reporting is off', async ({
   request,
