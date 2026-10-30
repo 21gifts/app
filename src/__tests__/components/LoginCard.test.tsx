@@ -408,7 +408,7 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });
 
-  it('shows the unknown-passkey heading, create button, and Social Recovery entry', () => {
+  it('shows the unknown-passkey heading, Try again first, create button, and Social Recovery entry', () => {
     mockPasskey('unknown');
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
@@ -427,6 +427,8 @@ describe('LoginCard', () => {
     const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
     expect(entry.getAttribute('href')).toBe('/recover');
     const retry = screen.getByRole('button', { name: 'Try again' });
+    const create = screen.getByRole('button', { name: 'Open a new account' });
+    expect(retry.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(retry.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

@@ -383,15 +383,15 @@ interface UnknownViewProps {
   onRetry: () => void;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
-  /** Whether **Recover account via Social Recovery** follows **Try again**. */
+  /** Whether **Recover account via Social Recovery** follows the two buttons. */
   showRecover: boolean;
 }
 
 /**
  * After authenticate finish `Unknown credential`: the offered passkey is not an account.
- * **Open a new account** opens the name form; **Try again** calls login;
- * **Recover account via Social Recovery** follows them when `showRecover` is
- * set, because this view only appears after a login problem.
+ * **Try again** (the first control) calls login; secondary **Open a new account**
+ * opens the name form; **Recover account via Social Recovery** follows them when
+ * `showRecover` is set, because this view only appears after a login problem.
  *
  * @param props - See {@link UnknownViewProps}.
  * @returns The unknown-credential view.
@@ -409,11 +409,11 @@ function UnknownView({
       <h1 className="text-lg font-medium text-center text-app-fg">{t('login.unknownHeading')}</h1>
       <p className="text-sm text-app-muted text-center">{t('login.unknownBody')}</p>
       <VersionNote block={versionBlock} />
-      <Button type="button" onClick={onRegister}>
-        {t('login.create')}
-      </Button>
-      <Button type="button" variant="secondary" onClick={onRetry}>
+      <Button type="button" onClick={onRetry}>
         {t('login.retry')}
+      </Button>
+      <Button type="button" variant="secondary" onClick={onRegister}>
+        {t('login.create')}
       </Button>
       {showRecover ? <RecoverLink /> : null}
     </>
