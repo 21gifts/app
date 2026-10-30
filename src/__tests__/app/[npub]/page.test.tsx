@@ -361,6 +361,28 @@ describe('shop generateMetadata', () => {
     );
   });
 
+  it('serves api forum photo paths through the app proxy for the page and og:image', async () => {
+    const id = '22222222-2222-4222-8222-222222222222';
+    const photos = [
+      { url: `/messages/${id}/photo.png`, width: 640, height: 480 },
+      { url: `/messages/${id}/photo/1.webp`, width: null, height: null },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation(() => Promise.resolve(response(200, { shop: { ...SHOP, photos } }))),
+    );
+    const metadata = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
+    expect(metadata.openGraph).toMatchObject({
+      images: [{ url: `/messages/${id}/photo.jpg`, alt: 'Cafe Luna', width: 640, height: 480 }],
+    });
+    render(await ShopPage({ params: Promise.resolve({ npub: NPUB }) }));
+    expect(screen.getByTestId('shop-screen').getAttribute('data-photos')).toBe(
+      `/messages/${id}/photo.jpg /messages/${id}/photo/1.jpg`,
+    );
+  });
+
   it('uses og.png when no photo is http(s)', async () => {
     vi.stubGlobal(
       'fetch',

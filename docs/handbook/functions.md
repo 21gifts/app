@@ -1198,7 +1198,14 @@
 - **Purpose:** Make one public shop photo URL safe to render and to publish as `og:image`.
 - **Inputs:** The photo `url` from `GET /shops/:npub` and an optional api base. With the base (trailing slashes trimmed), a root-relative `/path` is appended after the full base, path included (`https://x/v1` + `/a` → `https://x/v1/a`), so an api behind a path prefix still serves its photos; any other relative path resolves against the base plus `/`, and a protocol-relative `//host/…` stays a host, not a path. Without it, only an absolute URL is accepted.
 - **Returns / side effects:** The absolute `http:` or `https:` URL, or null for every other scheme (`javascript:`, `data:`, …) and for an unparsable value. No side effects.
-- **Used by:** `ShopPage` (with `getApiUrl()`), `ShopScreen` (without a base).
+- **Used by:** `ShopPage` (with `getApiUrl()`), `ShopScreen` (without a base), each after `sameOriginShopPhotoPath` found no api forum photo path.
+
+## Function: sameOriginShopPhotoPath
+
+- **Purpose:** Load a shop photo from the app's own origin when the api sends its own forum photo path, as the Content-Security-Policy (`img-src 'self'`) requires.
+- **Inputs:** The photo `url` from `GET /shops/:npub`.
+- **Returns / side effects:** `/messages/:id/photo.jpg` for `/messages/:id/photo` with or without a `jpg`, `jpeg`, `png`, or `webp` extension, and `/messages/:id/photo/:n.jpg` for `/messages/:id/photo/:n.<ext>` (`n` 1–9); `:id` must be a UUID and is lower-cased. The app proxies both paths, and the api serves a still by its index whatever the extension. Any other value is null. A relative `og:image` resolves against the site, so link previews use the same path. No side effects.
+- **Used by:** `ShopPage`, `ShopScreen`.
 
 ## Function: NpubCopyButton
 

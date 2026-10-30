@@ -13,7 +13,7 @@ import type { Shop } from '@/lib/api-types';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { fetchMapsKey } from '@/lib/maps-key';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { resolveShopPhotoUrl } from '@/lib/shop-photo-url';
+import { resolveShopPhotoUrl, sameOriginShopPhotoPath } from '@/lib/shop-photo-url';
 
 /** Visible state of the public shop screen. */
 export type ShopScreenProps = { state: 'ready'; shop: Shop } | { state: 'gone' | 'unavailable' };
@@ -39,13 +39,14 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const payAddress = giftsLightningAddress(shop?.payUsername, host);
   const qr = openCryptoPayQrValue(shop?.payUsername, host);
-  // ShopPage already resolved relative paths against the api; the browser has
-  // no api base, so it keeps only absolute http(s) photos.
+  // ShopPage already turned api forum photo paths into the app's own proxy
+  // paths and other relative paths into api URLs; the browser has no api base,
+  // so it keeps those proxy paths and absolute http(s) photos only.
   const photos = useMemo(
     () =>
       (shop?.photos ?? [])
         .flatMap((photo) => {
-          const url = resolveShopPhotoUrl(photo.url);
+          const url = sameOriginShopPhotoPath(photo.url) ?? resolveShopPhotoUrl(photo.url);
           return url === null ? [] : [url];
         })
         .map((url, index) => ({ index, url })),

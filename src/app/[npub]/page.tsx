@@ -8,7 +8,7 @@ import { SHOP_NPUB_RE, shopResponseSchema, type Shop } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
 import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import { ogDescriptionText } from '@/lib/public-message-og';
-import { resolveShopPhotoUrl } from '@/lib/shop-photo-url';
+import { resolveShopPhotoUrl, sameOriginShopPhotoPath } from '@/lib/shop-photo-url';
 
 const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/;
 
@@ -44,9 +44,10 @@ function redirectNpub(response: Response): string | null {
  * valid npub. An npub segment is usable only as a 200 whose `shop.npub` is
  * that same npub. Every other status, a 200 for a hex segment, and a timeout
  * or abort after {@link API_FETCH_TIMEOUT_MS} become `unavailable`; 404 and 410
- * stay `missing` and `gone`. Photo URLs go through {@link resolveShopPhotoUrl}
- * against the api base: a relative path becomes an api URL, and a photo that
- * is not http(s) is dropped, so the page and `og:image` share the same list.
+ * stay `missing` and `gone`. An api forum photo path becomes the app's own
+ * proxy path ({@link sameOriginShopPhotoPath}); any other photo URL goes through
+ * {@link resolveShopPhotoUrl} against the api base, and a photo that is not
+ * http(s) is dropped, so the page and `og:image` share the same list.
  *
  * Wrapped in React `cache`, so `generateMetadata` and `ShopPage` share one api
  * call and one answer per request.
@@ -82,7 +83,7 @@ const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
     }
     // A relative photo path belongs to the api; only http(s) photos render.
     const photos = parsed.data.shop.photos.flatMap((photo) => {
-      const url = resolveShopPhotoUrl(photo.url, apiBase);
+      const url = sameOriginShopPhotoPath(photo.url) ?? resolveShopPhotoUrl(photo.url, apiBase);
       return url === null ? [] : [{ ...photo, url }];
     });
     return { kind: 'ready', shop: { ...parsed.data.shop, photos } };

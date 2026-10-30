@@ -233,6 +233,11 @@ describe('ShopScreen', () => {
           ...SHOP,
           photos: [
             { url: '/messages/111/photo.jpg', width: null, height: null },
+            {
+              url: '/messages/33333333-3333-4333-8333-333333333333/photo.jpg',
+              width: null,
+              height: null,
+            },
             { url: 'javascript:alert(1)', width: null, height: null },
             { url: 'http://api.21.gifts/one.jpg', width: null, height: null },
             { url: 'https://api.21.gifts/two.jpg', width: null, height: null },
@@ -242,10 +247,11 @@ describe('ShopScreen', () => {
     );
     const stills = screen.getAllByAltText('Photo from Cafe Luna');
     expect(stills.map((node) => node.getAttribute('src'))).toEqual([
+      '/messages/33333333-3333-4333-8333-333333333333/photo.jpg',
       'http://api.21.gifts/one.jpg',
       'https://api.21.gifts/two.jpg',
     ]);
-    expect(stills.map((node) => node.getAttribute('data-photo-index'))).toEqual(['0', '1']);
+    expect(stills.map((node) => node.getAttribute('data-photo-index'))).toEqual(['0', '1', '2']);
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
   });
 
