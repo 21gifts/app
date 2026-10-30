@@ -21,6 +21,15 @@ build placeholder). The middleware reads it on every request, so one image
 switches from report-only to enforced by setting `CSP_MODE=enforce` and
 recreating the container. Unset needs no deployment change.
 
+The Playwright server starts with `CSP_MODE=enforce` (`playwright.config.ts`),
+so every e2e spec runs under the enforced policy. CI always starts a fresh
+server; a local run that reuses a server already on port 3000 keeps that
+server's mode. `e2e/csp.spec.ts` loads `/404` and every route without a URL
+parameter that a signed-out visitor can open (`PUBLIC_PAGES`), waits until
+the network is idle, and fails on any `securitypolicyviolation` the page's
+document reports. The app embeds no frame (`frame-src 'none'`), and these
+pages start no worker. A new public route belongs in `PUBLIC_PAGES`.
+
 ## Reports
 
 The policy names `report-uri /monitoring/csp` and `report-to csp`; the
@@ -61,6 +70,16 @@ nothing is sent.
   the Google map script and, on `/`, the MapLibre script of the public shop
   map (`https://unpkg.com/maplibre-gl@<version>/dist/maplibre-gl.js`), which
   `HomeShops` inserts with the page's nonce copied from the page's own scripts.
+- **HTML rewritten in front of the app:** the policy only holds for the
+  HTML the app sends. A CDN or proxy feature that rewrites the HTML on its
+  way to the browser and adds a `<script>` element is blocked, because that
+  element has no nonce. The CDN's email address obfuscation is such a
+  feature: it replaces email addresses in the page (such as `you@21.gifts`
+  on `/`) with links to a decoder and adds a same-origin decoder script
+  without the nonce, reported as `script-src-elem` with the app's own origin.
+  It must stay off for every deployment of the app. Do not add the
+  injected script to the policy, and do not hide the addresses in the app
+  to avoid it.
 - **Styles:** `'unsafe-inline'` is needed. React renders `style` attributes on
   the server, and the map script inserts `<style>` elements.
 
@@ -151,6 +170,9 @@ where a script could send data. The hosts the app is known to reach:
    compiled its WebAssembly module and reached `nd1.breez.technology` and
    `datasync.breez.technology:442`, then stopped at the API key check. The
    remaining wallet hosts are from step 1.
+4. Enforced: the Playwright behavior suite ran with `CSP_MODE=enforce` and
+   recorded every `securitypolicyviolation`. The only one was the image
+   `e2e/csp.spec.ts` blocks on purpose to prove that its listener works.
 
 Before `CSP_MODE=enforce`, check the reports in Sentry for sources this list
 missed, in particular from the wallet (SDK rows) and the map with a valid key

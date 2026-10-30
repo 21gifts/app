@@ -1,15 +1,43 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Content-Security-Policy in the Playwright build: `CSP_MODE` is unset, so
- * every page sends the policy report-only. `NEXT_PUBLIC_SENTRY_DSN` is empty,
- * so the report route is closed. The enforcing header and the forwarding are
- * covered by the unit tests of `src/middleware.ts`, `src/lib/csp.ts`, and
- * `src/lib/sentry.ts`.
+ * Content-Security-Policy in the Playwright build: `CSP_MODE=enforce`, so
+ * every page sends the enforced policy and every spec runs under it.
+ * `NEXT_PUBLIC_SENTRY_DSN` is empty, so the report route is closed. The
+ * report-only default and the forwarding are covered by the unit tests of
+ * `src/middleware.ts`, `src/lib/csp.ts`, and `src/lib/sentry.ts`.
  */
 
-/** Header the default mode sends. */
+/** Header the enforced mode sends. */
+const ENFORCED = 'content-security-policy';
+
+/** Header the default mode sends instead. */
 const REPORT_ONLY = 'content-security-policy-report-only';
+
+/**
+ * Routes without a URL parameter that a signed-out visitor can open, and the
+ * not-found screen.
+ */
+const PUBLIC_PAGES = [
+  '/',
+  '/404',
+  '/about',
+  '/donate',
+  '/habit-tracker',
+  '/handbook',
+  '/handbook/endpoints',
+  '/handbook/functions',
+  '/handbook/screens',
+  '/legal',
+  '/login',
+  '/pl',
+  '/recover',
+  '/rules',
+  '/statistics',
+  '/stats',
+  '/terms',
+  '/welcome',
+];
 
 /** Signed-in member, enough for the signed-in screens to render. */
 const E2E_ACCOUNT = {
@@ -66,18 +94,20 @@ async function seedSignedIn(page: Page): Promise<void> {
   });
 }
 
-test('Function: getCspMode — pages send the policy report-only by default', async ({ page }) => {
+test('Function: getCspMode — pages send the enforced policy with CSP_MODE=enforce', async ({
+  page,
+}) => {
   const response = await page.goto('/');
   const headers = response?.headers() ?? {};
-  expect(headers[REPORT_ONLY]).toContain("default-src 'self'");
-  expect(headers['content-security-policy']).toBeUndefined();
+  expect(headers[ENFORCED]).toContain("default-src 'self'");
+  expect(headers[REPORT_ONLY]).toBeUndefined();
 });
 
-test('Function: cspHeaderName — route handlers carry the same report-only header', async ({
+test('Function: cspHeaderName — route handlers carry the same enforced header', async ({
   request,
 }) => {
   const response = await request.get('/healthz');
-  expect(response.headers()[REPORT_ONLY]).toContain('report-uri /monitoring/csp');
+  expect(response.headers()[ENFORCED]).toContain('report-uri /monitoring/csp');
   expect(response.headers()['reporting-endpoints']).toBe('csp="/monitoring/csp"');
 });
 
@@ -85,7 +115,7 @@ test('Function: createCspNonce — every page script carries the nonce of its re
   page,
 }) => {
   const response = await page.goto('/');
-  const nonce = /'nonce-([^']+)'/.exec(response?.headers()[REPORT_ONLY] ?? '')?.[1];
+  const nonce = /'nonce-([^']+)'/.exec(response?.headers()[ENFORCED] ?? '')?.[1];
   expect(nonce).toMatch(/^[A-Za-z0-9+/]{22}==$/);
   const scripts = await page.evaluate(() =>
     [...document.querySelectorAll('script:not([type="application/ld+json"])')].map(
@@ -95,7 +125,7 @@ test('Function: createCspNonce — every page script carries the nonce of its re
   expect(scripts.length).toBeGreaterThan(3);
   expect(new Set(scripts)).toEqual(new Set([nonce]));
   const again = await page.goto('/');
-  expect(again?.headers()[REPORT_ONLY]).not.toContain(`'nonce-${nonce}'`);
+  expect(again?.headers()[ENFORCED]).not.toContain(`'nonce-${nonce}'`);
 });
 
 test('Function: buildCsp — landing, welcome, and shops load without a violation', async ({
@@ -126,6 +156,21 @@ test('Function: buildCsp — landing, welcome, and shops load without a violatio
     .poll(violations)
     .toEqual([expect.stringMatching(/^img-src http:\/\/csp-check\.invalid/)]);
 });
+
+for (const path of PUBLIC_PAGES) {
+  test(`Function: buildCsp — ${path} runs signed out under the enforced policy without a violation`, async ({
+    page,
+  }) => {
+    test.slow(path.startsWith('/handbook/'), 'renders every handbook section');
+    const violations = await recordViolations(page);
+    const response = await page.goto(path);
+    expect(response?.headers()[ENFORCED]).toContain("'strict-dynamic'");
+    await expect(page).toHaveURL(path);
+    await expect(page.locator('main').first()).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    expect(await violations()).toEqual([]);
+  });
+}
 
 test('Function: forwardCspReport — POST /monitoring/csp is 404 while reporting is off', async ({
   request,
