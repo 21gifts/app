@@ -200,6 +200,15 @@ describe('renewPasskey', () => {
     );
   });
 
+  it('confirms the new passkey under the rp.id of the seed options', async () => {
+    vi.mocked(startPasskeySeed).mockResolvedValueOnce({
+      challengeId: 'ch',
+      options: { challenge: 'aa', rp: { id: 'app.test', name: '21.gifts' } },
+    });
+    expect((await renewPasskey('tok')).outcome).toBe('ok');
+    expect(obtainPrfFirst).toHaveBeenCalledWith({ id: 'cred', type: 'public-key' }, 'app.test');
+  });
+
   it('reports a missing PRF as prfUnsupported', async () => {
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     const result = await renewPasskey('tok');

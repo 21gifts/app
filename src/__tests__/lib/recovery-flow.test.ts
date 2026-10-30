@@ -14,7 +14,7 @@ import {
 import type { Account, RecoveryBegin } from '@/lib/api-types';
 import { logInteraction } from '@/lib/interaction-log';
 import { mergePrfExtension } from '@/lib/passkey-renew';
-import { mnemonicFromPrfFirst, obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { mnemonicFromPrfFirst, obtainPrfFirst, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
 import {
   createNewPasskey,
   defaultRecoveryDeps,
@@ -91,7 +91,11 @@ const PRF = new Uint8Array(32).fill(7);
 
 const BEGIN: RecoveryBegin = {
   challengeId: 'challenge-1',
-  options: { challenge: 'Y2hhbGxlbmdlLTE', user: { id: 'dXNlcg' } },
+  options: {
+    challenge: 'Y2hhbGxlbmdlLTE',
+    rp: { id: 'rp.test', name: '21.gifts' },
+    user: { id: 'dXNlcg' },
+  },
   accountId: 'acc_ada',
   username: 'ada',
 };
@@ -546,6 +550,7 @@ describe('createNewPasskey', () => {
     expect(traceWallet).toHaveBeenCalledWith('wallet.passkey', expect.any(Function), {
       prompt: 'recovery',
     });
+    expect(obtainPrfFirst).toHaveBeenCalledWith(expect.anything(), 'rp.test');
     expect(mnemonicFromPrfFirst).toHaveBeenCalledWith(PRF);
     expect(sdk.connect).toHaveBeenCalledWith(NEW_WORDS, 'breez-key', HOST);
     expect(sdk.identityPubkey).toHaveBeenCalledWith(NEW_WORDS);
@@ -755,6 +760,13 @@ describe('transfer', () => {
       sessionToken: 'sess-new',
     });
     expect(useAuthStore.getState().session).toBe('sess-new');
+    const begins = vi.mocked(startPasskeyAuthentication).mock.calls.length;
+    const get = vi.fn().mockResolvedValue(null);
+    vi.stubGlobal('navigator', { credentials: { get } });
+    await obtainPrfFirstFromGet(new Uint8Array([1]));
+    vi.unstubAllGlobals();
+    expect(vi.mocked(startPasskeyAuthentication).mock.calls).toHaveLength(begins);
+    expect((get.mock.calls[0]?.[0] as CredentialRequestOptions).publicKey?.rpId).toBe('app.test');
     expect(vi.mocked(logInteraction).mock.calls).toEqual([['login'], ['recovery_done']]);
     expect(old.sendToSparkAddress).toHaveBeenCalledWith(
       NEW_ADDRESS,
