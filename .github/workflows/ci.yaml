@@ -37,7 +37,9 @@ jobs:
   check:
     name: Typecheck, Handbook, E2E-check, Screenshots, Test (100% coverage), Build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Social recovery adds ~3 minutes of coverage tests; the job now needs
+    # about 10:30 and timed out at the old limit with every step green.
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4

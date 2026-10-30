@@ -87,6 +87,8 @@ const SENSITIVE_KEY_PARTS = [
   'mnemonic',
   'phrase',
   'seed',
+  'share',
+  'slip39',
   'prf',
   'token',
   'secret',
@@ -104,8 +106,8 @@ const ALLOWED_HEADERS = new Set(['user-agent', 'referer']);
 /** Breadcrumb categories of network requests. */
 const REQUEST_CATEGORIES = new Set(['fetch', 'xhr', 'http']);
 
-/** Valid BIP-39 phrase lengths. */
-const PHRASE_LENGTHS = new Set([12, 15, 18, 21, 24]);
+/** Word counts of BIP-39 phrases and of SLIP-39 shares (20 and 33 words). */
+const PHRASE_LENGTHS = new Set([12, 15, 18, 20, 21, 24, 33]);
 
 /** One word of 3 to 8 letters (the BIP-39 English word shape, any case). */
 const WORD = /^[a-z]{3,8}$/i;
@@ -150,6 +152,7 @@ export type WalletSpanName =
   | 'wallet.prepare'
   | 'wallet.send'
   | 'wallet.address.register'
+  | 'wallet.address.transfer'
   | 'wallet.passkey';
 
 /**
@@ -159,8 +162,8 @@ export type WalletSpanName =
 export type WalletSpanAttributes = {
   /** How a payment travels. */
   route?: 'spark' | 'lightning' | 'onchain';
-  /** Which passkey prompt opened the wallet. */
-  prompt?: 'login' | 'unlock';
+  /** Which passkey prompt opened the wallet, or made the passkey of a social recovery. */
+  prompt?: 'login' | 'unlock' | 'recovery';
 };
 
 /**
@@ -288,10 +291,11 @@ function redactString(value: string): string {
 }
 
 /**
- * Whether an array looks like a recovery phrase split into words.
+ * Whether an array looks like a recovery phrase or a recovery share split
+ * into words.
  *
  * @param items - Array to test.
- * @returns `true` for 12 to 24 words.
+ * @returns `true` for 12 to 33 words: BIP-39 phrases and SLIP-39 shares.
  */
 function isWordList(items: unknown[]): boolean {
   return (
@@ -864,6 +868,7 @@ const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
   'profile',
   'public-messages',
   'push',
+  'recover',
   'rules',
   'settings',
   'setup',

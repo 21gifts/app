@@ -5,6 +5,7 @@
  * memory and never stored by this app. The adapter exposes no availability
  * check for addresses: the account's own username is the only one registered.
  */
+import { derSignatureHex, lnurlRecoverMessage } from '@/lib/recovery-lookup';
 
 /**
  * IndexedDB directory name the SDK uses for this app's wallet state. The SDK
@@ -540,11 +541,74 @@ export interface WalletConnection {
    */
   prepare(request: WalletPayRequest): Promise<WalletPreparedPayment>;
   /**
+   * Signs `message` with the wallet's identity key (the SDK's `signMessage`,
+   * compact): ECDSA on secp256k1 over one SHA-256 of the UTF-8 text, low S.
+   *
+   * @param message - Text to sign.
+   * @returns The identity public key and the compact r‖s signature, both
+   *   lower-case hex.
+   * @throws When the SDK refuses the text (its address-server messages are
+   *   reserved to the SDK).
+   */
+  signMessage(message: string): Promise<{ pubkey: string; signature: string }>;
+  /**
+   * Whether the wallet holds an address on its domain (the SDK's
+   * `getLightningAddress`, which looks it up once when it was never read).
+   *
+   * @returns `true` when it holds one.
+   */
+  hasAddress(): Promise<boolean>;
+  /**
+   * Authorizes moving this wallet's address to another wallet. Signs only;
+   * nothing is sent.
+   *
+   * @param transfereePubkey - Identity public key of the wallet that takes the address.
+   * @returns The authorization, valid for ten minutes.
+   * @throws When the wallet holds no address.
+   */
+  authorizeAddressTransfer(transfereePubkey: string): Promise<WalletAddressTransfer>;
+  /**
+   * Claims an address another wallet authorized for this one (the SDK posts
+   * `POST /lnurlpay/<own key>/transfer` to the app's host).
+   *
+   * @param transfer - The authorization from {@link WalletConnection.authorizeAddressTransfer}.
+   * @returns Resolves once the address server accepted the claim.
+   * @throws When the claim is refused or cannot be sent.
+   */
+  claimAddressTransfer(transfer: WalletAddressTransfer): Promise<void>;
+  /**
+   * This wallet's Spark address (the SDK's `receivePayment` for a Spark address).
+   *
+   * @returns The address.
+   */
+  receiveSparkAddress(): Promise<string>;
+  /**
+   * Sends exactly `amountSats` to a Spark address. Any other payment method is
+   * refused before anything is sent. A send repeated with the same key is not
+   * paid twice: the SDK answers the first payment.
+   *
+   * @param address - Spark address of the receiving wallet.
+   * @param amountSats - Whole sats to send.
+   * @param idempotencyKey - A UUID for this send and its retries.
+   * @returns Resolves once the SDK sent the payment.
+   * @throws Error `Not a Spark address` for another method; otherwise the SDK's error.
+   */
+  sendToSparkAddress(address: string, amountSats: number, idempotencyKey: string): Promise<void>;
+  /**
    * Closes the connection.
    *
    * @returns Resolves when the SDK has disconnected.
    */
   disconnect(): Promise<void>;
+}
+
+/**
+ * A signed authorization to move a wallet's address to another wallet.
+ * Opaque to the app; only the adapter reads it.
+ */
+export interface WalletAddressTransfer {
+  /** SDK authorization, passed back unchanged to `claimAddressTransfer`. */
+  readonly authorization: unknown;
 }
 
 /**
@@ -878,6 +942,70 @@ export interface WalletSdk {
    * @returns A live connection.
    */
   connect(mnemonic: string, apiKey: string, lnurlDomain: string): Promise<WalletConnection>;
+  /**
+   * Identity public key of a set of words, worked out offline: no connect and
+   * no network.
+   *
+   * @param mnemonic - BIP-39 recovery phrase.
+   * @returns The identity public key, lower-case hex.
+   * @throws When the words are not a valid phrase.
+   */
+  identityPubkey(mnemonic: string): Promise<string>;
+  /**
+   * Signs the address lookup of a set of words offline, as the SDK signs its
+   * own lookup: the `recover` message for this wallet on `domain`, DER encoded.
+   * The SDK's `signMessage` refuses that message, so the SDK's own external
+   * signer of the same words signs it.
+   *
+   * @param mnemonic - BIP-39 recovery phrase.
+   * @param domain - Host the address lives on (the app's own host).
+   * @param timestampSecs - Unix time in seconds.
+   * @returns The identity public key and the DER signature, both lower-case hex.
+   * @throws When the words are not a valid phrase.
+   */
+  signAddressLookup(
+    mnemonic: string,
+    domain: string,
+    timestampSecs: number,
+  ): Promise<{ pubkey: string; signature: string }>;
+}
+
+/** The SDK's external signer of one set of words, for its wallet's identity key. */
+type SparkSigner = ReturnType<SdkModule['defaultExternalSigners']>['sparkSigner'];
+
+/**
+ * Lower-case hex of bytes.
+ *
+ * @param bytes - Byte values.
+ * @returns The hex text.
+ */
+function hexOf(bytes: readonly number[]): string {
+  return bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Runs `work` with the SDK's external signer of a set of words on mainnet, and
+ * frees the signer's memory afterwards.
+ *
+ * @param sdk - The initialised SDK module.
+ * @param mnemonic - BIP-39 recovery phrase.
+ * @param work - What to do with the signer.
+ * @returns What `work` resolves to.
+ * @throws When the words are not a valid phrase, or what `work` throws.
+ */
+async function withSparkSigner<T>(
+  sdk: SdkModule,
+  mnemonic: string,
+  work: (signer: SparkSigner) => Promise<T>,
+): Promise<T> {
+  const signers = sdk.defaultExternalSigners(mnemonic, null, 'mainnet');
+  const signer = signers.sparkSigner;
+  try {
+    return await work(signer);
+  } finally {
+    signer.free();
+    signers.free();
+  }
 }
 
 /**
@@ -888,7 +1016,8 @@ export interface WalletSdk {
  * reload is needed.
  *
  * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet and whose
- * `getInfo` can wait for synchronized state.
+ * `getInfo` can wait for synchronized state, and whose `identityPubkey` and
+ * `signAddressLookup` work from words offline.
  * @throws When the SDK module cannot be imported or its initialisation fails.
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
@@ -1020,10 +1149,64 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             },
           };
         },
+        async signMessage(message: string): Promise<{ pubkey: string; signature: string }> {
+          const signed = await handle.signMessage({ message, compact: true });
+          return { pubkey: signed.pubkey, signature: signed.signature };
+        },
+        async hasAddress(): Promise<boolean> {
+          return (await handle.getLightningAddress()) !== undefined;
+        },
+        async authorizeAddressTransfer(transfereePubkey: string): Promise<WalletAddressTransfer> {
+          return {
+            authorization: await handle.authorizeLightningAddressTransfer({ transfereePubkey }),
+          };
+        },
+        async claimAddressTransfer(transfer: WalletAddressTransfer): Promise<void> {
+          await handle.claimLightningAddressTransfer({
+            authorization: transfer.authorization as Parameters<
+              typeof handle.claimLightningAddressTransfer
+            >[0]['authorization'],
+          });
+        },
+        async receiveSparkAddress(): Promise<string> {
+          const response = await handle.receivePayment({ paymentMethod: { type: 'sparkAddress' } });
+          return response.paymentRequest;
+        },
+        async sendToSparkAddress(
+          address: string,
+          amountSats: number,
+          idempotencyKey: string,
+        ): Promise<void> {
+          const prepared = await handle.prepareSendPayment({
+            paymentRequest: { type: 'input', input: address },
+            amount: BigInt(amountSats),
+          });
+          if (prepared.paymentMethod.type !== 'sparkAddress') {
+            throw new Error('Not a Spark address');
+          }
+          await handle.sendPayment({ prepareResponse: prepared, idempotencyKey });
+        },
         async disconnect(): Promise<void> {
           await handle.disconnect();
         },
       };
+    },
+    async identityPubkey(mnemonic: string): Promise<string> {
+      return withSparkSigner(sdk, mnemonic, async (signer) =>
+        hexOf((await signer.getIdentityPublicKey()).bytes),
+      );
+    },
+    async signAddressLookup(
+      mnemonic: string,
+      domain: string,
+      timestampSecs: number,
+    ): Promise<{ pubkey: string; signature: string }> {
+      return withSparkSigner(sdk, mnemonic, async (signer) => {
+        const pubkey = hexOf((await signer.getIdentityPublicKey()).bytes);
+        const message = lnurlRecoverMessage(domain, pubkey, timestampSecs);
+        const signed = await signer.signMessage(new TextEncoder().encode(message));
+        return { pubkey, signature: derSignatureHex(Uint8Array.from(signed.bytes)) };
+      });
     },
   };
 }

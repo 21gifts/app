@@ -25,4 +25,10 @@ describe('LoginBlockedNotice', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
     expect(reload).toHaveBeenCalledTimes(1);
   });
+
+  it('outdated without reload is the status line only', () => {
+    renderWithLocale(<LoginBlockedNotice kind="outdated" reload={false} />);
+    expect(screen.getByRole('status').textContent).toBe('A new version is ready');
+    expect(screen.queryByRole('button')).toBeNull();
+  });
 });

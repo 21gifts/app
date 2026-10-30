@@ -123,6 +123,12 @@ export const accountSchema = z.object({
    */
   passkeyRenewPrfUnsupported: z.boolean().optional(),
   /**
+   * True once 21.gifts stores the account's share of a social recovery for
+   * its current verified wallet. Optional so older api bodies still parse;
+   * missing means not set up.
+   */
+  socialRecoverySetUp: z.boolean().optional(),
+  /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
    * is strictly `false`.
@@ -209,6 +215,9 @@ export const accountSchema = z.object({
  * `sparkPubkey` is the claimed in-app wallet key and `sparkWalletVerified`
  * is true once that wallet registered the account's address; then the
  * username can no longer change. Both are omitted on older api builds.
+ * `socialRecoverySetUp` is true once 21.gifts stores the account's share of a
+ * social recovery for its current verified wallet; omitted on older api
+ * builds, which counts as not set up.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
@@ -703,6 +712,44 @@ export const passkeySessionSchema = z.object({
  * A session issued immediately after a successful passkey ceremony.
  */
 export type PasskeySession = z.infer<typeof passkeySessionSchema>;
+
+/**
+ * Runtime schema for social recovery begin: the creation options for the new
+ * passkey, plus the id and username of the account the old wallet belongs to.
+ */
+export const recoveryBeginSchema = passkeyBeginSchema.extend({
+  accountId: z.string(),
+  username: z.string(),
+});
+
+/**
+ * A started social recovery of one account.
+ */
+export type RecoveryBegin = z.infer<typeof recoveryBeginSchema>;
+
+/**
+ * Runtime schema for one wallet the owner's account used before a social
+ * recovery. `balanceSats` is the public explorer balance the api read, or
+ * `null` when it is unknown; it is information only.
+ */
+export const previousWalletSchema = z.object({
+  sparkPubkey: z.string(),
+  sparkAddress: z.string(),
+  replacedAt: z.number(),
+  balanceSats: z.number().int().nonnegative().nullable(),
+});
+
+/**
+ * A wallet the owner's account used before a social recovery.
+ */
+export type PreviousWallet = z.infer<typeof previousWalletSchema>;
+
+/**
+ * Runtime schema for `GET /me/previous-wallets`.
+ */
+export const previousWalletsSchema = z.object({
+  wallets: z.array(previousWalletSchema),
+});
 
 /**
  * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).

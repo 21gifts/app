@@ -374,6 +374,28 @@ describe('WalletScreenView', () => {
     expect(screen.queryByRole('button', { name: 'I saved these words' })).toBeNull();
   });
 
+  it('warns under the twelve words that they take over the whole account', () => {
+    renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="phrase"
+        status="idle"
+        error={null}
+        words={words}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+      />,
+    );
+    const warning = screen.getByText(
+      'Keep these 12 words secret. Whoever has them can take over your whole account, not only the wallet.',
+    );
+    expect(warning.className).toContain('text-app-muted');
+    expect(warning.previousElementSibling?.tagName).toBe('OL');
+    expect(screen.queryByText(/cannot recover/)).toBeNull();
+  });
+
   it('hides the twelve words when Back is pressed and does not leave the page', () => {
     const hidePhrase = vi.fn();
     renderWithLocale(

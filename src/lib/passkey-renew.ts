@@ -196,7 +196,15 @@ function reportSeedDiagnostic(
   });
 }
 
-async function mergePrfExtension(
+/**
+ * Adds the PRF request (`prf.eval.first` = the PRF salt) to passkey creation
+ * options, so the new passkey yields the bytes behind a recovery phrase.
+ * Other extensions and options stay as they are.
+ *
+ * @param options - Creation options as decoded from the api.
+ * @returns A copy with the PRF extension.
+ */
+export async function mergePrfExtension(
   options: PublicKeyCredentialCreationOptions,
 ): Promise<PublicKeyCredentialCreationOptions> {
   const salt = await prfEvalFirstSalt();

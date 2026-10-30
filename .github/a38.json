@@ -73,6 +73,11 @@
       "workflow": ".github/workflows/a38-guard.yml",
       "job": "guard",
       "reason": "This job is the A38 guard itself, which audits the author report rather than being part of it."
+    },
+    {
+      "workflow": ".github/workflows/visual-baselines.yaml",
+      "job": "update",
+      "reason": "This job regenerates Linux Chromium visual baselines on manual dispatch only (workflow_dispatch or a push to the workflow file itself); it uploads snapshots for review, never gates a pull request, and performs no author-measurable testing."
     }
   ]
 }

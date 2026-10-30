@@ -113,6 +113,8 @@ test('every passkey step without the current build id gets 403 app_outdated', as
     '/auth/passkey/register/finish',
     '/auth/passkey/authenticate/begin',
     '/auth/passkey/authenticate/finish',
+    '/auth/passkey/recovery/begin',
+    '/auth/passkey/recovery/finish',
   ];
   for (const step of steps) {
     for (const headers of [{}, { 'x-app-build': 'other-build' }]) {

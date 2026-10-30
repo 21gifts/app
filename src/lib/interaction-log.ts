@@ -26,7 +26,8 @@ export type InteractionName =
   | 'wallet_move_step'
   | 'wallet_move_copied'
   | 'wallet_move_closed'
-  | 'wallet_move_done';
+  | 'wallet_move_done'
+  | 'recovery_done';
 
 /** Values an interaction may carry: ids, amounts, counts, and search terms. */
 export type InteractionProps = Record<string, string | number | boolean | null>;
@@ -72,6 +73,8 @@ const SECRET_KEY_PARTS = [
   'mnemonic',
   'phrase',
   'seed',
+  'share',
+  'slip39',
   'prf',
   'preimage',
   'secret',
@@ -121,6 +124,7 @@ const SEPARATE_EVENTS: Partial<Record<InteractionName, string>> = {
   wallet_move_copied: 'wallet-intro',
   wallet_move_closed: 'wallet-intro',
   wallet_move_done: 'wallet-intro',
+  recovery_done: 'recovery',
 };
 
 /**

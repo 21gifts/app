@@ -81,6 +81,7 @@ beforeEach(() => {
     retry: vi.fn(),
     cancel: vi.fn(),
     error: null,
+    recoveryPending: false,
     nameError: null,
   });
   useAuthStore.setState({ session: null, account: null, lockedSession: null });

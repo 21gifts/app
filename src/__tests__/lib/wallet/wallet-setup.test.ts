@@ -87,6 +87,20 @@ function account(overrides: Partial<Account> = {}): Account {
   };
 }
 
+/**
+ * A wallet SDK around a fake `connect`; the offline signer is not used here.
+ *
+ * @param connect - The fake connect.
+ * @returns The SDK.
+ */
+function sdkOf(connect: unknown): WalletSdk {
+  return {
+    connect: connect as WalletSdk['connect'],
+    identityPubkey: vi.fn(),
+    signAddressLookup: vi.fn(),
+  };
+}
+
 function fakeSdk(overrides?: { connect?: () => Promise<WalletConnection> }): {
   loadSdk: WalletSdkLoader;
   connection: {
@@ -113,9 +127,7 @@ function fakeSdk(overrides?: { connect?: () => Promise<WalletConnection> }): {
         return connection as unknown as WalletConnection;
       }),
   );
-  const loadSdk: WalletSdkLoader = vi.fn(async () => ({
-    connect: connect as WalletSdk['connect'],
-  }));
+  const loadSdk: WalletSdkLoader = vi.fn(async () => sdkOf(connect));
   return { loadSdk, connection };
 }
 

@@ -62,7 +62,10 @@ export default function LegalPage(): ReactElement {
           <code>numberFormat</code> cookie; absent means Swiss grouping 10&apos;000.23. Choosing a
           light or dark appearance writes a <code>theme</code> cookie; choosing System removes it.
           The application stores a session token in <code>localStorage</code> after you log in so a
-          returning visitor stays logged in.
+          returning visitor stays logged in. If another member chose you to keep a Social Recovery
+          share for them, the application stores that share in <code>localStorage</code> under your
+          account until you delete it. While recovering an account or moving a balance, the 12
+          recovery words and the shares stay only in the open tab&apos;s memory.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-paper/70">
@@ -84,8 +87,16 @@ export default function LegalPage(): ReactElement {
           in the app, which only you can open. It does not hold funds. Bitcoin payments go directly
           from the giver&apos;s wallet to the receiver&apos;s wallet. The application stores, with
           your account, the wallet details that let payments to your 21.gifts address reach that
-          wallet. Your 12 recovery words open your Bitcoin in any compatible wallet, also if
-          21.gifts stops running; your 21.gifts address works only while 21.gifts runs.
+          wallet. If you set up Social Recovery, your 12 recovery words are split into three parts:
+          the two people you choose each keep one, and 21.gifts stores the third, encrypted, with
+          your account, for your current wallet and for each previous wallet until you remove that
+          wallet. One part alone opens nothing; any two parts together open the wallet. 21.gifts
+          keeps its part as a backup only: the application never shows it or sends it anywhere.
+          After a recovery, the key and the address of the previous wallet stay with your account
+          until you remove it, and 21.gifts reads that wallet&apos;s balance by its address from a
+          public blockchain explorer, without your account details. Your 12 recovery words open your
+          Bitcoin in any compatible wallet, also if 21.gifts stops running; your 21.gifts address
+          works only while 21.gifts runs.
         </p>
         <h3 className="text-lg font-semibold">Wallet and payment data</h3>
         <p className="text-paper/70">

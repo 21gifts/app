@@ -2,7 +2,7 @@
 
 Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
-**Signed-in header.** Signed in means the wallet's recovery phrase is in this tab's memory, except for accounts that cannot hold a wallet. After reload, in a new tab, or after reopening the app, a valid stored session without that phrase counts as signed out. The central `OnboardingGate` keeps the visitor on the requested path and shows the ordinary login card in place of every signed-in screen; **Log in** refreshes the session and derives the phrase with that passkey prompt, asking for the seed passkey only when another passkey signed in. For a held-back session the card greets the member (**Welcome back, {name}**, the name or else the username) above **Log in with your device**, shows the muted line **Confirm to open your wallet** directly above **Log in**, keeps **Log in** and **New to 21.gifts?** / **Open a new account**, and has no **Log out**: whichever passkey logs in decides the account, and a different account (or a new one) replaces the held session. No-PRF shows `wallet.prfUnsupported` above **Log in**; a cancelled prompt or any other failure shows `login.error` there and stays on the card. While the login card shows, the signed-in Menu is absent. The guest-allowed `/welcome`, `/statistics`, and `/habit-tracker` show this card too, without their **Log in** link; only a visitor without any stored session sees their signed-out view. One-time wallet setup is not part of this gate and may continue in the background. Every signed-in screen with the Menu (`SignedInChrome`) shows one Menu button top-right (the three-line icon only, no visible word; its accessible name is **Menu**), and left of it, while the wallet is open and its balance is known, the balance as small plain text (₿ over the default fiat from the current spot, not a stored charge; no wallet button, no pill) that opens `/wallet`. While the balance is on its way (the wallet opens, or failed to open and is opened again in the background) a skeleton of the same size stands in its place; without a wallet, or after a failure that is not retried, nothing shows there. When a payment arrives while the app is open, that balance turns green for a moment with the amount under it, and a banner slides down at the top: **You received ₿…** with the current spot under the bitcoin when a rate is loaded; tapping it opens `/wallet`, the X closes it, and it goes away by itself after six seconds. Any signed-in page opened with `?move=1` opens the move-funds flow (also after signing in first, when the link was opened signed out); while that flow is open the **Menu** cannot be opened, also not by keyboard, and signing out drops a request still waiting so it never opens for the next member. Open, the Menu starts with the account header (`MenuAccountHeader`): the profile photo or the name's initial, the name and `@username` (together one link to `/profile` that closes the Menu, once the account is loaded), and in the top-right corner the wallet balance small (₿, with the default fiat from the current spot under it; a link to `/wallet`; two skeleton bars while the wallet opens; nothing while it has failed or is not available); there is no row of Received, Given, or post totals. When a repayment is payable, a row below the header's first row shows **Loan repayment due today** and **₿X** with the current spot beside it, or **You're behind on your loan** and that amount in red, plus **Send**; **Send** closes the Menu and opens `/loans/repay`. The row is absent when nothing is payable. Opened right after a page load, while the stored session is still being checked, the header already has its final size: a skeleton circle for the photo and skeleton bars for the name and `@username`, so **Home** and the rows under it do not move when the account arrives. The photo starts loading when the header chrome mounts, not when the Menu opens, and is kept for the session, so it is usually there on the first open. A divider follows, then **Home** and **Balance** (`/wallet`) as the first two rows. On a phone the open Menu is a sheet that ends above the page footer (Receive / Send or a page button) and scrolls by itself, so its last row (the version line) is reachable while the page behind stays put. The page frame uses a tighter inset (`px-3 py-2`, `px-2` below 360px) and the frame rows `px-5`, so the header fits at 320px.
+**Signed-in header.** Signed in means the wallet's recovery phrase is in this tab's memory, except for accounts that cannot hold a wallet. After reload, in a new tab, or after reopening the app, a valid stored session without that phrase counts as signed out. The central `OnboardingGate` keeps the visitor on the requested path and shows the ordinary login card in place of every signed-in screen; **Log in** refreshes the session and derives the phrase with that passkey prompt, asking for the seed passkey only when another passkey signed in. For a held-back session the card greets the member (**Welcome back, {name}**, the name or else the username) above **Log in with your device**, shows the muted line **Confirm to open your wallet** directly above **Log in**, keeps **Log in** and **New to 21.gifts?** / **Open a new account**, and has no **Log out**, and no **Recover account via Social Recovery** until the passkey of an unfinished social recovery answers **Log in**: whichever passkey logs in decides the account, and a different account (or a new one) replaces the held session. No-PRF shows `wallet.prfUnsupported` above **Log in**; the passkey of an unfinished social recovery (authenticate finish 409 `recovery_pending`) shows `login.recoveryPending` there and **Recover account via Social Recovery** directly under **Log in** (variant held-session-recovery-pending on `/welcome`); a cancelled prompt or any other failure shows `login.error` there and stays on the card. While the login card shows, the signed-in Menu is absent. The guest-allowed `/welcome`, `/statistics`, and `/habit-tracker` show this card too, without their **Log in** link; only a visitor without any stored session sees their signed-out view. One-time wallet setup is not part of this gate and may continue in the background. Every signed-in screen with the Menu (`SignedInChrome`) shows one Menu button top-right (the three-line icon only, no visible word; its accessible name is **Menu**), and left of it, while the wallet is open and its balance is known, the balance as small plain text (₿ over the default fiat from the current spot, not a stored charge; no wallet button, no pill) that opens `/wallet`. While the balance is on its way (the wallet opens, or failed to open and is opened again in the background) a skeleton of the same size stands in its place; without a wallet, or after a failure that is not retried, nothing shows there. When a payment arrives while the app is open, that balance turns green for a moment with the amount under it, and a banner slides down at the top: **You received ₿…** with the current spot under the bitcoin when a rate is loaded; tapping it opens `/wallet`, the X closes it, and it goes away by itself after six seconds. Any signed-in page opened with `?move=1` opens the move-funds flow (also after signing in first, when the link was opened signed out); while that flow is open the **Menu** cannot be opened, also not by keyboard, and signing out drops a request still waiting so it never opens for the next member. Open, the Menu starts with the account header (`MenuAccountHeader`): the profile photo or the name's initial, the name and `@username` (together one link to `/profile` that closes the Menu, once the account is loaded), and in the top-right corner the wallet balance small (₿, with the default fiat from the current spot under it; a link to `/wallet`; two skeleton bars while the wallet opens; nothing while it has failed or is not available); there is no row of Received, Given, or post totals. When a repayment is payable, a row below the header's first row shows **Loan repayment due today** and **₿X** with the current spot beside it, or **You're behind on your loan** and that amount in red, plus **Send**; **Send** closes the Menu and opens `/loans/repay`. The row is absent when nothing is payable. Opened right after a page load, while the stored session is still being checked, the header already has its final size: a skeleton circle for the photo and skeleton bars for the name and `@username`, so **Home** and the rows under it do not move when the account arrives. The photo starts loading when the header chrome mounts, not when the Menu opens, and is kept for the session, so it is usually there on the first open. A divider follows, then **Home** and **Balance** (`/wallet`) as the first two rows. On a phone the open Menu is a sheet that ends above the page footer (Receive / Send or a page button) and scrolls by itself, so its last row (the version line) is reachable while the page behind stays put. The page frame uses a tighter inset (`px-3 py-2`, `px-2` below 360px) and the frame rows `px-5`, so the header fits at 320px.
 
 **Role hierarchy.** Ranks are basis 0, verified 1, moderator 2, initiator 2, founder 3. Initiator is rank 2, equal to moderator. A named minimum means that rank or any higher rank, and an equal rank meets it. The app checks this with `roleAtLeast` (`src/lib/roles.ts`); an equality test on the viewer's role is a defect. Do not write "moderator or initiator" or „Moderator oder Initiator“; permission checks name the minimum rank only.
 
@@ -34,7 +34,7 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; a Social Recovery share kept for another member is stored in `localStorage` under the keeping member's account until they delete it, and while an account is recovered or a balance moved the 12 recovery words and the shares stay only in the open tab's memory; Cloudflare TLS; login on this origin; with Social Recovery set up, 21.gifts stores one of the three parts of the 12 recovery words, encrypted, with the account for the current wallet and each previous wallet until it is removed (one part alone opens nothing, any two together open the wallet, and the application never shows or sends 21.gifts' part), and after a recovery it keeps the previous wallet's key and address until it is removed and reads that wallet's balance by its address from a public blockchain explorer; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
 - **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Open **Terms of Use** (`/terms`) or **Wallet and data** (`/terms#wallet-and-data`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -1240,7 +1240,7 @@ When `/me/loans` fails, the screen shows the red alert **Could not load your loa
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
-- **What the user sees:** The usual signed-in header (see **Signed-in header**): profile chrome left and **Menu** right. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** shows the words of the open wallet from tab memory without a passkey prompt. A wallet-backed account whose wallet is not open in this tab sees the login card (`WalletLoginCard`) in place of the screen. Only where the login gate does not apply (a build without the wallet) and the phrase is not in tab memory does it run PRF get of that id, without `credentials.create` and without seed/begin, and that one prompt also keeps the phrase in tab memory. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
+- **What the user sees:** The usual signed-in header (see **Signed-in header**): profile chrome left and **Menu** right. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** shows the words of the open wallet from tab memory without a passkey prompt. A wallet-backed account whose wallet is not open in this tab sees the login card (`WalletLoginCard`) in place of the screen. Only where the login gate does not apply (a build without the wallet) and the phrase is not in tab memory does it run PRF get of that id, without `credentials.create` and without seed/begin, and that one prompt also keeps the phrase in tab memory. The 12 words and the warning **Keep these 12 words secret. Whoever has them can take over your whole account, not only the wallet.** replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
 - **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, reached from **Recovery phrase** on `/settings`. **Try again** clears the error. Back hides the 12 words and keeps the wallet open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `WalletScreenView` `surface="phrase"`, `WalletPhraseScreen`, `WalletPhrasePage`, `useWalletPhrase`, `OnboardingGate`.
 
@@ -1282,14 +1282,14 @@ Pinned fixture (`?visual=prf-unsupported`, Playwright builds only). The passkey 
 
 ## Screen: /settings
 
-- **URL:** `/settings` — signed-in settings, opened from **Settings** in the Menu: the home of the member's preferences and account actions. `/profile` keeps identity only. Requires a name, a username, and the living-room rules agreement, like `/profile` (an older account that finished setup without a username still reaches it). `#recovery`, `#address`, and `#notifications` scroll to those parts.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Settings**, then five sections, each with a small heading; a rule separates each section from the one above it (Wallet, the first, has none). **Wallet:** with a recovery passkey (`passkeyCredentialId` set) the button **Recovery phrase**; without one the hint that the phrase is created on this device and the existing login passkey stays, followed by **Add recovery phrase**. Under it **21.gifts address**: the member's address in monospace with an icon-only Copy, or, while no username is set, **Set a username first.** and the username field with **Continue**. Then **Default amount**: ₿ or the preferred fiat code, the unit every amount field starts in, with the line **Amount fields start in this unit.** **Display:** Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF / EUR / USD / PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`); Theme and Number format each say **Saved on this device**. **Notifications:** heading **Notify me about:**, Hearts (On / Off), and Posts (All / Only to me / Only with a gift / Off) on the same line as its label, right-aligned. The label does not shrink; the pill wraps under it only when the row is too narrow. A second block, **On this device**, shows Notifications (On / Off) when Push APIs are ready, with the iPhone install hint outside the Home Screen app. **Account:** **Log out**. **About & legal:** **Handbook**, **Legal & Privacy**, **Terms of Use**, **Living room rules**, and **Contact**, then **Version {version}**.
-- **Actions:** **Recovery phrase** and **Add recovery phrase** open `/wallet/phrase` without a page load; the words and the passkey ceremony happen there, not on this page. The top-left arrow on `/wallet/phrase` then returns here. Copy puts the 21.gifts address on the clipboard; its icon turns into a check mark for two seconds. **Continue** stores a new username (`POST /me/username`), and the address appears in place of the field. **Default amount** stores `account.amountUnit` (`POST /me/amount-unit`, the same save as the switch on every amount field). Language and Fiat currency are stored on the account and on this device; Theme and Number format only on this device. The notification controls store the level (`POST /me/notification-level`) and hearts (`POST /me/heart-notifications`) and switch push on this device on or off. **Log out** ends the session and opens `/login`. The About & legal links open their pages without a page load. The top-left arrow on `/settings` returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `SettingsPage`, `SettingsScreen`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`, `UsernameForm`, `saveAmountUnit`, `LanguagePreferenceSwitcher`, `ThemeSwitcher`, `FiatPreferenceSwitcher`, `NumberFormatSwitcher`, `PushToggle`, `LogoutButton`, `giftsLightningAddress`, `getAppVersion`.
+- **URL:** `/settings` — signed-in settings, opened from **Settings** in the Menu: the home of the member's preferences and account actions. `/profile` keeps identity only. Requires a name, a username, and the living-room rules agreement, like `/profile` (an older account that finished setup without a username still reaches it). `#recovery`, `#social-recovery`, `#address`, and `#notifications` scroll to those parts; `#previous-wallets` scrolls to the previous wallets once they have loaded.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Settings**, then five sections, each with a small heading; a rule separates each section from the one above it (Wallet, the first, has none). **Wallet:** with a recovery passkey (`passkeyCredentialId` set) the button **Recovery phrase**; without one the hint that the phrase is created on this device and the existing login passkey stays, followed by **Add recovery phrase**. Under it **Social Recovery**: without a verified wallet the line **Available once your wallet is connected.**; otherwise **Not set up yet. Two people you trust can help you get your account back.**, or, once 21.gifts keeps this wallet's share, **Set up for this wallet.**, with **Secure my account** (primary while not set up, secondary once it is). **Shares I keep for others** always follows. After a social recovery, **Previous wallets** lists each wallet the account used before, as a card: **Replaced on {date}**, its balance as the public explorer sees it (₿ with the current spot beside it, **Empty**, or **Balance unknown**), and **Transfer remaining balance**. The explorer can lag behind the wallet, so every wallet keeps that link and nothing here removes one. A failed list shows **Previous wallets could not be loaded.** with **Try again**; an empty list, and an account without a verified wallet, show nothing there. No key or address of a wallet is shown. Then **21.gifts address**: the member's address in monospace with an icon-only Copy, or, while no username is set, **Set a username first.** and the username field with **Continue**. Then **Default amount**: ₿ or the preferred fiat code, the unit every amount field starts in, with the line **Amount fields start in this unit.** **Display:** Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF / EUR / USD / PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`); Theme and Number format each say **Saved on this device**. **Notifications:** heading **Notify me about:**, Hearts (On / Off), and Posts (All / Only to me / Only with a gift / Off) on the same line as its label, right-aligned. The label does not shrink; the pill wraps under it only when the row is too narrow. A second block, **On this device**, shows Notifications (On / Off) when Push APIs are ready, with the iPhone install hint outside the Home Screen app. **Account:** **Log out**. **About & legal:** **Handbook**, **Legal & Privacy**, **Terms of Use**, **Living room rules**, and **Contact**, then **Version {version}**.
+- **Actions:** **Recovery phrase** and **Add recovery phrase** open `/wallet/phrase` without a page load; the words and the passkey ceremony happen there, not on this page. The top-left arrow on `/wallet/phrase` then returns here. **Secure my account** opens `/settings/social-recovery`, **Shares I keep for others** opens `/settings/held-shares`, and **Transfer remaining balance** opens `/settings/previous-wallets/<key>`, each without a page load; their top-left arrow returns here. **Try again** under the previous wallets reads them again (`GET /me/previous-wallets`). Copy puts the 21.gifts address on the clipboard; its icon turns into a check mark for two seconds. **Continue** stores a new username (`POST /me/username`), and the address appears in place of the field. **Default amount** stores `account.amountUnit` (`POST /me/amount-unit`, the same save as the switch on every amount field). Language and Fiat currency are stored on the account and on this device; Theme and Number format only on this device. The notification controls store the level (`POST /me/notification-level`) and hearts (`POST /me/heart-notifications`) and switch push on this device on or off. **Log out** ends the session and opens `/login`. The About & legal links open their pages without a page load. The top-left arrow on `/settings` returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `SettingsPage`, `SettingsScreen`, `SocialRecoveryRow`, `PreviousWalletsRow`, `usePreviousWallets`, `fetchPreviousWallets`, `useSpotRate`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`, `UsernameForm`, `saveAmountUnit`, `LanguagePreferenceSwitcher`, `ThemeSwitcher`, `FiatPreferenceSwitcher`, `NumberFormatSwitcher`, `PushToggle`, `LogoutButton`, `giftsLightningAddress`, `getAppVersion`.
 
 ### Variant: default
 
-Account with a recovery passkey and a username. **Wallet** shows **Recovery phrase**, the address **ada@21.gifts** with its Copy icon, and **Default amount** with ₿ pressed; then **Display**, **Notifications**, **Account**, and **About & legal** as described above.
+Account with a recovery passkey and a username, and no verified wallet in this build. **Wallet** shows **Recovery phrase**, then **Social Recovery** with **Available once your wallet is connected.** and **Shares I keep for others**, the address **ada@21.gifts** with its Copy icon, and **Default amount** with ₿ pressed; then **Display**, **Notifications**, **Account**, and **About & legal** as described above.
 
 ![21.gifts settings](images/settings.png)
 
@@ -1347,16 +1347,590 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ![21.gifts settings menu with the account header loading](images/settings-menu-header-account-loading.png)
 
+### Variant: social-recovery-off
+
+Account with a verified wallet, no Social Recovery yet, and no previous wallets. Under **Recovery phrase**, **Social Recovery** says **Not set up yet. Two people you trust can help you get your account back.** above the primary **Secure my account** and the secondary **Shares I keep for others**.
+
+![21.gifts settings with Social Recovery not set up](images/settings-social-recovery-off.png)
+
+### Variant: social-recovery-on
+
+Account whose verified wallet has Social Recovery set up. **Social Recovery** says **Set up for this wallet.**; **Secure my account** is secondary like **Shares I keep for others**, and sets it up again with new codes.
+
+![21.gifts settings with Social Recovery set up](images/settings-social-recovery-on.png)
+
+### Variant: previous-wallets
+
+Opened as `/settings#previous-wallets` after a social recovery, so the list scrolls into view once it has loaded. Three previous wallets: **Replaced on Jan 1, 2026** with **₿21'000 · $21.00**, one replaced on Dec 1, 2025 that is **Empty**, and one from Nov 1, 2025 with **Balance unknown**. Each card has **Transfer remaining balance**; none offers a remove, because the public balance can lag behind the wallet.
+
+![21.gifts settings previous wallets](images/settings-previous-wallets.png)
+
+### Variant: previous-wallets-error
+
+Opened as `/settings#previous-wallets` while `GET /me/previous-wallets` fails: under **Previous wallets**, the alert **Previous wallets could not be loaded.** and **Try again**.
+
+![21.gifts settings previous wallets load error](images/settings-previous-wallets-error.png)
+
+## Screen: /settings/held-shares
+
+- **URL:** `/settings/held-shares` — the shares a signed-in member keeps for other members' Social Recovery, opened from **Shares I keep for others** on `/settings`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Shares I keep for others**, the line **Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.**, then the outcome of the last scan, if any: **You now keep a share for @{username}.** (`role="status"`), or an alert that the code is not a Social Recovery code, that it is a share of the member's own account, that this phone already keeps a share of that setup (under any account signed in here), or that this browser cannot keep shares. Then **Keep a share** and either **You keep no shares for others yet.** or one card per kept share, newest first: **@username**, **Kept since {date}**, and two icon-only controls, **Show code for @username** (QR icon) and **Delete share of @username** (trash icon). **Keep a share** fills the page with the camera, the same layer as the wallet Send camera, with **Point the camera at the code on the other phone** over the picture; a blocked camera or none says so in its place. **Show code** shows **Share of @username**, **Show this code only to @username in person, so they can restore their account.**, and the share's QR (**Share code**, no logo). Shares are stored in this browser only, under the signed-in member's account: logging out keeps them, and another account signed in here does not see them. Nothing is sent to the api.
+- **Actions:** **Keep a share** opens the camera; the first code read closes it and keeps the share, or says why not. The trash icon opens the confirm **Delete the share of @username? Only do this when they ask.** with an icon-only check (**Delete**) and X (**Keep**). The top-left arrow steps from the camera or a code back to the list; on the list it returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `HeldSharesPage`, `HeldSharesScreen`, `useHeldShares`, `loadHeldShares`, `keepHeldShare`, `deleteHeldShare`, `parseShareCode`, `QrScanner`, `QrCode`, `InlineConfirm`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+A member who keeps no shares: the title, the intro, **Keep a share**, and **You keep no shares for others yet.**
+
+![21.gifts shares kept for others](images/settings-held-shares.png)
+
+### Variant: list
+
+Two kept shares, newest first: **@cara** (**Kept since Jan 2, 2026**) and **@bob** (**Kept since Jan 1, 2026**), each with its icon-only QR and trash controls.
+
+![21.gifts shares kept for others list](images/held-shares-list.png)
+
+### Variant: scan
+
+After **Keep a share**: the camera fills the page with the viewfinder and **Point the camera at the code on the other phone** over the picture (a blank test camera).
+
+![21.gifts keep a share camera](images/held-shares-scan.png)
+
+### Variant: stored
+
+The camera read Bob's code: back on the list, **You now keep a share for @bob.** and Bob's card, kept since Jan 7, 2026.
+
+![21.gifts share kept](images/held-shares-stored.png)
+
+### Variant: refused-own
+
+The camera read a share of the signed-in member's own account: the alert **This is a share of your own account. Only other people can keep it.**; nothing is kept.
+
+![21.gifts own share refused](images/held-shares-refused-own.png)
+
+### Variant: refused-duplicate
+
+The camera read Bob's code while this phone already keeps it: the alert **This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.**; Bob's one card stays.
+
+![21.gifts second share of a setup refused](images/held-shares-refused-duplicate.png)
+
+### Variant: refused-storage
+
+The browser refuses to store the scanned share: the alert **This browser cannot keep shares. Allow site data and try again.**
+
+![21.gifts share storage refused](images/held-shares-refused-storage.png)
+
+### Variant: invalid
+
+The camera read a code that is not a share: the alert **This is not a Social Recovery code.**
+
+![21.gifts code that is not a share](images/held-shares-invalid.png)
+
+### Variant: qr
+
+After **Show code for @bob**: **Share of @bob**, **Show this code only to @bob in person, so they can restore their account.**, and the share's QR.
+
+![21.gifts kept share code](images/held-shares-qr.png)
+
+### Variant: delete-confirm
+
+After **Delete share of @bob**: the confirm **Delete the share of @bob? Only do this when they ask.** with an icon-only check and X under Bob's name; his trash icon is hidden while it is open.
+
+![21.gifts delete a kept share](images/held-shares-delete-confirm.png)
+
+### Variant: camera-denied
+
+After **Keep a share** with the camera blocked: **Camera access is off. Allow the camera to scan the code.** on the black camera area.
+
+![21.gifts keep a share camera blocked](images/held-shares-camera-denied.png)
+
+### Variant: camera-unavailable
+
+After **Keep a share** on a device without a camera: **No camera found. Use a phone with a camera to scan the code.** on the black camera area.
+
+![21.gifts keep a share without a camera](images/held-shares-camera-unavailable.png)
+
+## Screen: /settings/social-recovery
+
+- **URL:** `/settings/social-recovery` — **Secure my account**: the owner gives two people one Social Recovery share each, and 21.gifts keeps the third. Opened from **Secure my account** in the Social Recovery row of `/settings` or in the grant prompt on `/welcome`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Secure my account** on every step. **Intro:** **Choose two people you trust. Each of them gets one part of your 12 words as a code. Any two parts together restore your account on a new phone. 21.gifts keeps a third part as a backup.**, the warning **Both people together can take over your account and your wallet at once, without you. Only choose people you trust with that.** in the body colour, **Both need their own 21.gifts account. They keep their part in their app while signed in.**, and **You can also do this in a video call. Never show both codes in the same call, and do not record it.** When this wallet already has Social Recovery, the intro adds **A new setup does not cancel the parts you gave out before: any two old parts still restore your account. Ask people you no longer choose to delete their old part.** Then **Continue**, which turns into **Checking your wallet…** with a spinner while the open wallet is checked. **Person 1**, then **Person 2**: **Ask person {n} to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.** (person 2 adds **Person 2 must be someone other than person 1.**), that person's code as a QR (**Code for person {n}**, no logo, on the white plate), **Person {n} has scanned it**, and under **Their app refused the code?** the secondary **Start again with new codes**. After person 2, **Saving the 21.gifts backup…** with a spinner, then **Your account is secured**, **Two people and 21.gifts now each hold one part. Any two parts restore your account.**, and **Done**. An error replaces the step with its alert: **These 12 words do not open the wallet of this account. Setup stopped.** with nothing to press, or **Your wallet could not be opened. Please try again.**, **The 21.gifts backup could not be saved.**, or **Your wallet changed during setup. Start again.**, each with **Try again**. The 12 words and the shares stay in this tab's memory; there is no passkey prompt, and only the 21.gifts share is sent.
+- **Actions:** **Continue** takes the 12 words of the open wallet from tab memory, checks that the open wallet is the account's verified wallet, splits the words into three shares, checks that every two of them give the words back, and shows person 1's code. **Person 1 has scanned it** shows person 2's code. **Person 2 has scanned it** stores the 21.gifts share (`PUT /me/recovery-share`) and shows the done step. **Start again with new codes** splits the same words again into a new set, for a person whose app refused the code (one phone keeps only one share of a setup), and shows person 1's new code. **Try again** checks the wallet again, uploads the same share again, or, after a changed wallet, returns to the intro. **Done** returns to `/settings`, where Social Recovery now says **Set up for this wallet.**, without a page load and without a second copy of `/settings` in the history. The top-left arrow steps from person 2 to person 1, and from person 1 to the intro, which drops the codes; on the intro, while checking or saving, on an error, and on the done step it returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `SocialRecoveryPage`, `SocialRecoveryScreen`, `useSocialRecoverySetup`, `peekSessionPhrase`, `ensureWalletConnected`, `splitPhrase`, `encodeShareCode`, `putRecoveryShare`, `returnToView`, `QrCode`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+Account with a verified wallet and no Social Recovery yet: the title, the four intro lines with the warning in the body colour, and **Continue**.
+
+![21.gifts secure my account](images/settings-social-recovery.png)
+
+### Variant: intro-renew
+
+Account whose wallet already has Social Recovery: the intro adds **A new setup does not cancel the parts you gave out before: any two old parts still restore your account. Ask people you no longer choose to delete their old part.** above **Continue**.
+
+![21.gifts secure my account again](images/social-recovery-intro-renew.png)
+
+### Variant: checking
+
+Pinned fixture (`?visual=sr-checking`, Playwright builds only): the intro while the open wallet is checked and its words are split. **Checking your wallet…** with a spinner stands where **Continue** was.
+
+![21.gifts secure my account checking the wallet](images/social-recovery-checking.png)
+
+### Variant: share-1
+
+Pinned fixture (`?visual=sr-share-1`, Playwright builds only): fixture words split with a fixed random source, not a live wallet. **Person 1**, what person 1 does, the QR **Code for person 1**, **Person 1 has scanned it**, and **Their app refused the code?** with **Start again with new codes**.
+
+![21.gifts secure my account code for person 1](images/social-recovery-share-1.png)
+
+### Variant: share-2
+
+Pinned fixture (`?visual=sr-share-2`, Playwright builds only): the step after **Person 1 has scanned it**. **Person 2**, what person 2 does, **Person 2 must be someone other than person 1.**, the QR **Code for person 2**, **Person 2 has scanned it**, and **Start again with new codes**.
+
+![21.gifts secure my account code for person 2](images/social-recovery-share-2.png)
+
+### Variant: saving
+
+After **Person 2 has scanned it** on the pinned person 2 step, while `PUT /me/recovery-share` has not answered: **Saving the 21.gifts backup…** with a spinner under the title; no code is shown any more.
+
+![21.gifts secure my account saving the backup](images/social-recovery-saving.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=sr-done`, Playwright builds only): the backup is stored. **Your account is secured**, **Two people and 21.gifts now each hold one part. Any two parts restore your account.**, and **Done**.
+
+![21.gifts account secured](images/social-recovery-done.png)
+
+### Variant: wallet-mismatch
+
+Pinned fixture (`?visual=sr-mismatch`, Playwright builds only): the open wallet is not the account's verified wallet. The alert **These 12 words do not open the wallet of this account. Setup stopped.** and nothing to press; the top-left arrow leaves.
+
+![21.gifts secure my account with another wallet](images/social-recovery-wallet-mismatch.png)
+
+### Variant: wallet-error
+
+After **Continue** in this build, which holds no open wallet: the alert **Your wallet could not be opened. Please try again.** and **Try again**.
+
+![21.gifts secure my account wallet error](images/social-recovery-wallet-error.png)
+
+### Variant: save-error
+
+Pinned fixture (`?visual=sr-save-error`, Playwright builds only): the 21.gifts share could not be stored. The alert **The 21.gifts backup could not be saved.** and **Try again**, which uploads the same share again.
+
+![21.gifts secure my account save error](images/social-recovery-save-error.png)
+
+### Variant: wallet-changed
+
+After **Person 2 has scanned it** on the pinned person 2 step, when `PUT /me/recovery-share` answered 409 because the account's wallet changed: the alert **Your wallet changed during setup. Start again.** and **Try again**, which returns to the intro.
+
+![21.gifts secure my account wallet changed](images/social-recovery-wallet-changed.png)
+
+## Screen: /recover
+
+- **URL:** `/recover` — the signed-out social recovery of an account whose passkey is lost. Opened from **Recover account via Social Recovery** on the `/login` card (idle and the account question, and after **Log in** with the passkey of an unfinished recovery, also on the held card). Same chrome as `/login`, and not behind `OnboardingGate`, so the page stays open after the recovered account signs in, while its balance moves.
+- **What the user sees:** Fill `AppShell` with the page-frame header (`ProfileChromeLeft` with `HomeWordmark`, the light language switcher) and the card **Recover your account** on every step. **Start:** **Meet the two people who keep your shares, or have your old 12 words ready.**, **Scan two codes**, and **Type my 12 words**. **Scan:** the camera fills the page (the wallet Send camera layer) with **Scan code 1 of 2**; after the first code the camera stops, **Code 1 of 2 scanned (@username).** stays at the bottom, and the button **Scan code 2 of 2** starts it again for the second; a refused code stops the camera and shows its alert with **Try again**. **Type:** the field **Your 12 words** with **Separate the words with spaces.** and **Continue**. Then **Opening the old wallet…** (or **Checking the account. This can take a few minutes.** while the address service is asked again after a pause). **Account @username found.** with **Create a new passkey on this phone. It gets its own new 12 words.** and **Create new passkey**. **Move to this phone** with what moves, the checklist **Account**, **21.gifts address**, and **Balance** (a check for each part done), and **Transfer**. **Your account is back** with what the new words mean, that Social Recovery must be set up again, **Show new 12 words**, and **Secure my account**. Refusals, closed logins, an outdated build, a wallet that does not open, and passkey problems show their alert or the login card's notice, with **Try again** or **Start over** where they help. The old words, the new words, and the PRF bytes stay in this tab's memory.
+- **Actions:** **Scan two codes** reads two share codes and rebuilds the old 12 words; **Scan code 2 of 2** starts the camera for the second code, so the first code, often still in front of the camera, is not read again; **Type my 12 words** takes them typed. The old wallet then opens beside any other wallet and proves the account with its signed address lookup (`POST /auth/passkey/recovery/begin`), which is asked up to three times in all, 31 s apart, while the api cannot look it up yet. **Create new passkey** makes the passkey with its PRF request, derives its 12 words, and opens its wallet. **Transfer** moves, from the first part not done: the account (`POST /auth/passkey/recovery/finish`, signed by the old wallet), the 21.gifts address (claimed by the new wallet through `POST /lnurlpay/[pubkey]/transfer`), the sign-in with the new passkey (`POST /auth/passkey/authenticate/begin` and `finish`, limited to that passkey, logged as `login` and `recovery_done`), and the whole balance (a Spark send from the old wallet). While the api has not committed the move it waits for the settle window and begins again, which may ask for the passkey once more. **Move the balance later** ends with the balance left in the previous wallet (movable from `/settings`). **Try again** under the closed-logins notice picks the recovery up where it stopped: before the account was found it looks the account up again with the old wallet still open, and during the move it shows **Transfer** again with what is done. **Start over** drops everything and returns to the start. **Log in** after a recovery done before returns to `/login`. **Show new 12 words** opens `/wallet/phrase`; **Secure my account** opens `/settings/social-recovery`. The top-left arrow steps from the camera or the words field back to the start; otherwise it returns to the previous in-app view, or `/welcome` when this tab has none, without a page load, and the recovery stays in memory, so coming back resumes it. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `RecoverPage`, `RecoverScreen`, `useRecoveryFlow`, `useRecoveryStore`, `OldWordsInput`, `QrScanner`, `parseShareCode`, `phraseFromShareCodes`, `rememberOldWords`, `openAndBegin`, `openWordsWallet`, `createNewPasskey`, `transfer`, `finishWithoutBalance`, `resumeRecovery`, `resetRecovery`, `startPasskeyRecovery`, `finishPasskeyRecovery`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `rememberPhraseFromPrf`, `LoginBlockedNotice`, `BusyLine`, `returnToView`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`.
+
+### Variant: default
+
+Signed out, opened from **Recover account via Social Recovery** on `/login`. Title **Recover your account**, **Meet the two people who keep your shares, or have your old 12 words ready.**, the primary **Scan two codes**, and the secondary **Type my 12 words**.
+
+![21.gifts recover your account](images/recover.png)
+
+### Variant: scan
+
+After **Scan two codes**: the camera fills the page with the hint **Scan code 1 of 2** over the picture.
+
+![21.gifts recovery scanning code 1](images/recover-scan.png)
+
+### Variant: scan-second
+
+The first code was read: the camera stops, **Code 1 of 2 scanned (@ada).** stays at the bottom, and **Scan code 2 of 2** starts the camera for the second code, so the first code, often still in front of the camera, is not read again.
+
+![21.gifts recovery after code 1](images/recover-scan-second.png)
+
+### Variant: scan-second-camera
+
+After **Scan code 2 of 2**: the camera runs again with the hint **Scan code 2 of 2**, and **Code 1 of 2 scanned (@ada).** stays at the bottom.
+
+![21.gifts recovery scanning code 2](images/recover-scan-second-camera.png)
+
+### Variant: code-invalid
+
+The camera read a text that is not a share code: the camera stops, and the alert **This is not a Social Recovery code.** shows over the black layer with **Try again**, which starts the camera again.
+
+![21.gifts recovery with a code that is not a share](images/recover-code-invalid.png)
+
+### Variant: code-same
+
+The second code read is the first one again: **That was the same code twice. Scan the other person's code.** with **Try again**; the first code stays named at the bottom.
+
+![21.gifts recovery with the same code twice](images/recover-code-same.png)
+
+### Variant: code-other-set
+
+The second code belongs to another setup: **These two codes do not belong together.** with **Try again**; the first code stays named at the bottom.
+
+![21.gifts recovery with codes of two setups](images/recover-code-other-set.png)
+
+### Variant: camera-denied
+
+The camera is blocked: **Camera access is off. Allow the camera, or type your 12 words.** in place of the picture.
+
+![21.gifts recovery with a blocked camera](images/recover-camera-denied.png)
+
+### Variant: camera-unavailable
+
+The device has no camera: **No camera found. Type your 12 words instead.** in place of the picture.
+
+![21.gifts recovery without a camera](images/recover-camera-unavailable.png)
+
+### Variant: type
+
+After **Type my 12 words**: the field **Your 12 words**, the hint **Separate the words with spaces.**, and **Continue**.
+
+![21.gifts recovery typing the 12 words](images/recover-type.png)
+
+### Variant: words-invalid
+
+The typed words are not 12 valid words: the alert **These are not 12 valid words. Check the spelling.** above **Continue**.
+
+![21.gifts recovery with invalid words](images/recover-words-invalid.png)
+
+### Variant: no-wallet
+
+Valid words in a build without a wallet (as in Playwright): **Recovery is not available in this version of the app.** and **Start over**. No wallet code is downloaded.
+
+![21.gifts recovery without a wallet in this build](images/recover-no-wallet.png)
+
+### Variant: opening
+
+Pinned fixture (`?visual=recover-opening`, Playwright builds only): the old wallet opens and the account is looked up. **Opening the old wallet…** with a spinner.
+
+![21.gifts recovery opening the old wallet](images/recover-opening.png)
+
+### Variant: opening-wait
+
+Pinned fixture (`?visual=recover-opening-wait`, Playwright builds only): the account could not be looked up yet, and it is asked again after a pause. **Checking the account. This can take a few minutes.** with a spinner.
+
+![21.gifts recovery waiting for the account](images/recover-opening-wait.png)
+
+### Variant: blocked-closed
+
+Pinned fixture (`?visual=recover-blocked-closed`, Playwright builds only): logins are closed for an update. The login card's notice **21.gifts is updating. Please try again a little later.**, then **Try again**, which picks the recovery up where it stopped, and **Start over**.
+
+![21.gifts recovery while logins are closed](images/recover-blocked-closed.png)
+
+### Variant: blocked-outdated
+
+Pinned fixture (`?visual=recover-blocked-outdated`, Playwright builds only): this tab runs an older build. The login card's notice **A new version is ready**, here without **Reload**: only the login card and the profile claim reload the page.
+
+![21.gifts recovery with a new version ready](images/recover-blocked-outdated.png)
+
+### Variant: not-found
+
+Pinned fixture (`?visual=recover-not-found`, Playwright builds only): **These words do not belong to a 21.gifts account with a connected wallet.** and **Start over**.
+
+![21.gifts recovery without an account](images/recover-not-found.png)
+
+### Variant: already-done
+
+Pinned fixture (`?visual=recover-done`, Playwright builds only): **This account was already recovered. Log in with your new passkey.**, **Log in**, which returns to `/login`, and **Start over**.
+
+![21.gifts recovery of an account recovered before](images/recover-already-done.png)
+
+### Variant: operator
+
+Pinned fixture (`?visual=recover-operator`, Playwright builds only): **This account cannot be recovered here. Contact 21.gifts.** and **Start over**.
+
+![21.gifts recovery that needs an operator](images/recover-operator.png)
+
+### Variant: other-account
+
+Pinned fixture (`?visual=recover-other-account`, Playwright builds only): the scanned codes name another account than the old wallet opens. **These codes belong to another account.** and **Start over**.
+
+![21.gifts recovery with codes of another account](images/recover-other-account.png)
+
+### Variant: unavailable
+
+Pinned fixture (`?visual=recover-unavailable`, Playwright builds only): the account could still not be looked up after three tries. **The address service is not reachable right now. Try again in a minute.**, **Try again**, and **Start over**.
+
+![21.gifts recovery while the address service is not reachable](images/recover-unavailable.png)
+
+### Variant: wallet-error
+
+Pinned fixture (`?visual=recover-wallet-error`, Playwright builds only): the old wallet did not open. **Your wallet could not be opened. Please try again.**, **Try again**, and **Start over**.
+
+![21.gifts recovery when the old wallet does not open](images/recover-wallet-error.png)
+
+### Variant: found
+
+Pinned fixture (`?visual=recover-found`, Playwright builds only): **Account @ada found.**, **Create a new passkey on this phone. It gets its own new 12 words.**, and **Create new passkey**.
+
+![21.gifts recovery account found](images/recover-found.png)
+
+### Variant: found-busy
+
+Pinned fixture (`?visual=recover-found-busy`, Playwright builds only): the passkey prompt is open. **Create new passkey** is disabled with a spinner.
+
+![21.gifts recovery creating the new passkey](images/recover-found-busy.png)
+
+### Variant: restart
+
+Pinned fixture (`?visual=recover-restart`, Playwright builds only): the move did not go through and the recovery began again. **The move did not go through. Create the new passkey again.** above the found text and **Create new passkey**.
+
+![21.gifts recovery started again](images/recover-restart.png)
+
+### Variant: passkey-cancelled
+
+Pinned fixture (`?visual=recover-cancelled`, Playwright builds only): the passkey prompt was dismissed or failed. **Could not set up a passkey. Please try again.** above **Create new passkey**.
+
+![21.gifts recovery with a cancelled passkey](images/recover-passkey-cancelled.png)
+
+### Variant: passkey-timeout
+
+Pinned fixture (`?visual=recover-timeout`, Playwright builds only): the passkey prompt timed out. **The device prompt timed out before you finished. Try again.** above **Create new passkey**.
+
+![21.gifts recovery with a passkey prompt that timed out](images/recover-passkey-timeout.png)
+
+### Variant: prf-unsupported
+
+Pinned fixture (`?visual=recover-prf`, Playwright builds only): the new passkey gave no PRF output. **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** above **Create new passkey**.
+
+![21.gifts recovery on a phone that cannot hold the wallet](images/recover-prf-unsupported.png)
+
+### Variant: new-wallet-error
+
+Pinned fixture (`?visual=recover-new-wallet-error`, Playwright builds only): the new passkey was made, but its wallet did not open. **Your wallet could not be opened. Please try again.** above **Create new passkey**, which makes the passkey again.
+
+![21.gifts recovery when the new wallet does not open](images/recover-new-wallet-error.png)
+
+### Variant: transfer
+
+Pinned fixture (`?visual=recover-transfer`, Playwright builds only): **Move to this phone**, what moves, the checklist **Account**, **21.gifts address**, and **Balance** with nothing checked yet, and **Transfer**.
+
+![21.gifts recovery move to this phone](images/recover-transfer.png)
+
+### Variant: transfer-busy
+
+Pinned fixture (`?visual=recover-transfer-busy`, Playwright builds only): **Transfer** was just pressed and the move starts. Nothing is checked yet, and **Transfer** is disabled with a spinner.
+
+![21.gifts recovery starting the move](images/recover-transfer-busy.png)
+
+### Variant: transfer-progress
+
+Pinned fixture (`?visual=recover-transfer-progress`, Playwright builds only): a press that waits for the move to be confirmed. **Account** and **21.gifts address** are checked, **Confirming the move. This can take a few minutes.**, and **Transfer** is disabled with a spinner.
+
+![21.gifts recovery confirming the move](images/recover-transfer-progress.png)
+
+### Variant: transfer-error
+
+Pinned fixture (`?visual=recover-transfer-error`, Playwright builds only): **Account** is checked, **Not everything was moved yet. Tap Transfer again to continue.**, **Transfer**, and **Start over**.
+
+![21.gifts recovery move not finished](images/recover-transfer-error.png)
+
+### Variant: balance-error
+
+Pinned fixture (`?visual=recover-balance-error`, Playwright builds only): the account moved and signed in, but the balance did not move. **The balance could not be moved yet.**, **Transfer**, and **Move the balance later**.
+
+![21.gifts recovery balance not moved](images/recover-balance-error.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=recover-complete`, Playwright builds only): **Your account is back**, what the new words mean, **Set up Social Recovery again for the new words. Old shares now only open the previous wallet.**, **Show new 12 words**, and **Secure my account**.
+
+![21.gifts account recovered](images/recover-done.png)
+
+### Variant: done-balance-missing
+
+Pinned fixture (`?visual=recover-complete-missing`, Playwright builds only): the done step after **Move the balance later**, with **Some balance stayed in the previous wallet. You can move it later in the settings.**
+
+![21.gifts account recovered with balance left behind](images/recover-done-balance-missing.png)
+
+## Screen: /settings/previous-wallets/[sparkPubkey]
+
+- **URL:** `/settings/previous-wallets/<key>` — **Transfer remaining balance** for one wallet the account used before a social recovery. Opened from that wallet's **Transfer remaining balance** link in the previous wallets on `/settings`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Nothing shows while the account's previous wallets are read. The title **Transfer remaining balance**, then **Scan the two codes of this wallet or type its 12 words.** with **Scan two codes** and **Type my 12 words** (the same camera and words field as `/recover`; codes of another account are refused). **Opening the old wallet…** while it opens. **In this wallet** with its synced balance in ₿ and the member's fiat at the current spot, and **Transfer** (a spinner while it moves). At 0: **This wallet is empty. You can remove it from your account.**, the secondary **Remove previous wallet**, and **Done**. After the move: **Moved to your wallet.**, **Remove previous wallet**, and **Done**. **Remove previous wallet** opens a confirm (**Remove this previous wallet from your account?**, check removes, X keeps). Errors show their alert with **Try again**. A wallet that is not the account's says so in a muted line with nothing to press; the top-left arrow leaves. No key or address is shown.
+- **Actions:** Reads the previous wallets (`GET /me/previous-wallets`). The words open the wallet beside the member's own (offline key check first: words of another wallet are refused before anything connects) and read its synced balance. **Transfer** sends the whole balance to the member's own wallet (its Spark address) and reads again until a synced read gives 0, with a new idempotency key only after a send that went out. Only after a synced read of 0 can the wallet be removed: the confirmed removal calls `DELETE /me/previous-wallets/<key>` (which also drops the 21.gifts share of that wallet; its 404 means an earlier press whose answer was lost already removed it, and counts as removed), closes the wallet, and returns to `/settings`, where the list loads again without it. **Done** returns to `/settings` too, without a page load and without a second copy of it in the history. The top-left arrow steps from the camera or the words field back to the start; otherwise it returns to the previous in-app view, or `/welcome` when this tab has none. Leaving the page closes the wallet. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `PreviousWalletPage`, `RemainingBalanceScreen`, `useRemainingBalance`, `fetchPreviousWallets`, `openPreviousWallet`, `transferRemainingBalance`, `closePreviousWallet`, `deletePreviousWallet`, `OldWordsInput`, `InlineConfirm`, `BusyLine`, `useSpotRate`, `returnToView`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+Ada with a previous wallet, opened from its **Transfer remaining balance** link on `/settings`. Title **Transfer remaining balance**, **Scan the two codes of this wallet or type its 12 words.**, **Scan two codes**, and **Type my 12 words**.
+
+![21.gifts transfer remaining balance](images/previous-wallet.png)
+
+### Variant: not-found
+
+The key in the address is not one of the account's previous wallets: the muted line **This previous wallet is not on your account.** and nothing to press; the top-left arrow leaves.
+
+![21.gifts previous wallet not on the account](images/previous-wallet-not-found.png)
+
+### Variant: load-error
+
+`GET /me/previous-wallets` failed: **Previous wallets could not be loaded.** and **Try again**.
+
+![21.gifts previous wallets not loaded](images/previous-wallet-load-error.png)
+
+### Variant: scan
+
+After **Scan two codes**: the camera fills the page with the hint **Scan code 1 of 2**.
+
+![21.gifts previous wallet scanning code 1](images/previous-wallet-scan.png)
+
+### Variant: scan-second
+
+The first code was read: the camera stops, **Code 1 of 2 scanned (@ada).** at the bottom, and **Scan code 2 of 2**, which starts the camera for code 2.
+
+![21.gifts previous wallet after code 1](images/previous-wallet-scan-second.png)
+
+### Variant: scan-second-camera
+
+After **Scan code 2 of 2**: the camera runs again for code 2, with **Code 1 of 2 scanned (@ada).** at the bottom.
+
+![21.gifts previous wallet scanning code 2](images/previous-wallet-scan-second-camera.png)
+
+### Variant: code-invalid
+
+The camera read a text that is not a share code: **This is not a Social Recovery code.** over the stopped camera with **Try again**.
+
+![21.gifts previous wallet with a code that is not a share](images/previous-wallet-code-invalid.png)
+
+### Variant: code-same
+
+The second code read is the first one again: **That was the same code twice. Scan the other person's code.** with **Try again**.
+
+![21.gifts previous wallet with the same code twice](images/previous-wallet-code-same.png)
+
+### Variant: code-other-set
+
+The second code belongs to another setup: **These two codes do not belong together.** with **Try again**.
+
+![21.gifts previous wallet with codes of two setups](images/previous-wallet-code-other-set.png)
+
+### Variant: code-other-account
+
+The code belongs to another member's account: **These codes belong to another account.** with **Try again**.
+
+![21.gifts previous wallet with codes of another account](images/previous-wallet-code-other-account.png)
+
+### Variant: camera-denied
+
+The camera is blocked: **Camera access is off. Allow the camera, or type your 12 words.**
+
+![21.gifts previous wallet with a blocked camera](images/previous-wallet-camera-denied.png)
+
+### Variant: camera-unavailable
+
+The device has no camera: **No camera found. Type your 12 words instead.**
+
+![21.gifts previous wallet without a camera](images/previous-wallet-camera-unavailable.png)
+
+### Variant: type
+
+After **Type my 12 words**: the field **Your 12 words**, its hint, and **Continue**.
+
+![21.gifts previous wallet typing the 12 words](images/previous-wallet-type.png)
+
+### Variant: words-invalid
+
+The typed words are not 12 valid words: **These are not 12 valid words. Check the spelling.**
+
+![21.gifts previous wallet with invalid words](images/previous-wallet-words-invalid.png)
+
+### Variant: opening
+
+Pinned fixture (`?visual=prev-opening`, Playwright builds only): the previous wallet opens and reads its balance. **Opening the old wallet…** with a spinner.
+
+![21.gifts previous wallet opening](images/previous-wallet-opening.png)
+
+### Variant: mismatch
+
+Pinned fixture (`?visual=prev-mismatch`, Playwright builds only): the words open another wallet. **These words do not open this previous wallet.** and **Try again**, which returns to the start.
+
+![21.gifts previous wallet with other words](images/previous-wallet-mismatch.png)
+
+### Variant: wallet-error
+
+Valid words in a build without a wallet (as in Playwright): **Your wallet could not be opened. Please try again.** and **Try again**, which opens the wallet again with the same words.
+
+![21.gifts previous wallet that does not open](images/previous-wallet-wallet-error.png)
+
+### Variant: balance
+
+Pinned fixture (`?visual=prev-balance`, Playwright builds only): **In this wallet** with its synced balance **₿21'000 · $21.00** (current spot) and **Transfer**.
+
+![21.gifts previous wallet balance](images/previous-wallet-balance.png)
+
+### Variant: sending
+
+Pinned fixture (`?visual=prev-sending`, Playwright builds only): the balance is being moved. **Transfer** is disabled with a spinner.
+
+![21.gifts previous wallet moving the balance](images/previous-wallet-sending.png)
+
+### Variant: error
+
+Pinned fixture (`?visual=prev-error`, Playwright builds only): the balance did not move. The balance, **The balance could not be moved. Try again.**, and **Try again**.
+
+![21.gifts previous wallet balance not moved](images/previous-wallet-error.png)
+
+### Variant: empty
+
+Pinned fixture (`?visual=prev-empty`, Playwright builds only): the synced read gave 0. **₿0 · $0.00**, **This wallet is empty. You can remove it from your account.**, the secondary **Remove previous wallet**, and **Done**.
+
+![21.gifts empty previous wallet](images/previous-wallet-empty.png)
+
+### Variant: remove-confirm
+
+On the pinned empty wallet, after **Remove previous wallet**: the confirm **Remove this previous wallet from your account?** with the icon buttons **Remove** (check) and **Keep** (X).
+
+![21.gifts remove previous wallet confirm](images/previous-wallet-remove-confirm.png)
+
+### Variant: removing
+
+On the pinned empty wallet, after the confirm, while `DELETE /me/previous-wallets/<key>` has not answered: the check shows a spinner and both buttons are disabled.
+
+![21.gifts removing the previous wallet](images/previous-wallet-removing.png)
+
+### Variant: remove-error
+
+On the pinned empty wallet, after the confirm, when `DELETE` failed: **The wallet could not be removed. Try again.** inside the open confirm.
+
+![21.gifts previous wallet not removed](images/previous-wallet-remove-error.png)
+
+### Variant: done
+
+Pinned fixture (`?visual=prev-done`, Playwright builds only): the move ended with a synced read of 0. **Moved to your wallet.**, **Remove previous wallet**, and **Done**.
+
+![21.gifts remaining balance moved](images/previous-wallet-done.png)
+
+### Variant: done-remove-confirm
+
+On the pinned moved wallet (`?visual=prev-done`), after **Remove previous wallet**: **Moved to your wallet.** over the confirm **Remove this previous wallet from your account?** with the icon buttons **Remove** (check) and **Keep** (X), and **Done**.
+
+![21.gifts remove previous wallet confirm after the move](images/previous-wallet-done-remove-confirm.png)
+
+### Variant: done-removing
+
+On the pinned moved wallet, after the confirm, while `DELETE /me/previous-wallets/<key>` has not answered: **Moved to your wallet.** stays, the check shows a spinner, and both buttons are disabled.
+
+![21.gifts removing the previous wallet after the move](images/previous-wallet-done-removing.png)
+
+### Variant: done-remove-error
+
+On the pinned moved wallet, after the confirm, when `DELETE` failed: **Moved to your wallet.** stays, with **The wallet could not be removed. Try again.** inside the open confirm.
+
+![21.gifts previous wallet not removed after the move](images/previous-wallet-done-remove-error.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in** only. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in** and **Open a new account**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
-- **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link. After **Log in** the screen stays on `/login` until the wallet is open, then moves on as before; meanwhile, and while a stored session is held back, `OnboardingGate` shows `WalletLoginCard` (the same card, with any no-PRF or error alert; for a held-back session with the greeting and without **Log out**).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**, then the secondary link **Recover account via Social Recovery** (to `/recover`). After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account**, **Open a new account**, and **Recover account via Social Recovery**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in** and **Open a new account**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **Actions:** Change language. Log in with an existing passkey. **Recover account via Social Recovery** opens `/recover` client-side. After `NotAllowedError`, choose an existing account or open a new one. A passkey whose social recovery is not finished yet (authenticate finish answers 409 `recovery_pending`) shows **Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.** with **Try again** and, under it, the link **Recover account via Social Recovery** to `/recover` (with a held-back session, the same alert and link follow its **Log in**); that passkey is never reported to the authenticator as unknown. In an in-app browser: open the page in the system browser or copy the link. After **Log in** the screen stays on `/login` until the wallet is open, then moves on as before; meanwhile, and while a stored session is held back, `OnboardingGate` shows `WalletLoginCard` (the same card, with any no-PRF or error alert; for a held-back session with the greeting and without **Log out**).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, `openInSystemBrowser`.
 
 ### Variant: idle
 
-Logged out. Heading **Log in with your device** and the single primary **Log in**; no **Open a new account** on this card (a new account starts from the account choice after **Log in**). On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
+Logged out. Heading **Log in with your device**, the primary **Log in**, and under it the secondary link **Recover account via Social Recovery**; no **Open a new account** on this card (a new account starts from the account choice after **Log in**). On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
 
 ![21.gifts login idle](images/login.png)
 
@@ -1404,7 +1978,7 @@ Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **T
 
 ### Variant: choice
 
-After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. Creating an account starts only after the name form, not on the choice click. **Open a new account** opens the name form. Phone pictures also show the muted installed-iOS line. On iOS below 18 the name form still opens, and submitting a valid name does not complete create; the card then shows the version sentence as the alert.
+After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account**, **Open a new account**, and the secondary link **Recover account via Social Recovery**. Creating an account starts only after the name form, not on the choice click. **Open a new account** opens the name form. Phone pictures also show the muted installed-iOS line. On iOS below 18 the name form still opens, and submitting a valid name does not complete create; the card then shows the version sentence as the alert.
 
 ![21.gifts login choice](images/login-choice.png)
 
@@ -1452,9 +2026,15 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 
 ### Variant: held-session
 
-A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then the muted line **Confirm to open your wallet**, **Log in**, **New to 21.gifts?**, and **Open a new account**. There is no **Log out**: **Log in** is one passkey prompt that opens the session and the wallet, and if another account's passkey answers, that account replaces the held session. A dismissed prompt or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
+A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then the muted line **Confirm to open your wallet**, **Log in**, **New to 21.gifts?**, and **Open a new account**, and no Social Recovery entry. There is no **Log out**: **Log in** is one passkey prompt that opens the session and the wallet, and if another account's passkey answers, that account replaces the held session. A dismissed prompt or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
 
 ![21.gifts login for a held-back session](images/login-held-session.png)
+
+### Variant: recovery-pending
+
+After **Log in**, the passkey that answered belongs to a social recovery that is not finished yet (authenticate finish answers 409 `recovery_pending`). The error card shows **Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.**, **Try again**, and under it the secondary link **Recover account via Social Recovery**, which opens `/recover` (Try again asks the same passkey, which stays refused until the recovery is finished). No session is stored, and the passkey is not reported to the authenticator as unknown.
+
+![21.gifts login while a recovery is not finished](images/login-recovery-pending.png)
 
 ## Screen: /donate
 
@@ -1704,9 +2284,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 
 - **URL:** `/welcome` — when `account.setup` is null (name may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, and rules. Their sign-up prompt already placed the recovery phrase in tab memory, so wallet setup can finish in the background during onboarding or here; the phrase itself is never shown on that path.
 - **What the user sees — loans:** Directly under the welcome heading, a signed-in member with a loan still collecting or being repaid sees the collapsed loan card. It is absent when there is no such loan. The card says **Your loan** or **Your loans (N)**, then **Not fully funded yet.**, **Fully funded.**, or **X of N fully funded.** A single loan's `ForumGoalBar` keeps its defined-currency ask; several loans use one combined Bitcoin goal bar. A funded loan then shows one of: **Due today** with **₿X** and the current spot beside it (bitcoin alone only while that spot is not loaded) and **Send**; **You're N days behind** with that same bitcoin and spot and a danger outline; **Nothing due today** with a success outline, **Next: tomorrow, ₿X** with the current spot beside that bitcoin (bitcoin alone only while the spot is not loaded), and a right arrow to `/loans/repay`; or **No repayments on Sundays**. Other payable states keep the neutral outline. **Show loan** / **Show loans** is closed by default; opened, it lists each loan's text and funding percentage as a link to that post. The signed-in **Menu** account header (see **Signed-in header**) adds its repayment row under its first row (photo, name, `@username`, and balance) only while an amount is payable.
-- **What the user sees:** Chrome is the page-frame header. Once per member (`walletIntroSeen: false` on the account; missing on an older api counts as seen), as soon as the wallet is no longer opening and no other dialog, the Menu, a wallet view, or the writer is open, and **Receive** / **Send** are not folded away for a focused field, a tour explains that the app is now the wallet: it highlights the header balance, **Receive**, **Send**, and **Menu** in place, one after the other (a step whose element is not there is left out; with a failed wallet there is no header balance, so the tour runs **Receive**, **Send**, **Menu**, 1 of 3), with **Skip** and **Next** / **Got it**; either end saves that it was seen, on every device. The forum home shows no top-left arrow, whatever this tab's view history holds; only the wordmark sits top-left. An ask step uses that same slot. The Menu's **Home** clears this tab's in-app view history and opens `/welcome` client-side (the open wallet stays open), so the first screen opened from here has an arrow back to `/welcome`, as on a fresh tab. The browser's own back button is not affected. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. A signed-in member has no composer on the page: a round **+** (**Write a post**, 56 px, primary colours, a shadow) floats at the bottom right of the frame, 24 px from the edge and 23 px above **Receive** / **Send** (near the frame's bottom edge without them). Tapping it opens the writer right under the header row, from the header row's bottom edge to the frame's (frame background, rounded bottom corners), with the text field focused so the keyboard comes up within the tap: a centred title **Send a post** (or **Ask for money** while Ask is chosen), the **Send a post** / **Ask for money** pill, then the composer as before (camera, photo, place, then text field and send; the Ask wizard on **Ask for money**; errors; the posting fee opens the pay sheet over it). It covers the feed and **Receive** / **Send**, scrolls inside itself when taller, and moves with the frame when the keyboard shifts the page. The top-left arrow closes it (after stepping back through any Ask step inside); there is no close or cancel button. A successful post closes it by itself and the post appears on the feed; the feed then shows its top with the new note (a posting fee that completes after the writer was closed changes neither the scroll nor the focus). Closed with the arrow, an unsent draft stays for the next opening and the feed comes back where it was. **Receive** and **Send** follow the scroll: about 80 px of scrolling down slims them from 56 px to 36 px (slightly smaller text, smaller icons, less padding), about 80 px up brings them back, with no animation while the finger moves; when the scroll stops half way they glide (320 ms) to the nearer size, and within 24 px of the top they are always full. The **+** moves with them. With reduced motion they settle without the glide. The same buttons on `/wallet` behave the same way. Only while a text field in the page has the focus (a reaction or reply text, an amount, a mention box) do the **+** fade out and **Receive** / **Send** fold away (about 280 ms, the same easing as their glide; at once with reduced motion), so the form being filled keeps the whole height above the keyboard and the **+** never lies over its send button. An open reaction form or gift amount box whose field does not have the focus leaves both in place. The page only grows downwards while they fold, so nothing under the finger moves. Once the focus has left the field, both come back, and **Receive** / **Send** follow the scroll again; when a mouse click on a control of the form takes the focus away, they come back only after that click, so it reaches the control and not the **+**. `/wallet` and every other page keep their buttons as they are. The signed-in page ends with 80 px of empty room under the last note, so at the end of the feed its controls scroll clear of the **+**. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". Wallet setup may still be finishing in the background for a new account, but it never covers this non-money screen and no failure note appears here. A signed-out visit (no stored session) keeps the wordmark, shows **Log in**, and does not show the member menu. A held-back stored session is not a guest: the login card replaces the feed, and the top right shows neither **Log in** nor the member menu (variant held-session). Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, the public still is `forumPhotoSrc` (`/messages/{id}/photo.jpg`, extra stills `/photo/{n}.jpg`; a blob or data URL wins for a composer preview; a deleted note does not use the public URL) then caption text below the photo, a link to `/shops?pin=<id>#map` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field shows the current spot, and stays off the line only when that spot is not loaded) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate / Heart do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default) (except toward an author who cannot receive yet: then it shows `forum.errorEmpty` and invoices nothing); a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post) (a reply whose author cannot receive yet shows it disabled with **Can't receive yet**); composer in the writer (opened with **+**): **Send a post** / **Ask for money** pill, then a row of Post-path **Take a photo** (Camera, `camera.takePhoto`; on a phone it opens the camera, photos only), **Add a photo or video** (ImagePlus), and **Add a place** (MapPin), and under that row the textarea with **Post** (Send icon) to its right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. In the writer the Post composer has the same two rows on a touch device (phone or tablet) as elsewhere: the photo icon row with **Take a photo**, **Add a photo or video** and **Add a place**, and below it the text field with **Post** on its right. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present. A posted ask with no stored snapshot shows the current spot beside bitcoin, and bitcoin alone only when that spot is not loaded. The unsent wizard preview uses that same spot. A legacy ask shows the current spot when it stored no snapshot, and bitcoin alone only when that spot is not loaded. Then orange 0–100, green overflow, uncapped percent. A missing name, username, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries; when the api lists `lightning-address` (the member cannot receive yet), or answers a gift, paid reply, posting fee with `code` `wallet_required`, the same dialog explains that gifts and posts need the member's own 21.gifts wallet. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply asks for the amount in the reply card; **Continue** opens the pay sheet, a bottom sheet over the dimmed page (centred on a wide frame): the title **Send to {name}** (**Lend to {name}** on a loan that still collects, **Pay to post** for the posting fee) with Close (`X`) at its right, not Back, the amount large with its fiat under it, and the in-app wallet pay slot. The amount box, the reaction form, or the writer stays behind it, disabled. Close, a tap on the dimmed page, and Escape cancel at once; when the payment goes out the sheet shows a green check, **Sent to {name}** (**Lent to {name}**, **Paid and posted**) and the amount for 1.4 s, then slides away. No invoice QR and no button to another wallet app, on any device. No name or address form. No guest donate CTA. Signed-in chrome shows `IntroduceYourselfOverlay` on this screen, and on no other, when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; when the author cannot receive yet (`authorCanReceive: false`) the heart and its count show disabled with **Can't receive yet** before them; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart and **+1** at once, before any request, for 700 ms. The pay sheet pays from the member's in-app wallet only (the `sparkInvoice` when the api issued one, otherwise the payment request). The wallet is open whenever the member is signed in; otherwise the central gate shows the login card in place of this screen. While the wallet connects, prepares amount and fee, or finishes one-time setup in the background, the slot shows **Checking your wallet…**. A prepared payment shows one full-width button, **Send {amount}** (the amount with its fiat; **Lend {amount}** on a loan that still collects); the posting fee of a new post or reply instead says **Pay {amount} and post**, here, on the signed-in public note, and on a member profile. Only a quoted fee above ₿0 adds a **Fee {amount}** row with the default fiat above that button. Every payment waits for that explicit tap, including a zero-fee payment. After paying it says **Paying from your wallet…** and the existing long-poll closes the sheet on confirmation, with no waiting line. A send that fails or times out is not retried: the sheet keeps waiting for 60 seconds, then shows a neutral not-confirmed-yet sentence; a sheet still open 60 seconds after a successful send shows the same sentence. Too little balance shows an alert, then **Still missing: {amount}** in ₿ and fiat (absent only while the balance is unknown), then a full-width **Add Bitcoin**, with no address and no QR in the sheet; it closes the sheet and opens Receive over the forum. While this shows, the slot reads the synced balance every 4 s; once the balance covers the amount and known fee, it prepares again and stops at the same button (with the fee row only when the quoted fee is above ₿0), never paying without that tap. The author's own funded credit shows **Repay your loan**, which opens `/loans/repay`; the same wallet-pay behaviour applies to the posting fee in the composer. Without a configured wallet, or for an account that cannot hold one, the sheet says **Your 21.gifts wallet is not available here, so this cannot be paid.**; a failed connection or prepare shows **Your wallet could not prepare this payment. Please try again.** with **Try again**. If background setup exhausts its retries, this money surface instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; it never appears elsewhere on the forum.
-- **Actions:** On the loan card, use **Send** or the right arrow to open `/loans/repay` and use **Show loan(s)** to open its linked loan list; on the author's own funded credit, use **Repay your loan** to open that same route. In the one-time wallet tour, **Next** / **Got it** and **Skip** (Escape skips too); dismiss the living-room laws hint (permanent), tap **+** to open the writer and close it with the top-left arrow, post a text and/or photo or video message from the writer, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes (Menu **Home** also clears the in-app view history), open Menu **Home** on any other screen to clear the in-app view history and return here, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, or rules agreement (a missing wallet is explained there, not filled in), open the rules or contact pages, retry a failed load; open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, opens the writer and focuses its text field via `requestForumCompose` / `FORUM_COMPOSE_EVENT`).
-- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `LoansCard`, `useMyLoans`, `summarizeLoans`, `ButtonLink`, `ForumLoader`, `ForumBoard`, `AppShellOverlay`, `WalletFooterActions`, `useAppHeight`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `forumGoalPercent`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `WalletTour`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `forumPhotoSrc`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `useSpotRate`, `fetchFxSpot`, `spotRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`, `WalletPay`, `useWalletPay`, the wallet payment primitive.
+- **What the user sees:** Chrome is the page-frame header. Once per member (`walletIntroSeen: false` on the account; missing on an older api counts as seen), as soon as the wallet is no longer opening and no other dialog, the Menu, a wallet view, or the writer is open, and **Receive** / **Send** are not folded away for a focused field, a tour explains that the app is now the wallet: it highlights the header balance, **Receive**, **Send**, and **Menu** in place, one after the other (a step whose element is not there is left out; with a failed wallet there is no header balance, so the tour runs **Receive**, **Send**, **Menu**, 1 of 3), with **Skip** and **Next** / **Got it**; either end saves that it was seen, on every device. The forum home shows no top-left arrow, whatever this tab's view history holds; only the wordmark sits top-left. An ask step uses that same slot. The Menu's **Home** clears this tab's in-app view history and opens `/welcome` client-side (the open wallet stays open), so the first screen opened from here has an arrow back to `/welcome`, as on a fresh tab. The browser's own back button is not affected. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. A signed-in member has no composer on the page: a round **+** (**Write a post**, 56 px, primary colours, a shadow) floats at the bottom right of the frame, 24 px from the edge and 23 px above **Receive** / **Send** (near the frame's bottom edge without them). Tapping it opens the writer right under the header row, from the header row's bottom edge to the frame's (frame background, rounded bottom corners), with the text field focused so the keyboard comes up within the tap: a centred title **Send a post** (or **Ask for money** while Ask is chosen), the **Send a post** / **Ask for money** pill, then the composer as before (camera, photo, place, then text field and send; the Ask wizard on **Ask for money**; errors; the posting fee opens the pay sheet over it). It covers the feed and **Receive** / **Send**, scrolls inside itself when taller, and moves with the frame when the keyboard shifts the page. The top-left arrow closes it (after stepping back through any Ask step inside); there is no close or cancel button. A successful post closes it by itself and the post appears on the feed; the feed then shows its top with the new note (a posting fee that completes after the writer was closed changes neither the scroll nor the focus). Closed with the arrow, an unsent draft stays for the next opening and the feed comes back where it was. **Receive** and **Send** follow the scroll: about 80 px of scrolling down slims them from 56 px to 36 px (slightly smaller text, smaller icons, less padding), about 80 px up brings them back, with no animation while the finger moves; when the scroll stops half way they glide (320 ms) to the nearer size, and within 24 px of the top they are always full. The **+** moves with them. With reduced motion they settle without the glide. The same buttons on `/wallet` behave the same way. Only while a text field in the page has the focus (a reaction or reply text, an amount, a mention box) do the **+** fade out and **Receive** / **Send** fold away (about 280 ms, the same easing as their glide; at once with reduced motion), so the form being filled keeps the whole height above the keyboard and the **+** never lies over its send button. An open reaction form or gift amount box whose field does not have the focus leaves both in place. The page only grows downwards while they fold, so nothing under the finger moves. Once the focus has left the field, both come back, and **Receive** / **Send** follow the scroll again; when a mouse click on a control of the form takes the focus away, they come back only after that click, so it reaches the control and not the **+**. `/wallet` and every other page keep their buttons as they are. The signed-in page ends with 80 px of empty room under the last note, so at the end of the feed its controls scroll clear of the **+**. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". Wallet setup may still be finishing in the background for a new account, but it never covers this non-money screen and no failure note appears here. A signed-out visit (no stored session) keeps the wordmark, shows **Log in**, and does not show the member menu. A held-back stored session is not a guest: the login card replaces the feed, and the top right shows neither **Log in** nor the member menu (variant held-session). Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, the public still is `forumPhotoSrc` (`/messages/{id}/photo.jpg`, extra stills `/photo/{n}.jpg`; a blob or data URL wins for a composer preview; a deleted note does not use the public URL) then caption text below the photo, a link to `/shops?pin=<id>#map` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field shows the current spot, and stays off the line only when that spot is not loaded) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate / Heart do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default) (except toward an author who cannot receive yet: then it shows `forum.errorEmpty` and invoices nothing); a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post) (a reply whose author cannot receive yet shows it disabled with **Can't receive yet**); composer in the writer (opened with **+**): **Send a post** / **Ask for money** pill, then a row of Post-path **Take a photo** (Camera, `camera.takePhoto`; on a phone it opens the camera, photos only), **Add a photo or video** (ImagePlus), and **Add a place** (MapPin), and under that row the textarea with **Post** (Send icon) to its right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. In the writer the Post composer has the same two rows on a touch device (phone or tablet) as elsewhere: the photo icon row with **Take a photo**, **Add a photo or video** and **Add a place**, and below it the text field with **Post** on its right. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present. A posted ask with no stored snapshot shows the current spot beside bitcoin, and bitcoin alone only when that spot is not loaded. The unsent wizard preview uses that same spot. A legacy ask shows the current spot when it stored no snapshot, and bitcoin alone only when that spot is not loaded. Then orange 0–100, green overflow, uncapped percent. A missing name, username, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries; when the api lists `lightning-address` (the member cannot receive yet), or answers a gift, paid reply, posting fee with `code` `wallet_required`, the same dialog explains that gifts and posts need the member's own 21.gifts wallet. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply asks for the amount in the reply card; **Continue** opens the pay sheet, a bottom sheet over the dimmed page (centred on a wide frame): the title **Send to {name}** (**Lend to {name}** on a loan that still collects, **Pay to post** for the posting fee) with Close (`X`) at its right, not Back, the amount large with its fiat under it, and the in-app wallet pay slot. The amount box, the reaction form, or the writer stays behind it, disabled. Close, a tap on the dimmed page, and Escape cancel at once; when the payment goes out the sheet shows a green check, **Sent to {name}** (**Lent to {name}**, **Paid and posted**) and the amount for 1.4 s, then slides away. No invoice QR and no button to another wallet app, on any device. No name or address form. No guest donate CTA. Signed-in chrome shows `IntroduceYourselfOverlay` on this screen, and on no other, when `setup` is null and `hasPosted` is false. For a grant member (admitted, or on today's trial) whose account has no Social Recovery yet (`socialRecoverySetUp` false), the same chrome shows `SocialRecoveryPromptOverlay` here, and on no other screen, once **Introduce yourself** is not shown: **Social Recovery for your grant**, **Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.**, an icon-only Close, and **Secure my account**. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; when the author cannot receive yet (`authorCanReceive: false`) the heart and its count show disabled with **Can't receive yet** before them; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart and **+1** at once, before any request, for 700 ms. The pay sheet pays from the member's in-app wallet only (the `sparkInvoice` when the api issued one, otherwise the payment request). The wallet is open whenever the member is signed in; otherwise the central gate shows the login card in place of this screen. While the wallet connects, prepares amount and fee, or finishes one-time setup in the background, the slot shows **Checking your wallet…**. A prepared payment shows one full-width button, **Send {amount}** (the amount with its fiat; **Lend {amount}** on a loan that still collects); the posting fee of a new post or reply instead says **Pay {amount} and post**, here, on the signed-in public note, and on a member profile. Only a quoted fee above ₿0 adds a **Fee {amount}** row with the default fiat above that button. Every payment waits for that explicit tap, including a zero-fee payment. After paying it says **Paying from your wallet…** and the existing long-poll closes the sheet on confirmation, with no waiting line. A send that fails or times out is not retried: the sheet keeps waiting for 60 seconds, then shows a neutral not-confirmed-yet sentence; a sheet still open 60 seconds after a successful send shows the same sentence. Too little balance shows an alert, then **Still missing: {amount}** in ₿ and fiat (absent only while the balance is unknown), then a full-width **Add Bitcoin**, with no address and no QR in the sheet; it closes the sheet and opens Receive over the forum. While this shows, the slot reads the synced balance every 4 s; once the balance covers the amount and known fee, it prepares again and stops at the same button (with the fee row only when the quoted fee is above ₿0), never paying without that tap. The author's own funded credit shows **Repay your loan**, which opens `/loans/repay`; the same wallet-pay behaviour applies to the posting fee in the composer. Without a configured wallet, or for an account that cannot hold one, the sheet says **Your 21.gifts wallet is not available here, so this cannot be paid.**; a failed connection or prepare shows **Your wallet could not prepare this payment. Please try again.** with **Try again**. If background setup exhausts its retries, this money surface instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; it never appears elsewhere on the forum.
+- **Actions:** On the loan card, use **Send** or the right arrow to open `/loans/repay` and use **Show loan(s)** to open its linked loan list; on the author's own funded credit, use **Repay your loan** to open that same route. In the one-time wallet tour, **Next** / **Got it** and **Skip** (Escape skips too); dismiss the living-room laws hint (permanent), tap **+** to open the writer and close it with the top-left arrow, post a text and/or photo or video message from the writer, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes (Menu **Home** also clears the in-app view history), open Menu **Home** on any other screen to clear the in-app view history and return here, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, or rules agreement (a missing wallet is explained there, not filled in), open the rules or contact pages, retry a failed load; open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, opens the writer and focuses its text field via `requestForumCompose` / `FORUM_COMPOSE_EVENT`); dismiss `SocialRecoveryPromptOverlay` for this visit (Close) or open `/settings/social-recovery` with **Secure my account**.
+- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `LoansCard`, `useMyLoans`, `summarizeLoans`, `ButtonLink`, `ForumLoader`, `ForumBoard`, `AppShellOverlay`, `WalletFooterActions`, `useAppHeight`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `forumGoalPercent`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `SocialRecoveryPromptOverlay`, `WalletTour`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `forumPhotoSrc`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `useSpotRate`, `fetchFxSpot`, `spotRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`, `WalletPay`, `useWalletPay`, the wallet payment primitive.
 
 ### Variant: default
 
@@ -1833,6 +2413,12 @@ The held-back session on `/welcome` (`?visual=held-session`) after **Log in** wh
 The held-back session on `/welcome` (`?visual=held-session`) after **Log in** from a tab that runs an older app build: authenticate begin answered 403 `{ "code": "app_outdated" }`. `LoginBlockedNotice` replaces the login card: **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs.
 
 ![21.gifts welcome for a held-back session, new version](images/welcome-held-session-outdated.png)
+
+### Variant: held-session-recovery-pending
+
+The held-back session on `/welcome` (`?visual=held-session`) after **Log in** with the passkey of a social recovery that is not finished yet: authenticate finish answered 409 `{ "code": "recovery_pending" }`. The card stays, greeting **Welcome back, Ada**, with **Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.** (`login.recoveryPending`) above **Log in** in place of **Something went wrong. Please try again.**, and the secondary **Recover account via Social Recovery** directly under **Log in**, which opens `/recover`; **New to 21.gifts?** and **Open a new account** follow. The passkey is not reported to the authenticator as unknown, the session stays held back, and the top right still shows neither **Log in** nor the **Menu**.
+
+![21.gifts welcome for a held-back session, unfinished recovery](images/welcome-held-session-recovery-pending.png)
 
 ### Variant: wallet-buttons
 
@@ -3558,6 +4144,14 @@ Named member with living-room rules agreed and `hasPosted` false. After login on
 - **Actions:** Close dismisses this mount only. **Write an introduction** (`Button` `type="button"` `size="lg"`) dismisses the overlay, opens the writer and focuses its text field (`requestForumCompose` / `FORUM_COMPOSE_EVENT`). It stays on `/welcome`; the dialog never opens on `/wallet`, the point of sale, the profile, messages, or the setup flow.
 
 ![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
+
+### Variant: overlay-social-recovery
+
+Admitted grant member who has posted and has no Social Recovery yet (`socialRecoverySetUp` false). On `/welcome`, the only screen that shows it, `SocialRecoveryPromptOverlay` dialog **Social Recovery for your grant** with its body and **Secure my account**. Close (X) is icon-only.
+
+- **Actions:** Close dismisses it for this visit; it shows again on the next visit while Social Recovery is missing. **Secure my account** (`Button` `type="button"` `size="lg"`) closes it and opens `/settings/social-recovery` without a page load. When **Introduce yourself** also applies, that dialog comes first, and this one shows in the same visit once that dialog is closed, by its Close or by **Write an introduction** (which also opens the writer under this one).
+
+![21.gifts welcome overlay Social Recovery](images/welcome-overlay-social-recovery.png)
 
 ### Variant: overlay-external-link
 
