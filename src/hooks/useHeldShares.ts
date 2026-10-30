@@ -138,8 +138,8 @@ export function useHeldShares(): UseHeldSharesResult {
   const savingRef = useRef(false);
   /** Advanced by every key derivation; a derivation overtaken by a newer one reads nothing. */
   const openRef = useRef(0);
-  /** Whether the boxes that do not open are being deleted, so a second delete waits. */
-  const lockedDeletingRef = useRef(false);
+  /** Epoch whose boxes that do not open are being deleted, so a second delete of it waits. */
+  const lockedDeletingRef = useRef<number | null>(null);
   /** Epoch the last passkey prompt was started in; its error shows only in that epoch. */
   const promptEpochRef = useRef<number | null>(null);
 
@@ -365,10 +365,10 @@ export function useHeldShares(): UseHeldSharesResult {
 
   const removeLocked = useCallback((): void => {
     setConfirmDeleteLocked(false);
-    if (session === null || lockedDeletingRef.current) {
+    if (session === null || lockedDeletingRef.current === epochRef.current) {
       return;
     }
-    lockedDeletingRef.current = true;
+    lockedDeletingRef.current = epochRef.current;
     setNotice(null);
     const epoch = epochRef.current;
     void (async () => {
@@ -380,7 +380,6 @@ export function useHeldShares(): UseHeldSharesResult {
           () => false,
         );
         if (epochRef.current !== epoch) {
-          lockedDeletingRef.current = false;
           return;
         }
         if (deleted) {
@@ -390,7 +389,7 @@ export function useHeldShares(): UseHeldSharesResult {
           left.push(id);
         }
       }
-      lockedDeletingRef.current = false;
+      lockedDeletingRef.current = null;
       setLockedIds((current) => current.filter((id) => !done.includes(id)));
       if (left.length > 0) {
         setNotice({ kind: 'deleteError' });
