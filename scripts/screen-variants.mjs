@@ -5949,13 +5949,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
-    id: 'shop-edit-photo-busy',
-    image: 'members-shop-edit-photo-busy.png',
-    visual: 'state-members-shop-edit-photo-busy',
-    needle: "shotScreen(page, 'state-members-shop-edit-photo-busy')",
-  },
-  {
-    route: '/members/[accountId]',
     id: 'shop-edit-photo-unsupported',
     image: 'members-shop-edit-photo-unsupported.png',
     visual: 'state-members-shop-edit-photo-unsupported',
@@ -8834,13 +8827,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
-    id: 'shop-edit-photo-busy',
-    image: 'messages-id-shop-edit-photo-busy.png',
-    visual: 'state-messages-id-shop-edit-photo-busy',
-    needle: "shotScreen(page, 'state-messages-id-shop-edit-photo-busy')",
-  },
-  {
-    route: '/messages/[id]',
     id: 'shop-edit-photo-unsupported',
     image: 'messages-id-shop-edit-photo-unsupported.png',
     visual: 'state-messages-id-shop-edit-photo-unsupported',
@@ -9520,13 +9506,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'shop-edit-photo-busy',
-    image: 'welcome-shop-edit-photo-busy.png',
-    visual: 'state-welcome-shop-edit-photo-busy',
-    needle: "shotScreen(page, 'state-welcome-shop-edit-photo-busy')",
-  },
-  {
-    route: '/welcome',
     id: 'shop-edit-photo-unsupported',
     image: 'welcome-shop-edit-photo-unsupported.png',
     visual: 'state-welcome-shop-edit-photo-unsupported',
@@ -9968,13 +9947,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
-    id: 'map-edit-photo-busy',
-    image: 'shops-map-edit-photo-busy.png',
-    visual: 'state-shops-map-edit-photo-busy',
-    needle: "shotScreen(page, 'state-shops-map-edit-photo-busy')",
-  },
-  {
-    route: '/shops',
     id: 'map-edit-photo-unsupported',
     image: 'shops-map-edit-photo-unsupported.png',
     visual: 'state-shops-map-edit-photo-unsupported',
@@ -10287,13 +10259,6 @@ export const SCREEN_VARIANTS = [
     image: 'shops-table-edit-place-map-loading.png',
     visual: 'state-shops-table-edit-place-map-loading',
     needle: "shotScreen(page, 'state-shops-table-edit-place-map-loading')",
-  },
-  {
-    route: '/shops',
-    id: 'table-edit-photo-busy',
-    image: 'shops-table-edit-photo-busy.png',
-    visual: 'state-shops-table-edit-photo-busy',
-    needle: "shotScreen(page, 'state-shops-table-edit-photo-busy')",
   },
   {
     route: '/shops',
@@ -10833,13 +10798,6 @@ export const SCREEN_VARIANTS = [
     image: 'shops-edit-summary.png',
     visual: 'state-shops-edit-summary',
     needle: "shotScreen(page, 'state-shops-edit-summary')",
-  },
-  {
-    route: '/shops',
-    id: 'edit-photo-busy',
-    image: 'shops-edit-photo-busy.png',
-    visual: 'state-shops-edit-photo-busy',
-    needle: "shotScreen(page, 'state-shops-edit-photo-busy')",
   },
   {
     route: '/shops',

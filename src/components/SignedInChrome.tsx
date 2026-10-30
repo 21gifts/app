@@ -244,11 +244,16 @@ function SignedInMenu(): ReactElement {
     };
   }, [sheetScrolls, narrow]);
 
+  // A tall wide menu measures again when it opens, not when it closes: closing must
+  // keep the panel in the sheet host, because moving the portal remounts the panel
+  // and drops the iOS install sheet it holds (as on a narrow frame).
+  const wasOpenRef = useRef(open);
   useLayoutEffect(() => {
-    if (open || !sheetBecauseTall) {
-      return;
+    const opened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (opened && sheetBecauseTall) {
+      setSheetBecauseTall(false);
     }
-    setSheetBecauseTall(false);
   }, [open, sheetBecauseTall]);
 
   useLayoutEffect(() => {

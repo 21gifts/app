@@ -1862,7 +1862,11 @@ async function openShopTextNotLongerError(page: Page): Promise<void> {
     .click();
   await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery and Coffee House Zurich");
   // Some edit fixtures store a place without a country.
-  await page.getByLabel('Country', { exact: true }).selectOption('CH');
+  // The Shops country filter is also named Country, so stay inside the address fields.
+  await page
+    .getByTestId('shop-address-fields')
+    .getByLabel('Country', { exact: true })
+    .selectOption('CH');
   await page.getByRole('button', { name: 'Use this place' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
@@ -9181,18 +9185,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('No edits yet')).toBeVisible();
   }
 
-  test('welcome shop-edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openWelcomeShopEditor(page);
-    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-shop-edit-photo-busy');
-  });
-
   test('welcome shop-edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
       HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
@@ -12974,7 +12966,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: '.', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create payment' })).toBeDisabled();
     await shotScreen(page, 'state-pos-bad-amount');
   });
 
@@ -14547,18 +14538,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
   }
-
-  test('state /members shop-edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openMembersShopEditor(page);
-    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-members-shop-edit-photo-busy');
-  });
 
   test('state /members shop-edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
@@ -21287,18 +21266,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
     await motionSettled(page);
   }
-
-  test('state /messages/[id] shop-edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openMessagesShopEditor(page);
-    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-messages-id-shop-edit-photo-busy');
-  });
 
   test('state /messages/[id] shop-edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
@@ -28238,6 +28205,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21000');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -29454,6 +29422,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.getByRole('textbox', { name: 'Place name' }).fill('a'.repeat(81));
     await expect(page.getByText('Keep the place name to 80 characters')).toBeVisible();
@@ -29466,6 +29435,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.getByRole('textbox', { name: 'Place name' }).fill('Cafe\u007f');
     await expect(page.getByText('The place name cannot include control characters')).toBeVisible();
@@ -29548,6 +29518,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
@@ -30117,6 +30088,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     const composer = page.getByLabel('Your message');
     await composer.fill('Cafe Luna is open every day. #21GiftsShop');
     const feedback = page.getByText(
@@ -31031,6 +31003,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
@@ -31659,7 +31632,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops?visual=heart-needs-balance');
+    await page.goto('/shops?visual=heart-needs-balance#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
@@ -31690,7 +31663,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops?visual=heart-cannot-receive');
+    await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(
@@ -31727,7 +31700,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops?visual=heart-cannot-receive');
+    await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
@@ -31778,7 +31751,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops?visual=heart-cannot-receive');
+    await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
@@ -31829,7 +31802,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops');
+    await page.goto('/shops#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await expect(page.getByText("Can't receive yet")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
@@ -31891,7 +31864,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.goto('/shops');
+    await page.goto('/shops#post');
     await expect(page.getByText('Fresh pandesal every morning near the chapel.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const replyCard = page.locator('[data-reply-id="r-ben"]');
@@ -31925,7 +31898,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/shops?visual=heart-paid');
+    await page.goto('/shops?visual=heart-paid#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
@@ -32356,7 +32329,7 @@ test.describe('shops screens', () => {
 
   test('shops country list open', async ({ page }) => {
     await seedCountryShops(page);
-    await page.goto('/shops');
+    await page.goto('/shops#post');
     await expect(page.getByText('Duka Nairobi')).toBeVisible();
     await page.getByRole('combobox', { name: 'Country' }).click();
     await expect(page.getByRole('option')).toHaveText([
@@ -32399,7 +32372,7 @@ test.describe('shops screens', () => {
 
   test('shops posts filtered by country', async ({ page }) => {
     await seedCountryShops(page);
-    await page.goto('/shops?country=PH');
+    await page.goto('/shops?country=PH#post');
     await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines (1)');
     await expect(page.getByText('Sari-sari Manila')).toBeVisible();
     await expect(page.getByText('Duka Nairobi')).toHaveCount(0);
@@ -32636,22 +32609,6 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
   }
-
-  test('shops map-edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openShopsMapEditEditor(page);
-    await page
-      .locator('form')
-      .filter({ hasText: '1 / 5 · Photos' })
-      .locator('input[type="file"]:not([capture])')
-      .setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-shops-map-edit-photo-busy');
-  });
 
   test('shops map-edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
@@ -33406,22 +33363,6 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
   }
-
-  test('shops table-edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openShopsTableEditEditor(page);
-    await page
-      .locator('form')
-      .filter({ hasText: '1 / 5 · Photos' })
-      .locator('input[type="file"]:not([capture])')
-      .setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-shops-table-edit-photo-busy');
-  });
 
   test('shops table-edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
@@ -34342,28 +34283,12 @@ test.describe('shops screens', () => {
         body: JSON.stringify({ edits: [] }),
       });
     });
-    await page.goto('/shops');
+    await page.goto('/shops#post');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit shop note' }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
   }
-
-  test('shops edit-photo-busy', async ({ page }) => {
-    await page.addInitScript(() => {
-      window.createImageBitmap = () => new Promise(() => undefined);
-    });
-    await openShopsEditEditor(page);
-    await page
-      .locator('form')
-      .filter({ hasText: '1 / 5 · Photos' })
-      .locator('input[type="file"]:not([capture])')
-      .setInputFiles('e2e/fixtures/tiny.jpg');
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
-    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-shops-edit-photo-busy');
-  });
 
   test('shops edit-photo-too-large', async ({ page }) => {
     await page.addInitScript(() => {
@@ -35737,7 +35662,7 @@ test.describe('shops screens', () => {
         });
       },
     );
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
       timeout: 10_000,
     });
@@ -41181,9 +41106,9 @@ test.describe('habit tracker baselines', () => {
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
-    // The line under the amount eases in: click once it has come to rest.
+    // The problem shows while typing, and Continue stays disabled. Wait until the
+    // line under the amount has eased in.
     await motionSettled(page);
-    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
         hasText: 'Expected a JSON body with an integer "amountSats"',

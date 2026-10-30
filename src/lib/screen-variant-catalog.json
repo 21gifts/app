@@ -5034,12 +5034,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:shop-edit-photo-busy",
-    "label": "/members/[accountId] shop-edit-photo-busy",
-    "visual": "state-members-shop-edit-photo-busy",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/members/[accountId]:shop-edit-photo-unsupported",
     "label": "/members/[accountId] shop-edit-photo-unsupported",
     "visual": "state-members-shop-edit-photo-unsupported",
@@ -7506,12 +7500,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages/[id]:shop-edit-photo-busy",
-    "label": "/messages/[id] shop-edit-photo-busy",
-    "visual": "state-messages-id-shop-edit-photo-busy",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages/[id]:shop-edit-photo-unsupported",
     "label": "/messages/[id] shop-edit-photo-unsupported",
     "visual": "state-messages-id-shop-edit-photo-unsupported",
@@ -8094,12 +8082,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:shop-edit-photo-busy",
-    "label": "/welcome shop-edit-photo-busy",
-    "visual": "state-welcome-shop-edit-photo-busy",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:shop-edit-photo-unsupported",
     "label": "/welcome shop-edit-photo-unsupported",
     "visual": "state-welcome-shop-edit-photo-unsupported",
@@ -8478,12 +8460,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/shops:map-edit-photo-busy",
-    "label": "/shops map-edit-photo-busy",
-    "visual": "state-shops-map-edit-photo-busy",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/shops:map-edit-photo-unsupported",
     "label": "/shops map-edit-photo-unsupported",
     "visual": "state-shops-map-edit-photo-unsupported",
@@ -8751,12 +8727,6 @@
     "id": "/shops:table-edit-place-map-loading",
     "label": "/shops table-edit-place-map-loading",
     "visual": "state-shops-table-edit-place-map-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:table-edit-photo-busy",
-    "label": "/shops table-edit-photo-busy",
-    "visual": "state-shops-table-edit-photo-busy",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -9219,12 +9189,6 @@
     "id": "/shops:edit-summary",
     "label": "/shops edit-summary",
     "visual": "state-shops-edit-summary",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:edit-photo-busy",
-    "label": "/shops edit-photo-busy",
-    "visual": "state-shops-edit-photo-busy",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

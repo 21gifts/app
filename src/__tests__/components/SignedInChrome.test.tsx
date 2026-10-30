@@ -1006,6 +1006,58 @@ describe('SignedInChrome', () => {
     }
   });
 
+  it('keeps the iOS install sheet when a tall wide menu closes, and measures again on reopen', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    let bottom = 751;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return { top: 0, bottom, toJSON: () => ({}) } as DOMRect;
+    };
+    const host = document.createElement('div');
+    host.setAttribute('data-menu-sheet-host', '');
+    document.body.append(host);
+    try {
+      renderWithLocale(
+        <AppShellContext.Provider
+          value={
+            { frameWidth: 800, scrollerEl: null } as unknown as NonNullable<
+              React.ContextType<typeof AppShellContext>
+            >
+          }
+        >
+          <SignedInChrome />
+        </AppShellContext.Provider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      // A wide menu that does not fit even lifted is the sheet.
+      expect(host.contains(panel)).toBe(true);
+      fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+      expect(panel.className).toContain('hidden');
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect(menuPanel()).toBe(panel);
+      expect(host.contains(panel)).toBe(true);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      // A menu that fits now opens on the trigger again.
+      bottom = 400;
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(host.contains(menuPanel())).toBe(false);
+      expect(menuPanel().className).toContain('absolute');
+      expect(menuPanel().className).not.toContain('hidden');
+    } finally {
+      host.remove();
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
   it('shows the introduce overlay on /welcome when onboarding is done and hasPosted is false', () => {
     navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;

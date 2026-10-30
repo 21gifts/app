@@ -4658,12 +4658,6 @@ A moderator opened **Edit shop note** on Cafe Luna and opened **Shop place and a
 
 ![21.gifts welcome shop edit place map loading](images/welcome-shop-edit-place-map-loading.png)
 
-### Variant: shop-edit-photo-busy
-
-A moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
-
-![21.gifts welcome shop edit photo busy](images/welcome-shop-edit-photo-busy.png)
-
 ### Variant: shop-edit-photo-unsupported
 
 A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos**. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
@@ -5153,12 +5147,6 @@ A moderator opened **Edit shop note** on **Map** and opened **Shop place and add
 
 ![21.gifts shops map edit place map loading](images/shops-map-edit-place-map-loading.png)
 
-### Variant: map-edit-photo-busy
-
-A moderator chose a photo on step **1 / 5 · Photos** in the map's shop editor. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
-
-![21.gifts shops map edit photo busy](images/shops-map-edit-photo-busy.png)
-
 ### Variant: map-edit-photo-unsupported
 
 A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos** in the map's shop editor. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
@@ -5475,12 +5463,6 @@ A moderator opened **Edit shop note** on **Table**. The history request failed. 
 A moderator opened **Edit shop note** on **Table** and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown. **Table** stays selected. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit place map loading](images/shops-table-edit-place-map-loading.png)
-
-### Variant: table-edit-photo-busy
-
-A moderator chose a photo on step **1 / 5 · Photos** in the table row. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
-
-![21.gifts shops table edit photo busy](images/shops-table-edit-photo-busy.png)
 
 ### Variant: table-edit-photo-unsupported
 
@@ -6022,12 +6004,6 @@ is disabled. **History** still says there are no edits yet.
 **Next** again. Step **5 / 5 · Summary** is open. The 21.gifts user is **@ada**. **Save changes** is the button on the card. **History** is under the card.
 
 ![21.gifts shops edit summary](images/shops-edit-summary.png)
-
-### Variant: edit-photo-busy
-
-A moderator chose a photo on step **1 / 5 · Photos** in the Post list. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
-
-![21.gifts shops edit photo busy](images/shops-edit-photo-busy.png)
 
 ### Variant: edit-photo-unsupported
 
@@ -7244,12 +7220,6 @@ A moderator viewing another member opened **Edit shop note** on Cafe Luna in Car
 A moderator viewing another member opened **Edit shop note** on Cafe Luna in Carol's posts and opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
 
 ![21.gifts member shop edit place map loading](images/members-shop-edit-place-map-loading.png)
-
-### Variant: shop-edit-photo-busy
-
-The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready. The closed pencil does not cover this result.
-
-![21.gifts member shop edit photo busy](images/members-shop-edit-photo-busy.png)
 
 ### Variant: shop-edit-photo-unsupported
 
@@ -9881,12 +9851,6 @@ A moderator on the public top-level shop note Cafe Luna opened **Edit shop note*
 A moderator on the public top-level shop note Cafe Luna opened **Shop place and address** from **2 / 5 · Place**. The map key has not returned. **Loading the map.** is where the map would be. **The map is not available.** is not shown.
 
 ![21.gifts public message shop edit place map loading](images/messages-id-shop-edit-place-map-loading.png)
-
-### Variant: shop-edit-photo-busy
-
-The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready. The closed pencil does not cover this result.
-
-![21.gifts public message shop edit photo busy](images/messages-id-shop-edit-photo-busy.png)
 
 ### Variant: shop-edit-photo-unsupported
 
