@@ -139,6 +139,29 @@ describe('useHeldShares', () => {
     expect(result.current.unlockError).toBeNull();
   });
 
+  it('never reads another account with the key of the previous one', async () => {
+    const { result } = await ready({ shares: [BOB], lockedIds: [] });
+    let answer: (value: HeldShares) => void = () => undefined;
+    mocks.loadHeldShares.mockReturnValue(
+      new Promise<HeldShares>((resolve) => {
+        answer = resolve;
+      }),
+    );
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
+    });
+    expect(result.current.shares).toEqual([]);
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenLastCalledWith('sess-2', 'acc_other', KEY);
+    });
+    expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      answer({ shares: [CARA], lockedIds: [] });
+      await Promise.resolve();
+    });
+    expect(result.current.shares).toEqual([CARA]);
+  });
+
   it('does nothing without a session or account', async () => {
     useAuthStore.setState({ session: null, account: null });
     const { result } = renderHook(() => useHeldShares());
@@ -182,7 +205,7 @@ describe('useHeldShares', () => {
     expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
   });
 
-  it('reads nothing when the passkey gives the words after the session ended', async () => {
+  it('derives no key when the passkey gives the words after the account left', async () => {
     mocks.peekSessionPhrase.mockReturnValue(null);
     const { result, rerender } = renderHook(() => useHeldShares());
     await waitFor(() => {
@@ -190,6 +213,24 @@ describe('useHeldShares', () => {
     });
     act(() => {
       useAuthStore.setState({ session: null, account: null });
+    });
+    mocks.phrase.words = WORDS.split(' ');
+    rerender();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mocks.hidePhrase).toHaveBeenCalled();
+    expect(mocks.heldShareBoxKey).not.toHaveBeenCalled();
+  });
+
+  it('reads nothing when the passkey gives the words after the session ended', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
+    const { result, rerender } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    act(() => {
+      useAuthStore.setState({ session: null });
     });
     mocks.phrase.words = WORDS.split(' ');
     rerender();
