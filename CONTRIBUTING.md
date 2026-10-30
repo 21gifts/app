@@ -83,12 +83,17 @@ app/
 │   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
 │   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
 │   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
+│   │   │   ├── recovery-share/route.ts  # PUT /me/recovery-share (the Social Recovery share 21.gifts keeps)
+│   │   │   ├── previous-wallets/
+│   │   │   │   ├── route.ts     # GET /me/previous-wallets (wallets a social recovery replaced)
+│   │   │   │   └── [sparkPubkey]/route.ts  # DELETE /me/previous-wallets/:sparkPubkey
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
 │   │   ├── lnurlpay/[pubkey]/
 │   │   │   ├── route.ts         # POST in-app wallet address registration → api
 │   │   │   ├── recover/route.ts # POST in-app wallet address lookup → api
+│   │   │   ├── transfer/route.ts # POST in-app wallet address move to a recovered account's new wallet → api
 │   │   │   └── metadata/route.ts # GET payer notes on received payments → api
 │   │   ├── lnurlp/[username]/invoice/route.ts  # GET payment request for a verified in-app wallet → api, CORS *
 │   │   ├── verify/[paymentHash]/route.ts       # GET payment settled check → api, CORS *
@@ -160,6 +165,8 @@ app/
 │   │   │   └── reject/route.ts                   # POST /funding/reject
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
+│   │   ├── recover/
+│   │   │   └── page.tsx         # GET /recover — signed-out Social Recovery: old 12 words or two share codes, new passkey, Transfer
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
@@ -176,13 +183,19 @@ app/
 │   │   │   ├── payment/page.tsx # GET /wallet/payment?id= — one payment's details
 │   │   │   └── phrase/page.tsx  # GET /wallet/phrase — add or show the recovery phrase
 │   │   ├── settings/
-│   │   │   └── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
+│   │   │   ├── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
+│   │   │   ├── social-recovery/page.tsx  # GET /settings/social-recovery — Secure my account (two share QRs, 21.gifts keeps the third)
+│   │   │   ├── held-shares/page.tsx      # GET /settings/held-shares — shares kept for other members (this browser only)
+│   │   │   └── previous-wallets/[sparkPubkey]/page.tsx  # GET /settings/previous-wallets/:key — Transfer remaining balance
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
 │   │   ├── auth/passkey/seed/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/seed/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/seed/finish
+│   │   ├── auth/passkey/recovery/
+│   │   │   ├── begin/route.ts   # POST /auth/passkey/recovery/begin (old wallet's signed address lookup)
+│   │   │   └── finish/route.ts  # POST /auth/passkey/recovery/finish (new passkey + new wallet key)
 │   │   ├── members/
 │   │   │   └── [accountId]/page.tsx  # GET /members/:id — signed-in member profile
 │   │   ├── moderate/
@@ -232,9 +245,18 @@ app/
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (identity only: pictures + totals + About me + name/location + public facts)
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
-│   │   ├── LoginBlockedNotice.tsx # Login card / profile claim body when the api refuses a session (logins closed, new version + Reload)
+│   │   ├── LoginBlockedNotice.tsx # Login card / profile claim / /recover body when the api refuses a session (logins closed, new version + Reload; no Reload on /recover)
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
-│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
+│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, Social Recovery, previous wallets, address, default amount; Display; Notifications; Account; About & legal)
+│   │   ├── SocialRecoveryRow.tsx # /settings Social Recovery status, Secure my account, Shares I keep for others
+│   │   ├── PreviousWalletsRow.tsx # /settings previous wallets: replaced date, explorer balance (information only), Transfer remaining balance
+│   │   ├── SocialRecoveryScreen.tsx # /settings/social-recovery intro, person 1 and 2 share QRs, save, done
+│   │   ├── HeldSharesScreen.tsx # /settings/held-shares list, Keep a share camera, share QR, delete confirm
+│   │   ├── SocialRecoveryPromptOverlay.tsx # /welcome grant dialog: Social Recovery for your grant → Secure my account
+│   │   ├── RecoverScreen.tsx    # /recover views: start, scan/type, opening, blocked, refused, found, Transfer, done
+│   │   ├── OldWordsInput.tsx    # Old 12 words from two scanned share codes or typed (/recover, previous wallet page)
+│   │   ├── RemainingBalanceScreen.tsx # /settings/previous-wallets/:key open, balance, Transfer, remove after a synced 0
+│   │   ├── BusyLine.tsx         # role=status line with a spinner (recovery, setup, remaining balance)
 │   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, payable loan row
 │   │   ├── HeaderBalance.tsx    # Signed-in header balance (₿ over fiat, link to /wallet, green bump on arrival)
 │   │   ├── ReceivedNotice.tsx   # In-app banner for a payment received while the app is open
@@ -255,7 +277,7 @@ app/
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
 │   │   ├── OpenReceive.tsx      # Add Bitcoin of the pay slot: opens Receive (forum home panel or /wallet?receive=1)
 │   │   ├── WalletSend.tsx       # Wallet Send view (full-size camera, Paste, Enter manually, amount, confirm, sent)
-│   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) filling the Send camera area
+│   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) filling the Send, share, and recovery camera areas
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
@@ -335,6 +357,11 @@ app/
 │   │   ├── useWalletSetup.ts    # Inline setup-failure state, screenshot pins, and retry
 │   │   ├── useWalletPay.ts      # In-app pay path of one invoice (prepare, confirm, send, 60 s wait)
 │   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
+│   │   ├── useSocialRecoverySetup.ts # Secure my account steps: check the open wallet, split, show two QRs, save 21.gifts' share
+│   │   ├── useHeldShares.ts     # Shares kept for others: list, scan and keep, show, delete
+│   │   ├── usePreviousWallets.ts # GET /me/previous-wallets for the settings row (only with a verified wallet) and its retry
+│   │   ├── useRecoveryFlow.ts   # /recover view from the recovery store + its actions and screenshot pins
+│   │   ├── useRemainingBalance.ts # Previous wallet page steps: open, balance, Transfer, remove
 │   │   ├── useWalletSend.ts     # Wallet send flow steps
 │   │   ├── useWalletPanel.ts    # Receive / Send view over a page, its Back steps, scroll restore (/wallet, /welcome)
 │   │   ├── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
@@ -357,6 +384,13 @@ app/
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
+│   │   ├── slip39.ts            # SLIP-39 split and combine on WebCrypto (2-of-3 shares of the 12 words' 16 bytes)
+│   │   ├── slip39-wordlist.ts   # SLIP-39 word list (1024 words, pinned SHA-256)
+│   │   ├── recovery-share-code.ts # Share QR payload `21gifts-share:v1:…`, split of the 12 words and rebuild from two codes
+│   │   ├── recovery-holder-store.ts # Shares kept for others in localStorage under the keeping member's account id
+│   │   ├── recovery-lookup.ts   # Signed address lookup and recovery message of a social recovery
+│   │   ├── recovery-flow.ts     # Signed-out recovery: open the old wallet, begin, new passkey, Transfer (words in memory only)
+│   │   ├── remaining-balance.ts # Open a previous wallet from its words and move its rest to the member's wallet
 │   │   ├── interaction-log.ts   # Signed-in interaction events: queue, cleaned props, POST /me/events batches
 │   │   ├── move-funds.ts        # Tab-scoped move-funds request (source receive | link) + MOVE_FUNDS_EVENT
 │   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
@@ -400,6 +434,10 @@ app/
 │   │   ├── scroll-surface.ts    # Which scrollport is active, and clipping of the rest
 │   │   ├── motion.ts            # Shared motion time windows, settle event, and transition-end wait
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
+│   ├── stores/                  # zustand stores
+│   │   ├── auth-store.ts        # Session, account, and the held-back session
+│   │   ├── wallet-store.ts      # In-app wallet status, balance, and identity key
+│   │   └── recovery-store.ts    # The /recover view only (words, PRF bytes, and connections stay in recovery-flow.ts)
 │   ├── types/
 
 │   │   └── env.d.ts             # Ambient ProcessEnv typings
@@ -436,11 +474,12 @@ app/
 │   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
-│   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
+│   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, one QR per request, blocked, none) for camera specs
 │   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Background setup, inline notes, payments list, username freeze, address proxies
+│   ├── social-recovery.spec.ts  # Social Recovery settings, setup, kept shares, /recover, previous wallets, recovery proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
@@ -1062,9 +1101,10 @@ What a trace holds:
   their fetch spans, resource timings, and the LCP and CLS web vitals.
 - One transaction per wallet step, timed with `traceWallet` (`op: wallet`):
   `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
-  `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
-  `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
-  `onchain`), `prompt` (`login` or `unlock`), and on every wallet span why the
+  `wallet.prepare`, `wallet.send`, `wallet.address.register`,
+  `wallet.address.transfer`, and `wallet.passkey`. The only attributes are
+  `route` (`spark`, `lightning`, or `onchain`), `prompt` (`login`, `unlock`,
+  or `recovery`), and on every wallet span why the
   page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
   or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
   page load during a client-side navigation, otherwise `other`;
@@ -1097,7 +1137,9 @@ Privacy rules (this app holds wallets):
   username.
 - One scrubber (`beforeSend` / `beforeSendTransaction` / `beforeBreadcrumb` in
   `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
-  12–24-word recovery-phrase runs in any letter case;
+  recovery-phrase runs of 12 or more words in any letter case (they also
+  cover a social recovery share), word arrays of a phrase's or a share's
+  length (12, 15, 18, 20, 21, 24, or 33 words);
   `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
   `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
   addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
@@ -1106,7 +1148,8 @@ Privacy rules (this app holds wallets):
   tokens and `Authorization` headers; the stored session token
   (`21gifts.session`); URL query strings and fragments (the path stays); and
   every value under keys such as `mnemonic`, `phrase`, `words`, `seed`,
-  `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or `fragment`. In a
+  `share`, `slip39`, `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or
+  `fragment`. In a
   transaction that covers its name, every span description, and all span
   data (`/pl/?lightning=…` is sent as `/pl/`). The SDK's own 16- or 32-digit
   hex ids under `event_id`, `trace_id`, `span_id`, and `parent_span_id` stay
@@ -1183,7 +1226,8 @@ only for a signed-in member and both through same-origin proxies:
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
   (`reason` `timeout` or `error`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
-  a group of their own, so an api that does not accept those names yet cannot
+  a group of their own, and `recovery_done` (the sign-in that ends a social
+  recovery) as another, so an api that does not accept those names yet cannot
   drop another event with them.
 
 A payment that did not go out, and a wallet that did not open, are also sent

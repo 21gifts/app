@@ -7,9 +7,16 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/LoginCard', () => ({
-  LoginCard: ({ heldProblem }: { heldProblem?: 'noPrf' | 'failed' | null }) => (
+  LoginCard: ({
+    heldProblem,
+    showRecover,
+  }: {
+    heldProblem?: 'noPrf' | 'failed' | null;
+    showRecover?: boolean;
+  }) => (
     <>
       <p>login card</p>
+      {showRecover === false ? null : <p>recovery entry</p>}
       {heldProblem === undefined || heldProblem === null ? null : (
         <p role="alert">
           {heldProblem === 'noPrf'
@@ -53,6 +60,7 @@ describe('WalletLoginCard', () => {
   it('shows the login card without opening a wallet while there is no session', () => {
     renderWithLocale(<WalletLoginCard />);
     expect(screen.getByText('login card')).toBeTruthy();
+    expect(screen.queryByText('recovery entry')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(finishWalletOpen).not.toHaveBeenCalled();
   });

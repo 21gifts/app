@@ -18,10 +18,21 @@ export type PayMethod = 'lightning' | 'spark' | 'onchain' | 'lnurl' | 'unknown';
  * point-of-sale charge read in that view (`pos`), a gift on a note, reply, or
  * habit comment (`gift`), a paid reaction (`reaction`), the posting fee
  * (`post_fee`), a loan repayment on `/loans/repay` (`repay`), the inbox pay sheet
- * (`inbox`), or a heart (`heart`).
+ * (`inbox`), a heart (`heart`), the balance move of a social recovery on
+ * `/recover` (`recovery`), or **Transfer remaining balance** of a previous
+ * wallet (`previous_wallet`).
  */
 export type PayFlow =
-  'send' | 'pos' | 'gift' | 'reaction' | 'post_fee' | 'repay' | 'inbox' | 'heart';
+  | 'send'
+  | 'pos'
+  | 'gift'
+  | 'reaction'
+  | 'post_fee'
+  | 'repay'
+  | 'inbox'
+  | 'heart'
+  | 'recovery'
+  | 'previous_wallet';
 
 /**
  * Short code for why a payment did not go out. Never the error text itself.

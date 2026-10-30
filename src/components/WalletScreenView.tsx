@@ -121,7 +121,7 @@ export function WalletScreenView({
           </li>
         ))}
       </ol>
-      <p className="text-sm text-app-muted">{t('wallet.onlyBackup')}</p>
+      <p className="text-sm text-app-muted">{t('wallet.phraseWarning')}</p>
     </>
   ) : view === 'activate' ? (
     <>

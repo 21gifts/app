@@ -9,7 +9,9 @@ import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitc
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
+import { PreviousWalletsRow } from '@/components/PreviousWalletsRow';
 import { PushToggle } from '@/components/PushToggle';
+import { SocialRecoveryRow } from '@/components/SocialRecoveryRow';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
 import { ButtonLink, Card, IconButton, SegmentedControl } from '@/components/ui';
@@ -151,13 +153,18 @@ function DefaultAmountRow(): ReactElement {
  * Signed-in settings page: the member's preferences and account actions, in
  * five sections. **Wallet**: the recovery phrase on `/wallet/phrase`
  * (**Recovery phrase** when the account has a `passkeyCredentialId`,
- * otherwise the add hint and **Add recovery phrase**), the 21.gifts address
- * with Copy (or the username form while no username is set), and the default
- * amount unit. **Display**: language, theme, fiat currency, and number format.
- * **Notifications**: {@link PushToggle}. **Account**: {@link LogoutButton}.
- * **About & legal**: the handbook, legal, terms, rules, and contact links and
- * the app version. Each section and the recovery and address rows carry an
- * id; a `#id` in the address scrolls that part into view once it renders.
+ * otherwise the add hint and **Add recovery phrase**), the Social Recovery
+ * row ({@link SocialRecoveryRow}: its status, **Secure my account**, and
+ * **Shares I keep for others**), the previous wallets after a social recovery
+ * ({@link PreviousWalletsRow}, only when there are some or their read failed),
+ * the 21.gifts address with Copy (or the username form while no username is
+ * set), and the default amount unit. **Display**: language, theme, fiat
+ * currency, and number format. **Notifications**: {@link PushToggle}.
+ * **Account**: {@link LogoutButton}. **About & legal**: the handbook, legal,
+ * terms, rules, and contact links and the app version. Each section and the
+ * recovery, Social Recovery, and address rows carry an id; a `#id` in the
+ * address scrolls that part into view once it renders. The previous wallets
+ * row loads later and scrolls itself into view for `#previous-wallets`.
  * Renders nothing without a session or before the account has loaded.
  *
  * @returns The settings card, or `null` without a session or account.
@@ -205,6 +212,8 @@ export function SettingsScreen(): ReactElement | null {
             </>
           )}
         </div>
+        <SocialRecoveryRow />
+        <PreviousWalletsRow />
         <AddressRow />
         <DefaultAmountRow />
       </SettingsSection>

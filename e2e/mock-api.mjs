@@ -114,6 +114,49 @@ function bearer(req) {
   return token === '' ? null : token;
 }
 
+/**
+ * Parses a request body that must be one JSON object.
+ *
+ * @param {string} rawBody
+ * @returns {Record<string, any> | null} The object, or `null` for anything else.
+ */
+function jsonObject(rawBody) {
+  try {
+    const parsed = JSON.parse(rawBody);
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when `value` is a JSON object with no keys beyond `keys`, as a
+ * `.strict()` schema of the api demands.
+ *
+ * @param {unknown} value
+ * @param {string[]} keys
+ * @returns {boolean}
+ */
+function isStrictObject(value, keys) {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    Object.keys(value).every((key) => keys.includes(key))
+  );
+}
+
+/**
+ * True when `value` is a wallet identity key the api can normalize: trimmed
+ * and lower-cased, `02` or `03` and 64 hex digits.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isSparkPubkey(value) {
+  return typeof value === 'string' && /^0[23][0-9a-f]{64}$/.test(value.trim().toLowerCase());
+}
+
 function hasName(account) {
   return account.name !== null && String(account.name).trim() !== '';
 }
@@ -2741,21 +2784,76 @@ const server = http.createServer(async (req, res) => {
   }
 
   // As the api with APP_BUILD_REQUIRED set: every passkey step that leads to
-  // a session needs the Playwright build's id (`dev`) in X-App-Build, checked
-  // before anything else. A missing header or another id (e2e uses
-  // `e2e-old-build` for an outdated tab) is 403 app_outdated.
+  // a session, including the social recovery steps, needs the Playwright
+  // build's id (`dev`) in X-App-Build, checked before anything else. A missing
+  // header or another id (e2e uses `e2e-old-build` for an outdated tab) is
+  // 403 app_outdated.
   if (
     method === 'POST' &&
     (pathName === '/auth/passkey/register/begin' ||
       pathName === '/auth/passkey/register/finish' ||
       pathName === '/auth/passkey/authenticate/begin' ||
-      pathName === '/auth/passkey/authenticate/finish') &&
+      pathName === '/auth/passkey/authenticate/finish' ||
+      pathName === '/auth/passkey/recovery/begin' ||
+      pathName === '/auth/passkey/recovery/finish') &&
     req.headers['x-app-build'] !== 'dev'
   ) {
     json(res, 403, {
       error: 'A new app version is ready. Reload the page.',
       code: 'app_outdated',
     });
+    return;
+  }
+
+  // Social recovery: no old wallet in Playwright holds an account, so a
+  // well-formed begin is 404 and no finish has a challenge. Both steps check
+  // the body as the api's strict schemas do: no extra keys and wallet keys
+  // the api can normalize; begin also the lookup's DER hex and timestamp.
+  // Finish checks the body, then the origin, then the challenge, in the
+  // api's order.
+  if (method === 'POST' && pathName === '/auth/passkey/recovery/begin') {
+    const parsed = jsonObject(rawBody);
+    const lookup = parsed?.lookup;
+    if (
+      parsed === null ||
+      !isStrictObject(parsed, ['sparkPubkey', 'lookup']) ||
+      !isSparkPubkey(parsed.sparkPubkey) ||
+      !isStrictObject(lookup, ['signature', 'timestamp']) ||
+      typeof lookup.signature !== 'string' ||
+      !/^[0-9a-f]{16,144}$/.test(lookup.signature) ||
+      !Number.isSafeInteger(lookup.timestamp) ||
+      lookup.timestamp < 0
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with sparkPubkey and lookup' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/auth/passkey/recovery/finish') {
+    const parsed = jsonObject(rawBody);
+    const signature = parsed?.signature;
+    if (
+      parsed === null ||
+      !isStrictObject(parsed, ['challengeId', 'credential', 'newSparkPubkey', 'signature']) ||
+      typeof parsed.challengeId !== 'string' ||
+      !('credential' in parsed) ||
+      !isSparkPubkey(parsed.newSparkPubkey) ||
+      !isStrictObject(signature, ['pubkey', 'signature']) ||
+      !isSparkPubkey(signature.pubkey) ||
+      typeof signature.signature !== 'string'
+    ) {
+      json(res, 400, {
+        error: 'Expected a JSON body with challengeId, credential, newSparkPubkey and signature',
+      });
+      return;
+    }
+    if (req.headers.origin !== 'http://localhost:3000') {
+      json(res, 400, { error: 'Invalid origin' });
+      return;
+    }
+    json(res, 400, { error: 'Unknown or expired challenge' });
     return;
   }
 
@@ -3007,6 +3105,62 @@ const server = http.createServer(async (req, res) => {
     account.sparkPubkey = parsed.sparkPubkey;
     account.sparkWalletVerified = false;
     json(res, 200, account);
+    return;
+  }
+
+  // As the api: a strict body with a key it can normalize and a share of 20
+  // lower-case words, then only for the account's verified wallet. The stub
+  // keeps no share, only the owner field it sets.
+  if (method === 'PUT' && pathName === '/me/recovery-share') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const parsed = jsonObject(rawBody);
+    if (
+      parsed === null ||
+      !isStrictObject(parsed, ['sparkPubkey', 'share']) ||
+      !isSparkPubkey(parsed.sparkPubkey) ||
+      typeof parsed.share !== 'string' ||
+      !/^[a-z]{4,8}(?: [a-z]{4,8}){19}$/.test(parsed.share)
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with sparkPubkey and a recovery share' });
+      return;
+    }
+    if (account.sparkWalletVerified !== true) {
+      json(res, 409, { error: 'Wallet is not connected' });
+      return;
+    }
+    if (parsed.sparkPubkey.trim().toLowerCase() !== account.sparkPubkey) {
+      json(res, 409, { error: 'Wallet changed' });
+      return;
+    }
+    account.socialRecoverySetUp = true;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/me/previous-wallets') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { wallets: [] });
+    return;
+  }
+
+  // No account in Playwright has a previous wallet, so every key is 404, as
+  // the api answers a key that is not one of the account's previous wallets.
+  if (method === 'DELETE' && /^\/me\/previous-wallets\/[^/]+$/.test(pathName)) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
     return;
   }
 

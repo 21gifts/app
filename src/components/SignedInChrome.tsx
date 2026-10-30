@@ -39,6 +39,7 @@ import { MenuAccountHeader } from '@/components/MenuAccountHeader';
 import { MoveFundsSheet } from '@/components/MoveFundsSheet';
 import { PwaInstall } from '@/components/PwaInstall';
 import { ReceivedNotice } from '@/components/ReceivedNotice';
+import { SocialRecoveryPromptOverlay } from '@/components/SocialRecoveryPromptOverlay';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { getAppVersion } from '@/lib/config';
@@ -83,7 +84,13 @@ import { useAuthStore } from '@/stores/auth-store';
  * false, also mounts {@link IntroduceYourselfOverlay}; it never covers
  * `/wallet`, the point of sale, the profile, messages, setup, or any other
  * screen. Close dismisses this mount only; the introduce CTA skips the overlay
- * once, so the next mount does not show it again.
+ * once, so the next mount does not show it again. On the same screen and
+ * only there, a grant member (`funding.status` `admitted` or `trial`) whose
+ * `socialRecoverySetUp` is false gets {@link SocialRecoveryPromptOverlay}
+ * once the introduce dialog is not shown (introduce comes first; once it is
+ * closed, by its Close or by **Write an introduction**, this one shows in the
+ * same visit). Close dismisses it for this mount; the next mount shows it
+ * again.
  *
  * Renders nothing, and starts none of the Menu's reads, while the login card
  * is on screen: a stored session held back until its wallet is open
@@ -149,6 +156,17 @@ function SignedInMenu(): ReactElement {
     account.setup === null &&
     account.hasPosted === false &&
     !introduceDismissed;
+  const [recoveryPromptDismissed, setRecoveryPromptDismissed] = useState(false);
+  const grantMember =
+    account?.funding?.status === 'admitted' || account?.funding?.status === 'trial';
+  const showRecoveryPrompt =
+    pathname === '/welcome' &&
+    account !== null &&
+    account.setup === null &&
+    grantMember &&
+    account.socialRecoverySetUp === false &&
+    !showIntroduce &&
+    !recoveryPromptDismissed;
 
   useEffect(() => {
     if (!open) {
@@ -705,6 +723,13 @@ function SignedInMenu(): ReactElement {
           <IntroduceYourselfOverlay
             onDismiss={() => {
               setIntroduceDismissed(true);
+            }}
+          />
+        ) : null}
+        {showRecoveryPrompt ? (
+          <SocialRecoveryPromptOverlay
+            onDismiss={() => {
+              setRecoveryPromptDismissed(true);
             }}
           />
         ) : null}

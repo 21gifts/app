@@ -42,7 +42,10 @@ import {
   trustChainSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  previousWalletSchema,
+  previousWalletsSchema,
   pushSubscriptionResponseSchema,
+  recoveryBeginSchema,
   vapidPublicSchema,
   viewProfileSchema,
 } from '@/lib/api-types';
@@ -1725,6 +1728,17 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, lightningAddressVerified: 'yes' })).toThrow();
   });
 
+  it('accepts socialRecoverySetUp true and false, and parses without it', () => {
+    expect(accountSchema.parse(account).socialRecoverySetUp).toBeUndefined();
+    expect(accountSchema.parse({ ...account, socialRecoverySetUp: true }).socialRecoverySetUp).toBe(
+      true,
+    );
+    expect(
+      accountSchema.parse({ ...account, socialRecoverySetUp: false }).socialRecoverySetUp,
+    ).toBe(false);
+    expect(() => accountSchema.parse({ ...account, socialRecoverySetUp: 'yes' })).toThrow();
+  });
+
   it('accepts forumLawsDismissed true and false', () => {
     expect(accountSchema.parse({ ...account, forumLawsDismissed: false }).forumLawsDismissed).toBe(
       false,
@@ -2040,6 +2054,45 @@ describe('passkeyBeginSchema', () => {
       challengeId: 'ch',
       options: { challenge: 'aa' },
     });
+  });
+});
+
+describe('recoveryBeginSchema', () => {
+  const begin = {
+    challengeId: 'ch',
+    options: { challenge: 'aa' },
+    accountId: 'acc_1',
+    username: 'ada',
+  };
+
+  it('accepts the begin options with the account id and username', () => {
+    expect(recoveryBeginSchema.parse(begin)).toEqual(begin);
+  });
+
+  it('rejects a begin without the account', () => {
+    expect(() => recoveryBeginSchema.parse({ ...begin, accountId: undefined })).toThrow();
+    expect(() => recoveryBeginSchema.parse({ ...begin, username: 1 })).toThrow();
+  });
+});
+
+describe('previousWalletsSchema', () => {
+  const wallet = {
+    sparkPubkey: `02${'a'.repeat(64)}`,
+    sparkAddress: 'spark1abc',
+    replacedAt: 1_761_700_000_000,
+    balanceSats: 1234,
+  };
+
+  it('accepts a known, an empty and an unknown balance', () => {
+    const wallets = [wallet, { ...wallet, balanceSats: 0 }, { ...wallet, balanceSats: null }];
+    expect(previousWalletsSchema.parse({ wallets })).toEqual({ wallets });
+    expect(previousWalletsSchema.parse({ wallets: [] })).toEqual({ wallets: [] });
+  });
+
+  it('rejects a negative, fractional or missing balance', () => {
+    expect(() => previousWalletSchema.parse({ ...wallet, balanceSats: -1 })).toThrow();
+    expect(() => previousWalletSchema.parse({ ...wallet, balanceSats: 1.5 })).toThrow();
+    expect(() => previousWalletSchema.parse({ ...wallet, balanceSats: undefined })).toThrow();
   });
 });
 

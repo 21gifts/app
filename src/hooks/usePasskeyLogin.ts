@@ -8,6 +8,7 @@ import {
   isUnknownCredentialError,
   isWrongAccountError,
   LoginsClosedError,
+  RecoveryPendingError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   WRONG_ACCOUNT_ERROR,
@@ -111,6 +112,11 @@ export interface UsePasskeyLogin {
   cancel: () => void;
   /** Last `Error.message` when `status === 'error'`, otherwise `null`. */
   error: string | null;
+  /**
+   * True when `status === 'error'` because the passkey belongs to a social
+   * recovery that is not finished yet (`RecoveryPendingError`).
+   */
+  recoveryPending: boolean;
   /** Username problem while `status === 'name'`, otherwise `null`. */
   nameError: 'invalid' | 'taken' | null;
   /** Drops a taken or invalid name so a changed draft can be submitted. */
@@ -539,13 +545,17 @@ async function readLoginPrfFirst(
 /**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
  * When the Breez API key is set, a successful ceremony may remember the
- * recovery phrase in tab memory from PRF output.
+ * recovery phrase in tab memory from PRF output. A passkey of a social
+ * recovery that is not finished yet (`RecoveryPendingError`) ends in `error`
+ * with `recoveryPending` set, and the authenticator is never told that the
+ * passkey is unknown, because that passkey may become the account's only one.
  *
- * @returns Status plus login, register, submitName, authenticate, retry, cancel, and error.
+ * @returns Status plus login, register, submitName, authenticate, retry, cancel, error, and recoveryPending.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const [lastError, setLastError] = useState<string | null>(null);
+  const [recoveryPending, setRecoveryPending] = useState(false);
   const [nameError, setNameError] = useState<'invalid' | 'taken' | null>(null);
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
@@ -574,6 +584,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     nameOfferedRef.current = false;
     setNameError(null);
     setLastError(null);
+    setRecoveryPending(false);
     setStatus('idle');
   }, []);
 
@@ -591,6 +602,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       const runId = ++runIdRef.current;
       setNameError(null);
       setLastError(null);
+      setRecoveryPending(false);
       setStatus('starting');
       return { runId, controller };
     },
@@ -919,6 +931,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         setStatus('unknown');
         return;
       }
+      if (error instanceof RecoveryPendingError) {
+        setLastError(error.message);
+        setRecoveryPending(true);
+        setStatus('error');
+        return;
+      }
       if (error instanceof LoginsClosedError) {
         setLastError(null);
         setStatus('closed');
@@ -1078,6 +1096,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     clearNameError,
     cancel,
     error: status === 'error' ? lastError : null,
+    recoveryPending: status === 'error' && recoveryPending,
     nameError: status === 'name' ? nameError : null,
   };
 }

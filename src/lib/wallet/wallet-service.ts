@@ -181,11 +181,12 @@ function tellReceived(mnemonic: string, payment: WalletPayment): void {
 
 /**
  * Host the app is served from. The wallet's address lives on this host, and
- * the app forwards the wallet's address calls to the api.
+ * the app forwards the wallet's address calls to the api. It is the domain
+ * every wallet of this app connects and signs with.
  *
  * @returns `window.location.host`.
  */
-function appHost(): string {
+export function appHost(): string {
   return window.location.host;
 }
 
@@ -925,6 +926,26 @@ export async function ensureWalletConnected(
 }
 
 /**
+ * Reads the Spark address of the signed-in member's wallet, opening the
+ * wallet from the tab phrase first when it is not open yet.
+ *
+ * @param loadSdk - SDK loader forwarded to {@link ensureWalletConnected}.
+ * @returns The wallet's Spark address.
+ * @throws Error `wallet-connect` when the wallet could not be opened or closed
+ *   meanwhile; otherwise the SDK's error.
+ */
+export async function receiveWalletSparkAddress(
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<string> {
+  await ensureWalletConnected(loadSdk);
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.receiveSparkAddress();
+}
+
+/**
  * Registers the account's username as the address of the connected wallet.
  * Never asks whether a name is free: only the account's own username is sent.
  *
@@ -1127,12 +1148,13 @@ function isQuoteExpired(err: unknown): boolean {
 /**
  * Reason code of an SDK rejection, from the shape of its message. Never
  * returns the text itself. A refused minimum is read by `payFromWallet`
- * itself, since it carries the minimum.
+ * itself, since it carries the minimum. The balance moves of a social
+ * recovery and of a previous wallet report their failed sends with it too.
  *
  * @param err - Rejection from the SDK.
  * @returns The reason.
  */
-function sdkFailureReason(err: unknown): PayReason {
+export function sdkFailureReason(err: unknown): PayReason {
   const text = errorText(err);
   if (isInsufficientFunds(err)) {
     return 'insufficient';

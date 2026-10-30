@@ -2583,7 +2583,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('What if I lose my device?').click();
     await expect(
       faq.getByText(
-        'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+        'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-device-open', true, {
@@ -3743,6 +3743,28 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('A new version is ready')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
     await shotScreen(page, 'state-welcome-held-session-outdated');
+  });
+
+  test('welcome held-session-recovery-pending', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Recovery is not finished', code: 'recovery_pending' }),
+      });
+    });
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-recovery-pending');
   });
 
   test('wallet balance-connecting', async ({ page }) => {
@@ -6698,6 +6720,29 @@ test.describe('login variant baselines', () => {
       page.getByText('21.gifts is updating. Please try again a little later.'),
     ).toBeVisible();
     await shotScreen(page, 'state-login-closed');
+  });
+
+  test('login recovery-pending', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Recovery is not finished', code: 'recovery_pending' }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByText(
+        'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-recovery-pending');
   });
 
   test('login outdated', async ({ page }) => {
@@ -31030,6 +31075,44 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-overlay-introduce');
   });
 
+  test('welcome overlay-social-recovery', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          hasPosted: true,
+          socialRecoverySetUp: false,
+          funding: {
+            status: 'admitted',
+            trialUtcDate: null,
+            admittedAt: 1_700_000_000_000,
+            reviewedByName: 'Mod',
+          },
+        }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    const dialog = page.getByRole('dialog', { name: 'Social Recovery for your grant' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Secure my account' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-overlay-social-recovery');
+  });
+
   test('welcome overlay-external-link', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -42111,5 +42194,1283 @@ test.describe('settings states', () => {
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-settings-push-enable-error');
+  });
+
+  /**
+   * Answers `GET /me/previous-wallets`.
+   *
+   * @param page - Page under test.
+   * @param status - HTTP status.
+   * @param body - JSON body.
+   */
+  async function fulfillPreviousWallets(page: Page, status: number, body: unknown): Promise<void> {
+    await page.route(/\/me\/previous-wallets$/, async (route) => {
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+  }
+
+  test('settings social-recovery-off', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillPreviousWallets(page, 200, { wallets: [] });
+    await openSettings(page);
+    const row = page.locator('#social-recovery');
+    await expect(
+      row.getByText('Not set up yet. Two people you trust can help you get your account back.'),
+    ).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Shares I keep for others' })).toBeVisible();
+    await expect(page.locator('#previous-wallets')).toHaveCount(0);
+    await shotScreen(page, 'state-settings-social-recovery-off');
+  });
+
+  test('settings social-recovery-on', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await fulfillPreviousWallets(page, 200, { wallets: [] });
+    await openSettings(page);
+    const row = page.locator('#social-recovery');
+    await expect(row.getByText('Set up for this wallet.')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
+    await expect(page.locator('#previous-wallets')).toHaveCount(0);
+    await shotScreen(page, 'state-settings-social-recovery-on');
+  });
+
+  test('settings previous-wallets', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillSpot(page);
+    await fulfillPreviousWallets(page, 200, {
+      wallets: [
+        {
+          sparkPubkey: `02${'a'.repeat(64)}`,
+          sparkAddress: 'spark1old',
+          replacedAt: 1_767_268_800_000,
+          balanceSats: 21_000,
+        },
+        {
+          sparkPubkey: `03${'b'.repeat(64)}`,
+          sparkAddress: 'spark1older',
+          replacedAt: 1_764_590_400_000,
+          balanceSats: 0,
+        },
+        {
+          sparkPubkey: `02${'c'.repeat(64)}`,
+          sparkAddress: 'spark1oldest',
+          replacedAt: 1_761_998_400_000,
+          balanceSats: null,
+        },
+      ],
+    });
+    await page.goto('/settings#previous-wallets');
+    const row = page.locator('#previous-wallets');
+    await expect(row.getByText("₿21'000 · $21.00")).toBeVisible();
+    await expect(row.getByText('Empty')).toBeVisible();
+    await expect(row.getByText('Balance unknown')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Transfer remaining balance' })).toHaveCount(3);
+    await expect(row.getByRole('button')).toHaveCount(0);
+    await expect(row).toBeInViewport();
+    await shotScreen(page, 'state-settings-previous-wallets');
+  });
+
+  test('settings previous-wallets-error', async ({ page }) => {
+    await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
+    await fulfillPreviousWallets(page, 503, { error: 'Wallet data is unavailable' });
+    await page.goto('/settings#previous-wallets');
+    const row = page.locator('#previous-wallets');
+    await expect(row.getByRole('alert')).toHaveText('Previous wallets could not be loaded.');
+    await expect(row.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(row).toBeInViewport();
+    await shotScreen(page, 'state-settings-previous-wallets-error');
+  });
+});
+
+test.describe('held shares states', () => {
+  /** Bob's share: a share of another recovery set (identifier 7506), member 0. */
+  const HELD_BOB =
+    '21gifts-share:v1:acc_bob:bob:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+  /** Cara's share, of another set. */
+  const HELD_CARA =
+    '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** A share of the signed-in member's own account. */
+  const HELD_OWN =
+    '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+  /** Where the signed-in member keeps shares. */
+  const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
+
+  /**
+   * Signs in Ada with her stubbed camera.
+   *
+   * @param page - Page under test.
+   * @param camera - Camera behaviour.
+   */
+  async function seedHolder(page: Page, camera: CameraStub = { kind: 'blank' }): Promise<void> {
+    await stubCamera(page, camera);
+    await page.clock.install({ time: new Date('2026-01-07T12:00:00.000Z') });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+  }
+
+  /**
+   * Keeps shares under Ada's key before the page loads.
+   *
+   * @param page - Page under test.
+   * @param codes - Payloads, oldest first.
+   */
+  async function seedKept(page: Page, codes: readonly string[]): Promise<void> {
+    await page.addInitScript(
+      ({ key, value }) => {
+        localStorage.setItem(key, value);
+      },
+      {
+        key: HELD_KEY,
+        value: JSON.stringify({
+          v: 1,
+          shares: codes.map((code, index) => ({
+            code,
+            storedAt: 1_767_268_800_000 + index * 86_400_000,
+          })),
+        }),
+      },
+    );
+  }
+
+  /**
+   * Opens the kept-shares page.
+   *
+   * @param page - Page under test.
+   */
+  async function openHeldShares(page: Page): Promise<void> {
+    await page.goto('/settings/held-shares');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
+    ).toBeVisible();
+  }
+
+  test('screen /settings/held-shares', async ({ page }) => {
+    await seedHolder(page);
+    await openHeldShares(page);
+    await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
+    await shotScreen(page, 'screen-settings-held-shares');
+  });
+
+  test('held shares list', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Show code for @cara' })).toBeVisible();
+    await expect(page.getByText('Kept since Jan 1, 2026')).toBeVisible();
+    await shotScreen(page, 'state-held-shares-list');
+  });
+
+  test('held shares scan', async ({ page }) => {
+    await seedHolder(page);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByText('Point the camera at the code on the other phone')).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await shotScreen(page, 'state-held-shares-scan');
+  });
+
+  test('held shares stored', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
+    await expect(page.getByText('Kept since Jan 7, 2026')).toBeVisible();
+    await shotScreen(page, 'state-held-shares-stored');
+  });
+
+  test('held shares refused-own', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_OWN });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This is a share of your own account. Only other people can keep it.',
+    );
+    await shotScreen(page, 'state-held-shares-refused-own');
+  });
+
+  test('held shares refused-duplicate', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await seedKept(page, [HELD_BOB]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.',
+    );
+    await expect(page.getByRole('listitem')).toHaveCount(1);
+    await shotScreen(page, 'state-held-shares-refused-duplicate');
+  });
+
+  test('held shares refused-storage', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await page.addInitScript(() => {
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string): void {
+        if (key.startsWith('21gifts.recoveryShares.')) {
+          throw new DOMException('Storage is full', 'QuotaExceededError');
+        }
+        setItem.call(this, key, value);
+      };
+    });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'This browser cannot keep shares. Allow site data and try again.',
+    );
+    await shotScreen(page, 'state-held-shares-refused-storage');
+  });
+
+  test('held shares invalid', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
+    await shotScreen(page, 'state-held-shares-invalid');
+  });
+
+  test('held shares qr', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Show code for @bob' }).click();
+    await expect(page.getByRole('heading', { level: 2, name: 'Share of @bob' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Share code' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-qr');
+  });
+
+  test('held shares delete-confirm', async ({ page }) => {
+    await seedHolder(page);
+    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Delete the share of @bob? Only do this when they ask.' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-held-shares-delete-confirm');
+  });
+
+  test('held shares camera-denied', async ({ page }) => {
+    await seedHolder(page, { kind: 'denied' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Camera access is off. Allow the camera to scan the code.',
+    );
+    await shotScreen(page, 'state-held-shares-camera-denied');
+  });
+
+  test('held shares camera-unavailable', async ({ page }) => {
+    await seedHolder(page, { kind: 'none' });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'No camera found. Use a phone with a camera to scan the code.',
+    );
+    await shotScreen(page, 'state-held-shares-camera-unavailable');
+  });
+});
+
+test.describe('social recovery setup states', () => {
+  /**
+   * Signs in Ada with a verified wallet.
+   *
+   * @param page - Page under test.
+   * @param extras - Account fields to change.
+   */
+  async function seedOwner(page: Page, extras: Record<string, unknown> = {}): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          sparkPubkey: `02${'a'.repeat(64)}`,
+          sparkWalletVerified: true,
+          socialRecoverySetUp: false,
+          ...extras,
+        }),
+      });
+    });
+  }
+
+  /**
+   * Opens **Secure my account**, optionally on a screenshot pin.
+   *
+   * @param page - Page under test.
+   * @param pin - The `?visual=` pin, if any.
+   */
+  async function openSetup(page: Page, pin?: string): Promise<void> {
+    await page.goto(
+      pin === undefined ? '/settings/social-recovery' : `/settings/social-recovery?visual=${pin}`,
+    );
+    await expect(page.getByRole('heading', { level: 1, name: 'Secure my account' })).toBeVisible();
+  }
+
+  test('screen /settings/social-recovery', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page);
+    await expect(page.getByText(/^Choose two people you trust\./)).toBeVisible();
+    await expect(page.getByText(/^A new setup does not cancel/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await shotScreen(page, 'screen-settings-social-recovery');
+  });
+
+  test('social recovery intro-renew', async ({ page }) => {
+    await seedOwner(page, { socialRecoverySetUp: true });
+    await openSetup(page);
+    await expect(page.getByText(/^A new setup does not cancel/)).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-intro-renew');
+  });
+
+  test('social recovery checking', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-checking');
+    await expect(page.getByRole('status')).toHaveText('Checking your wallet…');
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await shotScreen(page, 'state-social-recovery-checking');
+  });
+
+  test('social recovery share-1', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-share-1');
+    await expect(page.getByRole('heading', { level: 2, name: 'Person 1' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Code for person 1' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Person 1 has scanned it' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-share-1');
+  });
+
+  test('social recovery share-2', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-share-2');
+    await expect(page.getByRole('heading', { level: 2, name: 'Person 2' })).toBeVisible();
+    await expect(page.getByText('Person 2 must be someone other than person 1.')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Code for person 2' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-share-2');
+  });
+
+  test('social recovery saving', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/recovery-share$/, () => {
+      // Never answered: the upload stays in flight for the picture.
+    });
+    await openSetup(page, 'sr-share-2');
+    await page.getByRole('button', { name: 'Person 2 has scanned it' }).click();
+    await expect(page.getByRole('status')).toHaveText('Saving the 21.gifts backup…');
+    await shotScreen(page, 'state-social-recovery-saving');
+  });
+
+  test('social recovery done', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-done');
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is secured' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-done');
+  });
+
+  test('social recovery wallet-mismatch', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-mismatch');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These 12 words do not open the wallet of this account. Setup stopped.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+    await shotScreen(page, 'state-social-recovery-wallet-mismatch');
+  });
+
+  test('social recovery wallet-error', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page);
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-wallet-error');
+  });
+
+  test('social recovery save-error', async ({ page }) => {
+    await seedOwner(page);
+    await openSetup(page, 'sr-save-error');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The 21.gifts backup could not be saved.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-save-error');
+  });
+
+  test('social recovery wallet-changed', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/recovery-share$/, async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet changed' }),
+      });
+    });
+    await openSetup(page, 'sr-share-2');
+    await page.getByRole('button', { name: 'Person 2 has scanned it' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet changed during setup. Start again.',
+    );
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-social-recovery-wallet-changed');
+  });
+});
+
+/** Two shares of one recovery set of `@ada` (identifier 2864). */
+const RECOVER_CODES = [
+  '21gifts-share:v1:acc_e2e:ada:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel',
+  '21gifts-share:v1:acc_e2e:ada:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
+] as const;
+
+/** A share of `@ada`'s account from another setup (a share of another recovery set, identifier 7506). */
+const RECOVER_OTHER_SET =
+  '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+
+/** A share of another account (a share of another recovery set, identifier 7506). */
+const RECOVER_OTHER_ACCOUNT =
+  '21gifts-share:v1:acc_bob:bob:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+
+/** Public BIP-39 test phrase: valid 12 words. */
+const RECOVER_PHRASE =
+  'legal winner thank year wave sausage worth useful legal winner thank yellow';
+
+/**
+ * Waits until the stubbed camera shows a picture.
+ *
+ * @param page - Page under test.
+ */
+async function cameraPlaying(page: Page): Promise<void> {
+  await expect
+    .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+    .toBeGreaterThanOrEqual(2);
+}
+
+test.describe('recover states', () => {
+  /**
+   * Opens `/recover` signed out, optionally on a screenshot pin.
+   *
+   * @param page - Page under test.
+   * @param pin - The `?visual=` pin, if any.
+   */
+  async function openRecover(page: Page, pin?: string): Promise<void> {
+    await page.goto(pin === undefined ? '/recover' : `/recover?visual=${pin}`);
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Recover your account' }),
+    ).toBeAttached();
+  }
+
+  /**
+   * Opens the camera on `/recover`.
+   *
+   * @param page - Page under test.
+   * @param camera - Camera behaviour.
+   */
+  async function openCamera(page: Page, camera: CameraStub): Promise<void> {
+    await stubCamera(page, camera);
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+  }
+
+  /**
+   * Types words on `/recover`.
+   *
+   * @param page - Page under test.
+   * @param words - The words.
+   */
+  async function typeWords(page: Page, words: string): Promise<void> {
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await page.getByLabel('Your 12 words').fill(words);
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
+  test('screen /recover', async ({ page }) => {
+    await openRecover(page);
+    await expect(page.getByRole('button', { name: 'Scan two codes' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Type my 12 words' })).toBeVisible();
+    await shotScreen(page, 'screen-recover');
+  });
+
+  test('recover scan', async ({ page }) => {
+    await openCamera(page, { kind: 'blank' });
+    await expect(page.getByText('Scan code 1 of 2')).toBeVisible();
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-recover-scan');
+  });
+
+  test('recover scan-second', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
+    await shotScreen(page, 'state-recover-scan-second');
+  });
+
+  test('recover scan-second-camera', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-recover-scan-second-camera');
+  });
+
+  test('recover code-invalid', async ({ page }) => {
+    await openCamera(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
+    await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-recover-code-invalid');
+  });
+
+  test('recover code-same', async ({ page }) => {
+    await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      "That was the same code twice. Scan the other person's code.",
+    );
+    await shotScreen(page, 'state-recover-code-same');
+  });
+
+  test('recover code-other-set', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These two codes do not belong together.',
+    );
+    await shotScreen(page, 'state-recover-code-other-set');
+  });
+
+  test('recover camera-denied', async ({ page }) => {
+    await openCamera(page, { kind: 'denied' });
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Camera access is off. Allow the camera, or type your 12 words.',
+    );
+    await shotScreen(page, 'state-recover-camera-denied');
+  });
+
+  test('recover camera-unavailable', async ({ page }) => {
+    await openCamera(page, { kind: 'none' });
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'No camera found. Type your 12 words instead.',
+    );
+    await shotScreen(page, 'state-recover-camera-unavailable');
+  });
+
+  test('recover type', async ({ page }) => {
+    await openRecover(page);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await expect(page.getByLabel('Your 12 words')).toBeVisible();
+    await expect(page.getByText('Separate the words with spaces.')).toBeVisible();
+    await shotScreen(page, 'state-recover-type');
+  });
+
+  test('recover words-invalid', async ({ page }) => {
+    await typeWords(page, 'legal winner thank year');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These are not 12 valid words. Check the spelling.',
+    );
+    await shotScreen(page, 'state-recover-words-invalid');
+  });
+
+  test('recover no-wallet', async ({ page }) => {
+    await typeWords(page, RECOVER_PHRASE);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Recovery is not available in this version of the app.',
+    );
+    await shotScreen(page, 'state-recover-no-wallet');
+  });
+
+  const pinned: ReadonlyArray<readonly [string, string, string]> = [
+    ['recover-opening', 'state-recover-opening', 'Opening the old wallet…'],
+    [
+      'recover-opening-wait',
+      'state-recover-opening-wait',
+      'Checking the account. This can take a few minutes.',
+    ],
+    [
+      'recover-blocked-closed',
+      'state-recover-blocked-closed',
+      '21.gifts is updating. Please try again a little later.',
+    ],
+    ['recover-blocked-outdated', 'state-recover-blocked-outdated', 'A new version is ready'],
+    [
+      'recover-not-found',
+      'state-recover-not-found',
+      'These words do not belong to a 21.gifts account with a connected wallet.',
+    ],
+    [
+      'recover-done',
+      'state-recover-already-done',
+      'This account was already recovered. Log in with your new passkey.',
+    ],
+    [
+      'recover-operator',
+      'state-recover-operator',
+      'This account cannot be recovered here. Contact 21.gifts.',
+    ],
+    [
+      'recover-other-account',
+      'state-recover-other-account',
+      'These codes belong to another account.',
+    ],
+    [
+      'recover-unavailable',
+      'state-recover-unavailable',
+      'The address service is not reachable right now. Try again in a minute.',
+    ],
+    [
+      'recover-wallet-error',
+      'state-recover-wallet-error',
+      'Your wallet could not be opened. Please try again.',
+    ],
+    [
+      'recover-found',
+      'state-recover-found',
+      'Create a new passkey on this phone. It gets its own new 12 words.',
+    ],
+    [
+      'recover-found-busy',
+      'state-recover-found-busy',
+      'Create a new passkey on this phone. It gets its own new 12 words.',
+    ],
+    [
+      'recover-restart',
+      'state-recover-restart',
+      'The move did not go through. Create the new passkey again.',
+    ],
+    [
+      'recover-cancelled',
+      'state-recover-passkey-cancelled',
+      'Could not set up a passkey. Please try again.',
+    ],
+    [
+      'recover-timeout',
+      'state-recover-passkey-timeout',
+      'The device prompt timed out before you finished. Try again.',
+    ],
+    [
+      'recover-prf',
+      'state-recover-prf-unsupported',
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    ],
+    [
+      'recover-new-wallet-error',
+      'state-recover-new-wallet-error',
+      'Your wallet could not be opened. Please try again.',
+    ],
+    [
+      'recover-transfer',
+      'state-recover-transfer',
+      'This moves your account, your 21.gifts address and your whole balance to the new wallet on this phone.',
+    ],
+    [
+      'recover-transfer-busy',
+      'state-recover-transfer-busy',
+      'This moves your account, your 21.gifts address and your whole balance to the new wallet on this phone.',
+    ],
+    [
+      'recover-transfer-progress',
+      'state-recover-transfer-progress',
+      'Confirming the move. This can take a few minutes.',
+    ],
+    [
+      'recover-transfer-error',
+      'state-recover-transfer-error',
+      'Not everything was moved yet. Tap Transfer again to continue.',
+    ],
+    ['recover-balance-error', 'state-recover-balance-error', 'The balance could not be moved yet.'],
+    [
+      'recover-complete',
+      'state-recover-done',
+      'Set up Social Recovery again for the new words. Old shares now only open the previous wallet.',
+    ],
+    [
+      'recover-complete-missing',
+      'state-recover-done-balance-missing',
+      'Some balance stayed in the previous wallet. You can move it later in the settings.',
+    ],
+  ];
+
+  test('recover opening', async ({ page }) => {
+    await openRecover(page, pinned[0]![0]);
+    await expect(page.getByText(pinned[0]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-opening');
+  });
+
+  test('recover opening-wait', async ({ page }) => {
+    await openRecover(page, pinned[1]![0]);
+    await expect(page.getByText(pinned[1]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-opening-wait');
+  });
+
+  test('recover blocked-closed', async ({ page }) => {
+    await openRecover(page, pinned[2]![0]);
+    await expect(page.getByText(pinned[2]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start over' })).toBeVisible();
+    await shotScreen(page, 'state-recover-blocked-closed');
+  });
+
+  test('recover blocked-outdated', async ({ page }) => {
+    await openRecover(page, pinned[3]![0]);
+    await expect(page.getByText(pinned[3]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toHaveCount(0);
+    await shotScreen(page, 'state-recover-blocked-outdated');
+  });
+
+  test('recover not-found', async ({ page }) => {
+    await openRecover(page, pinned[4]![0]);
+    await expect(page.getByText(pinned[4]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-not-found');
+  });
+
+  test('recover already-done', async ({ page }) => {
+    await openRecover(page, pinned[5]![0]);
+    await expect(page.getByText(pinned[5]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await shotScreen(page, 'state-recover-already-done');
+  });
+
+  test('recover operator', async ({ page }) => {
+    await openRecover(page, pinned[6]![0]);
+    await expect(page.getByText(pinned[6]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-operator');
+  });
+
+  test('recover other-account', async ({ page }) => {
+    await openRecover(page, pinned[7]![0]);
+    await expect(page.getByText(pinned[7]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-other-account');
+  });
+
+  test('recover unavailable', async ({ page }) => {
+    await openRecover(page, pinned[8]![0]);
+    await expect(page.getByText(pinned[8]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-unavailable');
+  });
+
+  test('recover wallet-error', async ({ page }) => {
+    await openRecover(page, pinned[9]![0]);
+    await expect(page.getByText(pinned[9]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-wallet-error');
+  });
+
+  test('recover found', async ({ page }) => {
+    await openRecover(page, pinned[10]![0]);
+    await expect(page.getByText(pinned[10]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create new passkey' })).toBeEnabled();
+    await shotScreen(page, 'state-recover-found');
+  });
+
+  test('recover found-busy', async ({ page }) => {
+    await openRecover(page, pinned[11]![0]);
+    await expect(page.getByText(pinned[11]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create new passkey' })).toBeDisabled();
+    await shotScreen(page, 'state-recover-found-busy');
+  });
+
+  test('recover restart', async ({ page }) => {
+    await openRecover(page, pinned[12]![0]);
+    await expect(page.getByText(pinned[12]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-restart');
+  });
+
+  test('recover passkey-cancelled', async ({ page }) => {
+    await openRecover(page, pinned[13]![0]);
+    await expect(page.getByText(pinned[13]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-passkey-cancelled');
+  });
+
+  test('recover passkey-timeout', async ({ page }) => {
+    await openRecover(page, pinned[14]![0]);
+    await expect(page.getByText(pinned[14]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-passkey-timeout');
+  });
+
+  test('recover prf-unsupported', async ({ page }) => {
+    await openRecover(page, pinned[15]![0]);
+    await expect(page.getByText(pinned[15]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-prf-unsupported');
+  });
+
+  test('recover new-wallet-error', async ({ page }) => {
+    await openRecover(page, pinned[16]![0]);
+    await expect(page.getByText(pinned[16]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-new-wallet-error');
+  });
+
+  test('recover transfer', async ({ page }) => {
+    await openRecover(page, pinned[17]![0]);
+    await expect(page.getByText(pinned[17]![2])).toBeVisible();
+    await expect(page.getByRole('listitem')).toHaveCount(3);
+    await shotScreen(page, 'state-recover-transfer');
+  });
+
+  test('recover transfer-busy', async ({ page }) => {
+    await openRecover(page, pinned[18]![0]);
+    await expect(page.getByText(pinned[18]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Transfer' })).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'done' })).toHaveCount(0);
+    await expect(page.getByRole('status')).toHaveCount(0);
+    await shotScreen(page, 'state-recover-transfer-busy');
+  });
+
+  test('recover transfer-progress', async ({ page }) => {
+    await openRecover(page, pinned[19]![0]);
+    await expect(page.getByText(pinned[19]![2])).toBeVisible();
+    await expect(page.getByRole('img', { name: 'done' })).toHaveCount(2);
+    await shotScreen(page, 'state-recover-transfer-progress');
+  });
+
+  test('recover transfer-error', async ({ page }) => {
+    await openRecover(page, pinned[20]![0]);
+    await expect(page.getByText(pinned[20]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Start over' })).toBeVisible();
+    await shotScreen(page, 'state-recover-transfer-error');
+  });
+
+  test('recover balance-error', async ({ page }) => {
+    await openRecover(page, pinned[21]![0]);
+    await expect(page.getByText(pinned[21]![2])).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Move the balance later' })).toBeVisible();
+    await shotScreen(page, 'state-recover-balance-error');
+  });
+
+  test('recover done', async ({ page }) => {
+    await openRecover(page, pinned[22]![0]);
+    await expect(page.getByText(pinned[22]![2])).toBeVisible();
+    await expect(page.getByText(/^Some balance stayed/)).toHaveCount(0);
+    await shotScreen(page, 'state-recover-done');
+  });
+
+  test('recover done-balance-missing', async ({ page }) => {
+    await openRecover(page, pinned[23]![0]);
+    await expect(page.getByText(pinned[23]![2])).toBeVisible();
+    await shotScreen(page, 'state-recover-done-balance-missing');
+  });
+});
+
+test.describe('previous wallet states', () => {
+  /** The previous wallet the page opens. */
+  const PREVIOUS_KEY = `02${'a'.repeat(64)}`;
+
+  /**
+   * Signs in Ada with a verified wallet, with her stubbed camera and her
+   * previous wallets answered.
+   *
+   * @param page - Page under test.
+   * @param options - Camera, and the status of `GET /me/previous-wallets`.
+   */
+  async function seedOwner(
+    page: Page,
+    options: { camera?: CameraStub; listStatus?: number; listed?: boolean } = {},
+  ): Promise<void> {
+    await stubCamera(page, options.camera ?? { kind: 'blank' });
+    await fulfillSpot(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          sparkPubkey: `02${'e'.repeat(64)}`,
+          sparkWalletVerified: true,
+          socialRecoverySetUp: true,
+        }),
+      });
+    });
+    const status = options.listStatus ?? 200;
+    await page.route(/\/me\/previous-wallets$/, async (route) => {
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          status === 200
+            ? {
+                wallets:
+                  options.listed === false
+                    ? []
+                    : [
+                        {
+                          sparkPubkey: PREVIOUS_KEY,
+                          sparkAddress: 'spark1old',
+                          replacedAt: 1_767_268_800_000,
+                          balanceSats: 21_000,
+                        },
+                      ],
+              }
+            : { error: 'Wallet data is unavailable' },
+        ),
+      });
+    });
+  }
+
+  /**
+   * Opens the previous wallet's page, optionally on a screenshot pin.
+   *
+   * @param page - Page under test.
+   * @param pin - The `?visual=` pin, if any.
+   */
+  async function openWallet(page: Page, pin?: string): Promise<void> {
+    await page.goto(
+      pin === undefined
+        ? `/settings/previous-wallets/${PREVIOUS_KEY}`
+        : `/settings/previous-wallets/${PREVIOUS_KEY}?visual=${pin}`,
+    );
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Transfer remaining balance' }),
+    ).toBeAttached();
+  }
+
+  /**
+   * Opens the camera on the previous wallet's page.
+   *
+   * @param page - Page under test.
+   * @param camera - Camera behaviour.
+   */
+  async function openCamera(page: Page, camera: CameraStub): Promise<void> {
+    await seedOwner(page, { camera });
+    await openWallet(page);
+    await page.getByRole('button', { name: 'Scan two codes' }).click();
+  }
+
+  /**
+   * Types words on the previous wallet's page.
+   *
+   * @param page - Page under test.
+   * @param words - The words.
+   */
+  async function typeWords(page: Page, words: string): Promise<void> {
+    await seedOwner(page);
+    await openWallet(page);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await page.getByLabel('Your 12 words').fill(words);
+    await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
+  test('screen /settings/previous-wallets/[sparkPubkey]', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page);
+    await expect(
+      page.getByText('Scan the two codes of this wallet or type its 12 words.'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-settings-previous-wallets-sparkPubkey');
+  });
+
+  test('previous wallet not-found', async ({ page }) => {
+    await seedOwner(page, { listed: false });
+    await openWallet(page);
+    await expect(page.getByText('This previous wallet is not on your account.')).toBeVisible();
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Done' })).toHaveCount(0);
+    await shotScreen(page, 'state-previous-wallet-not-found');
+  });
+
+  test('previous wallet load-error', async ({ page }) => {
+    await seedOwner(page, { listStatus: 503 });
+    await openWallet(page);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Previous wallets could not be loaded.',
+    );
+    await shotScreen(page, 'state-previous-wallet-load-error');
+  });
+
+  test('previous wallet scan', async ({ page }) => {
+    await openCamera(page, { kind: 'blank' });
+    await expect(page.getByText('Scan code 1 of 2')).toBeVisible();
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-previous-wallet-scan');
+  });
+
+  test('previous wallet scan-second', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.locator('video')).toHaveCount(0);
+    await shotScreen(page, 'state-previous-wallet-scan-second');
+  });
+
+  test('previous wallet scan-second-camera', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await cameraPlaying(page);
+    await shotScreen(page, 'state-previous-wallet-scan-second-camera');
+  });
+
+  test('previous wallet code-invalid', async ({ page }) => {
+    await openCamera(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
+    await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
+    await shotScreen(page, 'state-previous-wallet-code-invalid');
+  });
+
+  test('previous wallet code-same', async ({ page }) => {
+    await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      "That was the same code twice. Scan the other person's code.",
+    );
+    await shotScreen(page, 'state-previous-wallet-code-same');
+  });
+
+  test('previous wallet code-other-set', async ({ page }) => {
+    await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
+    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These two codes do not belong together.',
+    );
+    await shotScreen(page, 'state-previous-wallet-code-other-set');
+  });
+
+  test('previous wallet code-other-account', async ({ page }) => {
+    await openCamera(page, { kind: 'qr', text: RECOVER_OTHER_ACCOUNT });
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These codes belong to another account.',
+    );
+    await shotScreen(page, 'state-previous-wallet-code-other-account');
+  });
+
+  test('previous wallet camera-denied', async ({ page }) => {
+    await openCamera(page, { kind: 'denied' });
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Camera access is off. Allow the camera, or type your 12 words.',
+    );
+    await shotScreen(page, 'state-previous-wallet-camera-denied');
+  });
+
+  test('previous wallet camera-unavailable', async ({ page }) => {
+    await openCamera(page, { kind: 'none' });
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'No camera found. Type your 12 words instead.',
+    );
+    await shotScreen(page, 'state-previous-wallet-camera-unavailable');
+  });
+
+  test('previous wallet type', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await expect(page.getByLabel('Your 12 words')).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-type');
+  });
+
+  test('previous wallet words-invalid', async ({ page }) => {
+    await typeWords(page, 'legal winner thank year');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These are not 12 valid words. Check the spelling.',
+    );
+    await shotScreen(page, 'state-previous-wallet-words-invalid');
+  });
+
+  test('previous wallet wallet-error', async ({ page }) => {
+    await typeWords(page, RECOVER_PHRASE);
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
+    await shotScreen(page, 'state-previous-wallet-wallet-error');
+  });
+
+  test('previous wallet opening', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-opening');
+    await expect(page.getByRole('status')).toHaveText('Opening the old wallet…');
+    await shotScreen(page, 'state-previous-wallet-opening');
+  });
+
+  test('previous wallet mismatch', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-mismatch');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'These words do not open this previous wallet.',
+    );
+    await shotScreen(page, 'state-previous-wallet-mismatch');
+  });
+
+  test('previous wallet balance', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-balance');
+    await expect(page.getByText("₿21'000 · $21.00")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Transfer' })).toBeEnabled();
+    await shotScreen(page, 'state-previous-wallet-balance');
+  });
+
+  test('previous wallet sending', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-sending');
+    await expect(page.getByText("₿21'000 · $21.00")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Transfer' })).toBeDisabled();
+    await shotScreen(page, 'state-previous-wallet-sending');
+  });
+
+  test('previous wallet error', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-error');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The balance could not be moved. Try again.',
+    );
+    await shotScreen(page, 'state-previous-wallet-error');
+  });
+
+  test('previous wallet empty', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-empty');
+    await expect(
+      page.getByText('This wallet is empty. You can remove it from your account.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove previous wallet' })).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-empty');
+  });
+
+  test('previous wallet remove-confirm', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-empty');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Remove this previous wallet from your account?' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-remove-confirm');
+  });
+
+  test('previous wallet removing', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, () => {
+      // Never answered: the removal stays in flight for the picture.
+    });
+    await openWallet(page, 'prev-empty');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Remove this previous wallet from your account?',
+    });
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(confirm.getByRole('button', { name: 'Remove' })).toBeDisabled();
+    await shotScreen(page, 'state-previous-wallet-removing');
+  });
+
+  test('previous wallet remove-error', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet data is unavailable' }),
+      });
+    });
+    await openWallet(page, 'prev-empty');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await page
+      .getByRole('group', { name: 'Remove this previous wallet from your account?' })
+      .getByRole('button', { name: 'Remove' })
+      .click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be removed. Try again.',
+    );
+    await shotScreen(page, 'state-previous-wallet-remove-error');
+  });
+
+  test('previous wallet done', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-done');
+    await expect(page.getByRole('status')).toHaveText('Moved to your wallet.');
+    await expect(page.getByRole('button', { name: 'Remove previous wallet' })).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done');
+  });
+
+  test('previous wallet done-remove-confirm', async ({ page }) => {
+    await seedOwner(page);
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Remove this previous wallet from your account?' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-remove-confirm');
+  });
+
+  test('previous wallet done-removing', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, () => {
+      // Never answered: the removal stays in flight for the picture.
+    });
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Remove this previous wallet from your account?',
+    });
+    await confirm.getByRole('button', { name: 'Remove' }).click();
+    await expect(confirm.getByRole('button', { name: 'Remove' })).toBeDisabled();
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-removing');
+  });
+
+  test('previous wallet done-remove-error', async ({ page }) => {
+    await seedOwner(page);
+    await page.route(/\/me\/previous-wallets\/[^/]+$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet data is unavailable' }),
+      });
+    });
+    await openWallet(page, 'prev-done');
+    await page.getByRole('button', { name: 'Remove previous wallet' }).click();
+    await page
+      .getByRole('group', { name: 'Remove this previous wallet from your account?' })
+      .getByRole('button', { name: 'Remove' })
+      .click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The wallet could not be removed. Try again.',
+    );
+    await expect(page.getByText('Moved to your wallet.')).toBeVisible();
+    await shotScreen(page, 'state-previous-wallet-done-remove-error');
   });
 });

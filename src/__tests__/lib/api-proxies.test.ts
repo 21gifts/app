@@ -4,6 +4,8 @@ import {
   proxyDiagnosticsPost,
   proxyAuthPasskeyAuthenticateBeginPost,
   proxyAuthPasskeyAuthenticateFinishPost,
+  proxyAuthPasskeyRecoveryBeginPost,
+  proxyAuthPasskeyRecoveryFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
   proxyAuthPasskeyReplaceBeginPost,
@@ -17,11 +19,15 @@ import {
   proxyMeWalletPut,
   proxyLnurlpayRegisterPost,
   proxyLnurlpayRecoverPost,
+  proxyLnurlpayTransferPost,
   proxyLnurlpayMetadataGet,
   proxyLnurlpInvoiceGet,
   proxyVerifyGet,
   proxyMePasskeyRenewAckPost,
   proxyMePasskeyRenewReportPost,
+  proxyMePreviousWalletDelete,
+  proxyMePreviousWalletsGet,
+  proxyMeRecoverySharePut,
   proxyGiftsGet,
   proxyGiftsStatsGet,
   proxyFxSpotGet,
@@ -255,6 +261,93 @@ describe('api proxy wrappers', () => {
       '02ab',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurlpay/02ab/recover');
+  });
+
+  it('proxyLnurlpayTransferPost hits POST /lnurlpay/:pubkey/transfer', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayTransferPost(
+      new Request('http://localhost/lnurlpay/02ab/transfer', { method: 'POST', body: '{}' }),
+      '02ab',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/lnurlpay/02ab/transfer');
+    expect(init.method).toBe('POST');
+    expect(init.signal).toBeUndefined();
+    await proxyLnurlpayTransferPost(
+      new Request('http://localhost/lnurlpay/x/transfer', { method: 'POST', body: '{}' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/lnurlpay/a%2Fb/transfer');
+  });
+
+  it('proxyAuthPasskeyRecoveryBeginPost hits POST /auth/passkey/recovery/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRecoveryBeginPost(
+      new Request('http://localhost/auth/passkey/recovery/begin', {
+        method: 'POST',
+        headers: { 'x-app-build': 'build-1' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/auth/passkey/recovery/begin');
+    expect(init.method).toBe('POST');
+    expect(new Headers(init.headers).get('x-app-build')).toBe('build-1');
+  });
+
+  it('proxyAuthPasskeyRecoveryFinishPost hits POST /auth/passkey/recovery/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRecoveryFinishPost(
+      new Request('http://localhost/auth/passkey/recovery/finish', {
+        method: 'POST',
+        headers: { 'x-app-build': 'build-1', origin: 'http://localhost' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/auth/passkey/recovery/finish');
+    expect(init.method).toBe('POST');
+    expect(new Headers(init.headers).get('x-app-build')).toBe('build-1');
+    expect(new Headers(init.headers).get('origin')).toBe('http://localhost');
+  });
+
+  it('proxyMeRecoverySharePut hits PUT /me/recovery-share', async () => {
+    const fetchMock = stubApi();
+    await proxyMeRecoverySharePut(
+      new Request('http://localhost/me/recovery-share', {
+        method: 'PUT',
+        headers: { authorization: 'Bearer token' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/recovery-share');
+    expect(init.method).toBe('PUT');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+  });
+
+  it('proxyMePreviousWalletsGet hits GET /me/previous-wallets', async () => {
+    const fetchMock = stubApi();
+    await proxyMePreviousWalletsGet(new Request('http://localhost/me/previous-wallets'));
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/previous-wallets');
+    expect(init.method).toBe('GET');
+  });
+
+  it('proxyMePreviousWalletDelete hits DELETE /me/previous-wallets/:sparkPubkey', async () => {
+    const fetchMock = stubApi();
+    await proxyMePreviousWalletDelete(
+      new Request('http://localhost/me/previous-wallets/02ab', { method: 'DELETE' }),
+      '02ab',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/previous-wallets/02ab');
+    expect(init.method).toBe('DELETE');
+    await proxyMePreviousWalletDelete(
+      new Request('http://localhost/me/previous-wallets/x', { method: 'DELETE' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/me/previous-wallets/a%2Fb');
   });
 
   it('proxyLnurlpayMetadataGet hits GET /lnurlpay/:pubkey/metadata with the query', async () => {

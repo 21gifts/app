@@ -15,6 +15,7 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LoginsClosedError,
+  RecoveryPendingError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   UnknownCredentialError,
@@ -1531,6 +1532,45 @@ describe('usePasskeyLogin', () => {
         Reflect.deleteProperty(globalThis, 'PublicKeyCredential');
       }
     }
+  });
+
+  it('a passkey of an unfinished recovery is never signalled unknown and marks the error', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new RecoveryPendingError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    expect(result.current.recoveryPending).toBe(false);
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.recoveryPending).toBe(true);
+    expect(signal).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().session).toBeNull();
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(
+      new Error('Failed to finish passkey authentication: 400'),
+    );
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.recoveryPending).toBe(false);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new RecoveryPendingError());
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(result.current.recoveryPending).toBe(true);
+    act(() => {
+      result.current.cancel();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(result.current.recoveryPending).toBe(false);
+    vi.unstubAllGlobals();
   });
 
   it('does not signal on a different finish 400 and shows error', async () => {

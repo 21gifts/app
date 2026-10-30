@@ -13,6 +13,10 @@ type SentRequest = {
 const MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
+/** A 20-word SLIP-39 recovery share. */
+const SHARE =
+  'body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+
 type Module = typeof import('@/lib/interaction-log');
 let mod: Module;
 let useAuthStore: typeof import('@/stores/auth-store').useAuthStore;
@@ -111,6 +115,7 @@ describe('logInteraction', () => {
   it('keeps nothing without a session', async () => {
     useAuthStore.setState({ session: null });
     mod.logInteraction('screen_view');
+    mod.logInteraction('recovery_done');
     useAuthStore.setState({ session: 'sess' });
     await mod.flushInteractions();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -138,6 +143,9 @@ describe('logInteraction', () => {
       preimage: 'x',
       sessionToken: 'x',
       privateKey: 'x',
+      shareCode: 'x',
+      slip39Identifier: 1,
+      payload: `21gifts-share:v1:acc_1:ada:${SHARE}`,
       'bad key': 'x',
       words: MNEMONIC,
       hash: 'f'.repeat(64),
@@ -149,6 +157,7 @@ describe('logInteraction', () => {
     await mod.flushInteractions();
     expect(posted()[0]?.props).toEqual({ query: 'coffee', count: 3 });
     expect(JSON.stringify(requests().map((request) => request.body))).not.toContain(MNEMONIC);
+    expect(JSON.stringify(requests().map((request) => request.body))).not.toContain(SHARE);
   });
 
   it('drops an event it cannot build instead of throwing', async () => {
@@ -423,6 +432,28 @@ describe('failure events the api may not know yet', () => {
     // The refused wallet batch is dropped; the others were accepted, so nothing is sent again.
     await mod.flushInteractions();
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keep the recovery event apart, so an api without its name drops no other event', async () => {
+    fetchMock.mockImplementation((_url: string, init: SentRequest) => {
+      const names = (JSON.parse(init.body) as { events: SentEvent[] }).events.map((e) => e.name);
+      // An api that knows every other event but not the recovery event yet.
+      const refused = names.includes('recovery_done');
+      return Promise.resolve({ ok: !refused, status: refused ? 400 : 204 });
+    });
+    mod.logInteraction('login');
+    mod.logInteraction('recovery_done');
+    mod.logInteraction('wallet_tour_shown', { steps: 4 });
+    await mod.flushInteractions();
+    expect(batches()).toEqual([['login'], ['recovery_done'], ['wallet_tour_shown']]);
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('keep the recovery event, without props, once an api accepts its name', async () => {
+    mod.logInteraction('recovery_done');
+    await mod.flushInteractions();
+    expect(posted().map((event) => [event.name, event.props])).toEqual([['recovery_done', {}]]);
   });
 
   it('are sent first when they are the oldest, and a failed batch of them is kept', async () => {

@@ -91,6 +91,28 @@ export async function proxyAuthPasskeySeedFinishPost(request: Request): Promise<
 }
 
 /**
+ * Proxies POST /auth/passkey/recovery/begin (social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (no session; JSON body with
+ *   the old wallet's signed lookup).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyRecoveryBeginPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/recovery/begin');
+}
+
+/**
+ * Proxies POST /auth/passkey/recovery/finish (social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (no session; JSON body signed
+ *   by the old wallet).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyRecoveryFinishPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/recovery/finish');
+}
+
+/**
  * Proxies GET /me to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -315,6 +337,40 @@ export async function proxyMeWalletPut(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies PUT /me/recovery-share (21.gifts' share of a social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sparkPubkey, share }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeRecoverySharePut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/recovery-share');
+}
+
+/**
+ * Proxies GET /me/previous-wallets to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMePreviousWalletsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/previous-wallets');
+}
+
+/**
+ * Proxies DELETE /me/previous-wallets/:sparkPubkey to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param sparkPubkey - Previous wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyMePreviousWalletDelete(
+  request: Request,
+  sparkPubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/me/previous-wallets/${encodeURIComponent(sparkPubkey)}`);
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON
@@ -371,6 +427,21 @@ export async function proxyLnurlpayRecoverPost(
   pubkey: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/recover`);
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey/transfer (the new wallet claims an address
+ * the old wallet authorized) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (JSON body signed by both wallets).
+ * @param pubkey - New wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayTransferPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/transfer`);
 }
 
 /**

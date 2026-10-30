@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell, AppShellContext } from '@/components/AppShell';
 import { SignedInChrome } from '@/components/SignedInChrome';
@@ -177,6 +177,7 @@ beforeEach(() => {
     cancel,
     error: null,
     clearNameError: vi.fn(),
+    recoveryPending: false,
     nameError: null,
   });
   useAuthStore.setState({
@@ -1104,6 +1105,124 @@ describe('SignedInChrome', () => {
     requestForumCompose();
     renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  /** The effective grant object of an owner account, with the given status. */
+  function grant(status: 'none' | 'pending' | 'trial' | 'admitted' | 'rejected'): {
+    status: typeof status;
+    trialUtcDate: string | null;
+    admittedAt: number | null;
+    reviewedByName: string | null;
+  } {
+    return {
+      status,
+      trialUtcDate: status === 'trial' ? '2026-01-07' : null,
+      admittedAt: status === 'admitted' ? 1_700_000_000_000 : null,
+      reviewedByName: null,
+    };
+  }
+
+  /**
+   * Seeds the signed-in account on `/welcome` with grant and recovery fields.
+   *
+   * @param extra - Account fields to set.
+   */
+  function welcomeAccount(extra: Record<string, unknown>): void {
+    navigation.pathname = '/welcome';
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: true, ...extra } });
+  }
+
+  it.each(['admitted', 'trial'] as const)(
+    'shows the Social Recovery prompt on /welcome for a %s grant member without it',
+    (status) => {
+      welcomeAccount({ funding: grant(status), socialRecoverySetUp: false });
+      renderWithLocale(<SignedInChrome />);
+      const dialog = screen.getByRole('dialog', { name: 'Social Recovery for your grant' });
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+      expect(screen.getByRole('button', { name: 'Secure my account' })).toBeTruthy();
+      expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    },
+  );
+
+  it.each([
+    ['a pending application', { funding: grant('pending'), socialRecoverySetUp: false }],
+    ['no grant', { funding: grant('none'), socialRecoverySetUp: false }],
+    ['a rejected application', { funding: grant('rejected'), socialRecoverySetUp: false }],
+    ['a basis member', { funding: null, socialRecoverySetUp: false }],
+    ['an older api without funding', { socialRecoverySetUp: false }],
+    ['Social Recovery set up', { funding: grant('admitted'), socialRecoverySetUp: true }],
+    ['an older api without the field', { funding: grant('admitted') }],
+    [
+      'setup still running',
+      { funding: grant('admitted'), socialRecoverySetUp: false, setup: 'rules' },
+    ],
+  ])('does not show the Social Recovery prompt for %s', (_label, extra) => {
+    welcomeAccount(extra);
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+  });
+
+  it.each(['/wallet', '/settings', '/profile', '/grants', '/messages', '/setup/rules'])(
+    'never shows the Social Recovery prompt over %s',
+    (path) => {
+      welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false });
+      navigation.pathname = path;
+      renderWithLocale(<SignedInChrome />);
+      expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+    },
+  );
+
+  it('shows Introduce yourself first and the Social Recovery prompt once it is closed', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.getByRole('dialog', { name: 'Introduce yourself' })).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Introduce yourself' })).getByRole('button', {
+        name: 'Close',
+      }),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('shows the Social Recovery prompt in the same visit after Write an introduction', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
+    const first = renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+    first.unmount();
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('closes the Social Recovery prompt for this mount, and the next mount shows it again', () => {
+    welcomeAccount({ funding: grant('trial'), socialRecoverySetUp: false });
+    const first = renderWithLocale(<SignedInChrome />);
+    const close = within(
+      screen.getByRole('dialog', { name: 'Social Recovery for your grant' }),
+    ).getByRole('button', { name: 'Close' });
+    expect(screen.queryByText('Close')).toBeNull();
+    fireEvent.click(close);
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    first.unmount();
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('opens Secure my account from the Social Recovery prompt', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Secure my account' }));
+    expect(push).toHaveBeenCalledWith('/settings/social-recovery');
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
   });
 
   it('opens a full-width sheet without a shell scroller when the viewport is narrow', () => {

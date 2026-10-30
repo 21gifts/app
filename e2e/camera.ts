@@ -6,11 +6,18 @@ import QRCode from 'qrcode';
  *
  * - `blank`: a live stream of a plain black frame (no QR code in view).
  * - `qr`: a live stream that shows one QR code holding `text`.
+ * - `qrs`: one QR code per camera request: request n shows `texts[n]`, and
+ *   every request after the last a plain black frame (a scanner that starts
+ *   again for a second code reads the next one, then nothing).
  * - `denied`: the visitor blocked the camera (`NotAllowedError`).
  * - `none`: the device has no camera (`NotFoundError`).
  */
 export type CameraStub =
-  { kind: 'blank' } | { kind: 'qr'; text: string } | { kind: 'denied' } | { kind: 'none' };
+  | { kind: 'blank' }
+  | { kind: 'qr'; text: string }
+  | { kind: 'qrs'; texts: readonly string[] }
+  | { kind: 'denied' }
+  | { kind: 'none' };
 
 /** Counters the stub keeps on `window` for assertions. */
 export interface CameraStubStats {
@@ -30,10 +37,12 @@ export interface CameraStubStats {
  * @param stub - Camera behaviour.
  */
 export async function stubCamera(page: Page, stub: CameraStub): Promise<void> {
-  const qr =
-    stub.kind === 'qr' ? await QRCode.toDataURL(stub.text, { margin: 4, width: 360 }) : null;
+  const texts = stub.kind === 'qr' ? [stub.text] : stub.kind === 'qrs' ? [...stub.texts] : [];
+  const images = await Promise.all(
+    texts.map((text) => QRCode.toDataURL(text, { margin: 4, width: 360 })),
+  );
   await page.addInitScript(
-    ({ kind, image }) => {
+    ({ kind, images }) => {
       const stats = { requests: 0, live: 0 };
       Object.defineProperty(window, '__cameraStub', { value: stats });
       const draw = async (canvas: HTMLCanvasElement): Promise<void> => {
@@ -41,7 +50,9 @@ export async function stubCamera(page: Page, stub: CameraStub): Promise<void> {
         if (context === null) {
           return;
         }
-        context.fillStyle = kind === 'qr' ? '#ffffff' : '#000000';
+        // `qr` repeats its one code; `qrs` shows the next code, then nothing.
+        const image = kind === 'qr' ? (images[0] ?? null) : (images[stats.requests - 1] ?? null);
+        context.fillStyle = image === null ? '#000000' : '#ffffff';
         context.fillRect(0, 0, canvas.width, canvas.height);
         if (image === null) {
           return;
@@ -81,7 +92,7 @@ export async function stubCamera(page: Page, stub: CameraStub): Promise<void> {
         value: { getUserMedia },
       });
     },
-    { kind: stub.kind, image: qr },
+    { kind: stub.kind, images },
   );
 }
 

@@ -65,6 +65,7 @@ function mockPasskey(status: PasskeyStatus = 'idle', error: string | null = null
     cancel: cancelSpy,
     error: status === 'error' ? error : null,
     clearNameError: vi.fn(),
+    recoveryPending: false,
     nameError: null,
   });
 }

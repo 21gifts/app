@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
     disconnect: vi.fn(),
     connect: vi.fn(),
     defaultConfig: vi.fn(),
+    defaultExternalSigners: vi.fn(),
     init: vi.fn(),
   };
 });
@@ -40,6 +41,7 @@ vi.mock('@breeztech/breez-sdk-spark/web', () => ({
     mocks.callOrder.push('connect');
     return mocks.connect(...args);
   },
+  defaultExternalSigners: (...args: unknown[]) => mocks.defaultExternalSigners(...args),
 }));
 
 beforeEach(async () => {
@@ -791,6 +793,185 @@ describe('payments', () => {
     expect(sdkPay.lnurlPay).toHaveBeenCalledWith({ prepareResponse: response });
     await conn.prepare({ type: 'lnurl', request: { details: LNURL }, amountSats: 5 });
     expect(sdkPay.prepareLnurlPay).toHaveBeenLastCalledWith({ amount: 5n, payRequest: LNURL });
+  });
+});
+
+describe('social recovery', () => {
+  const sdkRecovery = {
+    signMessage: vi.fn(),
+    getLightningAddress: vi.fn(),
+    authorizeLightningAddressTransfer: vi.fn(),
+    claimLightningAddressTransfer: vi.fn(),
+    receivePayment: vi.fn(),
+    prepareSendPayment: vi.fn(),
+    sendPayment: vi.fn(),
+  };
+  /** The identity key and a compact signature of the SDK's offline signer. */
+  const OLD_KEY = '0281363910b0dc0015a4a25e758da30f0e28388ea5252c0e3713936f2d4ef7d3d5';
+  const COMPACT =
+    'b02626c724efdd78042241a16fb1808118544d09f13d2d745847f5dbfc46f46167acd68bf9f5cf6cf844b000c555a228c811924a44473a516c7cce6a95cdaab4';
+  const DER =
+    '3045022100b02626c724efdd78042241a16fb1808118544d09f13d2d745847f5dbfc46f461022067acd68bf9f5cf6cf844b000c555a228c811924a44473a516c7cce6a95cdaab4';
+  const signer = {
+    getIdentityPublicKey: vi.fn(),
+    signMessage: vi.fn(),
+    free: vi.fn(),
+  };
+  const signers = { sparkSigner: signer, free: vi.fn() };
+  const UUID = '5f0c3a4e-8d1b-4f6a-9c2e-7b3d1a0e9f42';
+
+  beforeEach(() => {
+    for (const fn of [...Object.values(sdkRecovery), ...Object.values(signer), signers.free]) {
+      fn.mockReset();
+    }
+    mocks.connect.mockResolvedValue({
+      getInfo: mocks.getInfo,
+      addEventListener: mocks.addEventListener,
+      disconnect: mocks.disconnect,
+      ...sdkRecovery,
+    });
+    mocks.defaultExternalSigners.mockReset().mockReturnValue(signers);
+    signer.getIdentityPublicKey.mockResolvedValue({
+      bytes: Array.from(Buffer.from(OLD_KEY, 'hex')),
+    });
+    signer.signMessage.mockResolvedValue({ bytes: Array.from(Buffer.from(COMPACT, 'hex')) });
+  });
+
+  async function connection(): Promise<
+    Awaited<ReturnType<Awaited<ReturnType<typeof loadWalletSdk>>['connect']>>
+  > {
+    const sdk = await loadWalletSdk();
+    return sdk.connect(MNEMONIC, API_KEY, HOST);
+  }
+
+  it('signMessage signs compact and returns only the key and the signature', async () => {
+    sdkRecovery.signMessage.mockResolvedValue({ pubkey: OLD_KEY, signature: COMPACT, extra: 1 });
+    const conn = await connection();
+    await expect(conn.signMessage('21gifts-account-recovery-v1\nacc')).resolves.toEqual({
+      pubkey: OLD_KEY,
+      signature: COMPACT,
+    });
+    expect(sdkRecovery.signMessage).toHaveBeenCalledWith({
+      message: '21gifts-account-recovery-v1\nacc',
+      compact: true,
+    });
+  });
+
+  it('hasAddress reads the address the wallet holds, or none', async () => {
+    sdkRecovery.getLightningAddress
+      .mockResolvedValueOnce({ username: 'ada', lightningAddress: 'ada@21.gifts' })
+      .mockResolvedValueOnce(undefined);
+    const conn = await connection();
+    await expect(conn.hasAddress()).resolves.toBe(true);
+    await expect(conn.hasAddress()).resolves.toBe(false);
+    expect(sdkRecovery.getLightningAddress).toHaveBeenCalledWith();
+  });
+
+  it('authorizes the address for the new key and claims it with that same authorization', async () => {
+    const authorization = {
+      username: 'ada',
+      pubkey: OLD_KEY,
+      signature: DER,
+      domain: HOST,
+      timestamp: 1_700_000_000,
+    };
+    sdkRecovery.authorizeLightningAddressTransfer.mockResolvedValue(authorization);
+    sdkRecovery.claimLightningAddressTransfer.mockResolvedValue({ username: 'ada' });
+    const conn = await connection();
+    const transfer = await conn.authorizeAddressTransfer(IDENTITY);
+    expect(sdkRecovery.authorizeLightningAddressTransfer).toHaveBeenCalledWith({
+      transfereePubkey: IDENTITY,
+    });
+    expect(transfer).toEqual({ authorization });
+    await expect(conn.claimAddressTransfer(transfer)).resolves.toBeUndefined();
+    expect(sdkRecovery.claimLightningAddressTransfer).toHaveBeenCalledWith({ authorization });
+  });
+
+  it('claimAddressTransfer passes a refused claim on', async () => {
+    sdkRecovery.claimLightningAddressTransfer.mockRejectedValue(new Error('refused'));
+    const conn = await connection();
+    await expect(conn.claimAddressTransfer({ authorization: {} })).rejects.toThrow('refused');
+  });
+
+  it('receiveSparkAddress asks for a Spark address and returns it', async () => {
+    sdkRecovery.receivePayment.mockResolvedValue({ paymentRequest: 'spark1qxyz', fee: 0n });
+    const conn = await connection();
+    await expect(conn.receiveSparkAddress()).resolves.toBe('spark1qxyz');
+    expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
+      paymentMethod: { type: 'sparkAddress' },
+    });
+  });
+
+  it('sendToSparkAddress sends exactly the amount with the idempotency key', async () => {
+    const prepared = {
+      amount: 21_000n,
+      paymentMethod: { type: 'sparkAddress', address: 'spark1qxyz', fee: '0' },
+      feePolicy: 'feesExcluded',
+    };
+    sdkRecovery.prepareSendPayment.mockResolvedValue(prepared);
+    sdkRecovery.sendPayment.mockResolvedValue({ payment: {} });
+    const conn = await connection();
+    await expect(conn.sendToSparkAddress('spark1qxyz', 21_000, UUID)).resolves.toBeUndefined();
+    expect(sdkRecovery.prepareSendPayment).toHaveBeenCalledWith({
+      paymentRequest: { type: 'input', input: 'spark1qxyz' },
+      amount: 21_000n,
+    });
+    expect(sdkRecovery.sendPayment).toHaveBeenCalledWith({
+      prepareResponse: prepared,
+      idempotencyKey: UUID,
+    });
+  });
+
+  it('sendToSparkAddress refuses any other payment method and sends nothing', async () => {
+    sdkRecovery.prepareSendPayment.mockResolvedValue({
+      amount: 21_000n,
+      paymentMethod: { type: 'bolt11Invoice', lightningFeeSats: 2 },
+    });
+    const conn = await connection();
+    await expect(conn.sendToSparkAddress('lnbc1', 21_000, UUID)).rejects.toThrow(
+      'Not a Spark address',
+    );
+    expect(sdkRecovery.sendPayment).not.toHaveBeenCalled();
+  });
+
+  it('identityPubkey reads the key of the words offline and frees the signer', async () => {
+    const sdk = await loadWalletSdk();
+    await expect(sdk.identityPubkey(MNEMONIC)).resolves.toBe(OLD_KEY);
+    expect(mocks.defaultExternalSigners).toHaveBeenCalledWith(MNEMONIC, null, 'mainnet');
+    expect(mocks.connect).not.toHaveBeenCalled();
+    expect(signer.free).toHaveBeenCalledTimes(1);
+    expect(signers.free).toHaveBeenCalledTimes(1);
+  });
+
+  it('identityPubkey frees the signer also when reading the key fails', async () => {
+    signer.getIdentityPublicKey.mockRejectedValue(new Error('signer failed'));
+    const sdk = await loadWalletSdk();
+    await expect(sdk.identityPubkey(MNEMONIC)).rejects.toThrow('signer failed');
+    expect(signer.free).toHaveBeenCalledTimes(1);
+    expect(signers.free).toHaveBeenCalledTimes(1);
+  });
+
+  it('identityPubkey passes invalid words on', async () => {
+    mocks.defaultExternalSigners.mockImplementation(() => {
+      throw new Error('invalid mnemonic');
+    });
+    const sdk = await loadWalletSdk();
+    await expect(sdk.identityPubkey('not words')).rejects.toThrow('invalid mnemonic');
+  });
+
+  it('signAddressLookup signs the exact recover message bytes and DER-encodes the signature', async () => {
+    const sdk = await loadWalletSdk();
+    await expect(sdk.signAddressLookup(MNEMONIC, HOST, 1_761_700_000)).resolves.toEqual({
+      pubkey: OLD_KEY,
+      signature: DER,
+    });
+    const signed = signer.signMessage.mock.calls[0]?.[0] as Uint8Array;
+    expect(new TextDecoder().decode(signed)).toBe(
+      `breez-lnurl:v2\nrecover\n${HOST}\n${OLD_KEY}\n1761700000`,
+    );
+    expect(mocks.connect).not.toHaveBeenCalled();
+    expect(signer.free).toHaveBeenCalledTimes(1);
+    expect(signers.free).toHaveBeenCalledTimes(1);
   });
 });
 

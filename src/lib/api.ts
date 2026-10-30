@@ -43,7 +43,9 @@ import {
   trustChainSchema,
   passkeyBeginSchema,
   passkeySessionSchema,
+  previousWalletsSchema,
   pushSubscriptionResponseSchema,
+  recoveryBeginSchema,
   vapidPublicSchema,
   viewProfileSchema,
   fiatAmountSchema,
@@ -84,6 +86,8 @@ import {
   type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
+  type PreviousWallet,
+  type RecoveryBegin,
   type TrustActionResult,
   type TrustChain,
   type ForumGoalCurrency,
@@ -214,6 +218,21 @@ export class AppOutdatedError extends Error {
 }
 
 /**
+ * Reads `code` from a clone of an api error body, so the caller can still
+ * read the body.
+ *
+ * @param response - The raw fetch response.
+ * @returns The body's `code`, or `undefined` when the body is not a JSON object.
+ */
+async function readApiCode(response: Response): Promise<unknown> {
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  return body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+}
+
+/**
  * Throws the typed login refusal when a 503 body carries `code`
  * {@link LOGINS_CLOSED_CODE} or a 403 body carries {@link APP_OUTDATED_CODE}.
  * Reads a clone, so the caller can still read the body; any other status,
@@ -227,12 +246,7 @@ async function throwIfLoginBlocked(response: Response): Promise<void> {
   if (response.status !== 503 && response.status !== 403) {
     return;
   }
-  const body: unknown = await response
-    .clone()
-    .json()
-    .catch(() => null);
-  const code =
-    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  const code = await readApiCode(response);
   if (response.status === 503 && code === LOGINS_CLOSED_CODE) {
     throw new LoginsClosedError();
   }
@@ -266,12 +280,7 @@ export async function throwIfWalletAnswer(response: Response): Promise<void> {
   if (response.status !== 400) {
     return;
   }
-  const body: unknown = await response
-    .clone()
-    .json()
-    .catch(() => null);
-  const code =
-    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  const code = await readApiCode(response);
   if (code === WALLET_REQUIRED_CODE) {
     throw new WalletRequiredError();
   }
@@ -325,6 +334,79 @@ export function isUnknownCredentialError(error: unknown): boolean {
     error instanceof UnknownCredentialError ||
     (error instanceof Error && error.message === UNKNOWN_CREDENTIAL_ERROR)
   );
+}
+
+/** Api error `code` (HTTP 409) when authenticate finish gets the new passkey of an unfinished recovery. */
+const RECOVERY_PENDING_CODE = 'recovery_pending';
+
+/** Api error `code` (HTTP 409) when recovery begin finds the account already recovered. */
+const RECOVERY_DONE_CODE = 'recovery_done';
+
+/** Api error `code` (HTTP 409) when recovery begin finds an account only an operator can recover. */
+const RECOVERY_OPERATOR_CODE = 'recovery_operator';
+
+/**
+ * Why a social recovery request did not succeed.
+ *
+ * - `not_found`: the old wallet holds no 21.gifts account.
+ * - `done`: the account was already recovered; sign in with the new passkey.
+ * - `operator`: only an operator can recover the account.
+ * - `unavailable`: the api or the address service cannot answer now (5xx or 429).
+ * - `invalid`: the api refused the request (any other non-2xx).
+ * - `challenge`: the finish challenge is unknown, expired, or already used; the account did not move.
+ * - `pending`: another recovery of the account is pending.
+ * - `key_in_use`: the new wallet key is in use; on the share upload, the wallet is not connected or changed.
+ */
+export type RecoveryErrorKind =
+  | 'not_found'
+  | 'done'
+  | 'operator'
+  | 'unavailable'
+  | 'invalid'
+  | 'challenge'
+  | 'pending'
+  | 'key_in_use';
+
+/**
+ * Rejection of a social recovery request. Recognised by status together with
+ * the body's `code` or exact `error`, never by text alone; screens show
+ * catalog copy.
+ */
+export class RecoveryError extends Error {
+  /** Why the request did not succeed. */
+  public readonly kind: RecoveryErrorKind;
+
+  /**
+   * @param kind - Why the request did not succeed.
+   */
+  public constructor(kind: RecoveryErrorKind) {
+    super(`recovery_${kind}`);
+    this.name = 'RecoveryError';
+    this.kind = kind;
+  }
+}
+
+/**
+ * Api answer 409 with `code` `recovery_pending` on authenticate finish: the
+ * passkey belongs to a social recovery that is not finished yet. Recognised
+ * by that status together with the body's `code`, never by text. The
+ * authenticator must not be told that this passkey is unknown.
+ */
+export class RecoveryPendingError extends Error {
+  constructor() {
+    super(RECOVERY_PENDING_CODE);
+    this.name = 'RecoveryPendingError';
+  }
+}
+
+/**
+ * Kind of a recovery answer without a kind of its own.
+ *
+ * @param status - HTTP status of a non-2xx answer.
+ * @returns `unavailable` for a server error or a rate limit, which can pass; `invalid` otherwise.
+ */
+function recoveryStatusKind(status: number): RecoveryErrorKind {
+  return status >= 500 || status === 429 ? 'unavailable' : 'invalid';
 }
 
 /** Device IANA zone for the Sunday write check. Empty when the runtime has none. */
@@ -4064,6 +4146,8 @@ export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
  * @param challengeId - Id returned by {@link startPasskeyAuthentication}.
  * @param credential - Browser assertion JSON.
  * @returns Token plus account.
+ * @throws {@link RecoveryPendingError} on 409 with `code` `recovery_pending`:
+ *   the passkey belongs to a social recovery that is not finished yet.
  * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws {@link UnknownCredentialError} on 400 with the unknown-credential api string.
@@ -4078,6 +4162,9 @@ export async function finishPasskeyAuthentication(
     headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ challengeId, credential }),
   });
+  if (response.status === 409 && (await readApiCode(response)) === RECOVERY_PENDING_CODE) {
+    throw new RecoveryPendingError();
+  }
   await throwIfLoginBlocked(response);
   await throwIfWrongAccount(response);
   if (response.status === 400) {
@@ -4090,6 +4177,190 @@ export async function finishPasskeyAuthentication(
     throw new Error(`Failed to finish passkey authentication: ${response.status}`);
   }
   return passkeySessionSchema.parse(await response.json());
+}
+
+/**
+ * Starts the social recovery of the account the old wallet belongs to. The
+ * api first checks the old wallet's signed address lookup.
+ *
+ * @param body - The old wallet's identity key and its signed lookup (lowercase
+ *   DER hex signature, timestamp in seconds).
+ * @returns Challenge id, creation options for the new passkey, and the
+ *   account's id and username.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
+ * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws {@link RecoveryError} `not_found` on 404, `done` or `operator` on 409
+ *   with that `code`, `unavailable` on 5xx or 429, `invalid` on any other non-2xx.
+ * @throws Error on a body that fails validation.
+ */
+export async function startPasskeyRecovery(body: {
+  sparkPubkey: string;
+  lookup: { signature: string; timestamp: number };
+}): Promise<RecoveryBegin> {
+  const response = await fetch('/auth/passkey/recovery/begin', {
+    method: 'POST',
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      sparkPubkey: body.sparkPubkey,
+      lookup: { signature: body.lookup.signature, timestamp: body.lookup.timestamp },
+    }),
+  });
+  await throwIfLoginBlocked(response);
+  await throwIfWrongAccount(response);
+  if (response.status === 404) {
+    throw new RecoveryError('not_found');
+  }
+  if (response.status === 409) {
+    const code = await readApiCode(response);
+    if (code === RECOVERY_DONE_CODE) {
+      throw new RecoveryError('done');
+    }
+    if (code === RECOVERY_OPERATOR_CODE) {
+      throw new RecoveryError('operator');
+    }
+  }
+  if (!response.ok) {
+    throw new RecoveryError(recoveryStatusKind(response.status));
+  }
+  return recoveryBeginSchema.parse(await response.json());
+}
+
+/** Exact api `{ error }` bodies of recovery finish and their kinds. */
+const RECOVERY_FINISH_ERRORS = new Map<string, { status: number; kind: RecoveryErrorKind }>([
+  ['Unknown or expired challenge', { status: 400, kind: 'challenge' }],
+  ['Challenge expired', { status: 400, kind: 'challenge' }],
+  ['Challenge already used', { status: 400, kind: 'challenge' }],
+  ['A recovery is already pending', { status: 409, kind: 'pending' }],
+  ['Wallet key is already in use', { status: 409, kind: 'key_in_use' }],
+]);
+
+/**
+ * Stores the new passkey and the new wallet key as the account's pending
+ * social recovery. The old wallet signed both. A repeat of the same finish
+ * after a lost answer succeeds again and changes nothing.
+ *
+ * @param body - Challenge id from {@link startPasskeyRecovery}, the new
+ *   passkey's attestation JSON, the new wallet key, and the old wallet's
+ *   signature over the recovery message.
+ * @returns Resolves once the api stored the pending recovery.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
+ * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws {@link RecoveryError} `challenge` on 400 for an unknown, expired, or
+ *   used challenge (the account did not move), `pending` or `key_in_use` on
+ *   409 with that api string, `unavailable` on 5xx or 429, `invalid` on any
+ *   other non-2xx.
+ */
+export async function finishPasskeyRecovery(body: {
+  challengeId: string;
+  credential: unknown;
+  newSparkPubkey: string;
+  signature: { pubkey: string; signature: string };
+}): Promise<void> {
+  const response = await fetch('/auth/passkey/recovery/finish', {
+    method: 'POST',
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      challengeId: body.challengeId,
+      credential: body.credential,
+      newSparkPubkey: body.newSparkPubkey,
+      signature: { pubkey: body.signature.pubkey, signature: body.signature.signature },
+    }),
+  });
+  await throwIfLoginBlocked(response);
+  await throwIfWrongAccount(response);
+  if (response.ok) {
+    return;
+  }
+  const raw = await readApiError(response);
+  const known = raw === null ? undefined : RECOVERY_FINISH_ERRORS.get(raw);
+  throw new RecoveryError(
+    known !== undefined && known.status === response.status
+      ? known.kind
+      : recoveryStatusKind(response.status),
+  );
+}
+
+/**
+ * Stores 21.gifts' share of the owner's social recovery for the account's
+ * verified wallet. The share is the raw member with index 2, never the code
+ * a holder keeps.
+ *
+ * @param sessionToken - Bearer session.
+ * @param body - The account's verified wallet key and the share (20
+ *   lowercase words, single spaces).
+ * @returns The updated {@link Account}, with `socialRecoverySetUp` true.
+ * @throws {@link RecoveryError} `key_in_use` on 409 (the wallet is not
+ *   connected or changed), `unavailable` on 5xx or 429, `invalid` on any other
+ *   non-2xx.
+ * @throws Error on a body that fails {@link accountSchema}.
+ */
+export async function putRecoveryShare(
+  sessionToken: string,
+  body: { sparkPubkey: string; share: string },
+): Promise<Account> {
+  const response = await fetch('/me/recovery-share', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sparkPubkey: body.sparkPubkey, share: body.share }),
+  });
+  if (response.status === 409) {
+    throw new RecoveryError('key_in_use');
+  }
+  if (!response.ok) {
+    throw new RecoveryError(recoveryStatusKind(response.status));
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Lists the wallets the signed-in account used before a social recovery,
+ * each with its public explorer balance or `null` when that is unknown.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns The previous wallets, as the api orders them.
+ * @throws Error `Unauthorized` on 401.
+ * @throws Error `Previous wallets are unavailable` on any other non-2xx.
+ * @throws Error on a body that fails validation.
+ */
+export async function fetchPreviousWallets(sessionToken: string): Promise<PreviousWallet[]> {
+  const response = await fetch('/me/previous-wallets', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
+  if (!response.ok) {
+    throw new Error('Previous wallets are unavailable');
+  }
+  return previousWalletsSchema.parse(await response.json()).wallets;
+}
+
+/**
+ * Drops a previous wallet of the signed-in account, together with the
+ * 21.gifts share stored for it. The api answers 404 once that wallet is no
+ * longer one of the account's (also on a repeat), and the app only asks for a
+ * key it found listed, so 404 means the wallet is already removed, e.g. by a
+ * press whose answer was lost.
+ *
+ * @param sessionToken - Bearer session.
+ * @param sparkPubkey - The previous wallet's identity key.
+ * @returns Resolves on 204, and on 404 (already removed).
+ * @throws Error `Could not remove the previous wallet` on any other status.
+ */
+export async function deletePreviousWallet(
+  sessionToken: string,
+  sparkPubkey: string,
+): Promise<void> {
+  const response = await fetch(`/me/previous-wallets/${encodeURIComponent(sparkPubkey)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status !== 204 && response.status !== 404) {
+    throw new Error('Could not remove the previous wallet');
+  }
 }
 
 /**

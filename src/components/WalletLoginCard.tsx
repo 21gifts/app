@@ -42,7 +42,10 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
  * prompt `login.error`, above **Log in** on `LoginCard`'s held start view.
  * That view is the ordinary login (**Log in**, **Open a new account**) with
  * no **Log out**: whichever passkey logs in decides the account, and a
- * different account replaces the held session. A card that mounts later for
+ * different account replaces the held session. It offers the Social Recovery
+ * entry only when the passkey that answered belongs to a social recovery that
+ * is not finished yet (`login.recoveryPending`): that passkey is not the held
+ * member's, and the alert names the entry. A card that mounts later for
  * the same held-back session shows the alert of its last wallet open. In a
  * Playwright build `?visual=balance-locked-prf-unsupported` and
  * `?visual=balance-locked-error` pin those two alerts.
@@ -88,5 +91,5 @@ export function WalletLoginCard(): ReactElement {
     };
   }, [session]);
 
-  return <LoginCard heldProblem={problem} />;
+  return <LoginCard heldProblem={problem} showRecover={false} />;
 }
