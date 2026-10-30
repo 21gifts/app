@@ -151,10 +151,27 @@ describe('keepHeldShare', () => {
         memberIndex: 0,
       },
     });
+    expect(result.ok && result.share.boxId).not.toBe(kept[0]?.boxId);
     const [session, id, ciphertext] = api.putHeldShareBox.mock.calls[0] as [string, string, string];
     expect(session).toBe('sess');
     expect(result.ok && id === result.share.boxId).toBe(true);
     expect(await openHeldShare(key, HOLDER, id, ciphertext)).toBe(code(OTHER_SET));
+  });
+
+  it('keeps a share of another owner whose set has the same identifier', async () => {
+    const key = await heldShareBoxKey(WORDS);
+    const result = await keepHeldShare(
+      'sess',
+      HOLDER,
+      key,
+      kept,
+      code(SHARES[1], 'acc_cara', 'cara'),
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      share: { ownerAccountId: 'acc_cara', identifier: 2864 },
+    });
+    expect(api.putHeldShareBox).toHaveBeenCalledTimes(1);
   });
 
   it('answers save when the api does not store the box', async () => {
@@ -188,17 +205,19 @@ describe('relockHeldShares', () => {
   });
 
   it('derives no key and moves nothing without boxes, without current words, for the same words, or for words that are not a phrase', async () => {
-    const keySpy = vi.spyOn(crypto.subtle, 'deriveKey');
     api.fetchHeldShareBoxes.mockResolvedValue([]);
+    const keySpy = vi.spyOn(crypto.subtle, 'deriveKey');
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(0);
+    expect(keySpy).not.toHaveBeenCalled();
     api.fetchHeldShareBoxes.mockResolvedValue([
       await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
     ]);
     keySpy.mockClear();
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, null)).toBe(0);
     expect(await relockHeldShares('sess', HOLDER, ` ${WORDS} `, WORDS)).toBe(0);
+    expect(await relockHeldShares('sess', HOLDER, WORDS.toUpperCase(), WORDS)).toBe(0);
     expect(keySpy).not.toHaveBeenCalled();
-    expect(api.fetchHeldShareBoxes).toHaveBeenCalledTimes(3);
+    expect(api.fetchHeldShareBoxes).toHaveBeenCalledTimes(4);
     expect(await relockHeldShares('sess', HOLDER, 'not a phrase', WORDS)).toBe(0);
     expect(api.putHeldShareBox).not.toHaveBeenCalled();
   });

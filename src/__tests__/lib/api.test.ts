@@ -6032,6 +6032,11 @@ describe('fetchHeldShareBoxes', () => {
 });
 
 describe('putHeldShareBox', () => {
+  it.each([200, 201])('resolves on status %i (replaced or created)', async (status) => {
+    stubFetch({ ok: true, status, body: {} });
+    await expect(putHeldShareBox('sess', 'id', 'AQID')).resolves.toBeUndefined();
+  });
+
   it('puts the ciphertext under the encoded id with the Bearer', async () => {
     const fetchMock = stubFetch({ ok: true, status: 201, body: {} });
     await expect(putHeldShareBox('sess', 'a/b', 'AQID')).resolves.toBeUndefined();

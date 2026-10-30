@@ -40,6 +40,21 @@ const heldShareBoxes = new Map();
 /** Most boxes one account keeps, as the api allows. */
 const HELD_SHARES_MAX = 50;
 
+/**
+ * The box id of a `/me/held-shares/:id` path, or `''` when it is not
+ * percent-encoded validly (an empty id is refused like any malformed id).
+ *
+ * @param {string} pathName
+ * @returns {string}
+ */
+function heldShareBoxIdFromPath(pathName) {
+  try {
+    return decodeURIComponent(pathName.slice('/me/held-shares/'.length));
+  } catch {
+    return '';
+  }
+}
+
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
 
@@ -2920,7 +2935,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const id = decodeURIComponent(pathName.slice('/me/held-shares/'.length));
+    const id = heldShareBoxIdFromPath(pathName);
     const parsed = jsonObject(rawBody);
     const ciphertext =
       parsed !== null && isStrictObject(parsed, ['ciphertext']) ? parsed.ciphertext : null;
@@ -2970,7 +2985,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const id = decodeURIComponent(pathName.slice('/me/held-shares/'.length));
+    const id = heldShareBoxIdFromPath(pathName);
     if (heldShareBoxes.get(id)?.accountId === account.id) {
       heldShareBoxes.delete(id);
     }
