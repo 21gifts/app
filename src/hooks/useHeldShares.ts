@@ -225,8 +225,9 @@ export function useHeldShares(): UseHeldSharesResult {
       return;
     }
     setLoad('opening');
+    const epoch = epochRef.current;
     void settlePhraseDerivations().then(() => {
-      if (cancelled) {
+      if (cancelled || epochRef.current !== epoch || keyRef.current !== null) {
         return;
       }
       const words = peekSessionPhrase();
@@ -363,11 +364,11 @@ export function useHeldShares(): UseHeldSharesResult {
   }, []);
 
   const removeLocked = useCallback((): void => {
+    setConfirmDeleteLocked(false);
     if (session === null || lockedDeletingRef.current) {
       return;
     }
     lockedDeletingRef.current = true;
-    setConfirmDeleteLocked(false);
     setNotice(null);
     const epoch = epochRef.current;
     void (async () => {
