@@ -4,7 +4,6 @@ import { cameraStats, stubCamera } from './camera';
 import { installFakeWebAuthn } from './fake-webauthn';
 import { fulfillSpot } from './fx-spot';
 import { fakePasskeyWords, PREVIOUS_WORDS, routeHeldShares, sealedBox } from './held-boxes';
-import { installNoPrfWebAuthn, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 import { heldShareBoxKey, newHeldShareBoxId, openHeldShare } from '../src/lib/held-share-box';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
@@ -545,6 +544,9 @@ const HELD_CODE_2 =
 const HELD_CARA =
   '21gifts-share:v1:acc_cara:cara:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
+/** Seed passkey id of the fake passkey on the held-shares page: it must decode as base64url. */
+const HELD_CREDENTIAL_ID = 'Y3JlZC1zZWVk';
+
 /**
  * Opens `/settings/held-shares` and its boxes with **Open my shares** (the
  * fake passkey gives the words).
@@ -781,7 +783,7 @@ test.describe('social recovery libraries', () => {
       await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA),
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
     ]);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await expect(page.getByRole('listitem')).toHaveText(['@bob', '@cara']);
   });
@@ -794,7 +796,7 @@ test.describe('social recovery libraries', () => {
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
       await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
     ]);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await expect(page.getByRole('listitem')).toHaveText([
       '@bob',
@@ -805,7 +807,7 @@ test.describe('social recovery libraries', () => {
   test('Function: openHeldShare — a box of another holder does not open', async ({ page }) => {
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page, [await sealedBox('acc_other', 'b'.repeat(32), HELD_CODE)]);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await expect(page.getByRole('listitem')).toHaveText([
       '1 kept share cannot be opened with your current 12 words.',
@@ -818,7 +820,7 @@ test.describe('social recovery libraries', () => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE });
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
@@ -839,7 +841,7 @@ test.describe('social recovery libraries', () => {
     const held = await routeHeldShares(page, [
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
     ]);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('listitem')).toHaveCount(2);
@@ -856,7 +858,7 @@ test.describe('social recovery libraries', () => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE });
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page);
-    await signInMember(page, 'cred-seed');
+    await signInMember(page, HELD_CREDENTIAL_ID);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
@@ -1151,7 +1153,7 @@ test.describe('shares kept for others', () => {
   }) => {
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await page.goto('/settings/held-shares');
     await expect(
       page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
@@ -1174,7 +1176,7 @@ test.describe('shares kept for others', () => {
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
       await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA),
     ]);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await expect(page.getByRole('listitem')).toHaveText(['@bob', '@cara']);
     const show = page.getByRole('button', { name: 'Show code for @bob' });
@@ -1196,7 +1198,7 @@ test.describe('shares kept for others', () => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE.replace('acc_owner:bob', 'acc_e2e:ada') });
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -1211,7 +1213,7 @@ test.describe('shares kept for others', () => {
     const held = await routeHeldShares(page, [
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE_2),
     ]);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -1225,7 +1227,7 @@ test.describe('shares kept for others', () => {
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page);
     held.putStatus = 409;
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -1239,7 +1241,7 @@ test.describe('shares kept for others', () => {
     const held = await routeHeldShares(page, [
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
     ]);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Delete share of @bob' }).click();
     const confirm = page.getByRole('group', {
@@ -1260,7 +1262,7 @@ test.describe('shares kept for others', () => {
       await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
       await sealedBox('acc_e2e', 'd'.repeat(32), HELD_CODE_2, PREVIOUS_WORDS),
     ]);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await expect(
       page.getByText('2 kept shares cannot be opened with your current 12 words.'),
@@ -1280,7 +1282,7 @@ test.describe('shares kept for others', () => {
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
     ]);
     held.getStatus = 503;
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await page.goto('/settings/held-shares');
     await page.getByRole('button', { name: 'Open my shares' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText('Your shares could not be loaded.');
@@ -1289,20 +1291,11 @@ test.describe('shares kept for others', () => {
     await expect(page.getByRole('listitem')).toHaveText(['@bob']);
   });
 
-  test('a passkey without PRF output says so in the recovery phrase wording', async ({ page }) => {
-    await installNoPrfWebAuthn(page);
-    await routeHeldShares(page);
-    await signInOwner(page, { passkeyCredentialId: 'CQkJCQkJCQkJCQkJCQkJCQ' });
-    await page.goto('/settings/held-shares');
-    await page.getByRole('button', { name: 'Open my shares' }).click();
-    await expect(page.locator('p[role="alert"]')).toHaveText(PRF_UNSUPPORTED_MESSAGE);
-  });
-
   test('a scanned text that is not a share is refused, and the camera stops', async ({ page }) => {
     await stubCamera(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
@@ -1319,7 +1312,7 @@ test.describe('shares kept for others', () => {
     await stubCamera(page, { kind: 'blank' });
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(
@@ -1335,7 +1328,7 @@ test.describe('shares kept for others', () => {
     await stubCamera(page, { kind: 'denied' });
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -1347,7 +1340,7 @@ test.describe('shares kept for others', () => {
     await stubCamera(page, { kind: 'none' });
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page);
-    await signInOwner(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(

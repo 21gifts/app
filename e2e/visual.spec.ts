@@ -37460,6 +37460,8 @@ test.describe('held shares states', () => {
   /** Cara's share, of another set. */
   const HELD_CARA =
     '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** Seed passkey id of the fake passkey: any base64url decodes, `cred-seed` does not. */
+  const HELD_CREDENTIAL_ID = 'Y3JlZC1zZWVk';
   /** A share of the signed-in member's own account. */
   const HELD_OWN =
     '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
@@ -37492,7 +37494,7 @@ test.describe('held shares states', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
+          passkeyCredentialId: HELD_CREDENTIAL_ID,
         }),
       });
     });
