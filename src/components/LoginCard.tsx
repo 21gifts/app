@@ -46,14 +46,15 @@ type VersionBlock = {
  * held start view adds **Open a new account** under **New to 21.gifts?**: it
  * is registration, and a new account replaces the held session as well.
  *
- * The idle start view and the account question also offer **Recover account
- * via Social Recovery**, a link to `/recover`, unless `showRecover` is false
- * (inside {@link WalletLoginCard}, which stands in for a member session); the
- * held start view does not either. A passkey of a social recovery that is not
- * finished yet (it belongs to that recovery, not to a held session) shows
- * `login.recoveryPending` with that link under the button wherever it
- * answered: on the error view under **Try again**, and on the held start view
- * under **Log in**, in place of `login.error`.
+ * **Recover account via Social Recovery**, a link to `/recover`, only comes
+ * with a login problem, like **Open a new account**: the account question and
+ * the unknown-passkey view offer it unless `showRecover` is false (inside
+ * {@link WalletLoginCard}, which stands in for a member session). The idle
+ * start view and the held start view do not offer it. A passkey of a social
+ * recovery that is not finished yet (it belongs to that recovery, not to a
+ * held session) shows `login.recoveryPending` with that link under the button
+ * wherever it answered: on the error view under **Try again**, and on the held
+ * start view under **Log in**, in place of `login.error`.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
@@ -62,8 +63,9 @@ type VersionBlock = {
  * @param props - `heldProblem`: why the last wallet open of the held-back
  *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
  *   `login.error`), shown on the held start view until its next **Log in**.
- *   `showRecover`: whether the idle and choice views offer the Social Recovery
- *   entry (default `true`); an unfinished recovery always offers it.
+ *   `showRecover`: whether the problem views (account question, unknown
+ *   passkey) offer the Social Recovery entry (default `true`); an unfinished
+ *   recovery always offers it.
  * @returns The card.
  */
 export function LoginCard({
@@ -189,6 +191,7 @@ export function LoginCard({
     body = (
       <UnknownView
         versionBlock={versionBlock}
+        showRecover={showRecover}
         onRegister={() => passkey.register()}
         onRetry={passkey.login}
       />
@@ -203,9 +206,7 @@ export function LoginCard({
       />
     );
   } else {
-    body = (
-      <StartView onLogin={passkey.login} versionBlock={versionBlock} showRecover={showRecover} />
-    );
+    body = <StartView onLogin={passkey.login} versionBlock={versionBlock} />;
   }
 
   return <Card surface={false}>{body}</Card>;
@@ -244,8 +245,12 @@ interface StartViewProps {
   /** Alert above **Log in**, or null. */
   alert?:
     'login.error' | 'login.wrongAccount' | 'login.recoveryPending' | 'wallet.prfUnsupported' | null;
-  /** Whether **Recover account via Social Recovery** follows **Log in**. */
-  showRecover: boolean;
+  /**
+   * Whether **Recover account via Social Recovery** follows **Log in**: only a
+   * held view with an unfinished recovery passes true; the idle view never
+   * offers the entry.
+   */
+  showRecover?: boolean;
 }
 
 /**
@@ -263,11 +268,11 @@ function RecoverLink(): ReactElement {
 }
 
 /**
- * The initial logged-out state: **Log in**, then **Recover account via Social
- * Recovery** when `showRecover` is set.
+ * The initial logged-out state: **Log in**.
  * For a held-back session, a greeting above the heading, an alert,
- * **Confirm to open your wallet** above **Log in**, and **Open a new account**
- * under a short line.
+ * **Confirm to open your wallet** above **Log in**, **Open a new account**
+ * under a short line, and **Recover account via Social Recovery** only while
+ * that alert says a recovery is not finished yet (`showRecover`).
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
@@ -279,7 +284,7 @@ function StartView({
   greeting = null,
   held = false,
   alert = null,
-  showRecover,
+  showRecover = false,
 }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
@@ -373,16 +378,25 @@ interface UnknownViewProps {
   onRetry: () => void;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
+  /** Whether **Recover account via Social Recovery** follows the two buttons. */
+  showRecover: boolean;
 }
 
 /**
  * After authenticate finish `Unknown credential`: the offered passkey is not an account.
- * **Open a new account** opens the name form; **Try again** calls login.
+ * **Try again** (the first control) calls login; secondary **Open a new account**
+ * opens the name form; **Recover account via Social Recovery** follows them when
+ * `showRecover` is set, because this view only appears after a login problem.
  *
  * @param props - See {@link UnknownViewProps}.
  * @returns The unknown-credential view.
  */
-function UnknownView({ onRegister, onRetry, versionBlock }: UnknownViewProps): ReactElement {
+function UnknownView({
+  onRegister,
+  onRetry,
+  versionBlock,
+  showRecover,
+}: UnknownViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -390,12 +404,13 @@ function UnknownView({ onRegister, onRetry, versionBlock }: UnknownViewProps): R
       <h1 className="text-lg font-medium text-center text-app-fg">{t('login.unknownHeading')}</h1>
       <p className="text-sm text-app-muted text-center">{t('login.unknownBody')}</p>
       <VersionNote block={versionBlock} />
-      <Button type="button" onClick={onRegister}>
-        {t('login.create')}
-      </Button>
-      <Button type="button" variant="secondary" onClick={onRetry}>
+      <Button type="button" onClick={onRetry}>
         {t('login.retry')}
       </Button>
+      <Button type="button" variant="secondary" onClick={onRegister}>
+        {t('login.create')}
+      </Button>
+      {showRecover ? <RecoverLink /> : null}
     </>
   );
 }
