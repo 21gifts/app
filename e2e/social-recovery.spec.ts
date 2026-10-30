@@ -1533,11 +1533,97 @@ test.describe('Recover account via Social Recovery', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
   }
 
-  test('Function: RecoverPage — the login card offers the Social Recovery entry, which opens /recover', async ({
+  /**
+   * Answers the next login with an unknown credential: the offered passkey is
+   * not an account, so the login card shows its unknown-passkey problem view.
+   *
+   * @param page - The page.
+   */
+  async function answerUnknownPasskey(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseCreationOptionsFromJSON?: unknown;
+        parseRequestOptionsFromJSON?: unknown;
+        signalUnknownCredential?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'signalUnknownCredential', {
+          value: async () => undefined,
+          configurable: true,
+        });
+      }
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            throw new Error('create must not run on the login unknown path');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const publicKey = options?.publicKey;
+            const challenge = publicKey?.challenge;
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            if (!publicKey || !isBytes) {
+              throw new Error('invalid request options');
+            }
+            return {
+              id: 'cred',
+              type: 'public-key',
+              toJSON: () => ({
+                id: 'cred',
+                rawId: 'cred',
+                type: 'public-key',
+                response: {},
+                clientExtensionResults: {},
+              }),
+            };
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch',
+          options: {
+            challenge: 'aa',
+            rpId: 'localhost',
+            userVerification: 'required',
+          },
+        }),
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unknown credential' }),
+      });
+    });
+  }
+
+  test('Function: RecoverPage — a login problem offers the Social Recovery entry, which opens /recover', async ({
     page,
   }) => {
+    await answerUnknownPasskey(page);
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'This passkey is not an account' }),
+    ).toBeVisible();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await expect(page).toHaveURL(/\/recover$/);
     await expect(
@@ -1635,12 +1721,15 @@ test.describe('Recover account via Social Recovery', () => {
   test('Function: useRecoveryStore — leaving /recover and coming back resumes the recovery', async ({
     page,
   }) => {
+    await answerUnknownPasskey(page);
     await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await typeWords(page, OLD_PHRASE);
     await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
     await page.getByRole('link', { name: 'Back', exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
   });
@@ -1699,6 +1788,7 @@ test.describe('Recover account via Social Recovery', () => {
   test('Function: resumeRecovery — the pinned closed logins offer Try again and Start over, and stay after leaving', async ({
     page,
   }) => {
+    await answerUnknownPasskey(page);
     await page.goto('/login');
     await page.goto('/recover?visual=recover-blocked-closed');
     await expect(page.getByRole('status')).toHaveText(
@@ -1710,6 +1800,7 @@ test.describe('Recover account via Social Recovery', () => {
     );
     await page.getByRole('link', { name: 'Back', exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await expect(page).toHaveURL(/\/recover$/);
     await expect(page.getByRole('status')).toHaveText(

@@ -321,12 +321,11 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows Log in and the Social Recovery entry when logged out and idle', () => {
+  it('shows Log in without the Social Recovery entry when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((button) => button.textContent)).toEqual(['Log in']);
-    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
-    expect(entry.getAttribute('href')).toBe('/recover');
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
     expect(screen.queryByText('New to 21.gifts?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);
@@ -356,8 +355,13 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
     idle.unmount();
     mockPasskey('choice');
-    renderWithLocale(<LoginCard showRecover={false} />);
+    const choice = renderWithLocale(<LoginCard showRecover={false} />);
     expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    choice.unmount();
+    mockPasskey('unknown');
+    renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });
 
@@ -404,7 +408,7 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });
 
-  it('shows the unknown-passkey heading and create button', () => {
+  it('shows the unknown-passkey heading, Try again first, create button, and Social Recovery entry', () => {
     mockPasskey('unknown');
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
@@ -420,6 +424,12 @@ describe('LoginCard', () => {
     expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getAllByRole('button')).toHaveLength(2);
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    const create = screen.getByRole('button', { name: 'Open a new account' });
+    expect(retry.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(retry.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows a loading state while a passkey ceremony starts', () => {
