@@ -27,8 +27,10 @@ server; a local run that reuses a server already on port 3000 keeps that
 server's mode. `e2e/csp.spec.ts` loads `/404` and every route without a URL
 parameter that a signed-out visitor can open (`PUBLIC_PAGES`), waits until
 the network is idle, and fails on any `securitypolicyviolation` the page's
-document reports. The app embeds no frame (`frame-src 'none'`), and these
-pages start no worker. A new public route belongs in `PUBLIC_PAGES`.
+document reports. The app embeds no frame (`frame-src 'none'`). The only
+worker is MapLibre's `blob:` vector renderer of the shop map on `/` and its
+language URLs; a violation inside a worker does not reach the document's
+listener. A new public route belongs in `PUBLIC_PAGES`.
 
 ## Reports
 
