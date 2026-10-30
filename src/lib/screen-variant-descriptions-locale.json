@@ -5825,24 +5825,69 @@
     "fil": "Binuksan bilang /settings#previous-wallets habang pumapalya ang GET /me/previous-wallets: sa ilalim ng Mga dating wallet, ang alerto Hindi ma-load ang mga dating wallet. at Subukan ulit."
   },
   "/settings/held-shares:default": {
-    "de": "Ein Mitglied, das keine Anteile aufbewahrt: Titel, Einleitung, Anteil aufbewahren und Du bewahrst noch keine Anteile für andere auf.",
-    "es": "Un miembro que no guarda partes: el título, la introducción, Guardar una parte y Todavía no guardas partes para otros.",
-    "fil": "Miyembrong walang itinatabing bahagi: ang pamagat, ang intro, ang Magtabi ng bahagi, at Wala ka pang itinatabing bahagi para sa iba."
+    "de": "Ein Mitglied, das keine Anteile aufbewahrt, nachdem die Anteile geöffnet sind: Titel, Einleitung, Anteil aufbewahren und Du bewahrst noch keine Anteile für andere auf.",
+    "es": "Un miembro que no guarda partes, después de abrir las partes: el título, la introducción, Guardar una parte y Todavía no guardas partes para otros.",
+    "fil": "Miyembrong walang itinatabing bahagi, pagkatapos mabuksan ang mga bahagi: ang pamagat, ang intro, ang Magtabi ng bahagi, at Wala ka pang itinatabing bahagi para sa iba."
+  },
+  "/settings/held-shares:unlock": {
+    "de": "Keine Wörter in diesem Tab: Titel, Einleitung, Bestätige mit deinem Passkey, um die Anteile zu öffnen, die du aufbewahrst. und Meine Anteile öffnen.",
+    "es": "Sin palabras en esta pestaña: el título, la introducción, Confirma con tu passkey para abrir las partes que guardas. y Abrir mis partes.",
+    "fil": "Walang salita sa tab na ito: ang pamagat, ang intro, ang Kumpirmahin gamit ang passkey mo para mabuksan ang mga bahaging itinatabi mo., at ang Buksan ang mga bahagi ko."
+  },
+  "/settings/held-shares:unlock-error": {
+    "de": "Die Passkey-Abfrage von Meine Anteile öffnen ist fehlgeschlagen: der Hinweis Die Wiederherstellungsphrase konnte nicht erstellt oder geöffnet werden. über Meine Anteile öffnen.",
+    "es": "La solicitud de passkey de Abrir mis partes falló: el aviso de que la frase de recuperación no se pudo crear ni abrir, sobre Abrir mis partes.",
+    "fil": "Pumalya ang passkey prompt ng Buksan ang mga bahagi ko: ang alerto na hindi nagawa o nabuksan ang recovery phrase, sa itaas ng Buksan ang mga bahagi ko."
+  },
+  "/settings/held-shares:unlock-timeout": {
+    "de": "Die Passkey-Abfrage ist abgelaufen: der Hinweis, dass die Geräteabfrage abgelaufen ist, über Meine Anteile öffnen.",
+    "es": "La solicitud de passkey caducó: el aviso de que la solicitud del dispositivo caducó, sobre Abrir mis partes.",
+    "fil": "Nag-timeout ang passkey prompt: ang alerto na nag-timeout ang prompt ng device, sa itaas ng Buksan ang mga bahagi ko."
+  },
+  "/settings/held-shares:unlock-prf-unsupported": {
+    "de": "Der Passkey gab keine PRF-Ausgabe: der Hinweis, dass dieses Telefon oder dieser Browser keine 21.gifts-Wallet halten kann, über Meine Anteile öffnen.",
+    "es": "La passkey no dio salida PRF: el aviso de que este teléfono o navegador no puede guardar una wallet de 21.gifts, sobre Abrir mis partes.",
+    "fil": "Walang PRF output ang passkey: ang alerto na hindi kayang hawakan ng teleponong o browser na ito ang 21.gifts wallet, sa itaas ng Buksan ang mga bahagi ko."
+  },
+  "/settings/held-shares:opening": {
+    "de": "Die Boxen werden gelesen und geöffnet: Deine Anteile werden geöffnet… unter der Einleitung.",
+    "es": "Las cajas se leen y se abren: Abriendo tus partes… bajo la introducción.",
+    "fil": "Binabasa at binubuksan ang mga kahon: Binubuksan ang mga bahagi mo… sa ilalim ng intro."
+  },
+  "/settings/held-shares:load-error": {
+    "de": "Die Boxen konnten nicht gelesen werden: der Hinweis Deine Anteile konnten nicht geladen werden. und Erneut versuchen.",
+    "es": "No se pudieron leer las cajas: el aviso No se pudieron cargar tus partes. e Inténtalo de nuevo.",
+    "fil": "Hindi nabasa ang mga kahon: ang alerto Hindi ma-load ang mga bahagi mo. at Subukan ulit."
   },
   "/settings/held-shares:list": {
-    "de": "Zwei aufbewahrte Anteile, der neueste zuerst: @cara (Aufbewahrt seit 02.01.2026) und @bob (Aufbewahrt seit 01.01.2026), jeweils mit den Symbol-Schaltflächen für QR und Papierkorb.",
-    "es": "Dos partes guardadas, la más reciente primero: @cara (Guardada desde el 2 ene 2026) y @bob (Guardada desde el 1 ene 2026), cada una con sus controles de icono de QR y papelera.",
-    "fil": "Dalawang itinatabing bahagi, pinakabago muna: @cara (Itinatabi mula Ene 2, 2026) at @bob (Itinatabi mula Ene 1, 2026), bawat isa may icon-only na kontrol ng QR at basurahan."
+    "de": "Zwei aufbewahrte Anteile, nach Benutzername: @bob und @cara, jeweils mit den Symbol-Schaltflächen für QR und Papierkorb.",
+    "es": "Dos partes guardadas, por nombre de usuario: @bob y @cara, cada una con sus controles de icono de QR y papelera.",
+    "fil": "Dalawang itinatabing bahagi, ayon sa username: @bob at @cara, bawat isa may icon-only na kontrol ng QR at basurahan."
+  },
+  "/settings/held-shares:locked": {
+    "de": "Bobs Anteil und zwei Boxen unter den früheren Wörtern des Mitglieds: Bobs Karte und die Zeile 2 aufbewahrte Anteile lassen sich mit deinen aktuellen 12 Wörtern nicht öffnen. mit ihrem Papierkorb-Symbol.",
+    "es": "La parte de Bob y dos cajas con las palabras anteriores del miembro: la tarjeta de Bob y la fila 2 partes guardadas no se pueden abrir con tus 12 palabras actuales. con su icono de papelera.",
+    "fil": "Ang bahagi ni Bob at dalawang kahon sa dating mga salita ng miyembro: ang card ni Bob at ang hanay na 2 itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita. na may icon ng basurahan."
+  },
+  "/settings/held-shares:locked-delete-confirm": {
+    "de": "Nach dem Papierkorb-Symbol dieser Zeile: die Rückfrage Die Anteile löschen, die sich nicht öffnen lassen? mit Haken und X als Symbol; der Papierkorb ist ausgeblendet, solange sie offen ist.",
+    "es": "Tras el icono de papelera de esa fila: la confirmación ¿Borrar las partes que no se pueden abrir? con una marca y una X solo de icono; la papelera se oculta mientras está abierta.",
+    "fil": "Pagkatapos ng icon ng basurahan ng hanay na iyon: ang kumpirmasyon Burahin ang mga bahaging hindi mabuksan? na may icon-only na check at X; nakatago ang basurahan habang bukas ito."
   },
   "/settings/held-shares:scan": {
     "de": "Nach Anteil aufbewahren: Die Kamera füllt die Seite mit dem Sucher und Richte die Kamera auf den Code auf dem anderen Telefon über dem Bild (eine leere Testkamera).",
     "es": "Tras Guardar una parte: la cámara llena la página con el visor y Apunta la cámara al código del otro teléfono sobre la imagen (una cámara de prueba en blanco).",
     "fil": "Pagkatapos ng Magtabi ng bahagi: pinupuno ng camera ang page ng viewfinder at ng Itutok ang camera sa code sa kabilang telepono sa ibabaw ng larawan (isang blangkong test camera)."
   },
+  "/settings/held-shares:saving": {
+    "de": "Die Kamera hat Bobs Code gelesen und seine Box wird gespeichert: Der Anteil wird aufbewahrt… anstelle von Anteil aufbewahren.",
+    "es": "La cámara leyó el código de Bob y su caja se está guardando: Guardando la parte… en lugar de Guardar una parte.",
+    "fil": "Nabasa ng camera ang code ni Bob at sine-save ang kahon nito: Itinatabi ang bahagi… kapalit ng Magtabi ng bahagi."
+  },
   "/settings/held-shares:stored": {
-    "de": "Die Kamera hat Bobs Code gelesen: zurück in der Liste, Du bewahrst jetzt einen Anteil für @bob auf. und Bobs Karte, aufbewahrt seit dem 07.01.2026.",
-    "es": "La cámara leyó el código de Bob: de vuelta en la lista, Ahora guardas una parte para @bob. y la tarjeta de Bob, guardada desde el 7 ene 2026.",
-    "fil": "Nabasa ng camera ang code ni Bob: balik sa listahan, May itinatabi ka nang bahagi para kay @bob. at ang card ni Bob, itinatabi mula Ene 7, 2026."
+    "de": "Die Kamera hat Bobs Code gelesen: zurück in der Liste, Du bewahrst jetzt einen Anteil für @bob auf. und Bobs Karte.",
+    "es": "La cámara leyó el código de Bob: de vuelta en la lista, Ahora guardas una parte para @bob. y la tarjeta de Bob.",
+    "fil": "Nabasa ng camera ang code ni Bob: balik sa listahan, May itinatabi ka nang bahagi para kay @bob. at ang card ni Bob."
   },
   "/settings/held-shares:refused-own": {
     "de": "Die Kamera hat einen Anteil des eigenen Kontos gelesen: der Hinweis Das ist ein Anteil deines eigenen Kontos. Nur andere Personen können ihn aufbewahren.; nichts wird aufbewahrt.",
@@ -5850,14 +5895,19 @@
     "fil": "Nabasa ng camera ang bahagi ng sariling account: ang alerto Bahagi ito ng sarili mong account. Ibang tao lang ang puwedeng magtabi nito.; walang itinatabi."
   },
   "/settings/held-shares:refused-duplicate": {
-    "de": "Die Kamera hat Bobs Code gelesen, während dieses Telefon ihn schon aufbewahrt: der Hinweis Dieses Telefon bewahrt schon einen Anteil dieser Einrichtung für @bob auf. Ein Telefon bewahrt nur einen Anteil einer Einrichtung auf.; Bobs eine Karte bleibt.",
-    "es": "La cámara leyó el código de Bob mientras este teléfono ya lo guarda: el aviso Este teléfono ya guarda una parte de esta configuración para @bob. Un teléfono guarda solo una parte de cada configuración.; la única tarjeta de Bob se queda.",
-    "fil": "Nabasa ng camera ang code ni Bob habang itinatabi na ito ng teleponong ito: ang alerto May itinatabi na ang teleponong ito na bahagi ng setup na ito para kay @bob. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang telepono.; nananatili ang iisang card ni Bob."
+    "de": "Die Kamera hat Bobs Code gelesen, während das Mitglied schon einen Anteil dieser Einrichtung aufbewahrt: der Hinweis Dieses Konto bewahrt schon einen Anteil dieser Einrichtung für @bob auf. Eine Person bewahrt nur einen Anteil einer Einrichtung auf.; Bobs eine Karte bleibt.",
+    "es": "La cámara leyó el código de Bob mientras el miembro ya guarda una parte de esa configuración: el aviso Esta cuenta ya guarda una parte de esta configuración para @bob. Una persona guarda solo una parte de cada configuración.; la única tarjeta de Bob se queda.",
+    "fil": "Nabasa ng camera ang code ni Bob habang may itinatabi na ang miyembro na bahagi ng setup na iyon: ang alerto May itinatabi na ang account na ito na bahagi ng setup na ito para kay @bob. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang tao.; nananatili ang iisang card ni Bob."
   },
-  "/settings/held-shares:refused-storage": {
-    "de": "Der Browser verweigert das Speichern des gescannten Anteils: der Hinweis Dieser Browser kann keine Anteile aufbewahren. Erlaube Websitedaten und versuche es erneut.",
-    "es": "El navegador se niega a guardar la parte escaneada: el aviso Este navegador no puede guardar partes. Permite los datos del sitio e inténtalo de nuevo.",
-    "fil": "Tumatanggi ang browser na i-store ang na-scan na bahagi: ang alerto Hindi makapagtabi ng mga bahagi ang browser na ito. Payagan ang site data at subukan ulit."
+  "/settings/held-shares:save-error": {
+    "de": "21.gifts hat die Box des gescannten Anteils nicht gespeichert: der Hinweis Der Anteil konnte nicht aufbewahrt werden. Versuche es erneut.",
+    "es": "21.gifts no guardó la caja de la parte escaneada: el aviso No se pudo guardar la parte. Inténtalo de nuevo.",
+    "fil": "Hindi na-save ng 21.gifts ang kahon ng na-scan na bahagi: ang alerto Hindi naitabi ang bahagi. Subukan ulit."
+  },
+  "/settings/held-shares:delete-error": {
+    "de": "21.gifts hat Bobs Box nicht gelöscht: der Hinweis Der Anteil konnte nicht gelöscht werden. Versuche es erneut.; beide Karten bleiben.",
+    "es": "21.gifts no borró la caja de Bob: el aviso No se pudo borrar la parte. Inténtalo de nuevo.; las dos tarjetas se quedan.",
+    "fil": "Hindi binura ng 21.gifts ang kahon ni Bob: ang alerto Hindi nabura ang bahagi. Subukan ulit.; nananatili ang dalawang card."
   },
   "/settings/held-shares:invalid": {
     "de": "Die Kamera hat einen Code gelesen, der kein Anteil ist: der Hinweis Das ist kein Social-Recovery-Code.",

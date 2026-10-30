@@ -3507,7 +3507,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets, the session token and a Social Recovery share kept for another member in `localStorage`, and that recovery words and shares stay in the open tab's memory while an account is recovered or a balance moved) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets, the session token in `localStorage`, that recovery words and shares stay in the open tab's memory while an account is recovered or a balance moved, and that a Social Recovery share kept for another member is encrypted in the browser with a key from the holder's own 12 words and stored with the holder's account, unreadable to 21.gifts) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
 - **Inputs:** None.
 - **Returns / side effects:** The legal screen with links to `/contact`, `/terms`, and `/terms#wallet-and-data`.
 - **Used by:** Route `/legal`.
@@ -4487,7 +4487,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: encodeShareCode
 
-- **Purpose:** Builds the QR payload of one social recovery share: `21gifts-share:v1:<owner account id>:<owner username>:<20 share words>` (`SHARE_CODE_PREFIX` plus the fields). The payload is shown phone to phone and never sent to the api.
+- **Purpose:** Builds the QR payload of one social recovery share: `21gifts-share:v1:<owner account id>:<owner username>:<20 share words>` (`SHARE_CODE_PREFIX` plus the fields). The payload is shown phone to phone and reaches the api only encrypted, in a holder's box.
 - **Inputs:** Owner account id, owner username, and the share's 20 words.
 - **Returns / side effects:** The payload text. Throws `Invalid share code` when the result would not read back with `parseShareCode`, so no QR is shown that a holder's app refuses.
 - **Used by:** `useSocialRecoverySetup` (the QR codes of shares 1 and 2 on `/settings/social-recovery`) and `keepHeldShare`.
@@ -4513,26 +4513,54 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The 12 words, in memory only. Throws `Slip39Error` `set` for shares of another owner or identifier, `members` for the same share twice, `digest` when they do not fit together, and `length` when they do not give 16 bytes.
 - **Used by:** `OldWordsInput` (two scanned codes rebuild the old 12 words on `/recover` and `/settings/previous-wallets/[sparkPubkey]`).
 
+## Function: heldShareBoxKey
+
+- **Purpose:** The key a holder's share boxes are encrypted with: HKDF-SHA256 over the 16 bytes behind the holder's own 12 words (salt `21gifts-held-share-box`, info `box-key-v1`, 32 bytes), imported into WebCrypto as a non-extractable AES-256-GCM key. The key comes from the words, not from the passkey, so the holder's own Social Recovery can move the boxes to the new words while the old ones are rebuilt.
+- **Inputs:** The holder's 12 words (from tab memory, the passkey prompt of **Open my shares**, or the old and new words of a recovery).
+- **Returns / side effects:** The `CryptoKey` (encrypt and decrypt only). Throws the BIP-39 error of `mnemonicToEntropy` for words that are not a valid phrase. The words and bytes stay in memory.
+- **Used by:** `useHeldShares` (the key of the open page) and `relockHeldShares`.
+
+## Function: newHeldShareBoxId
+
+- **Purpose:** A new box id: 16 bytes from `crypto.getRandomValues` as 32 lower-case hex digits, the form `PUT /me/held-shares/:id` accepts. The app draws the id; the api only stores it.
+- **Inputs:** None.
+- **Returns / side effects:** The id. No network.
+- **Used by:** `keepHeldShare`.
+
+## Function: sealHeldShare
+
+- **Purpose:** Encrypts one share code into a box: `0x01` (version), a fresh 12-byte random IV, and the AES-256-GCM ciphertext with its tag, with the additional data `21gifts-held-share-v1`, the holder's account id, and the box id on three lines, so a box only opens under its own holder and id.
+- **Inputs:** The holder's box key, the holder's account id, the box id, and the share code.
+- **Returns / side effects:** The box as base64url without padding. No network.
+- **Used by:** `keepHeldShare` (a new box) and `relockHeldShares` (a box sealed again with the new words).
+
+## Function: openHeldShare
+
+- **Purpose:** Decrypts one box sealed by `sealHeldShare`.
+- **Inputs:** The holder's box key, the holder's account id, the box id, and the box (base64url).
+- **Returns / side effects:** The share code, or `null` when the box does not open: another version byte, another key (for example the holder's words before a recovery of their own), another account or id, changed bytes, text that is not base64url, or plaintext that is not UTF-8. Never throws. No network.
+- **Used by:** `loadHeldShares` and `relockHeldShares`.
+
 ## Function: loadHeldShares
 
-- **Purpose:** Reads the shares the signed-in member keeps for other members' social recovery, from `localStorage` key `21gifts.recoveryShares.<holder account id>` (`HELD_SHARES_KEY_PREFIX`), whose value is `{ "v": 1, "shares": [{ "code", "storedAt" }] }`.
-- **Inputs:** The signed-in member's account id.
-- **Returns / side effects:** `HeldShare[]` (`code`, `ownerAccountId`, `ownerUsername`, `identifier`, `memberIndex`, `storedAt`), newest first. Every payload is read again with `parseShareCode`, and one that no longer reads is left out. On the server, with blocked storage, or with an unreadable value it returns none. Logging out does not clear the key; the screens show a member only the shares under the signed-in account.
+- **Purpose:** Reads the shares the signed-in member keeps for other members' Social Recovery: every box of `GET /me/held-shares` (`fetchHeldShareBoxes`) is opened with the key of the member's current words (`openHeldShare`) and its code read with `parseShareCode`.
+- **Inputs:** Session token, the signed-in member's account id, and the box key of the member's current words.
+- **Returns / side effects:** `{ shares, lockedIds }`: `HeldShare[]` (`boxId`, `code`, `ownerAccountId`, `ownerUsername`, `identifier`, `memberIndex`) sorted by owner username, and the ids of the boxes that did not open or hold no share code. Nothing is deleted. Throws the errors of `fetchHeldShareBoxes` when the boxes cannot be read.
 - **Used by:** `useHeldShares` on `/settings/held-shares`.
 
 ## Function: keepHeldShare
 
-- **Purpose:** Keeps a scanned share for another member under the signed-in member's key. It refuses the member's own share, and a share whose owner and identifier are already kept in this browser under any account (it reads every key with the prefix), so one phone never holds two shares of one set.
-- **Inputs:** The signed-in member's account id, the scanned text, and the time to store (epoch ms).
-- **Returns / side effects:** `{ ok: true, share }` after writing, or `{ ok: false, reason }` with `invalid`, `own`, `duplicate`, or `storage` (no window, or the browser refused to read or write). The share never reaches the api.
+- **Purpose:** Keeps a scanned share for another member in a new box. It refuses text that is not a share, a share of the member's own account, and a share whose owner account id and SLIP-39 identifier are already among the member's opened boxes, so one member never keeps two shares of one set. Otherwise it seals the code (`sealHeldShare`) under a new random id (`newHeldShareBoxId`) and stores it (`putHeldShareBox`).
+- **Inputs:** Session token, the signed-in member's account id, the box key of the member's current words, the member's shares as last read, and the scanned text.
+- **Returns / side effects:** `{ ok: true, share }` once the api stored the box, or `{ ok: false, reason }` with `invalid`, `own`, `duplicate`, or `save` (the api did not store it). The code reaches the api only encrypted.
 - **Used by:** `useHeldShares` (**Keep a share** on `/settings/held-shares`).
 
-## Function: deleteHeldShare
+## Function: relockHeldShares
 
-- **Purpose:** Deletes the kept share of one owner and set identifier from the signed-in member's key; with the last share the key is removed.
-- **Inputs:** The signed-in member's account id, the owner's account id, and the set identifier.
-- **Returns / side effects:** `true` when a share was deleted; `false` when none matched, on the server, or when the browser refused the write.
-- **Used by:** `useHeldShares` (the confirmed delete on `/settings/held-shares`).
+- **Purpose:** After the member's own Social Recovery, moves the boxes they keep for others from their previous 12 words to their current ones: every box that opens with the previous words is sealed again with the current words and written back under the same id (`putHeldShareBox`). A box that does not open with the previous words is left as it is.
+- **Inputs:** Session token, the member's account id, the previous 12 words, and the current 12 words.
+- **Returns / side effects:** How many boxes moved. Never throws: same words, words that are not a phrase, or boxes that cannot be read move nothing, and a box whose write fails stays under the previous words for the next call (moved boxes no longer open with the previous words, so a repeat is safe).
+- **Used by:** The sign-in with the new passkey in `recovery-flow.ts` (with the old words still in memory) and `useRemainingBalance` (old words entered on `/settings/previous-wallets/[sparkPubkey]`, with the open wallet's words in tab memory). Neither waits for it, so it never holds up the recovery or the balance move.
 
 ## Function: derSignatureHex
 
@@ -4780,6 +4808,48 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with Bearer, path `sparkPubkey` (URL-encoded upstream).
 - **Returns / side effects:** Upstream `Response` (204 with no body when dropped).
 - **Used by:** Route DELETE `/me/previous-wallets/[sparkPubkey]`.
+
+## Function: fetchHeldShareBoxes
+
+- **Purpose:** GET `/me/held-shares` with Bearer: the boxes the signed-in member keeps other members' shares in, oldest first. The api returns only the caller's own boxes and cannot read them.
+- **Inputs:** Session token.
+- **Returns / side effects:** `HeldShareBox[]` (`id`, `ciphertext`, `updatedAt`). Throws `Unauthorized` on 401 and `Held shares are unavailable` on any other non-2xx. A body that fails `heldShareBoxesSchema` throws.
+- **Used by:** `loadHeldShares` and `relockHeldShares`.
+
+## Function: putHeldShareBox
+
+- **Purpose:** PUT `/me/held-shares/:id` with Bearer and JSON `{ ciphertext }`: creates (201) or replaces (200) one box of the signed-in member.
+- **Inputs:** Session token, the box id (URL-encoded into the path), and the sealed box (base64url).
+- **Returns / side effects:** Resolves once stored. Any non-2xx (400 for a bad id or box, 409 `Box id in use` or `Too many held shares`, 401, 429, 5xx) throws `Could not keep the share`.
+- **Used by:** `keepHeldShare` and `relockHeldShares`.
+
+## Function: deleteHeldShareBox
+
+- **Purpose:** DELETE `/me/held-shares/:id` with Bearer: deletes one box of the signed-in member. The api answers 204 also for a box that is already gone, so a repeat after a lost answer succeeds.
+- **Inputs:** Session token and the box id (URL-encoded into the path).
+- **Returns / side effects:** Resolves on 204; any other status throws `Could not delete the share`.
+- **Used by:** `useHeldShares` (the confirmed delete of one share, and of the boxes that do not open with the current words).
+
+## Function: proxyMeHeldSharesGet
+
+- **Purpose:** Proxies GET `/me/held-shares` to the api.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/me/held-shares`.
+
+## Function: proxyMeHeldSharePut
+
+- **Purpose:** Proxies PUT `/me/held-shares/:id` to the api.
+- **Inputs:** Incoming `Request` with Bearer and JSON `{ ciphertext }`, path `id` (URL-encoded upstream).
+- **Returns / side effects:** Upstream `Response`. Does not read or log the body.
+- **Used by:** Route PUT `/me/held-shares/[id]`.
+
+## Function: proxyMeHeldShareDelete
+
+- **Purpose:** Proxies DELETE `/me/held-shares/:id` to the api.
+- **Inputs:** Incoming `Request` with Bearer, path `id` (URL-encoded upstream).
+- **Returns / side effects:** Upstream `Response` (204 with no body).
+- **Used by:** Route DELETE `/me/held-shares/[id]`.
 
 ## Function: proxyLnurlpayRegisterPost
 
@@ -5993,16 +6063,16 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: HeldSharesScreen
 
-- **Purpose:** Body of `/settings/held-shares`, the holder side of Social Recovery: the shares kept in this browser under the signed-in member's account (`useHeldShares`). A share never reaches the api.
-- **Inputs:** `useHeldShares()`, the signed-in account from `useAuthStore`, and the UI locale (dates).
-- **Returns / side effects:** `null` before the account has loaded. **List** (`Card surface={false}`): **h1** **Shares I keep for others** (`heldShares.title`), the intro (`heldShares.intro`), the notice of the last scan (**You now keep a share for @username.** as `role="status"`, or a `role="alert"` with `shareCode.invalid`, `heldShares.own`, `heldShares.duplicate` naming the owner, or `heldShares.storageError`), a primary `Button size="lg"` **Keep a share** (`heldShares.keep`), then **You keep no shares for others yet.** (`heldShares.empty`) or one card per share: `@username` (`heldShares.owner`), **Kept since {date}** (`heldShares.storedAt`), and icon-only ghost `IconButton`s **Show code for @username** (lucide `QrCode`, `heldShares.show`) and **Delete share of @username** (lucide `Trash2` in `text-app-danger`, `heldShares.delete`). The trash opens `InlineConfirm` (`heldShares.deleteConfirm`, check `heldShares.deleteYes`, X `heldShares.deleteNo`) and is hidden while it is open. **Scan**: an sr-only **h1** and the full-port camera layer of the wallet Send view (`section[data-port-fill]`, `absolute inset-0 … bg-black`, named **Keep a share**) holding `QrScanner` with `copy` `heldShares.scanHint`, `heldShares.cameraDenied`, and `heldShares.cameraUnavailable`. **Code**: an sr-only **h1**, **h2** **Share of @username** (`heldShares.qrTitle`), `heldShares.qrBody`, and `QrCode` of the payload labelled **Share code** (`heldShares.qrLabel`, no logo). The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft onBackClick`) steps from the camera or a code back to the list, otherwise it leaves.
+- **Purpose:** Body of `/settings/held-shares`, the holder side of Social Recovery: the shares the signed-in member keeps for others in encrypted boxes on the api (`useHeldShares`). A share reaches the api only encrypted.
+- **Inputs:** `useHeldShares()`, the signed-in account from `useAuthStore`, and the UI locale.
+- **Returns / side effects:** `null` before the account has loaded. Every list step is a `Card surface={false}` with **h1** **Shares I keep for others** (`heldShares.title`) and the intro (`heldShares.intro`). **Opening**: `BusyLine` `heldShares.opening`. **Unlock**: the muted `heldShares.unlockHint`, the alert of a failed prompt in the recovery phrase's wording (`wallet.prfUnsupported`, `wallet.timeout`, or `wallet.errorGeneric`), and the primary `Button size="lg"` **Open my shares** (`heldShares.unlock`, disabled with a spinner while the prompt runs). **Load error**: the alert `heldShares.loadError` and **Try again** (`login.retry`). **List**: the notice of the last scan or delete (**You now keep a share for @username.** as `role="status"`, or a `role="alert"` with `shareCode.invalid`, `heldShares.own`, `heldShares.duplicate` naming the owner, `heldShares.saveError`, or `heldShares.deleteError`), the primary `Button size="lg"` **Keep a share** (`heldShares.keep`; `BusyLine` `heldShares.saving` in its place while a share is kept), then **You keep no shares for others yet.** (`heldShares.empty`) or a list: one card per share with `@username` (`heldShares.owner`) and icon-only ghost `IconButton`s **Show code for @username** (lucide `QrCode`, `heldShares.show`) and **Delete share of @username** (lucide `Trash2` in `text-app-danger`, `heldShares.delete`), then, when boxes do not open with the current words, one muted row `heldShares.lockedOne` or `heldShares.lockedMany` with the icon-only **Delete the shares that cannot be opened** (`heldShares.deleteLocked`). Each trash opens `InlineConfirm` (`heldShares.deleteConfirm` or `heldShares.deleteLockedConfirm`, check `heldShares.deleteYes`, X `heldShares.deleteNo`) and is hidden while it is open. **Scan**: an sr-only **h1** and the full-port camera layer of the wallet Send view (`section[data-port-fill]`, `absolute inset-0 … bg-black`, named **Keep a share**) holding `QrScanner` with `copy` `heldShares.scanHint`, `heldShares.cameraDenied`, and `heldShares.cameraUnavailable`. **Code**: an sr-only **h1**, **h2** **Share of @username** (`heldShares.qrTitle`), `heldShares.qrBody`, and `QrCode` of the payload labelled **Share code** (`heldShares.qrLabel`, no logo). The one top-left arrow (`AppShellTopLeft` with `ProfileChromeLeft onBackClick`) steps from the camera or a code back to the list, otherwise it leaves.
 - **Used by:** `HeldSharesPage`.
 
 ## Function: useHeldShares
 
-- **Purpose:** State and actions of `/settings/held-shares` for the signed-in member, whose `account.id` is the holder id. Shares stay in this browser's `localStorage` and never reach the api.
-- **Inputs:** `account.id` from `useAuthStore`; uses `loadHeldShares`, `keepHeldShare`, `deleteHeldShare`, and `parseShareCode`.
-- **Returns / side effects:** `{ shares, view, notice, confirmDelete, scan, onScanResult, showQr, askDelete, remove, cancel, back }`. `shares` are newest first. `view` is `list`, `scan`, or `{ qr: share }`. `scan()` clears the notice and a pending confirm and opens the camera. `onScanResult(text)` returns to the list: a payload that does not read gives the notice `invalid`; otherwise it keeps the share with the time now and gives `stored` with the owner's username, or the refusal `own`, `duplicate` (a share of that owner and set under any holder key in this browser), or `storage`, also with the username. `showQr(share)` opens its code. `askDelete(share)` sets `confirmDelete` to its payload, `cancel()` clears it, and `remove(share)` deletes it, reloads the list, and gives the notice `storage` when the share is still there. `back()` returns `true` after stepping from the camera or a code to the list, and `false` on the list. Without an account the list is empty and `scan`, `onScanResult`, and `remove` do nothing.
+- **Purpose:** State and actions of `/settings/held-shares` for the signed-in member, whose `account.id` is the holder id. The shares live in encrypted boxes on the api under the member's login; only the box key of the member's words stays in memory, never the words.
+- **Inputs:** `session` and `account.id` from `useAuthStore`; the words from tab memory (`settlePhraseDerivations`, then `peekSessionPhrase`) or from `useWalletPhrase` (`showPhrase`, the passkey prompt of **Show recovery phrase**, then `hidePhrase`); uses `heldShareBoxKey`, `loadHeldShares`, `keepHeldShare`, `deleteHeldShareBox`, and `parseShareCode`.
+- **Returns / side effects:** `{ load, unlocking, unlockError, shares, lockedCount, saving, view, notice, confirmDelete, confirmDeleteLocked, unlock, reload, scan, onScanResult, showQr, askDelete, remove, askDeleteLocked, removeLocked, cancel, back }`. `load` is `opening` (words looked up or boxes read), `unlock` (no words in tab memory: `unlock()` asks for the passkey, `unlocking` and `unlockError` mirror that prompt), `loadError` (words that give no key or boxes that cannot be read; `reload()` tries again), or `ready`. `shares` are sorted by owner username; `lockedCount` counts the boxes that do not open with the current words, which are never deleted on their own. `view` is `list`, `scan`, or `{ qr: share }`. `scan()` (only when `ready` and not saving) clears the notice and pending confirms and opens the camera. `onScanResult(text)` returns to the list, sets `saving`, and keeps the share in a new box: `stored` with the owner's username, or the refusal `invalid`, `own`, `duplicate` (that owner and set among the opened boxes), or `saveError`, with the username when the payload was readable. `showQr(share)` opens its code. `askDelete(share)` sets `confirmDelete` to its box id, `askDeleteLocked()` sets `confirmDeleteLocked`, `cancel()` clears both. `remove(share)` deletes its box and drops it from the list, or gives `deleteError` and keeps it. `removeLocked()` deletes every box that does not open; the ones the api did not delete stay counted with `deleteError`. `back()` returns `true` after stepping from the camera or a code to the list, and `false` on the list. Without a session or account nothing is read and the actions do nothing.
 - **Used by:** `HeldSharesScreen`.
 
 ## Function: SocialRecoveryPage
@@ -6100,7 +6170,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** **Transfer** on `transfer`: one press moves the account to the new passkey and wallet, resuming at the first part not done.
 - **Inputs:** The recovery in progress; no-op unless `transfer` is shown and idle with an attempt.
-- **Returns / side effects:** The view is busy throughout. **Account:** the old wallet signs `recoveryMessage` (account id, the begin's challenge, the new credential id, the new key) with `signMessage`; a failure or another key ends the press with `generic`. `finishPasskeyRecovery` stores the pending recovery; `RecoveryError` `challenge` (the account did not move) begins again at once, which on a new begin restarts the attempt (`found` with `restart`, the new wallet closed, every part of the attempt dropped); any other refusal ends the press (`generic`, or `blocked` / `refused`). **Address:** when the old wallet holds an address (`hasAddress`), it authorizes the move (`authorizeAddressTransfer`) and the new wallet (opened again if the sign-in closed it) claims it, timed as `wallet.address.transfer`; the moment the claim settled (resolved, threw, or was not needed) is kept, and a failure does not stop the press. **Sign-in:** the new wallet is closed, then `startPasskeyAuthentication`, `getCredential` limited to the new credential (`wallet.passkey`, `prompt: recovery`), and `finishPasskeyAuthentication`, without `signalUnknownCredential`. Success clears the tab phrase, starts `rememberPhraseFromPrf` with the new PRF bytes, stores the session (`setAuth`), logs `login` and `recovery_done`, and marks the account, address, and sign-in done. `RecoveryPendingError` waits until `RECOVERY_SETTLE_WAIT_MS` after the claim settled and begins again; `UnknownCredentialError` begins again at once. A begin again that answers `done` signs in once more (an unknown passkey then means `refused` `done`); `operator` and `not_found` are `refused`; `unavailable` three times, a dismissed prompt, or another failure ends the press with `generic`. **Balance:** reads the old wallet's synced balance and sends all of it to the new Spark address (`sendToSparkAddress`, `wallet.send` with `route: spark`). A send that throws keeps its idempotency key for the next press and is reported as a payment that did not go out (`reportPaymentFailure`: stage `send`, method `spark`, flow `recovery`, the reason from `sdkFailureReason`, the amount, under the session of the sign-in); after a send that went out the key is dropped and the balance read again; up to `RECOVERY_SEND_TRIES` (3) sends per press; any failure is `balance`. A synced read of 0 closes the old wallet, drops every word and connection, and shows `done`.
+- **Returns / side effects:** The view is busy throughout. **Account:** the old wallet signs `recoveryMessage` (account id, the begin's challenge, the new credential id, the new key) with `signMessage`; a failure or another key ends the press with `generic`. `finishPasskeyRecovery` stores the pending recovery; `RecoveryError` `challenge` (the account did not move) begins again at once, which on a new begin restarts the attempt (`found` with `restart`, the new wallet closed, every part of the attempt dropped); any other refusal ends the press (`generic`, or `blocked` / `refused`). **Address:** when the old wallet holds an address (`hasAddress`), it authorizes the move (`authorizeAddressTransfer`) and the new wallet (opened again if the sign-in closed it) claims it, timed as `wallet.address.transfer`; the moment the claim settled (resolved, threw, or was not needed) is kept, and a failure does not stop the press. **Sign-in:** the new wallet is closed, then `startPasskeyAuthentication`, `getCredential` limited to the new credential (`wallet.passkey`, `prompt: recovery`), and `finishPasskeyAuthentication`, without `signalUnknownCredential`. Success clears the tab phrase, starts `rememberPhraseFromPrf` with the new PRF bytes, starts `relockHeldShares` with the old and the new words (the boxes the member keeps for others move to the new words; not awaited, and a failure never ends the press: the next words entered on a previous wallet's page try again), stores the session (`setAuth`), logs `login` and `recovery_done`, and marks the account, address, and sign-in done. `RecoveryPendingError` waits until `RECOVERY_SETTLE_WAIT_MS` after the claim settled and begins again; `UnknownCredentialError` begins again at once. A begin again that answers `done` signs in once more (an unknown passkey then means `refused` `done`); `operator` and `not_found` are `refused`; `unavailable` three times, a dismissed prompt, or another failure ends the press with `generic`. **Balance:** reads the old wallet's synced balance and sends all of it to the new Spark address (`sendToSparkAddress`, `wallet.send` with `route: spark`). A send that throws keeps its idempotency key for the next press and is reported as a payment that did not go out (`reportPaymentFailure`: stage `send`, method `spark`, flow `recovery`, the reason from `sdkFailureReason`, the amount, under the session of the sign-in); after a send that went out the key is dropped and the balance read again; up to `RECOVERY_SEND_TRIES` (3) sends per press; any failure is `balance`. A synced read of 0 closes the old wallet, drops every word and connection, and shows `done`.
 - **Used by:** `useRecoveryFlow` (`transfer`).
 
 ## Function: finishWithoutBalance
@@ -6142,7 +6212,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** State and actions of **Transfer remaining balance** for one previous wallet of the signed-in account.
 - **Inputs:** `sparkPubkey` (lower-cased for the checks), the session from `useAuthStore`, and the client-side router. In a Playwright build only (`visualPin`), `?visual=prev-opening`, `prev-mismatch`, `prev-balance`, `prev-empty`, `prev-sending`, `prev-error`, and `prev-done` open that step (₿21'000, or 0) without reading the list or opening a wallet; a deployed build ignores them.
-- **Returns / side effects:** `{ step, balanceSats, removal, removable, reload, scan, type, onWords, retryOpen, transfer, askRemove, cancelRemove, confirmRemove, leave, back }`. Reads `fetchPreviousWallets` once per session and `reload`: the key not listed is `notFound`, a failure `loadError`, otherwise `start`. `onWords` opens the wallet (`openPreviousWallet`): `mismatch`, `walletError` (the words stay for `retryOpen`, which opens again; after `mismatch` it returns to `start` and drops them), or `balance` with the synced balance. `transfer` (on `balance` or `error`) runs `transferRemainingBalance` with the session: `done` (balance 0) or `error`. `removable` is true only with a synced read of 0 (`balance` at 0, or `done`); then `askRemove` opens the confirm, `cancelRemove` closes it, and `confirmRemove` calls `deletePreviousWallet` (busy meanwhile; a wallet that is already removed counts as removed, so **Remove** after a lost answer still ends), then `closePreviousWallet` and `returnToView('/settings', router)`, or `error`. `leave` (**Done**) calls `returnToView('/settings', router)`. `back()` steps from `scan` or `type` to `start`, otherwise returns `false`. Unmount drops the words and calls `closePreviousWallet`; answers after that are dropped.
+- **Returns / side effects:** `{ step, balanceSats, removal, removable, reload, scan, type, onWords, retryOpen, transfer, askRemove, cancelRemove, confirmRemove, leave, back }`. Reads `fetchPreviousWallets` once per session and `reload`: the key not listed is `notFound`, a failure `loadError`, otherwise `start`. `onWords` first moves the boxes the member keeps for others from the entered words to the words of the open wallet in tab memory (`relockHeldShares`, not awaited; nothing without words in tab memory), then opens the wallet (`openPreviousWallet`): `mismatch`, `walletError` (the words stay for `retryOpen`, which opens again; after `mismatch` it returns to `start` and drops them), or `balance` with the synced balance. `transfer` (on `balance` or `error`) runs `transferRemainingBalance` with the session: `done` (balance 0) or `error`. `removable` is true only with a synced read of 0 (`balance` at 0, or `done`); then `askRemove` opens the confirm, `cancelRemove` closes it, and `confirmRemove` calls `deletePreviousWallet` (busy meanwhile; a wallet that is already removed counts as removed, so **Remove** after a lost answer still ends), then `closePreviousWallet` and `returnToView('/settings', router)`, or `error`. `leave` (**Done**) calls `returnToView('/settings', router)`. `back()` steps from `scan` or `type` to `start`, otherwise returns `false`. Unmount drops the words and calls `closePreviousWallet`; answers after that are dropped.
 - **Used by:** `RemainingBalanceScreen`.
 
 ## Function: openPreviousWallet

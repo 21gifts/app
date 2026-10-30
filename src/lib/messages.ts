@@ -747,10 +747,8 @@ const en = {
   'heldShares.stored': 'You now keep a share for @{username}.',
   'heldShares.own': 'This is a share of your own account. Only other people can keep it.',
   'heldShares.duplicate':
-    'This phone already keeps a share of this setup for @{username}. One phone keeps only one share of a setup.',
-  'heldShares.storageError': 'This browser cannot keep shares. Allow site data and try again.',
+    'This account already keeps a share of this setup for @{username}. One person keeps only one share of a setup.',
   'heldShares.owner': '@{username}',
-  'heldShares.storedAt': 'Kept since {date}',
   'heldShares.show': 'Show code for @{username}',
   'heldShares.delete': 'Delete share of @{username}',
   'heldShares.deleteConfirm': 'Delete the share of @{username}? Only do this when they ask.',
@@ -760,6 +758,17 @@ const en = {
   'heldShares.qrBody':
     'Show this code only to @{username} in person, so they can restore their account.',
   'heldShares.qrLabel': 'Share code',
+  'heldShares.unlockHint': 'Confirm with your passkey to open the shares you keep.',
+  'heldShares.unlock': 'Open my shares',
+  'heldShares.opening': 'Opening your shares…',
+  'heldShares.loadError': 'Your shares could not be loaded.',
+  'heldShares.saving': 'Keeping the share…',
+  'heldShares.saveError': 'The share could not be kept. Try again.',
+  'heldShares.deleteError': 'The share could not be deleted. Try again.',
+  'heldShares.lockedOne': '1 kept share cannot be opened with your current 12 words.',
+  'heldShares.lockedMany': '{count} kept shares cannot be opened with your current 12 words.',
+  'heldShares.deleteLocked': 'Delete the shares that cannot be opened',
+  'heldShares.deleteLockedConfirm': 'Delete the shares that cannot be opened?',
   'shareCode.invalid': 'This is not a Social Recovery code.',
   'shareCode.same': "That was the same code twice. Scan the other person's code.",
   'shareCode.otherSet': 'These two codes do not belong together.',
@@ -2332,11 +2341,8 @@ const de = {
   'heldShares.own':
     'Das ist ein Anteil deines eigenen Kontos. Nur andere Personen können ihn aufbewahren.',
   'heldShares.duplicate':
-    'Dieses Telefon bewahrt schon einen Anteil dieser Einrichtung für @{username} auf. Ein Telefon bewahrt nur einen Anteil einer Einrichtung auf.',
-  'heldShares.storageError':
-    'Dieser Browser kann keine Anteile aufbewahren. Erlaube Websitedaten und versuche es erneut.',
+    'Dieses Konto bewahrt schon einen Anteil dieser Einrichtung für @{username} auf. Eine Person bewahrt nur einen Anteil einer Einrichtung auf.',
   'heldShares.owner': '@{username}',
-  'heldShares.storedAt': 'Aufbewahrt seit {date}',
   'heldShares.show': 'Code für @{username} zeigen',
   'heldShares.delete': 'Anteil von @{username} löschen',
   'heldShares.deleteConfirm':
@@ -2347,6 +2353,20 @@ const de = {
   'heldShares.qrBody':
     'Zeige diesen Code nur @{username} persönlich, damit die Person ihr Konto wiederherstellen kann.',
   'heldShares.qrLabel': 'Anteil-Code',
+  'heldShares.unlockHint':
+    'Bestätige mit deinem Passkey, um die Anteile zu öffnen, die du aufbewahrst.',
+  'heldShares.unlock': 'Meine Anteile öffnen',
+  'heldShares.opening': 'Deine Anteile werden geöffnet…',
+  'heldShares.loadError': 'Deine Anteile konnten nicht geladen werden.',
+  'heldShares.saving': 'Der Anteil wird aufbewahrt…',
+  'heldShares.saveError': 'Der Anteil konnte nicht aufbewahrt werden. Versuche es erneut.',
+  'heldShares.deleteError': 'Der Anteil konnte nicht gelöscht werden. Versuche es erneut.',
+  'heldShares.lockedOne':
+    '1 aufbewahrter Anteil lässt sich mit deinen aktuellen 12 Wörtern nicht öffnen.',
+  'heldShares.lockedMany':
+    '{count} aufbewahrte Anteile lassen sich mit deinen aktuellen 12 Wörtern nicht öffnen.',
+  'heldShares.deleteLocked': 'Anteile löschen, die sich nicht öffnen lassen',
+  'heldShares.deleteLockedConfirm': 'Die Anteile löschen, die sich nicht öffnen lassen?',
   'shareCode.invalid': 'Das ist kein Social-Recovery-Code.',
   'shareCode.same': 'Das war zweimal derselbe Code. Scanne den Code der anderen Person.',
   'shareCode.otherSet': 'Diese zwei Codes gehören nicht zusammen.',
@@ -3948,11 +3968,8 @@ const es = {
   'heldShares.stored': 'Ahora guardas una parte para @{username}.',
   'heldShares.own': 'Esta es una parte de tu propia cuenta. Solo otras personas pueden guardarla.',
   'heldShares.duplicate':
-    'Este teléfono ya guarda una parte de esta configuración para @{username}. Un teléfono guarda solo una parte de cada configuración.',
-  'heldShares.storageError':
-    'Este navegador no puede guardar partes. Permite los datos del sitio e inténtalo de nuevo.',
+    'Esta cuenta ya guarda una parte de esta configuración para @{username}. Una persona guarda solo una parte de cada configuración.',
   'heldShares.owner': '@{username}',
-  'heldShares.storedAt': 'Guardada desde el {date}',
   'heldShares.show': 'Mostrar el código para @{username}',
   'heldShares.delete': 'Borrar la parte de @{username}',
   'heldShares.deleteConfirm':
@@ -3963,6 +3980,18 @@ const es = {
   'heldShares.qrBody':
     'Muestra este código solo a @{username} en persona, para que pueda restaurar su cuenta.',
   'heldShares.qrLabel': 'Código de la parte',
+  'heldShares.unlockHint': 'Confirma con tu passkey para abrir las partes que guardas.',
+  'heldShares.unlock': 'Abrir mis partes',
+  'heldShares.opening': 'Abriendo tus partes…',
+  'heldShares.loadError': 'No se pudieron cargar tus partes.',
+  'heldShares.saving': 'Guardando la parte…',
+  'heldShares.saveError': 'No se pudo guardar la parte. Inténtalo de nuevo.',
+  'heldShares.deleteError': 'No se pudo borrar la parte. Inténtalo de nuevo.',
+  'heldShares.lockedOne': '1 parte guardada no se puede abrir con tus 12 palabras actuales.',
+  'heldShares.lockedMany':
+    '{count} partes guardadas no se pueden abrir con tus 12 palabras actuales.',
+  'heldShares.deleteLocked': 'Borrar las partes que no se pueden abrir',
+  'heldShares.deleteLockedConfirm': '¿Borrar las partes que no se pueden abrir?',
   'shareCode.invalid': 'Este no es un código de Social Recovery.',
   'shareCode.same': 'Era el mismo código dos veces. Escanea el código de la otra persona.',
   'shareCode.otherSet': 'Estos dos códigos no van juntos.',
@@ -5547,11 +5576,8 @@ const fil = {
   'heldShares.stored': 'May itinatabi ka nang bahagi para kay @{username}.',
   'heldShares.own': 'Bahagi ito ng sarili mong account. Ibang tao lang ang puwedeng magtabi nito.',
   'heldShares.duplicate':
-    'May itinatabi na ang teleponong ito na bahagi ng setup na ito para kay @{username}. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang telepono.',
-  'heldShares.storageError':
-    'Hindi makapagtabi ng mga bahagi ang browser na ito. Payagan ang site data at subukan ulit.',
+    'May itinatabi na ang account na ito na bahagi ng setup na ito para kay @{username}. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang tao.',
   'heldShares.owner': '@{username}',
-  'heldShares.storedAt': 'Itinatabi mula {date}',
   'heldShares.show': 'Ipakita ang code para kay @{username}',
   'heldShares.delete': 'Burahin ang bahagi ni @{username}',
   'heldShares.deleteConfirm':
@@ -5562,6 +5588,20 @@ const fil = {
   'heldShares.qrBody':
     'Ipakita lang ang code na ito kay @{username} nang personal, para maibalik niya ang account niya.',
   'heldShares.qrLabel': 'Code ng bahagi',
+  'heldShares.unlockHint':
+    'Kumpirmahin gamit ang passkey mo para mabuksan ang mga bahaging itinatabi mo.',
+  'heldShares.unlock': 'Buksan ang mga bahagi ko',
+  'heldShares.opening': 'Binubuksan ang mga bahagi mo…',
+  'heldShares.loadError': 'Hindi ma-load ang mga bahagi mo.',
+  'heldShares.saving': 'Itinatabi ang bahagi…',
+  'heldShares.saveError': 'Hindi naitabi ang bahagi. Subukan ulit.',
+  'heldShares.deleteError': 'Hindi nabura ang bahagi. Subukan ulit.',
+  'heldShares.lockedOne':
+    '1 itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita.',
+  'heldShares.lockedMany':
+    '{count} itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita.',
+  'heldShares.deleteLocked': 'Burahin ang mga bahaging hindi mabuksan',
+  'heldShares.deleteLockedConfirm': 'Burahin ang mga bahaging hindi mabuksan?',
   'shareCode.invalid': 'Hindi ito Social Recovery code.',
   'shareCode.same': 'Iisang code ang na-scan nang dalawang beses. I-scan ang code ng isa pang tao.',
   'shareCode.otherSet': 'Hindi magkasama ang dalawang code na ito.',

@@ -3,7 +3,8 @@
  * shares and back. A payload is
  * `21gifts-share:v1:<owner account id>:<owner username>:<20 share words>`; the
  * words stay a standard SLIP-39 share, so the shares can also be combined by
- * hand. A payload is never sent to the api.
+ * hand. A payload reaches the api only encrypted, in a holder's box
+ * (`held-shares.ts`).
  */
 import { entropyToMnemonic, mnemonicToEntropy } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';

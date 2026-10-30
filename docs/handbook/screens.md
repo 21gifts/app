@@ -34,7 +34,7 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; a Social Recovery share kept for another member is stored in `localStorage` under the keeping member's account until they delete it, and while an account is recovered or a balance moved the 12 recovery words and the shares stay only in the open tab's memory; Cloudflare TLS; login on this origin; with Social Recovery set up, 21.gifts stores one of the three parts of the 12 recovery words, encrypted, with the account for the current wallet and each previous wallet until it is removed (one part alone opens nothing, any two together open the wallet, and the application never shows or sends 21.gifts' part), and after a recovery it keeps the previous wallet's key and address until it is removed and reads that wallet's balance by its address from a public blockchain explorer; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; a Social Recovery part kept for another member is encrypted in the browser with a key from the keeping member's own 12 words and stored with their account, unreadable to 21.gifts, until they delete it; while an account is recovered or a balance moved the 12 recovery words and the shares stay only in the open tab's memory; Cloudflare TLS; login on this origin; with Social Recovery set up, 21.gifts stores one of the three parts of the 12 recovery words, encrypted, with the account for the current wallet and each previous wallet until it is removed (one part alone opens nothing, any two together open the wallet, and the application never shows or sends 21.gifts' part), and after a recovery it keeps the previous wallet's key and address until it is removed and reads that wallet's balance by its address from a public blockchain explorer; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
 - **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Open **Terms of Use** (`/terms`) or **Wallet and data** (`/terms#wallet-and-data`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
@@ -1398,21 +1398,69 @@ Opened as `/settings#previous-wallets` while `GET /me/previous-wallets` fails: u
 ## Screen: /settings/held-shares
 
 - **URL:** `/settings/held-shares` — the shares a signed-in member keeps for other members' Social Recovery, opened from **Shares I keep for others** on `/settings`. Requires a name, a username, and the living-room rules agreement, like `/settings`.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Shares I keep for others**, the line **Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.**, then the outcome of the last scan, if any: **You now keep a share for @{username}.** (`role="status"`), or an alert that the code is not a Social Recovery code, that it is a share of the member's own account, that this phone already keeps a share of that setup (under any account signed in here), or that this browser cannot keep shares. Then **Keep a share** and either **You keep no shares for others yet.** or one card per kept share, newest first: **@username**, **Kept since {date}**, and two icon-only controls, **Show code for @username** (QR icon) and **Delete share of @username** (trash icon). **Keep a share** fills the page with the camera, the same layer as the wallet Send camera, with **Point the camera at the code on the other phone** over the picture; a blocked camera or none says so in its place. **Show code** shows **Share of @username**, **Show this code only to @username in person, so they can restore their account.**, and the share's QR (**Share code**, no logo). Shares are stored in this browser only, under the signed-in member's account: logging out keeps them, and another account signed in here does not see them. Nothing is sent to the api.
-- **Actions:** **Keep a share** opens the camera; the first code read closes it and keeps the share, or says why not. The trash icon opens the confirm **Delete the share of @username? Only do this when they ask.** with an icon-only check (**Delete**) and X (**Keep**). The top-left arrow steps from the camera or a code back to the list; on the list it returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `HeldSharesPage`, `HeldSharesScreen`, `useHeldShares`, `loadHeldShares`, `keepHeldShare`, `deleteHeldShare`, `parseShareCode`, `QrScanner`, `QrCode`, `InlineConfirm`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Heading **Shares I keep for others** and the line **Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.** on every step. The shares are kept on 21.gifts under the member's own login, each in a box that only the member's 12 words open; 21.gifts cannot read a box and does not know whose share it holds. While the boxes open, **Opening your shares…** (`role="status"`). The words come from the open wallet in this tab, with no prompt; when the tab has none, **Confirm with your passkey to open the shares you keep.** and **Open my shares** ask for the passkey, the same prompt as **Show recovery phrase**, and a prompt that fails shows the recovery phrase's wording above the button. Boxes that cannot be read show **Your shares could not be loaded.** with **Try again**. Then the outcome of the last scan or delete, if any: **You now keep a share for @{username}.** (`role="status"`), or an alert that the code is not a Social Recovery code, that it is a share of the member's own account, that this account already keeps a share of that setup, that the share could not be kept, or that it could not be deleted. Then **Keep a share** (while a scanned share is kept, **Keeping the share…** in its place) and either **You keep no shares for others yet.** or one card per kept share, by username: **@username** and two icon-only controls, **Show code for @username** (QR icon) and **Delete share of @username** (trash icon). Boxes that do not open with the member's current 12 words (kept under words the member had before a Social Recovery of their own) are never deleted on their own: one neutral row says how many (**1 kept share cannot be opened with your current 12 words.** or **{count} kept shares cannot be opened with your current 12 words.**) with the icon-only **Delete the shares that cannot be opened**. **Keep a share** fills the page with the camera, the same layer as the wallet Send camera, with **Point the camera at the code on the other phone** over the picture; a blocked camera or none says so in its place. **Show code** shows **Share of @username**, **Show this code only to @username in person, so they can restore their account.**, and the share's QR (**Share code**, no logo). Logging out, a new phone, or another browser keeps the shares; they show again once the member signs in.
+- **Actions:** **Open my shares** asks for the passkey. **Keep a share** opens the camera; the first code read closes it and keeps the share in a new box, or says why not. The trash icon opens the confirm **Delete the share of @username? Only do this when they ask.** with an icon-only check (**Delete**) and X (**Keep**); the trash icon of the row that cannot be opened opens **Delete the shares that cannot be opened?** with the same check and X. **Try again** reads the boxes again. The top-left arrow steps from the camera or a code back to the list; on the list it returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `HeldSharesPage`, `HeldSharesScreen`, `useHeldShares`, `useWalletPhrase`, `heldShareBoxKey`, `loadHeldShares`, `keepHeldShare`, `fetchHeldShareBoxes`, `putHeldShareBox`, `deleteHeldShareBox`, `parseShareCode`, `BusyLine`, `QrScanner`, `QrCode`, `InlineConfirm`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
 
 ### Variant: default
 
-A member who keeps no shares: the title, the intro, **Keep a share**, and **You keep no shares for others yet.**
+A member who keeps no shares, after the boxes opened: the title, the intro, **Keep a share**, and **You keep no shares for others yet.**
 
 ![21.gifts shares kept for others](images/settings-held-shares.png)
 
+### Variant: unlock
+
+No words in this tab: the title, the intro, **Confirm with your passkey to open the shares you keep.**, and **Open my shares**.
+
+![21.gifts open the shares kept for others](images/held-shares-unlock.png)
+
+### Variant: unlock-error
+
+The passkey prompt of **Open my shares** failed: the alert **The recovery phrase could not be created or opened. Check this device and try again.** above **Open my shares**.
+
+![21.gifts shares kept for others passkey error](images/held-shares-unlock-error.png)
+
+### Variant: unlock-timeout
+
+The passkey prompt timed out: the alert **The device prompt timed out before you finished. Try again.** above **Open my shares**.
+
+![21.gifts shares kept for others passkey timeout](images/held-shares-unlock-timeout.png)
+
+### Variant: unlock-prf-unsupported
+
+The passkey gave no PRF output: the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** above **Open my shares**.
+
+![21.gifts shares kept for others without PRF](images/held-shares-unlock-prf-unsupported.png)
+
+### Variant: opening
+
+The boxes are being read and opened: **Opening your shares…** under the intro.
+
+![21.gifts shares kept for others opening](images/held-shares-opening.png)
+
+### Variant: load-error
+
+The boxes could not be read: the alert **Your shares could not be loaded.** and **Try again**.
+
+![21.gifts shares kept for others not loaded](images/held-shares-load-error.png)
+
 ### Variant: list
 
-Two kept shares, newest first: **@cara** (**Kept since Jan 2, 2026**) and **@bob** (**Kept since Jan 1, 2026**), each with its icon-only QR and trash controls.
+Two kept shares, by username: **@bob** and **@cara**, each with its icon-only QR and trash controls.
 
 ![21.gifts shares kept for others list](images/held-shares-list.png)
+
+### Variant: locked
+
+Bob's share and two boxes kept under the member's previous words: Bob's card and the row **2 kept shares cannot be opened with your current 12 words.** with its trash icon.
+
+![21.gifts kept shares that cannot be opened](images/held-shares-locked.png)
+
+### Variant: locked-delete-confirm
+
+After the trash icon of that row: the confirm **Delete the shares that cannot be opened?** with an icon-only check and X; the trash icon is hidden while it is open.
+
+![21.gifts delete kept shares that cannot be opened](images/held-shares-locked-delete-confirm.png)
 
 ### Variant: scan
 
@@ -1420,9 +1468,15 @@ After **Keep a share**: the camera fills the page with the viewfinder and **Poin
 
 ![21.gifts keep a share camera](images/held-shares-scan.png)
 
+### Variant: saving
+
+The camera read Bob's code and its box is being stored: **Keeping the share…** in place of **Keep a share**.
+
+![21.gifts share being kept](images/held-shares-saving.png)
+
 ### Variant: stored
 
-The camera read Bob's code: back on the list, **You now keep a share for @bob.** and Bob's card, kept since Jan 7, 2026.
+The camera read Bob's code: back on the list, **You now keep a share for @bob.** and Bob's card.
 
 ![21.gifts share kept](images/held-shares-stored.png)
 
@@ -1434,15 +1488,21 @@ The camera read a share of the signed-in member's own account: the alert **This 
 
 ### Variant: refused-duplicate
 
-The camera read Bob's code while this phone already keeps it: the alert **This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.**; Bob's one card stays.
+The camera read Bob's code while the member already keeps a share of that setup: the alert **This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.**; Bob's one card stays.
 
 ![21.gifts second share of a setup refused](images/held-shares-refused-duplicate.png)
 
-### Variant: refused-storage
+### Variant: save-error
 
-The browser refuses to store the scanned share: the alert **This browser cannot keep shares. Allow site data and try again.**
+21.gifts did not store the box of the scanned share: the alert **The share could not be kept. Try again.**
 
-![21.gifts share storage refused](images/held-shares-refused-storage.png)
+![21.gifts share not kept](images/held-shares-save-error.png)
+
+### Variant: delete-error
+
+21.gifts did not delete Bob's box: the alert **The share could not be deleted. Try again.**; both cards stay.
+
+![21.gifts share not deleted](images/held-shares-delete-error.png)
 
 ### Variant: invalid
 

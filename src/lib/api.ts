@@ -42,6 +42,7 @@ import {
   passkeyBeginSchema,
   passkeySessionSchema,
   previousWalletsSchema,
+  heldShareBoxesSchema,
   pushSubscriptionResponseSchema,
   recoveryBeginSchema,
   vapidPublicSchema,
@@ -84,6 +85,7 @@ import {
   type PasskeyBegin,
   type PasskeySession,
   type PreviousWallet,
+  type HeldShareBox,
   type RecoveryBegin,
   type TrustActionResult,
   type TrustChain,
@@ -4320,6 +4322,75 @@ export async function deletePreviousWallet(
   });
   if (response.status !== 204 && response.status !== 404) {
     throw new Error('Could not remove the previous wallet');
+  }
+}
+
+/**
+ * Lists the boxes the signed-in member keeps other members' shares in. The
+ * api returns only the caller's own boxes, oldest first; it cannot read them.
+ *
+ * @param sessionToken - Bearer session.
+ * @returns The boxes.
+ * @throws Error `Unauthorized` on 401.
+ * @throws Error `Held shares are unavailable` on any other non-2xx.
+ * @throws Error on a body that fails validation.
+ */
+export async function fetchHeldShareBoxes(sessionToken: string): Promise<HeldShareBox[]> {
+  const response = await fetch('/me/held-shares', {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
+  if (!response.ok) {
+    throw new Error('Held shares are unavailable');
+  }
+  return heldShareBoxesSchema.parse(await response.json()).boxes;
+}
+
+/**
+ * Creates or replaces one box of the signed-in member (201 or 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param id - The box id (32 lower-case hex digits).
+ * @param ciphertext - The encrypted share, base64url.
+ * @returns Resolves once the api stored the box.
+ * @throws Error `Could not keep the share` on any non-2xx.
+ */
+export async function putHeldShareBox(
+  sessionToken: string,
+  id: string,
+  ciphertext: string,
+): Promise<void> {
+  const response = await fetch(`/me/held-shares/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ ciphertext }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not keep the share');
+  }
+}
+
+/**
+ * Deletes one box of the signed-in member. The api answers 204 also for a box
+ * that is already gone, so a repeat after a lost answer succeeds.
+ *
+ * @param sessionToken - Bearer session.
+ * @param id - The box id.
+ * @returns Resolves on 204.
+ * @throws Error `Could not delete the share` on any other status.
+ */
+export async function deleteHeldShareBox(sessionToken: string, id: string): Promise<void> {
+  const response = await fetch(`/me/held-shares/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (response.status !== 204) {
+    throw new Error('Could not delete the share');
   }
 }
 
