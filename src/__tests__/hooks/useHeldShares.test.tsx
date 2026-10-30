@@ -488,6 +488,78 @@ describe('useHeldShares', () => {
     expect(result.current.notice).toBeNull();
   });
 
+  it('shows no load error for a key derivation that a newer one overtook', async () => {
+    mocks.loadHeldShares.mockResolvedValue({ shares: [CARA], lockedIds: [] });
+    let fail: (reason: Error) => void = () => undefined;
+    mocks.heldShareBoxKey.mockReturnValueOnce(
+      new Promise<CryptoKey>((_, reject) => {
+        fail = reject;
+      }),
+    );
+    const { result } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    await act(async () => {
+      fail(new Error('bad words'));
+      await Promise.resolve();
+    });
+    expect(result.current.load).toBe('ready');
+  });
+
+  it('lists a kept share once when a read already returned it', async () => {
+    const { result } = await ready({ shares: [CARA], lockedIds: [] });
+    let kept: (value: KeepShareResult) => void = () => undefined;
+    mocks.keepHeldShare.mockReturnValue(
+      new Promise<KeepShareResult>((resolve) => {
+        kept = resolve;
+      }),
+    );
+    act(() => {
+      result.current.onScanResult(BOB.code);
+    });
+    mocks.loadHeldShares.mockResolvedValue({ shares: [BOB, CARA], lockedIds: [] });
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(result.current.shares).toEqual([BOB, CARA]);
+    });
+    await act(async () => {
+      kept({ ok: true, share: BOB });
+      await Promise.resolve();
+    });
+    expect(result.current.shares).toEqual([BOB, CARA]);
+  });
+
+  it('hides a passkey error of a prompt started for the previous account', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
+    mocks.phrase.error = 'timeout';
+    const { result, rerender } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    expect(result.current.unlockError).toBe('timeout');
+    act(() => {
+      result.current.unlock();
+    });
+    rerender();
+    expect(result.current.unlockError).toBe('timeout');
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    expect(result.current.unlockError).toBeNull();
+  });
+
   it('ignores the tab-memory lookup of an unmounted page', async () => {
     let settle: () => void = () => undefined;
     mocks.settlePhraseDerivations.mockReturnValue(
