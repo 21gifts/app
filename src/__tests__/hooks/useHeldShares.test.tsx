@@ -162,6 +162,126 @@ describe('useHeldShares', () => {
     expect(result.current.shares).toEqual([CARA]);
   });
 
+  it('drops a key, a keep, and deletes that answer after the account changed', async () => {
+    const OTHER = { ...account, id: 'acc_other' };
+    const { result } = await ready({ shares: [BOB], lockedIds: ['x'.repeat(32)] });
+    let kept: (value: KeepShareResult) => void = () => undefined;
+    mocks.keepHeldShare.mockReturnValue(
+      new Promise<KeepShareResult>((resolve) => {
+        kept = resolve;
+      }),
+    );
+    let deleted: () => void = () => undefined;
+    let refused: (reason: Error) => void = () => undefined;
+    let lockedGone: () => void = () => undefined;
+    mocks.deleteHeldShareBox
+      .mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          deleted = resolve;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise<void>((_, reject) => {
+          refused = reject;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          lockedGone = resolve;
+        }),
+      );
+    act(() => {
+      result.current.onScanResult(CARA.code);
+      result.current.remove(BOB);
+      result.current.remove(CARA);
+      result.current.removeLocked();
+    });
+    let key: (value: CryptoKey) => void = () => undefined;
+    mocks.heldShareBoxKey.mockReturnValueOnce(
+      new Promise<CryptoKey>((resolve) => {
+        key = resolve;
+      }),
+    );
+    mocks.loadHeldShares.mockResolvedValue({ shares: [], lockedIds: [] });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: OTHER });
+    });
+    await waitFor(() => {
+      expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(2);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-3', account: { ...account, id: 'acc_third' } });
+    });
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenLastCalledWith('sess-3', 'acc_third', KEY);
+    });
+    await act(async () => {
+      key(KEY);
+      kept({ ok: true, share: CARA });
+      deleted();
+      refused(new Error('Could not delete the share'));
+      lockedGone();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mocks.loadHeldShares).not.toHaveBeenCalledWith('sess-2', 'acc_other', KEY);
+    expect(result.current.shares).toEqual([]);
+    expect(result.current.lockedCount).toBe(0);
+    expect(result.current.notice).toBeNull();
+    expect(result.current.saving).toBe(false);
+  });
+
+  it('drops a failed key of the previous account', async () => {
+    mocks.loadHeldShares.mockResolvedValue({ shares: [], lockedIds: [] });
+    let fail: (reason: Error) => void = () => undefined;
+    mocks.heldShareBoxKey.mockReturnValueOnce(
+      new Promise<CryptoKey>((_, reject) => {
+        fail = reject;
+      }),
+    );
+    const { result } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    await act(async () => {
+      fail(new Error('bad words'));
+      await Promise.resolve();
+    });
+    expect(result.current.load).toBe('ready');
+  });
+
+  it('leaves a box deleted here out of a read that was already running', async () => {
+    const { result } = await ready({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
+    let answer: (value: HeldShares) => void = () => undefined;
+    mocks.loadHeldShares.mockReturnValue(
+      new Promise<HeldShares>((resolve) => {
+        answer = resolve;
+      }),
+    );
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      result.current.remove(BOB);
+      result.current.removeLocked();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
+      answer({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
+      await Promise.resolve();
+    });
+    expect(result.current.shares).toEqual([CARA]);
+    expect(result.current.lockedCount).toBe(0);
+  });
+
   it('does nothing without a session or account', async () => {
     useAuthStore.setState({ session: null, account: null });
     const { result } = renderHook(() => useHeldShares());

@@ -37,12 +37,12 @@ describe('/me/held-shares/:id', () => {
         method: 'DELETE',
         headers: { authorization: 'Bearer token' },
       }),
-      { params: Promise.resolve({ id: 'f'.repeat(32) }) },
+      { params: Promise.resolve({ id: 'a/b' }) },
     );
     expect(response.status).toBe(204);
     expect(await response.text()).toBe('');
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(String(url)).toBe(`https://api.test/me/held-shares/${'f'.repeat(32)}`);
+    expect(String(url)).toBe('https://api.test/me/held-shares/a%2Fb');
     expect(init.method).toBe('DELETE');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
