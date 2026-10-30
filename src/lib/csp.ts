@@ -46,6 +46,9 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
     'https://*.googleapis.com',
     'https://*.gstatic.com',
     'https://*.ggpht.com',
+    // Shop cover photos in the public shop map popup on `/` (OpenCryptoPay map API).
+    'https://api.opencryptopay.io',
+    'https://dev-api.opencryptopay.io',
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   // Video previews before upload.

@@ -98,6 +98,12 @@ describe('buildCsp', () => {
     expect(script).not.toContain("'unsafe-inline'");
   });
 
+  it('allows the OpenCryptoPay hosts of the shop map cover photos as images', () => {
+    const img = directives(buildCsp('n')).get('img-src') ?? [];
+    expect(img).toContain('https://api.opencryptopay.io');
+    expect(img).toContain('https://dev-api.opencryptopay.io');
+  });
+
   it('blocks plugins, base rewrites, and framing', () => {
     const parsed = directives(buildCsp('n'));
     expect(parsed.get('object-src')).toEqual(["'none'"]);
