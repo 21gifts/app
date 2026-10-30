@@ -91,8 +91,9 @@ export interface UseHeldSharesResult {
  * ({@link useWalletPhrase}); only the key stays in memory, and only for the
  * account it was derived for: another account in this tab looks its words up
  * again and starts from an empty list, and an answer that arrives for the
- * previous account (key, read, keep, or delete) changes nothing. A box deleted
- * here stays out of a read that was already running. Boxes that do not
+ * previous account (key, read, keep, delete, or a passkey prompt started for
+ * it) changes nothing. A box deleted here stays out of, and a share kept here
+ * is added to, a read that was already running. Boxes that do not
  * open with these words are counted and can be deleted together, never on
  * their own. **Keep a share** opens the camera; a scanned payload is kept in
  * a new box ({@link keepHeldShare}) and the list comes back with a notice:
@@ -129,6 +130,12 @@ export function useHeldShares(): UseHeldSharesResult {
   const epochRef = useRef(0);
   /** Boxes deleted on this page for the account, left out of a read that was already running. */
   const deletedRef = useRef<Set<string>>(new Set());
+  /** Shares kept on this page for the account, added to a read that was already running. */
+  const keptRef = useRef<Map<string, HeldShare>>(new Map());
+  /** The passkey prompt of **Open my shares**: the epoch and account it was started for. */
+  const unlockRef = useRef<{ epoch: number; accountId: string } | null>(null);
+  /** Whether a scanned share is being kept, set before the state so a second scan waits. */
+  const savingRef = useRef(false);
 
   /** Reads the boxes with `key`; an answer of an older read is dropped. */
   const read = useCallback(
@@ -142,7 +149,13 @@ export function useHeldShares(): UseHeldSharesResult {
         const held = await loadHeldShares(session, holderAccountId, key);
         if (runRef.current === run) {
           const deleted = deletedRef.current;
-          setShares(held.shares.filter((share) => !deleted.has(share.boxId)));
+          const listed = new Set(held.shares.map((share) => share.boxId));
+          const kept = [...keptRef.current.values()].filter((share) => !listed.has(share.boxId));
+          setShares(
+            [...held.shares, ...kept]
+              .filter((share) => !deleted.has(share.boxId))
+              .sort((a, b) => a.ownerUsername.localeCompare(b.ownerUsername)),
+          );
           setLockedIds(held.lockedIds.filter((id) => !deleted.has(id)));
           setLoad('ready');
         }
@@ -157,10 +170,7 @@ export function useHeldShares(): UseHeldSharesResult {
 
   /** Derives the key from `words`, keeps only the key, and reads the boxes. */
   const open = useCallback(
-    async (words: string): Promise<void> => {
-      if (holderAccountId === null) {
-        return;
-      }
+    async (words: string, accountId: string): Promise<void> => {
       const epoch = epochRef.current;
       let key: CryptoKey;
       try {
@@ -174,10 +184,10 @@ export function useHeldShares(): UseHeldSharesResult {
       if (epochRef.current !== epoch) {
         return;
       }
-      keyRef.current = { accountId: holderAccountId, key };
+      keyRef.current = { accountId, key };
       await read(key);
     },
-    [holderAccountId, read],
+    [read],
   );
 
   useEffect(() => {
@@ -187,6 +197,9 @@ export function useHeldShares(): UseHeldSharesResult {
       runRef.current += 1;
       keyRef.current = null;
       deletedRef.current = new Set();
+      keptRef.current = new Map();
+      unlockRef.current = null;
+      savingRef.current = false;
       setShares([]);
       setLockedIds([]);
       setSaving(false);
@@ -214,7 +227,7 @@ export function useHeldShares(): UseHeldSharesResult {
         setLoad('unlock');
         return;
       }
-      void open(words);
+      void open(words, holderAccountId);
     });
     return () => {
       cancelled = true;
@@ -222,17 +235,25 @@ export function useHeldShares(): UseHeldSharesResult {
   }, [holderAccountId, open, read, session, tries]);
 
   useEffect(() => {
-    if (load !== 'unlock' || phraseWords.length !== 12) {
+    if (phraseWords.length !== 12) {
       return;
     }
     const words = phraseWords.join(' ');
     hidePhrase();
-    void open(words);
+    const started = unlockRef.current;
+    unlockRef.current = null;
+    if (load === 'unlock' && started !== null && started.epoch === epochRef.current) {
+      void open(words, started.accountId);
+    }
   }, [hidePhrase, load, open, phraseWords]);
 
   const unlock = useCallback((): void => {
+    if (holderAccountId === null) {
+      return;
+    }
+    unlockRef.current = { epoch: epochRef.current, accountId: holderAccountId };
     void phrase.showPhrase();
-  }, [phrase]);
+  }, [holderAccountId, phrase]);
 
   const reload = useCallback((): void => {
     setTries((count) => count + 1);
@@ -251,20 +272,28 @@ export function useHeldShares(): UseHeldSharesResult {
   const onScanResult = useCallback(
     (text: string): void => {
       const held = keyRef.current;
-      if (session === null || holderAccountId === null || held?.accountId !== holderAccountId) {
+      if (
+        session === null ||
+        holderAccountId === null ||
+        held?.accountId !== holderAccountId ||
+        savingRef.current
+      ) {
         return;
       }
       const key = held.key;
       setView('list');
       const username = parseShareCode(text)?.ownerUsername;
+      savingRef.current = true;
       setSaving(true);
       const epoch = epochRef.current;
       void keepHeldShare(session, holderAccountId, key, shares, text).then((result) => {
         if (epochRef.current !== epoch) {
           return;
         }
+        savingRef.current = false;
         setSaving(false);
         if (result.ok) {
+          keptRef.current.set(result.share.boxId, result.share);
           setShares((current) =>
             [...current, result.share].sort((a, b) =>
               a.ownerUsername.localeCompare(b.ownerUsername),
@@ -304,6 +333,7 @@ export function useHeldShares(): UseHeldSharesResult {
         () => {
           if (epochRef.current === epoch) {
             deletedRef.current.add(share.boxId);
+            keptRef.current.delete(share.boxId);
             setShares((current) => current.filter((kept) => kept.boxId !== share.boxId));
           }
         },

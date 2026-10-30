@@ -350,6 +350,7 @@ describe('useHeldShares', () => {
       expect(result.current.load).toBe('unlock');
     });
     act(() => {
+      result.current.unlock();
       useAuthStore.setState({ session: null });
     });
     mocks.phrase.words = WORDS.split(' ');
@@ -361,6 +362,76 @@ describe('useHeldShares', () => {
       await Promise.resolve();
     });
     expect(mocks.loadHeldShares).not.toHaveBeenCalled();
+  });
+
+  it('drops the words of a passkey prompt started for the previous account, and hides them', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
+    const { result, rerender } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    act(() => {
+      result.current.unlock();
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    mocks.phrase.words = WORDS.split(' ');
+    rerender();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mocks.hidePhrase).toHaveBeenCalled();
+    expect(mocks.heldShareBoxKey).not.toHaveBeenCalled();
+    expect(result.current.load).toBe('unlock');
+  });
+
+  it('starts no passkey prompt without an account', () => {
+    useAuthStore.setState({ session: null, account: null });
+    const { result } = renderHook(() => useHeldShares());
+    act(() => {
+      result.current.unlock();
+    });
+    expect(mocks.showPhrase).not.toHaveBeenCalled();
+  });
+
+  it('adds a share kept here to a read that was already running, and keeps one share at a time', async () => {
+    const { result } = await ready({ shares: [CARA], lockedIds: [] });
+    let answer: (value: HeldShares) => void = () => undefined;
+    mocks.loadHeldShares.mockReturnValue(
+      new Promise<HeldShares>((resolve) => {
+        answer = resolve;
+      }),
+    );
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenCalledTimes(2);
+    });
+    let kept: (value: KeepShareResult) => void = () => undefined;
+    mocks.keepHeldShare.mockReturnValue(
+      new Promise<KeepShareResult>((resolve) => {
+        kept = resolve;
+      }),
+    );
+    act(() => {
+      result.current.onScanResult(BOB.code);
+      result.current.onScanResult(BOB.code);
+    });
+    expect(mocks.keepHeldShare).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      kept({ ok: true, share: BOB });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      answer({ shares: [CARA], lockedIds: [] });
+      await Promise.resolve();
+    });
+    expect(result.current.shares).toEqual([BOB, CARA]);
   });
 
   it('ignores the tab-memory lookup of an unmounted page', async () => {
