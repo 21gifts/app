@@ -83,7 +83,8 @@ const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
     }
     // A relative photo path belongs to the api; only http(s) photos render.
     const photos = parsed.data.shop.photos.flatMap((photo) => {
-      const url = sameOriginShopPhotoPath(photo.url, apiBase) ?? resolveShopPhotoUrl(photo.url, apiBase);
+      const url =
+        sameOriginShopPhotoPath(photo.url, apiBase) ?? resolveShopPhotoUrl(photo.url, apiBase);
       return url === null ? [] : [{ ...photo, url }];
     });
     return { kind: 'ready', shop: { ...parsed.data.shop, photos } };

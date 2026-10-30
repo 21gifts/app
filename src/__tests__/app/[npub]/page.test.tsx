@@ -282,7 +282,8 @@ describe('shop generateMetadata', () => {
         description: 'Coffee and bitcoin',
         images: [
           {
-            url: SHOP.photos[0]?.url,
+            // The api-host still is served through the app proxy.
+            url: '/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
             alt: 'Cafe Luna',
             width: 1280,
             height: 960,
@@ -293,7 +294,9 @@ describe('shop generateMetadata', () => {
         card: 'summary_large_image',
         title: 'Cafe Luna',
         description: 'Coffee and bitcoin',
-        images: [{ url: SHOP.photos[0]?.url, alt: 'Cafe Luna' }],
+        images: [
+          { url: '/messages/11111111-1111-4111-8111-111111111111/photo.jpg', alt: 'Cafe Luna' },
+        ],
       },
     });
     expect(fetch).toHaveBeenCalledWith(

@@ -70,19 +70,27 @@ describe('sameOriginShopPhotoPath', () => {
   });
 
   it('maps a photo URL under the api base to the app proxy', () => {
-    expect(sameOriginShopPhotoPath(`https://api.21.gifts/messages/${ID}/photo.png`, 'https://api.21.gifts/')).toBe(
-      `/messages/${ID}/photo.jpg`,
-    );
-    expect(sameOriginShopPhotoPath(`https://x.test/v1/messages/${ID}/photo/3.jpg`, 'https://x.test/v1')).toBe(
-      `/messages/${ID}/photo/3.jpg`,
-    );
+    expect(
+      sameOriginShopPhotoPath(
+        `https://api.21.gifts/messages/${ID}/photo.png`,
+        'https://api.21.gifts/',
+      ),
+    ).toBe(`/messages/${ID}/photo.jpg`);
+    expect(
+      sameOriginShopPhotoPath(`https://x.test/v1/messages/${ID}/photo/3.jpg`, 'https://x.test/v1'),
+    ).toBe(`/messages/${ID}/photo/3.jpg`);
   });
 
   it('keeps a photo URL on another host, or on the api host without a base, for the api resolver', () => {
     const api = `https://api.21.gifts/messages/${ID}/photo.jpg`;
     expect(sameOriginShopPhotoPath(api)).toBeNull();
     expect(sameOriginShopPhotoPath(api, 'https://api.21.gifts.evil.example')).toBeNull();
-    expect(sameOriginShopPhotoPath(`https://cdn.example/messages/${ID}/photo.jpg`, 'https://api.21.gifts')).toBeNull();
+    expect(
+      sameOriginShopPhotoPath(
+        `https://cdn.example/messages/${ID}/photo.jpg`,
+        'https://api.21.gifts',
+      ),
+    ).toBeNull();
   });
 
   it('leaves every other value to the api resolver', () => {
