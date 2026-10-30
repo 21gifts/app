@@ -15,7 +15,7 @@ concurrency:
 permissions:
   contents: read
 
-# Branch run 2 for the develop into staging baselines; this line is removed again.
+# Branch run 3 for the develop into staging baselines; this line is removed again.
 # Regenerates Linux visual baselines on the same Playwright image the visual
 # jobs use, for when new states need first-time snapshots. Manual dispatch
 # only: it never gates a pull request. The changed snapshots are uploaded as
