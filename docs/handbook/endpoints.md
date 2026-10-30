@@ -373,7 +373,7 @@
 ## Endpoint: GET /me/held-shares
 
 - **Purpose:** Same-origin proxy of api `GET /me/held-shares`. Lists the caller's own share boxes, oldest first: `{ boxes: [{ id, ciphertext, updatedAt }] }`. The ciphertext is opaque to the api; the owner's id and name exist only inside it.
-- **Errors:** Upstream 401, 404 (feature off), 429, or 502 if the api is unreachable.
+- **Errors:** Upstream 401, 429, or 502 if the api is unreachable.
 - **Used by:** `fetchHeldShareBoxes`.
 - **Auth:** Bearer.
 
