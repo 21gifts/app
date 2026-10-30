@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HeldSharesScreen } from '@/components/HeldSharesScreen';
+import type { QrCodeProps } from '@/components/QrCode';
 import type { QrScannerProps } from '@/components/QrScanner';
 import type { UseHeldSharesResult } from '@/hooks/useHeldShares';
 import type { Account } from '@/lib/api-types';
@@ -28,6 +29,11 @@ vi.mock('@/components/ProfileChromeLeft', () => ({
     >
       Back
     </button>
+  ),
+}));
+vi.mock('@/components/QrCode', () => ({
+  QrCode: ({ value, label, logo }: QrCodeProps) => (
+    <div role="img" aria-label={label} data-value={value} data-logo={logo ?? ''} />
   ),
 }));
 vi.mock('@/hooks/useHeldShares', () => ({
@@ -141,6 +147,11 @@ describe('HeldSharesScreen', () => {
     held({ load: 'opening' });
     render();
     expect(screen.getByRole('status').textContent).toBe('Opening your shares…');
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
   });
 
@@ -148,6 +159,11 @@ describe('HeldSharesScreen', () => {
     const result = held({ load: 'unlock' });
     render();
     expect(screen.getByText('Confirm with your passkey to open the shares you keep.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open my shares' }));
     expect(result.unlock).toHaveBeenCalled();
@@ -180,6 +196,11 @@ describe('HeldSharesScreen', () => {
     const result = held({ load: 'loadError' });
     render();
     expect(screen.getByRole('alert').textContent).toBe('Your shares could not be loaded.');
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(result.reload).toHaveBeenCalled();
   });
@@ -316,7 +337,9 @@ describe('HeldSharesScreen', () => {
     expect(
       screen.getByText('Show this code only to @bob in person, so they can restore their account.'),
     ).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Share code' }).querySelector('image')).toBeNull();
+    const qr = screen.getByRole('img', { name: 'Share code' });
+    expect(qr.getAttribute('data-value')).toBe(BOB.code);
+    expect(qr.getAttribute('data-logo')).toBe('');
     expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(backResults.list).toEqual([true]);
