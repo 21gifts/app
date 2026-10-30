@@ -166,7 +166,7 @@ describe('LoginCard', () => {
       useAuthStore.setState({ wrongAccount: true });
       view.rerender(<LoginCard showRecover={false} />);
       expect(screen.getByRole('alert').textContent).toBe(
-        'You signed in with the wrong account. Please try again with the correct account.',
+        'You signed in with a different account. Try again with the right one.',
       );
       expect(
         screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
@@ -401,7 +401,7 @@ describe('LoginCard', () => {
     mockPasskey('error', 'recovery_pending', null, true);
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('alert').textContent).toBe(
-      'You signed in with the wrong account. Please try again with the correct account.',
+      'You signed in with a different account. Try again with the right one.',
     );
     expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
   });

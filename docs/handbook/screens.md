@@ -45,7 +45,7 @@ The second question is open: **Does 21.gifts keep any of my donation?** The answ
 
 ### Variant: faq-password-open
 
-The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.
+The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.
 
 ![21.gifts home FAQ password open](images/root-faq-password-open.png)
 

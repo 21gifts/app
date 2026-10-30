@@ -168,7 +168,7 @@ const en = {
     '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
   'home.faq3Q': 'Does 21.gifts store my password?',
   'home.faq3A':
-    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.',
   'home.faq4Q': 'What if I lose my device?',
   'home.faq4A':
     'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
@@ -1883,7 +1883,7 @@ const de = {
     '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
   'home.faq3Q': 'Speichert 21.gifts mein Passwort?',
   'home.faq3A':
-    'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.',
+    'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Sobald du Social Recovery eingerichtet hast, bewahrt 21.gifts einen gesicherten Teil deiner 12 Wörter auf, der allein nichts öffnet. Gib Wiederherstellungswörter nie weiter.',
   'home.faq4Q': 'Was passiert, wenn ich mein Gerät verliere?',
   'home.faq4A':
     'Du kannst dein Konto mit deinen 12 Wörtern wiederherstellen oder mit Social Recovery, falls du es eingerichtet hast. Richte Social Recovery in den Einstellungen ein.',
@@ -3662,7 +3662,7 @@ const es = {
     '21.gifts no se queda con ninguna parte. Tu cartera o la red de pago pueden cobrar sus propias comisiones.',
   'home.faq3Q': '¿Guarda 21.gifts mi contraseña?',
   'home.faq3A':
-    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.',
+    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Cuando configuras Social Recovery, 21.gifts guarda una parte cifrada de tus 12 palabras, que por sí sola no abre nada. Nunca compartas tus palabras de recuperación.',
   'home.faq4Q': '¿Y si pierdo mi dispositivo?',
   'home.faq4A':
     'Puedes recuperar tu cuenta con tus 12 palabras, o con Social Recovery si lo configuraste. Configura Social Recovery en los ajustes.',
@@ -5405,7 +5405,7 @@ const fil = {
     'Walang bahaging kinukuha ang 21.gifts. Maaaring may sariling bayarin ang wallet mo o ang payment network.',
   'home.faq3Q': 'Iniimbak ba ng 21.gifts ang password ko?',
   'home.faq3A':
-    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word.',
+    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Kapag na-set up mo na ang Social Recovery, nagtatago ang 21.gifts ng isang naka-encrypt na bahagi ng 12 salita mo na walang nabubuksan nang mag-isa. Huwag kailanman ibahagi ang iyong mga recovery word.',
   'home.faq4Q': 'Paano kung mawala ang device ko?',
   'home.faq4A':
     'Maibabalik mo ang account mo gamit ang iyong 12 salita, o gamit ang Social Recovery kung na-set up mo ito. I-set up ang Social Recovery sa mga setting.',

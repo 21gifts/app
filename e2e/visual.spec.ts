@@ -2565,7 +2565,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('Does 21.gifts store my password?').click();
     await expect(
       faq.getByText(
-        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-password-open', true, {

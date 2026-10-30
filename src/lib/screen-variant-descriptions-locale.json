@@ -6965,9 +6965,9 @@
     "fil": "Bukas ang pangalawang tanong: May kinukuha ba ang 21.gifts sa donasyon ko? Sinasabi ng sagot na walang bahaging kinukuha ang 21.gifts. Maaaring maningil pa rin ng sariling bayarin ang wallet mo o ang payment network."
   },
   "/:faq-password-open": {
-    "de": "Die dritte Frage ist geöffnet: Speichert 21.gifts mein Passwort? Die Antwort sagt, dass du kein Passwort für 21.gifts anlegst. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.",
-    "es": "La tercera pregunta está abierta: ¿Guarda 21.gifts mi contraseña? La respuesta dice que no creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.",
-    "fil": "Bukas ang ikatlong tanong: Iniimbak ba ng 21.gifts ang password ko? Sinasabi ng sagot na hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word."
+    "de": "Die dritte Frage ist geöffnet: Speichert 21.gifts mein Passwort? Die Antwort sagt, dass du kein Passwort für 21.gifts anlegst. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Sobald du Social Recovery eingerichtet hast, bewahrt 21.gifts einen gesicherten Teil deiner 12 Wörter auf, der allein nichts öffnet. Gib Wiederherstellungswörter nie weiter.",
+    "es": "La tercera pregunta está abierta: ¿Guarda 21.gifts mi contraseña? La respuesta dice que no creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Cuando configuras Social Recovery, 21.gifts guarda una parte cifrada de tus 12 palabras, que por sí sola no abre nada. Nunca compartas tus palabras de recuperación.",
+    "fil": "Bukas ang ikatlong tanong: Iniimbak ba ng 21.gifts ang password ko? Sinasabi ng sagot na hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Kapag na-set up mo na ang Social Recovery, nagtatago ang 21.gifts ng isang naka-encrypt na bahagi ng 12 salita mo na walang nabubuksan nang mag-isa. Huwag kailanman ibahagi ang iyong mga recovery word."
   },
   "/:faq-device-open": {
     "de": "Die vierte Frage ist geöffnet: Was passiert, wenn ich mein Gerät verliere? Die Antwort sagt, dass du dein Konto mit deinen 12 Wörtern wiederherstellen kannst oder mit Social Recovery, falls du es eingerichtet hast, und dass du Social Recovery in den Einstellungen einrichtest.",
