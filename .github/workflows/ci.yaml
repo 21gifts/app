@@ -133,8 +133,8 @@ jobs:
       # `shards`.
       matrix:
         project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
-        shard: [1, 2]
-        shards: [2]
+        shard: [1, 2, 3]
+        shards: [3]
     # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble

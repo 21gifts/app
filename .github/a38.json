@@ -42,7 +42,7 @@
     {
       "workflow": ".github/workflows/ci.yaml",
       "job": "visual-shards",
-      "reason": "This job runs Playwright visual regression tests as GitHub-hosted matrix shards (two per project for desktop-light, desktop-dark, mobile-light, mobile-dark) inside the mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
+      "reason": "This job runs Playwright visual regression tests as GitHub-hosted matrix shards (three per project for desktop-light, desktop-dark, mobile-light, mobile-dark) inside the mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
     },
     {
       "workflow": ".github/workflows/ci.yaml",
