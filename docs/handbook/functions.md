@@ -4419,7 +4419,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Reads the relying-party id from api WebAuthn options and keeps it in tab memory for later PRF prompts in this tab.
 - **Inputs:** WebAuthn options JSON from an api begin: `rpId` of assertion options, else `rp.id` of creation options.
-- **Returns / side effects:** The id, or `null` when it is missing or empty (also stored, so a later prompt fails as no PRF). Not persisted.
+- **Returns / side effects:** The id, or `null` when it is missing or empty. That `null` is stored too and counts as no ceremony in this tab, so a later `obtainPrfFirstFromGet` asks a fresh authentication begin and fails as no PRF only when that begin carries no id either. Not persisted.
 - **Used by:** `usePasskeyLogin` (register, and a finished login), `renewPasskey`, `createNewPasskey`, the social recovery sign-in, and `obtainPrfFirstFromGet`.
 
 ## Function: classifyWebAuthnError
