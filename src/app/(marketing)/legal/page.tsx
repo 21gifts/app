@@ -65,10 +65,10 @@ export default function LegalPage(): ReactElement {
           means Swiss grouping 10&apos;000.23. Choosing a light or dark appearance writes a{' '}
           <code>theme</code> cookie; choosing System removes it. The application stores a session
           token in <code>localStorage</code> after you log in so a returning visitor stays logged
-          in. If another member chose you to keep a Social Recovery
-          share for them, the application stores that share in <code>localStorage</code> under your
-          account until you delete it. While recovering an account or moving a balance, the 12
-          recovery words and the shares stay only in the open tab&apos;s memory.
+          in. If another member chose you to keep a Social Recovery share for them, the application
+          stores that share in <code>localStorage</code> under your account until you delete it.
+          While recovering an account or moving a balance, the 12 recovery words and the shares stay
+          only in the open tab&apos;s memory.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-paper/70">

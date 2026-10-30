@@ -118,7 +118,7 @@ export const SCREEN_VARIANTS = [
     id: 'faq-device-open',
     image: 'root-faq-device-open.png',
     visual: 'state-root-faq-device-open',
-    needle: 'we cannot recover your account yet',
+    needle: 'with Social Recovery if you set it up',
   },
   {
     route: '/',
