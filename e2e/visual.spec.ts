@@ -21143,7 +21143,8 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    await error.scrollIntoViewIfNeeded();
+    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the pick left.
+    await error.evaluate((node) => node.scrollIntoView({ block: 'center' }));
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -33701,9 +33702,10 @@ test.describe('shops screens', () => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopTextNotLongerError(page);
+    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the typing left.
     await page
       .getByText('The shop text must be longer than the shop name.')
-      .scrollIntoViewIfNeeded();
+      .evaluate((node) => node.scrollIntoView({ block: 'center' }));
     await shotScreen(page, 'state-shops-table-edit-text-not-longer');
   });
 
