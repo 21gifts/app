@@ -1,5 +1,9 @@
 import { entropyToMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
+import { startPasskeyAuthentication } from '@/lib/api';
+
+// Existing wallets are derived from these four values and the relying-party
+// id. Never change them: a different value gives different words.
 
 /** UTF-8 input whose SHA-256 digest is the WebAuthn PRF eval.first salt. */
 export const PRF_EVAL_FIRST_SALT_UTF8 = '21gifts-nostr-v1';
@@ -12,6 +16,9 @@ export const MNEMONIC_HKDF_INFO_UTF8 = 'mnemonic-v1';
 
 /** BIP-39 entropy length in bits (12 English words). */
 export const MNEMONIC_ENTROPY_BITS = 128;
+
+/** Relying-party id of this tab's latest api passkey ceremony. */
+let ceremonyRpId: string | null = null;
 
 function toUint8Array(data: BufferSource): Uint8Array {
   if (data instanceof ArrayBuffer) {
@@ -83,59 +90,47 @@ export async function mnemonicFromPrfFirst(prfFirst: BufferSource): Promise<stri
 }
 
 /**
- * Prefer PRF output from `create()`. If missing, run `get()` with
- * `allowCredentials` of the new credential id and `prf.eval.first` = salt.
- * Returns `null` when the authenticator still has no PRF (caller must abort
- * before finish and throw `wallet.prfUnsupported`).
+ * Reads the relying-party id from api WebAuthn options (`rpId` of assertion
+ * options, `rp.id` of creation options) and keeps it in tab memory as the id
+ * for later PRF prompts in this tab ({@link obtainPrfFirstFromGet}).
  *
- * @param credential - Result of `navigator.credentials.create`.
- * @returns PRF first bytes, or `null`.
+ * @param options - WebAuthn options JSON from an api begin.
+ * @returns The relying-party id, or `null` when the options carry none.
  */
-export async function obtainPrfFirst(credential: PublicKeyCredential): Promise<Uint8Array | null> {
-  const fromCreate = readPrfFirst(credential);
-  if (fromCreate && fromCreate.byteLength > 0) {
-    return fromCreate;
-  }
-  const salt = await prfEvalFirstSalt();
-  const assertion = (await navigator.credentials.get({
-    publicKey: {
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rpId: window.location.hostname,
-      allowCredentials: [{ type: 'public-key', id: credential.rawId }],
-      userVerification: 'required',
-      extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
-    },
-  })) as PublicKeyCredential | null;
-  if (!assertion) {
-    return null;
-  }
-  const fromGet = readPrfFirst(assertion);
-  if (!fromGet || fromGet.byteLength === 0) {
-    return null;
-  }
-  return fromGet;
+export function rememberCeremonyRpId(options: Record<string, unknown>): string | null {
+  const rp = options['rp'];
+  const raw =
+    options['rpId'] ??
+    (typeof rp === 'object' && rp !== null ? (rp as { id?: unknown }).id : undefined);
+  ceremonyRpId = typeof raw === 'string' && raw !== '' ? raw : null;
+  return ceremonyRpId;
 }
 
 /**
- * Authenticate with PRF eval.first to re-derive the recovery phrase.
- * Does not contact the API. `allowCredentials` is this account's current
- * passkey so a leftover credential after replace cannot supply the words.
- * No assertion is forwarded.
+ * Relying-party id for a PRF prompt outside an api ceremony: the id of this
+ * tab's latest api ceremony, else the `rpId` of a fresh authentication begin
+ * (a session restored from storage has had no ceremony in this tab).
  *
- * @param allowCredentialId - Current credential id bytes (WebAuthn `rawId`).
- * @returns PRF first bytes, or `null`.
+ * @returns The relying-party id, or `null` when the api sent none.
  */
-export async function obtainPrfFirstFromGet(
-  allowCredentialId: Uint8Array,
+async function promptRpId(): Promise<string | null> {
+  if (ceremonyRpId !== null) {
+    return ceremonyRpId;
+  }
+  const begin = await startPasskeyAuthentication();
+  return rememberCeremonyRpId(begin.options);
+}
+
+async function prfFirstFromGet(
+  rpId: string,
+  allowCredentialId: BufferSource,
 ): Promise<Uint8Array | null> {
   const salt = await prfEvalFirstSalt();
-  const idBytes = new Uint8Array(allowCredentialId.byteLength);
-  idBytes.set(allowCredentialId);
   const assertion = (await navigator.credentials.get({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rpId: window.location.hostname,
-      allowCredentials: [{ type: 'public-key', id: idBytes }],
+      rpId,
+      allowCredentials: [{ type: 'public-key', id: allowCredentialId }],
       userVerification: 'required',
       extensions: { prf: { eval: { first: Uint8Array.from(salt) } } },
     },
@@ -148,6 +143,63 @@ export async function obtainPrfFirstFromGet(
     return null;
   }
   return first;
+}
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  return a.byteLength === b.byteLength && a.every((byte, i) => byte === b[i]);
+}
+
+/**
+ * Confirms the PRF output of a new passkey with one `get()` (`allowCredentials`
+ * of the new credential id, `prf.eval.first` = salt, user verification
+ * required) and returns the `get()` output. Returns `null` when `rpId` is
+ * missing, the `get()` has no PRF, or `create()` returned PRF output that
+ * differs from it (caller must abort before finish and throw
+ * `wallet.prfUnsupported`).
+ *
+ * @param credential - Result of `navigator.credentials.create`.
+ * @param rpId - Relying-party id of the creation options (`rp.id`).
+ * @returns PRF first bytes, or `null`.
+ */
+export async function obtainPrfFirst(
+  credential: PublicKeyCredential,
+  rpId: string | null,
+): Promise<Uint8Array | null> {
+  if (rpId === null) {
+    return null;
+  }
+  const fromCreate = readPrfFirst(credential);
+  const fromGet = await prfFirstFromGet(rpId, credential.rawId);
+  if (fromGet === null) {
+    return null;
+  }
+  if (fromCreate && fromCreate.byteLength > 0 && !sameBytes(fromCreate, fromGet)) {
+    return null;
+  }
+  return fromGet;
+}
+
+/**
+ * Authenticate with PRF eval.first to re-derive the recovery phrase, under the
+ * relying-party id of this tab's latest api ceremony. Without one, asks the
+ * api for an authentication begin only to read its `rpId`; no assertion is
+ * forwarded. `allowCredentials` is this account's current passkey so a
+ * leftover credential after replace cannot supply the words.
+ *
+ * @param allowCredentialId - Current credential id bytes (WebAuthn `rawId`).
+ * @returns PRF first bytes, or `null` (also when the api sent no relying-party id).
+ * @throws When the authentication begin fails.
+ */
+export async function obtainPrfFirstFromGet(
+  allowCredentialId: Uint8Array,
+): Promise<Uint8Array | null> {
+  const rpId = await promptRpId();
+  if (rpId === null) {
+    return null;
+  }
+  const idBytes = new Uint8Array(allowCredentialId.byteLength);
+  idBytes.set(allowCredentialId);
+  return prfFirstFromGet(rpId, idBytes);
 }
 
 /**

@@ -26,7 +26,12 @@ import type { RecoveryBegin } from '@/lib/api-types';
 import { getBreezApiKey } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { mergePrfExtension } from '@/lib/passkey-renew';
-import { classifyWebAuthnError, mnemonicFromPrfFirst, obtainPrfFirst } from '@/lib/prf-mnemonic';
+import {
+  classifyWebAuthnError,
+  mnemonicFromPrfFirst,
+  obtainPrfFirst,
+  rememberCeremonyRpId,
+} from '@/lib/prf-mnemonic';
 import { recoveryMessage } from '@/lib/recovery-lookup';
 import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
@@ -535,7 +540,7 @@ export async function createNewPasskey(): Promise<void> {
       return;
     }
     credential = created as PublicKeyCredential;
-    prfFirst = await obtainPrfFirst(credential);
+    prfFirst = await obtainPrfFirst(credential, rememberCeremonyRpId(begin.options));
   } catch (error) {
     fail(classifyWebAuthnError(error) === 'timeout' ? 'timeout' : 'cancelled');
     return;
@@ -670,6 +675,7 @@ async function signIn(f: Flow, a: Attempt): Promise<SignInOutcome> {
       return { kind: 'stale' };
     }
     clearSessionPhrase();
+    rememberCeremonyRpId(begin.options);
     void rememberPhraseFromPrf({
       prfFirst: a.prfFirst,
       credentialId: a.newCredentialId,

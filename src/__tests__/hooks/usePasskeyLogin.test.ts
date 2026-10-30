@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   mnemonicFromPrfFirst,
   obtainPrfFirst,
+  obtainPrfFirstFromGet,
   prfEvalFirstSalt,
   readPrfFirst,
+  rememberCeremonyRpId,
 } from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { bytesToBase64Url, requestOptionsFromJSON } from '@/lib/webauthn-browser';
@@ -185,6 +187,67 @@ afterEach(() => {
 });
 
 describe('usePasskeyLogin', () => {
+  it('confirms the new passkey under the rp.id of the registration options', async () => {
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId: 'ch',
+      options: { challenge: 'aa', rp: { id: 'app.test', name: '21.gifts' } },
+    });
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+    expect(obtainPrfFirst).toHaveBeenCalledWith(cred, 'app.test');
+    expect(finishPasskeyRegistration).toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('passes no relying-party id when the registration options carry none', async () => {
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+    expect(obtainPrfFirst).toHaveBeenCalledWith(cred, null);
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.error).toBe('wallet.prfUnsupported');
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the rpId of a login for a later phrase prompt in this tab', async () => {
+    rememberCeremonyRpId({});
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId: 'ch',
+      options: { challenge: 'aa', rpId: 'app.test' },
+    });
+    const get = vi.fn().mockResolvedValue({
+      id: 'cred',
+      type: 'public-key',
+      getClientExtensionResults: () => ({}),
+    });
+    vi.stubGlobal('navigator', { ...navigator, credentials: { get, create: vi.fn() } });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(useAuthStore.getState().session).toBe('tok');
+    await obtainPrfFirstFromGet(new Uint8Array([1]));
+    expect(startPasskeyAuthentication).toHaveBeenCalledTimes(1);
+    expect((get.mock.calls[1]?.[0] as CredentialRequestOptions).publicKey?.rpId).toBe('app.test');
+    vi.unstubAllGlobals();
+  });
+
   it('does not finish registration when PRF is missing', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
