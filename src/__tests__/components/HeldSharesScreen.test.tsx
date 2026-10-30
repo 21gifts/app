@@ -158,6 +158,10 @@ describe('HeldSharesScreen', () => {
         'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
       ],
       ['timeout', 'The device prompt timed out before you finished. Try again.'],
+      [
+        'generic',
+        'The recovery phrase could not be created or opened. Check this device and try again.',
+      ],
     ] as const) {
       held({ load: 'unlock', unlockError });
       render();
@@ -210,6 +214,7 @@ describe('HeldSharesScreen', () => {
       within(items[0] as HTMLElement).getByRole('button', { name: 'Show code for @bob' }),
     ).toBe(show);
     expect(remove.querySelector('svg')?.getAttribute('class')).toContain('text-app-danger');
+    expect(screen.queryByText('Delete share of @bob')).toBeNull();
     fireEvent.click(show);
     expect(result.showQr).toHaveBeenCalledWith(BOB);
     fireEvent.click(remove);
@@ -238,6 +243,7 @@ describe('HeldSharesScreen', () => {
     const row = screen.getByRole('listitem');
     expect(row.textContent).toBe('1 kept share cannot be opened with your current 12 words.');
     expect(within(row).getByText(/cannot be opened/).className).toContain('text-app-muted');
+    expect(screen.queryByText('Delete the shares that cannot be opened')).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'Delete the shares that cannot be opened' }),
     );
@@ -312,6 +318,9 @@ describe('HeldSharesScreen', () => {
     ).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Share code' }).querySelector('image')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(backResults.list).toEqual([true]);
+    expect(hook.result?.back).toHaveBeenCalled();
   });
 
   it('uses the UI language', () => {

@@ -95,10 +95,10 @@ export async function routeHeldShares(
     if (request.method() === 'PUT' && id !== undefined) {
       if (state.putStatus === 200 || state.putStatus === 201) {
         const { ciphertext } = request.postDataJSON() as { ciphertext: string };
-        state.boxes = [
-          ...state.boxes.filter((box) => box.id !== id),
-          { id, ciphertext, updatedAt: '2026-01-07T12:00:00.000Z' },
-        ];
+        const box = { id, ciphertext, updatedAt: '2026-01-07T12:00:00.000Z' };
+        state.boxes = state.boxes.some((kept) => kept.id === id)
+          ? state.boxes.map((kept) => (kept.id === id ? box : kept))
+          : [...state.boxes, box];
       }
       await route.fulfill({ status: state.putStatus, contentType: 'application/json', body: '{}' });
       return;
