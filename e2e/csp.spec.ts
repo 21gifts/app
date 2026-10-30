@@ -14,9 +14,13 @@ const ENFORCED = 'content-security-policy';
 /** Header the default mode sends instead. */
 const REPORT_ONLY = 'content-security-policy-report-only';
 
-/** Routes without a URL parameter that a signed-out visitor can open. */
+/**
+ * Routes without a URL parameter that a signed-out visitor can open, and the
+ * not-found screen.
+ */
 const PUBLIC_PAGES = [
   '/',
+  '/404',
   '/about',
   '/donate',
   '/habit-tracker',

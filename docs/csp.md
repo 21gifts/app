@@ -24,11 +24,11 @@ recreating the container. Unset needs no deployment change.
 The Playwright server starts with `CSP_MODE=enforce` (`playwright.config.ts`),
 so every e2e spec runs under the enforced policy. CI always starts a fresh
 server; a local run that reuses a server already on port 3000 keeps that
-server's mode. `e2e/csp.spec.ts` loads every route without a URL parameter
-that a signed-out visitor can open (`PUBLIC_PAGES`), waits until the network
-is idle, and fails on any `securitypolicyviolation` the page's document
-reports. The app embeds no frame (`frame-src 'none'`), and these pages start
-no worker. A new public route belongs in `PUBLIC_PAGES`.
+server's mode. `e2e/csp.spec.ts` loads `/404` and every route without a URL
+parameter that a signed-out visitor can open (`PUBLIC_PAGES`), waits until
+the network is idle, and fails on any `securitypolicyviolation` the page's
+document reports. The app embeds no frame (`frame-src 'none'`), and these
+pages start no worker. A new public route belongs in `PUBLIC_PAGES`.
 
 ## Reports
 
