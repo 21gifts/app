@@ -1,3 +1,5 @@
+import { forumPhotoSrc } from '@/lib/forum-photo';
+
 /**
  * Make one shop photo URL safe to render.
  *
@@ -38,23 +40,26 @@ const API_EXTRA_PHOTO =
   /^\/messages\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photo\/([1-9])\.(?:jpe?g|png|webp)$/i;
 
 /**
- * Same-origin path of a shop photo the api sends as its own forum photo path.
+ * Same-origin path of a shop photo the api sends as its own forum photo URL.
  *
- * The app proxies forum photos at `/messages/:id/photo.jpg` and
- * `/messages/:id/photo/:n.jpg`, and the api serves a still by its index
- * whatever the extension, so the page loads shop photos from its own origin,
- * as the Content-Security-Policy requires (`img-src 'self'`). A relative
- * `og:image` resolves against the site, so link previews use the same path.
+ * The api sends shop photos as `{apiBase}/messages/:id/photo.<ext>` and
+ * `{apiBase}/messages/:id/photo/:n.<ext>`. The app proxies forum photos at
+ * `/messages/:id/photo.jpg` and `/messages/:id/photo/:n.jpg`, and the api
+ * serves a still by its index whatever the extension, so the page loads shop
+ * photos from its own origin, as the Content-Security-Policy requires
+ * (`img-src 'self'`). A relative `og:image` resolves against the site, so link
+ * previews use the same path.
  *
  * @param url - Photo URL from `GET /shops/:npub`.
- * @returns `/messages/:id/photo.jpg` or `/messages/:id/photo/:n.jpg`, or null for any other value.
+ * @param apiBase - Api base URL (`getApiUrl()`); a URL under it counts as an api path. Omit in the browser, which only sees paths the server already mapped.
+ * @returns `forumPhotoSrc` of the still, or null for any other value.
  */
-export function sameOriginShopPhotoPath(url: string): string | null {
-  const cover = API_COVER_PHOTO.exec(url);
-  if (cover !== null) return `/messages/${(cover[1] as string).toLowerCase()}/photo.jpg`;
-  const extra = API_EXTRA_PHOTO.exec(url);
-  if (extra !== null) {
-    return `/messages/${(extra[1] as string).toLowerCase()}/photo/${extra[2] as string}.jpg`;
-  }
+export function sameOriginShopPhotoPath(url: string, apiBase?: string): string | null {
+  const base = apiBase?.replace(/\/+$/, '') ?? '';
+  const path = base !== '' && url.startsWith(`${base}/`) ? url.slice(base.length) : url;
+  const cover = API_COVER_PHOTO.exec(path);
+  if (cover !== null) return forumPhotoSrc((cover[1] as string).toLowerCase());
+  const extra = API_EXTRA_PHOTO.exec(path);
+  if (extra !== null) return forumPhotoSrc((extra[1] as string).toLowerCase(), Number(extra[2]));
   return null;
 }

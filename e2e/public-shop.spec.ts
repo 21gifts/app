@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ogDescriptionText } from '../src/lib/public-message-og';
-import { resolveShopPhotoUrl } from '../src/lib/shop-photo-url';
+import { resolveShopPhotoUrl, sameOriginShopPhotoPath } from '../src/lib/shop-photo-url';
 
 const LISTED_NPUB = `npub1${'2'.repeat(58)}`;
 const GONE_NPUB = `npub1${'3'.repeat(58)}`;
@@ -8,6 +8,8 @@ const UNAVAILABLE_NPUB = `npub1${'4'.repeat(58)}`;
 const NO_PAYMENT_NPUB = `npub1${'5'.repeat(58)}`;
 const UNKNOWN_NPUB = `npub1${'6'.repeat(58)}`;
 const GALLERY_NPUB = `npub1${'7'.repeat(58)}`;
+const API_PHOTO_NPUB = `npub1${'9'.repeat(58)}`;
+const SHOP_PHOTO_MESSAGE_ID = '99999999-9999-4999-8999-999999999999';
 const KNOWN_HEX = 'a'.repeat(64);
 
 test('e2e:check dynamic path token for /[npub]', async ({ page }) => {
@@ -324,4 +326,33 @@ test('unavailable shop shows the shop error and retry control', async ({ page })
     page.getByRole('alert').filter({ hasText: 'Could not load this shop. Please try again.' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
+test('Function: sameOriginShopPhotoPath — an api-host shop photo loads through the app proxy', async ({
+  page,
+}) => {
+  const proxied = `/messages/${SHOP_PHOTO_MESSAGE_ID}/photo.jpg`;
+  expect(
+    sameOriginShopPhotoPath(
+      `http://127.0.0.1:3001/messages/${SHOP_PHOTO_MESSAGE_ID}/photo.png`,
+      'http://127.0.0.1:3001',
+    ),
+  ).toBe(proxied);
+  const apiPhotoRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().startsWith('http://127.0.0.1:3001/messages/')) {
+      apiPhotoRequests.push(request.url());
+    }
+  });
+  await page.goto(`/${API_PHOTO_NPUB}`);
+  const still = page.getByRole('img', { name: 'Photo from Api Photo Shop' });
+  await expect(still).toHaveAttribute('src', proxied);
+  await expect
+    .poll(() => still.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    new RegExp(`${proxied.replace(/[.]/g, '\\.')}$`),
+  );
+  expect(apiPhotoRequests).toEqual([]);
 });

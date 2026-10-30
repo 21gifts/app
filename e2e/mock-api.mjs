@@ -25,6 +25,8 @@ const contactMessages = [];
 const conversations = [];
 /** @type {Map<string, Buffer>} */
 const forumPhotos = new Map();
+/** Forum note whose cover photo the api-form shop photo points at (public-shop.spec.ts). */
+const SHOP_PHOTO_MESSAGE_ID = '99999999-9999-4999-8999-999999999999';
 /** @type {Map<string, Buffer>} keyed `${messageId}:${index}` */
 const conversationPhotos = new Map();
 /** @type {Map<string, Buffer>} */
@@ -1576,7 +1578,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 404, { error: 'Not found' });
       return;
     }
-    const bytes = forumPhotos.get(id);
+    const bytes =
+      id === SHOP_PHOTO_MESSAGE_ID
+        ? fs.readFileSync(new URL('./fixtures/technical-note.jpg', import.meta.url))
+        : forumPhotos.get(id);
     if (bytes === undefined) {
       json(res, 404, { error: 'Not found' });
       return;
@@ -2590,6 +2595,7 @@ const server = http.createServer(async (req, res) => {
     const noPaymentNpub = `npub1${'5'.repeat(58)}`;
     const galleryNpub = `npub1${'7'.repeat(58)}`;
     const noPinNpub = `npub1${'8'.repeat(58)}`;
+    const apiPhotoNpub = `npub1${'9'.repeat(58)}`;
     const knownHex = 'a'.repeat(64);
     if (value === knownHex) {
       res.writeHead(301, {
@@ -2669,6 +2675,34 @@ const server = http.createServer(async (req, res) => {
             ],
             payUsername: 'luna',
             nip05: 'luna@21.gifts',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === apiPhotoNpub) {
+      // The real api sends shop photos as absolute URLs on its own host.
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: apiPhotoNpub,
+            messageId: SHOP_PHOTO_MESSAGE_ID,
+            name: 'Api Photo Shop',
+            description: 'One photo in the api form.',
+            place: null,
+            photos: [
+              {
+                url: `http://${HOST}:${PORT}/messages/${SHOP_PHOTO_MESSAGE_ID}/photo.png`,
+                width: 1168,
+                height: 784,
+              },
+            ],
+            payUsername: 'luna',
+            nip05: null,
             createdAt: '2026-08-28T12:00:00.000Z',
           },
         },
