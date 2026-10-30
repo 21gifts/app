@@ -18,7 +18,12 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
 import { getBreezApiKey } from '@/lib/config';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
-import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
+import {
+  obtainPrfFirst,
+  prfEvalFirstSalt,
+  readPrfFirst,
+  rememberCeremonyRpId,
+} from '@/lib/prf-mnemonic';
 import { traceWallet } from '@/lib/sentry';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import {
@@ -695,7 +700,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       const publicKeyCredential = credential as PublicKeyCredential;
       let prfFirst: Uint8Array | null;
       try {
-        prfFirst = await obtainPrfFirst(publicKeyCredential);
+        prfFirst = await obtainPrfFirst(publicKeyCredential, rememberCeremonyRpId(begin.options));
       } catch (error: unknown) {
         if (isUserCancel(error) && iosRegisterBlocked()) {
           reportDiagnostic(iosRegisterReport('prf', begin, error));
@@ -865,6 +870,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       guard(runId);
+      rememberCeremonyRpId(begin.options);
       // Start the derivation before the session is visible, so a wallet unlock
       // that reacts to the new session waits for it instead of prompting again.
       void rememberPhraseFromPrf({

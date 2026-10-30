@@ -89,6 +89,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
       __passkeyUserId?: string;
     };
     capture.__passkeyCreateCount = 0;
+    let created = false;
     Object.defineProperty(navigator, 'credentials', {
       configurable: true,
       value: {
@@ -106,6 +107,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
           if (!publicKey || !isBytes(publicKey.challenge) || !isBytes(publicKey.user?.id)) {
             throw new Error('invalid creation options');
           }
+          created = true;
           return attestation;
         },
         get: async (options?: CredentialRequestOptions) => {
@@ -113,7 +115,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
           if (!publicKey || !isBytes(publicKey.challenge)) {
             throw new Error('invalid request options');
           }
-          if (opts.getSucceeds !== true) {
+          if (opts.getSucceeds !== true && !created) {
             throw new DOMException('No credentials', 'NotAllowedError');
           }
           return assertion;

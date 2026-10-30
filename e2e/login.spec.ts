@@ -44,6 +44,40 @@ test('login page shows only Log in from the start', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Create a login' })).toHaveCount(0);
 });
 
+test('Function: rememberCeremonyRpId — sign-up confirms the new passkey with one get() under the api rp.id', async ({
+  page,
+}) => {
+  await installFakeWebAuthn(page);
+  await page.addInitScript(() => {
+    const fake = navigator.credentials;
+    const rpIds: (string | undefined)[] = [];
+    (window as unknown as { e2eRpIds: (string | undefined)[] }).e2eRpIds = rpIds;
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: (options?: CredentialCreationOptions) => fake.create(options),
+        get: (options?: CredentialRequestOptions) => {
+          rpIds.push(options?.publicKey?.rpId);
+          return fake.get(options);
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    const response = await route.fetch();
+    const body = (await response.json()) as { options: { rp: { id: string } } };
+    body.options.rp.id = 'rp.e2e.test';
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await confirmNewAccount(page);
+  const rpIds = await page.evaluate(
+    () => (window as unknown as { e2eRpIds: (string | undefined)[] }).e2eRpIds,
+  );
+  expect(rpIds).toEqual(['localhost', 'rp.e2e.test']);
+});
+
 test('login shows Preparing your login while passkey begin hangs', async ({ page }) => {
   let release: () => void = () => undefined;
   const held = new Promise<void>((resolve) => {
