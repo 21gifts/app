@@ -527,13 +527,15 @@ describe('useRemainingBalance relock', () => {
     useAuthStore.setState({ account: null });
   });
 
-  it('moves nothing without the words in tab memory or without an account', async () => {
+  it('passes no current words when the tab holds none, and starts nothing without an account', async () => {
     useAuthStore.setState({ session: 'sess-owner', account: owner });
     vi.mocked(peekSessionPhrase).mockReturnValue(null);
     const { result } = await rendered();
     act(() => {
       result.current.onWords(WORDS);
     });
+    expect(relockHeldShares).toHaveBeenCalledWith('sess-owner', 'acc_owner', WORDS, null);
+    vi.mocked(relockHeldShares).mockClear();
     useAuthStore.setState({ account: null });
     vi.mocked(peekSessionPhrase).mockReturnValue('current words');
     act(() => {
