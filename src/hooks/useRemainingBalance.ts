@@ -132,7 +132,8 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * ({@link closePreviousWallet}). Words entered here also move the shares the
  * member keeps for others from these words to the open wallet's words in tab
  * memory ({@link relockHeldShares}, on its own, never holding up the page;
- * boxes that do not open with these words stay as they are). In a Playwright
+ * without words in tab memory, or for boxes that do not open with these
+ * words, nothing moves). In a Playwright
  * build the `prev-…` pins open a fixture step.
  *
  * @param sparkPubkey - The previous wallet's identity key, from the address.
@@ -188,10 +189,9 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
     (words: string): void => {
       const run = ++runRef.current;
       wordsRef.current = words;
-      const current = peekSessionPhrase();
       const holder = useAuthStore.getState().account;
-      if (session !== null && holder !== null && current !== null) {
-        void relockHeldShares(session, holder.id, words, current);
+      if (session !== null && holder !== null) {
+        void relockHeldShares(session, holder.id, words, peekSessionPhrase());
       }
       setState({ step: 'opening', balanceSats: null, removal: 'idle' });
       void openPreviousWallet(words, key).then((result) => {

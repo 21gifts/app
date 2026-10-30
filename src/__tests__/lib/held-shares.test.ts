@@ -187,10 +187,23 @@ describe('relockHeldShares', () => {
     );
   });
 
-  it('does nothing for the same words, words that are not a phrase, or boxes that cannot be read', async () => {
+  it('derives no key and moves nothing without boxes, without current words, for the same words, or for words that are not a phrase', async () => {
+    const keySpy = vi.spyOn(crypto.subtle, 'deriveKey');
+    api.fetchHeldShareBoxes.mockResolvedValue([]);
+    expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(0);
+    api.fetchHeldShareBoxes.mockResolvedValue([
+      await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
+    ]);
+    keySpy.mockClear();
+    expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, null)).toBe(0);
     expect(await relockHeldShares('sess', HOLDER, ` ${WORDS} `, WORDS)).toBe(0);
+    expect(keySpy).not.toHaveBeenCalled();
+    expect(api.fetchHeldShareBoxes).toHaveBeenCalledTimes(3);
     expect(await relockHeldShares('sess', HOLDER, 'not a phrase', WORDS)).toBe(0);
-    expect(api.fetchHeldShareBoxes).not.toHaveBeenCalled();
+    expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('moves nothing when the boxes cannot be read', async () => {
     api.fetchHeldShareBoxes.mockRejectedValue(new Error('Held shares are unavailable'));
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(0);
     expect(api.putHeldShareBox).not.toHaveBeenCalled();

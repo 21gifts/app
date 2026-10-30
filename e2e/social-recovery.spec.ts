@@ -2204,7 +2204,7 @@ test.describe('Transfer remaining balance', () => {
     );
   });
 
-  test('Function: relockHeldShares — old words typed without the wallet’s words in this tab leave every box as it is', async ({
+  test('Function: relockHeldShares — old words read the boxes, and without the wallet’s words in this tab no box changes', async ({
     page,
   }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
@@ -2226,7 +2226,7 @@ test.describe('Transfer remaining balance', () => {
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'Your wallet could not be opened. Please try again.',
     );
-    expect(calls).toEqual([]);
+    await expect.poll(() => calls).toEqual(['GET']);
     expect(held.boxes.map((box) => box.ciphertext)).toEqual(before);
   });
 

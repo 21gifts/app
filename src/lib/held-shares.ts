@@ -148,31 +148,33 @@ export async function keepHeldShare(
  * after the member's own social recovery: every box that opens with the
  * previous words is encrypted again with the current words and written back
  * under the same id. A box that does not open with the previous words is left
- * as it is. Best effort: it never throws, a box that fails stays as it was,
- * and the next call moves it (the boxes already moved no longer open with the
- * previous words). Same words do nothing.
+ * as it is. The boxes are read first, so a member who keeps none derives no
+ * key. Best effort: it never throws, a box that fails stays as it was, and
+ * the next call moves it (the boxes already moved no longer open with the
+ * previous words). Same words, or no current words in this tab, move nothing.
  *
  * @param sessionToken - Bearer session of the recovered member.
  * @param holderAccountId - The member's account.
  * @param oldWords - The member's previous 12 words.
- * @param newWords - The member's current 12 words.
+ * @param newWords - The member's current 12 words, or `null` while the tab
+ *   holds none (the next call moves the boxes).
  * @returns How many boxes were moved.
  */
 export async function relockHeldShares(
   sessionToken: string,
   holderAccountId: string,
   oldWords: string,
-  newWords: string,
+  newWords: string | null,
 ): Promise<number> {
   try {
+    const boxes = await fetchHeldShareBoxes(sessionToken);
+    if (boxes.length === 0 || newWords === null || sameWords(oldWords, newWords)) {
+      return 0;
+    }
     const [oldKey, newKey] = await Promise.all([
       heldShareBoxKey(oldWords),
       heldShareBoxKey(newWords),
     ]);
-    if (sameWords(oldWords, newWords)) {
-      return 0;
-    }
-    const boxes = await fetchHeldShareBoxes(sessionToken);
     let moved = 0;
     for (const box of boxes) {
       const code = await openHeldShare(oldKey, holderAccountId, box.id, box.ciphertext);
