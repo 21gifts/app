@@ -242,13 +242,13 @@ export function useHeldShares(): UseHeldSharesResult {
     hidePhrase();
     const started = unlockRef.current;
     unlockRef.current = null;
-    if (load === 'unlock' && started !== null && started.epoch === epochRef.current) {
+    if (started !== null && started.epoch === epochRef.current) {
       void open(words, started.accountId);
     }
   }, [hidePhrase, load, open, phraseWords]);
 
   const unlock = useCallback((): void => {
-    if (holderAccountId === null) {
+    if (holderAccountId === null || phrase.status === 'busy') {
       return;
     }
     unlockRef.current = { epoch: epochRef.current, accountId: holderAccountId };
@@ -361,20 +361,23 @@ export function useHeldShares(): UseHeldSharesResult {
     const epoch = epochRef.current;
     void (async () => {
       const left: string[] = [];
+      const done: string[] = [];
       for (const id of lockedIds) {
-        try {
-          await deleteHeldShareBox(session, id);
-          if (epochRef.current === epoch) {
-            deletedRef.current.add(id);
-          }
-        } catch {
+        const deleted = await deleteHeldShareBox(session, id).then(
+          () => true,
+          () => false,
+        );
+        if (epochRef.current !== epoch) {
+          return;
+        }
+        if (deleted) {
+          deletedRef.current.add(id);
+          done.push(id);
+        } else {
           left.push(id);
         }
       }
-      if (epochRef.current !== epoch) {
-        return;
-      }
-      setLockedIds(left);
+      setLockedIds((current) => current.filter((id) => !done.includes(id)));
       if (left.length > 0) {
         setNotice({ kind: 'deleteError' });
       }

@@ -164,7 +164,7 @@ describe('useHeldShares', () => {
 
   it('drops a key, a keep, and deletes that answer after the account changed', async () => {
     const OTHER = { ...account, id: 'acc_other' };
-    const { result } = await ready({ shares: [BOB], lockedIds: ['x'.repeat(32)] });
+    const { result } = await ready({ shares: [BOB], lockedIds: ['x'.repeat(32), 'y'.repeat(32)] });
     let kept: (value: KeepShareResult) => void = () => undefined;
     mocks.keepHeldShare.mockReturnValue(
       new Promise<KeepShareResult>((resolve) => {
@@ -228,6 +228,7 @@ describe('useHeldShares', () => {
     expect(result.current.lockedCount).toBe(0);
     expect(result.current.notice).toBeNull();
     expect(result.current.saving).toBe(false);
+    expect(mocks.deleteHeldShareBox).not.toHaveBeenCalledWith('sess', 'y'.repeat(32));
   });
 
   it('drops a failed key of the previous account', async () => {
@@ -312,6 +313,12 @@ describe('useHeldShares', () => {
     });
     expect(result.current.unlocking).toBe(true);
     expect(result.current.unlockError).toBe('timeout');
+    act(() => {
+      result.current.unlock();
+    });
+    expect(mocks.showPhrase).not.toHaveBeenCalled();
+    mocks.phrase.status = 'idle';
+    rerender();
     act(() => {
       result.current.unlock();
     });
