@@ -1163,6 +1163,12 @@ Rules:
 - A new external origin (script, image, font, frame, socket) needs a source in
   `CSP_SOURCES` and a row in `docs/csp.md` in the same PR; the unit test fails
   otherwise.
+- The Playwright build runs with `CSP_MODE=enforce`, so a spec fails when the
+  policy blocks something the app needs. `e2e/csp.spec.ts` fails on any
+  violation on the public pages.
+- A CDN or proxy feature that adds a script to the HTML (such as email
+  address obfuscation) stays off; that script has no nonce
+  ([`docs/csp.md`](docs/csp.md)).
 
 ## Wallet data and interaction log
 
