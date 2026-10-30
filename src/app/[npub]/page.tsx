@@ -44,7 +44,7 @@ function redirectNpub(response: Response): string | null {
  * valid npub. An npub segment is usable only as a 200 whose `shop.npub` is
  * that same npub. Every other status, a 200 for a hex segment, and a timeout
  * or abort after {@link API_FETCH_TIMEOUT_MS} become `unavailable`; 404 and 410
- * stay `missing` and `gone`. An api forum photo path becomes the app's own
+ * stay `missing` and `gone`. An api forum photo URL becomes the app's own
  * proxy path ({@link sameOriginShopPhotoPath}); any other photo URL goes through
  * {@link resolveShopPhotoUrl} against the api base, and a photo that is not
  * http(s) is dropped, so the page and `og:image` share the same list.
@@ -83,7 +83,8 @@ const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
     }
     // A relative photo path belongs to the api; only http(s) photos render.
     const photos = parsed.data.shop.photos.flatMap((photo) => {
-      const url = sameOriginShopPhotoPath(photo.url) ?? resolveShopPhotoUrl(photo.url, apiBase);
+      const url =
+        sameOriginShopPhotoPath(photo.url, apiBase) ?? resolveShopPhotoUrl(photo.url, apiBase);
       return url === null ? [] : [{ ...photo, url }];
     });
     return { kind: 'ready', shop: { ...parsed.data.shop, photos } };

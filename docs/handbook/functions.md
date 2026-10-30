@@ -168,7 +168,7 @@
 - **Purpose:** Build the same-origin path for a public forum still so the browser and the edge can cache it for a day. Always `.jpg`; the api serves the real bytes on that name.
 - **Inputs:** `messageId` string, optional `index` (0 or omitted or negative is `photo.jpg`; 1–9 are `photo/{n}.jpg`), optional `version` (a non-empty string appends `?v=`).
 - **Returns / side effects:** The path string. No I/O.
-- **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`.
+- **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`, `sameOriginShopPhotoPath`.
 
 ## Function: HandbookCopyLink
 
@@ -1202,9 +1202,9 @@
 
 ## Function: sameOriginShopPhotoPath
 
-- **Purpose:** Load a shop photo from the app's own origin when the api sends its own forum photo path, as the Content-Security-Policy (`img-src 'self'`) requires.
-- **Inputs:** The photo `url` from `GET /shops/:npub`.
-- **Returns / side effects:** `/messages/:id/photo.jpg` for `/messages/:id/photo` with or without a `jpg`, `jpeg`, `png`, or `webp` extension, and `/messages/:id/photo/:n.jpg` for `/messages/:id/photo/:n.<ext>` (`n` 1–9); `:id` must be a UUID and is lower-cased. The app proxies both paths, and the api serves a still by its index whatever the extension. Any other value is null. A relative `og:image` resolves against the site, so link previews use the same path. No side effects.
+- **Purpose:** Load a shop photo from the app's own origin when the api sends its own forum photo URL (`{apiBase}/messages/…`), as the Content-Security-Policy (`img-src 'self'`) requires.
+- **Inputs:** The photo `url` from `GET /shops/:npub`; optional `apiBase` (`getApiUrl()`, trailing slashes ignored). A URL under `apiBase` is read as its path; without `apiBase` only a root-relative path matches, which is what the browser copy sees after `ShopPage` mapped it.
+- **Returns / side effects:** Built with `forumPhotoSrc`: `/messages/:id/photo.jpg` for `/messages/:id/photo` with or without a `jpg`, `jpeg`, `png`, or `webp` extension, and `/messages/:id/photo/:n.jpg` for `/messages/:id/photo/:n.<ext>` (`n` 1–9); `:id` must be a UUID and is lower-cased. The app proxies both paths, and the api serves a still by its index whatever the extension. Any other value is null. A relative `og:image` resolves against the site, so link previews use the same path. No side effects.
 - **Used by:** `ShopPage`, `ShopScreen`.
 
 ## Function: NpubCopyButton

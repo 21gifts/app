@@ -282,7 +282,8 @@ describe('shop generateMetadata', () => {
         description: 'Coffee and bitcoin',
         images: [
           {
-            url: SHOP.photos[0]?.url,
+            // The api-host still is served through the app proxy.
+            url: '/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
             alt: 'Cafe Luna',
             width: 1280,
             height: 960,
@@ -293,7 +294,9 @@ describe('shop generateMetadata', () => {
         card: 'summary_large_image',
         title: 'Cafe Luna',
         description: 'Coffee and bitcoin',
-        images: [{ url: SHOP.photos[0]?.url, alt: 'Cafe Luna' }],
+        images: [
+          { url: '/messages/11111111-1111-4111-8111-111111111111/photo.jpg', alt: 'Cafe Luna' },
+        ],
       },
     });
     expect(fetch).toHaveBeenCalledWith(
@@ -361,10 +364,10 @@ describe('shop generateMetadata', () => {
     );
   });
 
-  it('serves api forum photo paths through the app proxy for the page and og:image', async () => {
+  it('serves api forum photo URLs through the app proxy for the page and og:image', async () => {
     const id = '22222222-2222-4222-8222-222222222222';
     const photos = [
-      { url: `/messages/${id}/photo.png`, width: 640, height: 480 },
+      { url: `https://api.test/messages/${id}/photo.png`, width: 640, height: 480 },
       { url: `/messages/${id}/photo/1.webp`, width: null, height: null },
     ];
     vi.stubGlobal(
