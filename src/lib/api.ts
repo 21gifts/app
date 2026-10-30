@@ -3095,6 +3095,8 @@ const repaymentLineSchema = z.object({
   /** Optional until every deployed api includes the live sats value for due fiat shares. */
   dueSats: z.number().int().nonnegative().nullable().optional().default(null),
   status: z.enum(['scheduled', 'due', 'paid']),
+  /** Optional until every deployed api marks a due line whose giver cannot receive. */
+  waiting: z.boolean().optional(),
   via: z.literal('lightning'),
 });
 
@@ -3105,6 +3107,8 @@ const repaymentLedgerSchema = z.object({
   termDays: z.number().int(),
   daysDue: z.number().int().nonnegative(),
   daysPaid: z.number().int().nonnegative(),
+  /** Optional until every deployed api counts the `waiting` lines. */
+  waitingShares: z.number().int().nonnegative().optional(),
   unassignedSats: z.number().int().nonnegative(),
   givers: z.array(
     z.object({
@@ -3129,7 +3133,8 @@ const repaymentLedgerSchema = z.object({
 
 /**
  * Public credit ledger from `GET /messages/:id/repayment`.
- * `givers[].canReceive` defaults to true while older api bodies omit it.
+ * `givers[].canReceive` defaults to true while older api bodies omit it;
+ * `repayments[].waiting` marks a due line whose giver cannot receive.
  */
 export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 
@@ -3184,6 +3189,8 @@ const myLoanSchema = z.object({
     payablePeople: z.number().int().nonnegative(),
     waitingSats: z.number().int().nonnegative(),
     waitingPeople: z.number().int().nonnegative(),
+    /** Optional until every deployed api counts the waiting shares. */
+    waitingShares: z.number().int().nonnegative().optional(),
     behindDays: z.number().int().nonnegative(),
     payableAmount: z.string().nullable(),
     waitingAmount: z.string().nullable(),
@@ -3201,9 +3208,20 @@ const myLoanSchema = z.object({
 const myLoansSchema = z.object({
   sundayRest: z.boolean(),
   loans: z.array(myLoanSchema),
+  /** Optional until every deployed api reports repayments owed to a caller who cannot receive. */
+  lenderWaiting: z
+    .object({
+      shares: z.number().int().nonnegative(),
+      loans: z.number().int().nonnegative(),
+      sats: z.number().int().nonnegative().nullable(),
+    })
+    .optional(),
 });
 
-/** `GET /me/loans` body. */
+/**
+ * `GET /me/loans` body. `lenderWaiting` counts the due shares owed to the
+ * caller while the caller cannot receive (all zero when they can).
+ */
 export type MyLoans = z.infer<typeof myLoansSchema>;
 
 /** One loan of {@link MyLoans}. */

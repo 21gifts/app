@@ -12,12 +12,12 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { forumGoalPercent } from '@/lib/forum-goal';
-import { summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
 export interface LoansCardProps {
-  /** Surface that owns the card; the wallet also shows waiting repayments. */
+  /** Surface that owns the card. */
   place: 'welcome' | 'wallet';
 }
 
@@ -29,7 +29,9 @@ function localDay(date: Date): string {
 }
 
 /**
- * Compact combined loan status shown on the welcome and wallet screens.
+ * Compact combined loan status shown on the welcome and wallet screens. Shares
+ * waiting for a lender's wallet are a muted line of their own, never part of
+ * the amount to send.
  *
  * @param props - Card placement.
  * @returns The loan card, or `null` while unavailable or when there are no loans.
@@ -46,6 +48,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return null;
   }
   const summary = summarizeLoans(loans);
+  const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
@@ -157,7 +160,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                   {summary.waitingSats === 0 ? (
                     <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
                   ) : null}
-                  {t('loans.nothingDue')}
+                  {t(summary.waitingSats === 0 ? 'loans.nothingDue' : 'loans.nothingToSend')}
                 </p>
                 {nextLine() === null ? null : (
                   <p className="text-xs tabular-nums lining-nums text-app-muted">{nextLine()}</p>
@@ -172,10 +175,13 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
               </Link>
             </div>
           )}
-          {place === 'wallet' && summary.waitingSats > 0 ? (
+          {summary.waitingSats > 0 ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
               {t(summary.waitingPeople === 1 ? 'loans.waitingOne' : 'loans.waitingMany', {
-                amount: money(summary.waitingSats),
+                amount:
+                  definedWaiting === null
+                    ? money(summary.waitingSats)
+                    : `${definedWaiting} · ${formatBitcoin(summary.waitingSats, numberFormat)}`,
                 count: summary.waitingPeople,
               })}
             </p>

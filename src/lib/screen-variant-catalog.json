@@ -720,6 +720,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-waiting-fiat",
+    "label": "/wallet loans-waiting-fiat",
+    "visual": "state-wallet-loans-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-fiat-open",
+    "label": "/wallet loans-waiting-fiat-open",
+    "visual": "state-wallet-loans-waiting-fiat-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:received",
     "label": "/wallet received",
     "visual": "state-wallet-received",
@@ -1071,6 +1083,18 @@
     "id": "/loans/repay:fiat-who-open",
     "label": "/loans/repay fiat-who-open",
     "visual": "state-loans-repay-fiat-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-fiat",
+    "label": "/loans/repay waiting-fiat",
+    "visual": "state-loans-repay-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-fiat-who-open",
+    "label": "/loans/repay waiting-fiat-who-open",
+    "visual": "state-loans-repay-waiting-fiat-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2697,6 +2721,42 @@
     "id": "/welcome:loans-waiting-all-open",
     "label": "/welcome loans-waiting-all-open",
     "visual": "state-welcome-loans-waiting-all-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting",
+    "label": "/welcome loans-waiting",
+    "visual": "state-welcome-loans-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-open",
+    "label": "/welcome loans-waiting-open",
+    "visual": "state-welcome-loans-waiting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:lender-waiting",
+    "label": "/welcome lender-waiting",
+    "visual": "state-welcome-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:lender-waiting-unpriced",
+    "label": "/welcome lender-waiting-unpriced",
+    "visual": "state-welcome-lender-waiting-unpriced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting",
+    "label": "/welcome loans-lender-waiting",
+    "visual": "state-welcome-loans-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting-open",
+    "label": "/welcome loans-lender-waiting-open",
+    "visual": "state-welcome-loans-lender-waiting-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -7953,6 +8013,18 @@
     "id": "/messages/[id]/repayment-list:overview",
     "label": "/messages/[id]/repayment-list overview",
     "visual": "state-messages-id-repayment-list-overview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:waiting",
+    "label": "/messages/[id]/repayment-list waiting",
+    "visual": "state-messages-id-repayment-list-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:waiting-long",
+    "label": "/messages/[id]/repayment-list waiting-long",
+    "visual": "state-messages-id-repayment-list-waiting-long",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

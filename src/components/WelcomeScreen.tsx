@@ -14,6 +14,7 @@ import { flushSync } from 'react-dom';
 import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import type { ForumWriter } from '@/components/ForumBoard';
 import { ForumLoader } from '@/components/ForumLoader';
+import { LenderWaitingCard } from '@/components/LenderWaitingCard';
 import { LoansCard } from '@/components/LoansCard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
@@ -29,8 +30,8 @@ import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The welcome column: gift icon, welcome heading, the member's loan card when
- * applicable, and {@link ForumLoader} (forum list; its composer lives in the writer). Page column is `max-w-xl`
+ * The welcome column: gift icon, welcome heading, the member's loan card and
+ * the card for repayments waiting for their wallet when applicable, and {@link ForumLoader} (forum list; its composer lives in the writer). Page column is `max-w-xl`
  * (`Card surface={false}`) so the AppShell frame is the only page-level
  * `rounded-3xl`. Forum heading is omitted on the board so this welcome title is
  * the only stack header.
@@ -73,6 +74,7 @@ function WelcomeColumn({ writer }: { writer: ForumWriter }): ReactElement {
           : t('login.welcomeSignedOut')}
       </h1>
       <LoansCard place="welcome" />
+      <LenderWaitingCard />
       <ForumLoader writer={writer} />
     </Card>
   );

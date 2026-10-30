@@ -1686,7 +1686,11 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { sundayRest: false, loans: [] });
+    json(res, 200, {
+      sundayRest: false,
+      loans: [],
+      lenderWaiting: { shares: 0, loans: 0, sats: 0 },
+    });
     return;
   }
 
