@@ -1,25 +1,52 @@
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHeldShares } from '@/hooks/useHeldShares';
+import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 import type { Account } from '@/lib/api-types';
-import { HELD_SHARES_KEY_PREFIX, type HeldShare } from '@/lib/recovery-holder-store';
+import type { HeldShare, HeldShares, KeepShareResult } from '@/lib/held-shares';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Two shares of one recovery set (identifier 2864). */
-const SHARES = [
-  'body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel',
-  'body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
-] as const;
+const mocks = vi.hoisted(() => ({
+  deleteHeldShareBox: vi.fn(),
+  heldShareBoxKey: vi.fn(),
+  loadHeldShares: vi.fn(),
+  keepHeldShare: vi.fn(),
+  peekSessionPhrase: vi.fn(),
+  settlePhraseDerivations: vi.fn(),
+  showPhrase: vi.fn(),
+  hidePhrase: vi.fn(),
+  phrase: { words: [] as string[], status: 'idle', error: null as string | null },
+}));
 
-/** A share of another set (a share of another recovery set, identifier 7506). */
-const OTHER_SET =
-  'domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+vi.mock('@/lib/api', () => ({ deleteHeldShareBox: mocks.deleteHeldShareBox }));
+vi.mock('@/lib/held-share-box', () => ({ heldShareBoxKey: mocks.heldShareBoxKey }));
+vi.mock('@/lib/held-shares', () => ({
+  loadHeldShares: mocks.loadHeldShares,
+  keepHeldShare: mocks.keepHeldShare,
+}));
+vi.mock('@/lib/tab-phrase', () => ({ peekSessionPhrase: mocks.peekSessionPhrase }));
+vi.mock('@/lib/wallet/wallet-phrase', () => ({
+  settlePhraseDerivations: mocks.settlePhraseDerivations,
+}));
+vi.mock(
+  '@/hooks/useWalletPhrase',
+  () =>
+    ({
+      useWalletPhrase: (): Partial<UseWalletPhraseResult> => ({
+        words: mocks.phrase.words,
+        status: mocks.phrase.status as UseWalletPhraseResult['status'],
+        error: mocks.phrase.error as UseWalletPhraseResult['error'],
+        showPhrase: mocks.showPhrase,
+        hidePhrase: mocks.hidePhrase,
+      }),
+    }) satisfies Record<string, unknown>,
+);
 
-const HOLDER = 'acc_holder';
-const HOLDER_KEY = `${HELD_SHARES_KEY_PREFIX}${HOLDER}`;
+const WORDS = 'one two three four five six seven eight nine ten eleven twelve';
+const KEY = { type: 'secret' } as unknown as CryptoKey;
 
 const account: Account = {
-  id: HOLDER,
+  id: 'acc_hal',
   linkingKey: null,
   role: 'basis',
   name: 'Hal',
@@ -37,243 +64,370 @@ const account: Account = {
   missing: [],
 };
 
+/** A share of another set (identifier 7506). */
+const OTHER_SET =
+  'domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+
 /**
- * A share payload.
+ * A kept share.
  *
- * @param share - Share words.
- * @param owner - Owner account id.
+ * @param boxId - Box id.
  * @param username - Owner username.
- * @returns The payload text.
+ * @returns The share.
  */
-function code(share: string, owner = 'acc_bob', username = 'bob'): string {
-  return `21gifts-share:v1:${owner}:${username}:${share}`;
+function share(boxId: string, username: string): HeldShare {
+  return {
+    boxId,
+    code: `21gifts-share:v1:acc_${username}:${username}:${OTHER_SET}`,
+    ownerAccountId: `acc_${username}`,
+    ownerUsername: username,
+    identifier: 7506,
+    memberIndex: 0,
+  };
 }
 
-/**
- * Stores shares under a keeping member's key.
- *
- * @param key - The storage key.
- * @param entries - Payloads with the time they were kept.
- */
-function seed(key: string, entries: Array<{ code: string; storedAt: number }>): void {
-  window.localStorage.setItem(key, JSON.stringify({ v: 1, shares: entries }));
-}
+const BOB = share('b'.repeat(32), 'bob');
+const CARA = share('c'.repeat(32), 'cara');
 
 /**
- * The shares the hook lists, by owner.
+ * Renders the hook with the words in tab memory and waits for the list.
  *
- * @param shares - Listed shares.
- * @returns Owner usernames in order.
+ * @param held - What the boxes give.
+ * @returns The hook.
  */
-function owners(shares: HeldShare[]): string[] {
-  return shares.map((share) => share.ownerUsername);
+async function ready(
+  held: HeldShares = { shares: [BOB], lockedIds: [] },
+): Promise<ReturnType<typeof renderHook<ReturnType<typeof useHeldShares>, unknown>>> {
+  mocks.loadHeldShares.mockResolvedValue(held);
+  const hook = renderHook(() => useHeldShares());
+  await waitFor(() => {
+    expect(hook.result.current.load).toBe('ready');
+  });
+  return hook;
 }
 
 beforeEach(() => {
-  window.localStorage.clear();
   useAuthStore.setState({ session: 'sess', account });
+  mocks.phrase.words = [];
+  mocks.phrase.status = 'idle';
+  mocks.phrase.error = null;
+  mocks.deleteHeldShareBox.mockReset().mockResolvedValue(undefined);
+  mocks.heldShareBoxKey.mockReset().mockResolvedValue(KEY);
+  mocks.loadHeldShares.mockReset();
+  mocks.keepHeldShare.mockReset();
+  mocks.peekSessionPhrase.mockReset().mockReturnValue(WORDS);
+  mocks.settlePhraseDerivations.mockReset().mockResolvedValue(undefined);
+  mocks.showPhrase.mockReset().mockResolvedValue(undefined);
+  mocks.hidePhrase.mockReset();
 });
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
-  window.localStorage.clear();
   useAuthStore.setState({ session: null, account: null });
 });
 
 describe('useHeldShares', () => {
-  it('lists the signed-in member’s shares, newest first, and starts on the list', () => {
-    seed(HOLDER_KEY, [
-      { code: code(SHARES[0]), storedAt: 1 },
-      { code: code(OTHER_SET, 'acc_cara', 'cara'), storedAt: 2 },
-    ]);
-    seed(`${HELD_SHARES_KEY_PREFIX}acc_other`, [
-      { code: code(SHARES[1], 'acc_dan', 'dan'), storedAt: 3 },
-    ]);
-    const { result } = renderHook(() => useHeldShares());
-    expect(owners(result.current.shares)).toEqual(['cara', 'bob']);
-    expect(result.current.view).toBe('list');
-    expect(result.current.notice).toBeNull();
-    expect(result.current.confirmDelete).toBeNull();
+  it('opens the boxes with the words in tab memory, without a passkey prompt', async () => {
+    const { result } = await ready({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
+    expect(mocks.settlePhraseDerivations).toHaveBeenCalled();
+    expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
+    expect(mocks.loadHeldShares).toHaveBeenCalledWith('sess', 'acc_hal', KEY);
+    expect(mocks.showPhrase).not.toHaveBeenCalled();
+    expect(result.current.shares).toEqual([BOB, CARA]);
+    expect(result.current.lockedCount).toBe(1);
+    expect(result.current.unlocking).toBe(false);
+    expect(result.current.unlockError).toBeNull();
   });
 
-  it('opens the camera and keeps a scanned share of another member', () => {
-    vi.spyOn(Date, 'now').mockReturnValue(5_000);
+  it('does nothing without a session or account', async () => {
+    useAuthStore.setState({ session: null, account: null });
     const { result } = renderHook(() => useHeldShares());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.load).toBe('opening');
+    act(() => {
+      result.current.scan();
+      result.current.onScanResult('x');
+      result.current.remove(BOB);
+      result.current.removeLocked();
+    });
+    expect(result.current.view).toBe('list');
+    expect(mocks.settlePhraseDerivations).not.toHaveBeenCalled();
+    expect(mocks.keepHeldShare).not.toHaveBeenCalled();
+    expect(mocks.deleteHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('asks for the passkey when no words are in tab memory, and opens with the words it gives', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
+    mocks.loadHeldShares.mockResolvedValue({ shares: [], lockedIds: [] });
+    mocks.phrase.status = 'busy';
+    mocks.phrase.error = 'timeout';
+    const { result, rerender } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    expect(result.current.unlocking).toBe(true);
+    expect(result.current.unlockError).toBe('timeout');
+    act(() => {
+      result.current.unlock();
+    });
+    expect(mocks.showPhrase).toHaveBeenCalledTimes(1);
+    mocks.phrase.words = WORDS.split(' ');
+    rerender();
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    expect(mocks.hidePhrase).toHaveBeenCalled();
+    expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
+  });
+
+  it('reads nothing when the passkey gives the words after the session ended', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
+    const { result, rerender } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
+    });
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    mocks.phrase.words = WORDS.split(' ');
+    rerender();
+    await waitFor(() => {
+      expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(mocks.loadHeldShares).not.toHaveBeenCalled();
+  });
+
+  it('ignores the tab-memory lookup of an unmounted page', async () => {
+    let settle: () => void = () => undefined;
+    mocks.settlePhraseDerivations.mockReturnValue(
+      new Promise<void>((resolve) => {
+        settle = resolve;
+      }),
+    );
+    const { unmount } = renderHook(() => useHeldShares());
+    unmount();
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(mocks.peekSessionPhrase).not.toHaveBeenCalled();
+  });
+
+  it('shows the load error when the words give no key or the boxes cannot be read, and Try again reads again', async () => {
+    mocks.heldShareBoxKey.mockRejectedValueOnce(new Error('bad words'));
+    const { result } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(result.current.load).toBe('loadError');
+    });
+    mocks.loadHeldShares.mockRejectedValueOnce(new Error('Held shares are unavailable'));
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('loadError');
+    });
+    mocks.loadHeldShares.mockResolvedValueOnce({ shares: [CARA], lockedIds: [] });
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    expect(mocks.heldShareBoxKey).toHaveBeenCalledTimes(2);
+    expect(result.current.shares).toEqual([CARA]);
+  });
+
+  it('drops the answer of an older read', async () => {
+    let first: (value: HeldShares) => void = () => undefined;
+    let second: (reason: Error) => void = () => undefined;
+    mocks.loadHeldShares
+      .mockReturnValueOnce(
+        new Promise<HeldShares>((resolve) => {
+          first = resolve;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise<HeldShares>((_, reject) => {
+          second = reject;
+        }),
+      )
+      .mockResolvedValueOnce({ shares: [CARA], lockedIds: [] });
+    const { result } = renderHook(() => useHeldShares());
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(mocks.loadHeldShares).toHaveBeenCalledTimes(2);
+    });
+    act(() => {
+      result.current.reload();
+    });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    await act(async () => {
+      first({ shares: [BOB], lockedIds: [] });
+      second(new Error('late'));
+      await Promise.resolve();
+    });
+    expect(result.current.load).toBe('ready');
+    expect(result.current.shares).toEqual([CARA]);
+  });
+
+  it('keeps a scanned share in a new box and lists it by username', async () => {
+    const { result } = await ready({ shares: [CARA], lockedIds: [] });
     act(() => {
       result.current.scan();
     });
     expect(result.current.view).toBe('scan');
+    let answer: (value: KeepShareResult) => void = () => undefined;
+    mocks.keepHeldShare.mockReturnValue(
+      new Promise<KeepShareResult>((resolve) => {
+        answer = resolve;
+      }),
+    );
     act(() => {
-      result.current.onScanResult(code(SHARES[0]));
+      result.current.onScanResult(BOB.code);
+    });
+    expect(mocks.keepHeldShare).toHaveBeenCalledWith('sess', 'acc_hal', KEY, [CARA], BOB.code);
+    expect(result.current.view).toBe('list');
+    expect(result.current.saving).toBe(true);
+    act(() => {
+      result.current.scan();
     });
     expect(result.current.view).toBe('list');
+    await act(async () => {
+      answer({ ok: true, share: BOB });
+      await Promise.resolve();
+    });
+    expect(result.current.saving).toBe(false);
     expect(result.current.notice).toEqual({ kind: 'stored', username: 'bob' });
-    expect(owners(result.current.shares)).toEqual(['bob']);
-    expect(result.current.shares[0]?.storedAt).toBe(5_000);
-    expect(window.localStorage.getItem(HOLDER_KEY)).toContain(SHARES[0]);
+    expect(result.current.shares).toEqual([BOB, CARA]);
   });
 
-  it('refuses a text that is not a share', () => {
-    const { result } = renderHook(() => useHeldShares());
-    act(() => {
-      result.current.scan();
+  it('says why a scanned share was not kept', async () => {
+    const { result } = await ready();
+    for (const [reason, kind] of [
+      ['own', 'own'],
+      ['duplicate', 'duplicate'],
+      ['save', 'saveError'],
+    ] as const) {
+      mocks.keepHeldShare.mockResolvedValueOnce({ ok: false, reason });
+      await act(async () => {
+        result.current.onScanResult(BOB.code);
+        await Promise.resolve();
+      });
+      expect(result.current.notice).toEqual({ kind, username: 'bob' });
+    }
+    mocks.keepHeldShare.mockResolvedValueOnce({ ok: false, reason: 'invalid' });
+    await act(async () => {
+      result.current.onScanResult('hello');
+      await Promise.resolve();
     });
-    act(() => {
-      result.current.onScanResult('lightning:lnbc1');
-    });
-    expect(result.current.view).toBe('list');
     expect(result.current.notice).toEqual({ kind: 'invalid' });
-    expect(window.localStorage.getItem(HOLDER_KEY)).toBeNull();
+    expect(result.current.shares).toEqual([BOB]);
   });
 
-  it('refuses a share of the member’s own account', () => {
+  it('ignores a scan and Keep a share before the boxes are open', async () => {
+    mocks.peekSessionPhrase.mockReturnValue(null);
     const { result } = renderHook(() => useHeldShares());
-    act(() => {
-      result.current.onScanResult(code(SHARES[0], HOLDER, 'hal'));
+    await waitFor(() => {
+      expect(result.current.load).toBe('unlock');
     });
-    expect(result.current.notice).toEqual({ kind: 'own', username: 'hal' });
-    expect(result.current.shares).toEqual([]);
-  });
-
-  it('refuses a second share of one setup, also when another account here keeps it', () => {
-    seed(`${HELD_SHARES_KEY_PREFIX}acc_other`, [{ code: code(SHARES[1]), storedAt: 1 }]);
-    const { result } = renderHook(() => useHeldShares());
-    act(() => {
-      result.current.onScanResult(code(SHARES[0]));
-    });
-    expect(result.current.notice).toEqual({ kind: 'duplicate', username: 'bob' });
-    expect(result.current.shares).toEqual([]);
-    expect(window.localStorage.getItem(HOLDER_KEY)).toBeNull();
-  });
-
-  it('says so when the browser cannot keep the share', () => {
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
-      throw new DOMException('full', 'QuotaExceededError');
-    });
-    const { result } = renderHook(() => useHeldShares());
-    act(() => {
-      result.current.onScanResult(code(SHARES[0]));
-    });
-    expect(result.current.notice).toEqual({ kind: 'storage', username: 'bob' });
-    expect(result.current.shares).toEqual([]);
-  });
-
-  it('shows a share’s code, and the arrow returns to the list', () => {
-    seed(HOLDER_KEY, [{ code: code(SHARES[0]), storedAt: 1 }]);
-    const { result } = renderHook(() => useHeldShares());
-    act(() => {
-      result.current.onScanResult('not a share');
-    });
-    const share = result.current.shares[0] as HeldShare;
-    act(() => {
-      result.current.askDelete(share);
-    });
-    act(() => {
-      result.current.showQr(share);
-    });
-    expect(result.current.view).toEqual({ qr: share });
-    expect(result.current.notice).toBeNull();
-    expect(result.current.confirmDelete).toBeNull();
-    let stepped = false;
-    act(() => {
-      stepped = result.current.back();
-    });
-    expect(stepped).toBe(true);
-    expect(result.current.view).toBe('list');
-    act(() => {
-      stepped = result.current.back();
-    });
-    expect(stepped).toBe(false);
-  });
-
-  it('steps back from the camera to the list', () => {
-    const { result } = renderHook(() => useHeldShares());
     act(() => {
       result.current.scan();
+      result.current.onScanResult(BOB.code);
     });
-    let stepped = false;
-    act(() => {
-      stepped = result.current.back();
-    });
-    expect(stepped).toBe(true);
     expect(result.current.view).toBe('list');
+    expect(mocks.keepHeldShare).not.toHaveBeenCalled();
   });
 
-  it('asks before a delete, cancels, and deletes on confirm', () => {
-    seed(HOLDER_KEY, [
-      { code: code(SHARES[0]), storedAt: 1 },
-      { code: code(OTHER_SET, 'acc_cara', 'cara'), storedAt: 2 },
-    ]);
-    const { result } = renderHook(() => useHeldShares());
+  it('shows a code, confirms and deletes a share, and keeps it when the api does not', async () => {
+    const { result } = await ready({ shares: [BOB, CARA], lockedIds: [] });
     act(() => {
-      result.current.onScanResult('not a share');
+      result.current.showQr(BOB);
     });
-    const bob = result.current.shares[1] as HeldShare;
+    expect(result.current.view).toEqual({ qr: BOB });
+    let stepped: boolean[] = [];
     act(() => {
-      result.current.askDelete(bob);
+      stepped = [result.current.back()];
     });
-    expect(result.current.confirmDelete).toBe(bob.code);
+    act(() => {
+      stepped.push(result.current.back());
+    });
+    expect(stepped).toEqual([true, false]);
+    act(() => {
+      result.current.askDelete(BOB);
+    });
+    expect(result.current.confirmDelete).toBe(BOB.boxId);
     act(() => {
       result.current.cancel();
     });
     expect(result.current.confirmDelete).toBeNull();
-    act(() => {
-      result.current.askDelete(bob);
+    mocks.deleteHeldShareBox.mockRejectedValueOnce(new Error('Could not delete the share'));
+    await act(async () => {
+      result.current.remove(BOB);
+      await Promise.resolve();
     });
+    expect(result.current.notice).toEqual({ kind: 'deleteError' });
+    expect(result.current.shares).toEqual([BOB, CARA]);
+    await act(async () => {
+      result.current.remove(BOB);
+      await Promise.resolve();
+    });
+    expect(mocks.deleteHeldShareBox).toHaveBeenLastCalledWith('sess', BOB.boxId);
+    expect(result.current.notice).toBeNull();
+    expect(result.current.shares).toEqual([CARA]);
+  });
+
+  it('confirms and deletes the boxes that do not open, keeping those the api did not delete', async () => {
+    const { result } = await ready({ shares: [], lockedIds: ['x'.repeat(32), 'y'.repeat(32)] });
     act(() => {
+      result.current.askDelete(BOB);
+      result.current.askDeleteLocked();
+    });
+    expect(result.current.confirmDeleteLocked).toBe(true);
+    expect(result.current.confirmDelete).toBeNull();
+    mocks.deleteHeldShareBox.mockRejectedValueOnce(new Error('Could not delete the share'));
+    await act(async () => {
+      result.current.removeLocked();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.confirmDeleteLocked).toBe(false);
+    expect(result.current.lockedCount).toBe(1);
+    expect(result.current.notice).toEqual({ kind: 'deleteError' });
+    await act(async () => {
+      result.current.removeLocked();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mocks.deleteHeldShareBox).toHaveBeenLastCalledWith('sess', 'x'.repeat(32));
+    expect(result.current.lockedCount).toBe(0);
+    expect(result.current.notice).toBeNull();
+  });
+
+  it('scanning or showing a code closes an open confirm and the notice', async () => {
+    const { result } = await ready();
+    act(() => {
+      result.current.askDeleteLocked();
       result.current.scan();
     });
-    expect(result.current.confirmDelete).toBeNull();
+    expect(result.current.confirmDeleteLocked).toBe(false);
     act(() => {
       result.current.back();
+      result.current.askDeleteLocked();
+      result.current.showQr(BOB);
     });
-    act(() => {
-      result.current.askDelete(bob);
-    });
-    act(() => {
-      result.current.remove(bob);
-    });
-    expect(owners(result.current.shares)).toEqual(['cara']);
-    expect(result.current.confirmDelete).toBeNull();
-    expect(result.current.notice).toBeNull();
-    expect(window.localStorage.getItem(HOLDER_KEY)).not.toContain(SHARES[0]);
-  });
-
-  it('keeps a share the browser could not delete and says so', () => {
-    seed(HOLDER_KEY, [{ code: code(SHARES[0]), storedAt: 1 }]);
-    const { result } = renderHook(() => useHeldShares());
-    const share = result.current.shares[0] as HeldShare;
-    vi.spyOn(window.localStorage, 'removeItem').mockImplementation(() => {
-      throw new DOMException('blocked', 'SecurityError');
-    });
-    act(() => {
-      result.current.remove(share);
-    });
-    expect(owners(result.current.shares)).toEqual(['bob']);
-    expect(result.current.notice).toEqual({ kind: 'storage' });
-  });
-
-  it('lists nothing and does nothing without an account', () => {
-    seed(HOLDER_KEY, [{ code: code(SHARES[0]), storedAt: 1 }]);
-    useAuthStore.setState({ account: null });
-    const { result } = renderHook(() => useHeldShares());
-    expect(result.current.shares).toEqual([]);
-    const share: HeldShare = {
-      code: code(SHARES[0]),
-      ownerAccountId: 'acc_bob',
-      ownerUsername: 'bob',
-      identifier: 2864,
-      memberIndex: 0,
-      storedAt: 1,
-    };
-    act(() => {
-      result.current.scan();
-      result.current.onScanResult(code(SHARES[1]));
-      result.current.remove(share);
-    });
-    expect(result.current.view).toBe('list');
-    expect(result.current.notice).toBeNull();
-    expect(window.localStorage.getItem(HOLDER_KEY)).toContain(SHARES[0]);
+    expect(result.current.confirmDeleteLocked).toBe(false);
   });
 });

@@ -752,6 +752,29 @@ export const previousWalletsSchema = z.object({
 });
 
 /**
+ * Runtime schema for one box a holder keeps another member's share in: the
+ * box id, the encrypted share (base64url, opaque to the api), and when it was
+ * last written (ISO 8601).
+ */
+export const heldShareBoxSchema = z.object({
+  id: z.string(),
+  ciphertext: z.string(),
+  updatedAt: z.string(),
+});
+
+/**
+ * One box a holder keeps another member's share in.
+ */
+export type HeldShareBox = z.infer<typeof heldShareBoxSchema>;
+
+/**
+ * Runtime schema for `GET /me/held-shares`: the caller's own boxes, oldest first.
+ */
+export const heldShareBoxesSchema = z.object({
+  boxes: z.array(heldShareBoxSchema),
+});
+
+/**
  * Trimmed forum body length accepted by `POST /messages` (api `MESSAGE_MAX_LENGTH`).
  */
 export const FORUM_MESSAGE_MAX_LENGTH = 8000;

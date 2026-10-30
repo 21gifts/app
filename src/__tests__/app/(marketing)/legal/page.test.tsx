@@ -84,8 +84,9 @@ describe('LegalPage', () => {
     const { container } = render(<LegalPage />);
     const text = (container.textContent ?? '').replace(/\s+/g, ' ');
     expect(text).toContain(
-      'If another member chose you to keep a Social Recovery share for them, the application stores that share in localStorage under your account until you delete it.',
+      'If another member chose you to keep a part for them, the application encrypts that part in your browser with a key from your own 12 recovery words and 21.gifts stores it with your account until you delete it. 21.gifts cannot read it and does not know whose part it is.',
     );
+    expect(text).not.toContain('stores that share in localStorage');
     expect(text).toContain(
       "While recovering an account or moving a balance, the 12 recovery words and the shares stay only in the open tab's memory.",
     );

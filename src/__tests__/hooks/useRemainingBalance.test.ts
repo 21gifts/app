@@ -2,7 +2,9 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRemainingBalance } from '@/hooks/useRemainingBalance';
 import { deletePreviousWallet, fetchPreviousWallets } from '@/lib/api';
-import type { PreviousWallet } from '@/lib/api-types';
+import type { Account, PreviousWallet } from '@/lib/api-types';
+import { relockHeldShares } from '@/lib/held-shares';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
 import {
   closePreviousWallet,
   openPreviousWallet,
@@ -24,6 +26,12 @@ vi.mock('@/lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api')>()),
   fetchPreviousWallets: vi.fn(),
   deletePreviousWallet: vi.fn(),
+}));
+vi.mock('@/lib/held-shares', () => ({
+  relockHeldShares: vi.fn(async () => 0),
+}));
+vi.mock('@/lib/tab-phrase', () => ({
+  peekSessionPhrase: vi.fn(() => null),
 }));
 vi.mock('@/lib/remaining-balance', () => ({
   openPreviousWallet: vi.fn(),
@@ -497,5 +505,40 @@ describe('useRemainingBalance', () => {
     window.history.replaceState({}, '', `/settings/previous-wallets/${KEY}?visual=prev-nothing`);
     const { result } = await rendered();
     expect(result.current.step).toBe('start');
+  });
+});
+
+describe('useRemainingBalance relock', () => {
+  const owner = { id: 'acc_owner' } as Account;
+
+  it('moves the kept shares from the entered words to the words in tab memory', async () => {
+    useAuthStore.setState({ session: 'sess-owner', account: owner });
+    vi.mocked(peekSessionPhrase).mockReturnValue('current words');
+    const { result } = await rendered();
+    act(() => {
+      result.current.onWords(WORDS);
+    });
+    expect(relockHeldShares).toHaveBeenCalledWith(
+      'sess-owner',
+      'acc_owner',
+      WORDS,
+      'current words',
+    );
+    useAuthStore.setState({ account: null });
+  });
+
+  it('moves nothing without the words in tab memory or without an account', async () => {
+    useAuthStore.setState({ session: 'sess-owner', account: owner });
+    vi.mocked(peekSessionPhrase).mockReturnValue(null);
+    const { result } = await rendered();
+    act(() => {
+      result.current.onWords(WORDS);
+    });
+    useAuthStore.setState({ account: null });
+    vi.mocked(peekSessionPhrase).mockReturnValue('current words');
+    act(() => {
+      result.current.onWords(WORDS);
+    });
+    expect(relockHeldShares).not.toHaveBeenCalled();
   });
 });

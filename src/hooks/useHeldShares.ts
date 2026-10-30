@@ -1,41 +1,65 @@
 'use client';
 
-import { useCallback, useState } from 'react';
-import {
-  deleteHeldShare,
-  keepHeldShare,
-  loadHeldShares,
-  type HeldShare,
-} from '@/lib/recovery-holder-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { deleteHeldShareBox } from '@/lib/api';
+import { heldShareBoxKey } from '@/lib/held-share-box';
+import { keepHeldShare, loadHeldShares, type HeldShare } from '@/lib/held-shares';
 import { parseShareCode } from '@/lib/recovery-share-code';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
+import { useWalletPhrase, type WalletPhraseErrorKind } from '@/hooks/useWalletPhrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** What `/settings/held-shares` shows: the list, the camera, or one share's code. */
 export type HeldSharesView = 'list' | 'scan' | { qr: HeldShare };
 
 /**
+ * Where reading the boxes is: the words are looked up (`opening`, also while
+ * the boxes load), the passkey must open them (`unlock`), the boxes could not
+ * be read (`loadError`), or they are read (`ready`).
+ */
+export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
+
+/**
  * The line over the list after a scan or a failed delete: the share was kept,
  * or why it was not (`invalid` payload, the member's `own` share, a
- * `duplicate` of a share of that setup in this browser, or `storage` that
- * could not be written). `username` is the owner named in a readable payload.
+ * `duplicate` of a share of that setup among the member's boxes, or a box the
+ * api did not save), or a delete the api did not do. `username` is the owner
+ * named in a readable payload.
  */
 export interface HeldSharesNotice {
   /** What happened. */
-  kind: 'stored' | 'invalid' | 'own' | 'duplicate' | 'storage';
+  kind: 'stored' | 'invalid' | 'own' | 'duplicate' | 'saveError' | 'deleteError';
   /** Username of the share's owner, when the payload was readable. */
   username?: string;
 }
 
 /** State and actions of `/settings/held-shares`. */
 export interface UseHeldSharesResult {
-  /** The shares the signed-in member keeps, newest first. */
+  /** Where reading the boxes is. */
+  load: HeldSharesLoad;
+  /** Whether the passkey prompt of **Open my shares** runs. */
+  unlocking: boolean;
+  /** Why the last passkey prompt did not open the shares, or `null`. */
+  unlockError: WalletPhraseErrorKind | null;
+  /** The shares that opened, by owner username. */
   shares: HeldShare[];
+  /** How many boxes do not open with the current words. */
+  lockedCount: number;
+  /** Whether a scanned share is being kept. */
+  saving: boolean;
   /** The view on screen. */
   view: HeldSharesView;
   /** The line over the list, or `null`. */
   notice: HeldSharesNotice | null;
-  /** Payload (`code`) of the share whose delete waits for a confirm, or `null`. */
+  /** Box id of the share whose delete waits for a confirm, or `null`. */
   confirmDelete: string | null;
+  /** Whether the delete of the boxes that do not open waits for a confirm. */
+  confirmDeleteLocked: boolean;
+  /** **Open my shares**: the passkey gives the words. */
+  unlock: () => void;
+  /** **Try again** after `loadError`. */
+  reload: () => void;
   /** Opens the camera. */
   scan: () => void;
   /** Keeps the scanned text and returns to the list with its notice. */
@@ -46,6 +70,10 @@ export interface UseHeldSharesResult {
   askDelete: (share: HeldShare) => void;
   /** Deletes one share (the confirmed delete). */
   remove: (share: HeldShare) => void;
+  /** Asks to confirm the delete of the boxes that do not open. */
+  askDeleteLocked: () => void;
+  /** Deletes the boxes that do not open (the confirmed delete). */
+  removeLocked: () => void;
   /** Closes the delete confirm. */
   cancel: () => void;
   /** The top-left arrow: from the camera or a code back to the list. */
@@ -53,94 +81,226 @@ export interface UseHeldSharesResult {
 }
 
 /**
- * The shares of one keeping member, or none without an account.
- *
- * @param holderAccountId - The signed-in member, or `null`.
- * @returns The shares, newest first.
- */
-function readShares(holderAccountId: string | null): HeldShare[] {
-  return holderAccountId === null ? [] : loadHeldShares(holderAccountId);
-}
-
-/**
  * The holder side of social recovery for the signed-in member
- * (`/settings/held-shares`): the shares other members gave them, kept in this
- * browser under the member's own account id ({@link loadHeldShares}). **Keep
- * a share** opens the camera; a scanned payload is kept with
- * {@link keepHeldShare} and the list comes back with a notice: kept for the
- * owner's username, or refused as not a share, the member's own, a second
- * share of one setup in this browser, or storage that cannot be written.
- * The QR icon shows a share's code for its owner; the trash icon asks to
- * confirm, and the confirmed delete uses {@link deleteHeldShare} (a share that
- * could not be deleted stays and gives the storage notice). The top-left arrow
- * steps from the camera or a code back to the list, otherwise it leaves.
- * Nothing is sent to the api, and without an account every action does
- * nothing.
+ * (`/settings/held-shares`): the shares other members gave them, kept as
+ * encrypted boxes on the api under the member's own login
+ * ({@link loadHeldShares}). The boxes open with a key from the member's 12
+ * words: the words of the open wallet in tab memory ({@link peekSessionPhrase},
+ * after {@link settlePhraseDerivations}, no prompt), otherwise **Open my
+ * shares** asks for the passkey as the recovery phrase does
+ * ({@link useWalletPhrase}); only the key stays in memory. Boxes that do not
+ * open with these words are counted and can be deleted together, never on
+ * their own. **Keep a share** opens the camera; a scanned payload is kept in
+ * a new box ({@link keepHeldShare}) and the list comes back with a notice:
+ * kept for the owner's username, or refused as not a share, the member's own,
+ * a second share of one setup, or a box the api did not save. The QR icon
+ * shows a share's code for its owner; the trash icon asks to confirm, and the
+ * confirmed delete removes the box ({@link deleteHeldShareBox}; a box the api
+ * did not delete stays and gives the delete notice). The top-left arrow steps
+ * from the camera or a code back to the list, otherwise it leaves. Without an
+ * account every action does nothing.
  *
- * @returns Shares, view, notice, the pending delete, and the actions.
+ * @returns Load state, shares, view, notice, the pending delete, and the actions.
  */
 export function useHeldShares(): UseHeldSharesResult {
+  const session = useAuthStore((state) => state.session);
   const holderAccountId = useAuthStore((state) => state.account?.id ?? null);
-  const [shares, setShares] = useState<HeldShare[]>(() => readShares(holderAccountId));
+  const phrase = useWalletPhrase();
+  const { hidePhrase, words: phraseWords } = phrase;
+  const [load, setLoad] = useState<HeldSharesLoad>('opening');
+  const [shares, setShares] = useState<HeldShare[]>([]);
+  const [lockedIds, setLockedIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const [view, setView] = useState<HeldSharesView>('list');
   const [notice, setNotice] = useState<HeldSharesNotice | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmDeleteLocked, setConfirmDeleteLocked] = useState(false);
+  const [tries, setTries] = useState(0);
+  const keyRef = useRef<CryptoKey | null>(null);
+  const runRef = useRef(0);
+
+  /** Reads the boxes with `key`; an answer of an older read is dropped. */
+  const read = useCallback(
+    async (key: CryptoKey): Promise<void> => {
+      if (session === null || holderAccountId === null) {
+        return;
+      }
+      const run = ++runRef.current;
+      setLoad('opening');
+      try {
+        const held = await loadHeldShares(session, holderAccountId, key);
+        if (runRef.current === run) {
+          setShares(held.shares);
+          setLockedIds(held.lockedIds);
+          setLoad('ready');
+        }
+      } catch {
+        if (runRef.current === run) {
+          setLoad('loadError');
+        }
+      }
+    },
+    [holderAccountId, session],
+  );
+
+  /** Derives the key from `words`, keeps only the key, and reads the boxes. */
+  const open = useCallback(
+    async (words: string): Promise<void> => {
+      let key: CryptoKey;
+      try {
+        key = await heldShareBoxKey(words);
+      } catch {
+        setLoad('loadError');
+        return;
+      }
+      keyRef.current = key;
+      await read(key);
+    },
+    [read],
+  );
+
+  useEffect(() => {
+    if (session === null || holderAccountId === null) {
+      return;
+    }
+    let cancelled = false;
+    const key = keyRef.current;
+    if (key !== null) {
+      void read(key);
+      return;
+    }
+    setLoad('opening');
+    void settlePhraseDerivations().then(() => {
+      if (cancelled) {
+        return;
+      }
+      const words = peekSessionPhrase();
+      if (words === null) {
+        setLoad('unlock');
+        return;
+      }
+      void open(words);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [holderAccountId, open, read, session, tries]);
+
+  useEffect(() => {
+    if (load !== 'unlock' || phraseWords.length !== 12) {
+      return;
+    }
+    const words = phraseWords.join(' ');
+    hidePhrase();
+    void open(words);
+  }, [hidePhrase, load, open, phraseWords]);
+
+  const unlock = useCallback((): void => {
+    void phrase.showPhrase();
+  }, [phrase]);
+
+  const reload = useCallback((): void => {
+    setTries((count) => count + 1);
+  }, []);
 
   const scan = useCallback((): void => {
-    if (holderAccountId === null) {
+    if (holderAccountId === null || load !== 'ready' || saving) {
       return;
     }
     setNotice(null);
     setConfirmDelete(null);
+    setConfirmDeleteLocked(false);
     setView('scan');
-  }, [holderAccountId]);
+  }, [holderAccountId, load, saving]);
 
   const onScanResult = useCallback(
     (text: string): void => {
-      if (holderAccountId === null) {
+      const key = keyRef.current;
+      if (session === null || holderAccountId === null || key === null) {
         return;
       }
       setView('list');
-      const parsed = parseShareCode(text);
-      if (parsed === null) {
-        setNotice({ kind: 'invalid' });
-        return;
-      }
-      const result = keepHeldShare(holderAccountId, text, Date.now());
-      setNotice({ kind: result.ok ? 'stored' : result.reason, username: parsed.ownerUsername });
-      if (result.ok) {
-        setShares(readShares(holderAccountId));
-      }
+      const username = parseShareCode(text)?.ownerUsername;
+      setSaving(true);
+      void keepHeldShare(session, holderAccountId, key, shares, text).then((result) => {
+        setSaving(false);
+        if (result.ok) {
+          setShares((current) =>
+            [...current, result.share].sort((a, b) =>
+              a.ownerUsername.localeCompare(b.ownerUsername),
+            ),
+          );
+          setNotice({ kind: 'stored', username: result.share.ownerUsername });
+          return;
+        }
+        const kind = result.reason === 'save' ? 'saveError' : result.reason;
+        setNotice(username === undefined ? { kind } : { kind, username });
+      });
     },
-    [holderAccountId],
+    [holderAccountId, session, shares],
   );
 
   const showQr = useCallback((share: HeldShare): void => {
     setNotice(null);
     setConfirmDelete(null);
+    setConfirmDeleteLocked(false);
     setView({ qr: share });
   }, []);
 
   const askDelete = useCallback((share: HeldShare): void => {
-    setConfirmDelete(share.code);
+    setConfirmDeleteLocked(false);
+    setConfirmDelete(share.boxId);
   }, []);
 
   const remove = useCallback(
     (share: HeldShare): void => {
-      if (holderAccountId === null) {
+      if (session === null) {
         return;
       }
-      deleteHeldShare(holderAccountId, share.ownerAccountId, share.identifier);
-      const left = readShares(holderAccountId);
-      setShares(left);
       setConfirmDelete(null);
-      setNotice(left.some((kept) => kept.code === share.code) ? { kind: 'storage' } : null);
+      setNotice(null);
+      deleteHeldShareBox(session, share.boxId).then(
+        () => {
+          setShares((current) => current.filter((kept) => kept.boxId !== share.boxId));
+        },
+        () => {
+          setNotice({ kind: 'deleteError' });
+        },
+      );
     },
-    [holderAccountId],
+    [session],
   );
+
+  const askDeleteLocked = useCallback((): void => {
+    setConfirmDelete(null);
+    setConfirmDeleteLocked(true);
+  }, []);
+
+  const removeLocked = useCallback((): void => {
+    if (session === null) {
+      return;
+    }
+    setConfirmDeleteLocked(false);
+    setNotice(null);
+    void (async () => {
+      const left: string[] = [];
+      for (const id of lockedIds) {
+        try {
+          await deleteHeldShareBox(session, id);
+        } catch {
+          left.push(id);
+        }
+      }
+      setLockedIds(left);
+      if (left.length > 0) {
+        setNotice({ kind: 'deleteError' });
+      }
+    })();
+  }, [lockedIds, session]);
 
   const cancel = useCallback((): void => {
     setConfirmDelete(null);
+    setConfirmDeleteLocked(false);
   }, []);
 
   const back = (): boolean => {
@@ -152,15 +312,25 @@ export function useHeldShares(): UseHeldSharesResult {
   };
 
   return {
+    load,
+    unlocking: phrase.status === 'busy',
+    unlockError: phrase.error,
     shares,
+    lockedCount: lockedIds.length,
+    saving,
     view,
     notice,
     confirmDelete,
+    confirmDeleteLocked,
+    unlock,
+    reload,
     scan,
     onScanResult,
     showQr,
     askDelete,
     remove,
+    askDeleteLocked,
+    removeLocked,
     cancel,
     back,
   };
