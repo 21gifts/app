@@ -555,7 +555,15 @@ describe('useHeldShares', () => {
   it('confirms and deletes the boxes that do not open, keeping those the api did not delete', async () => {
     const { result } = await ready({ shares: [], lockedIds: ['x'.repeat(32), 'y'.repeat(32)] });
     act(() => {
+      result.current.askDeleteLocked();
+    });
+    expect(result.current.confirmDeleteLocked).toBe(true);
+    act(() => {
       result.current.askDelete(BOB);
+    });
+    expect(result.current.confirmDeleteLocked).toBe(false);
+    expect(result.current.confirmDelete).toBe(BOB.boxId);
+    act(() => {
       result.current.askDeleteLocked();
     });
     expect(result.current.confirmDeleteLocked).toBe(true);
@@ -565,6 +573,8 @@ describe('useHeldShares', () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(2);
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledWith('sess', 'y'.repeat(32));
     expect(result.current.confirmDeleteLocked).toBe(false);
     expect(result.current.lockedCount).toBe(1);
     expect(result.current.notice).toEqual({ kind: 'deleteError' });
@@ -572,6 +582,7 @@ describe('useHeldShares', () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(3);
     expect(mocks.deleteHeldShareBox).toHaveBeenLastCalledWith('sess', 'x'.repeat(32));
     expect(result.current.lockedCount).toBe(0);
     expect(result.current.notice).toBeNull();
@@ -579,16 +590,43 @@ describe('useHeldShares', () => {
 
   it('scanning or showing a code closes an open confirm and the notice', async () => {
     const { result } = await ready();
-    act(() => {
-      result.current.askDeleteLocked();
+    /** Opens a notice and a confirm, then runs `step`, and checks all three are closed. */
+    const closes = async (askLocked: boolean, step: () => void): Promise<void> => {
+      mocks.keepHeldShare.mockResolvedValueOnce({ ok: false, reason: 'own' });
+      await act(async () => {
+        result.current.onScanResult(BOB.code);
+        await Promise.resolve();
+      });
+      act(() => {
+        if (askLocked) {
+          result.current.askDeleteLocked();
+        } else {
+          result.current.askDelete(BOB);
+        }
+      });
+      expect(result.current.notice).not.toBeNull();
+      expect(result.current.confirmDelete !== null || result.current.confirmDeleteLocked).toBe(
+        true,
+      );
+      act(step);
+      expect(result.current.notice).toBeNull();
+      expect(result.current.confirmDelete).toBeNull();
+      expect(result.current.confirmDeleteLocked).toBe(false);
+      act(() => {
+        result.current.back();
+      });
+    };
+    await closes(false, () => {
       result.current.scan();
     });
-    expect(result.current.confirmDeleteLocked).toBe(false);
-    act(() => {
-      result.current.back();
-      result.current.askDeleteLocked();
+    await closes(true, () => {
+      result.current.scan();
+    });
+    await closes(false, () => {
       result.current.showQr(BOB);
     });
-    expect(result.current.confirmDeleteLocked).toBe(false);
+    await closes(true, () => {
+      result.current.showQr(BOB);
+    });
   });
 });
