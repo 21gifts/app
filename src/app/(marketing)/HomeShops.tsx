@@ -892,8 +892,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       script.async = true;
       // Same nonce as the page's own scripts, so every script of the page carries it.
       // The browser hides the attribute value; the `nonce` property keeps it.
-      const nonced = [...document.querySelectorAll('script')].find((each) => each.nonce !== '');
-      if (nonced !== undefined) script.nonce = nonced.nonce;
+      const nonce = [...document.querySelectorAll('script')]
+        .map((each) => each.nonce)
+        .find((value): value is string => typeof value === 'string' && value !== '');
+      if (nonce !== undefined) script.nonce = nonce;
       script.setAttribute('data-shops-map', 'loading');
       listen(script);
       document.head.appendChild(script);
