@@ -1721,12 +1721,15 @@ test.describe('Recover account via Social Recovery', () => {
   test('Function: useRecoveryStore — leaving /recover and coming back resumes the recovery', async ({
     page,
   }) => {
+    await answerUnknownPasskey(page);
     await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await typeWords(page, OLD_PHRASE);
     await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
     await page.getByRole('link', { name: 'Back', exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(NO_WALLET);
   });
@@ -1785,6 +1788,7 @@ test.describe('Recover account via Social Recovery', () => {
   test('Function: resumeRecovery — the pinned closed logins offer Try again and Start over, and stay after leaving', async ({
     page,
   }) => {
+    await answerUnknownPasskey(page);
     await page.goto('/login');
     await page.goto('/recover?visual=recover-blocked-closed');
     await expect(page.getByRole('status')).toHaveText(
@@ -1796,6 +1800,7 @@ test.describe('Recover account via Social Recovery', () => {
     );
     await page.getByRole('link', { name: 'Back', exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole('button', { name: 'Log in' }).click();
     await page.getByRole('link', { name: 'Recover account via Social Recovery' }).click();
     await expect(page).toHaveURL(/\/recover$/);
     await expect(page.getByRole('status')).toHaveText(
