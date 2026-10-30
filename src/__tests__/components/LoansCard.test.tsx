@@ -212,7 +212,7 @@ describe('LoansCard', () => {
     );
   });
 
-  it('uses the long local date and only tells the wallet about waiting lenders', () => {
+  it('uses the long local date and tells both places about waiting lenders', () => {
     const data: MyLoans = {
       sundayRest: false,
       loans: [
@@ -232,15 +232,41 @@ describe('LoansCard', () => {
     vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload: vi.fn() });
     welcome.rerender(<LoansCard place="welcome" />);
     expect(screen.getByText(/Next: Tuesday, October 13/)).toBeTruthy();
-    expect(screen.queryByText(/lenders have no wallet/)).toBeNull();
+    expect(
+      screen.getByText('₿200 · $0.20 is waiting for 2 lenders to set up their wallets'),
+    ).toBeTruthy();
     welcome.unmount();
     show(data, 'wallet');
     const card = screen.getByRole('region', { name: 'Your loan' });
     expect(card.className).toContain('-mt-2');
     expect(card.className).toContain('max-w-xl');
     expect(card.className).not.toContain('mt-4');
-    expect(screen.getByText('₿200 · $0.20 waits · 2 lenders have no wallet yet')).toBeTruthy();
-    expect(screen.getByText('Nothing due today').className).toContain('text-app-muted');
+    expect(
+      screen.getByText('₿200 · $0.20 is waiting for 2 lenders to set up their wallets'),
+    ).toBeTruthy();
+    expect(screen.getByText('Nothing to send now').className).toContain('text-app-muted');
+    expect(screen.queryByText('Nothing due today')).toBeNull();
+  });
+
+  it('names waiting fiat shares by their stored figure', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '1680.00',
+          due: {
+            ...loan().due,
+            waitingSats: 200,
+            waitingPeople: 1,
+            waitingAmount: '11.20',
+          },
+        }),
+      ],
+    });
+    expect(
+      screen.getByText('₱11.20 · ₿200 is waiting for a lender to set up their wallet'),
+    ).toBeTruthy();
   });
 
   it('uses the singular waiting sentence and omits a missing next line', () => {
@@ -262,7 +288,9 @@ describe('LoansCard', () => {
       },
       'wallet',
     );
-    expect(screen.getByText('₿200 · $0.20 waits · a lender has no wallet yet')).toBeTruthy();
+    expect(
+      screen.getByText('₿200 · $0.20 is waiting for a lender to set up their wallet'),
+    ).toBeTruthy();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 });

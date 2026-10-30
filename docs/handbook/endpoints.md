@@ -729,7 +729,7 @@
 
 ## Endpoint: GET /messages/[id]/repayment
 
-- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each bitcoin repayment.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each bitcoin repayment; a `due` line whose giver cannot receive yet carries `waiting: true`, and `waitingShares` counts those lines. The body is passed through unchanged.
 - **Errors:** Upstream 404/503, or 502 if the api is unreachable.
 - **Used by:** `getRepayment`.
 - **Auth:** Public.
@@ -757,9 +757,9 @@
 
 ## Endpoint: GET /me/loans
 
-- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag.
+- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag. Each loan's `due.waitingShares` counts the shares waiting for a lender's wallet, and `lenderWaiting` `{ shares, loans, sats }` counts the repayments owed to the caller while the caller cannot receive. The body is passed through unchanged.
 - **Errors:** Upstream 401 or service errors, or 502 if the api is unreachable.
-- **Used by:** `getMyLoans` through `useMyLoans` for the loans card, Menu row, and `/loans/repay`.
+- **Used by:** `getMyLoans` through `useMyLoans` for the loans card, the lender card, Menu row, and `/loans/repay`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/repayment/due

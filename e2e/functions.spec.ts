@@ -36,7 +36,15 @@ import {
   typedFiatFigure,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
-import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
+import {
+  fulfillLedger,
+  fulfillMyLoans,
+  ledgerA,
+  loanA,
+  loanB,
+  loanWith,
+  myLoans,
+} from './loan-fixtures';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
 const APP_BUILD = { 'x-app-build': 'dev' };
@@ -15918,6 +15926,25 @@ test('Function: dueShares — Who gets paid lists every due lender', async ({ pa
   }
 });
 
+test('Function: definedDueLabel — a fiat waiting share keeps its stored figure', async ({
+  page,
+}) => {
+  const fiatWaiting = loanWith(loanB, {
+    due: { waitingSats: 480, waitingPeople: 1, waitingAmount: '12.00', waitingShares: 1 },
+  });
+  await openLoanUi(page, '/welcome', myLoans([fiatWaiting]), false);
+  await expect(
+    page.getByText('₱12.00 · ₿480 is waiting for a lender to set up their wallet'),
+  ).toBeVisible();
+});
+
+test('Function: centsString — the fiat due amount is written with two decimals', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
 test('Function: fittingPrefix — a short wallet offers the ordered fitting prefix', async ({
   page,
 }) => {
@@ -15946,6 +15973,25 @@ test('Function: useLoanRepay — wallet availability and sending pins reach the 
 test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {
   await openLoanUi(page, '/welcome', myLoans([loanA]), false);
   await expect(page.getByRole('region', { name: 'Your loan' })).toContainText("₿1'000");
+});
+
+test('Function: LenderWaitingCard — the welcome screen asks a lender to open the wallet', async ({
+  page,
+}) => {
+  await openLoanUi(
+    page,
+    '/welcome',
+    { ...myLoans([]), lenderWaiting: { shares: 1, loans: 1, sats: 500 } },
+    false,
+  );
+  const card = page.getByRole('region', {
+    name: '1 repayment is waiting for you — open your wallet to receive it',
+  });
+  await expect(card).toContainText('₿500');
+  await expect(card.getByRole('link', { name: 'Open your wallet' })).toHaveAttribute(
+    'href',
+    '/wallet',
+  );
 });
 
 test('Function: LoanRepayScreen — the repayment screen renders its due heading', async ({

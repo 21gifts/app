@@ -1,4 +1,7 @@
 import type { MyLoan, MyLoans, RepaymentLedger } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 
 /** Combined state of all of the member's loans, for the loans card, the Menu row and the screen. */
 export interface LoansSummary {
@@ -116,8 +119,11 @@ export interface DueShare {
   sats: number | null;
   /** row.amount (loan currency) or null. */
   amount: string | null;
-  /** givers[].canReceive of that accountId (true when the giver is not listed). */
-  canReceive: boolean;
+  /**
+   * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
+   * (older api), the giver's givers[].canReceive is false (a giver not listed can receive).
+   */
+  waiting: boolean;
 }
 
 /**
@@ -153,7 +159,7 @@ export function dueShares(
         name: row.name,
         sats: row.sats ?? row.dueSats,
         amount: row.amount,
-        canReceive: canReceive.get(row.accountId) ?? true,
+        waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });
     });
@@ -192,4 +198,47 @@ export function fittingPrefix<T>(
     total += itemCost;
   }
   return kept;
+}
+
+/**
+ * Writes whole cents as a two-decimal amount string.
+ *
+ * @param cents - Amount in hundredths of the currency.
+ * @returns For example `30.00` for 3000 cents.
+ */
+export function centsString(cents: bigint): string {
+  const whole = cents / 100n;
+  const fraction = String(cents % 100n).padStart(2, '0');
+  return `${whole}.${fraction}`;
+}
+
+/**
+ * The stored fiat figure of what is payable or waiting across loans, when every
+ * loan with that part above zero was asked in one fiat currency and the api
+ * sent its amount; otherwise the caller shows bitcoin with the current spot.
+ *
+ * @param loans - Loans of `GET /me/loans`.
+ * @param part - `payable` (`due.payableAmount`) or `waiting` (`due.waitingAmount`).
+ * @param style - Visitor number format.
+ * @returns The summed amount in that currency, or null.
+ */
+export function definedDueLabel(
+  loans: readonly MyLoan[],
+  part: 'payable' | 'waiting',
+  style: NumberFormatStyle,
+): string | null {
+  const active = loans.filter((loan) => loan.due[`${part}Sats`] > 0);
+  const code = active[0]?.goalCurrency;
+  if (
+    code === undefined ||
+    code === 'BTC' ||
+    !active.every((loan) => loan.goalCurrency === code && loan.due[`${part}Amount`] !== null)
+  ) {
+    return null;
+  }
+  const cents = active.reduce(
+    (sum, loan) => sum + (creditSmallestUnits(loan.due[`${part}Amount`] as string, false) ?? 0n),
+    0n,
+  );
+  return formatDefinedGoalAmount(centsString(cents), code, style);
 }

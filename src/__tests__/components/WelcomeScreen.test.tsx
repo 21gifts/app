@@ -17,6 +17,9 @@ vi.mock('@/hooks/useWalletSend', () => ({ useWalletSend: vi.fn() }));
 vi.mock('@/components/LoansCard', () => ({
   LoansCard: ({ place }: { place: string }) => <section aria-label={`Loans ${place}`} />,
 }));
+vi.mock('@/components/LenderWaitingCard', () => ({
+  LenderWaitingCard: () => <section aria-label="Lender waiting" />,
+}));
 const askStep = vi.hoisted(() => ({ on: false, inWriter: false, back: vi.fn() }));
 vi.mock('@/components/ForumLoader', async () => {
   const { useChromeBack } = await import('@/components/ViewHistoryRoot');
@@ -219,13 +222,15 @@ afterEach(() => {
 });
 
 describe('WelcomeScreen', () => {
-  it('puts the loans card below the heading and before the forum', () => {
+  it('puts the loans card and the lender card below the heading and before the forum', () => {
     renderWelcome();
     const heading = screen.getByRole('heading', { name: 'Welcome, Ada' });
     const loans = screen.getByRole('region', { name: 'Loans welcome' });
+    const lender = screen.getByRole('region', { name: 'Lender waiting' });
     const forum = screen.getByText('Forum stub');
     expect(heading.compareDocumentPosition(loans) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-    expect(loans.compareDocumentPosition(forum) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(loans.compareDocumentPosition(lender) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(lender.compareDocumentPosition(forum) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
   it('shows a welcome without name or address forms', async () => {

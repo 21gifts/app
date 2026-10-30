@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { MyLoan, RepaymentLedger } from '@/lib/api';
-import { dueShares, fittingPrefix, summarizeLoans } from '@/lib/loan-repay';
+import {
+  centsString,
+  definedDueLabel,
+  dueShares,
+  fittingPrefix,
+  summarizeLoans,
+} from '@/lib/loan-repay';
 
 function loan(overrides: Partial<MyLoan> = {}): MyLoan {
   return {
@@ -209,7 +215,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Ada',
         sats: null,
-        canReceive: true,
+        waiting: false,
       }),
       expect.objectContaining({
         messageId: 'm2',
@@ -217,7 +223,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Cara',
         sats: 100,
-        canReceive: false,
+        waiting: true,
       }),
       expect.objectContaining({
         messageId: 'm2',
@@ -225,7 +231,7 @@ describe('dueShares', () => {
         dayIndex: 1,
         name: 'Diego',
         sats: 100,
-        canReceive: false,
+        waiting: true,
       }),
       expect.objectContaining({
         messageId: 'm1',
@@ -234,9 +240,27 @@ describe('dueShares', () => {
         name: 'Bruno',
         sats: 90,
         amount: '1.00',
-        canReceive: false,
+        waiting: true,
       }),
     ]);
+  });
+
+  it("takes the api's waiting flag over the giver's availability", () => {
+    const flagged = ledger({
+      repayments: [
+        { ...ledger().repayments[0]!, waiting: false },
+        { ...ledger().repayments[0]!, dayIndex: 3, waiting: true },
+      ],
+    });
+    const listed = ledger({
+      givers: [{ ...ledger().givers[0]!, canReceive: true }],
+      repayments: [{ ...ledger().repayments[0]!, waiting: true }],
+    });
+    expect(
+      dueShares([loan(), loan({ messageId: 'm2' })], [flagged, listed]).map(
+        (share) => share.waiting,
+      ),
+    ).toEqual([false, true, true]);
   });
 
   it('treats a missing matching ledger as empty', () => {
@@ -249,5 +273,50 @@ describe('fittingPrefix', () => {
     expect(fittingPrefix([2, 3, 1], (value) => value, 4)).toEqual([2]);
     expect(fittingPrefix([1, 2, 3], (value) => (value === 2 ? null : value), 10)).toEqual([1]);
     expect(fittingPrefix([0, 1], (value) => value, 1)).toEqual([0, 1]);
+  });
+});
+
+describe('centsString', () => {
+  it('writes two decimals', () => {
+    expect(centsString(3000n)).toBe('30.00');
+    expect(centsString(5n)).toBe('0.05');
+    expect(centsString(123_456n)).toBe('1234.56');
+  });
+});
+
+describe('definedDueLabel', () => {
+  const php = (payable: string | null, waiting: string | null): MyLoan =>
+    loan({
+      goalCurrency: 'PHP',
+      due: {
+        ...loan().due,
+        payableSats: 300,
+        payableAmount: payable,
+        waitingSats: 20,
+        waitingAmount: waiting,
+      },
+    });
+
+  it('sums the stored figures of one fiat currency', () => {
+    expect(definedDueLabel([php('30.00', '1.50'), php('0.05', '2.00')], 'waiting', 'ch')).toBe(
+      '₱3.50',
+    );
+    expect(definedDueLabel([php('30.00', '1.50'), php('0.05', '2.00')], 'payable', 'ch')).toBe(
+      '₱30.05',
+    );
+  });
+
+  it('ignores loans with nothing in that part', () => {
+    const none = loan({ due: { ...loan().due, waitingSats: 0, waitingAmount: null } });
+    expect(definedDueLabel([none, php('30.00', '1.50')], 'waiting', 'ch')).toBe('₱1.50');
+  });
+
+  it('is null for bitcoin, mixed currencies, a missing amount, or nothing due', () => {
+    expect(definedDueLabel([loan()], 'waiting', 'ch')).toBeNull();
+    expect(
+      definedDueLabel([php('30.00', '1.50'), loan({ goalCurrency: 'USD' })], 'waiting', 'ch'),
+    ).toBeNull();
+    expect(definedDueLabel([php('30.00', null)], 'waiting', 'ch')).toBeNull();
+    expect(definedDueLabel([], 'payable', 'ch')).toBeNull();
   });
 });

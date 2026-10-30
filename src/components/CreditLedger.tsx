@@ -37,6 +37,8 @@ import {
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
+ * A due line whose giver cannot receive yet (`waiting`) reads **Waiting**, in
+ * muted type, under a line that names that giver.
  * `onLedger` hears every loaded ledger (the first read and
  * each refresh), so the loan block above can show the paid-back share without
  * a second request.
@@ -61,7 +63,7 @@ export function CreditLedger({
     messageId: string;
     ledger: RepaymentLedger;
   } | null>(null);
-  const ledger = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
+  const current = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
   useEffect(() => {
     let cancel = false;
     void getRepayment(messageId).then((row) => {
@@ -74,12 +76,12 @@ export function CreditLedger({
     };
   }, [messageId]);
   useEffect(() => {
-    if (ledger !== null) {
-      onLedger?.(ledger);
+    if (current !== null) {
+      onLedger?.(current);
     }
-  }, [ledger, onLedger]);
+  }, [current, onLedger]);
   useEffect(() => {
-    if (ledger === null || !ledger.repayments.some((row) => row.status === 'due')) {
+    if (current === null || !current.repayments.some((row) => row.status === 'due')) {
       return;
     }
     let cancel = false;
@@ -94,10 +96,11 @@ export function CreditLedger({
       cancel = true;
       clearInterval(timer);
     };
-  }, [ledger, messageId]);
-  if (ledger === null) {
+  }, [current, messageId]);
+  if (current === null) {
     return null;
   }
+  const ledger = withWaiting(current);
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
   const spot: SpotPair = { rateDay, visitorFiat };
   return (
@@ -242,17 +245,28 @@ function DayGroups({
                 key={`${row.dayIndex}:${row.accountId}`}
                 className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
               >
-                <span className="min-w-0 truncate text-sm text-app-fg">
-                  {giverLabel(row.name, row.username, row.accountId)}
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-app-fg">
+                    {giverLabel(row.name, row.username, row.accountId)}
+                  </span>
+                  {row.waiting === true ? (
+                    <span className="block text-xs text-app-muted">
+                      {t('loans.waitingFor', {
+                        name: giverLabel(row.name, row.username, row.accountId),
+                      })}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
                   <span className="text-right text-sm tabular-nums text-app-fg">
                     {rowAmount(row, fiat, numberFormat, spot)}
                   </span>
                   <span
-                    className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
+                    className={`whitespace-nowrap text-right text-xs font-medium ${
+                      row.waiting === true ? 'text-app-muted' : statusClass(row.status)
+                    }`}
                   >
-                    {t(statusKey(row.status))}
+                    {t(lineStatusKey(row))}
                   </span>
                 </span>
               </li>
@@ -405,6 +419,15 @@ function LongRepayment({
                   split: splitText(month.usualGroup.rows, fiat, numberFormat, spot),
                 })}
               </p>
+              {month.usualGroup.rows
+                .filter((row) => row.waiting === true)
+                .map((row) => (
+                  <p key={row.accountId} className="mt-1 text-xs text-app-muted">
+                    {t('loans.waitingFor', {
+                      name: giverLabel(row.name, row.username, row.accountId),
+                    })}
+                  </p>
+                ))}
               {month.exceptions.length > 0 ? (
                 <DayGroups
                   groups={month.exceptions}
@@ -459,20 +482,12 @@ function rowsStatus(rows: readonly RepaymentLine[]): RepaymentLine['status'] {
   return 'scheduled';
 }
 
-function sharedStatus(rows: readonly RepaymentLine[]): RepaymentLine['status'] | null {
-  const first = rows[0]!;
-  if (rows.every((row) => row.status === first.status)) {
-    return first.status;
-  }
-  return null;
-}
-
 function monthCountLabel(count: number, rows: readonly RepaymentLine[], t: Translate): string {
-  const status = sharedStatus(rows);
-  if (status === null) {
+  const key = lineStatusKey(rows[0]!);
+  if (!rows.every((row) => lineStatusKey(row) === key)) {
     return t('forum.creditDaysCount', { count });
   }
-  return t('forum.creditMonthDays', { count, status: t(statusKey(status)) });
+  return t('forum.creditMonthDays', { count, status: t(key) });
 }
 
 function uniformDay(groups: readonly DayGroup[], fiat: FiatCode | null): DayGroup | null {
@@ -496,15 +511,22 @@ function dayTotalKey(rows: readonly RepaymentLine[], fiat: FiatCode | null): num
 function daySignature(rows: readonly RepaymentLine[], fiat: FiatCode | null): string {
   return rows
     .map((row) =>
-      fiat !== null ? `${row.accountId}\u0000${row.amount}` : `${row.accountId}\u0000${row.sats}`,
+      fiat !== null
+        ? `${row.accountId}\u0000${row.amount}\u0000${row.waiting === true}`
+        : `${row.accountId}\u0000${row.sats}\u0000${row.waiting === true}`,
     )
     .sort()
     .join('\u0001');
 }
 
 function usualGroupIndex(groups: readonly DayGroup[], fiat: FiatCode | null): number {
+  const waits = (group: DayGroup): boolean => group.rows.some((row) => row.waiting === true);
+  const skipWaiting = groups.some((group) => !waits(group));
   const counts = new Map<string, { count: number; index: number }>();
   groups.forEach((group, index) => {
+    if (skipWaiting && waits(group)) {
+      return;
+    }
     const key = daySignature(group.rows, fiat);
     const seen = counts.get(key);
     if (seen === undefined) {
@@ -637,6 +659,24 @@ function monthsOf(groups: readonly DayGroup[]): { key: string; groups: DayGroup[
   return months;
 }
 
+/**
+ * Marks a due line whose giver cannot receive as waiting when the api did not
+ * send `waiting` (the rule of `dueShares`).
+ */
+function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
+  const cannotReceive = new Set(
+    ledger.givers.filter((giver) => !giver.canReceive).map((giver) => giver.accountId),
+  );
+  return {
+    ...ledger,
+    repayments: ledger.repayments.map((row) =>
+      row.waiting !== undefined || row.status !== 'due'
+        ? row
+        : { ...row, waiting: cannotReceive.has(row.accountId) },
+    ),
+  };
+}
+
 function giverLabel(name: string, username: string | null, accountId: string): string {
   if (name !== '' && username !== null) {
     return `${name} @${username}`;
@@ -648,6 +688,10 @@ function giverLabel(name: string, username: string | null, accountId: string): s
     return `@${username}`;
   }
   return accountId.slice(0, 8);
+}
+
+function lineStatusKey(row: RepaymentLine): MessageKey {
+  return row.waiting === true ? 'forum.creditStatusWaiting' : statusKey(row.status);
 }
 
 function statusKey(status: RepaymentLine['status']): MessageKey {

@@ -155,6 +155,36 @@ describe('CreditLedger', () => {
     expect(screen.getByText('Still owed')).toBeTruthy();
   });
 
+  it('marks a due line that waits for the giver wallet in muted type', async () => {
+    ledger({
+      ...btc,
+      repayments: btc.repayments.map((row) =>
+        row.status === 'due' ? { ...row, waiting: true } : row,
+      ),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    const lines = await screen.findAllByText(/^Waiting for .+ to set up their wallet$/);
+    expect(lines.length).toBe(btc.repayments.filter((row) => row.status === 'due').length);
+    for (const line of lines) {
+      expect(line.className).toContain('text-app-muted');
+    }
+    const status = screen.getAllByText('Waiting', { exact: true });
+    expect(status.length).toBe(lines.length);
+    expect(status[0]!.className).toContain('text-app-muted');
+  });
+
+  it('marks a due line as waiting from the giver when the api sends no waiting flag', async () => {
+    ledger({
+      ...btc,
+      givers: btc.givers.map((giver) => ({ ...giver, canReceive: giver.name !== 'Bea' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Waiting for Bea @bea to set up their wallet')).toBeTruthy();
+    expect(screen.getAllByText('Waiting', { exact: true })).toHaveLength(1);
+    expect(screen.queryByText('Due', { exact: true })).toBeNull();
+    expect(document.body.textContent).toContain('Scheduled');
+  });
+
   it('shows a repayment list link and hides the day rows', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" />);
@@ -611,7 +641,7 @@ describe('CreditLedger', () => {
       const onLedger = vi.fn();
       renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
       expect(await screen.findByText('Given')).toBeTruthy();
-      expect(onLedger).toHaveBeenCalled();
+      await waitFor(() => expect(onLedger).toHaveBeenCalled());
       expect(
         onLedger.mock.calls
           .at(-1)?.[0]
@@ -711,6 +741,62 @@ describe('CreditLedger', () => {
     expect(await screen.findByText('Next repayment')).toBeTruthy();
     expect(screen.getAllByText('Due').length).toBeGreaterThan(0);
     expect(document.body.textContent).not.toContain('8 days · Due');
+  });
+
+  it('lists a later waiting day of a long plan with its waiting line', async () => {
+    const plan = longPlan({ status: (day) => (day < 3 ? 'due' : 'scheduled') });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.dayIndex > 0 && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
+  it('lists the waiting days of a month apart even when most of its days wait', async () => {
+    const plan = longPlan({
+      status: (day) => (day < 6 ? 'due' : 'scheduled'),
+      cyrillAmount: () => '40.00',
+    });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet').length,
+    ).toBeGreaterThanOrEqual(6);
+  });
+
+  it('names the waiting lender under the usual split when every day has a waiting share', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({ ...row, waiting: row.name === 'Yorelene' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
+  it('names a month waiting when every share of it waits', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({ ...plan, repayments: plan.repayments.map((row) => ({ ...row, waiting: true })) });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('8 days · Waiting');
   });
 
   it('prices a long bitcoin plan in bitcoin across two months', async () => {
