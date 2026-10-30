@@ -211,6 +211,39 @@ async function footerAtRest(page: Page): Promise<void> {
 }
 
 /**
+ * Centers `locator` in the app scrollport and waits until it stays there. A photo pick or typing
+ * leaves the page at a scroll offset of its own, and Receive / Send settle on a timer after each
+ * scroll, so one `scrollIntoView` can land a few px or a whole row apart from one run to the next.
+ * Starting from the top gives every run the same scroll direction; centering again until the box
+ * stops moving waits out anything that reflows after the first scroll.
+ *
+ * @param locator - Element to center.
+ */
+async function centerAtRest(locator: Locator): Promise<void> {
+  const page = locator.page();
+  await locator.evaluate((node) => {
+    for (let box = node.parentElement; box !== null; box = box.parentElement) {
+      box.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  });
+  await motionSettled(page);
+  await footerAtRest(page);
+  let previous = Number.NaN;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await locator.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+    await motionSettled(page);
+    await footerAtRest(page);
+    const top = await locator.evaluate((node) => Math.round(node.getBoundingClientRect().top));
+    if (top === previous) {
+      return;
+    }
+    previous = top;
+  }
+  throw new Error('The element did not come to rest.');
+}
+
+/**
  * Types an amount into a gift amount field the way a tap does: the field takes the focus without a
  * scroll of its own, the app reveals it (`AppHeightSync`), and the value is typed once the page has
  * come to rest. Letting `fill` scroll the field into view first races that reveal while the footer
@@ -21428,8 +21461,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'unsupported');
     const error = page.getByText('Use a JPEG, PNG, or WebP photo');
     await expect(error).toBeVisible();
-    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the pick left.
-    await error.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+    await centerAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
   });
 
@@ -21448,8 +21480,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the pick left.
-    await error.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+    await centerAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -34139,10 +34170,7 @@ test.describe('shops screens', () => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopTextNotLongerError(page);
-    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the typing left.
-    await page
-      .getByText('The shop text must be longer than the shop name.')
-      .evaluate((node) => node.scrollIntoView({ block: 'center' }));
+    await centerAtRest(page.getByText('The shop text must be longer than the shop name.'));
     await shotScreen(page, 'state-shops-table-edit-text-not-longer');
   });
 
