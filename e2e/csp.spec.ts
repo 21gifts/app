@@ -151,7 +151,7 @@ test('Function: buildCsp — public pages run under the enforced policy without 
     const response = await page.goto(path);
     expect(response?.headers()[ENFORCED], path).toContain("'strict-dynamic'");
     await expect(page.locator('main').first(), path).toBeVisible();
-    await page.waitForLoadState('load');
+    await page.waitForLoadState('networkidle');
     expect(await violations(), path).toEqual([]);
   }
 });

@@ -21,11 +21,14 @@ build placeholder). The middleware reads it on every request, so one image
 switches from report-only to enforced by setting `CSP_MODE=enforce` and
 recreating the container. Unset needs no deployment change.
 
-The Playwright build runs with `CSP_MODE=enforce` (`playwright.config.ts`),
-so every e2e spec runs under the enforced policy. `e2e/csp.spec.ts` loads the
-public pages (`/`, `/handbook`, `/login`, `/welcome`, `/about`, `/stats`,
-`/donate`, `/legal`, `/terms`) signed out and fails on any
-`securitypolicyviolation`.
+The Playwright server starts with `CSP_MODE=enforce` (`playwright.config.ts`),
+so every e2e spec runs under the enforced policy. CI always starts a fresh
+server; a local run that reuses a server already on port 3000 keeps that
+server's mode. `e2e/csp.spec.ts` loads the public pages (`/`, `/handbook`,
+`/login`, `/welcome`, `/about`, `/stats`, `/donate`, `/legal`, `/terms`)
+signed out, waits until the network is idle, and fails on any
+`securitypolicyviolation` the page's document reports. The app embeds no
+frame (`frame-src 'none'`), and these pages start no worker.
 
 ## Reports
 
