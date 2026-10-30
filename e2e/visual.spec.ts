@@ -21123,7 +21123,8 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'unsupported');
     const error = page.getByText('Use a JPEG, PNG, or WebP photo');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    // A fixed position: scrollIntoViewIfNeeded keeps whatever offset the pick left.
+    await error.evaluate((node) => node.scrollIntoView({ block: 'center' }));
     await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
   });
 
@@ -25243,6 +25244,10 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Edit location' }).click();
     await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
     await expect(page.getByText('Not set')).toHaveCount(0);
+    // A fixed position: the focused field otherwise keeps a timing-dependent scroll offset.
+    await page
+      .getByRole('textbox', { name: 'Location' })
+      .evaluate((node) => node.scrollIntoView({ block: 'center' }));
     await shotScreen(page, 'state-members-location-editing');
   });
 
