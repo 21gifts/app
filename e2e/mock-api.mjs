@@ -1570,6 +1570,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // The app proxy asks for the api-form shop photo as `photo.jpg` (public-shop.spec.ts).
+  if (method === 'GET' && pathName === `/messages/${SHOP_PHOTO_MESSAGE_ID}/photo.jpg`) {
+    const bytes = fs.readFileSync(new URL('./fixtures/technical-note.jpg', import.meta.url));
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'cache-control': 'public, max-age=86400',
+      'access-control-allow-origin': '*',
+    });
+    res.end(bytes);
+    return;
+  }
+
   const photoMatch = pathName.match(/^\/messages\/([^/]+)\/photo$/);
   if (method === 'GET' && photoMatch) {
     const id = decodeURIComponent(photoMatch[1]);
@@ -1578,10 +1590,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 404, { error: 'Not found' });
       return;
     }
-    const bytes =
-      id === SHOP_PHOTO_MESSAGE_ID
-        ? fs.readFileSync(new URL('./fixtures/technical-note.jpg', import.meta.url))
-        : forumPhotos.get(id);
+    const bytes = forumPhotos.get(id);
     if (bytes === undefined) {
       json(res, 404, { error: 'Not found' });
       return;
