@@ -126,7 +126,7 @@ describe('HabitComments', () => {
       onDeleteComment,
       onPayOpen,
       onPaySubmit,
-      ratePending: true,
+      payError: 'loading',
       payCommentId: 'c-other',
       habit: habit([otherComment]),
     });
@@ -138,7 +138,24 @@ describe('HabitComments', () => {
     expect(onDeleteComment).toHaveBeenCalledWith('c-other');
     fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
     expect(onPayOpen).toHaveBeenCalledWith('c-other');
-    expect(screen.getByRole('button', { name: 'Continue' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(cont.disabled).toBe(true);
+    fireEvent.submit(cont.closest('form')!);
+    expect(onPaySubmit).not.toHaveBeenCalled();
+  });
+
+  it('holds Continue on the gift sheet while the rate request is still loading', () => {
+    const onPaySubmit = vi.fn();
+    renderComments({
+      onPaySubmit,
+      ratePending: true,
+      payCommentId: 'c-other',
+      habit: habit([otherComment]),
+    });
+    const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(cont.disabled).toBe(true);
+    fireEvent.submit(cont.closest('form')!);
     expect(onPaySubmit).not.toHaveBeenCalled();
   });
 

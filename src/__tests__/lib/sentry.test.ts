@@ -1342,7 +1342,8 @@ describe('forwardCspReport', () => {
     vi.stubGlobal('fetch', fetchMock);
     const app = resolve(__dirname, '../../app');
     const routes = readdirSync(app, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
+      // A dynamic root segment such as `[npub]` is not a literal page name.
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('['))
       .flatMap((entry) =>
         entry.name.startsWith('(')
           ? readdirSync(resolve(app, entry.name), { withFileTypes: true })

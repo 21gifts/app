@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const NAME_INVALID = 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.';
+const NAME_INVALID =
+  'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.';
 
 type FakeWebAuthnOptions = {
   createThrows?: boolean;
@@ -242,7 +243,7 @@ test('passkey name empty and invalid values do not open the passkey dialog', asy
 
   for (const value of ['.ada', '_', 'a b']) {
     await page.getByRole('textbox', { name: 'Name' }).fill(value);
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expectRejected();
   }
 });

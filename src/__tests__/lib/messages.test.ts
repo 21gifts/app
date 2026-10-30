@@ -122,7 +122,7 @@ describe('getCatalog', () => {
   it('says the @21.gifts address ends with the service while the 12 words keep the Bitcoin', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
-      for (const key of ['about.conv2Body', 'home.why3Body'] as const) {
+      for (const key of ['about.conv2Body', 'home.why2Body'] as const) {
         expect(catalog[key], `${locale}.${key}`).toContain('@21.gifts');
         expect(catalog[key], `${locale}.${key}`).toContain('12');
       }
@@ -151,12 +151,6 @@ describe('getCatalog', () => {
     expect(getCatalog('en')['wallet.phraseWarning']).toContain('whole account');
   });
 
-  it('prefixes home.step2BodyAfter with a period in every locale', () => {
-    for (const locale of LOCALES) {
-      expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
-    }
-  });
-
   it('contains no visitor-facing sats unit except home.faq8A', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
@@ -164,7 +158,7 @@ describe('getCatalog', () => {
         if (key === 'home.faq8A') {
           continue;
         }
-        expect(value, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
+        expect(value, `${locale}.${key}`).not.toMatch(/\b(?:sats?|satoshis?)\b/i);
       }
     }
   });

@@ -316,7 +316,9 @@ app/
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
 │   │   ├── ShopsCountryFilter.tsx # Country select above that pill (All countries + countries with shops)
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
-│   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── PlaceField.tsx       # Place pin on the forum composer; shop place-and-address dialog
+│   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
+│   │   ├── PlacePinChip.tsx     # Confirmed composer place with remove control
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
@@ -367,6 +369,7 @@ app/
 │   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
+│   │   ├── countries.ts         # ISO country codes + localized country option labels
 │   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
 │   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder, CSP report forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -419,7 +422,7 @@ app/
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
-│   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
+│   │   ├── forum-shop.ts        # API-matching shop validation rules, error mapping, and #21GiftsShop helpers
 │   │   ├── shop-country.ts      # /shops ?country= read and the country list with shop counts
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
@@ -603,6 +606,36 @@ width is the phone, which is wider than the padded column, and that is what shif
 `scripts/check-scrollports.mjs` fails lint on those widths. Every visual screenshot runs
 `pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll
 sideways.
+
+### Input feedback while entering (hard requirement)
+
+Every rule the API enforces on a user-entered field is checked in the app while
+the user enters data (on change, at the latest on blur). The message sits
+directly under that field, which has `aria-invalid="true"` and
+`aria-describedby` pointing to the message. When two fields share a row (for
+example street and house number), their messages sit directly under that row
+in field order, and each message names its field.
+
+The step or submit button is disabled while a rule is broken, and the reason is
+visible: the field message, or a summary line beside the button when that field
+is not on screen. Messages state what is wrong and how to fix it, including the
+concrete limit (for example, **4 digits for Switzerland**), never only **Check
+the X**.
+
+A server 400 is fallback only. Map a known API reason to its field or step and
+show that reason there; never replace a known reason with generic **Could not
+save** copy. Client rules live in shared API-mirroring helpers such as
+`src/lib/forum-shop.ts`, with unit tests that pin the same limits.
+
+The shop forms (and shop notes typed in the living-room composer), the profile
+and account forms (including the username in `UsernameForm` and `LoginCard`),
+ordinary living-room posts and the Ask wizard text, the living-room place name,
+replies, the pay sheet, contact, inbox, POS, the pay link, daily payments, and
+habits follow this rule.
+
+Forms must not hide fields with errors inside a small inner scroll area. A form
+that needs more room uses a dialog or sheet and still follows **One scroll
+surface**.
 
 ### Components
 
@@ -798,11 +831,11 @@ no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or oth
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
 is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
 job, behavioral specs in three parallel shard jobs (`chromium` project,
-`--shard=1/3` to `3/3`), and pixel compare in eight parallel visual shard jobs
-(each of the four visual combos in two shards, `--shard=1/2` and `2/2`). The
+`--shard=1/3` to `3/3`), and pixel compare in twelve parallel visual shard jobs
+(each of the four visual combos in three shards, `--shard=1/3` to `3/3`). The
 E2E (behavior) job and the four Visual (<combo>) jobs run no tests. E2E
 (behavior) is green only when every behavior shard is green, and each Visual
-(<combo>) job only when all eight visual shards are green.
+(<combo>) job only when all twelve visual shards are green.
 `npm run e2e:behavior` and `npm run e2e:visual` still run the whole suite
 locally.
 
@@ -884,7 +917,7 @@ unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or
 `## Function: <Name>` section and an e2e `Function: <Name>` needle, not a
 screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
-combo projects in eight parallel shard jobs on every PR (each with a 10-minute budget) so
+combo projects in twelve parallel shard jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
 A PR's snapshot diff must contain only screens whose intended appearance
@@ -936,16 +969,16 @@ CI will fail on the same conditions; catching them locally is faster.
 ### A38
 
 This repository requires A38 according to the canonical A38 standard in
-[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/1b153cdf7a1ac3687ba98cad7d323743050fb54b/docs/a38.md)
-at commit `1b153cdf7a1ac3687ba98cad7d323743050fb54b`. Repo job selection:
+[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/b421c4a7c957738187aa620a44e2f115dd939bd1/docs/a38.md)
+at commit `b421c4a7c957738187aa620a44e2f115dd939bd1`. Repo job selection:
 `.github/a38.json`. Target-branch applicability and fork workflow approval:
 `.github/pr-guard.json`. `dfx pr guard` is
-[wired in](https://github.com/DFXswiss/agent/blob/1b153cdf7a1ac3687ba98cad7d323743050fb54b/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
+[wired in](https://github.com/DFXswiss/agent/blob/b421c4a7c957738187aa620a44e2f115dd939bd1/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
 
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,
 Vitest with the coverage gate, the production build, Playwright behavior, and
-the eight visual shard jobs). A38 does not replace those GitHub checks. The author
+the twelve visual shard jobs). A38 does not replace those GitHub checks. The author
 report only covers the light local job in `.github/a38.json` (`npm run lint`
 on Node 22). Do not run Vitest, the production build, or Playwright locally
 for A38.
@@ -953,8 +986,16 @@ for A38.
 Draft pull requests run the GitHub CI jobs. GitHub holds fork runs from
 external contributors as `action_required`. Ready does not start CI. After a
 fresh A38 enforce pass on the current head, `dfx pr guard` approves those
-waiting initial runs, then sets Ready when the required GitHub jobs are green
-and the PR is mergeable. The newest well-formed second review comment that
+waiting initial runs, then sets Ready when the review rule below is met, the
+required GitHub jobs are green, and the PR is mergeable.
+
+Two reviews are required before Ready. One review is enough only when the
+pull request opener is listed in one_review_authors in the trusted
+.github/pr-guard.json on the default branch. A missing file, a missing key,
+or an empty list keeps two reviews required. An entry that exists only on
+the pull request head does not count.
+
+The newest well-formed second review comment that
 covers the current head returns a Ready pull request to draft when its
 `blocks_merge` is true and it counts at least one defect; a newer well-formed
 second review with `blocks_merge` false clears that. The merger does not click
@@ -1225,14 +1266,14 @@ performance traces, both through its scrubber.
 
 ## CI / CD
 
-| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`) + four Visual (<combo>) jobs, green only when all eight visual shards are green; **10 minutes each**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                      |
-| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                   |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                               |
-| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                           |
+| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + twelve visual shard jobs (`Visual (<combo>, shard 1/3)` to `3/3`) + four Visual (<combo>) jobs, green only when all twelve visual shards are green; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                 |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                       |
+| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                    |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                                |
+| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                            |
 
 Images target `linux/arm64`. Every deploy passes the build-arg
 `NEXT_PUBLIC_BUILD_ID` as the full commit SHA (`github.sha`), read by the

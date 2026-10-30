@@ -964,7 +964,7 @@ describe('InboxScreen', () => {
     expect(incoming.className).toContain('bg-app-card-muted');
     expect(incoming.className).not.toContain('bg-app-btn');
     expect(incoming.className).not.toContain('self-end');
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.queryByText('Enter a message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Next' } });
     expect(onDraftChange).toHaveBeenCalledWith('Next');
@@ -1398,6 +1398,55 @@ describe('InboxScreen', () => {
     expect(screen.getByText('₿21')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '7' } });
+  });
+
+  it('names the loading rate and the missing rate on the composer', () => {
+    const { rerender } = renderWithLocale(
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError="loading"
+        showFilter={false}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('The USD exchange rate is still loading.');
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <InboxScreen
+            conversations={[DIRECT]}
+            error={false}
+            loading={false}
+            onRetry={() => undefined}
+            openId="conv-2"
+            onOpen={() => undefined}
+            messages={[MESSAGE]}
+            messagesLoading={false}
+            messagesError={false}
+            onRetryMessages={() => undefined}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            posting={false}
+            formError="noRate"
+            showFilter={false}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('No USD exchange rate yet.');
   });
 
   it('hides the Amount field when showAmount is false', () => {

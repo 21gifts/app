@@ -27,8 +27,10 @@ server; a local run that reuses a server already on port 3000 keeps that
 server's mode. `e2e/csp.spec.ts` loads `/404` and every route without a URL
 parameter that a signed-out visitor can open (`PUBLIC_PAGES`), waits until
 the network is idle, and fails on any `securitypolicyviolation` the page's
-document reports. The app embeds no frame (`frame-src 'none'`), and these
-pages start no worker. A new public route belongs in `PUBLIC_PAGES`.
+document reports. The app embeds no frame (`frame-src 'none'`). The only
+worker is MapLibre's `blob:` vector renderer of the shop map on `/` and its
+language URLs; a violation inside a worker does not reach the document's
+listener. A new public route belongs in `PUBLIC_PAGES`.
 
 ## Reports
 
@@ -66,7 +68,10 @@ nothing is sent.
   middleware sets on the request). The root layout puts it on its three
   inline bootstrap scripts (app height, theme, Sunday rest). The JSON-LD block
   is data, not script, and needs none. `'strict-dynamic'` lets those
-  nonce'd scripts load the next chunks, the wallet SDK, and the map script.
+  nonce'd scripts load the next chunks, the wallet SDK, and the map scripts:
+  the Google map script and, on `/`, the MapLibre script of the public shop
+  map (`https://unpkg.com/maplibre-gl@<version>/dist/maplibre-gl.js`), which
+  `HomeShops` inserts with the page's nonce copied from the page's own scripts.
 - **HTML rewritten in front of the app:** the policy only holds for the
   HTML the app sends. A CDN or proxy feature that rewrites the HTML on its
   way to the browser and adds a `<script>` element is blocked, because that
@@ -88,38 +93,41 @@ code, because the SDK does not connect without a real Breez API key;
 **vendor** means taken from Google's documented requirements for the Maps
 JavaScript API, because the local run had no valid map key.
 
-| Directive         | Source                         | Needed for                                                                                                   | Found by  |
-| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ | --------- |
-| `default-src`     | `'self'`                       | Fallback for every directive not listed                                                                      | —         |
-| `script-src`      | `'self'`                       | Fallback for browsers without `'strict-dynamic'` (ignored by those that support it)                          | —         |
-| `script-src`      | `'strict-dynamic'`             | Next.js chunks, the wallet SDK module, and the map script, all loaded by nonce'd scripts                     | run       |
-| `script-src`      | `'wasm-unsafe-eval'`           | Compiling the wallet SDK's WebAssembly module (`WebAssembly.instantiateStreaming`)                           | run, SDK  |
-| `style-src`       | `'self'`                       | The app's CSS files (Tailwind, `next/font`)                                                                  | run       |
-| `style-src`       | `'unsafe-inline'`              | Server-rendered `style` attributes; `<style>` elements the map script inserts                                | run       |
-| `style-src`       | `https://fonts.googleapis.com` | Font stylesheet the map script loads for its labels                                                          | vendor    |
-| `img-src`         | `'self'`                       | Icons, handbook images, and every member photo (same-origin proxies)                                         | run       |
-| `img-src`         | `data:`                        | QR codes (profile, till, pay link, wallet) and other images the app draws itself                             | run       |
-| `img-src`         | `blob:`                        | Photos held in the browser as object URLs: the menu's account photo, previews before upload                  | run       |
-| `img-src`         | `https://*.googleapis.com`     | Map tiles and static map images                                                                              | run       |
-| `img-src`         | `https://*.gstatic.com`        | Map markers, cursors, and controls                                                                           | run       |
-| `img-src`         | `https://*.ggpht.com`          | Map place photos                                                                                             | vendor    |
-| `font-src`        | `'self'`                       | The Outfit font, served by `next/font` from the app                                                          | run       |
-| `font-src`        | `https://fonts.gstatic.com`    | Font files of the map labels                                                                                 | vendor    |
-| `media-src`       | `'self'`                       | Forum videos (same-origin proxy)                                                                             | run       |
-| `media-src`       | `blob:`                        | Videos held in the browser as object URLs, such as a preview before upload                                   | run       |
-| `connect-src`     | `'self'`                       | Every api call (same-origin proxy), the error-report tunnel, and the report route                            | run       |
-| `connect-src`     | `https:`                       | Wallet SDK and maps (see the next table); any receiver's Lightning-address server, which is not a fixed host | run, SDK  |
-| `connect-src`     | `wss://nr1.breez.technology`   | Wallet SDK: Nostr relay                                                                                      | SDK       |
-| `connect-src`     | `wss://relay.damus.io`         | Wallet SDK: Nostr relay                                                                                      | SDK       |
-| `connect-src`     | `wss://relaypag.es`            | Wallet SDK: Nostr relay                                                                                      | SDK       |
-| `worker-src`      | `'self'`                       | The push service worker `/sw.js`                                                                             | code      |
-| `worker-src`      | `blob:`                        | The map's vector renderer                                                                                    | vendor    |
-| `manifest-src`    | `'self'`                       | The web app manifest                                                                                         | code      |
-| `frame-src`       | `'none'`                       | The app embeds no frame                                                                                      | run, code |
-| `object-src`      | `'none'`                       | No plugins                                                                                                   | —         |
-| `base-uri`        | `'none'`                       | No `<base>` element; an injected one cannot redirect relative URLs                                           | —         |
-| `form-action`     | `'self'`                       | Forms post only to the app                                                                                   | —         |
-| `frame-ancestors` | `'none'`                       | No other site may frame the app                                                                              | —         |
+| Directive         | Source                             | Needed for                                                                                                                                                           | Found by  |
+| ----------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `default-src`     | `'self'`                           | Fallback for every directive not listed                                                                                                                              | —         |
+| `script-src`      | `'self'`                           | Fallback for browsers without `'strict-dynamic'` (ignored by those that support it)                                                                                  | —         |
+| `script-src`      | `'strict-dynamic'`                 | Next.js chunks, the wallet SDK module, the Google map script, and the MapLibre script from `unpkg.com` (inserted with the page nonce), all loaded by nonce'd scripts | run       |
+| `script-src`      | `'wasm-unsafe-eval'`               | Compiling the wallet SDK's WebAssembly module (`WebAssembly.instantiateStreaming`)                                                                                   | run, SDK  |
+| `style-src`       | `'self'`                           | The app's CSS files (Tailwind, `next/font`)                                                                                                                          | run       |
+| `style-src`       | `'unsafe-inline'`                  | Server-rendered `style` attributes; `<style>` elements the map script inserts                                                                                        | run       |
+| `style-src`       | `https://fonts.googleapis.com`     | Font stylesheet the map script loads for its labels                                                                                                                  | vendor    |
+| `style-src`       | `https://unpkg.com`                | MapLibre stylesheet of the public shop map on `/` (`maplibre-gl.css`, pinned version)                                                                                | run, code |
+| `img-src`         | `'self'`                           | Icons, handbook images, every member photo, and the photos of a public shop page (same-origin proxies)                                                               | run       |
+| `img-src`         | `data:`                            | QR codes (profile, till, pay link, wallet) and other images the app draws itself                                                                                     | run       |
+| `img-src`         | `blob:`                            | Photos held in the browser as object URLs: the menu's account photo, previews before upload                                                                          | run       |
+| `img-src`         | `https://*.googleapis.com`         | Map tiles and static map images                                                                                                                                      | run       |
+| `img-src`         | `https://*.gstatic.com`            | Map markers, cursors, and controls                                                                                                                                   | run       |
+| `img-src`         | `https://*.ggpht.com`              | Map place photos                                                                                                                                                     | vendor    |
+| `img-src`         | `https://api.opencryptopay.io`     | Shop cover photos in the public shop map popup on `/` (production map API)                                                                                           | run, code |
+| `img-src`         | `https://dev-api.opencryptopay.io` | Shop cover photos in the public shop map popup on `/` (DEV map API)                                                                                                  | run, code |
+| `font-src`        | `'self'`                           | The Outfit font, served by `next/font` from the app                                                                                                                  | run       |
+| `font-src`        | `https://fonts.gstatic.com`        | Font files of the map labels                                                                                                                                         | vendor    |
+| `media-src`       | `'self'`                           | Forum videos (same-origin proxy)                                                                                                                                     | run       |
+| `media-src`       | `blob:`                            | Videos held in the browser as object URLs, such as a preview before upload                                                                                           | run       |
+| `connect-src`     | `'self'`                           | Every api call (same-origin proxy), the error-report tunnel, and the report route                                                                                    | run       |
+| `connect-src`     | `https:`                           | Wallet SDK and maps (see the next table); any receiver's Lightning-address server, which is not a fixed host                                                         | run, SDK  |
+| `connect-src`     | `wss://nr1.breez.technology`       | Wallet SDK: Nostr relay                                                                                                                                              | SDK       |
+| `connect-src`     | `wss://relay.damus.io`             | Wallet SDK: Nostr relay                                                                                                                                              | SDK       |
+| `connect-src`     | `wss://relaypag.es`                | Wallet SDK: Nostr relay                                                                                                                                              | SDK       |
+| `worker-src`      | `'self'`                           | The push service worker `/sw.js`                                                                                                                                     | code      |
+| `worker-src`      | `blob:`                            | The map's vector renderer                                                                                                                                            | vendor    |
+| `manifest-src`    | `'self'`                           | The web app manifest                                                                                                                                                 | code      |
+| `frame-src`       | `'none'`                           | The app embeds no frame                                                                                                                                              | run, code |
+| `object-src`      | `'none'`                           | No plugins                                                                                                                                                           | —         |
+| `base-uri`        | `'none'`                           | No `<base>` element; an injected one cannot redirect relative URLs                                                                                                   | —         |
+| `form-action`     | `'self'`                           | Forms post only to the app                                                                                                                                           | —         |
+| `frame-ancestors` | `'none'`                           | No other site may frame the app                                                                                                                                      | —         |
 
 ### Hosts behind `connect-src https:`
 
@@ -143,6 +151,9 @@ where a script could send data. The hosts the app is known to reach:
 | `https://cloudflare-dns.com`              | Wallet SDK: DNS lookup of `₿name@domain` addresses       | SDK      |
 | `https://<receiver domain>`               | Wallet SDK: the receiver's Lightning-address server      | SDK      |
 | `https://maps.googleapis.com`             | Map script: map data and its load check                  | run      |
+| `https://tiles.openfreemap.org`           | Public shop map on `/`: MapLibre style, tiles, and fonts | code     |
+| `https://api.opencryptopay.io`            | Public shop map on `/`: shop places and their filters    | code     |
+| `https://dev-api.opencryptopay.io`        | Public shop map on `/` outside 21.gifts: the same data   | code     |
 
 ## How the list was built
 

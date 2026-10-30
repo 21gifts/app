@@ -176,6 +176,7 @@ beforeEach(() => {
     retry: vi.fn(),
     cancel,
     error: null,
+    clearNameError: vi.fn(),
     recoveryPending: false,
     nameError: null,
   });
@@ -502,6 +503,33 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
   });
 
+  it('resyncs again when the service worker reports a subscription change', async () => {
+    cleanup();
+    vi.mocked(resyncPushSubscription).mockClear();
+    const worker = new EventTarget();
+    vi.stubGlobal('navigator', { serviceWorker: worker });
+    const { unmount } = renderWithLocale(<SignedInChrome />);
+    await waitFor(() => {
+      expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(1);
+    });
+    worker.dispatchEvent(new MessageEvent('message', { data: null }));
+    worker.dispatchEvent(new MessageEvent('message', { data: 'other' }));
+    worker.dispatchEvent(new MessageEvent('message', { data: {} }));
+    worker.dispatchEvent(new MessageEvent('message', { data: { type: '21gifts-push-open' } }));
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(1);
+    vi.mocked(resyncPushSubscription).mockRejectedValueOnce(new Error('boom'));
+    worker.dispatchEvent(
+      new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
+    );
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenLastCalledWith('tok', true);
+    unmount();
+    worker.dispatchEvent(
+      new MessageEvent('message', { data: { type: '21gifts-push-subscription-change' } }),
+    );
+    expect(vi.mocked(resyncPushSubscription)).toHaveBeenCalledTimes(2);
+  });
+
   it('does not resync push when there is no session', () => {
     cleanup();
     vi.mocked(resyncPushSubscription).mockClear();
@@ -526,7 +554,9 @@ describe('SignedInChrome', () => {
   it('asks for OS permission when Notifications is opened without grant', () => {
     vi.mocked(enablePush).mockClear();
     vi.stubGlobal('Notification', { permission: 'default' });
-    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    });
     vi.stubGlobal('PushManager', function PushManager() {});
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -538,7 +568,9 @@ describe('SignedInChrome', () => {
     vi.mocked(enablePush).mockClear();
     vi.mocked(resyncPushSubscription).mockClear();
     vi.stubGlobal('Notification', { permission: 'default' });
-    vi.stubGlobal('navigator', { serviceWorker: {} });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { addEventListener: vi.fn(), removeEventListener: vi.fn() },
+    });
     const original = window.PushManager;
     // @ts-expect-error coverage: missing PushManager
     delete window.PushManager;
@@ -971,6 +1003,58 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('absolute');
     } finally {
       restore();
+    }
+  });
+
+  it('keeps the iOS install sheet when a tall wide menu closes, and measures again on reopen', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    let bottom = 751;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return { top: 0, bottom, toJSON: () => ({}) } as DOMRect;
+    };
+    const host = document.createElement('div');
+    host.setAttribute('data-menu-sheet-host', '');
+    document.body.append(host);
+    try {
+      renderWithLocale(
+        <AppShellContext.Provider
+          value={
+            { frameWidth: 800, scrollerEl: null } as unknown as NonNullable<
+              React.ContextType<typeof AppShellContext>
+            >
+          }
+        >
+          <SignedInChrome />
+        </AppShellContext.Provider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      // A wide menu that does not fit even lifted is the sheet.
+      expect(host.contains(panel)).toBe(true);
+      fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+      expect(panel.className).toContain('hidden');
+      expect(screen.getByRole('dialog')).toBeTruthy();
+      expect(menuPanel()).toBe(panel);
+      expect(host.contains(panel)).toBe(true);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      // A menu that fits now opens on the trigger again.
+      bottom = 400;
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(host.contains(menuPanel())).toBe(false);
+      expect(menuPanel().className).toContain('absolute');
+      expect(menuPanel().className).not.toContain('hidden');
+    } finally {
+      host.remove();
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
   });
 

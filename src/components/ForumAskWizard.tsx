@@ -4,6 +4,7 @@ import { ImagePlus, Loader2, X } from 'lucide-react';
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -28,6 +29,7 @@ import {
   splitCreditPlan,
   type CreditTermPreset,
 } from '@/lib/credit-plan';
+import { composerTextProblem, shownEntryProblem } from '@/lib/entry-text';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import {
   formatBitcoin,
@@ -75,6 +77,7 @@ export function ForumAskWizard({
   onAskDraftChange,
   draft,
   onDraftChange,
+  shopElsewhere = false,
   posting,
   photoDrafts,
   videoDraft,
@@ -102,6 +105,8 @@ export function ForumAskWizard({
   onAskDraftChange: (value: string) => void;
   draft: string;
   onDraftChange: (value: string) => void;
+  /** Whether the message draft contains the shop tag outside the shop composer. */
+  shopElsewhere?: boolean;
   posting: boolean;
   photoDrafts: ForumPhotoPayload[];
   videoDraft: ForumVideoPayload | null;
@@ -118,8 +123,22 @@ export function ForumAskWizard({
   const amountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const draftUnit = askDraftUnit ?? amountUnit;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const parsedAsk = parseForumAskAmountInUnit(askDraft, draftUnit, rateDay, fiat);
   const { numberFormat } = useNumberFormat();
+  const [textTouched, setTextTouched] = useState(false);
+  const askTextProblem = composerTextProblem(
+    draft,
+    composerMaxLength,
+    photoDrafts.length > 0 || videoDraft !== null,
+  );
+  const askTextShown = shownEntryProblem(askTextProblem, textTouched);
+  const askTextMessage =
+    askTextShown === 'empty'
+      ? t('forum.errorEmpty')
+      : askTextShown === 'tooLong'
+        ? t('forum.errorTooLong')
+        : null;
   const [creditPhase, setCreditPhase] = useState<CreditAskPhase>('amount');
   const [termPreset, setTermPreset] = useState<CreditTermPreset>(30);
   const [customDays, setCustomDays] = useState('');
@@ -429,17 +448,44 @@ export function ForumAskWizard({
             placeholder={t('forum.placeholder')}
             value={draft}
             onChange={onDraftChange}
-            maxLength={composerMaxLength}
+            onBlur={() => {
+              setTextTouched(true);
+            }}
             rows={4}
             disabled={posting}
+            {...(shopElsewhere || askTextMessage !== null
+              ? {
+                  ariaDescribedBy: [
+                    shopElsewhere ? shopElsewhereFeedbackId : null,
+                    askTextMessage !== null ? 'ask-composer-error' : null,
+                  ]
+                    .filter((id) => id !== null)
+                    .join(' '),
+                  ariaInvalid: true,
+                }
+              : {})}
             wrapperClassName="relative w-full"
             className="min-h-11 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
           />
+          {shopElsewhere ? (
+            <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+              {t('forum.shopPostUseShops')}
+            </p>
+          ) : null}
+          {askTextMessage !== null ? (
+            <p id="ask-composer-error" role="alert" className="text-center text-sm text-app-danger">
+              {askTextMessage}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
-            disabled={posting}
+            disabled={posting || shopElsewhere || askTextShown !== null}
             onClick={() => {
+              setTextTouched(true);
+              if (askTextProblem !== null) {
+                return;
+              }
               onStepChange(4);
             }}
           >
@@ -506,13 +552,21 @@ export function ForumAskWizard({
               />
             ) : null}
           </div>
+          {shopElsewhere ? (
+            <p id={shopElsewhereFeedbackId} className="text-center text-sm text-app-danger">
+              {t('forum.shopPostUseShops')}
+            </p>
+          ) : null}
+          {askTextProblem === 'tooLong' ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('forum.errorTooLong')}
+            </p>
+          ) : null}
           <Button
             type="button"
             variant="primary"
             size="lg"
-            disabled={
-              posting || (draft.trim() === '' && photoDrafts.length === 0 && videoDraft === null)
-            }
+            disabled={posting || shopElsewhere || askTextProblem !== null}
             onClick={onPost}
           >
             {posting ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : null}

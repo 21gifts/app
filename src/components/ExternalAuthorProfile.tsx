@@ -1,8 +1,7 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
   type ForumFormError,
@@ -11,7 +10,8 @@ import {
   type ForumReplyFormError,
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, IconButton } from '@/components/ui';
+import { NpubCopyButton } from '@/components/NpubCopyButton';
+import { Button, Card } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fetchExternalAuthorPosts,
@@ -24,9 +24,6 @@ import type {
   ExternalAuthorProfile as ExternalAuthorProfileData,
   ForumMessage,
 } from '@/lib/api-types';
-
-/** Copied-icon flash duration, matching {@link ForumBoard}. */
-const COPY_RESET_MS = 1200;
 
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
@@ -85,30 +82,6 @@ export interface ExternalAuthorProfileProps {
 }
 
 /**
- * Copy `text` via a hidden textarea and `document.execCommand('copy')`.
- *
- * @param text - String to put on the clipboard.
- * @returns Whether the browser reported a successful copy.
- */
-function fallbackCopy(text: string): boolean {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.setAttribute('aria-hidden', 'true');
-  ta.className = 'fixed opacity-0';
-  ta.readOnly = true;
-  document.body.appendChild(ta);
-  ta.select();
-  let ok = false;
-  try {
-    ok = document.execCommand('copy');
-  } catch {
-    ok = false;
-  }
-  ta.remove();
-  return ok;
-}
-
-/**
  * True when both feed counts are numbers (0 is a number).
  *
  * @param profile - Parsed external author profile, or null.
@@ -144,7 +117,6 @@ export function ExternalAuthorProfile({
   const router = useRouter();
   const rateDay = useSpotRate();
   const [profile, setProfile] = useState<ExternalAuthorProfileData | null>(null);
-  const [copied, setCopied] = useState(false);
   const [activity, setActivity] = useState<'posts' | 'replies' | 'shops' | 'credits' | null>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
@@ -159,9 +131,6 @@ export function ExternalAuthorProfile({
   const [shopsError, setShopsError] = useState(false);
   const [creditsError, setCreditsError] = useState(false);
   const [feedMessageId, setFeedMessageId] = useState(messageId);
-  const copyMounted = useRef(true);
-  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const copyGen = useRef(0);
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const shopsLoadGen = useRef(0);
@@ -171,7 +140,6 @@ export function ExternalAuthorProfile({
   if (feedMessageId !== messageId) {
     setFeedMessageId(messageId);
     setProfile(null);
-    setCopied(false);
     setActivity(null);
     setPosts(null);
     setReplies(null);
@@ -190,33 +158,7 @@ export function ExternalAuthorProfile({
     shopsLoadGen.current += 1;
     creditsLoadGen.current += 1;
     profileLoadGen.current += 1;
-    copyGen.current += 1;
-    if (copyTimer.current !== null) {
-      clearTimeout(copyTimer.current);
-      copyTimer.current = null;
-    }
   }
-
-  useEffect(() => {
-    copyMounted.current = true;
-    return () => {
-      copyMounted.current = false;
-      if (copyTimer.current !== null) {
-        clearTimeout(copyTimer.current);
-      }
-    };
-  }, []);
-
-  const flashCopied = useCallback((): void => {
-    setCopied(true);
-    if (copyTimer.current !== null) {
-      clearTimeout(copyTimer.current);
-    }
-    copyTimer.current = setTimeout(() => {
-      setCopied(false);
-      copyTimer.current = null;
-    }, COPY_RESET_MS);
-  }, []);
 
   useEffect(() => {
     const gen = profileLoadGen.current;
@@ -243,29 +185,6 @@ export function ExternalAuthorProfile({
   const lud16 = (profile?.lud16 ?? '').trim();
   const showNip05 = nip05 !== '';
   const showLud16 = lud16 !== '' && lud16.toLowerCase() !== nip05.toLowerCase();
-
-  const copyNpub = async (): Promise<void> => {
-    /* v8 ignore next 3 -- Copy renders only after a profile has loaded */
-    if (profile === null) {
-      return;
-    }
-    const gen = copyGen.current;
-    const npub = profile.npub;
-    try {
-      await navigator.clipboard.writeText(npub);
-      if (!copyMounted.current || copyGen.current !== gen) {
-        return;
-      }
-      flashCopied();
-    } catch {
-      if (!copyMounted.current || copyGen.current !== gen) {
-        return;
-      }
-      if (fallbackCopy(npub)) {
-        flashCopied();
-      }
-    }
-  };
 
   const loadFeed = async (kind: 'posts' | 'replies' | 'shops' | 'credits'): Promise<void> => {
     const setLoading =
@@ -437,24 +356,7 @@ export function ExternalAuthorProfile({
             </p>
             <p className="min-w-0 break-all text-center text-sm text-app-fg">{profile.npub}</p>
             <div className="flex items-center justify-center">
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                aria-label={
-                  copied ? t('forum.externalProfileCopied') : t('forum.externalProfileCopy')
-                }
-                title={copied ? t('forum.externalProfileCopied') : t('forum.externalProfileCopy')}
-                onClick={() => {
-                  void copyNpub();
-                }}
-              >
-                {copied ? (
-                  <Check aria-hidden="true" className="h-4 w-4" />
-                ) : (
-                  <Copy aria-hidden="true" className="h-4 w-4" />
-                )}
-              </IconButton>
+              <NpubCopyButton key={profile.npub} npub={profile.npub} />
             </div>
           </div>
         ) : null}

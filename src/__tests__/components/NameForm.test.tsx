@@ -173,8 +173,11 @@ describe('NameForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toBe('Could not save your name');
+    expect(alert.textContent).toBe('Name must be 1–80 characters.');
     expect(screen.getByPlaceholderText('Your name')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('stringifies a non-Error rejection', async () => {
@@ -330,5 +333,54 @@ describe('NameForm', () => {
     });
 
     expect(useAuthStore.getState().account).toBeNull();
+  });
+
+  it('shows empty, length, and control rules under the field', () => {
+    renderWithLocale(<NameForm />);
+    const field = screen.getByPlaceholderText('Your name');
+    const continueButton = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
+    const skip = screen.getByRole('button', { name: /skip/i }) as HTMLButtonElement;
+    expect(continueButton.disabled).toBe(false);
+    expect(skip.disabled).toBe(false);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(field.getAttribute('aria-invalid')).not.toBe('true');
+
+    fireEvent.blur(field);
+    const emptyAlert = screen.getByRole('alert');
+    expect(emptyAlert.textContent).toBe('Enter your name');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(emptyAlert.id);
+    expect(continueButton.disabled).toBe(true);
+    expect(skip.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'a'.repeat(81) } });
+    expect(screen.getByRole('alert').textContent).toBe('Name must be 1–80 characters.');
+    expect(continueButton.disabled).toBe(true);
+    expect(skip.disabled).toBe(false);
+    fireEvent.click(continueButton);
+    expect(setName).not.toHaveBeenCalled();
+
+    fireEvent.change(field, { target: { value: 'Ada\u0001' } });
+    expect(screen.getByRole('alert').textContent).toBe('Name cannot include control characters.');
+    expect(continueButton.disabled).toBe(true);
+    expect(setName).not.toHaveBeenCalled();
+  });
+
+  it('shows a control rule on the profile editor', () => {
+    useAuthStore.setState({ session: 'sess', account: namedAccount });
+    renderWithLocale(<NameForm />);
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+    const field = screen.getByPlaceholderText('Your name');
+    fireEvent.blur(field);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.change(field, { target: { value: 'Ada\u007f' } });
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Name cannot include control characters.');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(alert.id);
+    expect((screen.getByRole('button', { name: /save/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(setName).not.toHaveBeenCalled();
   });
 });

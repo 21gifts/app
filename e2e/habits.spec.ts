@@ -177,12 +177,12 @@ async function openHabitPay(
 test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
   await openHabitPay(page, null);
   await page.getByLabel('Amount').fill('0');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await expect(
     page.getByRole('alert').filter({
       hasText: 'Expected a JSON body with an integer "amountSats"',
     }),
   ).toHaveText('Expected a JSON body with an integer "amountSats"');
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
 });
 
 test('screen /habit-tracker donate-request', async ({ page }) => {
@@ -535,10 +535,10 @@ test('screen /habit-tracker edit-save-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The habit name is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -605,10 +605,10 @@ test('screen /habit-tracker add-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Add habit' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The habit name is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The habit name is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.locator('#habit-add-name')).toHaveValue('Stretch');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
@@ -621,7 +621,7 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Invalid name' }),
+        body: JSON.stringify({ error: 'Invalid comment' }),
       });
       return;
     }
@@ -649,10 +649,10 @@ test('screen /habit-tracker comment-error', async ({ page }) => {
   await page.getByRole('button', { name: 'Post' }).click();
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'Could not load or save the tracker. Please try again.',
+      hasText: 'The comment is not valid',
     }),
-  ).toHaveText('Could not load or save the tracker. Please try again.');
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  ).toHaveText('The comment is not valid');
+  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(draft).toHaveValue('still here');
   await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);

@@ -690,7 +690,11 @@ test('Function: WalletFooterActions — /wallet follows the scroll too and has n
     .poll(async () => (await page.getByRole('button', { name: 'Receive' }).boundingBox())!.height)
     .toBe(36);
 
+  // The default List view has no composer; the Post view keeps its own.
   await page.goto('/shops');
+  await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
+  await page.goto('/shops#post');
   await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
 

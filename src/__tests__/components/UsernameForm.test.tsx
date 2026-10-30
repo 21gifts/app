@@ -80,16 +80,29 @@ describe('UsernameForm', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('That username is already taken')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada2' } });
     vi.mocked(setUsername).mockRejectedValueOnce(new Error('username-invalid'));
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(
-      await screen.findByText('Use English letters, numbers, hyphen, underscore, or dot'),
+      await screen.findByText(
+        'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      ),
     ).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
 
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada3' } });
     vi.mocked(setUsername).mockRejectedValueOnce('boom');
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByText('Could not save your username')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('disables the control and shows a spinner while a request is in flight', async () => {
@@ -148,6 +161,55 @@ describe('UsernameForm', () => {
     expect(field.disabled).toBe(false);
     expect(field.getAttribute('aria-describedby')).toBeNull();
     expect(screen.queryByText(/can no longer be changed/)).toBeNull();
+  });
+
+  it('shows empty and format rules under the field and disables continue', () => {
+    renderWithLocale(<UsernameForm />);
+    const field = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement;
+    expect(button.disabled).toBe(false);
+    expect(field.getAttribute('aria-invalid')).not.toBe('true');
+    fireEvent.blur(field);
+    const emptyAlert = screen.getByRole('alert');
+    expect(emptyAlert.textContent).toBe('Enter a username');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(emptyAlert.id);
+    expect(button.disabled).toBe(true);
+
+    fireEvent.change(field, { target: { value: '_' } });
+    const formatAlert = screen.getByRole('alert');
+    expect(formatAlert.textContent).toBe(
+      'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+    );
+    expect(field.getAttribute('aria-describedby')).toBe(formatAlert.id);
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+    expect(setUsername).not.toHaveBeenCalled();
+  });
+
+  it('maps the api username sentences onto the field and disables continue', async () => {
+    vi.mocked(setUsername).mockRejectedValueOnce(new Error('Username is already in use'));
+    renderWithLocale(<UsernameForm />);
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(await screen.findByText('That username is already taken')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'ada2' } });
+    vi.mocked(setUsername).mockRejectedValueOnce(
+      new Error('Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot'),
+    );
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    expect(
+      await screen.findByText(
+        'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      ),
+    ).toBeTruthy();
+    expect((screen.getByRole('button', { name: /continue/i }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
   });
 
   it('does nothing without a session', () => {

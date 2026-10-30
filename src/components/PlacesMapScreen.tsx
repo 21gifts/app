@@ -3,39 +3,18 @@
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { GoogleMapCanvas } from '@/components/GoogleMapCanvas';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button, Card, IconButton } from '@/components/ui';
 import { fetchForumMessage, fetchPlaces } from '@/lib/api';
 import { logInteraction } from '@/lib/interaction-log';
 import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
-import { isShopNote } from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote } from '@/lib/forum-shop';
+import { fetchMapsKey } from '@/lib/maps-key';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
-
-type GoogleLatLngBounds = {
-  extend: (point: { lat: number; lng: number }) => void;
-};
-
-type GoogleMap = {
-  setCenter: (center: { lat: number; lng: number }) => void;
-  fitBounds: (bounds: GoogleLatLngBounds, padding?: number) => void;
-  getZoom: () => number | undefined;
-  setZoom: (zoom: number) => void;
-};
-
-type GoogleMapsNamespace = {
-  Map: new (
-    el: HTMLElement,
-    opts: { center: { lat: number; lng: number }; zoom: number },
-  ) => GoogleMap;
-  Marker: new (opts: { position: { lat: number; lng: number }; map: GoogleMap }) => unknown;
-  LatLngBounds: new () => GoogleLatLngBounds;
-  event?: {
-    addListenerOnce: (instance: GoogleMap, eventName: string, handler: () => void) => void;
-  };
-};
 
 function ShopPinEdit({
   placeId,
@@ -103,51 +82,6 @@ function ShopPinEdit({
   );
 }
 
-type GoogleWindow = Window & {
-  google?: { maps?: GoogleMapsNamespace };
-  gm_authFailure?: () => void;
-};
-
-/** The Maps script while it loads, so a redraw before `onload` waits for the same script. */
-let pendingMapsLoad: Promise<void> | null = null;
-
-/**
- * Load the Maps JavaScript API once. Resolves when `google.maps` exists. A call
- * while the script is still loading (a redraw for another country) gets the
- * same promise instead of a second script tag.
- *
- * @param key - Browser key from GET /maps/key. Not logged.
- * @returns Resolves when the script has loaded.
- */
-function loadGoogleMaps(key: string): Promise<void> {
-  const host = window as GoogleWindow;
-  if (host.google?.maps !== undefined) {
-    return Promise.resolve();
-  }
-  if (pendingMapsLoad !== null) {
-    return pendingMapsLoad;
-  }
-  const load = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
-    script.async = true;
-    script.dataset['googleMaps'] = '1';
-    script.onload = () => {
-      resolve();
-    };
-    script.onerror = () => {
-      reject(new Error('map'));
-    };
-    document.head.appendChild(script);
-  });
-  pendingMapsLoad = load;
-  const settle = (): void => {
-    pendingMapsLoad = null;
-  };
-  load.then(settle, settle);
-  return load;
-}
-
 /**
  * Signed-in map of every forum note that has a pin.
  *
@@ -172,7 +106,7 @@ export function PlacesMapScreen({
   country?: string | null;
   onShopsChanged?: () => void;
 } = {}): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const [loadedPlaces, setPlaces] = useState<ForumPlaceRow[] | null>(null);
   const places = useMemo(
@@ -186,9 +120,6 @@ export function PlacesMapScreen({
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const pinId = useSearchParams().get('pin');
-  const frameRef = useRef<HTMLDivElement | null>(null);
-  const authFailedRef = useRef(false);
-
   const openedShop =
     pinId !== null && places?.some((row) => row.id === pinId && row.shop === true) === true
       ? pinId
@@ -198,40 +129,13 @@ export function PlacesMapScreen({
       logInteraction('shop_opened', { placeId: openedShop });
     }
   }, [openedShop]);
-
-  useEffect(() => {
-    const host = window as GoogleWindow;
-    // A rejected key would paint Google's dialog into the frame. Clear it.
-    host.gm_authFailure = () => {
-      authFailedRef.current = true;
-      frameRef.current?.replaceChildren();
-    };
-    return () => {
-      delete host.gm_authFailure;
-    };
-  }, []);
-
   useEffect(() => {
     if (session === null) {
       return;
     }
     let cancelled = false;
     const run = async (): Promise<void> => {
-      const keyPromise = fetch('/maps/key')
-        .then(async (response) => {
-          const keyBody: unknown = await response.json();
-          if (
-            typeof keyBody === 'object' &&
-            keyBody !== null &&
-            'key' in keyBody &&
-            typeof keyBody.key === 'string'
-          ) {
-            const trimmed = keyBody.key.trim();
-            return trimmed === '' ? null : trimmed;
-          }
-          return null;
-        })
-        .catch(() => null);
+      const keyPromise = fetchMapsKey();
       try {
         const [rows, key] = await Promise.all([fetchPlaces(session), keyPromise]);
         if (cancelled) {
@@ -251,80 +155,6 @@ export function PlacesMapScreen({
       cancelled = true;
     };
   }, [session, attempt]);
-
-  useEffect(() => {
-    if (mapsKey === null || places === null || places.length === 0) {
-      return;
-    }
-    const frame = frameRef.current;
-    /* v8 ignore next 3 -- the map node is committed before this effect */
-    if (frame === null) {
-      return;
-    }
-    let cancelled = false;
-    const draw = async (): Promise<void> => {
-      if (authFailedRef.current) {
-        return;
-      }
-      try {
-        await loadGoogleMaps(mapsKey);
-        if (authFailedRef.current) {
-          frame.replaceChildren();
-          return;
-        }
-        // A newer draw (another country or pin) owns the frame now.
-        if (cancelled) {
-          return;
-        }
-        const maps = (window as GoogleWindow).google?.maps;
-        if (maps === undefined) {
-          return;
-        }
-        const matched = pinId === null ? undefined : places.find((row) => row.id === pinId);
-        const anchor = matched ?? places[0];
-        /* v8 ignore next 3 -- noUncheckedIndexedAccess; a non-empty list has a row */
-        if (anchor === undefined) {
-          return;
-        }
-        const frameAll = matched === undefined && places.length > 1;
-        const map = new maps.Map(frame, {
-          center: { lat: anchor.lat, lng: anchor.lng },
-          zoom: frameAll ? 2 : 14,
-        });
-        if (authFailedRef.current) {
-          frame.replaceChildren();
-          return;
-        }
-        for (const row of places) {
-          new maps.Marker({ position: { lat: row.lat, lng: row.lng }, map });
-        }
-        if (!frameAll) {
-          map.setCenter({ lat: anchor.lat, lng: anchor.lng });
-          return;
-        }
-        const bounds = new maps.LatLngBounds();
-        for (const row of places) {
-          bounds.extend({ lat: row.lat, lng: row.lng });
-        }
-        map.fitBounds(bounds, 32);
-        maps.event?.addListenerOnce(map, 'idle', () => {
-          if (cancelled) {
-            return;
-          }
-          const zoom = map.getZoom();
-          if (typeof zoom === 'number' && zoom > 14) {
-            map.setZoom(14);
-          }
-        });
-      } catch {
-        /* List stays usable when the script fails. */
-      }
-    };
-    void draw();
-    return () => {
-      cancelled = true;
-    };
-  }, [mapsKey, places, pinId]);
 
   let body: ReactElement;
   if (failed) {
@@ -351,17 +181,23 @@ export function PlacesMapScreen({
   } else if (places.length === 0) {
     body = <p className="text-center text-sm text-app-muted">{t('map.empty')}</p>;
   } else {
+    const matched = pinId === null ? undefined : places.find((row) => row.id === pinId);
+    const anchor = matched ?? places[0];
+    const frameAll = matched === undefined && places.length > 1;
     body = (
       <div className="flex w-full flex-col gap-3">
-        <div
-          ref={frameRef}
-          data-testid="places-map"
-          className="h-64 w-full rounded-2xl border border-app-border bg-app-card-muted"
+        <GoogleMapCanvas
+          mapsKey={mapsKey}
+          points={places}
+          anchor={anchor}
+          fitAll={frameAll}
+          testId="places-map"
         />
         <ul className="flex flex-col gap-2">
           {places.map((place) => {
-            const label = place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+            const label = formatPlacePinText(place, locale);
             const selected = place.id === pinId;
+            const href = place.shopNpub === null ? `/messages/${place.id}` : `/${place.shopNpub}`;
             return (
               <li
                 key={place.id}
@@ -380,13 +216,13 @@ export function PlacesMapScreen({
                       {place.name}
                     </Link>
                     {' · '}
-                    <Link href={`/messages/${place.id}`} className="underline">
+                    <Link href={href} className="underline">
                       {label}
                     </Link>
                   </span>
                 ) : (
                   <Link
-                    href={`/messages/${place.id}`}
+                    href={href}
                     data-selected={selected ? 'true' : 'false'}
                     className={`min-w-0 max-w-full break-words text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
@@ -414,6 +250,9 @@ export function PlacesMapScreen({
                                 lat: pin.lat,
                                 lng: pin.lng,
                                 label: pin.label ?? null,
+                                address: pin.address ?? null,
+                                shopNpub:
+                                  updated.shopNpub === undefined ? row.shopNpub : updated.shopNpub,
                               }
                             : row,
                         );

@@ -35,8 +35,9 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
   // The nonce is added per request; `'strict-dynamic'` trusts what nonce'd
   // scripts load (chunks, wallet SDK, map script). Wasm compile for the SDK.
   'script-src': ["'self'", "'strict-dynamic'", "'wasm-unsafe-eval'"],
-  // Style attributes, the map's own style elements, and its font stylesheet.
-  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  // Style attributes, the map's own style elements, and its font stylesheet;
+  // the MapLibre stylesheet of the public shop map on `/`.
+  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
   // QR codes and avatars (data:), photo previews (blob:), map tiles and icons.
   'img-src': [
     "'self'",
@@ -45,6 +46,9 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
     'https://*.googleapis.com',
     'https://*.gstatic.com',
     'https://*.ggpht.com',
+    // Shop cover photos in the public shop map popup on `/` (OpenCryptoPay map API).
+    'https://api.opencryptopay.io',
+    'https://dev-api.opencryptopay.io',
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   // Video previews before upload.

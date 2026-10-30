@@ -304,8 +304,30 @@ describe('PublicMessageLoader', () => {
       ...sample,
       place: { lat: 14.6, lng: 120.98, label: null },
     });
-    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    const coords = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     expect(await screen.findByRole('link', { name: '14.60000, 120.98000' })).toBeTruthy();
+    coords.unmount();
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(
+      await screen.findByRole('link', {
+        name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+      }),
+    ).toBeTruthy();
   });
 
   it('does not show a place link on a public reply', async () => {

@@ -81,6 +81,7 @@ beforeEach(() => {
     retry: vi.fn(),
     cancel: vi.fn(),
     error: null,
+    clearNameError: vi.fn(),
     recoveryPending: false,
     nameError: null,
   });

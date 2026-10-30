@@ -64,7 +64,7 @@ describe('LocationForm', () => {
     expect(screen.getByText('Not set')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Edit location' })).toBeTruthy();
     expect(screen.queryByText('Edit location')).toBeNull();
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    const input = screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('City or country') as HTMLInputElement;
     expect(input.className).toContain('text-base');
     expect(input.className).not.toContain('text-sm');
     expect(input.value).toBe('');
@@ -99,7 +99,7 @@ describe('LocationForm', () => {
     expect(await screen.findByText('Zug')).toBeTruthy();
     expect(setLocation).toHaveBeenCalledWith('sess', 'Zug');
     expect(useAuthStore.getState().account?.location).toBe('Zug');
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
   });
 
   it('trims the location before posting', async () => {
@@ -107,7 +107,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: '  Zug  ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -122,7 +122,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: '   ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -147,18 +147,21 @@ describe('LocationForm', () => {
   });
 
   it('shows the request error when saving fails', async () => {
-    vi.mocked(setLocation).mockRejectedValue(new Error('Location must be at most 80 characters'));
+    vi.mocked(setLocation).mockRejectedValue(new Error('nope'));
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not save your location');
-    expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
+    expect(screen.getByPlaceholderText('City or country')).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('cancels an edit and returns to the display view', () => {
@@ -166,12 +169,12 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
+    expect(screen.getByPlaceholderText('City or country')).toBeTruthy();
 
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
     expect(screen.getByText('Zug')).toBeTruthy();
     expect(setLocation).not.toHaveBeenCalled();
   });
@@ -185,16 +188,16 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     const button = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(
-      (screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement).disabled,
-    ).toBe(true);
+    expect((screen.getByPlaceholderText('City or country') as HTMLInputElement).disabled).toBe(
+      true,
+    );
     expect(button.querySelector('.animate-spin')).toBeTruthy();
 
     await act(async () => {
@@ -213,7 +216,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -245,7 +248,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -271,7 +274,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -294,7 +297,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    const input = screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('City or country') as HTMLInputElement;
     expect(input.value).toBe('Zug');
 
     fireEvent.change(input, { target: { value: 'Bern' } });
@@ -302,5 +305,68 @@ describe('LocationForm', () => {
 
     expect(await screen.findByText('Bern')).toBeTruthy();
     expect(setLocation).toHaveBeenCalledWith('sess', 'Bern');
+  });
+
+  it('shows length and control rules under the field and disables save', () => {
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    const field = screen.getByPlaceholderText('City or country');
+    const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.blur(field);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(save.disabled).toBe(false);
+
+    fireEvent.change(field, { target: { value: 'a'.repeat(81) } });
+    const longAlert = screen.getByRole('alert');
+    expect(longAlert.textContent).toBe('Location must be at most 80 characters.');
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe(longAlert.id);
+    expect(save.disabled).toBe(true);
+    fireEvent.click(save);
+    expect(setLocation).not.toHaveBeenCalled();
+
+    fireEvent.change(field, { target: { value: 'Zug\u0001' } });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Location cannot include control characters.',
+    );
+    expect(save.disabled).toBe(true);
+  });
+
+  it('does not post a location that breaks the field rule', () => {
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    const field = screen.getByPlaceholderText('City or country');
+    fireEvent.change(field, { target: { value: 'a'.repeat(81) } });
+    const save = screen.getByRole('button', { name: 'Save' });
+    const form = save.closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form as HTMLFormElement);
+    expect(setLocation).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Location must be at most 80 characters.');
+  });
+
+  it('maps the api length sentence onto the field', async () => {
+    vi.mocked(setLocation).mockRejectedValue(new Error('Location must be at most 80 characters'));
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
+      target: { value: 'Zug' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Location must be at most 80 characters.');
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows a clear failure under the display row', async () => {
+    useAuthStore.setState({ session: 'sess', account: locatedAccount });
+    vi.mocked(setLocation).mockRejectedValue('boom');
+    renderWithLocale(<LocationForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear location' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not save your location');
+    expect(screen.getByText('Zug')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
   });
 });

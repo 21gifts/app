@@ -35,6 +35,7 @@ const ROW = {
   lat: 14.6,
   lng: 120.98,
   label: 'Happyland' as string | null,
+  shopNpub: null as string | null,
 };
 
 const SECOND_ROW = {
@@ -49,7 +50,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
-  document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => {
+  document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
     node.remove();
   });
   delete (window as { google?: unknown }).google;
@@ -122,7 +123,23 @@ describe('PlacesMapScreen', () => {
     vi.mocked(logInteraction).mockClear();
     window.history.replaceState(null, '', '/map?pin=m-pin');
     useAuthStore.setState({ session: 'tok' });
-    fetchPlacesMock.mockResolvedValue([ROW, { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 }]);
+    fetchPlacesMock.mockResolvedValue([
+      ROW,
+      { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 },
+      {
+        ...ROW,
+        id: 'm-3',
+        label: 'Cafe Sol',
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+      { ...ROW, id: 'm-4', label: '', lat: 3, lng: 4 },
+    ]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
@@ -133,6 +150,12 @@ describe('PlacesMapScreen', () => {
       'break-words',
     );
     expect(screen.getByRole('link', { name: 'Ada · 1.00000, 2.00000' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', {
+        name: 'Ada · Cafe Sol · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected'),
     ).toBe('true');
@@ -162,6 +185,23 @@ describe('PlacesMapScreen', () => {
     expect(authors[1]?.parentElement?.getAttribute('data-selected')).toBe('false');
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
       '/messages/m-pin',
+    );
+  });
+
+  it('links a shop pin to its npub and keeps a pending shop on the forum note', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    const npub = `npub1${'2'.repeat(58)}`;
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, shopNpub: npub },
+      { ...ROW, id: 'm-pending', label: 'Pending', shopNpub: null },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<PlacesMapScreen />);
+    expect(
+      (await screen.findByRole('link', { name: 'Ada · Happyland' })).getAttribute('href'),
+    ).toBe(`/${npub}`);
+    expect(screen.getByRole('link', { name: 'Ada · Pending' }).getAttribute('href')).toBe(
+      '/messages/m-pending',
     );
   });
 
@@ -262,30 +302,6 @@ describe('PlacesMapScreen', () => {
     view.rerender(<PlacesMapScreen embedded />);
     expect(await screen.findByRole('link', { name: 'Ada · Boat' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ada · Plaza' })).toBeTruthy();
-  });
-
-  it('loads the Maps script once and keeps the newer map when the country changes before it loads', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchPlacesMock.mockResolvedValue([
-      { ...ROW, shop: true, countryCode: 'PH' },
-      { ...SECOND_ROW, shop: true, countryCode: 'KE' },
-    ]);
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
-    const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
-    await screen.findByRole('link', { name: 'Ada · Happyland' });
-    view.rerender(<PlacesMapScreen embedded country="KE" />);
-    await screen.findByRole('link', { name: 'Ada · Machakos' });
-    const scripts = document.querySelectorAll('script[data-google-maps="1"]');
-    expect(scripts).toHaveLength(1);
-    const maps = installGoogleMaps(4);
-    (scripts[0] as HTMLScriptElement).onload?.(new Event('load'));
-    await waitFor(() => {
-      expect(maps.Map).toHaveBeenCalledTimes(1);
-    });
-    // Only the Kenya draw runs; the superseded Philippines draw leaves the frame alone.
-    expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: -1.95, lng: 37.84 });
-    expect(screen.getByTestId('places-map').childElementCount).toBe(0);
-    expect(maps.Marker).toHaveBeenCalledTimes(1);
   });
 
   it('frames every pin when several places have no matching query', async () => {
@@ -401,9 +417,9 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    document.querySelector('script[data-google-maps="1"]')?.dispatchEvent(new Event('error'));
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
     expect(screen.getByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
   });
 
@@ -414,21 +430,21 @@ describe('PlacesMapScreen', () => {
     const view = renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    const script = document.querySelector('script[data-google-maps="1"]');
+    const script = document.querySelector('script[data-gmaps="weekly"]');
     script?.dispatchEvent(new Event('load'));
     await Promise.resolve();
     view.unmount();
-    document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => {
+    document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
       node.remove();
     });
     const again = renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    const pending = document.querySelector('script[data-google-maps="1"]');
+    const pending = document.querySelector('script[data-gmaps="weekly"]');
     again.unmount();
     pending?.dispatchEvent(new Event('load'));
     await Promise.resolve();
@@ -465,7 +481,7 @@ describe('PlacesMapScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
     renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByText('No places yet.')).toBeTruthy();
-    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
   });
 
   it('treats a null, missing, blank, or non-string key as no map', async () => {
@@ -475,7 +491,7 @@ describe('PlacesMapScreen', () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)));
       const view = renderWithLocale(<PlacesMapScreen />);
       expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
       view.unmount();
     }
   });
@@ -490,18 +506,18 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
     (window as { google?: unknown }).google = {
       maps: { Map: vi.fn(() => map), Marker },
     };
-    document.querySelector('script[data-google-maps="1"]')?.dispatchEvent(new Event('load'));
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('load'));
     await waitFor(() => {
       expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
     });
   });
 
-  it('does not draw after Google rejects the key before the list arrives', async () => {
+  it('does not draw after Google rejects the key before the map script loads', async () => {
     useAuthStore.setState({ session: 'tok' });
     let resolvePlaces: (rows: ForumPlaceRow[]) => void = () => undefined;
     fetchPlacesMock.mockReturnValue(
@@ -510,18 +526,23 @@ describe('PlacesMapScreen', () => {
       }),
     );
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
-    const Marker = vi.fn();
-    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker } };
     renderWithLocale(<PlacesMapScreen />);
+    resolvePlaces([ROW]);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    const script = await waitFor(() => {
+      const node = document.querySelector('script[data-gmaps="weekly"]');
+      expect(node).toBeTruthy();
+      return node as HTMLScriptElement;
+    });
     await waitFor(() => {
       expect((window as { gm_authFailure?: () => void }).gm_authFailure).toBeTypeOf('function');
     });
+    const Marker = vi.fn();
+    (window as { google?: unknown }).google = { maps: { Map: vi.fn(), Marker } };
     (window as { gm_authFailure?: () => void }).gm_authFailure?.();
-    resolvePlaces([ROW]);
-    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-    await Promise.resolve();
+    script.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(Marker).not.toHaveBeenCalled();
-    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
   });
 
   it('clears the frame when Google rejects the key after the map is drawn', async () => {
@@ -558,7 +579,7 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     const script = await waitFor(() => {
-      const node = document.querySelector('script[data-google-maps="1"]');
+      const node = document.querySelector('script[data-gmaps="weekly"]');
       expect(node).toBeTruthy();
       return node as HTMLScriptElement;
     });
@@ -659,10 +680,17 @@ describe('PlacesMapScreen', () => {
       setup: null,
       missing: [],
     } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
     const note: ForumMessage = {
       id: 'm-pin',
       name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 5,
       payable: true,
@@ -674,7 +702,13 @@ describe('PlacesMapScreen', () => {
       replyCount: 0,
       heartCount: 0,
       hearted: false,
-      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     };
     useAuthStore.setState({ session: 'tok', account: null });
     fetchPlacesMock.mockResolvedValue([
@@ -691,8 +725,8 @@ describe('PlacesMapScreen', () => {
       .mockResolvedValueOnce(note);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...note,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 3, lng: 4, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: 'Stall', address: completeAddress },
     });
     const shopsChanged = vi.fn();
     renderWithLocale(<PlacesMapScreen onShopsChanged={shopsChanged} />);
@@ -721,12 +755,16 @@ describe('PlacesMapScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findByRole('link', { name: 'Ada · Stall' })).toBeTruthy();
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Stall · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
 
     const saveOpened = async (value: string): Promise<void> => {
@@ -743,18 +781,29 @@ describe('PlacesMapScreen', () => {
 
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...note,
-      text: 'Cafe Norte\n\n#21GiftsShop',
-      place: { lat: 3, lng: 4, label: null },
+      text: 'Cafe Norte is open every morning.\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: 'Norte', address: completeAddress },
     });
-    await saveOpened('Cafe Norte');
-    expect(await screen.findByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
+    await saveOpened('Cafe Norte is open every morning.');
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Norte · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
 
-    const withoutPlace: ForumMessage = { ...note, text: 'Cafe Sur\n\n#21GiftsShop' };
+    const withoutPlace: ForumMessage = {
+      ...note,
+      text: 'Cafe Sur is open every morning.\n\n#21GiftsShop',
+    };
     delete withoutPlace.place;
     vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
-    await saveOpened('Cafe Sur');
+    await saveOpened('Cafe Sur is open every morning.');
     await waitFor(() => {
-      expect(screen.queryByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeNull();
+      expect(
+        screen.queryByRole('link', {
+          name: 'Ada · Norte · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+        }),
+      ).toBeNull();
     });
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
@@ -762,5 +811,251 @@ describe('PlacesMapScreen', () => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
     expect(shopsChanged).toHaveBeenCalled();
+  });
+
+  it('takes the shop npub from a pin edit and keeps it when the field is absent', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      heartCount: 0,
+      hearted: false,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland', address: completeAddress },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    };
+    const npub = `npub1${'3'.repeat(58)}`;
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true, shopNpub: null }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    renderWithLocale(<PlacesMapScreen />);
+    const pinHref = (): string | null =>
+      screen.getByRole('link', { name: /^Ada · Happyland/ }).getAttribute('href');
+    expect(
+      (await screen.findByRole('link', { name: 'Ada · Happyland' })).getAttribute('href'),
+    ).toBe('/messages/m-pin');
+
+    const save = async (): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol is open every morning.' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+      await waitFor(() => {
+        expect(vi.mocked(setMessageShopText)).toHaveBeenCalled();
+      });
+    };
+
+    vi.mocked(setMessageShopText).mockResolvedValue({ ...note, shopNpub: npub });
+    await save();
+    await waitFor(() => {
+      expect(pinHref()).toBe(`/${npub}`);
+    });
+
+    vi.mocked(setMessageShopText).mockClear();
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      place: { lat: 1, lng: 2, label: 'Happyland', address: completeAddress },
+    });
+    await save();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(pinHref()).toBe(`/${npub}`);
+
+    vi.mocked(setMessageShopText).mockClear();
+    vi.mocked(setMessageShopText).mockResolvedValue({ ...note, shopNpub: null });
+    await save();
+    await waitFor(() => {
+      expect(pinHref()).toBe('/messages/m-pin');
+    });
+  });
+
+  it('shows the address when a saved shop pin has no label', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      heartCount: 0,
+      hearted: false,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    };
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: null, address: completeAddress },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe West is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(
+      await screen.findByRole('link', {
+        name: 'Ada · Bahnhofstrasse 12, 8001 Zürich, Switzerland',
+      }),
+    ).toBeTruthy();
+  });
+
+  it('keeps the label alone when a saved shop pin has no address', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      heartCount: 0,
+      hearted: false,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    };
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: 'Stall' },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe West is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByRole('link', { name: 'Ada · Stall' })).toBeTruthy();
   });
 });

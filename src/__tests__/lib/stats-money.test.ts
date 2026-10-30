@@ -13,8 +13,12 @@ import {
   addDecimalStrings,
   attachTypedFigure,
   parseAmountDraft,
+  payDraftProblem,
   paySatsFromDraft,
+  replyDraftProblem,
   replySatsFromDraft,
+  shownDraftPayError,
+  shownPaySheetError,
   satsToFiatAmount,
   shownFiatForSats,
   spotRateDay,
@@ -263,7 +267,11 @@ describe('parseAmountDraft', () => {
     });
     expect(parseAmountDraft('fiat', '1.123456789', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('fiat', '1.00', null, 'USD')).toEqual({ kind: 'no-rate' });
-    expect(parseAmountDraft('fiat', '0', null, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '0', null, 'USD')).toEqual({ kind: 'sats', sats: 0 });
+    expect(parseAmountDraft('fiat', '0.00', { ...RATE_DAY, php: null }, 'PHP')).toEqual({
+      kind: 'sats',
+      sats: 0,
+    });
     expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: null }, 'PHP')).toEqual({
       kind: 'no-rate',
     });
@@ -325,6 +333,7 @@ describe('replySatsFromDraft and paySatsFromDraft', () => {
   it('keeps an empty reply empty and bills 0 as 1', () => {
     expect(replySatsFromDraft('', 'btc', RATE_DAY, 'USD')).toBe('empty');
     expect(replySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe(1);
+    expect(replySatsFromDraft('0', 'fiat', null, 'USD')).toBe(1);
     expect(replySatsFromDraft('nope', 'fiat', RATE_DAY, 'USD')).toBe('invalid');
     expect(replySatsFromDraft('1.00', 'fiat', null, 'USD')).toBe('invalid');
   });
@@ -332,7 +341,50 @@ describe('replySatsFromDraft and paySatsFromDraft', () => {
   it('treats a blank pay field as 21 sats', () => {
     expect(paySatsFromDraft('  ', 'fiat', RATE_DAY, 'USD')).toBe(21);
     expect(paySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe('invalid');
+    expect(paySatsFromDraft('0', 'fiat', null, 'USD')).toBe('invalid');
     expect(paySatsFromDraft('1.00', 'fiat', RATE_DAY, 'USD')).toBe(1000);
     expect(paySatsFromDraft('1.00', 'fiat', null, 'USD')).toBe('invalid');
+  });
+});
+
+describe('payDraftProblem and replyDraftProblem', () => {
+  it('keeps a loading fiat amount quiet and names a settled missing rate', () => {
+    expect(payDraftProblem('fiat', '  ', null, 'USD', false)).toBeNull();
+    expect(payDraftProblem('fiat', '1.00', null, 'USD', false)).toBe('quiet');
+    expect(payDraftProblem('fiat', '1.00', null, 'USD', true)).toBe('no-rate');
+    expect(payDraftProblem('btc', '0', RATE_DAY, 'USD', true)).toBe('invalid');
+    expect(payDraftProblem('btc', '21', RATE_DAY, 'USD', true)).toBeNull();
+    expect(payDraftProblem('fiat', 'nope', RATE_DAY, 'USD', true)).toBe('invalid');
+
+    expect(replyDraftProblem('btc', '', RATE_DAY, 'USD', true)).toBeNull();
+    expect(replyDraftProblem('btc', '0', RATE_DAY, 'USD', true)).toBeNull();
+    expect(replyDraftProblem('fiat', '0', null, 'USD', false)).toBeNull();
+    expect(payDraftProblem('fiat', '0', null, 'USD', false)).toBe('invalid');
+    expect(replyDraftProblem('fiat', '1.00', null, 'USD', false)).toBe('quiet');
+    expect(replyDraftProblem('fiat', '1.00', null, 'USD', true)).toBe('no-rate');
+    expect(replyDraftProblem('btc', '1.5', RATE_DAY, 'USD', true)).toBe('invalid');
+    expect(replyDraftProblem('btc', '21', RATE_DAY, 'USD', true)).toBeNull();
+  });
+
+  it('drops a stored amount error once the draft is acceptable', () => {
+    expect(shownDraftPayError('amount', 'quiet', 'amount', 'noRate')).toBeNull();
+    expect(shownDraftPayError('amount', null, 'amount', 'noRate')).toBeNull();
+    expect(shownDraftPayError('noRate', null, 'amount', 'noRate')).toBeNull();
+    expect(shownDraftPayError('request', null, 'amount', 'noRate')).toBe('request');
+    expect(shownDraftPayError('request', 'invalid', 'amount', 'noRate')).toBe('amount');
+    expect(shownDraftPayError(null, 'no-rate', 'amount', 'noRate')).toBe('noRate');
+    expect(shownDraftPayError<string>(null, null, 'amount', 'noRate')).toBeNull();
+  });
+
+  it('keeps a loading submit until the rate request settles', () => {
+    expect(shownPaySheetError('loading', 'quiet', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', null, 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', false)).toBe('loading');
+    expect(shownPaySheetError('loading', null, 'amount', 'noRate', true)).toBeNull();
+    expect(shownPaySheetError('loading', 'no-rate', 'amount', 'noRate', true)).toBe('noRate');
+    expect(shownPaySheetError('loading', 'invalid', 'amount', 'noRate', true)).toBe('amount');
+    expect(shownPaySheetError('request', 'quiet', 'amount', 'noRate', false)).toBe('request');
+    expect(shownPaySheetError(null, 'quiet', 'amount', 'noRate', false)).toBeNull();
   });
 });

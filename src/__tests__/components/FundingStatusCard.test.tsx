@@ -97,7 +97,9 @@ describe('FundingStatusCard', () => {
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+    expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
+      '/about',
+    );
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
     ).toBe('/grants/apply');
@@ -209,7 +211,9 @@ describe('FundingStatusCard', () => {
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+    expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
+      '/about',
+    );
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
     ).toBe('/grants/apply');

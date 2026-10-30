@@ -51,6 +51,8 @@ function PayLinkAmount(props: {
   disabled: boolean;
   onUnitChange: (unit: AmountUnit) => void;
   rateDay: FiatRateDay | null;
+  onBlur: () => void;
+  error?: string;
 }): ReactElement {
   const { t } = useTranslations();
   return (
@@ -62,6 +64,8 @@ function PayLinkAmount(props: {
       rateDay={props.rateDay}
       onUnitChange={props.onUnitChange}
       onValueChange={props.onValueChange}
+      onBlur={props.onBlur}
+      {...(props.error === undefined || props.error === '' ? {} : { error: props.error })}
     />
   );
 }
@@ -352,6 +356,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [formError, setFormError] = useState<
     'amount' | 'rate' | 'failed' | 'start' | 'replaced' | null
   >(null);
+  const [amountTouched, setAmountTouched] = useState(false);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
@@ -838,8 +843,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (postingRef.current || invoice !== null) {
       return;
     }
+    setAmountTouched(true);
     const generation = generationRef.current;
     const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
+    /* v8 ignore next 4 -- Continue is off while the amount names a missing rate, and the fiat unit needs a rate */
     if (parsed.kind === 'no-rate') {
       setFormError('rate');
       return;
@@ -952,6 +959,24 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
   };
 
+  const payParsed = profile === null ? null : parseAmountDraft(unit, amount, rateDay, fiat);
+  const payBlank = amount.trim() === '';
+  let payFieldError: string | null = null;
+  if (profile !== null && payParsed !== null) {
+    const showField = !payBlank || amountTouched || formError === 'amount' || formError === 'rate';
+    if (showField) {
+      if (payParsed.kind === 'no-rate') {
+        payFieldError = t('pos.noRate', { code: fiat });
+      } else if (payParsed.kind !== 'sats' || !Number.isSafeInteger(payParsed.sats)) {
+        payFieldError = t('pay.amountInvalid');
+      } else if (payParsed.sats < profile.minSats || payParsed.sats > profile.maxSats) {
+        payFieldError = t('pay.amountRange', {
+          min: formatBitcoin(profile.minSats, numberFormat),
+          max: formatBitcoin(profile.maxSats, numberFormat),
+        });
+      }
+    }
+  }
   const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
   const shopWindowLeft =
@@ -1116,21 +1141,19 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   disabled={posting}
                   onUnitChange={setUnit}
                   onValueChange={setAmount}
+                  onBlur={() => {
+                    setAmountTouched(true);
+                  }}
                   rateDay={rateDay}
+                  {...(payFieldError === null ? {} : { error: payFieldError })}
                 />
-                <Button type="submit" className="w-full" disabled={posting}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={posting || payFieldError !== null}
+                >
                   {t('forum.payContinue')}
                 </Button>
-                {formError === 'amount' ? (
-                  <p role="alert" className="text-sm text-app-danger">
-                    {t('pay.amountInvalid')}
-                  </p>
-                ) : null}
-                {formError === 'rate' ? (
-                  <p role="alert" className="text-sm text-app-danger">
-                    {t('pos.noRate', { code: fiat })}
-                  </p>
-                ) : null}
                 {formError === 'failed' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pay.failed')}

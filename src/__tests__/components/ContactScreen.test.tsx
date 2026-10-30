@@ -2,7 +2,6 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ContactScreen } from '@/components/ContactScreen';
-import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -40,7 +39,43 @@ describe('ContactScreen', () => {
     expect(button).toBeTruthy();
     expect(screen.queryByText('Send')).toBeNull();
     expect(field.nextElementSibling).toBe(button);
-    expect(field.getAttribute('maxLength')).toBe(String(CONTACT_MESSAGE_MAX_LENGTH));
+    expect(field.getAttribute('maxLength')).toBeNull();
+    expect(field.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('clears the empty message when sending finishes on an empty draft', () => {
+    const screenProps = (posting: boolean, draft: string) => (
+      <ContactScreen
+        posting={posting}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        formError={null}
+      />
+    );
+    const view = renderWithLocale(screenProps(true, 'Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    view.rerender(screenProps(false, ''));
+    expect(screen.queryByText('Enter a message')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('keeps the empty message when the person deletes the draft', () => {
+    const screenProps = (draft: string) => (
+      <ContactScreen
+        posting={false}
+        draft={draft}
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        formError={null}
+      />
+    );
+    const view = renderWithLocale(screenProps('Hi'));
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    view.rerender(screenProps(''));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
   });
 
   it('shows formError empty alert', () => {
@@ -54,6 +89,8 @@ describe('ContactScreen', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    expect(screen.getByLabelText('Your message').getAttribute('aria-invalid')).toBe('true');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows formError tooLong alert', () => {
@@ -103,15 +140,32 @@ describe('ContactScreen', () => {
     renderWithLocale(
       <ContactScreen
         posting={false}
-        draft=""
+        draft="Hi"
         onDraftChange={onDraftChange}
         onPost={onPost}
         formError={null}
       />,
     );
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    expect(onDraftChange).toHaveBeenCalledWith('Hi');
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    expect(onDraftChange).toHaveBeenCalledWith('Hello');
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the limit while the draft is over 8000 and does not send', () => {
+    const onPost = vi.fn();
+    renderWithLocale(
+      <ContactScreen
+        posting={false}
+        draft={'a'.repeat(8001)}
+        onDraftChange={() => undefined}
+        onPost={onPost}
+        formError={null}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(onPost).not.toHaveBeenCalled();
   });
 });

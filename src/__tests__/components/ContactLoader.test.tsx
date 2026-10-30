@@ -83,6 +83,8 @@ describe('ContactLoader', () => {
     renderWithLocale(<ContactLoader />);
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
     expect(postMock).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '   ' } });
@@ -99,7 +101,7 @@ describe('ContactLoader', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: `${'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1)}` },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -251,6 +253,37 @@ describe('ContactLoader', () => {
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
+  });
+
+  it('keeps the emptied draft quiet while the inbox thread is still opening', async () => {
+    let releaseList: (rows: never[]) => void = () => undefined;
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hi',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockReturnValue(
+      new Promise((resolve) => {
+        releaseList = resolve;
+      }),
+    );
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+    });
+    expect(screen.queryByText('Enter a message')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.blur(screen.getByLabelText('Your message'));
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message');
+    releaseList([]);
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/messages');
+    });
   });
 
   it('disables Send and shows a spinner while posting', async () => {

@@ -342,7 +342,7 @@ describe('ModeratorGroupScreen', () => {
     fireEvent.change(screen.getByLabelText('Your message'), {
       target: { value: 'a'.repeat(CONTACT_MESSAGE_MAX_LENGTH + 1) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Follow up' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));

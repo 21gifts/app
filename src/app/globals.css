@@ -83,6 +83,37 @@
       transform: none;
     }
   }
+  --color-home-happyland: #151316;
+  --color-home-portrait: #241d19;
+  --color-home-card: #faf9f7;
+  --color-home-why: #f5f2ec;
+  --color-home-bitcoin: #18120d;
+  --color-home-reply: #b76100;
+  --background-image-home-glow: radial-gradient(
+    ellipse at 75% 42%,
+    rgba(247, 147, 26, 0.17),
+    transparent 45%
+  );
+  --background-image-home-story: radial-gradient(circle at 75% 25%, #5b3a1e, #211b18 60%);
+  --text-home-display: clamp(3.25rem, 5.8vw, 5.7rem);
+  --text-home-preview: 2rem;
+  --leading-home-display: 0.99;
+  --leading-home-title: 1.08;
+  --tracking-home-display: -0.055em;
+  --tracking-home-hero: 0.22em;
+  --tracking-home-preview: 0.18em;
+  --tracking-home-kicker: 0.2em;
+  --tracking-home-label: 0.15em;
+  --radius-home-portrait: 1.75rem;
+  --radius-home-wallet: 1.1rem;
+  --container-home-copy: 560px;
+  --container-home-lead: 510px;
+  --container-home-preview: 540px;
+  --container-home-path: 250px;
+  --grid-template-columns-home-flow: minmax(0, 1fr) auto minmax(0, 1fr);
+  --grid-template-columns-home-split: 0.8fr 1.2fr;
+  --grid-template-columns-home-happyland: 1fr 0.9fr;
+  --stroke-width-home-step: 1.75;
 }
 
 html {
@@ -321,4 +352,80 @@ html[data-menu-sheet='1'] [data-menu-sheet-host] > #signed-in-menu {
    while such a layer is in the page. */
 [data-scrollport]:has(> [data-scroll-page] [data-port-fill]) {
   position: relative;
+}
+
+.shop-place-marker {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #d23b3b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+.shop-place-marker.is-daily {
+  background: #ff4d00;
+}
+.shop-place-marker.is-weekly {
+  background: #ff7a29;
+}
+.shop-place-marker.is-monthly {
+  background: #ffa05c;
+}
+.shop-place-marker.is-idle {
+  background: #ffc48f;
+}
+.shop-place-marker.is-none {
+  background: #ffe3cc;
+}
+button.shop-place-marker,
+button.shop-place-marker.is-daily,
+button.shop-place-marker.is-weekly,
+button.shop-place-marker.is-monthly,
+button.shop-place-marker.is-idle,
+button.shop-place-marker.is-none {
+  appearance: none;
+  margin: 0;
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  display: block;
+  cursor: pointer;
+  line-height: 0;
+  box-sizing: border-box;
+}
+button.shop-place-marker::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #d23b3b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+button.shop-place-marker.is-daily::before {
+  background: #ff4d00;
+}
+button.shop-place-marker.is-weekly::before {
+  background: #ff7a29;
+}
+button.shop-place-marker.is-monthly::before {
+  background: #ffa05c;
+}
+button.shop-place-marker.is-idle::before {
+  background: #ffc48f;
+}
+button.shop-place-marker.is-none::before {
+  background: #ffe3cc;
+}
+[hidden] {
+  display: none !important;
 }

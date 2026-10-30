@@ -19,9 +19,7 @@ import { WideImageCropper } from '@/components/WideImageCropper';
 import { Button, IconButton } from '@/components/ui';
 import { isForumPhotoFile, prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
-
-/** Max length of an About me note, matching the API. */
-const ABOUT_ME_MAX_LENGTH = 500;
+import { ABOUT_ME_LENGTH_MESSAGE, aboutMeTextProblem } from '@/lib/profile-fields';
 
 /** Copied-icon flash duration, matching {@link ForumBoard}. */
 const COPY_RESET_MS = 1200;
@@ -121,6 +119,8 @@ export function AboutMeSection({
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [textTouched, setTextTouched] = useState(false);
+  const [textServer, setTextServer] = useState<'long' | null>(null);
   const [copied, setCopied] = useState(false);
   const [storedPhotoUrl, setStoredPhotoUrl] = useState<string | null>(null);
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
@@ -325,6 +325,8 @@ export function AboutMeSection({
     setPhotoDraft(null);
     setPhotoRemoved(false);
     setError(null);
+    setTextTouched(false);
+    setTextServer(null);
     setEditing(true);
   }, [aboutMe]);
 
@@ -336,15 +338,22 @@ export function AboutMeSection({
     setPhotoRemoved(false);
     setBannerCropFile(null);
     setError(null);
+    setTextTouched(false);
+    setTextServer(null);
     setEditing(false);
   }, [aboutMe]);
 
   const saveEdit = useCallback(async (): Promise<void> => {
+    setTextTouched(true);
+    if (aboutMeTextProblem(draft) !== null) {
+      return;
+    }
     if (!onSave) {
       return;
     }
     setSaving(true);
     setError(null);
+    setTextServer(null);
     try {
       let saved: boolean | void;
       if (photoDraft !== null) {
@@ -379,6 +388,11 @@ export function AboutMeSection({
     } catch (err) {
       /* name 409 stays on /profile with the editor open; NameForm is on this card */
       if (err instanceof MissingRequirementsError && !err.missing.includes('rules')) {
+        return;
+      }
+      const message = err instanceof Error ? err.message : '';
+      if (message === ABOUT_ME_LENGTH_MESSAGE) {
+        setTextServer('long');
         return;
       }
       setError(t('profile.about.error'));
@@ -592,6 +606,21 @@ export function AboutMeSection({
     return null;
   }
 
+  const textProblem = aboutMeTextProblem(draft);
+  let textKind: 'long' | 'controls' | null = null;
+  if (textTouched && textProblem !== null) {
+    textKind = textProblem;
+  } else if (textServer !== null) {
+    textKind = textServer;
+  }
+  const textErrorId = `${textareaId}-error`;
+  const textAlert =
+    textKind === null ? null : (
+      <p id={textErrorId} role="alert" className="text-center text-sm text-app-danger">
+        {t(textKind === 'long' ? 'profile.about.errorLength' : 'profile.about.errorControls')}
+      </p>
+    );
+
   const displayPhoto =
     !editing && storedPhotoUrl !== null ? (
       // eslint-disable-next-line @next/next/no-img-element -- blob URL from loadPhoto
@@ -704,22 +733,34 @@ export function AboutMeSection({
                 ) : null}
               </div>
               <div className="flex items-start gap-2">
-                <label htmlFor={textareaId} className="sr-only">
-                  {t('profile.about.heading')}
-                </label>
-                <textarea
-                  id={textareaId}
-                  value={draft}
-                  maxLength={ABOUT_ME_MAX_LENGTH}
-                  disabled={saving}
-                  onChange={(event) => setDraft(event.target.value)}
-                  className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
-                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <label htmlFor={textareaId} className="sr-only">
+                    {t('profile.about.heading')}
+                  </label>
+                  <textarea
+                    id={textareaId}
+                    value={draft}
+                    disabled={saving}
+                    onChange={(event) => {
+                      setDraft(event.target.value);
+                      setTextTouched(true);
+                      setTextServer(null);
+                    }}
+                    onBlur={() => {
+                      setTextTouched(true);
+                    }}
+                    {...(textKind === null
+                      ? {}
+                      : { 'aria-invalid': true as const, 'aria-describedby': textErrorId })}
+                    className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
+                  />
+                  {textAlert}
+                </div>
                 <IconButton
                   type="button"
                   variant="primary"
                   size="md"
-                  disabled={saving || preparingPhoto}
+                  disabled={saving || preparingPhoto || textKind !== null}
                   aria-label={t('profile.about.save')}
                   title={t('profile.about.save')}
                   onClick={() => {

@@ -220,6 +220,13 @@
 - **Used by:** `fetchGrantPlaces` in `GrantPlacesPanel` on `/grants` and `/grants/goals`.
 - **Auth:** No bearer. Every visitor can read the free places.
 
+## Endpoint: GET /shops/list
+
+- **Purpose:** Same-origin proxy of api `GET /shops` (public shop directory). Forwards `limit` and `cursor`.
+- **Errors:** The proxy forwards the upstream status (400 invalid limit or cursor, 503 shops unavailable) or 502 when the api cannot be reached.
+- **Used by:** `fetchListedShops` on `/shops`.
+- **Auth:** No bearer.
+
 ## Endpoint: GET /funding/goal
 
 - **Purpose:** Same-origin proxy of api `GET /funding/goal` (7 UTC days of shop till-charge counts, plus how many shops had a charge on 5 of those days). Not the public 30-day shop series.
@@ -626,7 +633,7 @@
 
 - **Purpose:** Returns `{ key }` for the browser map, or `{ key: null }` when `GOOGLE_MAPS_API_KEY` is unset or blank. An empty value does not fail container boot. The key is not logged.
 - **Errors:** None. Always 200.
-- **Used by:** `PlaceField`, `PlacesMapScreen`.
+- **Used by:** `fetchMapsKey` (`PlacesMapScreen`, `ShopScreen`, `PlaceField`).
 - **Auth:** None.
 
 ## Endpoint: GET /forum/messages/hidden
@@ -808,7 +815,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/push/vapid-public` (VAPID application server public key for Web Push subscribe).
 - **Errors:** Upstream 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/settings` and via `enablePush` from the SignedInChrome Notifications click.
+- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/settings`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/push-subscriptions
@@ -888,6 +895,13 @@
 - **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, from `ShopAccountControl`, and from `DailyPaymentAmountsScreen` for the Person field on `/grants/payments/amounts`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/accounts/by-username/[username]
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/accounts/by-username/:username`. Exact account lookup by username. The stored spelling is returned; the client does not compare the name again.
+- **Errors:** Upstream 401/400/404/409, or 502 if the api is unreachable.
+- **Used by:** `lookupAccountByUsername` from `ShopAddWizard`, `ShopAccountControl`, and `ForumLoader`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/notifications
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, moderator appointment, and moderator proposal for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.
@@ -927,7 +941,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).
 - **Errors:** Upstream 400, 401, 404, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `deletePushSubscription` via `disablePush` on `/settings` and from `LogoutButton` (Menu and the Settings Account section).
+- **Used by:** `deletePushSubscription` via `disablePush` on `/settings` and from `LogoutButton` (Menu and the Settings Account section), and via `resyncPushSubscription` in `SignedInChrome` for the old endpoint after a VAPID key change.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /trust/graph
