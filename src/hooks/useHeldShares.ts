@@ -88,7 +88,9 @@ export interface UseHeldSharesResult {
  * words: the words of the open wallet in tab memory ({@link peekSessionPhrase},
  * after {@link settlePhraseDerivations}, no prompt), otherwise **Open my
  * shares** asks for the passkey as the recovery phrase does
- * ({@link useWalletPhrase}); only the key stays in memory. Boxes that do not
+ * ({@link useWalletPhrase}); only the key stays in memory, and only for the
+ * account it was derived for (another account in this tab looks its words up
+ * again and starts from an empty list). Boxes that do not
  * open with these words are counted and can be deleted together, never on
  * their own. **Keep a share** opens the camera; a scanned payload is kept in
  * a new box ({@link keepHeldShare}) and the list comes back with a notice:
@@ -116,7 +118,8 @@ export function useHeldShares(): UseHeldSharesResult {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [confirmDeleteLocked, setConfirmDeleteLocked] = useState(false);
   const [tries, setTries] = useState(0);
-  const keyRef = useRef<CryptoKey | null>(null);
+  /** The box key and the account it was derived for; a key never serves another account. */
+  const keyRef = useRef<{ accountId: string; key: CryptoKey } | null>(null);
   const runRef = useRef(0);
 
   /** Reads the boxes with `key`; an answer of an older read is dropped. */
@@ -146,6 +149,9 @@ export function useHeldShares(): UseHeldSharesResult {
   /** Derives the key from `words`, keeps only the key, and reads the boxes. */
   const open = useCallback(
     async (words: string): Promise<void> => {
+      if (holderAccountId === null) {
+        return;
+      }
       let key: CryptoKey;
       try {
         key = await heldShareBoxKey(words);
@@ -153,10 +159,10 @@ export function useHeldShares(): UseHeldSharesResult {
         setLoad('loadError');
         return;
       }
-      keyRef.current = key;
+      keyRef.current = { accountId: holderAccountId, key };
       await read(key);
     },
-    [read],
+    [holderAccountId, read],
   );
 
   useEffect(() => {
@@ -164,11 +170,15 @@ export function useHeldShares(): UseHeldSharesResult {
       return;
     }
     let cancelled = false;
-    const key = keyRef.current;
-    if (key !== null) {
-      void read(key);
+    const held = keyRef.current;
+    if (held !== null && held.accountId === holderAccountId) {
+      void read(held.key);
       return;
     }
+    keyRef.current = null;
+    runRef.current += 1;
+    setShares([]);
+    setLockedIds([]);
     setLoad('opening');
     void settlePhraseDerivations().then(() => {
       if (cancelled) {
@@ -215,10 +225,11 @@ export function useHeldShares(): UseHeldSharesResult {
 
   const onScanResult = useCallback(
     (text: string): void => {
-      const key = keyRef.current;
-      if (session === null || holderAccountId === null || key === null) {
+      const held = keyRef.current;
+      if (session === null || holderAccountId === null || held?.accountId !== holderAccountId) {
         return;
       }
+      const key = held.key;
       setView('list');
       const username = parseShareCode(text)?.ownerUsername;
       setSaving(true);
