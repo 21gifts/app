@@ -354,9 +354,14 @@ describe('api proxy wrappers', () => {
 
   it('proxyMeHeldSharesGet hits GET /me/held-shares', async () => {
     const fetchMock = stubApi();
-    await proxyMeHeldSharesGet(new Request('http://localhost/me/held-shares'));
+    await proxyMeHeldSharesGet(
+      new Request('http://localhost/me/held-shares', {
+        headers: { authorization: 'Bearer token' },
+      }),
+    );
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/me/held-shares');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
     expect(init.method).toBe('GET');
   });
 

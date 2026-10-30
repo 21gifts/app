@@ -179,9 +179,13 @@ describe('HeldSharesScreen', () => {
         'The recovery phrase could not be created or opened. Check this device and try again.',
       ],
     ] as const) {
-      held({ load: 'unlock', unlockError });
+      const failed = held({ load: 'unlock', unlockError });
       render();
       expect(screen.getByRole('alert').textContent).toBe(text);
+      const retry = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
+      expect(retry.disabled).toBe(false);
+      fireEvent.click(retry);
+      expect(failed.unlock).toHaveBeenCalledTimes(1);
       cleanup();
     }
     held({ load: 'unlock', unlockError: 'generic', unlocking: true });
@@ -251,6 +255,8 @@ describe('HeldSharesScreen', () => {
     });
     expect(screen.queryByRole('button', { name: 'Delete share of @bob' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Show code for @bob' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete share of @cara' })).toBeTruthy();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
     expect(result.cancel).toHaveBeenCalled();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
@@ -281,6 +287,8 @@ describe('HeldSharesScreen', () => {
     const confirm = screen.getByRole('group', {
       name: 'Delete the shares that cannot be opened?',
     });
+    expect(screen.getByRole('button', { name: 'Delete share of @bob' })).toBeTruthy();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
     expect(confirming.removeLocked).toHaveBeenCalled();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
@@ -327,6 +335,7 @@ describe('HeldSharesScreen', () => {
     expect(scanner.props?.onResult).toBe(result.onScanResult);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(backResults.list).toEqual([true]);
+    expect(result.back).toHaveBeenCalledTimes(1);
   });
 
   it('shows a share’s code for its owner', () => {

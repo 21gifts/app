@@ -18,8 +18,9 @@ describe('GET /me/held-shares', () => {
       }),
     );
     expect(response.status).toBe(200);
+    expect(await response.text()).toBe('{"boxes":[]}');
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(url.pathname).toBe('/me/held-shares');
+    expect(String(url)).toBe('https://api.test/me/held-shares');
     expect(init.method).toBe('GET');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
