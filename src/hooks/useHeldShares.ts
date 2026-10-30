@@ -89,8 +89,10 @@ export interface UseHeldSharesResult {
  * after {@link settlePhraseDerivations}, no prompt), otherwise **Open my
  * shares** asks for the passkey as the recovery phrase does
  * ({@link useWalletPhrase}); only the key stays in memory, and only for the
- * account it was derived for (another account in this tab looks its words up
- * again and starts from an empty list). Boxes that do not
+ * account it was derived for: another account in this tab looks its words up
+ * again and starts from an empty list, and an answer that arrives for the
+ * previous account (key, read, keep, or delete) changes nothing. A box deleted
+ * here stays out of a read that was already running. Boxes that do not
  * open with these words are counted and can be deleted together, never on
  * their own. **Keep a share** opens the camera; a scanned payload is kept in
  * a new box ({@link keepHeldShare}) and the list comes back with a notice:
@@ -121,6 +123,12 @@ export function useHeldShares(): UseHeldSharesResult {
   /** The box key and the account it was derived for; a key never serves another account. */
   const keyRef = useRef<{ accountId: string; key: CryptoKey } | null>(null);
   const runRef = useRef(0);
+  /** The account this page shows; a change starts a new epoch. */
+  const accountRef = useRef<string | null>(null);
+  /** Advanced on every account change; an answer of an older epoch changes nothing. */
+  const epochRef = useRef(0);
+  /** Boxes deleted on this page for the account, left out of a read that was already running. */
+  const deletedRef = useRef<Set<string>>(new Set());
 
   /** Reads the boxes with `key`; an answer of an older read is dropped. */
   const read = useCallback(
@@ -133,8 +141,9 @@ export function useHeldShares(): UseHeldSharesResult {
       try {
         const held = await loadHeldShares(session, holderAccountId, key);
         if (runRef.current === run) {
-          setShares(held.shares);
-          setLockedIds(held.lockedIds);
+          const deleted = deletedRef.current;
+          setShares(held.shares.filter((share) => !deleted.has(share.boxId)));
+          setLockedIds(held.lockedIds.filter((id) => !deleted.has(id)));
           setLoad('ready');
         }
       } catch {
@@ -152,11 +161,17 @@ export function useHeldShares(): UseHeldSharesResult {
       if (holderAccountId === null) {
         return;
       }
+      const epoch = epochRef.current;
       let key: CryptoKey;
       try {
         key = await heldShareBoxKey(words);
       } catch {
-        setLoad('loadError');
+        if (epochRef.current === epoch) {
+          setLoad('loadError');
+        }
+        return;
+      }
+      if (epochRef.current !== epoch) {
         return;
       }
       keyRef.current = { accountId: holderAccountId, key };
@@ -166,19 +181,29 @@ export function useHeldShares(): UseHeldSharesResult {
   );
 
   useEffect(() => {
+    if (accountRef.current !== holderAccountId) {
+      accountRef.current = holderAccountId;
+      epochRef.current += 1;
+      runRef.current += 1;
+      keyRef.current = null;
+      deletedRef.current = new Set();
+      setShares([]);
+      setLockedIds([]);
+      setSaving(false);
+      setView('list');
+      setNotice(null);
+      setConfirmDelete(null);
+      setConfirmDeleteLocked(false);
+    }
     if (session === null || holderAccountId === null) {
       return;
     }
     let cancelled = false;
     const held = keyRef.current;
-    if (held !== null && held.accountId === holderAccountId) {
+    if (held !== null) {
       void read(held.key);
       return;
     }
-    keyRef.current = null;
-    runRef.current += 1;
-    setShares([]);
-    setLockedIds([]);
     setLoad('opening');
     void settlePhraseDerivations().then(() => {
       if (cancelled) {
@@ -233,7 +258,11 @@ export function useHeldShares(): UseHeldSharesResult {
       setView('list');
       const username = parseShareCode(text)?.ownerUsername;
       setSaving(true);
+      const epoch = epochRef.current;
       void keepHeldShare(session, holderAccountId, key, shares, text).then((result) => {
+        if (epochRef.current !== epoch) {
+          return;
+        }
         setSaving(false);
         if (result.ok) {
           setShares((current) =>
@@ -270,12 +299,18 @@ export function useHeldShares(): UseHeldSharesResult {
       }
       setConfirmDelete(null);
       setNotice(null);
+      const epoch = epochRef.current;
       deleteHeldShareBox(session, share.boxId).then(
         () => {
-          setShares((current) => current.filter((kept) => kept.boxId !== share.boxId));
+          if (epochRef.current === epoch) {
+            deletedRef.current.add(share.boxId);
+            setShares((current) => current.filter((kept) => kept.boxId !== share.boxId));
+          }
         },
         () => {
-          setNotice({ kind: 'deleteError' });
+          if (epochRef.current === epoch) {
+            setNotice({ kind: 'deleteError' });
+          }
         },
       );
     },
@@ -293,14 +328,21 @@ export function useHeldShares(): UseHeldSharesResult {
     }
     setConfirmDeleteLocked(false);
     setNotice(null);
+    const epoch = epochRef.current;
     void (async () => {
       const left: string[] = [];
       for (const id of lockedIds) {
         try {
           await deleteHeldShareBox(session, id);
+          if (epochRef.current === epoch) {
+            deletedRef.current.add(id);
+          }
         } catch {
           left.push(id);
         }
+      }
+      if (epochRef.current !== epoch) {
+        return;
       }
       setLockedIds(left);
       if (left.length > 0) {
