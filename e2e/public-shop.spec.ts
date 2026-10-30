@@ -8,6 +8,8 @@ const UNAVAILABLE_NPUB = `npub1${'4'.repeat(58)}`;
 const NO_PAYMENT_NPUB = `npub1${'5'.repeat(58)}`;
 const UNKNOWN_NPUB = `npub1${'6'.repeat(58)}`;
 const GALLERY_NPUB = `npub1${'7'.repeat(58)}`;
+const RELATIVE_GALLERY_NPUB = `npub1${'c'.repeat(58)}`;
+const GALLERY_PHOTO_MESSAGE_ID = '77777777-7777-4777-8777-777777777777';
 const API_PHOTO_NPUB = `npub1${'9'.repeat(58)}`;
 const SHOP_PHOTO_MESSAGE_ID = '99999999-9999-4999-8999-999999999999';
 const KNOWN_HEX = 'a'.repeat(64);
@@ -44,8 +46,14 @@ test('ShopScreen gallery: two photos show dots and the second dot selects photo 
   await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
   const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
   await expect(stills).toHaveCount(2);
-  await expect(stills.nth(0)).toHaveAttribute('src', /\/e2e\/shop-photos\/one\.jpg$/);
-  await expect(stills.nth(1)).toHaveAttribute('src', /\/e2e\/shop-photos\/two\.jpg$/);
+  await expect(stills.nth(0)).toHaveAttribute(
+    'src',
+    `/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo.jpg`,
+  );
+  await expect(stills.nth(1)).toHaveAttribute(
+    'src',
+    `/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo/1.jpg`,
+  );
   const first = page.getByRole('button', { name: 'Photo 1 of 2' });
   const second = page.getByRole('button', { name: 'Photo 2 of 2' });
   await expect(first).toHaveAttribute('aria-current', 'true');
@@ -224,8 +232,8 @@ test('Function: resolveShopPhotoUrl — a relative shop photo becomes an api URL
     'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
   );
   expect(resolveShopPhotoUrl('javascript:alert(1)', 'http://127.0.0.1:3001')).toBeNull();
-  await page.goto(`/${GALLERY_NPUB}`);
-  const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
+  await page.goto(`/${RELATIVE_GALLERY_NPUB}`);
+  const stills = page.getByRole('img', { name: 'Photo from Relative Gallery' });
   await expect(stills).toHaveCount(2);
   await expect(stills.nth(0)).toHaveAttribute(
     'src',

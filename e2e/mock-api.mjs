@@ -27,6 +27,8 @@ const conversations = [];
 const forumPhotos = new Map();
 /** Forum note whose cover photo the api-form shop photo points at (public-shop.spec.ts). */
 const SHOP_PHOTO_MESSAGE_ID = '99999999-9999-4999-8999-999999999999';
+/** Forum note whose two stills the Twin Gallery shop sends in the api form (public-shop.spec.ts, visual.spec.ts). */
+const GALLERY_PHOTO_MESSAGE_ID = '77777777-7777-4777-8777-777777777777';
 /** @type {Map<string, Buffer>} keyed `${messageId}:${index}` */
 const conversationPhotos = new Map();
 /** @type {Map<string, Buffer>} */
@@ -2561,7 +2563,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const galleryPhotoMatch = pathName.match(/^\/e2e\/shop-photos\/(one|two)\.jpg$/);
+  // The relative gallery's paths, and the same two stills as the Twin Gallery's
+  // cover and first extra photo, asked for by the app's photo proxy.
+  const galleryPhotoMatch =
+    pathName.match(/^\/e2e\/shop-photos\/(one|two)\.jpg$/) ??
+    (pathName === `/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo.jpg`
+      ? ['', 'one']
+      : pathName === `/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo/1.jpg`
+        ? ['', 'two']
+        : null);
   if (method === 'GET' && galleryPhotoMatch !== null) {
     // Two different fixture stills, so the gallery shot shows which photo is selected.
     const file = galleryPhotoMatch[1] === 'one' ? 'technical-note.jpg' : 'profile-about.jpg';
@@ -2607,6 +2617,7 @@ const server = http.createServer(async (req, res) => {
     const unavailableNpub = `npub1${'4'.repeat(58)}`;
     const noPaymentNpub = `npub1${'5'.repeat(58)}`;
     const galleryNpub = `npub1${'7'.repeat(58)}`;
+    const relativeGalleryNpub = `npub1${'c'.repeat(58)}`;
     const noPinNpub = `npub1${'8'.repeat(58)}`;
     const apiPhotoNpub = `npub1${'9'.repeat(58)}`;
     const knownHex = 'a'.repeat(64);
@@ -2666,6 +2677,52 @@ const server = http.createServer(async (req, res) => {
             npub: galleryNpub,
             messageId: '11111111-1111-4111-8111-111111111111',
             name: 'Twin Gallery',
+            description: 'Two photos, one shop.',
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: 'Zurich Old Town',
+              address: {
+                street: 'Moon Street',
+                houseNumber: '21',
+                postalCode: '8001',
+                city: 'Zurich',
+                country: 'CH',
+              },
+            },
+            // The api form: the app loads both through its own photo proxy. A
+            // non-http(s) photo is dropped, so the gallery still has two.
+            photos: [
+              {
+                url: `http://${HOST}:${PORT}/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo.jpg`,
+                width: 1168,
+                height: 784,
+              },
+              { url: 'javascript:alert(1)', width: 1, height: 1 },
+              {
+                url: `http://${HOST}:${PORT}/messages/${GALLERY_PHOTO_MESSAGE_ID}/photo/1.jpg`,
+                width: 1400,
+                height: 933,
+              },
+            ],
+            payUsername: 'luna',
+            nip05: 'luna@21.gifts',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === relativeGalleryNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: relativeGalleryNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Relative Gallery',
             description: 'Two photos, one shop.',
             place: {
               lat: 47.3769,
