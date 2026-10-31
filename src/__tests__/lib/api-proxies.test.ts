@@ -384,12 +384,16 @@ describe('api proxy wrappers', () => {
   it('proxyMeHeldShareDelete hits DELETE /me/held-shares/:id', async () => {
     const fetchMock = stubApi();
     await proxyMeHeldShareDelete(
-      new Request('http://localhost/me/held-shares/x', { method: 'DELETE' }),
+      new Request('http://localhost/me/held-shares/x', {
+        method: 'DELETE',
+        headers: { authorization: 'Bearer token' },
+      }),
       'a/b',
     );
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/me/held-shares/a%2Fb');
     expect(init.method).toBe('DELETE');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
 
   it('proxyLnurlpayMetadataGet hits GET /lnurlpay/:pubkey/metadata with the query', async () => {
