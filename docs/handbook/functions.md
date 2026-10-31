@@ -3874,7 +3874,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets, the session token in `localStorage`, that recovery words and shares stay in the open tab's memory while an account is recovered or a balance moved, and that a Social Recovery share kept for another member is encrypted in the browser with a key from the holder's own 12 words and stored with the holder's account, unreadable to 21.gifts) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets, the session token in `localStorage`, that recovery words and shares stay in the open tab's memory while an account is recovered or a balance moved, and that a Social Recovery part kept for another member is encrypted in the browser with a key from the keeping member's own 12 words and stored with their account, unreadable to 21.gifts, until they delete it) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
 - **Inputs:** None.
 - **Returns / side effects:** The legal screen with links to `/contact`, `/terms`, and `/terms#wallet-and-data`.
 - **Used by:** Route `/legal`.
@@ -4934,7 +4934,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** After the member's own Social Recovery, moves the boxes they keep for others from their previous 12 words to their current ones: every box that opens with the previous words is sealed again with the current words and written back under the same id (`putHeldShareBox`). A box that does not open with the previous words is left as it is.
 - **Inputs:** Session token, the member's account id, the previous 12 words, and the current 12 words, or `null` while the tab holds none.
 - **Returns / side effects:** How many boxes moved. It reads the boxes first (`fetchHeldShareBoxes`), so a member who keeps none derives no key. Never throws: no boxes, no current words, same words, words that are not a phrase, or boxes that cannot be read move nothing, and a box whose write fails stays under the previous words for the next call (moved boxes no longer open with the previous words, so a repeat is safe).
-- **Used by:** The sign-in with the new passkey in `recovery-flow.ts` (with the old words still in memory) and `useRemainingBalance` (old words entered on `/settings/previous-wallets/[sparkPubkey]`, with the open wallet's words from tab memory, or `null` when the tab holds none). Neither waits for it, so it never holds up the recovery or the balance move.
+- **Used by:** The sign-in with the new passkey in `recovery-flow.ts` (with the old words still in memory) and `useRemainingBalance` (old words entered on `/settings/previous-wallets/[sparkPubkey]`, with the signed-in wallet's words from tab memory, or `null` when the tab holds none). Neither waits for it, so it never holds up the recovery or the balance move.
 
 ## Function: derSignatureHex
 

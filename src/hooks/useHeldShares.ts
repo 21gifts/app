@@ -103,7 +103,7 @@ export interface UseHeldSharesResult {
  * confirmed delete removes the box ({@link deleteHeldShareBox}; a box the api
  * did not delete stays and gives the delete notice). The top-left arrow steps
  * from the camera or a code back to the list, otherwise it leaves. Without an
- * account every action does nothing.
+ * account it reads, keeps, and deletes nothing, and starts no passkey prompt.
  *
  * @returns Load state, shares, view, notice, the pending delete, and the actions.
  */

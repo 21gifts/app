@@ -39,7 +39,7 @@ const ROW = 'flex flex-col gap-3 rounded-lg border border-app-border p-3';
 
 /**
  * `/settings/held-shares`: the shares the signed-in member keeps for other
- * members' social recovery ({@link useHeldShares}). Every state shows the
+ * members' social recovery ({@link useHeldShares}). Every list step shows the
  * title and the intro. While the boxes open, a status line says so. When no
  * words are in tab memory, the muted passkey hint and **Open my shares** ask
  * for the passkey; a failed prompt shows the recovery phrase's wording above

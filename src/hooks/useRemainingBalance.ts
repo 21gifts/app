@@ -130,8 +130,8 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * synced read of 0) returns there too. The words stay in component memory until the wallet
  * opened or the page closes; leaving the page closes the wallet
  * ({@link closePreviousWallet}). Words entered here also move the shares the
- * member keeps for others from these words to the open wallet's words in tab
- * memory ({@link relockHeldShares}, on its own, never holding up the page;
+ * member keeps for others from these words to the signed-in wallet's words in
+ * tab memory ({@link relockHeldShares}, on its own, never holding up the page;
  * without words in tab memory, or for boxes that do not open with these
  * words, nothing moves). In a Playwright
  * build the `prev-…` pins open a fixture step.

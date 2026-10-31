@@ -37,7 +37,7 @@ export interface HeldShare {
 export interface HeldShares {
   /** The shares that opened, by owner username. */
   shares: HeldShare[];
-  /** Ids of the boxes that do not open with the current words. */
+  /** Ids of the boxes that do not open with the current words or hold no share code. */
   lockedIds: string[];
 }
 
