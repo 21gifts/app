@@ -209,7 +209,7 @@ describe('relockHeldShares', () => {
     );
   });
 
-  it('derives no key and moves nothing without boxes, without current words, for the same words, or for words that are not a phrase', async () => {
+  it('derives no key and moves nothing without boxes, without current words, or for the same words', async () => {
     api.fetchHeldShareBoxes.mockResolvedValue([]);
     const keySpy = vi.spyOn(crypto.subtle, 'deriveKey');
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(0);
@@ -224,7 +224,14 @@ describe('relockHeldShares', () => {
     expect(await relockHeldShares('sess', HOLDER, WORDS.toUpperCase(), WORDS)).toBe(0);
     expect(keySpy).not.toHaveBeenCalled();
     expect(api.fetchHeldShareBoxes).toHaveBeenCalledTimes(4);
-    expect(await relockHeldShares('sess', HOLDER, 'not a phrase', WORDS)).toBe(0);
+    expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('moves nothing and does not throw for old words that are not a phrase', async () => {
+    api.fetchHeldShareBoxes.mockResolvedValue([
+      await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
+    ]);
+    await expect(relockHeldShares('sess', HOLDER, 'not a phrase', WORDS)).resolves.toBe(0);
     expect(api.putHeldShareBox).not.toHaveBeenCalled();
   });
 
