@@ -53,6 +53,7 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
       aria-modal="true"
       aria-labelledby="pos-paid-title"
       aria-describedby="pos-paid-amount"
+      data-covers-chrome
       className="pos-paid-fit fixed inset-0 z-[100] flex animate-paid-in flex-col items-center justify-center gap-6 bg-app-success p-6 text-center text-app-bg"
     >
       <div className="pos-paid-mark relative flex h-32 w-32 items-center justify-center sm:h-40 sm:w-40">

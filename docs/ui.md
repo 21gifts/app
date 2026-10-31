@@ -648,6 +648,8 @@ export interface PageChromeProps {
 
 Slot registrars: `AppShellHeader`, `AppShellFooter`, `AppShellTopLeft` (child registration wins over page `topLeft`), `AppShellTopLeftExtra` (extra chrome right of the top-left cluster; the host is `empty:hidden`). `useAppShellScroller` returns the inner `[data-scrollport]` node, or `null` outside AppShell.
 
+A fixed overlay never covers the app chrome row. The rare overlay that must cover it — the tour, the top toast, a full-screen dialog, the lifted menu — carries `data-covers-chrome` on its fixed root; the page-frame check fails any other overlay that covers the chrome row.
+
 ### `Wordmark`
 
 **Anatomy.** Text `21.gifts` as `Link` when `href` is set, otherwise a `<span>`.

@@ -432,6 +432,7 @@ function SignedInMenu(): ReactElement {
               <div
                 id="signed-in-menu"
                 ref={menuRef}
+                data-covers-chrome={lifted || undefined}
                 className={panelClass}
                 style={
                   lifted && menuBox !== null

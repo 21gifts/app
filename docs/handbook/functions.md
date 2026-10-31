@@ -1645,9 +1645,9 @@ Motion in the reaction flow (`Collapse` and `AutoHeight`, with `src/lib/motion.t
 
 ## Function: pageFrameProblems
 
-- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. A box inside `[data-scroll-x]` is ignored for the horizontal check unless it is position:fixed and its border box already crosses the left or right edge of the window. The sideways row itself is not ignored.
+- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom, and position:fixed overlays whose border box covers the app chrome row (`[data-app-chrome]`) by more than one pixel. An overlay whose root or an ancestor carries `data-covers-chrome` (the tour, the top toast, a full-screen dialog, the lifted menu) is exempt from the chrome check. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. A box inside `[data-scroll-x]` is ignored for the horizontal check unless it is position:fixed and its border box already crosses the left or right edge of the window. The sideways row itself is not ignored.
 - **Inputs:** None. Uses the open document, `window.innerWidth`, and `window.innerHeight`.
-- **Returns / side effects:** A string array. Empty means the page stays in the window. No DOM writes and no network.
+- **Returns / side effects:** A string array. Empty means the page stays in the window and no overlay covers the chrome row. No DOM writes and no network.
 - **Used by:** `shotScreen` in `e2e/visual.spec.ts`, before every screenshot, and the behavior test `Function: pageFrameProblems`.
 
 ## Function: ShopPlaceControl

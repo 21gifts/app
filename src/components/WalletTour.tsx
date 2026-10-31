@@ -262,7 +262,7 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
   const ringRight = Math.min(rect.right + RING_PAD, window.innerWidth);
 
   return (
-    <div className="fixed inset-0 z-[95]">
+    <div data-covers-chrome className="fixed inset-0 z-[95]">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed rounded-2xl shadow-[0_0_0_9999px_rgb(0_0_0/0.62)] ring-2 ring-white transition-all duration-300 motion-reduce:transition-none"

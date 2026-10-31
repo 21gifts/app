@@ -567,4 +567,41 @@ describe('pageFrameProblems', () => {
       '1 more boxes stick out',
     ]);
   });
+
+  it('fails a fixed overlay that covers the app chrome', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    stubBox(overlay, { left: 0, right: 375, top: 0, bottom: 200 });
+    document.body.append(chromeEl, overlay);
+    expect(pageFrameProblems()).toContain('fixed overlay covers the app chrome: div');
+  });
+
+  it('allows a covering overlay under a data-covers-chrome root', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const root = document.createElement('div');
+    root.setAttribute('data-covers-chrome', '');
+    root.style.position = 'fixed';
+    stubBox(root, { left: 0, right: 375, top: 0, bottom: 200 });
+    document.body.append(chromeEl, root);
+    expect(pageFrameProblems()).not.toContain('fixed overlay covers the app chrome: div');
+  });
+
+  it('allows a fixed overlay that sits fully below the app chrome', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    stubBox(overlay, { left: 0, right: 320, top: 100, bottom: 200 });
+    document.body.append(chromeEl, overlay);
+    expect(pageFrameProblems()).not.toContain('fixed overlay covers the app chrome: div');
+  });
 });

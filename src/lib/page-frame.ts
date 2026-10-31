@@ -72,8 +72,11 @@ export function fitBoxInFrame(input: FrameBoxInput): PlacedFrameBox | null {
 /**
  * Problems with the live document. Empty means the page stays in the window.
  *
- * @returns Sideways-scroll and stick-out messages for boxes that leave the window horizontally or
- *   vertically. Empty when the page stays in the window.
+ * Also fails any fixed overlay that covers the app chrome row, unless an ancestor carries
+ * `data-covers-chrome` (the tour and the top toast do).
+ *
+ * @returns Sideways-scroll, stick-out, and chrome-cover messages for boxes that leave the window
+ *   horizontally or vertically or cover the chrome row. Empty when the page stays clean.
  */
 export function pageFrameProblems(): string[] {
   const problems: string[] = [];
@@ -106,12 +109,27 @@ export function pageFrameProblems(): string[] {
     return tag;
   }
 
+  const chrome = document.querySelector('[data-app-chrome]');
+  const chromeRect = chrome instanceof HTMLElement ? chrome.getBoundingClientRect() : null;
+
   const stickOut: string[] = [];
   for (const node of document.body.querySelectorAll('*')) {
     // Slides may only stick out of the window to the left or right.
     const slide = node.closest('[data-scroll-x]') !== null && !node.hasAttribute('data-scroll-x');
     const rect = node.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) {
+      continue;
+    }
+    if (
+      chromeRect !== null &&
+      rect.top <= chromeRect.bottom - 1 &&
+      rect.bottom >= chromeRect.top + 1 &&
+      rect.left <= chromeRect.right - 1 &&
+      rect.right >= chromeRect.left + 1 &&
+      getComputedStyle(node).position === 'fixed' &&
+      node.closest('[data-covers-chrome]') === null
+    ) {
+      problems.push(`fixed overlay covers the app chrome: ${labelFor(node)}`);
       continue;
     }
     const overflowX = rect.left < -1 || rect.right > window.innerWidth + 1;
