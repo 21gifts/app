@@ -71,26 +71,31 @@ afterEach(() => {
 });
 
 describe('loadHeldShares', () => {
-  it('lists the boxes that open by owner username and counts the rest as locked', async () => {
+  it('lists the boxes that open by owner username, then box order, and counts the rest as locked', async () => {
+    // Username order (ann, ann, zoe) runs against account id, identifier, and box id order.
     api.fetchHeldShareBoxes.mockResolvedValue([
-      await box(WORDS, 'a'.repeat(32), code(OTHER_SET, 'acc_cara', 'cara')),
+      await box(WORDS, 'a'.repeat(32), code(SHARES[0], 'acc_aa', 'zoe')),
       await box(OLD_WORDS, 'b'.repeat(32), code(SHARES[1])),
-      await box(WORDS, 'c'.repeat(32), code(SHARES[0])),
+      await box(WORDS, 'e'.repeat(32), code(OTHER_SET, 'acc_zz', 'ann')),
       await box(WORDS, 'd'.repeat(32), 'not a share code'),
+      await box(WORDS, 'c'.repeat(32), code(OTHER_SET, 'acc_yy', 'ann')),
     ]);
     const held = await loadHeldShares('sess', HOLDER, await heldShareBoxKey(WORDS));
     expect(api.fetchHeldShareBoxes).toHaveBeenCalledWith('sess');
-    expect(held.shares).toEqual([
-      {
-        boxId: 'c'.repeat(32),
-        code: code(SHARES[0]),
-        ownerAccountId: 'acc_bob',
-        ownerUsername: 'bob',
-        identifier: 2864,
-        memberIndex: 0,
-      },
-      expect.objectContaining({ boxId: 'a'.repeat(32), ownerUsername: 'cara', identifier: 7506 }),
+    expect(held.shares.map((share) => share.boxId)).toEqual([
+      'e'.repeat(32),
+      'c'.repeat(32),
+      'a'.repeat(32),
     ]);
+    expect(held.shares[2]).toEqual({
+      boxId: 'a'.repeat(32),
+      code: code(SHARES[0], 'acc_aa', 'zoe'),
+      ownerAccountId: 'acc_aa',
+      ownerUsername: 'zoe',
+      identifier: 2864,
+      memberIndex: 0,
+    });
+    expect(held.shares[0]).toMatchObject({ ownerAccountId: 'acc_zz', identifier: 7506 });
     expect(held.lockedIds).toEqual(['b'.repeat(32), 'd'.repeat(32)]);
   });
 
@@ -212,6 +217,7 @@ describe('relockHeldShares', () => {
     api.fetchHeldShareBoxes.mockResolvedValue([
       await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
     ]);
+    expect(keySpy).toHaveBeenCalled();
     keySpy.mockClear();
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, null)).toBe(0);
     expect(await relockHeldShares('sess', HOLDER, ` ${WORDS} `, WORDS)).toBe(0);

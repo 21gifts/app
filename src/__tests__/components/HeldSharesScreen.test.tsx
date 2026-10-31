@@ -153,6 +153,8 @@ describe('HeldSharesScreen', () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open my shares' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('asks for the passkey with Open my shares and shows a failed prompt in the recovery phrase wording', () => {
@@ -165,8 +167,12 @@ describe('HeldSharesScreen', () => {
       ),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open my shares' }));
-    expect(result.unlock).toHaveBeenCalled();
+    expect(result.unlock).toHaveBeenCalledTimes(1);
+    expect(result.reload).not.toHaveBeenCalled();
+    expect(result.scan).not.toHaveBeenCalled();
     cleanup();
     for (const [unlockError, text] of [
       [
@@ -188,8 +194,19 @@ describe('HeldSharesScreen', () => {
       expect(failed.unlock).toHaveBeenCalledTimes(1);
       cleanup();
     }
+    held({ load: 'unlock', unlocking: true });
+    render();
+    expect(screen.getByText('Confirm with your passkey to open the shares you keep.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    const busy = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
+    expect(busy.disabled).toBe(true);
+    expect(busy.querySelector('svg')?.getAttribute('class')).toContain('animate-spin');
+    cleanup();
     held({ load: 'unlock', unlockError: 'generic', unlocking: true });
     render();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The recovery phrase could not be created or opened. Check this device and try again.',
+    );
     expect(screen.getByRole('alert').className).toContain('text-app-danger');
     const button = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
@@ -205,8 +222,12 @@ describe('HeldSharesScreen', () => {
         'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
       ),
     ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open my shares' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(result.reload).toHaveBeenCalled();
+    expect(result.reload).toHaveBeenCalledTimes(1);
+    expect(result.unlock).not.toHaveBeenCalled();
+    expect(result.scan).not.toHaveBeenCalled();
   });
 
   it('shows the title, the intro, Keep a share, and the empty line', () => {
@@ -242,8 +263,16 @@ describe('HeldSharesScreen', () => {
     expect(screen.queryByText('Delete share of @bob')).toBeNull();
     fireEvent.click(show);
     expect(result.showQr).toHaveBeenCalledWith(BOB);
+    expect(result.askDelete).not.toHaveBeenCalled();
     fireEvent.click(remove);
     expect(result.askDelete).toHaveBeenCalledWith(BOB);
+    expect(result.showQr).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Show code for @cara' }));
+    expect(result.showQr).toHaveBeenLastCalledWith(CARA);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete share of @cara' }));
+    expect(result.askDelete).toHaveBeenLastCalledWith(CARA);
+    fireEvent.click(screen.getByRole('button', { name: 'Keep a share' }));
+    expect(result.scan).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('You keep no shares for others yet.')).toBeNull();
   });
 
@@ -258,9 +287,12 @@ describe('HeldSharesScreen', () => {
     expect(screen.getByRole('button', { name: 'Delete share of @cara' })).toBeTruthy();
     expect(screen.getAllByRole('group')).toHaveLength(1);
     fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
-    expect(result.cancel).toHaveBeenCalled();
+    expect(result.cancel).toHaveBeenCalledTimes(1);
+    expect(result.remove).not.toHaveBeenCalled();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+    expect(result.remove).toHaveBeenCalledTimes(1);
     expect(result.remove).toHaveBeenCalledWith(BOB);
+    expect(result.cancel).toHaveBeenCalledTimes(1);
   });
 
   it('counts the boxes that do not open in one neutral row, with a confirmed delete', () => {
@@ -272,9 +304,10 @@ describe('HeldSharesScreen', () => {
     expect(within(row).getByText(/cannot be opened/).className).toContain('text-app-muted');
     expect(screen.queryByText('Delete the shares that cannot be opened')).toBeNull();
     fireEvent.click(
-      screen.getByRole('button', { name: 'Delete the shares that cannot be opened' }),
+      within(row).getByRole('button', { name: 'Delete the shares that cannot be opened' }),
     );
-    expect(result.askDeleteLocked).toHaveBeenCalled();
+    expect(result.askDeleteLocked).toHaveBeenCalledTimes(1);
+    expect(result.removeLocked).not.toHaveBeenCalled();
     cleanup();
     const confirming = held({ shares: [BOB], lockedCount: 3, confirmDeleteLocked: true });
     render();
@@ -289,10 +322,12 @@ describe('HeldSharesScreen', () => {
     });
     expect(screen.getByRole('button', { name: 'Delete share of @bob' })).toBeTruthy();
     expect(screen.getAllByRole('group')).toHaveLength(1);
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
-    expect(confirming.removeLocked).toHaveBeenCalled();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
-    expect(confirming.cancel).toHaveBeenCalled();
+    expect(confirming.cancel).toHaveBeenCalledTimes(1);
+    expect(confirming.removeLocked).not.toHaveBeenCalled();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+    expect(confirming.removeLocked).toHaveBeenCalledTimes(1);
+    expect(confirming.cancel).toHaveBeenCalledTimes(1);
   });
 
   it('shows the saving line in place of Keep a share', () => {
