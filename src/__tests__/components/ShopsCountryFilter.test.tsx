@@ -131,6 +131,9 @@ describe('ShopsCountryFilter', () => {
         if (this.hasAttribute('data-app-frame')) {
           return new DOMRect(100, 20, 800, 700);
         }
+        if (this.hasAttribute('data-app-chrome')) {
+          return new DOMRect(120, 25, 760, 45);
+        }
         return opensAbove ? new DOMRect(220, 650, 180, 44) : new DOMRect(220, 70, 180, 44);
       });
     try {
@@ -172,7 +175,7 @@ describe('ShopsCountryFilter', () => {
       await waitFor(() => {
         const lifted = screen.getByRole('listbox').parentElement;
         expect(lifted?.style.bottom).toBe('126px');
-        expect(lifted?.style.top).toBe('36px');
+        expect(lifted?.style.top).toBe('86px');
       });
 
       fireEvent.click(trigger);

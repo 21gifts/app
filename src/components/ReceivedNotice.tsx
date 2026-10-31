@@ -42,7 +42,10 @@ export function ReceivedNotice(): ReactElement | null {
   const fiatAmount = satsToFiatAmount(payment.amountSats, rateDay, fiat);
 
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] flex justify-center px-3">
+    <div
+      data-covers-chrome
+      className="pointer-events-none fixed inset-x-0 top-3 z-[90] flex justify-center px-3"
+    >
       <div
         role="status"
         key={payment.id}

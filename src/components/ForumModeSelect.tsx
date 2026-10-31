@@ -278,6 +278,11 @@ export function ForumModeSelect<T extends string>(props: {
       }
       const anchorRect = anchor.getBoundingClientRect();
       const raw = frameEl.getBoundingClientRect();
+      // Include the chrome row bottom in the top bound so the listbox never covers the chrome.
+      const chromeEl = frameEl.querySelector('[data-app-chrome]');
+      const chromeBottom =
+        /* v8 ignore next line -- an AppShell frame always renders the chrome row */
+        chromeEl instanceof HTMLElement ? chromeEl.getBoundingClientRect().bottom : raw.top;
       const band = window.visualViewport;
       const viewTop = band?.offsetTop ?? 0;
       const viewBottom = viewTop + (band?.height ?? window.innerHeight);
@@ -285,7 +290,7 @@ export function ForumModeSelect<T extends string>(props: {
         fitBoxInFrame({
           frameLeft: Math.max(raw.left, 0),
           frameRight: Math.min(raw.right, window.innerWidth),
-          frameTop: Math.max(raw.top, viewTop),
+          frameTop: Math.max(raw.top, viewTop, chromeBottom),
           frameBottom: Math.min(raw.bottom, viewBottom),
           anchorLeft: anchorRect.left,
           anchorTop: anchorRect.top,
