@@ -59,6 +59,15 @@ describe('heldShareBoxKey', () => {
     expect(new TextDecoder().decode(plain)).toBe(CODE);
   });
 
+  it('wipes the 16 bytes once the key material holds them', async () => {
+    const spy = vi.spyOn(crypto.subtle, 'importKey');
+    await heldShareBoxKey(OTHER_WORDS);
+    const entropy = spy.mock.calls[0]?.[1] as Uint8Array;
+    spy.mockRestore();
+    expect(entropy).toHaveLength(16);
+    expect(entropy.every((byte) => byte === 0)).toBe(true);
+  });
+
   it('throws for words that are not a phrase', async () => {
     await expect(heldShareBoxKey('not a phrase')).rejects.toThrow();
   });
@@ -81,6 +90,17 @@ describe('newHeldShareBoxId', () => {
 describe('sealHeldShare and openHeldShare', () => {
   it('seals a version 1 box with a fresh IV that opens again', async () => {
     const key = await heldShareBoxKey(WORDS);
+    const iv = Uint8Array.from({ length: 12 }, (_, i) => i + 1);
+    const spy = vi
+      .spyOn(crypto, 'getRandomValues')
+      .mockImplementationOnce(<T extends ArrayBufferView | null>(array: T): T => {
+        (array as unknown as Uint8Array).set(iv);
+        return array;
+      });
+    const pinned = base64UrlToBytes(await sealHeldShare(key, 'acc_hal', BOX_ID, CODE));
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+    expect(pinned.slice(1, 13)).toEqual(iv);
     const first = await sealHeldShare(key, 'acc_hal', BOX_ID, CODE);
     const second = await sealHeldShare(key, 'acc_hal', BOX_ID, CODE);
     expect(first).toMatch(/^[A-Za-z0-9_-]+$/);
@@ -91,7 +111,7 @@ describe('sealHeldShare and openHeldShare', () => {
     expect(await openHeldShare(key, 'acc_hal', BOX_ID, first)).toBe(CODE);
   });
 
-  it('does not open with other words, another holder, another id, another version, or changed bytes', async () => {
+  it('does not open with other words, another holder, another id, another version, changed bytes, or a short box', async () => {
     const key = await heldShareBoxKey(WORDS);
     const box = await sealHeldShare(key, 'acc_hal', BOX_ID, CODE);
     expect(await openHeldShare(await heldShareBoxKey(OTHER_WORDS), 'acc_hal', BOX_ID, box)).toBe(
@@ -106,5 +126,29 @@ describe('sealHeldShare and openHeldShare', () => {
     bytes[20] = (bytes[20] ?? 0) ^ 1;
     expect(await openHeldShare(key, 'acc_hal', BOX_ID, bytesToBase64Url(bytes))).toBeNull();
     expect(await openHeldShare(key, 'acc_hal', BOX_ID, '%%%')).toBeNull();
+    expect(await openHeldShare(key, 'acc_hal', BOX_ID, '')).toBeNull();
+    expect(
+      await openHeldShare(key, 'acc_hal', BOX_ID, bytesToBase64Url(Uint8Array.of(1))),
+    ).toBeNull();
+    const truncated = bytesToBase64Url(base64UrlToBytes(box).slice(0, -1));
+    expect(await openHeldShare(key, 'acc_hal', BOX_ID, truncated)).toBeNull();
+  });
+
+  it('does not open a box whose sealed bytes are not UTF-8', async () => {
+    const key = await heldShareBoxKey(WORDS);
+    const iv = new Uint8Array(12);
+    const sealed = new Uint8Array(
+      await crypto.subtle.encrypt(
+        {
+          name: 'AES-GCM',
+          iv,
+          additionalData: new TextEncoder().encode(`21gifts-held-share-v1\nacc_hal\n${BOX_ID}`),
+        },
+        key,
+        Uint8Array.of(0xff, 0xfe),
+      ),
+    );
+    const box = bytesToBase64Url(Uint8Array.from([1, ...iv, ...sealed]));
+    expect(await openHeldShare(key, 'acc_hal', BOX_ID, box)).toBeNull();
   });
 });
