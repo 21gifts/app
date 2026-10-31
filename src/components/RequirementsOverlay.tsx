@@ -88,6 +88,7 @@ export function RequirementsOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t(titleKey)}
+      data-covers-chrome
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
     >
       <Card maxWidth="sm">

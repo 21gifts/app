@@ -191,6 +191,7 @@ export function PwaInstall({
     sheetOpen && typeof document !== 'undefined'
       ? createPortal(
           <div
+            data-covers-chrome
             className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
             onMouseDown={(event) => {
               event.stopPropagation();
