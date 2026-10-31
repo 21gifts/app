@@ -37577,6 +37577,27 @@ test.describe('held shares states', () => {
     await shotScreen(page, 'state-held-shares-unlock-prf-unsupported');
   });
 
+  test('held shares unlock-busy', async ({ page }) => {
+    await seedHolder(page);
+    // The passkey prompt stays open, so the button stays busy.
+    await page.addInitScript(() => {
+      const credentials = navigator.credentials;
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: credentials.create.bind(credentials),
+          get: () => new Promise<never>(() => undefined),
+        },
+      });
+    });
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares');
+    const unlock = page.getByRole('button', { name: 'Open my shares' });
+    await unlock.click();
+    await expect(unlock).toBeDisabled();
+    await shotScreen(page, 'state-held-shares-unlock-busy');
+  });
+
   test('held shares opening', async ({ page }) => {
     await seedHolder(page);
     await routeHeldShares(page);

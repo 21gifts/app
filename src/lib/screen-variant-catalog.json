@@ -1476,6 +1476,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings/held-shares:unlock-busy",
+    "label": "/settings/held-shares unlock-busy",
+    "visual": "state-held-shares-unlock-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings/held-shares:opening",
     "label": "/settings/held-shares opening",
     "visual": "state-held-shares-opening",

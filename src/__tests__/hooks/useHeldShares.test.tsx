@@ -131,9 +131,11 @@ afterEach(() => {
 describe('useHeldShares', () => {
   it('opens the boxes with the words in tab memory, without a passkey prompt', async () => {
     mocks.peekSessionPhrase.mockReturnValue(null);
-    mocks.settlePhraseDerivations.mockImplementation(async () => {
-      mocks.peekSessionPhrase.mockReturnValue(WORDS);
-    });
+    mocks.settlePhraseDerivations.mockImplementation(() =>
+      Promise.resolve().then(() => {
+        mocks.peekSessionPhrase.mockReturnValue(WORDS);
+      }),
+    );
     const { result } = await ready({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
     expect(mocks.settlePhraseDerivations).toHaveBeenCalled();
     expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
@@ -227,6 +229,7 @@ describe('useHeldShares', () => {
       expect(mocks.loadHeldShares).toHaveBeenLastCalledWith('sess-3', 'acc_third', KEY);
     });
     const loads = mocks.loadHeldShares.mock.calls.length;
+    const deletes = mocks.deleteHeldShareBox.mock.calls.length;
     await act(async () => {
       key(OTHER_KEY);
       kept({ ok: true, share: CARA });
@@ -241,7 +244,9 @@ describe('useHeldShares', () => {
     expect(result.current.lockedCount).toBe(0);
     expect(result.current.notice).toBeNull();
     expect(result.current.saving).toBe(false);
+    expect(mocks.deleteHeldShareBox.mock.calls.length).toBe(deletes);
     expect(mocks.deleteHeldShareBox).not.toHaveBeenCalledWith('sess', 'y'.repeat(32));
+    expect(result.current.load).toBe('ready');
   });
 
   it('drops a failed key of the previous account', async () => {
@@ -267,6 +272,8 @@ describe('useHeldShares', () => {
       await Promise.resolve();
     });
     expect(result.current.load).toBe('ready');
+    expect(result.current.unlockError).toBeNull();
+    expect(result.current.notice).toBeNull();
   });
 
   it('leaves a box deleted here out of a read that was already running', async () => {
@@ -348,6 +355,7 @@ describe('useHeldShares', () => {
     });
     expect(mocks.hidePhrase).toHaveBeenCalled();
     expect(mocks.heldShareBoxKey).toHaveBeenCalledWith(WORDS);
+    expect(mocks.loadHeldShares).toHaveBeenCalledWith('sess', 'acc_hal', KEY);
   });
 
   it('derives no key when the passkey gives the words after the account left', async () => {
@@ -362,12 +370,13 @@ describe('useHeldShares', () => {
     act(() => {
       useAuthStore.setState({ session: null, account: null });
     });
+    expect(mocks.hidePhrase).not.toHaveBeenCalled();
     mocks.phrase.words = WORDS.split(' ');
     rerender();
     await act(async () => {
-      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(mocks.hidePhrase).toHaveBeenCalled();
+    expect(mocks.hidePhrase).toHaveBeenCalledTimes(1);
     expect(mocks.heldShareBoxKey).not.toHaveBeenCalled();
   });
 
@@ -401,18 +410,20 @@ describe('useHeldShares', () => {
     act(() => {
       result.current.unlock();
     });
+    expect(mocks.showPhrase).toHaveBeenCalledTimes(1);
     act(() => {
       useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_other' } });
     });
     await waitFor(() => {
       expect(result.current.load).toBe('unlock');
     });
+    mocks.hidePhrase.mockClear();
     mocks.phrase.words = WORDS.split(' ');
     rerender();
     await act(async () => {
       await Promise.resolve();
     });
-    expect(mocks.hidePhrase).toHaveBeenCalled();
+    expect(mocks.hidePhrase).toHaveBeenCalledTimes(1);
     expect(mocks.heldShareBoxKey).not.toHaveBeenCalled();
     expect(result.current.load).toBe('unlock');
   });
@@ -448,7 +459,7 @@ describe('useHeldShares', () => {
     );
     act(() => {
       result.current.onScanResult(BOB.code);
-      result.current.onScanResult(BOB.code);
+      result.current.onScanResult(CARA.code);
     });
     expect(mocks.keepHeldShare).toHaveBeenCalledTimes(1);
     await act(async () => {
@@ -552,6 +563,7 @@ describe('useHeldShares', () => {
     act(() => {
       result.current.onScanResult(BOB.code);
     });
+    expect(mocks.keepHeldShare).toHaveBeenCalledTimes(1);
     mocks.loadHeldShares.mockResolvedValue({ shares: [BOB, CARA], lockedIds: [] });
     act(() => {
       result.current.reload();
@@ -607,6 +619,7 @@ describe('useHeldShares', () => {
     act(() => {
       useAuthStore.setState({ session: 'sess-2' });
     });
+    expect(mocks.settlePhraseDerivations).toHaveBeenCalledTimes(2);
     mocks.phrase.words = WORDS.split(' ');
     rerender();
     await waitFor(() => {
@@ -652,6 +665,9 @@ describe('useHeldShares', () => {
       oldGone();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledWith('sess', 'x'.repeat(32));
+    expect(result.current.lockedCount).toBe(1);
+    expect(result.current.load).toBe('ready');
     act(() => {
       result.current.removeLocked();
     });
@@ -671,6 +687,7 @@ describe('useHeldShares', () => {
       }),
     );
     const { unmount } = renderHook(() => useHeldShares());
+    expect(mocks.settlePhraseDerivations).toHaveBeenCalledTimes(1);
     unmount();
     await act(async () => {
       settle();
@@ -778,7 +795,7 @@ describe('useHeldShares', () => {
   });
 
   it('says why a scanned share was not kept', async () => {
-    const { result } = await ready();
+    const { result } = await ready({ shares: [CARA], lockedIds: [] });
     for (const [reason, kind] of [
       ['own', 'own'],
       ['duplicate', 'duplicate'],
@@ -797,7 +814,7 @@ describe('useHeldShares', () => {
       await Promise.resolve();
     });
     expect(result.current.notice).toEqual({ kind: 'invalid' });
-    expect(result.current.shares).toEqual([BOB]);
+    expect(result.current.shares).toEqual([CARA]);
   });
 
   it('ignores a scan and Keep a share before the boxes are open', async () => {
@@ -808,9 +825,14 @@ describe('useHeldShares', () => {
     });
     act(() => {
       result.current.scan();
+    });
+    expect(result.current.view).toBe('list');
+    expect(result.current.load).toBe('unlock');
+    act(() => {
       result.current.onScanResult(BOB.code);
     });
     expect(result.current.view).toBe('list');
+    expect(result.current.load).toBe('unlock');
     expect(mocks.keepHeldShare).not.toHaveBeenCalled();
   });
 
@@ -873,8 +895,10 @@ describe('useHeldShares', () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(2);
-    expect(mocks.deleteHeldShareBox).toHaveBeenCalledWith('sess', 'y'.repeat(32));
+    expect(mocks.deleteHeldShareBox.mock.calls).toEqual([
+      ['sess', 'x'.repeat(32)],
+      ['sess', 'y'.repeat(32)],
+    ]);
     expect(result.current.confirmDeleteLocked).toBe(false);
     expect(result.current.lockedCount).toBe(1);
     expect(result.current.notice).toEqual({ kind: 'deleteError' });
@@ -905,9 +929,8 @@ describe('useHeldShares', () => {
         }
       });
       expect(result.current.notice).not.toBeNull();
-      expect(result.current.confirmDelete !== null || result.current.confirmDeleteLocked).toBe(
-        true,
-      );
+      expect(result.current.confirmDeleteLocked).toBe(askLocked);
+      expect(result.current.confirmDelete).toBe(askLocked ? null : BOB.boxId);
       act(step);
       expect(result.current.notice).toBeNull();
       expect(result.current.confirmDelete).toBeNull();

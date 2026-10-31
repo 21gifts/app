@@ -5835,19 +5835,24 @@
     "fil": "Walang salita sa tab na ito: ang pamagat, ang intro, ang Kumpirmahin gamit ang passkey mo para mabuksan ang mga bahaging itinatabi mo., at ang Buksan ang mga bahagi ko."
   },
   "/settings/held-shares:unlock-error": {
-    "de": "Die Passkey-Abfrage von Meine Anteile öffnen ist fehlgeschlagen: der Hinweis Die Wiederherstellungsphrase konnte nicht erstellt oder geöffnet werden. über Meine Anteile öffnen.",
-    "es": "La solicitud de passkey de Abrir mis partes falló: el aviso de que la frase de recuperación no se pudo crear ni abrir, sobre Abrir mis partes.",
-    "fil": "Pumalya ang passkey prompt ng Buksan ang mga bahagi ko: ang alerto na hindi nagawa o nabuksan ang recovery phrase, sa itaas ng Buksan ang mga bahagi ko."
+    "de": "Die Passkey-Abfrage von Meine Anteile öffnen ist fehlgeschlagen: der Hinweis Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut. über Meine Anteile öffnen.",
+    "es": "La solicitud de passkey de Abrir mis partes falló: el aviso No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo. sobre Abrir mis partes.",
+    "fil": "Pumalya ang passkey prompt ng Buksan ang mga bahagi ko: ang alerto Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit. sa itaas ng Buksan ang mga bahagi ko."
   },
   "/settings/held-shares:unlock-timeout": {
-    "de": "Die Passkey-Abfrage ist abgelaufen: der Hinweis, dass die Geräteabfrage abgelaufen ist, über Meine Anteile öffnen.",
-    "es": "La solicitud de passkey caducó: el aviso de que la solicitud del dispositivo caducó, sobre Abrir mis partes.",
-    "fil": "Nag-timeout ang passkey prompt: ang alerto na nag-timeout ang prompt ng device, sa itaas ng Buksan ang mga bahagi ko."
+    "de": "Die Passkey-Abfrage ist abgelaufen: der Hinweis Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut. über Meine Anteile öffnen.",
+    "es": "La solicitud de passkey caducó: el aviso La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo. sobre Abrir mis partes.",
+    "fil": "Nag-timeout ang passkey prompt: ang alerto Nag-timeout ang device prompt bago ka matapos. Subukan ulit. sa itaas ng Buksan ang mga bahagi ko."
   },
   "/settings/held-shares:unlock-prf-unsupported": {
-    "de": "Der Passkey gab keine PRF-Ausgabe: der Hinweis, dass dieses Telefon oder dieser Browser keine 21.gifts-Wallet halten kann, über Meine Anteile öffnen.",
-    "es": "La passkey no dio salida PRF: el aviso de que este teléfono o navegador no puede guardar una wallet de 21.gifts, sobre Abrir mis partes.",
-    "fil": "Walang PRF output ang passkey: ang alerto na hindi kayang hawakan ng teleponong o browser na ito ang 21.gifts wallet, sa itaas ng Buksan ang mga bahagi ko."
+    "de": "Der Passkey gab keine PRF-Ausgabe: der Hinweis Dieses Telefon oder dieser Browser kann keine 21.gifts-Wallet halten. Bitte verwenden Sie ein aktuelles Telefon oder einen aktuellen Browser, der Passkeys unterstützt. über Meine Anteile öffnen.",
+    "es": "La passkey no dio salida PRF: el aviso Este teléfono o navegador no puede guardar una wallet de 21.gifts. Usa un teléfono o navegador actualizado que admita passkeys. sobre Abrir mis partes.",
+    "fil": "Walang PRF output ang passkey: ang alerto Hindi kayang maglaman ng 21.gifts wallet ang phone o browser na ito. Gumamit ng updated na phone o browser na sumusuporta sa passkeys. sa itaas ng Buksan ang mga bahagi ko."
+  },
+  "/settings/held-shares:unlock-busy": {
+    "de": "Die Passkey-Abfrage von Meine Anteile öffnen läuft: die Schaltfläche ist gesperrt und zeigt einen Ladekreis.",
+    "es": "La solicitud de passkey de Abrir mis partes está en curso: el botón está desactivado y muestra un indicador de carga.",
+    "fil": "Tumatakbo ang passkey prompt ng Buksan ang mga bahagi ko: naka-disable ang button at may umiikot na loader."
   },
   "/settings/held-shares:opening": {
     "de": "Die Boxen werden gelesen und geöffnet: Deine Anteile werden geöffnet… unter der Einleitung.",
@@ -5856,7 +5861,7 @@
   },
   "/settings/held-shares:load-error": {
     "de": "Die Boxen konnten nicht gelesen werden: der Hinweis Deine Anteile konnten nicht geladen werden. und Erneut versuchen.",
-    "es": "No se pudieron leer las cajas: el aviso No se pudieron cargar tus partes. e Inténtalo de nuevo.",
+    "es": "No se pudieron leer las cajas: el aviso No se pudieron cargar tus partes. e Intentar de nuevo.",
     "fil": "Hindi nabasa ang mga kahon: ang alerto Hindi ma-load ang mga bahagi mo. at Subukan ulit."
   },
   "/settings/held-shares:list": {

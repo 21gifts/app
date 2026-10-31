@@ -1797,6 +1797,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings/held-shares',
+    id: 'unlock-busy',
+    image: 'held-shares-unlock-busy.png',
+    visual: 'state-held-shares-unlock-busy',
+    needle: "shotScreen(page, 'state-held-shares-unlock-busy')",
+  },
+  {
+    route: '/settings/held-shares',
     id: 'opening',
     image: 'held-shares-opening.png',
     visual: 'state-held-shares-opening',

@@ -1172,9 +1172,10 @@ test.describe('shares kept for others', () => {
     page,
   }) => {
     await installFakeWebAuthn(page, true);
+    // Listed by owner username, not in the api's or the box ids' order.
     await routeHeldShares(page, [
-      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
-      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA),
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CARA),
+      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CODE),
     ]);
     await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
@@ -1234,6 +1235,7 @@ test.describe('shares kept for others', () => {
       'The share could not be kept. Try again.',
     );
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
+    expect(held.boxes).toEqual([]);
   });
 
   test('a confirmed delete removes the box; Keep closes the confirm', async ({ page }) => {
@@ -1248,7 +1250,9 @@ test.describe('shares kept for others', () => {
       name: 'Delete the share of @bob? Only do this when they ask.',
     });
     await confirm.getByRole('button', { name: 'Keep' }).click();
+    await expect(confirm).toBeHidden();
     await expect(page.getByRole('listitem')).toHaveCount(1);
+    expect(held.boxes).toHaveLength(1);
     await page.getByRole('button', { name: 'Delete share of @bob' }).click();
     await confirm.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
@@ -1268,8 +1272,20 @@ test.describe('shares kept for others', () => {
       page.getByText('2 kept shares cannot be opened with your current 12 words.'),
     ).toBeVisible();
     expect(held.boxes).toHaveLength(3);
-    await page.getByRole('button', { name: 'Delete the shares that cannot be opened' }).click();
+    const deleteLocked = page.getByRole('button', {
+      name: 'Delete the shares that cannot be opened',
+    });
+    await deleteLocked.click();
     const confirm = page.getByRole('group', { name: 'Delete the shares that cannot be opened?' });
+    await expect(confirm).toBeVisible();
+    expect(held.boxes).toHaveLength(3);
+    await confirm.getByRole('button', { name: 'Keep' }).click();
+    await expect(confirm).toBeHidden();
+    await expect(
+      page.getByText('2 kept shares cannot be opened with your current 12 words.'),
+    ).toBeVisible();
+    expect(held.boxes).toHaveLength(3);
+    await deleteLocked.click();
     await confirm.getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText(/cannot be opened/)).toHaveCount(0);
     expect(held.boxes.map((box) => box.id)).toEqual(['b'.repeat(32)]);

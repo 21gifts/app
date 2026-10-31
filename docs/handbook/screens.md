@@ -1432,6 +1432,12 @@ The passkey gave no PRF output: the alert **This phone or browser cannot hold a 
 
 ![21.gifts shares kept for others without PRF](images/held-shares-unlock-prf-unsupported.png)
 
+### Variant: unlock-busy
+
+The passkey prompt of **Open my shares** is open: the button is disabled and shows a spinner until the prompt ends.
+
+![21.gifts shares kept for others passkey prompt open](images/held-shares-unlock-busy.png)
+
 ### Variant: opening
 
 The boxes are being read and opened: **Opening your shares…** under the intro.
