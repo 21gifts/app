@@ -833,7 +833,7 @@ test.describe('social recovery libraries', () => {
     );
   });
 
-  test('Function: newHeldShareBoxId — every kept share gets its own random 32-hex id', async ({
+  test('Function: newHeldShareBoxId — a kept share gets a new 32-hex box id, not one in use', async ({
     page,
   }) => {
     await stubCamera(page, { kind: 'qr', text: HELD_CARA });
@@ -1228,6 +1228,12 @@ test.describe('shares kept for others', () => {
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page);
     held.putStatus = 409;
+    const puts: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'PUT' && request.url().includes('/me/held-shares/')) {
+        puts.push(request.url());
+      }
+    });
     await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
@@ -1235,7 +1241,7 @@ test.describe('shares kept for others', () => {
       'The share could not be kept. Try again.',
     );
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
-    expect(held.boxes).toEqual([]);
+    expect(puts).toHaveLength(1);
   });
 
   test('a confirmed delete removes the box; Keep closes the confirm', async ({ page }) => {
@@ -2220,7 +2226,7 @@ test.describe('Transfer remaining balance', () => {
     );
   });
 
-  test('Function: relockHeldShares — old words read the boxes, and without the wallet’s words in this tab no box changes', async ({
+  test('Function: relockHeldShares — without the wallet’s words in this tab the boxes are read and none is written', async ({
     page,
   }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
@@ -2238,11 +2244,20 @@ test.describe('Transfer remaining balance', () => {
     await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}`);
     await page.getByRole('button', { name: 'Type my 12 words' }).click();
     await page.getByLabel('Your 12 words').fill(OLD_PHRASE);
+    const read = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/me/held-shares') && response.request().method() === 'GET',
+    );
     await page.getByRole('button', { name: 'Continue' }).click();
+    await read;
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'Your wallet could not be opened. Please try again.',
     );
-    await expect.poll(() => calls).toEqual(['GET']);
+    // The relock runs on its own, so give a late write time to show up.
+    await expect(
+      page.waitForRequest((request) => request.method() === 'PUT', { timeout: 1_000 }),
+    ).rejects.toThrow();
+    expect(calls).toEqual(['GET']);
     expect(held.boxes.map((box) => box.ciphertext)).toEqual(before);
   });
 

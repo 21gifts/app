@@ -393,6 +393,10 @@ describe('HeldSharesScreen', () => {
   it('uses the UI language', () => {
     held({ shares: [CARA] });
     renderWithLocale(<HeldSharesScreen />, 'de');
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Anteile, die ich für andere aufbewahre' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Anteil aufbewahren' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Code für @cara zeigen' })).toBeTruthy();
   });
 });

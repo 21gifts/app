@@ -90,6 +90,7 @@ function share(boxId: string, username: string): HeldShare {
 
 const BOB = share('b'.repeat(32), 'bob');
 const CARA = share('c'.repeat(32), 'cara');
+const DAVE = share('d'.repeat(32), 'dave');
 
 /**
  * Renders the hook with the words in tab memory and waits for the list.
@@ -353,6 +354,7 @@ describe('useHeldShares', () => {
       expect(result.current.load).toBe('ready');
     });
     expect(result.current.shares).toEqual([BOB]);
+    expect(result.current.saving).toBe(false);
     mocks.keepHeldShare.mockResolvedValueOnce({ ok: false, reason: 'invalid' });
     await act(async () => {
       result.current.onScanResult('not a share');
@@ -380,11 +382,15 @@ describe('useHeldShares', () => {
       result.current.onScanResult(CARA.code);
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    // DAVE only comes with the read, so the list shows that the read was applied.
     await act(async () => {
-      loaded({ shares: [BOB, CARA], lockedIds: [] });
+      loaded({ shares: [BOB, CARA, DAVE], lockedIds: [] });
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(result.current.shares).toEqual([BOB, CARA]);
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    expect(result.current.shares).toEqual([BOB, CARA, DAVE]);
   });
 
   it('drops a failed key of the previous account', async () => {
@@ -433,11 +439,15 @@ describe('useHeldShares', () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    // DAVE only comes with the read, so the list shows that the read was applied.
     await act(async () => {
-      answer({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
+      answer({ shares: [BOB, CARA, DAVE], lockedIds: ['x'.repeat(32)] });
       await Promise.resolve();
     });
-    expect(result.current.shares).toEqual([CARA]);
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    expect(result.current.shares).toEqual([CARA, DAVE]);
     expect(result.current.lockedCount).toBe(0);
   });
 
@@ -637,7 +647,7 @@ describe('useHeldShares', () => {
     expect(mocks.loadHeldShares).toHaveBeenCalledWith('sess-2', 'acc_hal', KEY);
   });
 
-  it('deletes the boxes that do not open once at a time', async () => {
+  it('starts no second delete of the boxes that do not open while one runs', async () => {
     const { result } = await ready({ shares: [], lockedIds: ['x'.repeat(32)] });
     let gone: () => void = () => undefined;
     mocks.deleteHeldShareBox.mockReturnValueOnce(
@@ -709,11 +719,14 @@ describe('useHeldShares', () => {
     await waitFor(() => {
       expect(result.current.shares).toEqual([BOB, CARA]);
     });
+    // The api answers with a new object for the same box, as keepHeldShare does.
     await act(async () => {
-      kept({ ok: true, share: BOB });
+      kept({ ok: true, share: { ...BOB } });
       await Promise.resolve();
     });
     expect(result.current.shares).toEqual([BOB, CARA]);
+    expect(result.current.saving).toBe(false);
+    expect(result.current.notice).toEqual({ kind: 'stored', username: 'bob' });
   });
 
   it('hides a passkey error of a prompt started for the previous account', async () => {

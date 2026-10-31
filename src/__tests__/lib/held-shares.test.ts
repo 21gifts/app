@@ -190,7 +190,7 @@ describe('keepHeldShare', () => {
 });
 
 describe('relockHeldShares', () => {
-  it('seals every box of the old words again with the new words under the same id', async () => {
+  it('seals the boxes of the old words again under the same id, leaves other boxes, and goes on after a failed write', async () => {
     const boxes = [
       await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
       await box(WORDS, 'b'.repeat(32), code(OTHER_SET, 'acc_cara', 'cara')),

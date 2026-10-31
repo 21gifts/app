@@ -1,6 +1,6 @@
 import { mnemonicToEntropy } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   heldShareBoxKey,
   newHeldShareBoxId,
@@ -21,16 +21,20 @@ const CODE =
 
 const BOX_ID = '0123456789abcdef0123456789abcdef';
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('heldShareBoxKey', () => {
   it('derives a non-extractable AES-256-GCM key by HKDF-SHA256 from the 16 bytes of the words', async () => {
-    const key = await heldShareBoxKey(` ${WORDS} `);
+    const key = await heldShareBoxKey(` ${OTHER_WORDS} `);
     expect(key.extractable).toBe(false);
     expect(key.algorithm).toMatchObject({ name: 'AES-GCM', length: 256 });
     expect(key.usages.sort()).toEqual(['decrypt', 'encrypt']);
     // The same derivation by hand opens what the key sealed.
     const material = await crypto.subtle.importKey(
       'raw',
-      Uint8Array.from(mnemonicToEntropy(WORDS, wordlist)),
+      Uint8Array.from(mnemonicToEntropy(OTHER_WORDS, wordlist)),
       'HKDF',
       false,
       ['deriveBits'],
@@ -60,10 +64,18 @@ describe('heldShareBoxKey', () => {
   });
 
   it('wipes the 16 bytes once the key material holds them', async () => {
-    const spy = vi.spyOn(crypto.subtle, 'importKey');
+    const importKey = crypto.subtle.importKey.bind(crypto.subtle);
+    let entropy: Uint8Array = new Uint8Array();
+    let held = new Uint8Array();
+    vi.spyOn(crypto.subtle, 'importKey').mockImplementationOnce(
+      (...args: Parameters<SubtleCrypto['importKey']>) => {
+        entropy = args[1] as Uint8Array;
+        held = Uint8Array.from(entropy);
+        return importKey(...args);
+      },
+    );
     await heldShareBoxKey(OTHER_WORDS);
-    const entropy = spy.mock.calls[0]?.[1] as Uint8Array;
-    spy.mockRestore();
+    expect(held).toEqual(Uint8Array.from(mnemonicToEntropy(OTHER_WORDS, wordlist)));
     expect(entropy).toHaveLength(16);
     expect(entropy.every((byte) => byte === 0)).toBe(true);
   });
@@ -81,8 +93,9 @@ describe('newHeldShareBoxId', () => {
         (array as unknown as Uint8Array).set(Uint8Array.from({ length: 16 }, (_, i) => i * 17));
         return array;
       });
-    expect(newHeldShareBoxId()).toBe('00112233445566778899aabbccddeeff');
+    const id = newHeldShareBoxId();
     spy.mockRestore();
+    expect(id).toBe('00112233445566778899aabbccddeeff');
     expect(newHeldShareBoxId()).toMatch(/^[0-9a-f]{32}$/);
   });
 });
@@ -98,8 +111,9 @@ describe('sealHeldShare and openHeldShare', () => {
         return array;
       });
     const pinned = base64UrlToBytes(await sealHeldShare(key, 'acc_hal', BOX_ID, CODE));
-    expect(spy).toHaveBeenCalledTimes(1);
+    const calls = spy.mock.calls.length;
     spy.mockRestore();
+    expect(calls).toBe(1);
     expect(pinned.slice(1, 13)).toEqual(iv);
     const first = await sealHeldShare(key, 'acc_hal', BOX_ID, CODE);
     const second = await sealHeldShare(key, 'acc_hal', BOX_ID, CODE);
