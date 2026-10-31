@@ -70,6 +70,9 @@ import {
   fetchViewProfile,
   fetchPreviousWallets,
   deletePreviousWallet,
+  fetchHeldShareBoxes,
+  putHeldShareBox,
+  deleteHeldShareBox,
   finishPasskeyAuthentication,
   finishPasskeyRecovery,
   finishPasskeyRegistration,
@@ -5994,6 +5997,75 @@ describe('deletePreviousWallet', () => {
     await expect(deletePreviousWallet('sess', 'key')).rejects.toThrow(
       'Could not remove the previous wallet',
     );
+  });
+});
+
+describe('fetchHeldShareBoxes', () => {
+  const box = {
+    id: 'a'.repeat(32),
+    ciphertext: 'AQID',
+    updatedAt: '2026-10-30T12:00:00.000Z',
+  };
+
+  it('reads the boxes with the Bearer', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { boxes: [box] } });
+    await expect(fetchHeldShareBoxes('sess')).resolves.toEqual([box]);
+    expect(fetchMock).toHaveBeenCalledWith('/me/held-shares', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws Unauthorized on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: { error: 'Unauthorized' } });
+    await expect(fetchHeldShareBoxes('sess')).rejects.toThrow('Unauthorized');
+  });
+
+  it('throws the unavailable error on any other failure', async () => {
+    stubFetch({ ok: false, status: 429, body: { error: 'Too many requests' } });
+    await expect(fetchHeldShareBoxes('sess')).rejects.toThrow('Held shares are unavailable');
+  });
+
+  it('throws on a body that fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { boxes: [{ ...box, ciphertext: 1 }] } });
+    await expect(fetchHeldShareBoxes('sess')).rejects.toThrow();
+  });
+});
+
+describe('putHeldShareBox', () => {
+  it.each([200, 201])('resolves on status %i (replaced or created)', async (status) => {
+    stubFetch({ ok: true, status, body: {} });
+    await expect(putHeldShareBox('sess', 'id', 'AQID')).resolves.toBeUndefined();
+  });
+
+  it('puts the ciphertext under the encoded id with the Bearer', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 201, body: {} });
+    await expect(putHeldShareBox('sess', 'a/b', 'AQID')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/held-shares/a%2Fb', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ciphertext: 'AQID' }),
+    });
+  });
+
+  it.each([400, 401, 409, 503])('throws on status %i', async (status) => {
+    stubFetch({ ok: false, status, body: {} });
+    await expect(putHeldShareBox('sess', 'id', 'AQID')).rejects.toThrow('Could not keep the share');
+  });
+});
+
+describe('deleteHeldShareBox', () => {
+  it('deletes the encoded id with the Bearer and resolves on 204', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 204, body: null });
+    await expect(deleteHeldShareBox('sess', 'a/b')).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith('/me/held-shares/a%2Fb', {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it.each([200, 401, 404, 503])('throws on status %i', async (status) => {
+    stubFetch({ ok: status === 200, status, body: {} });
+    await expect(deleteHeldShareBox('sess', 'id')).rejects.toThrow('Could not delete the share');
   });
 });
 

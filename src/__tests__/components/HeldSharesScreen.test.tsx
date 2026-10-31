@@ -1,14 +1,17 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HeldSharesScreen } from '@/components/HeldSharesScreen';
+import type { QrCodeProps } from '@/components/QrCode';
 import type { QrScannerProps } from '@/components/QrScanner';
+import type { UseHeldSharesResult } from '@/hooks/useHeldShares';
 import type { Account } from '@/lib/api-types';
-import { HELD_SHARES_KEY_PREFIX } from '@/lib/recovery-holder-store';
+import type { HeldShare } from '@/lib/held-shares';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const scanner = vi.hoisted(() => ({ props: null as QrScannerProps | null }));
 const backResults = vi.hoisted(() => ({ list: [] as boolean[] }));
+const hook = vi.hoisted(() => ({ result: null as UseHeldSharesResult | null }));
 
 vi.mock('@/components/QrScanner', () => ({
   QrScanner: (props: QrScannerProps) => {
@@ -28,22 +31,41 @@ vi.mock('@/components/ProfileChromeLeft', () => ({
     </button>
   ),
 }));
+vi.mock('@/components/QrCode', () => ({
+  QrCode: ({ value, label, logo }: QrCodeProps) => (
+    <div role="img" aria-label={label} data-value={value} data-logo={logo ?? ''} />
+  ),
+}));
+vi.mock('@/hooks/useHeldShares', () => ({
+  useHeldShares: (): UseHeldSharesResult => hook.result as UseHeldSharesResult,
+}));
 
-/** Two shares of one recovery set (identifier 2864). */
-const SHARES = [
-  'body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel',
-  'body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology',
-] as const;
-
-/** A share of another set (a share of another recovery set, identifier 7506). */
+/** A share of another set (identifier 7506). */
 const OTHER_SET =
   'domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
 
-const HOLDER = 'acc_holder';
-const HOLDER_KEY = `${HELD_SHARES_KEY_PREFIX}${HOLDER}`;
+/**
+ * A kept share.
+ *
+ * @param username - Owner username.
+ * @returns The share.
+ */
+function share(username: string): HeldShare {
+  return {
+    boxId: `${username}`.padEnd(32, '0'),
+    code: `21gifts-share:v1:acc_${username}:${username}:${OTHER_SET}`,
+    ownerAccountId: `acc_${username}`,
+    ownerUsername: username,
+    identifier: 7506,
+    memberIndex: 0,
+  };
+}
+
+const BOB = share('bob');
+const CARA = share('cara');
 
 const account: Account = {
-  id: HOLDER,
+  id: 'acc_hal',
   linkingKey: null,
   role: 'basis',
   name: 'Hal',
@@ -62,54 +84,55 @@ const account: Account = {
 };
 
 /**
- * A share payload.
+ * Sets what the hook returns.
  *
- * @param share - Share words.
- * @param owner - Owner account id.
- * @param username - Owner username.
- * @returns The payload text.
+ * @param state - Fields to change from a ready, empty list.
+ * @returns The hook result.
  */
-function code(share: string, owner = 'acc_bob', username = 'bob'): string {
-  return `21gifts-share:v1:${owner}:${username}:${share}`;
+function held(state: Partial<UseHeldSharesResult> = {}): UseHeldSharesResult {
+  const result: UseHeldSharesResult = {
+    load: 'ready',
+    unlocking: false,
+    unlockError: null,
+    shares: [],
+    lockedCount: 0,
+    saving: false,
+    view: 'list',
+    notice: null,
+    confirmDelete: null,
+    confirmDeleteLocked: false,
+    unlock: vi.fn(),
+    reload: vi.fn(),
+    scan: vi.fn(),
+    onScanResult: vi.fn(),
+    showQr: vi.fn(),
+    askDelete: vi.fn(),
+    remove: vi.fn(),
+    askDeleteLocked: vi.fn(),
+    removeLocked: vi.fn(),
+    cancel: vi.fn(),
+    back: vi.fn(() => true),
+    ...state,
+  };
+  hook.result = result;
+  return result;
 }
 
-/** Keeps Bob's and Cara's shares under the holder (Cara's is newer). */
-function seedTwo(): void {
-  window.localStorage.setItem(
-    HOLDER_KEY,
-    JSON.stringify({
-      v: 1,
-      shares: [
-        { code: code(SHARES[0]), storedAt: 1_767_268_800_000 },
-        { code: code(OTHER_SET, 'acc_cara', 'cara'), storedAt: 1_767_355_200_000 },
-      ],
-    }),
-  );
-}
-
-/**
- * Presses Keep a share and hands the camera a text.
- *
- * @param text - The scanned text.
- */
-function scan(text: string): void {
-  fireEvent.click(screen.getByRole('button', { name: 'Keep a share' }));
-  act(() => {
-    scanner.props?.onResult(text);
-  });
+/** Renders the screen and returns the heading of the page. */
+function render(): HTMLElement {
+  renderWithLocale(<HeldSharesScreen />);
+  return screen.getByRole('heading', { level: 1, name: 'Shares I keep for others' });
 }
 
 beforeEach(() => {
-  window.localStorage.clear();
   scanner.props = null;
   backResults.list = [];
   useAuthStore.setState({ session: 'sess', account });
+  held();
 });
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
-  window.localStorage.clear();
   useAuthStore.setState({ session: null, account: null });
 });
 
@@ -120,155 +143,260 @@ describe('HeldSharesScreen', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('shows the title, the intro, Keep a share, and the empty line', () => {
-    renderWithLocale(<HeldSharesScreen />);
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Shares I keep for others' }).className,
-    ).not.toContain('sr-only');
+  it('says the shares are being opened', () => {
+    held({ load: 'opening' });
+    render();
+    expect(screen.getByRole('status').textContent).toBe('Opening your shares…');
     expect(
       screen.getByText(
         'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Keep a share' }).className).toContain('w-full');
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open my shares' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('asks for the passkey with Open my shares and shows a failed prompt in the recovery phrase wording', () => {
+    const result = held({ load: 'unlock' });
+    render();
+    expect(screen.getByText('Confirm with your passkey to open the shares you keep.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Open my shares' }));
+    expect(result.unlock).toHaveBeenCalledTimes(1);
+    expect(result.reload).not.toHaveBeenCalled();
+    expect(result.scan).not.toHaveBeenCalled();
+    cleanup();
+    for (const [unlockError, text] of [
+      [
+        'prfUnsupported',
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      ],
+      ['timeout', 'The device prompt timed out before you finished. Try again.'],
+      [
+        'generic',
+        'The recovery phrase could not be created or opened. Check this device and try again.',
+      ],
+    ] as const) {
+      const failed = held({ load: 'unlock', unlockError });
+      render();
+      expect(screen.getByRole('alert').textContent).toBe(text);
+      const retry = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
+      expect(retry.disabled).toBe(false);
+      fireEvent.click(retry);
+      expect(failed.unlock).toHaveBeenCalledTimes(1);
+      cleanup();
+    }
+    held({ load: 'unlock', unlocking: true });
+    render();
+    expect(screen.getByText('Confirm with your passkey to open the shares you keep.')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    const busy = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
+    expect(busy.disabled).toBe(true);
+    expect(busy.querySelector('svg')?.getAttribute('class')).toContain('animate-spin');
+    cleanup();
+    held({ load: 'unlock', unlockError: 'generic', unlocking: true });
+    render();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The recovery phrase could not be created or opened. Check this device and try again.',
+    );
+    expect(screen.getByRole('alert').className).toContain('text-app-danger');
+    const button = screen.getByRole('button', { name: 'Open my shares' }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.querySelector('svg')?.getAttribute('class')).toContain('animate-spin');
+  });
+
+  it('shows the load error with Try again', () => {
+    const result = held({ load: 'loadError' });
+    render();
+    expect(screen.getByRole('alert').textContent).toBe('Your shares could not be loaded.');
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open my shares' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(result.reload).toHaveBeenCalledTimes(1);
+    expect(result.unlock).not.toHaveBeenCalled();
+    expect(result.scan).not.toHaveBeenCalled();
+  });
+
+  it('shows the title, the intro, Keep a share, and the empty line', () => {
+    const result = held();
+    expect(render().className).not.toContain('sr-only');
+    expect(
+      screen.getByText(
+        'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
+      ),
+    ).toBeTruthy();
+    const keep = screen.getByRole('button', { name: 'Keep a share' });
+    expect(keep.className).toContain('w-full');
+    fireEvent.click(keep);
+    expect(result.scan).toHaveBeenCalled();
     expect(screen.getByText('You keep no shares for others yet.')).toBeTruthy();
     expect(screen.queryByRole('list')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('lists each kept share, newest first, with icon-only show and delete', () => {
-    seedTwo();
-    renderWithLocale(<HeldSharesScreen />);
+  it('lists each share by username with icon-only show and delete', () => {
+    const result = held({ shares: [BOB, CARA] });
+    render();
     const items = screen.getAllByRole('listitem');
-    expect(items.map((item) => item.textContent)).toEqual([
-      '@caraKept since Jan 2, 2026',
-      '@bobKept since Jan 1, 2026',
-    ]);
+    expect(items.map((item) => item.textContent)).toEqual(['@bob', '@cara']);
     const show = screen.getByRole('button', { name: 'Show code for @bob' });
     const remove = screen.getByRole('button', { name: 'Delete share of @bob' });
     expect(screen.queryByText('Show code for @bob')).toBeNull();
-    expect(screen.queryByText('Delete share of @bob')).toBeNull();
     expect(
-      within(items[1] as HTMLElement).getByRole('button', { name: 'Show code for @bob' }),
+      within(items[0] as HTMLElement).getByRole('button', { name: 'Show code for @bob' }),
     ).toBe(show);
     expect(remove.querySelector('svg')?.getAttribute('class')).toContain('text-app-danger');
+    expect(screen.queryByText('Delete share of @bob')).toBeNull();
+    fireEvent.click(show);
+    expect(result.showQr).toHaveBeenCalledWith(BOB);
+    expect(result.askDelete).not.toHaveBeenCalled();
+    fireEvent.click(remove);
+    expect(result.askDelete).toHaveBeenCalledWith(BOB);
+    expect(result.showQr).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Show code for @cara' }));
+    expect(result.showQr).toHaveBeenLastCalledWith(CARA);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete share of @cara' }));
+    expect(result.askDelete).toHaveBeenLastCalledWith(CARA);
+    fireEvent.click(screen.getByRole('button', { name: 'Keep a share' }));
+    expect(result.scan).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('You keep no shares for others yet.')).toBeNull();
   });
 
-  it('opens the camera layer with the share wording and keeps a scanned share', () => {
+  it('confirms a delete in place of the trash icon', () => {
+    const result = held({ shares: [BOB, CARA], confirmDelete: BOB.boxId });
+    render();
+    const confirm = screen.getByRole('group', {
+      name: 'Delete the share of @bob? Only do this when they ask.',
+    });
+    expect(screen.queryByRole('button', { name: 'Delete share of @bob' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show code for @bob' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete share of @cara' })).toBeTruthy();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
+    expect(result.cancel).toHaveBeenCalledTimes(1);
+    expect(result.remove).not.toHaveBeenCalled();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+    expect(result.remove).toHaveBeenCalledTimes(1);
+    expect(result.remove).toHaveBeenCalledWith(BOB);
+    expect(result.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts the boxes that do not open in one neutral row, with a confirmed delete', () => {
+    const result = held({ lockedCount: 1 });
+    render();
+    expect(screen.queryByText('You keep no shares for others yet.')).toBeNull();
+    const row = screen.getByRole('listitem');
+    expect(row.textContent).toBe('1 kept share cannot be opened with your current 12 words.');
+    expect(within(row).getByText(/cannot be opened/).className).toContain('text-app-muted');
+    expect(screen.queryByText('Delete the shares that cannot be opened')).toBeNull();
+    fireEvent.click(
+      within(row).getByRole('button', { name: 'Delete the shares that cannot be opened' }),
+    );
+    expect(result.askDeleteLocked).toHaveBeenCalledTimes(1);
+    expect(result.removeLocked).not.toHaveBeenCalled();
+    cleanup();
+    const confirming = held({ shares: [BOB], lockedCount: 3, confirmDeleteLocked: true });
+    render();
+    expect(
+      screen.getByText('3 kept shares cannot be opened with your current 12 words.'),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Delete the shares that cannot be opened' }),
+    ).toBeNull();
+    const confirm = screen.getByRole('group', {
+      name: 'Delete the shares that cannot be opened?',
+    });
+    expect(screen.getByRole('button', { name: 'Delete share of @bob' })).toBeTruthy();
+    expect(screen.getAllByRole('group')).toHaveLength(1);
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
+    expect(confirming.cancel).toHaveBeenCalledTimes(1);
+    expect(confirming.removeLocked).not.toHaveBeenCalled();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
+    expect(confirming.removeLocked).toHaveBeenCalledTimes(1);
+    expect(confirming.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the saving line in place of Keep a share', () => {
+    held({ saving: true });
+    render();
+    expect(screen.getByRole('status').textContent).toBe('Keeping the share…');
+    expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
+  });
+
+  it.each([
+    ['stored', 'You now keep a share for @bob.'],
+    ['invalid', 'This is not a Social Recovery code.'],
+    ['own', 'This is a share of your own account. Only other people can keep it.'],
+    [
+      'duplicate',
+      'This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.',
+    ],
+    ['saveError', 'The share could not be kept. Try again.'],
+    ['deleteError', 'The share could not be deleted. Try again.'],
+  ] as const)('shows the %s notice', (kind, text) => {
+    held({ notice: kind === 'invalid' ? { kind } : { kind, username: 'bob' } });
+    render();
+    const line = screen.getByRole(kind === 'stored' ? 'status' : 'alert');
+    expect(line.textContent).toBe(text);
+    expect(line.className).toContain(kind === 'stored' ? 'text-app-success' : 'text-app-danger');
+  });
+
+  it('fills the page with the camera layer and the share wording', () => {
+    const result = held({ view: 'scan' });
     renderWithLocale(<HeldSharesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Keep a share' }));
     const layer = screen.getByRole('region', { name: 'Keep a share' });
     expect(layer.hasAttribute('data-port-fill')).toBe(true);
     expect(layer.className).toContain('absolute inset-0');
-    expect(layer.className).toContain('bg-black');
     expect(screen.getByRole('heading', { level: 1 }).className).toContain('sr-only');
     expect(scanner.props?.copy).toEqual({
       hint: 'heldShares.scanHint',
       denied: 'heldShares.cameraDenied',
       unavailable: 'heldShares.cameraUnavailable',
     });
-    act(() => {
-      scanner.props?.onResult(code(SHARES[0]));
-    });
-    expect(screen.queryByRole('region', { name: 'Keep a share' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('You now keep a share for @bob.');
-    expect(screen.getByRole('status').className).toContain('text-app-success');
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
-    expect(window.localStorage.getItem(HOLDER_KEY)).toContain(SHARES[0]);
+    expect(scanner.props?.onResult).toBe(result.onScanResult);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(backResults.list).toEqual([true]);
+    expect(result.back).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    ['not a share', 'lightning:lnbc1', 'This is not a Social Recovery code.'],
-    [
-      'the member’s own share',
-      code(SHARES[0], HOLDER, 'hal'),
-      'This is a share of your own account. Only other people can keep it.',
-    ],
-  ])('refuses %s with an alert', (_label, text, message) => {
+  it('shows a share’s code for its owner', () => {
+    held({ view: { qr: BOB } });
     renderWithLocale(<HeldSharesScreen />);
-    scan(text);
-    const alert = screen.getByRole('alert');
-    expect(alert.textContent).toBe(message);
-    expect(alert.className).toContain('text-app-danger');
-    expect(screen.getByText('You keep no shares for others yet.')).toBeTruthy();
-  });
-
-  it('refuses a second share of one setup and names its owner', () => {
-    window.localStorage.setItem(
-      `${HELD_SHARES_KEY_PREFIX}acc_other`,
-      JSON.stringify({ v: 1, shares: [{ code: code(SHARES[1]), storedAt: 1 }] }),
-    );
-    renderWithLocale(<HeldSharesScreen />);
-    scan(code(SHARES[0]));
-    expect(screen.getByRole('alert').textContent).toBe(
-      'This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.',
-    );
-  });
-
-  it('says so when this browser cannot keep shares', () => {
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
-      throw new DOMException('full', 'QuotaExceededError');
-    });
-    renderWithLocale(<HeldSharesScreen />);
-    scan(code(SHARES[0]));
-    expect(screen.getByRole('alert').textContent).toBe(
-      'This browser cannot keep shares. Allow site data and try again.',
-    );
-  });
-
-  it('shows a share’s code for its owner, and the arrow steps back to the list', () => {
-    seedTwo();
-    renderWithLocale(<HeldSharesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Show code for @bob' }));
     expect(screen.getByRole('heading', { level: 1 }).className).toContain('sr-only');
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Share of @bob');
     expect(
       screen.getByText('Show this code only to @bob in person, so they can restore their account.'),
     ).toBeTruthy();
     const qr = screen.getByRole('img', { name: 'Share code' });
-    expect(qr.querySelector('image')).toBeNull();
+    expect(qr.getAttribute('data-value')).toBe(BOB.code);
+    expect(qr.getAttribute('data-logo')).toBe('');
     expect(screen.queryByRole('button', { name: 'Keep a share' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(backResults.list).toEqual([true]);
-    expect(screen.getByRole('button', { name: 'Keep a share' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(backResults.list).toEqual([true, false]);
+    expect(hook.result?.back).toHaveBeenCalled();
   });
 
-  it('steps back from the camera to the list', () => {
-    renderWithLocale(<HeldSharesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Keep a share' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(backResults.list).toEqual([true]);
-    expect(screen.getByRole('button', { name: 'Keep a share' })).toBeTruthy();
-  });
-
-  it('confirms before a delete, keeps the share on cancel, and deletes it on confirm', () => {
-    seedTwo();
-    renderWithLocale(<HeldSharesScreen />);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete share of @bob' }));
-    const confirm = screen.getByRole('group', {
-      name: 'Delete the share of @bob? Only do this when they ask.',
-    });
-    expect(screen.queryByRole('button', { name: 'Delete share of @bob' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Show code for @bob' })).toBeTruthy();
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Keep' }));
-    expect(screen.queryByRole('group')).toBeNull();
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete share of @bob' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      '@caraKept since Jan 2, 2026',
-    ]);
-    expect(window.localStorage.getItem(HOLDER_KEY)).not.toContain(SHARES[0]);
-  });
-
-  it('formats the day in the UI language', () => {
-    seedTwo();
+  it('uses the UI language', () => {
+    held({ shares: [CARA] });
     renderWithLocale(<HeldSharesScreen />, 'de');
-    expect(screen.getByText('Aufbewahrt seit 02.01.2026')).toBeTruthy();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Anteile, die ich für andere aufbewahre' }),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Anteil aufbewahren' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Code für @cara zeigen' })).toBeTruthy();
   });
 });

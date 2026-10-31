@@ -370,6 +370,27 @@
 - **Used by:** `deletePreviousWallet`, which takes 404 as already removed: it asks only for a key the page found listed.
 - **Auth:** Bearer.
 
+## Endpoint: GET /me/held-shares
+
+- **Purpose:** Same-origin proxy of api `GET /me/held-shares`. Lists the caller's own share boxes, oldest first: `{ boxes: [{ id, ciphertext, updatedAt }] }`. The ciphertext is opaque to the api; the owner's id and name exist only inside it.
+- **Errors:** Upstream 401, 429, or 502 if the api is unreachable.
+- **Used by:** `fetchHeldShareBoxes`.
+- **Auth:** Bearer.
+
+## Endpoint: PUT /me/held-shares/[id]
+
+- **Purpose:** Same-origin proxy of api `PUT /me/held-shares/:id`. Creates (201) or replaces (200) one box of the caller. JSON `{ ciphertext }`: base64url without padding of 29 to 1024 bytes whose first byte is `0x01`. `id` is 32 lower-case hex digits drawn by the app.
+- **Errors:** Upstream 400 for a bad id or body, 401, 409 `Box id in use` (the id belongs to another account) or `Too many held shares` (more than 50 on create), 429, or 502 if the api is unreachable.
+- **Used by:** `putHeldShareBox`.
+- **Auth:** Bearer.
+
+## Endpoint: DELETE /me/held-shares/[id]
+
+- **Purpose:** Same-origin proxy of api `DELETE /me/held-shares/:id`. Deletes one box of the caller. 204 with no body, also for an id that is gone or belongs to another account (which changes nothing).
+- **Errors:** Upstream 401, 429, or 502 if the api is unreachable.
+- **Used by:** `deleteHeldShareBox`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /lnurlpay/[pubkey]
 
 - **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey`. The in-app wallet registers the account's username as its address on the app's own host; success marks the wallet verified.

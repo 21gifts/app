@@ -62,9 +62,7 @@ export default function LegalPage(): ReactElement {
           <code>numberFormat</code> cookie; absent means Swiss grouping 10&apos;000.23. Choosing a
           light or dark appearance writes a <code>theme</code> cookie; choosing System removes it.
           The application stores a session token in <code>localStorage</code> after you log in so a
-          returning visitor stays logged in. If another member chose you to keep a Social Recovery
-          share for them, the application stores that share in <code>localStorage</code> under your
-          account until you delete it. While recovering an account or moving a balance, the 12
+          returning visitor stays logged in. While recovering an account or moving a balance, the 12
           recovery words and the shares stay only in the open tab&apos;s memory.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
@@ -91,7 +89,10 @@ export default function LegalPage(): ReactElement {
           the two people you choose each keep one, and 21.gifts stores the third, encrypted, with
           your account, for your current wallet and for each previous wallet until you remove that
           wallet. One part alone opens nothing; any two parts together open the wallet. 21.gifts
-          keeps its part as a backup only: the application never shows it or sends it anywhere.
+          keeps its part as a backup only: the application never shows it or sends it anywhere. If
+          another member chose you to keep a part for them, the application encrypts that part in
+          your browser with a key from your own 12 recovery words and 21.gifts stores it with your
+          account until you delete it. 21.gifts cannot read it and does not know whose part it is.
           After a recovery, the key and the address of the previous wallet stay with your account
           until you remove it, and 21.gifts reads that wallet&apos;s balance by its address from a
           public blockchain explorer, without your account details. Your 12 recovery words open your

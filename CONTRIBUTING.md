@@ -84,6 +84,9 @@ app/
 │   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
 │   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   ├── recovery-share/route.ts  # PUT /me/recovery-share (the Social Recovery share 21.gifts keeps)
+│   │   │   ├── held-shares/
+│   │   │   │   ├── route.ts     # GET /me/held-shares (the boxes a holder keeps other members' shares in)
+│   │   │   │   └── [id]/route.ts  # PUT/DELETE /me/held-shares/:id
 │   │   │   ├── previous-wallets/
 │   │   │   │   ├── route.ts     # GET /me/previous-wallets (wallets a social recovery replaced)
 │   │   │   │   └── [sparkPubkey]/route.ts  # DELETE /me/previous-wallets/:sparkPubkey
@@ -185,7 +188,7 @@ app/
 │   │   ├── settings/
 │   │   │   ├── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
 │   │   │   ├── social-recovery/page.tsx  # GET /settings/social-recovery — Secure my account (two share QRs, 21.gifts keeps the third)
-│   │   │   ├── held-shares/page.tsx      # GET /settings/held-shares — shares kept for other members (this browser only)
+│   │   │   ├── held-shares/page.tsx      # GET /settings/held-shares — shares kept for other members (encrypted boxes on the api)
 │   │   │   └── previous-wallets/[sparkPubkey]/page.tsx  # GET /settings/previous-wallets/:key — Transfer remaining balance
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
@@ -251,7 +254,7 @@ app/
 │   │   ├── SocialRecoveryRow.tsx # /settings Social Recovery status, Secure my account, Shares I keep for others
 │   │   ├── PreviousWalletsRow.tsx # /settings previous wallets: replaced date, explorer balance (information only), Transfer remaining balance
 │   │   ├── SocialRecoveryScreen.tsx # /settings/social-recovery intro, person 1 and 2 share QRs, save, done
-│   │   ├── HeldSharesScreen.tsx # /settings/held-shares list, Keep a share camera, share QR, delete confirm
+│   │   ├── HeldSharesScreen.tsx # /settings/held-shares unlock, list, Keep a share camera, share QR, delete confirms
 │   │   ├── SocialRecoveryPromptOverlay.tsx # /welcome grant dialog: Social Recovery for your grant → Secure my account
 │   │   ├── RecoverScreen.tsx    # /recover views: start, scan/type, opening, blocked, refused, found, Transfer, done
 │   │   ├── OldWordsInput.tsx    # Old 12 words from two scanned share codes or typed (/recover, previous wallet page)
@@ -384,7 +387,8 @@ app/
 │   │   ├── slip39.ts            # SLIP-39 split and combine on WebCrypto (2-of-3 shares of the 12 words' 16 bytes)
 │   │   ├── slip39-wordlist.ts   # SLIP-39 word list (1024 words, pinned SHA-256)
 │   │   ├── recovery-share-code.ts # Share QR payload `21gifts-share:v1:…`, split of the 12 words and rebuild from two codes
-│   │   ├── recovery-holder-store.ts # Shares kept for others in localStorage under the keeping member's account id
+│   │   ├── held-share-box.ts    # Box key from the holder's 12 words (HKDF, AES-GCM), seal and open one share box (WebCrypto)
+│   │   ├── held-shares.ts       # Shares kept for others as api boxes: load, keep, re-lock after the holder's own recovery
 │   │   ├── recovery-lookup.ts   # Signed address lookup and recovery message of a social recovery
 │   │   ├── recovery-flow.ts     # Signed-out recovery: open the old wallet, begin, new passkey, Transfer (words in memory only)
 │   │   ├── remaining-balance.ts # Open a previous wallet from its words and move its rest to the member's wallet

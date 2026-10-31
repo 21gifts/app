@@ -34,6 +34,7 @@ import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
+import { relockHeldShares } from '@/lib/held-shares';
 import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
 import { WALLET_CONNECT_TIMEOUT_MS } from '@/lib/wallet/wallet-service';
 import { credentialToJSON, requestOptionsFromJSON } from '@/lib/webauthn-browser';
@@ -65,6 +66,9 @@ vi.mock('@/lib/webauthn-browser', () => ({
 }));
 vi.mock('@/lib/wallet/wallet-phrase', () => ({
   rememberPhraseFromPrf: vi.fn(async () => true),
+}));
+vi.mock('@/lib/held-shares', () => ({
+  relockHeldShares: vi.fn(async () => 0),
 }));
 vi.mock('@/lib/tab-phrase', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/tab-phrase')>()),
@@ -759,6 +763,7 @@ describe('transfer', () => {
       account: ACCOUNT,
       sessionToken: 'sess-new',
     });
+    expect(relockHeldShares).toHaveBeenCalledWith('sess-new', ACCOUNT.id, OLD_WORDS, NEW_WORDS);
     expect(useAuthStore.getState().session).toBe('sess-new');
     const begins = vi.mocked(startPasskeyAuthentication).mock.calls.length;
     const get = vi.fn().mockResolvedValue(null);

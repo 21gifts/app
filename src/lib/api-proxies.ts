@@ -371,6 +371,38 @@ export async function proxyMePreviousWalletDelete(
 }
 
 /**
+ * Proxies GET /me/held-shares (the caller's share boxes) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeHeldSharesGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/held-shares');
+}
+
+/**
+ * Proxies PUT /me/held-shares/:id (create or replace one share box) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ ciphertext }`).
+ * @param id - Box id from the path.
+ * @returns The upstream response.
+ */
+export async function proxyMeHeldSharePut(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/me/held-shares/${encodeURIComponent(id)}`);
+}
+
+/**
+ * Proxies DELETE /me/held-shares/:id (delete one share box) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Box id from the path.
+ * @returns The upstream response.
+ */
+export async function proxyMeHeldShareDelete(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/me/held-shares/${encodeURIComponent(id)}`);
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON

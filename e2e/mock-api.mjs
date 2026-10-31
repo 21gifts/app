@@ -34,6 +34,26 @@ const messageTranslations = new Map();
 const walletReports = new Map();
 /** accountId → interaction events received (`POST /me/events`). */
 const interactionEvents = new Map();
+/** Share boxes: box id → `{ accountId, ciphertext, createdAt, updatedAt }` (`/me/held-shares`). */
+const heldShareBoxes = new Map();
+
+/** Most boxes one account keeps, as the api allows. */
+const HELD_SHARES_MAX = 50;
+
+/**
+ * The box id of a `/me/held-shares/:id` path, or `''` when it is not
+ * percent-encoded validly (an empty id is refused like any malformed id).
+ *
+ * @param {string} pathName
+ * @returns {string}
+ */
+function heldShareBoxIdFromPath(pathName) {
+  try {
+    return decodeURIComponent(pathName.slice('/me/held-shares/'.length));
+  } catch {
+    return '';
+  }
+}
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
@@ -2883,6 +2903,94 @@ const server = http.createServer(async (req, res) => {
     }
     account.socialRecoverySetUp = true;
     json(res, 200, account);
+    return;
+  }
+
+  // As the api: an account's own boxes, oldest first; the ciphertext is opaque.
+  if (method === 'GET' && pathName === '/me/held-shares') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const boxes = [...heldShareBoxes.entries()]
+      .filter(([, box]) => box.accountId === account.id)
+      .sort(([, a], [, b]) => a.createdAt - b.createdAt)
+      .map(([id, box]) => ({
+        id,
+        ciphertext: box.ciphertext,
+        updatedAt: new Date(box.updatedAt).toISOString(),
+      }));
+    json(res, 200, { boxes });
+    return;
+  }
+
+  // As the api: a 32-hex id and a base64url box of 29 to 1024 bytes that
+  // starts with 0x01; an id of another account is 409, as is a 51st box.
+  if (method === 'PUT' && /^\/me\/held-shares\/[^/]+$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = heldShareBoxIdFromPath(pathName);
+    const parsed = jsonObject(rawBody);
+    const ciphertext =
+      parsed !== null && isStrictObject(parsed, ['ciphertext']) ? parsed.ciphertext : null;
+    const bytes =
+      typeof ciphertext === 'string' && /^[A-Za-z0-9_-]+$/.test(ciphertext)
+        ? Buffer.from(ciphertext, 'base64url')
+        : null;
+    if (
+      !/^[0-9a-f]{32}$/.test(id) ||
+      bytes === null ||
+      bytes.length < 29 ||
+      bytes.length > 1024 ||
+      bytes[0] !== 1
+    ) {
+      json(res, 400, { error: 'Expected a box id and a held share ciphertext' });
+      return;
+    }
+    const existing = heldShareBoxes.get(id);
+    if (existing !== undefined && existing.accountId !== account.id) {
+      json(res, 409, { error: 'Box id in use' });
+      return;
+    }
+    const now = Date.now();
+    if (existing === undefined) {
+      const count = [...heldShareBoxes.values()].filter(
+        (box) => box.accountId === account.id,
+      ).length;
+      if (count >= HELD_SHARES_MAX) {
+        json(res, 409, { error: 'Too many held shares' });
+        return;
+      }
+      heldShareBoxes.set(id, { accountId: account.id, ciphertext, createdAt: now, updatedAt: now });
+      json(res, 201, {});
+      return;
+    }
+    existing.ciphertext = ciphertext;
+    existing.updatedAt = now;
+    json(res, 200, {});
+    return;
+  }
+
+  // As the api: idempotent, and another account's id changes nothing.
+  if (method === 'DELETE' && /^\/me\/held-shares\/[^/]+$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const id = heldShareBoxIdFromPath(pathName);
+    if (heldShareBoxes.get(id)?.accountId === account.id) {
+      heldShareBoxes.delete(id);
+    }
+    res.writeHead(204);
+    res.end();
     return;
   }
 

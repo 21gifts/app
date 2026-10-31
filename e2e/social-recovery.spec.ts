@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { cameraStats, stubCamera } from './camera';
+import { installFakeWebAuthn } from './fake-webauthn';
 import { fulfillSpot } from './fx-spot';
+import { fakePasskeyWords, PREVIOUS_WORDS, routeHeldShares, sealedBox } from './held-boxes';
+import { heldShareBoxKey, newHeldShareBoxId, openHeldShare } from '../src/lib/held-share-box';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
 const APP_BUILD = { 'x-app-build': 'dev' };
@@ -338,6 +341,100 @@ test.describe('social recovery endpoints', () => {
     expect(response.status()).toBe(404);
     expect(await response.json()).toEqual({ error: 'Not found' });
   });
+
+  test('Function: proxyMeHeldSharesGet — list without a session is 401', async ({ request }) => {
+    expect((await request.get('/me/held-shares')).status()).toBe(401);
+  });
+
+  test('Function: fetchHeldShareBoxes — a new account keeps no boxes', async ({ request }) => {
+    const token = await newSession(request);
+    const response = await request.get('/me/held-shares', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({ boxes: [] });
+  });
+
+  test('Function: proxyMeHeldSharePut — put without a session is 401', async ({ request }) => {
+    expect((await request.put('/me/held-shares/[id]')).status()).toBe(401);
+  });
+
+  test('Function: putHeldShareBox — a box is created, replaced, listed, and kept from another account', async ({
+    request,
+  }) => {
+    const token = await newSession(request);
+    const auth = { Authorization: `Bearer ${token}` };
+    const id = newHeldShareBoxId();
+    const first = await sealedBox('acc_any', id, HELD_CODE);
+    for (const [path, data] of [
+      ['/me/held-shares/NOT-HEX', { ciphertext: first.ciphertext }],
+      [`/me/held-shares/${id}`, { ciphertext: 'AQID' }],
+      [`/me/held-shares/${id}`, { ciphertext: `Ag${first.ciphertext.slice(2)}` }],
+      [`/me/held-shares/${id}`, { ciphertext: first.ciphertext, extra: true }],
+    ] as const) {
+      const refused = await request.put(path, { headers: auth, data });
+      expect(refused.status(), JSON.stringify(data)).toBe(400);
+    }
+    const created = await request.put(`/me/held-shares/${id}`, {
+      headers: auth,
+      data: { ciphertext: first.ciphertext },
+    });
+    expect(created.status()).toBe(201);
+    const second = await sealedBox('acc_any', id, HELD_CODE);
+    const replaced = await request.put(`/me/held-shares/${id}`, {
+      headers: auth,
+      data: { ciphertext: second.ciphertext },
+    });
+    expect(replaced.status()).toBe(200);
+    const listed = await request.get('/me/held-shares', { headers: auth });
+    expect(
+      ((await listed.json()) as { boxes: Array<{ id: string; ciphertext: string }> }).boxes,
+    ).toEqual([expect.objectContaining({ id, ciphertext: second.ciphertext })]);
+    const other = await newSession(request);
+    const taken = await request.put(`/me/held-shares/${id}`, {
+      headers: { Authorization: `Bearer ${other}` },
+      data: { ciphertext: first.ciphertext },
+    });
+    expect(taken.status()).toBe(409);
+    expect(await taken.json()).toEqual({ error: 'Box id in use' });
+  });
+
+  test('Function: proxyMeHeldShareDelete — delete without a session is 401', async ({
+    request,
+  }) => {
+    expect((await request.delete('/me/held-shares/[id]')).status()).toBe(401);
+  });
+
+  test('Function: deleteHeldShareBox — a delete is idempotent and leaves another account’s box alone', async ({
+    request,
+  }) => {
+    const token = await newSession(request);
+    const other = await newSession(request);
+    const id = newHeldShareBoxId();
+    const box = await sealedBox('acc_any', id, HELD_CODE);
+    await request.put(`/me/held-shares/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { ciphertext: box.ciphertext },
+    });
+    const foreign = await request.delete(`/me/held-shares/${id}`, {
+      headers: { Authorization: `Bearer ${other}` },
+    });
+    expect(foreign.status()).toBe(204);
+    const kept = await request.get('/me/held-shares', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(((await kept.json()) as { boxes: unknown[] }).boxes).toHaveLength(1);
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const deleted = await request.delete(`/me/held-shares/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      expect(deleted.status()).toBe(204);
+    }
+    const gone = await request.get('/me/held-shares', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(await gone.json()).toEqual({ boxes: [] });
+  });
 });
 
 test('Function: RecoveryPendingError — the pending passkey is never signalled unknown', async ({
@@ -439,8 +536,28 @@ test('a held session whose Log in is answered by the passkey of an unfinished re
 const HELD_CODE =
   '21gifts-share:v1:acc_owner:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
 
-/** `localStorage` key of the shares the signed-in test member keeps. */
-const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
+/** Another share of the same set as {@link HELD_CODE} (identifier 2864), member 1. */
+const HELD_CODE_2 =
+  '21gifts-share:v1:acc_owner:bob:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology';
+
+/** A share of another recovery set (identifier 7506), kept for Cara. */
+const HELD_CARA =
+  '21gifts-share:v1:acc_cara:cara:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
+
+/** Seed passkey id of the fake passkey on the held-shares page: it must decode as base64url. */
+const HELD_CREDENTIAL_ID = 'Y3JlZC1zZWVk';
+
+/**
+ * Opens `/settings/held-shares` and its boxes with **Open my shares** (the
+ * fake passkey gives the words).
+ *
+ * @param page - The page.
+ */
+async function openHeldShares(page: Page): Promise<void> {
+  await page.goto('/settings/held-shares');
+  await page.getByRole('button', { name: 'Open my shares' }).click();
+  await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
+}
 
 /**
  * Signs in a member whose account the api route answers, with or without a
@@ -658,72 +775,96 @@ test.describe('social recovery libraries', () => {
     await openPinnedShare(page, 'sr-share-2');
   });
 
-  test('Function: loadHeldShares — a kept share is listed, and stays in this browser after log out', async ({
+  test('Function: loadHeldShares — the boxes are read from the api and listed by username', async ({
     page,
   }) => {
-    await page.addInitScript(
-      ({ key, code }) => {
-        if (sessionStorage.getItem('e2e.seeded') === null) {
-          sessionStorage.setItem('e2e.seeded', '1');
-          localStorage.setItem(
-            key,
-            JSON.stringify({ v: 1, shares: [{ code, storedAt: 1_767_268_800_000 }] }),
-          );
-        }
-      },
-      { key: HELD_KEY, code: HELD_CODE },
-    );
-    await signInMember(page, 'cred-seed');
-    await page.goto('/settings/held-shares');
-    await expect(page.getByRole('listitem')).toHaveText(['@bobKept since Jan 1, 2026']);
-    const value = await page.evaluate((key) => localStorage.getItem(key), HELD_KEY);
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await page.getByRole('button', { name: 'Log out' }).click();
-    await expect(page).toHaveURL(/\/login/);
-    expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
-    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBe(value);
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA),
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+    ]);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveText(['@bob', '@cara']);
   });
 
-  test('Function: keepHeldShare — a scanned share is kept under the signed-in member', async ({
+  test('Function: heldShareBoxKey — the passkey’s words open the boxes, a box of other words stays counted', async ({
+    page,
+  }) => {
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+    ]);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveText([
+      '@bob',
+      '1 kept share cannot be opened with your current 12 words.',
+    ]);
+  });
+
+  test('Function: openHeldShare — a box of another holder does not open', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page, [await sealedBox('acc_other', 'b'.repeat(32), HELD_CODE)]);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveText([
+      '1 kept share cannot be opened with your current 12 words.',
+    ]);
+  });
+
+  test('Function: keepHeldShare — a scanned share is kept in a new box only the holder’s words open', async ({
     page,
   }) => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE });
-    await signInMember(page, 'cred-seed');
-    await page.goto('/settings/held-shares');
-    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBeNull();
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
-    const stored = await page.evaluate((key) => localStorage.getItem(key), HELD_KEY);
-    expect(JSON.parse(stored ?? 'null')).toMatchObject({ v: 1, shares: [{ code: HELD_CODE }] });
+    expect(held.boxes).toHaveLength(1);
+    const [box] = held.boxes;
+    expect(box?.ciphertext).not.toContain('bob');
+    const key = await heldShareBoxKey(await fakePasskeyWords());
+    expect(await openHeldShare(key, 'acc_e2e', box?.id ?? '', box?.ciphertext ?? '')).toBe(
+      HELD_CODE,
+    );
   });
 
-  test('Function: deleteHeldShare — a confirmed delete removes the kept share', async ({
+  test('Function: newHeldShareBoxId — a kept share gets a new 32-hex box id, not one in use', async ({
     page,
   }) => {
-    await page.addInitScript(
-      ({ key, code }) => {
-        if (sessionStorage.getItem('e2e.seeded') === null) {
-          sessionStorage.setItem('e2e.seeded', '1');
-          localStorage.setItem(
-            key,
-            JSON.stringify({ v: 1, shares: [{ code, storedAt: 1_767_268_800_000 }] }),
-          );
-        }
-      },
-      { key: HELD_KEY, code: HELD_CODE },
-    );
-    await signInMember(page, 'cred-seed');
-    await page.goto('/settings/held-shares');
-    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
-    const confirm = page.getByRole('group', {
-      name: 'Delete the share of @bob? Only do this when they ask.',
-    });
-    await confirm.getByRole('button', { name: 'Keep' }).click();
-    await expect(page.getByRole('listitem')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
-    await confirm.getByRole('button', { name: 'Delete' }).click();
-    await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
-    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBeNull();
+    await stubCamera(page, { kind: 'qr', text: HELD_CARA });
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+    ]);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    expect(held.boxes.map((box) => box.id)).toEqual([
+      'b'.repeat(32),
+      expect.stringMatching(/^[0-9a-f]{32}$/),
+    ]);
+    expect(held.boxes[1]?.id).not.toBe('b'.repeat(32));
+  });
+
+  test('Function: sealHeldShare — the box on the wire is version 1 in base64url', async ({
+    page,
+  }) => {
+    await stubCamera(page, { kind: 'qr', text: HELD_CODE });
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page);
+    await signInMember(page, HELD_CREDENTIAL_ID);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
+    const ciphertext = held.boxes[0]?.ciphertext ?? '';
+    expect(ciphertext).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(Buffer.from(ciphertext, 'base64url')[0]).toBe(1);
   });
 
   test('Function: appHost — without a wallet key no wallet code loads', async ({ page }) => {
@@ -1007,14 +1148,12 @@ test.describe('social recovery in the settings', () => {
 });
 
 test.describe('shares kept for others', () => {
-  /** A share of another set (a share of another recovery set, identifier 7506), kept for Cara. */
-  const CARA_CODE =
-    '21gifts-share:v1:acc_cara:cara:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
-
   test('Function: HeldSharesPage — /settings/held-shares lists no shares for a new holder', async ({
     page,
   }) => {
-    await signInOwner(page);
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
     await page.goto('/settings/held-shares');
     await expect(
       page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
@@ -1024,6 +1163,7 @@ test.describe('shares kept for others', () => {
         'Someone chose you to help restore their account. Keep their share here. Show it only to them, in person, when they ask.',
       ),
     ).toBeVisible();
+    await page.getByRole('button', { name: 'Open my shares' }).click();
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
   });
@@ -1031,27 +1171,15 @@ test.describe('shares kept for others', () => {
   test('Function: HeldSharesScreen — the code of a kept share is shown for its owner, and Back returns to the list', async ({
     page,
   }) => {
-    await page.addInitScript(
-      ({ key, codes }) => {
-        localStorage.setItem(
-          key,
-          JSON.stringify({
-            v: 1,
-            shares: codes.map((code, index) => ({
-              code,
-              storedAt: 1_767_268_800_000 + index * 86_400_000,
-            })),
-          }),
-        );
-      },
-      { key: HELD_KEY, codes: [HELD_CODE, CARA_CODE] },
-    );
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
-    await expect(page.getByRole('listitem')).toHaveText([
-      '@caraKept since Jan 2, 2026',
-      '@bobKept since Jan 1, 2026',
+    await installFakeWebAuthn(page, true);
+    // Listed by owner username, not in the api's or the box ids' order.
+    await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CARA),
+      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CODE),
     ]);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveText(['@bob', '@cara']);
     const show = page.getByRole('button', { name: 'Show code for @bob' });
     await expect(page.getByText('Show code for @bob')).toHaveCount(0);
     await show.click();
@@ -1069,42 +1197,128 @@ test.describe('shares kept for others', () => {
     page,
   }) => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE.replace('acc_owner:bob', 'acc_e2e:ada') });
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'This is a share of your own account. Only other people can keep it.',
     );
-    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBeNull();
+    expect(held.boxes).toEqual([]);
   });
 
-  test('a second share of one setup is refused, also when another account in this browser keeps it', async ({
-    page,
-  }) => {
+  test('a second share of one setup among the holder’s boxes is refused', async ({ page }) => {
     await stubCamera(page, { kind: 'qr', text: HELD_CODE });
-    await page.addInitScript(
-      ({ code }) => {
-        localStorage.setItem(
-          '21gifts.recoveryShares.acc_other',
-          JSON.stringify({ v: 1, shares: [{ code, storedAt: 1_767_268_800_000 }] }),
-        );
-      },
-      { code: HELD_CODE },
-    );
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE_2),
+    ]);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
-      'This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.',
+      'This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.',
+    );
+    expect(held.boxes).toHaveLength(1);
+  });
+
+  test('a box the api does not store says so, and nothing is listed', async ({ page }) => {
+    await stubCamera(page, { kind: 'qr', text: HELD_CODE });
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page);
+    held.putStatus = 409;
+    const puts: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'PUT' && request.url().includes('/me/held-shares/')) {
+        puts.push(request.url());
+      }
+    });
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The share could not be kept. Try again.',
     );
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
-    expect(await page.evaluate((key) => localStorage.getItem(key), HELD_KEY)).toBeNull();
+    expect(puts).toHaveLength(1);
+  });
+
+  test('a confirmed delete removes the box; Keep closes the confirm', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+    ]);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
+    const confirm = page.getByRole('group', {
+      name: 'Delete the share of @bob? Only do this when they ask.',
+    });
+    await confirm.getByRole('button', { name: 'Keep' }).click();
+    await expect(confirm).toBeHidden();
+    await expect(page.getByRole('listitem')).toHaveCount(1);
+    expect(held.boxes).toHaveLength(1);
+    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
+    expect(held.boxes).toEqual([]);
+  });
+
+  test('boxes that do not open are only deleted after the confirm', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+      await sealedBox('acc_e2e', 'd'.repeat(32), HELD_CODE_2, PREVIOUS_WORDS),
+    ]);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
+    await expect(
+      page.getByText('2 kept shares cannot be opened with your current 12 words.'),
+    ).toBeVisible();
+    expect(held.boxes).toHaveLength(3);
+    const deleteLocked = page.getByRole('button', {
+      name: 'Delete the shares that cannot be opened',
+    });
+    await deleteLocked.click();
+    const confirm = page.getByRole('group', { name: 'Delete the shares that cannot be opened?' });
+    await expect(confirm).toBeVisible();
+    expect(held.boxes).toHaveLength(3);
+    await confirm.getByRole('button', { name: 'Keep' }).click();
+    await expect(confirm).toBeHidden();
+    await expect(
+      page.getByText('2 kept shares cannot be opened with your current 12 words.'),
+    ).toBeVisible();
+    expect(held.boxes).toHaveLength(3);
+    await deleteLocked.click();
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText(/cannot be opened/)).toHaveCount(0);
+    expect(held.boxes.map((box) => box.id)).toEqual(['b'.repeat(32)]);
+    await expect(page.getByRole('listitem')).toHaveText(['@bob']);
+  });
+
+  test('boxes that cannot be read show Try again, which reads them again', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
+    ]);
+    held.getStatus = 503;
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await page.goto('/settings/held-shares');
+    await page.getByRole('button', { name: 'Open my shares' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('Your shares could not be loaded.');
+    held.getStatus = 200;
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByRole('listitem')).toHaveText(['@bob']);
   });
 
   test('a scanned text that is not a share is refused, and the camera stops', async ({ page }) => {
     await stubCamera(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
     await expect
@@ -1118,8 +1332,10 @@ test.describe('shares kept for others', () => {
 
   test('the camera layer says how to scan, and Back returns to the list', async ({ page }) => {
     await stubCamera(page, { kind: 'blank' });
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(
       page.getByRole('region', { name: 'Point the camera at the code on the other phone' }),
@@ -1132,8 +1348,10 @@ test.describe('shares kept for others', () => {
 
   test('a blocked camera says how to allow it', async ({ page }) => {
     await stubCamera(page, { kind: 'denied' });
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'Camera access is off. Allow the camera to scan the code.',
@@ -1142,8 +1360,10 @@ test.describe('shares kept for others', () => {
 
   test('a device without a camera says to use a phone with one', async ({ page }) => {
     await stubCamera(page, { kind: 'none' });
-    await signInOwner(page);
-    await page.goto('/settings/held-shares');
+    await installFakeWebAuthn(page, true);
+    await routeHeldShares(page);
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'No camera found. Use a phone with a camera to scan the code.',
@@ -2004,6 +2224,41 @@ test.describe('Transfer remaining balance', () => {
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'Your wallet could not be opened. Please try again.',
     );
+  });
+
+  test('Function: relockHeldShares — without the wallet’s words in this tab the boxes are read and none is written', async ({
+    page,
+  }) => {
+    await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
+    await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
+    const held = await routeHeldShares(page, [
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE, OLD_PHRASE),
+    ]);
+    const before = held.boxes.map((box) => box.ciphertext);
+    const calls: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/me/held-shares')) {
+        calls.push(request.method());
+      }
+    });
+    await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}`);
+    await page.getByRole('button', { name: 'Type my 12 words' }).click();
+    await page.getByLabel('Your 12 words').fill(OLD_PHRASE);
+    const read = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/me/held-shares') && response.request().method() === 'GET',
+    );
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await read;
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
+    // The relock runs on its own, so give a late write time to show up.
+    await expect(
+      page.waitForRequest((request) => request.method() === 'PUT', { timeout: 1_000 }),
+    ).rejects.toThrow();
+    expect(calls).toEqual(['GET']);
+    expect(held.boxes.map((box) => box.ciphertext)).toEqual(before);
   });
 
   test('Function: receiveWalletSparkAddress — Transfer on a previous wallet that is not open reads no address and says the move failed', async ({
