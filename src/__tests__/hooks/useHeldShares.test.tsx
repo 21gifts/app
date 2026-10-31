@@ -382,6 +382,8 @@ describe('useHeldShares', () => {
       result.current.onScanResult(CARA.code);
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
+    expect(result.current.load).toBe('opening');
+    expect(result.current.shares).toEqual([BOB, CARA]);
     // DAVE only comes with the read, so the list shows that the read was applied.
     await act(async () => {
       loaded({ shares: [BOB, CARA, DAVE], lockedIds: [] });
@@ -515,6 +517,7 @@ describe('useHeldShares', () => {
     act(() => {
       result.current.unlock();
     });
+    expect(mocks.showPhrase).toHaveBeenCalledTimes(1);
     act(() => {
       useAuthStore.setState({ session: null, account: null });
     });
@@ -614,11 +617,15 @@ describe('useHeldShares', () => {
       kept({ ok: true, share: BOB });
       await Promise.resolve();
     });
+    // DAVE only comes with the read, so the list shows that the read was applied.
     await act(async () => {
-      answer({ shares: [CARA], lockedIds: [] });
+      answer({ shares: [CARA, DAVE], lockedIds: [] });
       await Promise.resolve();
     });
-    expect(result.current.shares).toEqual([BOB, CARA]);
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
+    expect(result.current.shares).toEqual([BOB, CARA, DAVE]);
   });
 
   it('reads with the newest key derivation when the session changes for the same account', async () => {

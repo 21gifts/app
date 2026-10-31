@@ -397,6 +397,14 @@ test.describe('social recovery endpoints', () => {
     });
     expect(taken.status()).toBe(409);
     expect(await taken.json()).toEqual({ error: 'Box id in use' });
+    const kept = await request.get('/me/held-shares', { headers: auth });
+    expect(
+      ((await kept.json()) as { boxes: Array<{ id: string; ciphertext: string }> }).boxes,
+    ).toEqual([expect.objectContaining({ id, ciphertext: second.ciphertext })]);
+    const none = await request.get('/me/held-shares', {
+      headers: { Authorization: `Bearer ${other}` },
+    });
+    expect(await none.json()).toEqual({ boxes: [] });
   });
 
   test('Function: proxyMeHeldShareDelete — delete without a session is 401', async ({
@@ -825,12 +833,11 @@ test.describe('social recovery libraries', () => {
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
     expect(held.boxes).toHaveLength(1);
-    const [box] = held.boxes;
-    expect(box?.ciphertext).not.toContain('bob');
+    const { id, ciphertext } = held.boxes[0] as { id: string; ciphertext: string };
     const key = await heldShareBoxKey(await fakePasskeyWords());
-    expect(await openHeldShare(key, 'acc_e2e', box?.id ?? '', box?.ciphertext ?? '')).toBe(
-      HELD_CODE,
-    );
+    expect(await openHeldShare(key, 'acc_e2e', id, ciphertext)).toBe(HELD_CODE);
+    const otherKey = await heldShareBoxKey(PREVIOUS_WORDS);
+    expect(await openHeldShare(otherKey, 'acc_e2e', id, ciphertext)).toBeNull();
   });
 
   test('Function: newHeldShareBoxId — a kept share gets a new 32-hex box id, not one in use', async ({
