@@ -15,8 +15,8 @@ export type HeldSharesView = 'list' | 'scan' | { qr: HeldShare };
 
 /**
  * Where reading the boxes is: the words are looked up (`opening`, also while
- * the boxes load), the passkey must open them (`unlock`), the boxes could not
- * be read (`loadError`), or they are read (`ready`).
+ * the boxes load), the passkey must open them (`unlock`), the words gave no
+ * key or the boxes could not be read (`loadError`), or they are read (`ready`).
  */
 export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
 
@@ -25,8 +25,9 @@ export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
  * or why it was not (`invalid` payload, the member's `own` share, a
  * `duplicate` of another share of that setup among the member's boxes, or
  * `saveError` for boxes the api did not read or a box that was not sealed or
- * saved), or a delete of one share (`deleteError`) or of the boxes that do
- * not open (`lockedDeleteError`) the api did not do. `username` is the owner named in a readable payload.
+ * saved), or that the api did not delete one share (`deleteError`) or the
+ * boxes that do not open (`lockedDeleteError`). `username` is the owner named
+ * in a readable payload.
  */
 export interface HeldSharesNotice {
   /** What happened. */
@@ -76,7 +77,7 @@ export interface UseHeldSharesResult {
   askDeleteLocked: () => void;
   /** Deletes the boxes that do not open (the confirmed delete). */
   removeLocked: () => void;
-  /** Closes the delete confirm. */
+  /** Closes the delete confirm of one share and of the boxes that do not open. */
   cancel: () => void;
   /** The top-left arrow: from the camera or a code back to the list. */
   back: () => boolean;

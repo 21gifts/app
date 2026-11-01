@@ -209,6 +209,9 @@ describe('useHeldShares', () => {
         result.current.remove(BOB);
       }
     });
+    expect(
+      action === 'keep' ? mocks.keepHeldShare.mock.calls : mocks.deleteHeldShareBox.mock.calls,
+    ).toHaveLength(1);
     let key: (value: CryptoKey) => void = () => undefined;
     mocks.heldShareBoxKey.mockReturnValueOnce(
       new Promise<CryptoKey>((resolve) => {

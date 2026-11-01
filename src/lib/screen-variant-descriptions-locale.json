@@ -3997,7 +3997,7 @@
   "/settings/held-shares:locked-delete-error": {
     "de": "21.gifts hat die Box, die sich nicht öffnen lässt, nicht gelöscht: der Hinweis Die Anteile, die sich nicht öffnen lassen, konnten nicht gelöscht werden. Versuche es erneut.; Bobs Karte und die Zeile 1 aufbewahrter Anteil lässt sich mit deinen aktuellen 12 Wörtern nicht öffnen. bleiben.",
     "es": "21.gifts no borró la caja que no se puede abrir: el aviso No se pudieron borrar las partes que no se pueden abrir. Inténtalo de nuevo.; la tarjeta de Bob y la fila 1 parte guardada no se puede abrir con tus 12 palabras actuales. se quedan.",
-    "fil": "Hindi binura ng 21.gifts ang kahong hindi mabuksan: ang alerto Hindi nabura ang mga bahaging hindi mabuksan. Subukan ulit.; nananatili ang card ni Bob at ang hilerang 1 itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita."
+    "fil": "Hindi binura ng 21.gifts ang kahong hindi mabuksan: ang alerto Hindi nabura ang mga bahaging hindi mabuksan. Subukan ulit.; nananatili ang card ni Bob at ang hanay na 1 itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita."
   },
   "/settings/held-shares:opening": {
     "de": "Die Boxen werden gelesen und geöffnet: Deine Anteile werden geöffnet… unter der Einleitung.",

@@ -171,7 +171,7 @@ export async function keepHeldShare(
  * box deleted between the read and such a write can come back.
  * The boxes are read first, so a member who keeps none derives no key. Best
  * effort: it never throws, a box whose write fails is not counted, and the
- * next call moves it when the write did not reach the api (the boxes already
+ * next call moves it whenever the api did not store it (the boxes already
  * moved no longer open with the previous words). Same words, or no current
  * words in this tab, move nothing.
  *

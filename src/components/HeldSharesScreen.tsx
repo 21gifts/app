@@ -15,7 +15,7 @@ import type { WalletPhraseErrorKind } from '@/hooks/useWalletPhrase';
 import type { MessageKey } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Catalog key of each refusal notice. */
+/** Catalog key of each notice other than a kept share: a refusal or a failed save or delete. */
 const REFUSAL_COPY: Record<Exclude<HeldSharesNotice['kind'], 'stored'>, MessageKey> = {
   invalid: 'shareCode.invalid',
   own: 'heldShares.own',
@@ -46,8 +46,8 @@ const ROW = 'flex flex-col gap-3 rounded-lg border border-app-border p-3';
  * for the passkey; a failed prompt shows the recovery phrase's wording above
  * the button. Boxes that cannot be read give an alert with **Try again**. The
  * list shows the notice of the last scan (`role="status"` when a share was
- * kept, `role="alert"` when it was refused or a delete failed), **Keep a
- * share** (a status line while a scanned share is kept), then either the
+ * kept, `role="alert"` when it was refused or a save or delete failed),
+ * **Keep a share** (a status line while a scanned share is kept), then either the
  * empty line or one card per share with the owner's username and two
  * icon-only ghost buttons: the QR icon shows that share's code, and the trash
  * icon opens a confirm (check deletes, X keeps). When boxes do not open with

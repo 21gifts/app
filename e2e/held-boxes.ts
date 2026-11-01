@@ -54,9 +54,10 @@ export interface HeldSharesRoute {
   /** The boxes, oldest first. */
   boxes: E2eHeldBox[];
   /**
-   * Status every PUT answers with. 201 or 200 store the box as the api does:
+   * What PUT does. 201 or 200 store the box as the api does, which answers
    * 201 for a new box, 200 for a replaced one, 400 for a bad id or box, and
-   * 409 once the account keeps 50 boxes.
+   * 409 once the account keeps 50 boxes; any other status is the answer to
+   * every PUT, which stores nothing.
    */
   putStatus: number;
   /** Status every DELETE answers with; 204 removes the box. */
