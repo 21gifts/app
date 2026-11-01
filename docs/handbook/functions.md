@@ -4920,7 +4920,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the shares the signed-in member keeps for other members' Social Recovery: every box of `GET /me/held-shares` (`fetchHeldShareBoxes`) is opened with the key of the member's current words (`openHeldShare`) and its code read with `parseShareCode`.
 - **Inputs:** Session token, the signed-in member's account id, and the box key of the member's current words.
 - **Returns / side effects:** `{ shares, lockedIds }`: `HeldShare[]` (`boxId`, `code`, `ownerAccountId`, `ownerUsername`, `identifier`, `memberIndex`) sorted by owner username, and the ids of the boxes that did not open or hold no share code. Nothing is deleted. Throws the errors of `fetchHeldShareBoxes` when the boxes cannot be read.
-- **Used by:** `useHeldShares` on `/settings/held-shares`.
+- **Used by:** `useHeldShares` on `/settings/held-shares`, and `keepHeldShare` (the boxes read again before a keep).
 
 ## Function: keepHeldShare
 
@@ -5202,7 +5202,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** DELETE `/me/held-shares/:id` with Bearer: deletes one box of the signed-in member. The api answers 204 also for a box that is already gone, so a repeat after a lost answer succeeds.
 - **Inputs:** Session token and the box id (URL-encoded into the path).
 - **Returns / side effects:** Resolves on 204; any other status throws `Could not delete the share`.
-- **Used by:** `useHeldShares` (the confirmed delete of one share, and of the boxes that do not open with the current words).
+- **Used by:** `useHeldShares` (the confirmed delete of one share, and of the boxes that do not open with the current words) and `relockHeldShares` (a box a re-lock wrote again after it was deleted).
 
 ## Function: proxyMeHeldSharesGet
 

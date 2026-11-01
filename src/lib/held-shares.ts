@@ -4,9 +4,9 @@
  * Each box holds one share code, encrypted in this browser with a key derived
  * from the keeping member's 12 words ({@link heldShareBoxKey}); the api never
  * learns whose share a box holds. A box that does not open with the current
- * words is counted, never deleted on its own, and {@link relockHeldShares}
- * moves boxes from previous words to the current ones after the keeping
- * member's own recovery.
+ * words, or holds no share code, is counted, never deleted on its own, and
+ * {@link relockHeldShares} moves boxes from previous words to the current
+ * ones after the keeping member's own recovery.
  */
 import { deleteHeldShareBox, fetchHeldShareBoxes, putHeldShareBox } from '@/lib/api';
 import {

@@ -285,6 +285,7 @@ describe('relockHeldShares', () => {
     api.putHeldShareBox.mockResolvedValueOnce('created').mockResolvedValueOnce('replaced');
     api.deleteHeldShareBox.mockRejectedValue(new Error('Could not delete the share'));
     await expect(relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).resolves.toBe(1);
+    expect(api.deleteHeldShareBox.mock.calls).toEqual([['sess', 'a'.repeat(32)]]);
     expect(api.putHeldShareBox).toHaveBeenCalledTimes(2);
   });
 

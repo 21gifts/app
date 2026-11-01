@@ -23,10 +23,10 @@ export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
 /**
  * The line over the list after a scan or a failed delete: the share was kept,
  * or why it was not (`invalid` payload, the member's `own` share, a
- * `duplicate` of another share of that setup among the member's boxes, or a
- * box the api did not read or save), or a delete of one share
- * (`deleteError`) or of the boxes that do not open (`lockedDeleteError`) the
- * api did not do. `username` is the owner named in a readable payload.
+ * `duplicate` of another share of that setup among the member's boxes, or
+ * `saveError` for boxes the api did not read or a box it did not save), or a
+ * delete of one share (`deleteError`) or of the boxes that do not open
+ * (`lockedDeleteError`) the api did not do. `username` is the owner named in a readable payload.
  */
 export interface HeldSharesNotice {
   /** What happened. */
