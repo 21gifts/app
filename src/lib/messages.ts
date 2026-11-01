@@ -765,6 +765,8 @@ const en = {
   'heldShares.lockedMany': '{count} kept shares cannot be opened with your current 12 words.',
   'heldShares.deleteLocked': 'Delete the shares that cannot be opened',
   'heldShares.deleteLockedConfirm': 'Delete the shares that cannot be opened?',
+  'heldShares.lockedDeleteError':
+    'The shares that cannot be opened could not be deleted. Try again.',
   'shareCode.invalid': 'This is not a Social Recovery code.',
   'shareCode.same': "That was the same code twice. Scan the other person's code.",
   'shareCode.otherSet': 'These two codes do not belong together.',
@@ -2524,6 +2526,8 @@ const de = {
     '{count} aufbewahrte Anteile lassen sich mit deinen aktuellen 12 Wörtern nicht öffnen.',
   'heldShares.deleteLocked': 'Anteile löschen, die sich nicht öffnen lassen',
   'heldShares.deleteLockedConfirm': 'Die Anteile löschen, die sich nicht öffnen lassen?',
+  'heldShares.lockedDeleteError':
+    'Die Anteile, die sich nicht öffnen lassen, konnten nicht gelöscht werden. Versuche es erneut.',
   'shareCode.invalid': 'Das ist kein Social-Recovery-Code.',
   'shareCode.same': 'Das war zweimal derselbe Code. Scanne den Code der anderen Person.',
   'shareCode.otherSet': 'Diese zwei Codes gehören nicht zusammen.',
@@ -4317,6 +4321,8 @@ const es = {
     '{count} partes guardadas no se pueden abrir con tus 12 palabras actuales.',
   'heldShares.deleteLocked': 'Borrar las partes que no se pueden abrir',
   'heldShares.deleteLockedConfirm': '¿Borrar las partes que no se pueden abrir?',
+  'heldShares.lockedDeleteError':
+    'No se pudieron borrar las partes que no se pueden abrir. Inténtalo de nuevo.',
   'shareCode.invalid': 'Este no es un código de Social Recovery.',
   'shareCode.same': 'Era el mismo código dos veces. Escanea el código de la otra persona.',
   'shareCode.otherSet': 'Estos dos códigos no van juntos.',
@@ -6090,6 +6096,7 @@ const fil = {
     '{count} itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita.',
   'heldShares.deleteLocked': 'Burahin ang mga bahaging hindi mabuksan',
   'heldShares.deleteLockedConfirm': 'Burahin ang mga bahaging hindi mabuksan?',
+  'heldShares.lockedDeleteError': 'Hindi nabura ang mga bahaging hindi mabuksan. Subukan ulit.',
   'shareCode.invalid': 'Hindi ito Social Recovery code.',
   'shareCode.same': 'Iisang code ang na-scan nang dalawang beses. I-scan ang code ng isa pang tao.',
   'shareCode.otherSet': 'Hindi magkasama ang dalawang code na ito.',

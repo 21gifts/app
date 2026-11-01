@@ -8,7 +8,7 @@
  * moves boxes from previous words to the current ones after the keeping
  * member's own recovery.
  */
-import { fetchHeldShareBoxes, putHeldShareBox } from '@/lib/api';
+import { deleteHeldShareBox, fetchHeldShareBoxes, putHeldShareBox } from '@/lib/api';
 import {
   heldShareBoxKey,
   newHeldShareBoxId,
@@ -43,8 +43,9 @@ export interface HeldShares {
 
 /**
  * Outcome of {@link keepHeldShare}: the kept share, or why it was refused
- * (`invalid` payload, the member's `own` share, a `duplicate` of a share of
- * the same set among the member's boxes, or a box the api did not `save`).
+ * (`invalid` payload, the member's `own` share, a `duplicate` of another
+ * share of the same set among the member's boxes, or boxes the api did not
+ * read or a box it did not `save`).
  */
 export type KeepShareResult =
   { ok: true; share: HeldShare } | { ok: false; reason: 'invalid' | 'own' | 'duplicate' | 'save' };
@@ -88,23 +89,24 @@ export async function loadHeldShares(
 }
 
 /**
- * Keeps a scanned share for another member in a new box. Refuses a share of
- * the member's own account, and a share whose owner and set identifier are
- * already among the member's opened boxes, so one member never keeps two
- * shares of one set.
+ * Keeps a scanned share for another member. Refuses a share of the member's
+ * own account. The member's boxes are read again first
+ * ({@link loadHeldShares}): a box that already holds this share code is the
+ * kept share, so a scan repeated after a lost answer never makes a second
+ * box; another share whose owner and set identifier are among the opened
+ * boxes is refused, so one member never keeps two shares of one set.
+ * Otherwise the share goes into a new box.
  *
  * @param sessionToken - Bearer session.
  * @param holderAccountId - The signed-in member who keeps it.
  * @param key - The box key of the member's current words.
- * @param kept - The member's shares, as last read.
  * @param text - The scanned payload.
- * @returns The kept share, or why it was refused.
+ * @returns The kept share (in its existing or a new box), or why it was refused.
  */
 export async function keepHeldShare(
   sessionToken: string,
   holderAccountId: string,
   key: CryptoKey,
-  kept: readonly HeldShare[],
   text: string,
 ): Promise<KeepShareResult> {
   const parsed = parseShareCode(text);
@@ -114,6 +116,17 @@ export async function keepHeldShare(
   if (parsed.ownerAccountId === holderAccountId) {
     return { ok: false, reason: 'own' };
   }
+  const code = encodeShareCode(parsed.ownerAccountId, parsed.ownerUsername, parsed.share);
+  let kept: HeldShare[];
+  try {
+    kept = (await loadHeldShares(sessionToken, holderAccountId, key)).shares;
+  } catch {
+    return { ok: false, reason: 'save' };
+  }
+  const existing = kept.find((share) => share.code === code);
+  if (existing !== undefined) {
+    return { ok: true, share: existing };
+  }
   if (
     kept.some(
       (share) =>
@@ -122,7 +135,6 @@ export async function keepHeldShare(
   ) {
     return { ok: false, reason: 'duplicate' };
   }
-  const code = encodeShareCode(parsed.ownerAccountId, parsed.ownerUsername, parsed.share);
   const boxId = newHeldShareBoxId();
   try {
     const ciphertext = await sealHeldShare(key, holderAccountId, boxId, code);
@@ -148,9 +160,12 @@ export async function keepHeldShare(
  * after the member's own social recovery: every box that opens with the
  * previous words is encrypted again with the current words and written back
  * under the same id. A box that does not open with the previous words is left
- * as it is. The boxes are read first, so a member who keeps none derives no
- * key. Best effort: it never throws, a box that fails stays as it was, and
- * the next call moves it (the boxes already moved no longer open with the
+ * as it is. A box deleted while this runs is not brought back: when the api
+ * answers a write with `created`, the box was gone, so it is deleted again
+ * (once; a failed delete leaves it under the current words) and not counted.
+ * The boxes are read first, so a member who keeps none derives no key. Best
+ * effort: it never throws, a box whose write fails stays as it was, and the
+ * next call moves it (the boxes already moved no longer open with the
  * previous words). Same words, or no current words in this tab, move nothing.
  *
  * @param sessionToken - Bearer session of the recovered member.
@@ -181,13 +196,19 @@ export async function relockHeldShares(
       if (code === null) {
         continue;
       }
+      let stored: 'created' | 'replaced';
       try {
         const ciphertext = await sealHeldShare(newKey, holderAccountId, box.id, code);
-        await putHeldShareBox(sessionToken, box.id, ciphertext);
-        moved += 1;
+        stored = await putHeldShareBox(sessionToken, box.id, ciphertext);
       } catch {
         // This box stays under the previous words; the next call moves it.
+        continue;
       }
+      if (stored === 'created') {
+        await deleteHeldShareBox(sessionToken, box.id).catch(() => undefined);
+        continue;
+      }
+      moved += 1;
     }
     return moved;
   } catch {

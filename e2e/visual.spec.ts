@@ -43224,6 +43224,12 @@ test.describe('held shares states', () => {
     '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
   /** Seed passkey id of the fake passkey: any base64url decodes, `cred-seed` does not. */
   const HELD_CREDENTIAL_ID = 'Y3JlZC1zZWVk';
+  /** A share of a second set of Bob's (identifier 2864), member 0. */
+  const HELD_BOB_SET_2 =
+    '21gifts-share:v1:acc_bob:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** Member 1 of {@link HELD_BOB_SET_2}'s set. */
+  const HELD_BOB_SET_2_SECOND =
+    '21gifts-share:v1:acc_bob:bob:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology';
   /** A share of the signed-in member's own account. */
   const HELD_OWN =
     '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
@@ -43467,8 +43473,8 @@ test.describe('held shares states', () => {
   });
 
   test('held shares refused-duplicate', async ({ page }) => {
-    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
-    await routeHeldShares(page, await keptBoxes([HELD_BOB]));
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB_SET_2_SECOND });
+    await routeHeldShares(page, await keptBoxes([HELD_BOB_SET_2]));
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -43502,6 +43508,26 @@ test.describe('held shares states', () => {
     );
     await expect(page.getByRole('listitem')).toHaveCount(2);
     await shotScreen(page, 'state-held-shares-delete-error');
+  });
+
+  test('held shares locked-delete-error', async ({ page }) => {
+    await seedHolder(page);
+    const held = await routeHeldShares(page, [
+      ...(await keptBoxes([HELD_BOB])),
+      await sealedBox('acc_e2e', 'a'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+    ]);
+    held.deleteStatus = 503;
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete the shares that cannot be opened' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The shares that cannot be opened could not be deleted. Try again.',
+    );
+    await expect(page.getByRole('listitem')).toHaveText([
+      '@bob',
+      '1 kept share cannot be opened with your current 12 words.',
+    ]);
+    await shotScreen(page, 'state-held-shares-locked-delete-error');
   });
 
   test('held shares invalid', async ({ page }) => {

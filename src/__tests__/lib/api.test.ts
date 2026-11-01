@@ -6218,14 +6218,17 @@ describe('fetchHeldShareBoxes', () => {
 });
 
 describe('putHeldShareBox', () => {
-  it.each([200, 201])('resolves on status %i (replaced or created)', async (status) => {
+  it.each([
+    [201, 'created'],
+    [200, 'replaced'],
+  ] as const)('answers status %i as %s', async (status, stored) => {
     stubFetch({ ok: true, status, body: {} });
-    await expect(putHeldShareBox('sess', 'id', 'AQID')).resolves.toBeUndefined();
+    await expect(putHeldShareBox('sess', 'id', 'AQID')).resolves.toBe(stored);
   });
 
   it('puts the ciphertext under the encoded id with the Bearer', async () => {
     const fetchMock = stubFetch({ ok: true, status: 201, body: {} });
-    await expect(putHeldShareBox('sess', 'a/b', 'AQID')).resolves.toBeUndefined();
+    await expect(putHeldShareBox('sess', 'a/b', 'AQID')).resolves.toBe('created');
     expect(fetchMock).toHaveBeenCalledWith('/me/held-shares/a%2Fb', {
       method: 'PUT',
       headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },

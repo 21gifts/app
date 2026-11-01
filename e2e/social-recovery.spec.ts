@@ -1253,6 +1253,48 @@ test.describe('shares kept for others', () => {
     expect(puts).toHaveLength(1);
   });
 
+  test('a share whose box was stored while the answer was lost is kept in that box on the next scan', async ({
+    page,
+  }) => {
+    await stubCamera(page, { kind: 'qr', text: HELD_CODE });
+    await installFakeWebAuthn(page, true);
+    const held = await routeHeldShares(page);
+    await page.route(
+      /\/me\/held-shares\/[0-9a-f]{32}$/,
+      async (route) => {
+        const request = route.request();
+        if (request.method() !== 'PUT') {
+          await route.fallback();
+          return;
+        }
+        // The api stores the box, but its answer never reaches the page.
+        const id = new URL(request.url()).pathname.split('/')[3] as string;
+        const { ciphertext } = request.postDataJSON() as { ciphertext: string };
+        held.boxes = [...held.boxes, { id, ciphertext, updatedAt: '2026-01-07T12:00:00.000Z' }];
+        await route.abort('connectionreset');
+      },
+      { times: 1 },
+    );
+    const puts: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'PUT' && request.url().includes('/me/held-shares/')) {
+        puts.push(request.url());
+      }
+    });
+    await signInOwner(page, { passkeyCredentialId: HELD_CREDENTIAL_ID });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The share could not be kept. Try again.',
+    );
+    expect(held.boxes).toHaveLength(1);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
+    await expect(page.getByRole('listitem')).toHaveText(['@bob']);
+    expect(held.boxes).toHaveLength(1);
+    expect(puts).toHaveLength(1);
+  });
+
   test('a confirmed delete removes the box; Keep closes the confirm', async ({ page }) => {
     await installFakeWebAuthn(page, true);
     const held = await routeHeldShares(page, [

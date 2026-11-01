@@ -23,13 +23,15 @@ export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
 /**
  * The line over the list after a scan or a failed delete: the share was kept,
  * or why it was not (`invalid` payload, the member's `own` share, a
- * `duplicate` of a share of that setup among the member's boxes, or a box the
- * api did not save), or a delete the api did not do. `username` is the owner
- * named in a readable payload.
+ * `duplicate` of another share of that setup among the member's boxes, or a
+ * box the api did not read or save), or a delete of one share
+ * (`deleteError`) or of the boxes that do not open (`lockedDeleteError`) the
+ * api did not do. `username` is the owner named in a readable payload.
  */
 export interface HeldSharesNotice {
   /** What happened. */
-  kind: 'stored' | 'invalid' | 'own' | 'duplicate' | 'saveError' | 'deleteError';
+  kind:
+    'stored' | 'invalid' | 'own' | 'duplicate' | 'saveError' | 'deleteError' | 'lockedDeleteError';
   /** Username of the share's owner, when the payload was readable. */
   username?: string;
 }
@@ -93,12 +95,14 @@ export interface UseHeldSharesResult {
  * again and starts from an empty list, and an answer that arrives for the
  * previous account (key, read, keep, delete, or a passkey prompt started for
  * it) changes nothing. A box deleted here stays out of, and a share kept here
- * is added to, a read that was already running. Boxes that do not
- * open with these words are counted and can be deleted together, never on
- * their own. **Keep a share** opens the camera; a scanned payload is kept in
- * a new box ({@link keepHeldShare}); the list comes back, then a notice:
- * kept for the owner's username, or refused as not a share, the member's own,
- * a second share of one setup, or a box the api did not save. The QR icon
+ * is added to, a read that was already running. Boxes that do not open with
+ * these words are counted and can be deleted together, never on their own
+ * (boxes the api did not delete stay and give their own notice). **Keep a
+ * share** opens the camera; a scanned payload is kept ({@link keepHeldShare}:
+ * the boxes are read again, a box that already holds the code is used,
+ * otherwise a new box); the list comes back, then a notice: kept for the
+ * owner's username, or refused as not a share, the member's own, a second
+ * share of one setup, or boxes the api did not read or save. The QR icon
  * shows a share's code for its owner; the trash icon asks to confirm, and the
  * confirmed delete removes the box ({@link deleteHeldShareBox}; a box the api
  * did not delete stays and gives the delete notice). The top-left arrow steps
@@ -295,7 +299,7 @@ export function useHeldShares(): UseHeldSharesResult {
       savingRef.current = true;
       setSaving(true);
       const epoch = epochRef.current;
-      void keepHeldShare(session, holderAccountId, key, shares, text).then((result) => {
+      void keepHeldShare(session, holderAccountId, key, text).then((result) => {
         if (epochRef.current !== epoch) {
           return;
         }
@@ -317,7 +321,7 @@ export function useHeldShares(): UseHeldSharesResult {
         setNotice(username === undefined ? { kind } : { kind, username });
       });
     },
-    [holderAccountId, session, shares],
+    [holderAccountId, session],
   );
 
   const showQr = useCallback((share: HeldShare): void => {
@@ -392,7 +396,7 @@ export function useHeldShares(): UseHeldSharesResult {
       lockedDeletingRef.current = null;
       setLockedIds((current) => current.filter((id) => !done.includes(id)));
       if (left.length > 0) {
-        setNotice({ kind: 'deleteError' });
+        setNotice({ kind: 'lockedDeleteError' });
       }
     })();
   }, [lockedIds, session]);

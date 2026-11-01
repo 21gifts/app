@@ -22,6 +22,7 @@ const REFUSAL_COPY: Record<Exclude<HeldSharesNotice['kind'], 'stored'>, MessageK
   duplicate: 'heldShares.duplicate',
   saveError: 'heldShares.saveError',
   deleteError: 'heldShares.deleteError',
+  lockedDeleteError: 'heldShares.lockedDeleteError',
 };
 
 /** Catalog key of each passkey failure of **Open my shares**, as on the recovery phrase. */

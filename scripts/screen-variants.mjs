@@ -2071,6 +2071,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings/held-shares',
+    id: 'locked-delete-error',
+    image: 'held-shares-locked-delete-error.png',
+    visual: 'state-held-shares-locked-delete-error',
+    needle: "shotScreen(page, 'state-held-shares-locked-delete-error')",
+  },
+  {
+    route: '/settings/held-shares',
     id: 'invalid',
     image: 'held-shares-invalid.png',
     visual: 'state-held-shares-invalid',

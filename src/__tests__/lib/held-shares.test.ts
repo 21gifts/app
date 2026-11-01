@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { heldShareBoxKey, openHeldShare, sealHeldShare } from '@/lib/held-share-box';
-import { keepHeldShare, loadHeldShares, relockHeldShares, type HeldShare } from '@/lib/held-shares';
+import { keepHeldShare, loadHeldShares, relockHeldShares } from '@/lib/held-shares';
 
 const api = vi.hoisted(() => ({
   fetchHeldShareBoxes: vi.fn(),
   putHeldShareBox: vi.fn(),
+  deleteHeldShareBox: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => api);
@@ -63,7 +64,8 @@ async function box(
 
 beforeEach(() => {
   api.fetchHeldShareBoxes.mockReset();
-  api.putHeldShareBox.mockReset().mockResolvedValue(undefined);
+  api.putHeldShareBox.mockReset().mockResolvedValue('created');
+  api.deleteHeldShareBox.mockReset().mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -108,32 +110,74 @@ describe('loadHeldShares', () => {
 });
 
 describe('keepHeldShare', () => {
-  const kept: HeldShare[] = [
-    {
-      boxId: 'a'.repeat(32),
-      code: code(SHARES[0]),
-      ownerAccountId: 'acc_bob',
-      ownerUsername: 'bob',
-      identifier: 2864,
-      memberIndex: 0,
-    },
-  ];
+  /** The member's one box: share 1 of set 2864, kept for Bob. */
+  const keptBox = (): ReturnType<typeof box> => box(WORDS, 'a'.repeat(32), code(SHARES[0]));
 
-  it('refuses text that is not a share, a share of the own account, and a second share of a set', async () => {
+  beforeEach(async () => {
+    api.fetchHeldShareBoxes.mockResolvedValue([await keptBox()]);
+  });
+
+  it('refuses text that is not a share and a share of the own account before reading the boxes', async () => {
     const key = await heldShareBoxKey(WORDS);
-    expect(await keepHeldShare('sess', HOLDER, key, [], 'hello')).toEqual({
+    expect(await keepHeldShare('sess', HOLDER, key, 'hello')).toEqual({
       ok: false,
       reason: 'invalid',
     });
-    expect(await keepHeldShare('sess', HOLDER, key, [], code(SHARES[0], HOLDER, 'hal'))).toEqual({
+    expect(await keepHeldShare('sess', HOLDER, key, code(SHARES[0], HOLDER, 'hal'))).toEqual({
       ok: false,
       reason: 'own',
     });
-    expect(await keepHeldShare('sess', HOLDER, key, kept, code(SHARES[1]))).toEqual({
+    expect(api.fetchHeldShareBoxes).not.toHaveBeenCalled();
+    expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('refuses another share of a set among the boxes it reads again', async () => {
+    const key = await heldShareBoxKey(WORDS);
+    expect(await keepHeldShare('sess', HOLDER, key, code(SHARES[1]))).toEqual({
       ok: false,
       reason: 'duplicate',
     });
+    expect(api.fetchHeldShareBoxes).toHaveBeenCalledWith('sess');
     expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('answers the box that already holds the scanned code and writes no second box', async () => {
+    const key = await heldShareBoxKey(WORDS);
+    expect(await keepHeldShare('sess', HOLDER, key, ` ${code(SHARES[0])}\n`)).toEqual({
+      ok: true,
+      share: {
+        boxId: 'a'.repeat(32),
+        code: code(SHARES[0]),
+        ownerAccountId: 'acc_bob',
+        ownerUsername: 'bob',
+        identifier: 2864,
+        memberIndex: 0,
+      },
+    });
+    expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('finds the box of a keep whose answer was lost, so the repeated scan writes none', async () => {
+    const key = await heldShareBoxKey(WORDS);
+    const stored: { id: string; ciphertext: string; updatedAt: string }[] = [];
+    api.fetchHeldShareBoxes.mockImplementation(async () => [...stored]);
+    api.putHeldShareBox.mockImplementationOnce(
+      async (_session: string, id: string, ciphertext: string) => {
+        stored.push({ id, ciphertext, updatedAt: '2026-10-30T12:00:00.000Z' });
+        throw new Error('Could not keep the share');
+      },
+    );
+    expect(await keepHeldShare('sess', HOLDER, key, code(OTHER_SET))).toEqual({
+      ok: false,
+      reason: 'save',
+    });
+    const again = await keepHeldShare('sess', HOLDER, key, code(OTHER_SET));
+    expect(again).toMatchObject({
+      ok: true,
+      share: { boxId: stored[0]?.id, code: code(OTHER_SET) },
+    });
+    expect(api.putHeldShareBox).toHaveBeenCalledTimes(1);
+    expect(stored).toHaveLength(1);
   });
 
   it('seals the trimmed share in a new box and puts it under a random id', async () => {
@@ -142,7 +186,6 @@ describe('keepHeldShare', () => {
       'sess',
       HOLDER,
       key,
-      kept,
       `  ${code(OTHER_SET, 'acc_bob', 'bob')}\n`,
     );
     expect(result).toEqual({
@@ -156,24 +199,18 @@ describe('keepHeldShare', () => {
         memberIndex: 0,
       },
     });
-    expect(result.ok && result.share.boxId).not.toBe(kept[0]?.boxId);
+    expect(result.ok && result.share.boxId).not.toBe('a'.repeat(32));
     const [session, id, ciphertext] = api.putHeldShareBox.mock.calls[0] as [string, string, string];
     expect(session).toBe('sess');
     expect(result.ok && id === result.share.boxId).toBe(true);
     expect(await openHeldShare(key, HOLDER, id, ciphertext)).toBe(code(OTHER_SET));
-    const again = await keepHeldShare('sess', HOLDER, key, kept, code(OTHER_SET, 'acc_bob', 'bob'));
+    const again = await keepHeldShare('sess', HOLDER, key, code(OTHER_SET, 'acc_cara', 'cara'));
     expect(again.ok && result.ok && again.share.boxId !== result.share.boxId).toBe(true);
   });
 
   it('keeps a share of another owner whose set has the same identifier', async () => {
     const key = await heldShareBoxKey(WORDS);
-    const result = await keepHeldShare(
-      'sess',
-      HOLDER,
-      key,
-      kept,
-      code(SHARES[1], 'acc_cara', 'cara'),
-    );
+    const result = await keepHeldShare('sess', HOLDER, key, code(SHARES[1], 'acc_cara', 'cara'));
     expect(result).toMatchObject({
       ok: true,
       share: { ownerAccountId: 'acc_cara', identifier: 2864 },
@@ -181,10 +218,20 @@ describe('keepHeldShare', () => {
     expect(api.putHeldShareBox).toHaveBeenCalledTimes(1);
   });
 
+  it('answers save when the boxes cannot be read again, and writes nothing', async () => {
+    api.fetchHeldShareBoxes.mockRejectedValue(new Error('Held shares are unavailable'));
+    const key = await heldShareBoxKey(WORDS);
+    expect(await keepHeldShare('sess', HOLDER, key, code(OTHER_SET))).toEqual({
+      ok: false,
+      reason: 'save',
+    });
+    expect(api.putHeldShareBox).not.toHaveBeenCalled();
+  });
+
   it('answers save when the api does not store the box', async () => {
     api.putHeldShareBox.mockRejectedValue(new Error('Could not keep the share'));
     const key = await heldShareBoxKey(WORDS);
-    expect(await keepHeldShare('sess', HOLDER, key, [], code(SHARES[0]))).toEqual({
+    expect(await keepHeldShare('sess', HOLDER, key, code(OTHER_SET))).toEqual({
       ok: false,
       reason: 'save',
     });
@@ -199,7 +246,9 @@ describe('relockHeldShares', () => {
       await box(OLD_WORDS, 'c'.repeat(32), code(OTHER_SET)),
     ];
     api.fetchHeldShareBoxes.mockResolvedValue(boxes);
-    api.putHeldShareBox.mockRejectedValueOnce(new Error('Could not keep the share'));
+    api.putHeldShareBox
+      .mockRejectedValueOnce(new Error('Could not keep the share'))
+      .mockResolvedValue('replaced');
     expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(1);
     expect(api.putHeldShareBox.mock.calls.map((call) => call[1])).toEqual([
       'a'.repeat(32),
@@ -209,6 +258,34 @@ describe('relockHeldShares', () => {
     expect(await openHeldShare(await heldShareBoxKey(WORDS), HOLDER, id, ciphertext)).toBe(
       code(OTHER_SET),
     );
+    expect(api.deleteHeldShareBox).not.toHaveBeenCalled();
+  });
+
+  it('deletes again a box that was deleted after the read, and does not count it', async () => {
+    const boxes = [
+      await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
+      await box(OLD_WORDS, 'c'.repeat(32), code(OTHER_SET)),
+    ];
+    api.fetchHeldShareBoxes.mockResolvedValue(boxes);
+    // Box a is deleted between the read and its write: the write creates it again.
+    api.putHeldShareBox.mockResolvedValueOnce('created').mockResolvedValueOnce('replaced');
+    expect(await relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).toBe(1);
+    expect(api.putHeldShareBox.mock.calls.map((call) => call[1])).toEqual([
+      'a'.repeat(32),
+      'c'.repeat(32),
+    ]);
+    expect(api.deleteHeldShareBox.mock.calls).toEqual([['sess', 'a'.repeat(32)]]);
+  });
+
+  it('goes on with the next box when deleting a box created again fails', async () => {
+    api.fetchHeldShareBoxes.mockResolvedValue([
+      await box(OLD_WORDS, 'a'.repeat(32), code(SHARES[0])),
+      await box(OLD_WORDS, 'c'.repeat(32), code(OTHER_SET)),
+    ]);
+    api.putHeldShareBox.mockResolvedValueOnce('created').mockResolvedValueOnce('replaced');
+    api.deleteHeldShareBox.mockRejectedValue(new Error('Could not delete the share'));
+    await expect(relockHeldShares('sess', HOLDER, OLD_WORDS, WORDS)).resolves.toBe(1);
+    expect(api.putHeldShareBox).toHaveBeenCalledTimes(2);
   });
 
   it('derives no key and moves nothing without boxes, without current words, or for the same words', async () => {

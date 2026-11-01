@@ -1651,7 +1651,7 @@ The camera read a share of the signed-in member's own account: the alert **This 
 
 ### Variant: refused-duplicate
 
-The camera read Bob's code while the member already keeps a share of that setup: the alert **This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.**; Bob's one card stays.
+The camera read another share of Bob's setup while the member already keeps a share of that setup: the alert **This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.**; Bob's one card stays.
 
 ![21.gifts second share of a setup refused](images/held-shares-refused-duplicate.png)
 
@@ -1666,6 +1666,12 @@ The camera read Bob's code while the member already keeps a share of that setup:
 21.gifts did not delete Bob's box: the alert **The share could not be deleted. Try again.**; both cards stay.
 
 ![21.gifts share not deleted](images/held-shares-delete-error.png)
+
+### Variant: locked-delete-error
+
+21.gifts did not delete the box that cannot be opened: the alert **The shares that cannot be opened could not be deleted. Try again.**; Bob's card and the row **1 kept share cannot be opened with your current 12 words.** stay.
+
+![21.gifts shares that cannot be opened not deleted](images/held-shares-locked-delete-error.png)
 
 ### Variant: invalid
 

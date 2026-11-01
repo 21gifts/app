@@ -3994,6 +3994,11 @@
     "es": "Tras el icono de papelera de esa fila: la confirmación ¿Borrar las partes que no se pueden abrir? con una marca y una X solo de icono; la papelera se oculta mientras está abierta.",
     "fil": "Pagkatapos ng icon ng basurahan ng hanay na iyon: ang kumpirmasyon Burahin ang mga bahaging hindi mabuksan? na may icon-only na check at X; nakatago ang basurahan habang bukas ito."
   },
+  "/settings/held-shares:locked-delete-error": {
+    "de": "21.gifts hat die Box, die sich nicht öffnen lässt, nicht gelöscht: der Hinweis Die Anteile, die sich nicht öffnen lassen, konnten nicht gelöscht werden. Versuche es erneut.; Bobs Karte und die Zeile 1 aufbewahrter Anteil lässt sich mit deinen aktuellen 12 Wörtern nicht öffnen. bleiben.",
+    "es": "21.gifts no borró la caja que no se puede abrir: el aviso No se pudieron borrar las partes que no se pueden abrir. Inténtalo de nuevo.; la tarjeta de Bob y la fila 1 parte guardada no se puede abrir con tus 12 palabras actuales. se quedan.",
+    "fil": "Hindi binura ng 21.gifts ang kahong hindi mabuksan: ang alerto Hindi nabura ang mga bahaging hindi mabuksan. Subukan ulit.; nananatili ang card ni Bob at ang hilerang 1 itinatabing bahagi ang hindi mabuksan gamit ang kasalukuyan mong 12 salita."
+  },
   "/settings/held-shares:opening": {
     "de": "Die Boxen werden gelesen und geöffnet: Deine Anteile werden geöffnet… unter der Einleitung.",
     "es": "Las cajas se leen y se abren: Abriendo tus partes… bajo la introducción.",
@@ -4005,9 +4010,9 @@
     "fil": "Pagkatapos ng Ipakita ang code para kay @bob: Bahagi ni @bob, Ipakita lang ang code na ito kay @bob nang personal, para maibalik niya ang account niya., at ang QR ng bahagi."
   },
   "/settings/held-shares:refused-duplicate": {
-    "de": "Die Kamera hat Bobs Code gelesen, während das Mitglied schon einen Anteil dieser Einrichtung aufbewahrt: der Hinweis Dieses Konto bewahrt schon einen Anteil dieser Einrichtung für @bob auf. Eine Person bewahrt nur einen Anteil einer Einrichtung auf.; Bobs eine Karte bleibt.",
-    "es": "La cámara leyó el código de Bob mientras el miembro ya guarda una parte de esa configuración: el aviso Esta cuenta ya guarda una parte de esta configuración para @bob. Una persona guarda solo una parte de cada configuración.; la única tarjeta de Bob se queda.",
-    "fil": "Nabasa ng camera ang code ni Bob habang may itinatabi na ang miyembro na bahagi ng setup na iyon: ang alerto May itinatabi na ang account na ito na bahagi ng setup na ito para kay @bob. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang tao.; nananatili ang iisang card ni Bob."
+    "de": "Die Kamera hat einen weiteren Anteil von Bobs Einrichtung gelesen, während das Mitglied schon einen Anteil dieser Einrichtung aufbewahrt: der Hinweis Dieses Konto bewahrt schon einen Anteil dieser Einrichtung für @bob auf. Eine Person bewahrt nur einen Anteil einer Einrichtung auf.; Bobs eine Karte bleibt.",
+    "es": "La cámara leyó otra parte de la configuración de Bob mientras el miembro ya guarda una parte de esa configuración: el aviso Esta cuenta ya guarda una parte de esta configuración para @bob. Una persona guarda solo una parte de cada configuración.; la única tarjeta de Bob se queda.",
+    "fil": "Nabasa ng camera ang isa pang bahagi ng setup ni Bob habang may itinatabi na ang miyembro na bahagi ng setup na iyon: ang alerto May itinatabi na ang account na ito na bahagi ng setup na ito para kay @bob. Isang bahagi lang ng isang setup ang puwedeng itabi ng isang tao.; nananatili ang iisang card ni Bob."
   },
   "/settings/held-shares:refused-own": {
     "de": "Die Kamera hat einen Anteil des eigenen Kontos gelesen: der Hinweis Das ist ein Anteil deines eigenen Kontos. Nur andere Personen können ihn aufbewahren.; nichts wird aufbewahrt.",

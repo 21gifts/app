@@ -12,6 +12,7 @@ import {
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { returnToView } from '@/lib/view-history';
 import { visualPin } from '@/lib/visual-pin';
+import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -131,9 +132,10 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * opened or the page closes; leaving the page closes the wallet
  * ({@link closePreviousWallet}). Words entered here also move the shares the
  * member keeps for others from these words to the signed-in wallet's words in
- * tab memory ({@link relockHeldShares}, on its own, never holding up the page;
- * without words in tab memory, or for boxes that do not open with these
- * words, nothing moves). In a Playwright
+ * tab memory, read once the running phrase derivations have settled
+ * ({@link settlePhraseDerivations}, then {@link relockHeldShares}; on its own,
+ * never holding up the page; without words in tab memory, or for boxes that
+ * do not open with these words, nothing moves). In a Playwright
  * build the `prev-…` pins open a fixture step.
  *
  * @param sparkPubkey - The previous wallet's identity key, from the address.
@@ -191,7 +193,9 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
       wordsRef.current = words;
       const holder = useAuthStore.getState().account;
       if (session !== null && holder !== null) {
-        void relockHeldShares(session, holder.id, words, peekSessionPhrase());
+        void settlePhraseDerivations().then(() =>
+          relockHeldShares(session, holder.id, words, peekSessionPhrase()),
+        );
       }
       setState({ step: 'opening', balanceSats: null, removal: 'idle' });
       void openPreviousWallet(words, key).then((result) => {

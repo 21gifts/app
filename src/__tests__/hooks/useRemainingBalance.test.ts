@@ -11,6 +11,7 @@ import {
   transferRemainingBalance,
 } from '@/lib/remaining-balance';
 import { returnToView } from '@/lib/view-history';
+import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 const router = { back: vi.fn(), push: vi.fn(), replace: vi.fn() };
@@ -32,6 +33,9 @@ vi.mock('@/lib/held-shares', () => ({
 }));
 vi.mock('@/lib/tab-phrase', () => ({
   peekSessionPhrase: vi.fn(() => null),
+}));
+vi.mock('@/lib/wallet/wallet-phrase', () => ({
+  settlePhraseDerivations: vi.fn(async () => undefined),
 }));
 vi.mock('@/lib/remaining-balance', () => ({
   openPreviousWallet: vi.fn(),
@@ -515,9 +519,41 @@ describe('useRemainingBalance relock', () => {
     useAuthStore.setState({ session: 'sess-owner', account: owner });
     vi.mocked(peekSessionPhrase).mockReturnValue('current words');
     const { result } = await rendered();
+    await act(async () => {
+      result.current.onWords(WORDS);
+      await Promise.resolve();
+    });
+    expect(relockHeldShares).toHaveBeenCalledWith(
+      'sess-owner',
+      'acc_owner',
+      WORDS,
+      'current words',
+    );
+    useAuthStore.setState({ account: null });
+  });
+
+  it('reads the words in tab memory only once the running phrase derivations have settled', async () => {
+    useAuthStore.setState({ session: 'sess-owner', account: owner });
+    let settle: () => void = () => undefined;
+    vi.mocked(settlePhraseDerivations).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        settle = resolve;
+      }),
+    );
+    vi.mocked(peekSessionPhrase).mockReturnValue(null);
+    const { result } = await rendered();
     act(() => {
       result.current.onWords(WORDS);
     });
+    expect(result.current.step).toBe('opening');
+    expect(relockHeldShares).not.toHaveBeenCalled();
+    // The passkey's derivation ends and leaves the words in tab memory.
+    vi.mocked(peekSessionPhrase).mockReturnValue('current words');
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
+    expect(relockHeldShares).toHaveBeenCalledTimes(1);
     expect(relockHeldShares).toHaveBeenCalledWith(
       'sess-owner',
       'acc_owner',
@@ -531,15 +567,17 @@ describe('useRemainingBalance relock', () => {
     useAuthStore.setState({ session: 'sess-owner', account: owner });
     vi.mocked(peekSessionPhrase).mockReturnValue(null);
     const { result } = await rendered();
-    act(() => {
+    await act(async () => {
       result.current.onWords(WORDS);
+      await Promise.resolve();
     });
     expect(relockHeldShares).toHaveBeenCalledWith('sess-owner', 'acc_owner', WORDS, null);
     vi.mocked(relockHeldShares).mockClear();
     useAuthStore.setState({ account: null });
     vi.mocked(peekSessionPhrase).mockReturnValue('current words');
-    act(() => {
+    await act(async () => {
       result.current.onWords(WORDS);
+      await Promise.resolve();
     });
     expect(relockHeldShares).not.toHaveBeenCalled();
   });

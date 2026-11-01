@@ -347,6 +347,7 @@ describe('HeldSharesScreen', () => {
     ],
     ['saveError', 'The share could not be kept. Try again.'],
     ['deleteError', 'The share could not be deleted. Try again.'],
+    ['lockedDeleteError', 'The shares that cannot be opened could not be deleted. Try again.'],
   ] as const)('shows the %s notice', (kind, text) => {
     held({ notice: kind === 'invalid' ? { kind } : { kind, username: 'bob' } });
     render();

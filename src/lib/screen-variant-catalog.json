@@ -1710,6 +1710,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings/held-shares:locked-delete-error",
+    "label": "/settings/held-shares locked-delete-error",
+    "visual": "state-held-shares-locked-delete-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings/held-shares:invalid",
     "label": "/settings/held-shares invalid",
     "visual": "state-held-shares-invalid",

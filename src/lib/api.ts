@@ -4412,14 +4412,15 @@ export async function fetchHeldShareBoxes(sessionToken: string): Promise<HeldSha
  * @param sessionToken - Bearer session.
  * @param id - The box id (32 lower-case hex digits).
  * @param ciphertext - The encrypted share, base64url.
- * @returns Resolves once the api stored the box.
+ * @returns `created` on 201 (the account had no box with this id), otherwise
+ *   `replaced`.
  * @throws Error `Could not keep the share` on any non-2xx.
  */
 export async function putHeldShareBox(
   sessionToken: string,
   id: string,
   ciphertext: string,
-): Promise<void> {
+): Promise<'created' | 'replaced'> {
   const response = await fetch(`/me/held-shares/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: {
@@ -4431,6 +4432,7 @@ export async function putHeldShareBox(
   if (!response.ok) {
     throw new Error('Could not keep the share');
   }
+  return response.status === 201 ? 'created' : 'replaced';
 }
 
 /**

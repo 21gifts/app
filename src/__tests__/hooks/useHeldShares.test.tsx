@@ -936,7 +936,7 @@ describe('useHeldShares', () => {
     act(() => {
       result.current.onScanResult(BOB.code);
     });
-    expect(mocks.keepHeldShare).toHaveBeenCalledWith('sess', 'acc_hal', KEY, [CARA], BOB.code);
+    expect(mocks.keepHeldShare).toHaveBeenCalledWith('sess', 'acc_hal', KEY, BOB.code);
     expect(result.current.view).toBe('list');
     expect(result.current.saving).toBe(true);
     act(() => {
@@ -1059,7 +1059,7 @@ describe('useHeldShares', () => {
     ]);
     expect(result.current.confirmDeleteLocked).toBe(false);
     expect(result.current.lockedCount).toBe(1);
-    expect(result.current.notice).toEqual({ kind: 'deleteError' });
+    expect(result.current.notice).toEqual({ kind: 'lockedDeleteError' });
     await act(async () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
