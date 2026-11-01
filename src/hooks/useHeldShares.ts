@@ -62,7 +62,7 @@ export interface UseHeldSharesResult {
   reload: () => void;
   /** Opens the camera. */
   scan: () => void;
-  /** Keeps the scanned text and returns to the list with its notice. */
+  /** Returns to the list and keeps the scanned text; its notice follows when the keep ends. */
   onScanResult: (text: string) => void;
   /** Shows one share's code. */
   showQr: (share: HeldShare) => void;
@@ -96,7 +96,7 @@ export interface UseHeldSharesResult {
  * is added to, a read that was already running. Boxes that do not
  * open with these words are counted and can be deleted together, never on
  * their own. **Keep a share** opens the camera; a scanned payload is kept in
- * a new box ({@link keepHeldShare}) and the list comes back with a notice:
+ * a new box ({@link keepHeldShare}); the list comes back, then a notice:
  * kept for the owner's username, or refused as not a share, the member's own,
  * a second share of one setup, or a box the api did not save. The QR icon
  * shows a share's code for its owner; the trash icon asks to confirm, and the
@@ -253,7 +253,7 @@ export function useHeldShares(): UseHeldSharesResult {
     if (started !== null && started.epoch === epochRef.current) {
       void open(words, started.accountId);
     }
-  }, [hidePhrase, load, open, phraseWords]);
+  }, [hidePhrase, open, phraseWords]);
 
   const unlock = useCallback((): void => {
     if (holderAccountId === null || phrase.status === 'busy') {

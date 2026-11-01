@@ -2264,7 +2264,10 @@ test.describe('Transfer remaining balance', () => {
     );
     // The relock runs on its own, so give a late write time to show up.
     await expect(
-      page.waitForRequest((request) => request.method() === 'PUT', { timeout: 1_000 }),
+      page.waitForRequest(
+        (request) => request.method() === 'PUT' && request.url().includes('/me/held-shares/'),
+        { timeout: 1_000 },
+      ),
     ).rejects.toThrow();
     expect(calls).toEqual(['GET']);
     expect(held.boxes.map((box) => box.ciphertext)).toEqual(before);
