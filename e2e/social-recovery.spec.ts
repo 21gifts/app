@@ -431,7 +431,9 @@ test.describe('social recovery endpoints', () => {
     const kept = await request.get('/me/held-shares', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect(((await kept.json()) as { boxes: unknown[] }).boxes).toHaveLength(1);
+    expect(
+      ((await kept.json()) as { boxes: Array<{ id: string; ciphertext: string }> }).boxes,
+    ).toEqual([expect.objectContaining({ id, ciphertext: box.ciphertext })]);
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const deleted = await request.delete(`/me/held-shares/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -788,7 +790,7 @@ test.describe('social recovery libraries', () => {
   }) => {
     await installFakeWebAuthn(page, true);
     await routeHeldShares(page, [
-      await sealedBox('acc_e2e', 'c'.repeat(32), HELD_CARA),
+      await sealedBox('acc_e2e', 'a'.repeat(32), HELD_CARA),
       await sealedBox('acc_e2e', 'b'.repeat(32), HELD_CODE),
     ]);
     await signInMember(page, HELD_CREDENTIAL_ID);

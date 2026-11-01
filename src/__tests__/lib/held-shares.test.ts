@@ -161,6 +161,8 @@ describe('keepHeldShare', () => {
     expect(session).toBe('sess');
     expect(result.ok && id === result.share.boxId).toBe(true);
     expect(await openHeldShare(key, HOLDER, id, ciphertext)).toBe(code(OTHER_SET));
+    const again = await keepHeldShare('sess', HOLDER, key, kept, code(OTHER_SET, 'acc_bob', 'bob'));
+    expect(again.ok && result.ok && again.share.boxId !== result.share.boxId).toBe(true);
   });
 
   it('keeps a share of another owner whose set has the same identifier', async () => {
