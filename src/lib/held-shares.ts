@@ -44,8 +44,9 @@ export interface HeldShares {
 /**
  * Outcome of {@link keepHeldShare}: the kept share, or why it was refused
  * (`invalid` payload, the member's `own` share, a `duplicate` of another
- * share of the same set among the member's boxes, or boxes the api did not
- * read or a box it did not `save`).
+ * share of the same set among the member's boxes, or `save`: boxes the api
+ * did not read, a new box that could not be sealed, or one the api did not
+ * store).
  */
 export type KeepShareResult =
   { ok: true; share: HeldShare } | { ok: false; reason: 'invalid' | 'own' | 'duplicate' | 'save' };
@@ -95,7 +96,10 @@ export async function loadHeldShares(
  * kept share, so a scan repeated after a lost answer never makes a second
  * box; another share whose owner and set identifier are among the opened
  * boxes is refused, so one member never keeps two shares of one set.
- * Otherwise the share goes into a new box.
+ * Otherwise the share goes into a new box. Two devices that keep the same
+ * share at the same moment can each write a box: both read the boxes before
+ * either write, and the api cannot refuse the second because it never learns
+ * whose share a box holds.
  *
  * @param sessionToken - Bearer session.
  * @param holderAccountId - The signed-in member who keeps it.
@@ -163,10 +167,13 @@ export async function keepHeldShare(
  * as it is. A box deleted while this runs is not brought back: when the api
  * answers a write with `created`, the box was gone, so it is deleted again
  * (once; a failed delete leaves it under the current words) and not counted.
+ * A write whose answer is lost is not known to have created the box, so a
+ * box deleted between the read and such a write can come back.
  * The boxes are read first, so a member who keeps none derives no key. Best
- * effort: it never throws, a box whose write fails stays as it was, and the
- * next call moves it (the boxes already moved no longer open with the
- * previous words). Same words, or no current words in this tab, move nothing.
+ * effort: it never throws, a box whose write fails is not counted, and the
+ * next call moves it when the write did not reach the api (the boxes already
+ * moved no longer open with the previous words). Same words, or no current
+ * words in this tab, move nothing.
  *
  * @param sessionToken - Bearer session of the recovered member.
  * @param holderAccountId - The member's account.
@@ -201,7 +208,8 @@ export async function relockHeldShares(
         const ciphertext = await sealHeldShare(newKey, holderAccountId, box.id, code);
         stored = await putHeldShareBox(sessionToken, box.id, ciphertext);
       } catch {
-        // This box stays under the previous words; the next call moves it.
+        // Not sealed, not stored, or the answer was lost: the box is under the
+        // previous words (the next call moves it) or already under the current ones.
         continue;
       }
       if (stored === 'created') {

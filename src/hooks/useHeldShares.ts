@@ -24,9 +24,9 @@ export type HeldSharesLoad = 'opening' | 'unlock' | 'loadError' | 'ready';
  * The line over the list after a scan or a failed delete: the share was kept,
  * or why it was not (`invalid` payload, the member's `own` share, a
  * `duplicate` of another share of that setup among the member's boxes, or
- * `saveError` for boxes the api did not read or a box it did not save), or a
- * delete of one share (`deleteError`) or of the boxes that do not open
- * (`lockedDeleteError`) the api did not do. `username` is the owner named in a readable payload.
+ * `saveError` for boxes the api did not read or a box that was not sealed or
+ * saved), or a delete of one share (`deleteError`) or of the boxes that do
+ * not open (`lockedDeleteError`) the api did not do. `username` is the owner named in a readable payload.
  */
 export interface HeldSharesNotice {
   /** What happened. */
@@ -106,8 +106,10 @@ export interface UseHeldSharesResult {
  * shows a share's code for its owner; the trash icon asks to confirm, and the
  * confirmed delete removes the box ({@link deleteHeldShareBox}; a box the api
  * did not delete stays and gives the delete notice). The top-left arrow steps
- * from the camera or a code back to the list, otherwise it leaves. Without an
- * account it reads, keeps, and deletes nothing, and starts no passkey prompt.
+ * from the camera or a code back to the list, otherwise it leaves. One keep
+ * or delete runs at a time: a scan, a delete of one share, or the delete of
+ * the boxes that do not open asked while another runs does nothing. Without
+ * an account it reads, keeps, and deletes nothing, and starts no passkey prompt.
  *
  * @returns Load state, shares, view, notice, the pending delete, and the actions.
  */
@@ -138,12 +140,13 @@ export function useHeldShares(): UseHeldSharesResult {
   const keptRef = useRef<Map<string, HeldShare>>(new Map());
   /** The passkey prompt of **Open my shares**: the epoch and account it was started for. */
   const unlockRef = useRef<{ epoch: number; accountId: string } | null>(null);
-  /** Whether a scanned share is being kept, set before the state so a second scan waits. */
-  const savingRef = useRef(false);
+  /**
+   * Whether a keep, a delete of one share, or the delete of the boxes that do
+   * not open runs; set before any state, so another of them waits.
+   */
+  const busyRef = useRef(false);
   /** Advanced by every key derivation; a derivation overtaken by a newer one reads nothing. */
   const openRef = useRef(0);
-  /** Epoch whose boxes that do not open are being deleted, so a second delete of it waits. */
-  const lockedDeletingRef = useRef<number | null>(null);
   /** Epoch the last passkey prompt was started in; its error shows only in that epoch. */
   const promptEpochRef = useRef<number | null>(null);
 
@@ -210,7 +213,7 @@ export function useHeldShares(): UseHeldSharesResult {
       deletedRef.current = new Set();
       keptRef.current = new Map();
       unlockRef.current = null;
-      savingRef.current = false;
+      busyRef.current = false;
       setShares([]);
       setLockedIds([]);
       setSaving(false);
@@ -273,14 +276,14 @@ export function useHeldShares(): UseHeldSharesResult {
   }, []);
 
   const scan = useCallback((): void => {
-    if (holderAccountId === null || load !== 'ready' || saving) {
+    if (holderAccountId === null || load !== 'ready' || busyRef.current) {
       return;
     }
     setNotice(null);
     setConfirmDelete(null);
     setConfirmDeleteLocked(false);
     setView('scan');
-  }, [holderAccountId, load, saving]);
+  }, [holderAccountId, load]);
 
   const onScanResult = useCallback(
     (text: string): void => {
@@ -289,21 +292,21 @@ export function useHeldShares(): UseHeldSharesResult {
         session === null ||
         holderAccountId === null ||
         held?.accountId !== holderAccountId ||
-        savingRef.current
+        busyRef.current
       ) {
         return;
       }
       const key = held.key;
       setView('list');
       const username = parseShareCode(text)?.ownerUsername;
-      savingRef.current = true;
+      busyRef.current = true;
       setSaving(true);
       const epoch = epochRef.current;
       void keepHeldShare(session, holderAccountId, key, text).then((result) => {
         if (epochRef.current !== epoch) {
           return;
         }
-        savingRef.current = false;
+        busyRef.current = false;
         setSaving(false);
         if (result.ok) {
           keptRef.current.set(result.share.boxId, result.share);
@@ -338,15 +341,17 @@ export function useHeldShares(): UseHeldSharesResult {
 
   const remove = useCallback(
     (share: HeldShare): void => {
-      if (session === null) {
+      setConfirmDelete(null);
+      if (session === null || busyRef.current) {
         return;
       }
-      setConfirmDelete(null);
+      busyRef.current = true;
       setNotice(null);
       const epoch = epochRef.current;
       deleteHeldShareBox(session, share.boxId).then(
         () => {
           if (epochRef.current === epoch) {
+            busyRef.current = false;
             deletedRef.current.add(share.boxId);
             keptRef.current.delete(share.boxId);
             setShares((current) => current.filter((kept) => kept.boxId !== share.boxId));
@@ -354,6 +359,7 @@ export function useHeldShares(): UseHeldSharesResult {
         },
         () => {
           if (epochRef.current === epoch) {
+            busyRef.current = false;
             setNotice({ kind: 'deleteError' });
           }
         },
@@ -369,10 +375,10 @@ export function useHeldShares(): UseHeldSharesResult {
 
   const removeLocked = useCallback((): void => {
     setConfirmDeleteLocked(false);
-    if (session === null || lockedDeletingRef.current === epochRef.current) {
+    if (session === null || busyRef.current) {
       return;
     }
-    lockedDeletingRef.current = epochRef.current;
+    busyRef.current = true;
     setNotice(null);
     const epoch = epochRef.current;
     void (async () => {
@@ -393,7 +399,7 @@ export function useHeldShares(): UseHeldSharesResult {
           left.push(id);
         }
       }
-      lockedDeletingRef.current = null;
+      busyRef.current = false;
       setLockedIds((current) => current.filter((id) => !done.includes(id)));
       if (left.length > 0) {
         setNotice({ kind: 'lockedDeleteError' });

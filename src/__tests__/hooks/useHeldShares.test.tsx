@@ -176,39 +176,38 @@ describe('useHeldShares', () => {
     expect(result.current.shares).toEqual([CARA]);
   });
 
-  it('drops a key, a keep, and deletes that answer after the account changed', async () => {
+  it.each([
+    ['a keep', 'keep'],
+    ['a delete', 'delete'],
+    ['a failed delete', 'deleteError'],
+    ['the delete of the boxes that do not open', 'locked'],
+  ] as const)('drops a key and %s that answer after the account changed', async (_, action) => {
     const OTHER = { ...account, id: 'acc_other' };
     const { result } = await ready({ shares: [BOB], lockedIds: ['x'.repeat(32), 'y'.repeat(32)] });
-    let kept: (value: KeepShareResult) => void = () => undefined;
+    let settle: () => void = () => undefined;
     mocks.keepHeldShare.mockReturnValue(
       new Promise<KeepShareResult>((resolve) => {
-        kept = resolve;
+        settle = () => resolve({ ok: true, share: CARA });
       }),
     );
-    let deleted: () => void = () => undefined;
-    let refused: (reason: Error) => void = () => undefined;
-    let lockedGone: () => void = () => undefined;
-    mocks.deleteHeldShareBox
-      .mockReturnValueOnce(
-        new Promise<void>((resolve) => {
-          deleted = resolve;
-        }),
-      )
-      .mockReturnValueOnce(
-        new Promise<void>((_, reject) => {
-          refused = reject;
-        }),
-      )
-      .mockReturnValueOnce(
-        new Promise<void>((resolve) => {
-          lockedGone = resolve;
-        }),
-      );
+    mocks.deleteHeldShareBox.mockReturnValueOnce(
+      new Promise<void>((resolve, reject) => {
+        if (action !== 'keep') {
+          settle =
+            action === 'deleteError'
+              ? () => reject(new Error('Could not delete the share'))
+              : resolve;
+        }
+      }),
+    );
     act(() => {
-      result.current.onScanResult(CARA.code);
-      result.current.remove(BOB);
-      result.current.remove(CARA);
-      result.current.removeLocked();
+      if (action === 'keep') {
+        result.current.onScanResult(CARA.code);
+      } else if (action === 'locked') {
+        result.current.removeLocked();
+      } else {
+        result.current.remove(BOB);
+      }
     });
     let key: (value: CryptoKey) => void = () => undefined;
     mocks.heldShareBoxKey.mockReturnValueOnce(
@@ -217,7 +216,7 @@ describe('useHeldShares', () => {
       }),
     );
     // The third account keeps a box of the same id, which a late delete must not drop.
-    mocks.loadHeldShares.mockResolvedValue({ shares: [BOB], lockedIds: [] });
+    mocks.loadHeldShares.mockResolvedValue({ shares: [BOB], lockedIds: ['x'.repeat(32)] });
     act(() => {
       useAuthStore.setState({ session: 'sess-2', account: OTHER });
     });
@@ -230,20 +229,20 @@ describe('useHeldShares', () => {
     await waitFor(() => {
       expect(mocks.loadHeldShares).toHaveBeenLastCalledWith('sess-3', 'acc_third', KEY);
     });
+    await waitFor(() => {
+      expect(result.current.load).toBe('ready');
+    });
     const loads = mocks.loadHeldShares.mock.calls.length;
     const deletes = mocks.deleteHeldShareBox.mock.calls.length;
     await act(async () => {
       key(OTHER_KEY);
-      kept({ ok: true, share: CARA });
-      deleted();
-      refused(new Error('Could not delete the share'));
-      lockedGone();
+      settle();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(mocks.loadHeldShares.mock.calls.length).toBe(loads);
     expect(mocks.loadHeldShares).not.toHaveBeenCalledWith('sess-2', 'acc_other', OTHER_KEY);
     expect(result.current.shares).toEqual([BOB]);
-    expect(result.current.lockedCount).toBe(0);
+    expect(result.current.lockedCount).toBe(1);
     expect(result.current.notice).toBeNull();
     expect(result.current.saving).toBe(false);
     expect(mocks.deleteHeldShareBox.mock.calls.length).toBe(deletes);
@@ -333,6 +332,9 @@ describe('useHeldShares', () => {
     mocks.keepHeldShare.mockResolvedValueOnce({ ok: true, share: CARA });
     await act(async () => {
       result.current.onScanResult(CARA.code);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
       result.current.remove(BOB);
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -438,6 +440,9 @@ describe('useHeldShares', () => {
     });
     await act(async () => {
       result.current.remove(BOB);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
       result.current.removeLocked();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
@@ -680,6 +685,79 @@ describe('useHeldShares', () => {
     });
     expect(result.current.lockedCount).toBe(0);
     expect(result.current.notice).toBeNull();
+  });
+
+  it('starts no delete or scan while a keep runs, and deletes once it ended', async () => {
+    const { result } = await ready({ shares: [BOB], lockedIds: ['x'.repeat(32)] });
+    let kept: (value: KeepShareResult) => void = () => undefined;
+    mocks.keepHeldShare.mockReturnValue(
+      new Promise<KeepShareResult>((resolve) => {
+        kept = resolve;
+      }),
+    );
+    act(() => {
+      result.current.onScanResult(CARA.code);
+    });
+    act(() => {
+      result.current.remove(BOB);
+      result.current.removeLocked();
+      result.current.scan();
+    });
+    expect(mocks.deleteHeldShareBox).not.toHaveBeenCalled();
+    expect(result.current.view).toBe('list');
+    await act(async () => {
+      kept({ ok: true, share: CARA });
+      await Promise.resolve();
+    });
+    act(() => {
+      result.current.remove(BOB);
+    });
+    await waitFor(() => {
+      expect(result.current.shares).toEqual([CARA]);
+    });
+    expect(mocks.deleteHeldShareBox.mock.calls).toEqual([['sess', BOB.boxId]]);
+  });
+
+  it('starts no keep, scan, or other delete while a delete runs, and keeps once it ended', async () => {
+    const { result } = await ready({ shares: [BOB, CARA], lockedIds: ['x'.repeat(32)] });
+    let gone: () => void = () => undefined;
+    mocks.deleteHeldShareBox.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        gone = resolve;
+      }),
+    );
+    mocks.keepHeldShare.mockResolvedValue({ ok: true, share: DAVE });
+    act(() => {
+      result.current.removeLocked();
+    });
+    act(() => {
+      result.current.onScanResult(DAVE.code);
+      result.current.remove(BOB);
+      result.current.scan();
+    });
+    expect(mocks.keepHeldShare).not.toHaveBeenCalled();
+    expect(mocks.deleteHeldShareBox).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('list');
+    await act(async () => {
+      gone();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    mocks.deleteHeldShareBox.mockRejectedValueOnce(new Error('500'));
+    act(() => {
+      result.current.remove(BOB);
+    });
+    await waitFor(() => {
+      expect(result.current.notice).toEqual({ kind: 'deleteError' });
+    });
+    act(() => {
+      result.current.onScanResult(DAVE.code);
+    });
+    await waitFor(() => {
+      expect(result.current.notice).toEqual({ kind: 'stored', username: 'dave' });
+    });
+    expect(mocks.keepHeldShare).toHaveBeenCalledTimes(1);
+    expect(result.current.lockedCount).toBe(0);
+    expect(result.current.shares).toEqual([BOB, CARA, DAVE]);
   });
 
   it('shows no load error for a key derivation that a newer one overtook', async () => {
