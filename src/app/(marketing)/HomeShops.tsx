@@ -115,6 +115,7 @@ type MapHandle = {
   resize: () => void;
   setCenter: (center: LngLat) => void;
   setZoom: (zoom: number) => void;
+  easeTo: (options: { center: LngLat; zoom: number; duration?: number; animate?: boolean }) => void;
   fitBounds: (
     bounds: LngLatBoundsHandle,
     options: {
@@ -149,6 +150,7 @@ type MarkerHandle = {
 
 type PopupHandle = {
   setDOMContent: (content: HTMLElement) => PopupHandle;
+  on: (event: 'open', handler: () => void) => void;
   remove: () => void;
 };
 
@@ -834,13 +836,11 @@ function frameMap(map: MapHandle, lib: MapLibreNamespace, positions: readonly Ln
     return;
   }
   if (positions.length === 0) {
-    map.setCenter(HOME_CENTER);
-    map.setZoom(HOME_ZOOM);
+    map.easeTo({ center: HOME_CENTER, zoom: HOME_ZOOM, ...motion });
     return;
   }
   const position = positions[0] as LngLat;
-  map.setCenter(position);
-  map.setZoom(SINGLE_ZOOM);
+  map.easeTo({ center: position, zoom: SINGLE_ZOOM, ...motion });
 }
 
 function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
@@ -1190,7 +1190,7 @@ function clusterPosition(map: MapHandle, group: readonly PinRecord[]): LngLat {
     }
     const screen = screenCentroid(group, points);
     try {
-      const lngLat = map.unproject([screen.x, screen.y]);
+      const lngLat = map.unproject([Math.round(screen.x), Math.round(screen.y)]);
       if (Number.isFinite(lngLat.lng) && Number.isFinite(lngLat.lat))
         return [lngLat.lng, lngLat.lat];
     } catch {
@@ -1414,7 +1414,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           element.dataset['keyboardOpen'] = '1';
           element.click();
         });
-        element.addEventListener('click', () => {
+        popup.on('open', () => {
           if (element.dataset['keyboardOpen'] === '1') {
             delete element.dataset['keyboardOpen'];
             const close = content.querySelector('.shop-popup-close');
@@ -1893,7 +1893,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             </div>
           </div>
           {showError ? (
-            <div className="flex flex-wrap items-center gap-3 px-4 py-3.5">
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
               <p role="alert" className="text-center text-sm text-app-danger">
                 {copy.error}
               </p>
@@ -1902,7 +1902,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
               </Button>
             </div>
           ) : null}
-          {showEmpty ? <p className="px-4 py-3.5 text-sm text-ink/60">{copy.empty}</p> : null}
+          {showEmpty ? <p className="px-4 py-3 text-sm text-ink/60">{copy.empty}</p> : null}
           <div className="relative overflow-hidden rounded-b-2xl">
             <div
               id="shop-places-map"
@@ -1932,14 +1932,10 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                         : 'descending'
                       : 'none';
                     return (
-                      <th
-                        key={column.key}
-                        aria-sort={ariaSort}
-                        className="px-4 py-3 text-left align-top"
-                      >
+                      <th key={column.key} aria-sort={ariaSort} className="p-0 text-left align-top">
                         <button
                           type="button"
-                          className="inline-flex w-full items-center gap-1 text-left font-semibold"
+                          className="inline-flex min-h-11 w-full items-center gap-1 px-4 py-3 text-left font-semibold"
                           onClick={() => {
                             chooseSort(column.key);
                           }}
@@ -1961,7 +1957,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                 {rows.map((row) => (
                   <tr key={row.key} className="border-t border-ink/10 bg-paper text-sm">
                     {tableColumns.map((column) => (
-                      <td key={column.key} className="min-w-0 break-words px-4 py-3.5 align-top">
+                      <td key={column.key} className="min-w-0 break-words px-4 py-3 align-top">
                         {column.key === 'name' && row.href !== null ? (
                           <a href={row.href} className="font-medium underline underline-offset-2">
                             {row.name}

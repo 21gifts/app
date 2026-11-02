@@ -1135,6 +1135,23 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   });
 }
 
+async function sortHomeShops(
+  page: Page,
+  column: string,
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  await page.getByRole('button', { name: 'Table' }).click();
+  const header = page.getByRole('button', { name: column, exact: true });
+  const presses = direction === 'descending' ? (column === 'Name' ? 1 : 2) : 1;
+  for (let press = 0; press < presses; press += 1) {
+    await header.click();
+  }
+  await expect(page.getByRole('columnheader', { name: column })).toHaveAttribute(
+    'aria-sort',
+    direction,
+  );
+}
+
 /**
  * Waits until no public grant-places panel is still loading, so a capture never
  * depends on how fast `GET /funding/places` answers.
@@ -2560,6 +2577,62 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-sorted-desc');
   });
 
+  test('state / shops-sorted-name-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Name', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-name-desc');
+  });
+
+  test('state / shops-sorted-location-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Location', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-location-asc');
+  });
+
+  test('state / shops-sorted-country-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Country', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-country-asc');
+  });
+
+  test('state / shops-sorted-country-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Country', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-country-desc');
+  });
+
+  test('state / shops-sorted-shop-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Shop', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-asc');
+  });
+
+  test('state / shops-sorted-shop-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Shop', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-desc');
+  });
+
+  test('state / shops-sorted-activity-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-asc');
+  });
+
+  test('state / shops-sorted-activity-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-desc');
+  });
+
   test('state / shops-marker', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
@@ -2614,26 +2687,12 @@ test.describe('screen baselines', () => {
     await pressToggle();
     await expect(mapLibre).toBeVisible();
     await expect(attribution).toHaveClass(/maplibregl-compact-show/);
-    await page.locator('#shop-places-map canvas').evaluate((node: HTMLCanvasElement) => {
-      node.style.visibility = 'hidden';
-    });
-    // The empty style leaves the projected pin a few pixels off between runs.
-    await page.locator('#shop-places-map .shop-place-marker').evaluateAll((nodes) => {
-      for (const node of nodes) {
-        if (node instanceof HTMLElement) {
-          node.style.visibility = 'hidden';
-        }
-      }
-    });
-    await page.locator('#shop-places-map .shop-cluster').evaluateAll((nodes) => {
-      for (const node of nodes) {
-        const marker = node.closest('.maplibregl-marker');
-        if (marker instanceof HTMLElement) {
-          marker.style.visibility = 'hidden';
-        }
-      }
-    });
-    await shotScreen(page, 'state-root-shops-attribution');
+    await shotScreen(
+      page,
+      'state-root-shops-attribution',
+      true,
+      page.locator('#shop-places-map .maplibregl-canvas, #shop-places-map .maplibregl-marker'),
+    );
   });
 
   test('state / shops-help', async ({ page }) => {

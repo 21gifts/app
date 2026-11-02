@@ -464,9 +464,7 @@ button.shop-cluster {
   color: var(--color-paper);
   font: 600 14px/1 var(--font-sans);
   cursor: pointer;
-  box-shadow:
-    0 0 0 3px var(--shop-ring, #ffe3cc),
-    0 6px 16px rgb(10 9 12 / 0.25);
+  box-shadow: 0 0 0 3px var(--shop-ring, #ffe3cc);
   transition: transform 150ms;
 }
 button.shop-cluster:hover {

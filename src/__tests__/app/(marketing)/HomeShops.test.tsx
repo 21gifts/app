@@ -77,6 +77,7 @@ type MapDouble = {
   resize: ReturnType<typeof vi.fn>;
   setCenter: ReturnType<typeof vi.fn>;
   setZoom: ReturnType<typeof vi.fn>;
+  easeTo: ReturnType<typeof vi.fn>;
   fitBounds: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
   getZoom?: ReturnType<typeof vi.fn>;
@@ -97,6 +98,8 @@ type PopupDouble = {
   content: HTMLElement | null;
   setDOMContent: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
+  emit: (event: string) => void;
 };
 
 type BoundsDouble = { extend: ReturnType<typeof vi.fn> };
@@ -461,6 +464,7 @@ function installMapLibre(): LibDouble {
       resize: vi.fn(mapZoom),
       setCenter: vi.fn(mapZoom),
       setZoom: vi.fn(mapZoom),
+      easeTo: vi.fn(mapZoom),
       fitBounds: vi.fn(mapZoom),
       remove: vi.fn(mapZoom),
       getZoom: vi.fn(mapZoom),
@@ -487,6 +491,7 @@ function installMapLibre(): LibDouble {
   }
 
   function Popup(input: { offset: number }): PopupDouble {
+    const handlers: Record<string, (() => void)[]> = {};
     const popup: PopupDouble = {
       offset: input.offset,
       content: null,
@@ -495,6 +500,14 @@ function installMapLibre(): LibDouble {
         return popup;
       }),
       remove: vi.fn(),
+      on: vi.fn((event: string, handler: () => void) => {
+        const list = handlers[event] ?? [];
+        list.push(handler);
+        handlers[event] = list;
+      }),
+      emit(event: string): void {
+        for (const handler of handlers[event] ?? []) handler();
+      },
     };
     popups.push(popup);
     return popup;
@@ -1674,8 +1687,14 @@ describe('HomeShops', () => {
     expect(marker.setLngLat).toHaveBeenCalledWith([121, 14.6]);
     expect(marker.setPopup).toHaveBeenCalledWith(lib.popups[0]);
     expect(marker.addTo).toHaveBeenCalledWith(map);
-    expect(map.setCenter).toHaveBeenCalledWith([121, 14.6]);
-    expect(map.setZoom).toHaveBeenCalledWith(12);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(map.resize).not.toHaveBeenCalled();
 
@@ -1683,7 +1702,11 @@ describe('HomeShops', () => {
     expect(map.resize).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(map.resize).toHaveBeenCalledTimes(1);
-    expect(map.setZoom).toHaveBeenCalledTimes(2);
+    expect(map.easeTo).toHaveBeenNthCalledWith(2, {
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 800,
+    });
 
     expect(document.body.contains(marker.element)).toBe(true);
     const pinClick = vi.spyOn(marker.element, 'click');
@@ -1719,7 +1742,9 @@ describe('HomeShops', () => {
       duration: 0,
       animate: false,
     });
+    expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     const box = lib.bounds[0];
     if (box === undefined) throw new Error('bounds');
     expect(box.extend).toHaveBeenCalledWith([-180, -90]);
@@ -1790,6 +1815,38 @@ describe('HomeShops', () => {
     fireEvent.click(screen.getByRole('button', { name: copy.table }));
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(map.fitBounds).toHaveBeenNthCalledWith(3, lib.bounds[2], still);
+  });
+
+  it('eases to one pin and to none after a two-pin frame', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({ countries: ['PH', 'DE'] }),
+      placesBody([
+        giftsPlace('Manila', { country: 'PH', lat: 14.6, lon: 121 }),
+        giftsPlace('Berlin', { country: 'DE', lat: 52.5, lon: 13.4 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).not.toHaveBeenCalled();
+    changeMenu(copy.country, 'PH');
+    await resolvePlaces(placesBody([giftsPlace('Manila', { country: 'PH', lat: 14.6, lon: 121 })]));
+    expect(map.easeTo).toHaveBeenLastCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 800,
+    });
+    changeMenu(copy.country, 'DE');
+    await resolvePlaces(placesBody([]));
+    expect(map.easeTo).toHaveBeenLastCalledWith({
+      center: HOME_CENTER,
+      zoom: 7,
+      duration: 800,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
   });
 
   it('jumps a cluster click on an unloaded map, then animates the next click', async () => {
@@ -2011,8 +2068,14 @@ describe('HomeShops', () => {
     await resolveLatest(basicFilters({}), placesBody([]));
     await fireScript('load');
     const map = firstMap(lib);
-    expect(map.setCenter).toHaveBeenCalledWith(HOME_CENTER);
-    expect(map.setZoom).toHaveBeenCalledWith(7);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: HOME_CENTER,
+      zoom: 7,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(lib.markers).toHaveLength(0);
     expect(map.resize).not.toHaveBeenCalled();
@@ -2029,6 +2092,7 @@ describe('HomeShops', () => {
     const map = firstMap(lib);
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     await resolvePlaces({ places: [] }, 500);
     await waitFor(() => {
@@ -2036,6 +2100,7 @@ describe('HomeShops', () => {
     });
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
   });
 
@@ -2059,8 +2124,15 @@ describe('HomeShops', () => {
     if (marker === undefined) throw new Error('missing marker');
     expect(document.body.contains(marker.element)).toBe(false);
     expect(tableShell().hasAttribute('hidden')).toBe(false);
-    expect(map.setCenter).toHaveBeenCalledTimes(1);
-    expect(map.setZoom).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
   });
 
   it('opens the table and shows an error when the library or the map node is missing', async () => {
@@ -2111,13 +2183,20 @@ describe('HomeShops', () => {
     fireEvent.click(screen.getByRole('button', { name: copy.table }));
     await fireScript('load');
     const map = firstMap(lib);
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(map.resize).toHaveBeenCalledTimes(1);
-    expect(map.setCenter).toHaveBeenCalledWith([121, 14.6]);
-    expect(map.setZoom).toHaveBeenCalledWith(12);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
   });
 
   it('uses an existing script and does not add a second stylesheet', async () => {
@@ -2284,6 +2363,7 @@ describe('HomeShops', () => {
     const map = firstMap(lib);
     const centerCalls = map.setCenter.mock.calls.length;
     const zoomCalls = map.setZoom.mock.calls.length;
+    const easeCalls = map.easeTo.mock.calls.length;
     const boundsCalls = map.fitBounds.mock.calls.length;
     const markerCount = lib.markers.length;
     const latest = lib.markers[lib.markers.length - 1];
@@ -2297,6 +2377,7 @@ describe('HomeShops', () => {
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
     expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.easeTo).toHaveBeenCalledTimes(easeCalls);
     expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
     expect(latest.remove).toHaveBeenCalledTimes(1);
     expect(lib.markers).toHaveLength(markerCount);
@@ -2306,6 +2387,7 @@ describe('HomeShops', () => {
     expect(map.resize).toHaveBeenCalled();
     expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
     expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.easeTo).toHaveBeenCalledTimes(easeCalls);
     expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
   });
 
@@ -3078,54 +3160,55 @@ describe('HomeShops', () => {
     expect(clusterButton('is-daily')).toBeTruthy();
     map.getContainer = () => mapNode;
 
+    const hank = pinByName('Hank');
+    const hankPopup = popupOf(lib, hank);
     map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
-    fireEvent.click(pinByName('Hank'));
+    hankPopup.emit('open');
     expect(map.panBy).not.toHaveBeenCalled();
     map.getContainer = () => mapNode;
 
-    const hank = pinByName('Hank');
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).not.toHaveBeenCalled();
     const svgPopup = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgPopup.setAttribute('class', 'maplibregl-popup');
     mapNode.appendChild(svgPopup);
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).not.toHaveBeenCalled();
     svgPopup.remove();
     const popup = document.createElement('div');
     popup.className = 'maplibregl-popup';
     mapNode.appendChild(popup);
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
 
     setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
     setRect(popup, { top: 40, left: 40, bottom: 100, right: 100, width: 60, height: 60 });
     map.panBy.mockClear();
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).not.toHaveBeenCalled();
     setRect(popup, { top: 100, left: 40, bottom: 390, right: 100, width: 60, height: 290 });
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).toHaveBeenCalledWith([0, 6], { duration: 250 });
     setRect(popup, { top: 40, left: 20, bottom: 100, right: 390, width: 370, height: 60 });
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(map.panBy).toHaveBeenCalledWith([6, 0], { duration: 250 });
 
     const focus = vi
       .spyOn(HTMLButtonElement.prototype, 'focus')
       .mockImplementation(() => undefined);
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     expect(focus).not.toHaveBeenCalled();
     fireEvent.keyDown(hank, { key: 'Enter' });
+    hankPopup.emit('open');
     expect(focus).toHaveBeenCalledTimes(1);
-    const hankMarker = lib.markers.find((item) => item.element === hank);
-    const hankPopup = hankMarker?.setPopup.mock.calls[0]?.[0] as PopupDouble | undefined;
-    hankPopup?.content?.querySelector('.shop-popup-close')?.remove();
+    hankPopup.content?.querySelector('.shop-popup-close')?.remove();
     focus.mockClear();
     fireEvent.keyDown(hank, { key: 'Enter' });
+    hankPopup.emit('open');
     expect(focus).not.toHaveBeenCalled();
     const panBy = map.panBy;
     delete (map as { panBy?: unknown }).panBy;
-    fireEvent.click(hank);
+    hankPopup.emit('open');
     map.panBy = panBy;
 
     changeMenu(copy.country, 'DE');
@@ -3167,11 +3250,102 @@ describe('HomeShops', () => {
     expect(document.querySelector('.shop-cluster')).toBeNull();
   });
 
+  it('pans and focuses the connected close button when the popup opens', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        panBy: vi.fn(function (this: { transform: object }) {
+          void this.transform;
+        }),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    let connectedAtFocus: boolean | undefined;
+    vi.spyOn(HTMLButtonElement.prototype, 'focus').mockImplementation(function (
+      this: HTMLButtonElement,
+    ) {
+      if (!this.classList.contains('shop-popup-close')) return;
+      connectedAtFocus = this.isConnected;
+    });
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    if (popup.content === null) throw new Error('missing popup content');
+    shell.appendChild(popup.content);
+    popup.emit('open');
+    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
+    expect(connectedAtFocus).toBe(true);
+  });
+
+  it('places a cluster marker on a whole pixel', async () => {
+    const lib = installMapLibre();
+    const seen: [number, number][] = [];
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }, position: [number, number]) {
+          void this.transform;
+          if (position[0] === 121) return { x: 10.25, y: 20.25 };
+          return { x: 11.25, y: 21.25 };
+        },
+        unproject(this: { transform: object }, point: [number, number]) {
+          void this.transform;
+          seen.push(point);
+          return { lng: point[0], lat: point[1] };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.6, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(seen.at(-1)).toEqual([11, 21]);
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([11, 21]);
+  });
+
   it('sorts every column and keeps an equal name in ascending order', async () => {
     renderShops();
     await resolveLatest(basicFilters({}), sortRows());
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cal', 'Dee', 'Eve']);
     expect(columnHeader(copy.colName).getAttribute('aria-sort')).toBe('ascending');
+    expect(columnHeader(copy.colName).className).toContain('p-0');
+    expect(headerButton(copy.colName).className).toContain('min-h-11');
+    expect(headerButton(copy.colName).className).toContain('px-4');
+    expect(headerButton(copy.colName).className).toContain('py-3');
     expect(columnHeader(copy.colName).textContent).toBe(copy.colName);
     expect(triangleClass(copy.colLocation)).toContain('opacity-30');
     const placesBefore = callsTo('/map/places').length;
@@ -3506,6 +3680,13 @@ function sortRows(): { places: readonly unknown[] } {
     giftsPlace('Dee', { street: 'Early', country: 'KE', activity: 'none', shopName: 'SPAR' }),
     giftsPlace('Eve', { street: 'Mid', country: 'PH', activity: 'zeta', shopName: 'SPAR' }),
   ]);
+}
+
+function popupOf(lib: LibDouble, pin: HTMLElement): PopupDouble {
+  const marker = lib.markers.find((item) => item.element === pin);
+  const popup = marker?.setPopup.mock.calls[0]?.[0] as PopupDouble | undefined;
+  if (popup === undefined) throw new Error('missing popup');
+  return popup;
 }
 
 function pinByName(name: string): HTMLElement {

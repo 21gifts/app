@@ -157,6 +157,54 @@ The table is sorted by Location, descending. The Location column header has aria
 
 ![21.gifts home shops sorted descending](images/root-shops-sorted-desc.png)
 
+### Variant: shops-sorted-name-desc
+
+The table is sorted by Name, descending. The Name column header has aria-sort descending, and its triangle points down. Location is not the active sort column.
+
+![21.gifts home shops sorted by name descending](images/root-shops-sorted-name-desc.png)
+
+### Variant: shops-sorted-location-asc
+
+The table is sorted by Location, ascending. The Location column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+
+![21.gifts home shops sorted by location ascending](images/root-shops-sorted-location-asc.png)
+
+### Variant: shops-sorted-country-asc
+
+The table is sorted by Country, ascending. The Country column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+
+![21.gifts home shops sorted by country ascending](images/root-shops-sorted-country-asc.png)
+
+### Variant: shops-sorted-country-desc
+
+The table is sorted by Country, descending. The Country column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+
+![21.gifts home shops sorted by country descending](images/root-shops-sorted-country-desc.png)
+
+### Variant: shops-sorted-shop-asc
+
+The table is sorted by Shop, ascending. The Shop column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+
+![21.gifts home shops sorted by shop ascending](images/root-shops-sorted-shop-asc.png)
+
+### Variant: shops-sorted-shop-desc
+
+The table is sorted by Shop, descending. The Shop column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+
+![21.gifts home shops sorted by shop descending](images/root-shops-sorted-shop-desc.png)
+
+### Variant: shops-sorted-activity-asc
+
+The table is sorted by Activity, ascending. The Activity column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+
+![21.gifts home shops sorted by activity ascending](images/root-shops-sorted-activity-asc.png)
+
+### Variant: shops-sorted-activity-desc
+
+The table is sorted by Activity, descending. The Activity column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+
+![21.gifts home shops sorted by activity descending](images/root-shops-sorted-activity-desc.png)
+
 ### Variant: shops-marker
 
 Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
@@ -177,7 +225,7 @@ Map stays selected after the cluster is opened. The three Manila shops are separ
 
 ### Variant: shops-attribution
 
-Map stays selected. The attribution control is open and shows MapLibre. Map tiles, the shop pin, and any cluster are hidden.
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles, the shop pin, and any cluster are masked.
 
 ![21.gifts home shops attribution](images/root-shops-attribution.png)
 

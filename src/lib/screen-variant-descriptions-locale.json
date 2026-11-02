@@ -85,9 +85,9 @@
     "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Napili ang Blockchain na Bitcoin. Sarado ang listahan ng Asset at kasama sa teksto ng combobox na Asset ang BTC."
   },
   "/:shops-attribution": {
-    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln, der Shop-Pin und jeder Cluster sind ausgeblendet.",
-    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa, el pin de la tienda y cualquier grupo están ocultos.",
-    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa, ang pin ng tindahan, at ang anumang kumpol."
+    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln, der Shop-Pin und jeder Cluster sind maskiert.",
+    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa, el pin de la tienda y cualquier grupo están enmascarados.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakamaskara ang mga tile ng mapa, ang pin ng tindahan, at ang anumang kumpol."
   },
   "/:shops-blockchain": {
     "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt. Die Karte ist maskiert.",
@@ -8013,6 +8013,46 @@
     "de": "Die Tabelle ist nach Ort absteigend sortiert. Die Spaltenüberschrift Ort hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
     "es": "La tabla está ordenada por Lugar, descendente. El encabezado de columna Lugar tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
     "fil": "Ang talahanayan ay nakaayos ayon sa Lugar, pababa. Ang pamagat ng hanay na Lugar ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-name-desc": {
+    "de": "Die Tabelle ist nach Name absteigend sortiert. Die Spaltenüberschrift Name hat aria-sort descending, und ihr Dreieck zeigt nach unten. Ort ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Nombre, descendente. El encabezado de columna Nombre tiene aria-sort descending, y su triángulo apunta hacia abajo. Lugar no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Pangalan, pababa. Ang pamagat ng hanay na Pangalan ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Lugar ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-location-asc": {
+    "de": "Die Tabelle ist nach Ort aufsteigend sortiert. Die Spaltenüberschrift Ort hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Lugar, ascendente. El encabezado de columna Lugar tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Lugar, pataas. Ang pamagat ng hanay na Lugar ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-country-asc": {
+    "de": "Die Tabelle ist nach Land aufsteigend sortiert. Die Spaltenüberschrift Land hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por País, ascendente. El encabezado de columna País tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Bansa, pataas. Ang pamagat ng hanay na Bansa ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-country-desc": {
+    "de": "Die Tabelle ist nach Land absteigend sortiert. Die Spaltenüberschrift Land hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por País, descendente. El encabezado de columna País tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Bansa, pababa. Ang pamagat ng hanay na Bansa ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-shop-asc": {
+    "de": "Die Tabelle ist nach Shop aufsteigend sortiert. Die Spaltenüberschrift Shop hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Tienda, ascendente. El encabezado de columna Tienda tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Tindahan, pataas. Ang pamagat ng hanay na Tindahan ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-shop-desc": {
+    "de": "Die Tabelle ist nach Shop absteigend sortiert. Die Spaltenüberschrift Shop hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Tienda, descendente. El encabezado de columna Tienda tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Tindahan, pababa. Ang pamagat ng hanay na Tindahan ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-activity-asc": {
+    "de": "Die Tabelle ist nach Aktivität aufsteigend sortiert. Die Spaltenüberschrift Aktivität hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Actividad, ascendente. El encabezado de columna Actividad tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pataas. Ang pamagat ng hanay na Aktibidad ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-activity-desc": {
+    "de": "Die Tabelle ist nach Aktivität absteigend sortiert. Die Spaltenüberschrift Aktivität hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Actividad, descendente. El encabezado de columna Actividad tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pababa. Ang pamagat ng hanay na Aktibidad ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
   },
   "/:shops-cluster": {
     "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind maskiert.",
