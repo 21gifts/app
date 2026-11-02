@@ -9,7 +9,7 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with the wordmark top-left (`/` when unsigned, `/welcome` when a session is hydrated) and no back arrow, whatever this tab showed before, and a language switcher. The hero offers **Ask for help** (`/login`) first and **Send help** (the localized `/donate`) second, with a labeled non-interactive preview of a post. Directly under the hero, `HomeShops` lists only shops whose tech provider is exactly 21.gifts, with country, name, blockchain, asset, and activity filters and a Map/Table control. Then How it works, discovery, Why, Happyland (four photographs, an unlinked source paragraph, and three observations), support for the 21.gifts project at the platform account's own address (shown only when the build names that account; distinct from `/donate`), and the FAQ with only one answer open at a time. **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **What the user sees:** Dark 21.gifts header with the wordmark top-left (`/` when unsigned, `/welcome` when a session is hydrated) and no back arrow, whatever this tab showed before, and a language switcher. The hero offers **Ask for help** (`/login`) first and **Send help** (the localized `/donate`) second, with a labeled non-interactive preview of a post. Directly under the hero, the `HomeShops` block uses the same paper, ink, and card tokens as How it works. It lists only shops whose tech provider is exactly 21.gifts. Country, name, blockchain, asset, and activity filters appear only when the loaded shops differ on that field. Map and Table use `SegmentedControl`. The map clusters overlapping pins and the table sorts from its column headers. A matching shop id links to `/{npub}` on this site. Then How it works, discovery, Why, Happyland (four photographs, an unlinked source paragraph, and three observations), support for the 21.gifts project at the platform account's own address (shown only when the build names that account; distinct from `/donate`), and the FAQ with only one answer open at a time. **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
 - **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open Terms of Use, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`, `HomeShops`, `ProfileChromeLeft`.
 
@@ -87,7 +87,7 @@ The hero **Install app** button on iPhone opens the dialog **Add 21.gifts to you
 
 ### Variant: shops-table
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The table lists only shops whose tech provider is exactly 21.gifts and shows Name, Location, Country, Shop, Tech provider, and Activity.
+The shops block under the hero is on the table. The visible filters stay above a Map/Table control with Table selected. The table lists only shops whose tech provider is exactly 21.gifts. With this fixture the columns are Name, Location, Country, Shop, and Activity. The table has no Tech provider column. The CSV download still includes Tech provider.
 
 ![21.gifts home shops table](images/root-shops-table.png)
 
@@ -109,15 +109,27 @@ The Activity list is open and the listbox option Daily is visible. Map stays sel
 
 ![21.gifts home shops activity](images/root-shops-activity.png)
 
+### Variant: shops-country-open
+
+The Country list is open. The option Philippines is visible. Kenya is listed. Switzerland is not, because no loaded 21.gifts shop is in Switzerland. Map stays selected. The map is masked.
+
+![21.gifts home shops country open](images/root-shops-country-open.png)
+
+### Variant: shops-name-open
+
+The Name list is open. The option others is visible, as the raw shop-name token. SPAR is listed. Map stays selected. The map is masked.
+
+![21.gifts home shops name open](images/root-shops-name-open.png)
+
 ### Variant: shops-country-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country select value is PH.
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country combobox shows Philippines, the localized country name.
 
 ![21.gifts home shops country selected](images/root-shops-country-selected.png)
 
 ### Variant: shops-name-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name select value is SPAR.
+The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name combobox shows SPAR.
 
 ![21.gifts home shops name selected](images/root-shops-name-selected.png)
 
@@ -139,27 +151,45 @@ The shops block under the hero is on the table. Filters stay above a Map/Table c
 
 ![21.gifts home shops activity selected](images/root-shops-activity-selected.png)
 
+### Variant: shops-sorted-desc
+
+The table is sorted by Location, descending. The Location column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+
+![21.gifts home shops sorted descending](images/root-shops-sorted-desc.png)
+
 ### Variant: shops-marker
 
 Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
 
 ![21.gifts home shops marker](images/root-shops-marker.png)
 
+### Variant: shops-cluster
+
+Map stays selected and is zoomed out. Three Manila shops share one cluster button labelled 3 shops. The Nairobi shop stays its own pin. Map tiles are masked.
+
+![21.gifts home shops cluster](images/root-shops-cluster.png)
+
+### Variant: shops-pins
+
+Map stays selected after the cluster is opened. The three Manila shops are separate pins inside the frame. The Nairobi shop is also its own pin and sits outside this frame. The 3 shops cluster button is gone. This is a different state from the zoomed-out cluster: those shops are drawn as individual pins. Map tiles are masked.
+
+![21.gifts home shops pins](images/root-shops-pins.png)
+
 ### Variant: shops-attribution
 
-Map stays selected. The attribution control is open and shows MapLibre. Map tiles and the shop pin are hidden.
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles, the shop pin, and any cluster are hidden.
 
 ![21.gifts home shops attribution](images/root-shops-attribution.png)
 
 ### Variant: shops-help
 
-Table is selected. The button What the activity words mean is open and shows At least 5 days with a payment within the last 7 days.
+Table is selected. The button What the activity words mean is open under that button, inside the window, and shows At least 5 days with a payment within the last 7 days.
 
 ![21.gifts home shops help](images/root-shops-help.png)
 
 ### Variant: shops-loading
 
-The filter request has not finished. Map stays selected. The place-list error is not visible. No locations published yet is not visible. The map pane is visible and masked.
+The filter request has not finished, so the filter comboboxes are not shown yet. The heading is These shops accept Bitcoin through 21.gifts. Map stays selected. The place-list error is not visible. No locations published yet is not visible. The map pane is visible and masked.
 
 ![21.gifts home shops loading](images/root-shops-loading.png)
 
@@ -177,15 +207,21 @@ The MapLibre script is aborted, the same way as the behavior test. Table is sele
 
 ### Variant: shops-empty-map
 
-The places response is an empty array. No locations published yet is visible. The map stays visible and is masked.
+The places response is an empty array. No locations published yet is visible. No filter, help button, or legend is shown. The map stays visible and is masked.
 
 ![21.gifts home shops empty map](images/root-shops-empty-map.png)
 
 ### Variant: shops-empty-table
 
-The places response is an empty array and Table is selected. No locations published yet is visible. There is no Sample shop row.
+The places response is an empty array and Table is selected. No locations published yet is visible. There is no Sample shop row. No filter or help button is shown.
 
 ![21.gifts home shops empty table](images/root-shops-empty-table.png)
+
+### Variant: shops-filters-hidden
+
+The loaded shops do not differ by country, name, blockchain, asset, or activity, so no filter combobox is shown. Table is selected. The columns are Name, Location, and Activity. The help button stays, because shops are loaded.
+
+![21.gifts home shops filters hidden](images/root-shops-filters-hidden.png)
 
 ## Screen: /legal
 

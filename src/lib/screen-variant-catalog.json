@@ -96,6 +96,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-country-open",
+    "label": "/ shops-country-open",
+    "visual": "state-root-shops-country-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-name-open",
+    "label": "/ shops-name-open",
+    "visual": "state-root-shops-name-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:shops-country-selected",
     "label": "/ shops-country-selected",
     "visual": "state-root-shops-country-selected",
@@ -126,9 +138,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:shops-sorted-desc",
+    "label": "/ shops-sorted-desc",
+    "visual": "state-root-shops-sorted-desc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:shops-marker",
     "label": "/ shops-marker",
     "visual": "state-root-shops-marker",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-cluster",
+    "label": "/ shops-cluster",
+    "visual": "state-root-shops-cluster",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-pins",
+    "label": "/ shops-pins",
+    "visual": "state-root-shops-pins",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -171,6 +201,12 @@
     "id": "/:shops-empty-table",
     "label": "/ shops-empty-table",
     "visual": "state-root-shops-empty-table",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:shops-filters-hidden",
+    "label": "/ shops-filters-hidden",
+    "visual": "state-root-shops-filters-hidden",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

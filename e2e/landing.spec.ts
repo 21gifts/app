@@ -106,8 +106,8 @@ function isPublicMapApi(url: URL): boolean {
 function shopFilters(): Record<string, unknown> {
   return {
     activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
-    countries: ['PH'],
-    shopNames: ['SPAR'],
+    countries: ['CH', 'KE', 'PH'],
+    shopNames: ['Mini', 'SPAR'],
     techProviders: [
       {
         name: '21.gifts',
@@ -125,6 +125,7 @@ function shopFilters(): Record<string, unknown> {
   };
 }
 
+/** Four 21.gifts shops that differ, plus one hidden DFX desk. */
 function shopPlaces(): Record<string, unknown> {
   return {
     places: [
@@ -134,19 +135,49 @@ function shopPlaces(): Record<string, unknown> {
         shopName: 'SPAR',
         country: 'PH',
         activity: 'daily',
-        lat: 14.6,
-        lon: 121.0,
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
         techProvider: '21.gifts',
+        coverPhoto: { url: 'https://images.example/sample.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
-        id: `npub1${'i'.repeat(58)}`,
-        name: 'Idle shop',
-        shopName: 'SPAR',
+        name: 'North',
+        shopName: null,
         country: 'PH',
-        activity: 'olderThan30Days',
-        lat: 14.5,
-        lon: 121.1,
+        activity: 'within7Days',
+        category: 'cafe',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
         techProvider: '21.gifts',
+        supports: [{ blockchain: 'Tron', asset: 'USDT' }],
+      },
+      {
+        name: 'Mid',
+        shopName: null,
+        country: 'PH',
+        activity: 'within30Days',
+        category: 'grocery',
+        street: 'Manila mid',
+        lat: 14.62035,
+        lon: 120.95805,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'South',
+        shopName: null,
+        country: 'KE',
+        activity: 'none',
+        category: 'cafe',
+        street: 'Manila south',
+        lat: 14.6204,
+        lon: 120.9581,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Lightning', asset: 'BTC' }],
       },
       {
         name: 'Other desk',
@@ -161,9 +192,48 @@ function shopPlaces(): Record<string, unknown> {
   };
 }
 
-async function fulfillShopRoute(route: Route): Promise<void> {
+/** Two 21.gifts shops that do not differ on any filter field. */
+function identicalShopPlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'a'.repeat(58)}`,
+        name: 'Ann',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://images.example/ann.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'Bea',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+    ],
+  };
+}
+
+async function fulfillShopKind(route: Route, kind: 'varied' | 'identical'): Promise<void> {
   const path = new URL(route.request().url()).pathname;
-  const body = path === '/map/filters' ? shopFilters() : shopPlaces();
+  const body =
+    path === '/map/filters'
+      ? shopFilters()
+      : kind === 'identical'
+        ? identicalShopPlaces()
+        : shopPlaces();
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -172,25 +242,44 @@ async function fulfillShopRoute(route: Route): Promise<void> {
 }
 
 async function stubPublicMap(page: Page): Promise<void> {
-  await page.route((url) => isPublicMapApi(url), fulfillShopRoute);
+  await page.route(
+    (url) => isPublicMapApi(url),
+    (route) => fulfillShopKind(route, 'varied'),
+  );
+}
+
+async function stubIdenticalMap(page: Page): Promise<void> {
+  await page.route(
+    (url) => isPublicMapApi(url),
+    (route) => fulfillShopKind(route, 'identical'),
+  );
+}
+
+async function expectFirstCells(page: Page, names: readonly string[]): Promise<void> {
+  await expect(page.locator('#shops tbody tr td:first-child')).toHaveText([...names]);
 }
 
 test('Function: HomeShops lists a published shop and hides other providers', async ({ page }) => {
   await stubPublicMap(page);
   await page.goto('/');
   await expect(page.locator('section#shops')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
-  await expect(page.locator('#shops').getByText('Sample', { exact: true })).toHaveCount(1);
-  await expect(page.locator('#shops').getByText('Other desk', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', {
+      name: 'These shops accept Bitcoin through 21.gifts',
+      exact: true,
+    }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Table' }).click();
-  await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
+  await expect(page.getByRole('cell', { name: 'Other desk', exact: true })).toHaveCount(0);
   const sample = page.getByRole('link', { name: 'Sample', exact: true });
   await expect(sample).toHaveAttribute('href', `/npub1${'q'.repeat(58)}`);
   await expect(sample).not.toHaveAttribute('href', /opencryptopay\.io/);
   await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
   await page.getByRole('option', { name: 'Monthly', exact: true }).click();
   await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'Idle shop', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('cell', { name: 'South', exact: true })).toHaveCount(0);
 });
 
 test('Function: HomeShops stops after a filters HTTP error', async ({ page }) => {
@@ -220,7 +309,8 @@ test('Function: HomeShops opens the table when the map script fails', async ({ p
   await page.goto('/');
   await expect(page.getByText(getCatalog('en')['map.error'])).toBeVisible();
   await expect(page.getByRole('button', { name: 'Table' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
 });
 
 test('Function: HomeShops rejects an array places body without showing empty', async ({ page }) => {
@@ -240,7 +330,7 @@ test('Function: HomeShops rejects an array places body without showing empty', a
   await expect(page.getByText(getCatalog('en')['homeShops.empty'])).toHaveCount(0);
 });
 
-test('Function: HomeShops leaves only All when activities are missing', async ({ page }) => {
+test('Function: HomeShops hides filters and help when no shops are published', async ({ page }) => {
   const filters = shopFilters();
   delete filters['activities'];
   await page.route(
@@ -255,10 +345,32 @@ test('Function: HomeShops leaves only All when activities are missing', async ({
     },
   );
   await page.goto('/');
+  await expect(page.getByText(getCatalog('en')['homeShops.empty'])).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'What the activity words mean' })).toHaveCount(0);
+  await expect(page.locator('.shop-legend')).toHaveCount(0);
+});
+
+test('Function: HomeShops shows activity from the shops when filters omit it', async ({ page }) => {
+  await page.route(
+    (url) => isPublicMapApi(url),
+    async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const filters = shopFilters();
+      delete filters['activities'];
+      const body = path === '/map/filters' ? filters : shopPlaces();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    },
+  );
+  await page.goto('/');
   await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
-  const activityMenu = page.getByRole('listbox');
-  await expect(activityMenu.getByRole('option')).toHaveCount(1);
-  await expect(activityMenu.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Daily', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Idle', exact: true })).toHaveCount(0);
 });
 
 test('Function: FilterMenu opens the blockchain list', async ({ page }) => {
@@ -266,6 +378,196 @@ test('Function: FilterMenu opens the blockchain list', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
   await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
+});
+
+test('Function: HomeShops shows only filters and options the shops distinguish', async ({
+  page,
+}) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Blockchain', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Asset', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Country' }).getByRole('option')).toHaveText([
+    'All',
+    'Kenya',
+    'Philippines',
+  ]);
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Name' }).getByRole('option')).toHaveText([
+    'All',
+    'SPAR',
+    'others',
+  ]);
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Blockchain' }).getByRole('option')).toHaveText([
+    'All',
+    'Bitcoin',
+    'Lightning',
+    'Tron',
+  ]);
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Asset' }).getByRole('option')).toHaveText([
+    'All',
+    'BTC',
+    'USDT',
+  ]);
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Activity' }).getByRole('option')).toHaveText([
+    'All',
+    'Daily',
+    'Weekly',
+    'Monthly',
+    'None',
+  ]);
+  await page.keyboard.press('Escape');
+  await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+  await page.getByRole('option', { name: 'Bitcoin', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+  await expect(page.getByRole('listbox', { name: 'Asset' }).getByRole('option')).toHaveText([
+    'All',
+    'BTC',
+  ]);
+});
+
+test('Function: HomeShops hides filters that do not split the shops', async ({ page }) => {
+  await stubIdenticalMap(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Table' }).click();
+  await expect(page.getByRole('cell', { name: 'Ann', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Blockchain', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Asset', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Location' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Activity' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: 'Shop' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'What the activity words mean' })).toBeVisible();
+});
+
+test('Function: HomeShops sorts each column in both directions', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Table' }).click();
+  await expectFirstCells(page, ['Mid', 'North', 'Sample', 'South']);
+  await page.getByRole('button', { name: 'Name', exact: true }).click();
+  await expectFirstCells(page, ['South', 'Sample', 'North', 'Mid']);
+  await page.getByRole('button', { name: 'Location', exact: true }).click();
+  await expectFirstCells(page, ['Mid', 'North', 'South', 'Sample']);
+  await page.getByRole('button', { name: 'Location', exact: true }).click();
+  await expectFirstCells(page, ['Sample', 'South', 'North', 'Mid']);
+  await page.getByRole('button', { name: 'Country', exact: true }).click();
+  await expectFirstCells(page, ['South', 'Mid', 'North', 'Sample']);
+  await page.getByRole('button', { name: 'Country', exact: true }).click();
+  await expectFirstCells(page, ['Mid', 'North', 'Sample', 'South']);
+  await page.getByRole('button', { name: 'Shop', exact: true }).click();
+  await expectFirstCells(page, ['Mid', 'North', 'South', 'Sample']);
+  await page.getByRole('button', { name: 'Shop', exact: true }).click();
+  await expectFirstCells(page, ['Sample', 'Mid', 'North', 'South']);
+  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await expectFirstCells(page, ['Sample', 'North', 'Mid', 'South']);
+  await page.getByRole('button', { name: 'Activity', exact: true }).click();
+  await expectFirstCells(page, ['South', 'Mid', 'North', 'Sample']);
+  await page.getByRole('button', { name: 'Location', exact: true }).click();
+  await page.getByRole('button', { name: 'Location', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+  await page.getByRole('option', { name: 'Philippines', exact: true }).click();
+  await expectFirstCells(page, ['Sample', 'North', 'Mid']);
+});
+
+test('Function: HomeShops clusters overlapping pins and opens them', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const cluster = page.getByRole('button', { name: '3 shops' });
+  await expect(cluster).toBeVisible({ timeout: 20_000 });
+  const pins = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+  await expect(pins).toHaveCount(1);
+  await cluster.click();
+  await expect(pins).toHaveCount(4, { timeout: 20_000 });
+  await expect(cluster).toHaveCount(0);
+});
+
+test('Function: HomeShops popup shows a photo and a category only when they differ', async ({
+  page,
+}) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const lone = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+  await expect(lone).toHaveCount(1, { timeout: 20_000 });
+  await page.getByRole('button', { name: 'Sample, Daily' }).click();
+  await expect(page.locator('.shop-popup-photo')).toBeVisible();
+  await expect(page.locator('.shop-popup-category')).toHaveText('shopping');
+  await page.getByRole('button', { name: 'Close popup' }).click();
+  await expect(page.locator('.shop-popup-card')).toHaveCount(0);
+  await page.getByRole('button', { name: '3 shops' }).click();
+  await page.getByRole('button', { name: 'North, Weekly' }).click();
+  await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
+  await expect(page.locator('.shop-popup-category')).toHaveText('cafe');
+  await expect(page.locator('.shop-popup-name')).toHaveText('North');
+});
+
+test('Function: HomeShops hides the category chip when every shop shares it', async ({ page }) => {
+  await stubIdenticalMap(page);
+  await page.goto('/');
+  const ann = page.getByRole('button', { name: 'Ann, Daily' });
+  await expect(ann).toBeVisible({ timeout: 20_000 });
+  await ann.click();
+  await expect(page.locator('.shop-popup-photo')).toBeVisible();
+  await expect(page.locator('.shop-popup-category')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Close popup' }).click();
+  await page.getByRole('button', { name: 'Bea, Daily' }).click();
+  await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
+  await expect(page.locator('.shop-popup-category')).toHaveCount(0);
+});
+
+test('Function: HomeShops anchors the help panel inside the viewport', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const help = page.getByRole('button', { name: 'What the activity words mean' });
+  await help.scrollIntoViewIfNeeded();
+  await help.click();
+  const panel = page.locator('[data-shops-help-panel]');
+  await expect(panel).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await panel.boundingBox();
+      const viewport = page.viewportSize();
+      if (box === null || viewport === null) return false;
+      const right = box.x + box.width;
+      const bottom = box.y + box.height;
+      return box.x >= 16 && box.y >= 16 && right <= viewport.width && bottom <= viewport.height;
+    })
+    .toBe(true);
+});
+
+test('Function: HomeShops keeps an open filter list inside a narrow window', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await stubPublicMap(page);
+  await page.goto('/');
+  const country = page.getByRole('combobox', { name: 'Country', exact: true });
+  await country.scrollIntoViewIfNeeded();
+  await country.click();
+  const listbox = page.getByRole('listbox', { name: 'Country' });
+  await expect(listbox).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await listbox.boundingBox();
+      if (box === null) return false;
+      const right = box.x + box.width;
+      const bottom = box.y + box.height;
+      return box.x >= 0 && right <= 390 && box.width <= 358 && bottom <= 844;
+    })
+    .toBe(true);
 });
 
 test('legal page is reachable', async ({ page }) => {

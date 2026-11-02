@@ -160,7 +160,7 @@ export const SCREEN_VARIANTS = [
     id: 'shops-table',
     image: 'root-shops-table.png',
     visual: 'state-root-shops-table',
-    needle: "getByRole('columnheader', { name: 'Tech provider' })",
+    needle: "getByRole('columnheader', { name: 'Country' })",
   },
   {
     route: '/',
@@ -185,17 +185,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-country-open',
+    image: 'root-shops-country-open.png',
+    visual: 'state-root-shops-country-open',
+    needle: "getByRole('option', { name: 'Philippines' })",
+  },
+  {
+    route: '/',
+    id: 'shops-name-open',
+    image: 'root-shops-name-open.png',
+    visual: 'state-root-shops-name-open',
+    needle: "getByRole('option', { name: 'others' })",
+  },
+  {
+    route: '/',
     id: 'shops-country-selected',
     image: 'root-shops-country-selected.png',
     visual: 'state-root-shops-country-selected',
-    needle: "toHaveValue('PH')",
+    needle: "getByRole('combobox', { name: 'Country', exact: true })).toContainText(",
   },
   {
     route: '/',
     id: 'shops-name-selected',
     image: 'root-shops-name-selected.png',
     visual: 'state-root-shops-name-selected',
-    needle: "toHaveValue('SPAR')",
+    needle: "getByRole('combobox', { name: 'Name', exact: true })).toContainText('SPAR')",
   },
   {
     route: '/',
@@ -220,10 +234,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-sorted-desc',
+    image: 'root-shops-sorted-desc.png',
+    visual: 'state-root-shops-sorted-desc',
+    needle: "toHaveAttribute('aria-sort', 'descending')",
+  },
+  {
+    route: '/',
     id: 'shops-marker',
     image: 'root-shops-marker.png',
     visual: 'state-root-shops-marker',
     needle: "getByRole('link', { name: 'Sample' })",
+  },
+  {
+    route: '/',
+    id: 'shops-cluster',
+    image: 'root-shops-cluster.png',
+    visual: 'state-root-shops-cluster',
+    needle: "getByRole('button', { name: '3 shops' })",
+  },
+  {
+    route: '/',
+    id: 'shops-pins',
+    image: 'root-shops-pins.png',
+    visual: 'state-root-shops-pins',
+    needle: "page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)')",
   },
   {
     route: '/',
@@ -273,6 +308,13 @@ export const SCREEN_VARIANTS = [
     image: 'root-shops-empty-table.png',
     visual: 'state-root-shops-empty-table',
     needle: 'No locations published yet.',
+  },
+  {
+    route: '/',
+    id: 'shops-filters-hidden',
+    image: 'root-shops-filters-hidden.png',
+    visual: 'state-root-shops-filters-hidden',
+    needle: "getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0)",
   },
   {
     route: '/legal',

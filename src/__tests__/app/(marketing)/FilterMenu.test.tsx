@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterMenu, type MenuOption } from '@/app/(marketing)/FilterMenu';
 
-const optionClass = 'min-h-11 min-w-11 border-0 bg-transparent p-0 text-left font-inherit';
+const optionClass =
+  'flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
 
 const options: readonly MenuOption[] = [
   { value: '', label: 'All', swatch: null },
@@ -41,7 +42,7 @@ describe('FilterMenu', () => {
     expect(button.getAttribute('aria-haspopup')).toBe('listbox');
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.hasAttribute('aria-activedescendant')).toBe(false);
-    expect(button.textContent).toBe('All');
+    expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
@@ -87,7 +88,7 @@ describe('FilterMenu', () => {
   it('shows All and highlights the first option when the value is unknown', () => {
     renderMenu('nope');
     const button = trigger();
-    expect(button.textContent).toBe('All');
+    expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
     expect(screen.queryByRole('listbox')).toBeNull();
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     const optionNodes = within(screen.getByRole('listbox')).getAllByRole('option');
@@ -281,5 +282,194 @@ describe('FilterMenu', () => {
     if (!(swatch instanceof HTMLSpanElement)) throw new Error('missing swatch');
     expect(swatch.className).toBe('shop-place-marker is-daily');
     expect(swatch.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('inverts a chosen pill and points the chevron up while open', () => {
+    renderMenu('Bitcoin');
+    const button = trigger();
+    expect(button.className).toContain('bg-ink');
+    expect(button.className).toContain('text-paper');
+    expect(button.className).not.toContain('bg-paper');
+    expect(button.querySelector('[data-shop-value]')?.textContent).toBe('Bitcoin');
+    const chevron = button.querySelector('svg');
+    if (chevron === null) throw new Error('missing chevron');
+    expect(chevron.getAttribute('class')).not.toContain('rotate-180');
+    fireEvent.click(button);
+    expect(button.className).toContain('border-ink/35');
+    expect(button.querySelector('svg')?.getAttribute('class')).toContain('rotate-180');
+    const selected = within(screen.getByRole('listbox')).getByRole('option', { name: 'Bitcoin' });
+    expect(selected.className).toContain('font-semibold');
+    expect(selected.querySelector('svg')).toBeTruthy();
+    const all = within(screen.getByRole('listbox')).getByRole('option', { name: 'All' });
+    expect(all.querySelector('svg')).toBeNull();
+    expect(screen.getByRole('listbox').querySelector('.border-t')).toBeTruthy();
+  });
+
+  it('keeps one column up to 8 options and wraps longer lists, capped at 6', () => {
+    function labels(count: number): MenuOption[] {
+      const rows: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
+      for (let index = 1; index < count; index += 1) {
+        rows.push({ value: `v${index}`, label: `Option ${index}`, swatch: null });
+      }
+      return rows;
+    }
+    const { unmount } = render(
+      <FilterMenu
+        label="Blockchain"
+        value=""
+        allLabel="All"
+        options={labels(8)}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+    expect(screen.getByRole('listbox').querySelector('.grid')?.className).toContain('grid-cols-1');
+    unmount();
+
+    for (const [count, columns] of [
+      [9, 'grid-cols-2'],
+      [17, 'grid-cols-3'],
+      [25, 'grid-cols-4'],
+      [33, 'grid-cols-5'],
+      [41, 'grid-cols-6'],
+      [49, 'grid-cols-6'],
+    ] as const) {
+      const view = render(
+        <FilterMenu
+          label="Blockchain"
+          value=""
+          allLabel="All"
+          options={labels(count)}
+          onChange={vi.fn()}
+        />,
+      );
+      fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+      expect(screen.getByRole('listbox').querySelector('.grid')?.className).toContain(columns);
+      view.unmount();
+    }
+  });
+
+  it('renders an empty list without a hairline and only All without one', () => {
+    const { unmount } = render(
+      <FilterMenu label="Blockchain" value="" allLabel="All" options={[]} onChange={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+    expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(screen.getByRole('listbox').querySelector('.border-t')).toBeNull();
+    unmount();
+    render(
+      <FilterMenu
+        label="Blockchain"
+        value=""
+        allLabel="All"
+        options={[{ value: '', label: 'All', swatch: null }]}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+    expect(screen.getByRole('listbox').querySelector('.border-t')).toBeNull();
+  });
+
+  it('shows a blank value in the option grid when it is not the All row', () => {
+    render(
+      <FilterMenu
+        label="Blockchain"
+        value=""
+        allLabel="All"
+        options={[
+          { value: '', label: 'All', swatch: null },
+          { value: '', label: 'Blank', swatch: null },
+        ]}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+    const grid = screen.getByRole('listbox').querySelector('.grid');
+    expect(grid?.textContent).toBe('Blank');
+    expect(grid?.querySelector('[data-value]')?.getAttribute('data-value')).toBe('');
+  });
+
+  it('flips the panel inward and upward when it would leave the window', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 2000,
+      bottom: 20,
+      width: 200,
+      height: 20,
+      toJSON() {
+        return {};
+      },
+    });
+    renderMenu('');
+    fireEvent.click(trigger());
+    const listbox = screen.getByRole('listbox');
+    expect(listbox.className).toContain('right-0');
+    expect(listbox.className).toContain('top-full');
+    rect.mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 20,
+      bottom: 2000,
+      width: 20,
+      height: 200,
+      toJSON() {
+        return {};
+      },
+    });
+    fireEvent(window, new Event('resize'));
+    expect(screen.getByRole('listbox').className).toContain('left-0');
+    expect(screen.getByRole('listbox').className).toContain('bottom-full');
+    fireEvent(window, new Event('resize'));
+    expect(screen.getByRole('listbox').className).toContain('bottom-full');
+    rect.mockRestore();
+  });
+
+  it('settles after one placement when the measured rect depends on the alignment class', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    let measures = 0;
+    rect.mockImplementation(function (this: HTMLElement) {
+      if (this.getAttribute('role') === 'listbox') measures += 1;
+      const end = this.classList.contains('right-0');
+      const above = this.classList.contains('bottom-full');
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: end ? 20 : window.innerWidth + 40,
+        bottom: above ? 20 : window.innerHeight + 40,
+        width: 200,
+        height: 200,
+        toJSON() {
+          return {};
+        },
+      };
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      expect(measures).toBe(1);
+      const tokens = screen.getByRole('listbox').className.split(/\s+/);
+      expect(tokens).toContain('right-0');
+      expect(tokens).toContain('bottom-full');
+      expect(tokens).not.toContain('left-0');
+      expect(tokens).not.toContain('top-full');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('closes when a non-element is the pointer target', () => {
+    renderMenu('');
+    fireEvent.click(trigger());
+    fireEvent.mouseDown(document);
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 });

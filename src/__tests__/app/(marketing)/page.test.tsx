@@ -56,7 +56,7 @@ describe('Home', () => {
   it('renders the product headline', async () => {
     renderWithLocale(await Home());
     expect(screen.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: getCatalog('en')['homeShops.title'] })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: getCatalog('en')['homeShops.lead'] })).toBeTruthy();
   });
 
   it('explains the direct gift and shows an honest non-interactive preview', async () => {

@@ -2219,7 +2219,130 @@ function isHomeMapRequest(url: URL): boolean {
   return api && (url.pathname === '/map/filters' || url.pathname === '/map/places');
 }
 
-async function fulfillHomeMap(route: Route): Promise<void> {
+function homeMapFilters(): Record<string, unknown> {
+  return {
+    activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
+    countries: ['CH', 'KE', 'PH'],
+    shopNames: ['Mini', 'SPAR'],
+    techProviders: [
+      {
+        name: '21.gifts',
+        blockchains: ['Bitcoin'],
+        assets: ['BTC'],
+        pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'DFX.swiss',
+        blockchains: ['Liquid'],
+        assets: ['L-BTC'],
+        pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+      },
+    ],
+  };
+}
+
+/** Four 21.gifts shops that differ, plus one hidden DFX desk. */
+function variedHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'q'.repeat(58)}`,
+        name: 'Sample',
+        shopName: 'SPAR',
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://images.example/sample.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'North',
+        shopName: null,
+        country: 'PH',
+        activity: 'within7Days',
+        category: 'cafe',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Tron', asset: 'USDT' }],
+      },
+      {
+        name: 'Mid',
+        shopName: null,
+        country: 'PH',
+        activity: 'within30Days',
+        category: 'grocery',
+        street: 'Manila mid',
+        lat: 14.62035,
+        lon: 120.95805,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'South',
+        shopName: null,
+        country: 'KE',
+        activity: 'none',
+        category: 'cafe',
+        street: 'Manila south',
+        lat: 14.6204,
+        lon: 120.9581,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Lightning', asset: 'BTC' }],
+      },
+      {
+        name: 'Other desk',
+        techProvider: 'DFX.swiss',
+        id: 'dfx-hidden',
+        country: 'PH',
+        activity: 'daily',
+        lat: 14.7,
+        lon: 121.1,
+      },
+    ],
+  };
+}
+
+/** Two 21.gifts shops that do not differ on any filter field. */
+function identicalHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'a'.repeat(58)}`,
+        name: 'Ann',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://images.example/ann.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'Bea',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+    ],
+  };
+}
+
+async function fulfillHomeMapKind(route: Route, kind: 'varied' | 'identical'): Promise<void> {
   const url = new URL(route.request().url());
   if (url.hostname.includes('openfreemap.org')) {
     await route.fulfill({ status: 200, body: '' });
@@ -2227,48 +2350,10 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   }
   const body =
     url.pathname === '/map/filters'
-      ? {
-          activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
-          countries: ['PH'],
-          shopNames: ['SPAR'],
-          techProviders: [
-            {
-              name: '21.gifts',
-              blockchains: ['Bitcoin'],
-              assets: ['BTC'],
-              pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
-            },
-            {
-              name: 'DFX.swiss',
-              blockchains: ['Liquid'],
-              assets: ['L-BTC'],
-              pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
-            },
-          ],
-        }
-      : {
-          places: [
-            {
-              id: `npub1${'q'.repeat(58)}`,
-              name: 'Sample',
-              shopName: 'SPAR',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.6,
-              lon: 121.0,
-              techProvider: '21.gifts',
-            },
-            {
-              name: 'Other desk',
-              techProvider: 'DFX.swiss',
-              id: 'dfx-hidden',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.7,
-              lon: 121.1,
-            },
-          ],
-        };
+      ? homeMapFilters()
+      : kind === 'identical'
+        ? identicalHomePlaces()
+        : variedHomePlaces();
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -2276,8 +2361,27 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   });
 }
 
+async function fulfillHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'varied');
+}
+
+async function fulfillIdenticalHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'identical');
+}
+
 async function stubHomeMap(page: Page): Promise<void> {
   await page.route((url) => isHomeMapRequest(url), fulfillHomeMap);
+}
+
+async function stubIdenticalHomeMap(page: Page): Promise<void> {
+  await page.route((url) => isHomeMapRequest(url), fulfillIdenticalHomeMap);
+}
+
+/** One pin stays outside the Manila cluster when the map is framed on every shop. */
+async function expectOneShopPin(page: Page): Promise<void> {
+  const pin = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+  await expect(pin).toHaveCount(1, { timeout: 20_000 });
+  await expect(pin).toBeVisible();
 }
 
 test.describe('screen baselines', () => {
@@ -2285,9 +2389,7 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
@@ -2318,6 +2420,8 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
     await shotScreen(page, 'state-root-shops-table');
   });
 
@@ -2365,12 +2469,34 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
   });
 
+  test('state / shops-country-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Philippines' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Kenya' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Switzerland' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-country-open', true, page.locator('#shop-places-map'));
+  });
+
+  test('state / shops-name-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'others' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'SPAR' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-name-open', true, page.locator('#shop-places-map'));
+  });
+
   test('state / shops-country-selected', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Country').selectOption('PH');
-    await expect(page.getByLabel('Country')).toHaveValue('PH');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await page.getByRole('option', { name: 'Philippines' }).click();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toContainText(
+      'Philippines',
+    );
     await shotScreen(page, 'state-root-shops-country-selected');
   });
 
@@ -2378,8 +2504,9 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Name').selectOption('SPAR');
-    await expect(page.getByLabel('Name')).toHaveValue('SPAR');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await page.getByRole('option', { name: 'SPAR' }).click();
+    await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toContainText('SPAR');
     await shotScreen(page, 'state-root-shops-name-selected');
   });
 
@@ -2422,14 +2549,46 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity-selected');
   });
 
+  test('state / shops-sorted-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    const locationHeader = page.getByRole('columnheader', { name: 'Location' });
+    await expect(locationHeader).toHaveAttribute('aria-sort', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-desc');
+  });
+
   test('state / shops-marker', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    const marker = page.locator('#shop-places-map .shop-place-marker');
-    await expect(marker).toBeVisible({ timeout: 20_000 });
+    const marker = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+    await expect(marker).toHaveCount(1, { timeout: 20_000 });
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
     await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+  });
+
+  test('state / shops-cluster', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: '3 shops' })).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(1);
+    await shotScreen(page, 'state-root-shops-cluster', true, page.locator('.maplibregl-canvas'));
+  });
+
+  test('state / shops-pins', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click();
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(4);
+    await expect(page.getByRole('button', { name: '3 shops' })).toHaveCount(0);
+    await shotScreen(page, 'state-root-shops-pins', true, page.locator('.maplibregl-canvas'));
   });
 
   test('state / shops-attribution', async ({ page }) => {
@@ -2441,7 +2600,7 @@ test.describe('screen baselines', () => {
     // resolve that summary as a button, so the test clicks the summary itself.
     const toggleAttribution = attribution.locator('summary');
     await expect(toggleAttribution).toHaveAttribute('aria-label', 'Toggle attribution');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible();
+    await expectOneShopPin(page);
     const mapLibre = attribution.getByRole('link', { name: 'MapLibre', exact: true });
     // A pointer click on the summary is a drag on the map and moves the pin.
     // The DOM click still runs MapLibre's toggle listener.
@@ -2463,6 +2622,14 @@ test.describe('screen baselines', () => {
       for (const node of nodes) {
         if (node instanceof HTMLElement) {
           node.style.visibility = 'hidden';
+        }
+      }
+    });
+    await page.locator('#shop-places-map .shop-cluster').evaluateAll((nodes) => {
+      for (const node of nodes) {
+        const marker = node.closest('.maplibregl-marker');
+        if (marker instanceof HTMLElement) {
+          marker.style.visibility = 'hidden';
         }
       }
     });
@@ -2492,7 +2659,12 @@ test.describe('screen baselines', () => {
       },
     );
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'These shops accept Bitcoin through 21.gifts',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(page.getByText('Could not load places. Please try again.')).toHaveCount(0);
     await expect(page.getByText('No locations published yet.')).toHaveCount(0);
     await expect(page.locator('#shop-places-map')).toBeVisible();
@@ -2557,12 +2729,24 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-empty-table');
   });
 
+  test('state / shops-filters-hidden', async ({ page }) => {
+    await stubIdenticalHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('cell', { name: 'Ann', exact: true })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Location' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Activity' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'What the activity words mean' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-filters-hidden');
+  });
+
   test('state / faq-account-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Do I need an account to see the forum?').click();
     await expect(
@@ -2576,9 +2760,7 @@ test.describe('screen baselines', () => {
   test('state / faq-share-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts keep any of my donation?').click();
     await expect(
@@ -2592,9 +2774,7 @@ test.describe('screen baselines', () => {
   test('state / faq-password-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts store my password?').click();
     await expect(
@@ -2608,9 +2788,7 @@ test.describe('screen baselines', () => {
   test('state / faq-device-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What if I lose my device?').click();
     await expect(
@@ -2624,9 +2802,7 @@ test.describe('screen baselines', () => {
   test('state / faq-recipient-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Who receives the Bitcoin?').click();
     await expect(
@@ -2640,9 +2816,7 @@ test.describe('screen baselines', () => {
   test('state / faq-bitcoin-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Why Bitcoin?').click();
     await expect(
@@ -2656,9 +2830,7 @@ test.describe('screen baselines', () => {
   test('state / faq-taxes-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Is this regulated, and how do taxes work?').click();
     await expect(
@@ -2672,9 +2844,7 @@ test.describe('screen baselines', () => {
   test('state / faq-sat-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What does ₿1 mean here?').click();
     await expect(
@@ -2699,9 +2869,7 @@ test.describe('screen baselines', () => {
     });
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const install = page.locator('main').getByRole('button', { name: 'Install app' });
     await expect(install).toBeVisible();
     await install.click();
