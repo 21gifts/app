@@ -44,6 +44,7 @@ describe('FilterMenu', () => {
     expect(button.hasAttribute('aria-activedescendant')).toBe(false);
     expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
     expect(button.className.split(/\s+/)).toContain('gap-6');
+    expect(within(button).getByText('Blockchain').className).toContain('text-ink/60');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 

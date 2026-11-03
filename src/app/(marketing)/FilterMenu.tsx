@@ -377,7 +377,7 @@ export function FilterMenu({
     : open
       ? 'border-ink/35 bg-paper text-ink'
       : 'border-ink/12 bg-paper text-ink';
-  const labelTone = inverted ? 'text-paper/60' : 'text-ink/55';
+  const labelTone = inverted ? 'text-paper/60' : 'text-ink/60';
   const chevronTone = inverted ? 'text-paper' : 'text-ink';
 
   return (

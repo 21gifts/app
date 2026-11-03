@@ -1731,7 +1731,6 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           const container = map.getContainer();
           if (container instanceof HTMLElement) {
             const observer = new ResizeObserver(() => {
-              if (userMovedMaps.has(map)) return;
               // Places are still in flight. Framing the empty map here would
               // make the real shops fly in afterwards, and a capture can land
               // in the middle of that flight.
@@ -1740,6 +1739,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
               if (box === null || box === undefined) return;
               const key = `${box.width}x${box.height}`;
               if (framedSizes.get(map) === key) return;
+              // The user placed this view, so size the canvas and do not fit again.
+              if (userMovedMaps.has(map)) {
+                map.resize();
+                framedSizes.set(map, key);
+                return;
+              }
               frameMap(map, lib, markerPositions(rowsRef.current, failedRef.current), true);
             });
             observer.observe(container);
@@ -2097,7 +2102,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           <div hidden={view !== 'table'} className="w-full min-w-0 max-w-full rounded-b-2xl">
             <table className="w-full table-fixed">
               <thead>
-                <tr className="bg-home-card text-xs font-semibold text-ink/50">
+                <tr className="bg-home-card text-xs font-semibold text-ink/60">
                   {tableColumns.map((column) => {
                     const active = sortColumn === column.key;
                     const ariaSort = active

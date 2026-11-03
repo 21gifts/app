@@ -1511,6 +1511,11 @@ describe('HomeShops', () => {
     expect(textOf(headers[3])).toBe(copy.colShop);
     expect(textOf(headers[4])).toBe(copy.colActivity);
     expect(headers[5]).toBeUndefined();
+    const header = headers[0];
+    if (header === undefined) throw new Error('missing header');
+    const headerRow = header.closest('tr');
+    if (headerRow === null) throw new Error('missing header row');
+    expect(headerRow.className).toContain('text-ink/60');
 
     const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
     expect(help.textContent).not.toContain('?');
@@ -2022,7 +2027,10 @@ describe('HomeShops', () => {
     width = 360;
     observer.callback([], observer as unknown as ResizeObserver);
     expect(map.fitBounds).toHaveBeenCalledTimes(afterClick);
-    expect(map.resize).toHaveBeenCalledTimes(2);
+    expect(map.resize).toHaveBeenCalledTimes(3);
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(afterClick);
+    expect(map.resize).toHaveBeenCalledTimes(3);
 
     cleanup();
     expect(observer.disconnect).toHaveBeenCalledTimes(1);
