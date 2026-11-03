@@ -1152,6 +1152,24 @@ async function sortHomeShops(
   );
 }
 
+async function waitForShopPopupInsideMap(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const map = document.querySelector('#shop-places-map');
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return false;
+    const mapBox = map.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    return (
+      popupBox.width > 8 &&
+      popupBox.height > 8 &&
+      popupBox.left >= mapBox.left - 1 &&
+      popupBox.right <= mapBox.right + 1 &&
+      popupBox.top >= mapBox.top - 1 &&
+      popupBox.bottom <= mapBox.bottom + 1
+    );
+  });
+}
+
 async function settleShopMarkers(page: Page): Promise<void> {
   await page.evaluate(() => {
     const holder = document.documentElement;
@@ -1160,18 +1178,26 @@ async function settleShopMarkers(page: Page): Promise<void> {
   });
   await page.waitForFunction(
     () => {
+      const holder = document.documentElement;
+      const map = document.querySelector('#shop-places-map');
+      const mapWidth = map instanceof HTMLElement ? map.clientWidth : 0;
+      const mapHeight = map instanceof HTMLElement ? map.clientHeight : 0;
+      if (mapWidth < 2 || mapHeight < 2) {
+        holder.dataset['shopMarkerSig'] = '';
+        holder.dataset['shopMarkerStable'] = '0';
+        return false;
+      }
       const nodes = document.querySelectorAll(
         '#shop-places-map .shop-place-marker, #shop-places-map .shop-cluster-marker, #shop-places-map .maplibregl-popup',
       );
-      const signature = Array.from(nodes)
+      const signature = `${mapWidth}x${mapHeight}|${Array.from(nodes)
         .map((node) => {
           const rect = node.getBoundingClientRect();
           return [rect.left, rect.top, rect.width, rect.height]
-            .map((value) => Math.round(value))
+            .map((value) => value.toFixed(2))
             .join(',');
         })
-        .join('|');
-      const holder = document.documentElement;
+        .join('|')}`;
       const previous = holder.dataset['shopMarkerSig'] ?? '';
       const stable = Number(holder.dataset['shopMarkerStable'] ?? '0');
       if (signature !== '' && signature === previous) {
@@ -1180,7 +1206,7 @@ async function settleShopMarkers(page: Page): Promise<void> {
         holder.dataset['shopMarkerSig'] = signature;
         holder.dataset['shopMarkerStable'] = '0';
       }
-      return Number(holder.dataset['shopMarkerStable']) >= 4;
+      return Number(holder.dataset['shopMarkerStable']) >= 12;
     },
     undefined,
     { timeout: 10_000, polling: 50 },
@@ -1219,19 +1245,36 @@ async function waitForShopPhoto(page: Page): Promise<void> {
   });
 }
 
-/** Whole pixels. A fraction here changes how the name, the arrow, and the close icon rasterize. */
+/**
+ * Whole pixels above the open pin. The eased pan stops a fraction apart
+ * between two captures, and rounding that fraction moves the card by a pixel.
+ */
 async function snapShopPopup(page: Page): Promise<void> {
   await page.evaluate(() => {
+    const map = document.querySelector('#shop-places-map');
     const popup = document.querySelector('#shop-places-map .maplibregl-popup');
-    if (!(popup instanceof HTMLElement)) return;
-    popup.style.translate = '0px 0px';
-    const rect = popup.getBoundingClientRect();
-    const dx = Math.round(rect.left) - rect.left;
-    const dy = Math.round(rect.top) - rect.top;
-    popup.style.translate = `${dx}px ${dy}px`;
-    // The click lands on the card. Hover would underline the name, slide the
-    // arrow, and fill the close button, and the reflow decides which one.
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return;
     popup.style.pointerEvents = 'none';
+    popup.style.translate = '0px 0px';
+    const pin = map.querySelector('.shop-place-marker:not(.is-clustered)');
+    const popupBox = popup.getBoundingClientRect();
+    if (!(pin instanceof HTMLElement)) {
+      const dx = Math.floor(popupBox.left) - popupBox.left;
+      const dy = Math.floor(popupBox.top) - popupBox.top;
+      popup.style.translate = `${dx}px ${dy}px`;
+      return;
+    }
+    const pinBox = pin.getBoundingClientRect();
+    const mapBox = map.getBoundingClientRect();
+    const width = Math.round(popupBox.width);
+    const height = Math.round(popupBox.height);
+    const minLeft = Math.round(mapBox.left) + 8;
+    const maxLeft = Math.round(mapBox.right) - width - 8;
+    const minTop = Math.round(mapBox.top) + 8;
+    const maxTop = Math.round(mapBox.bottom) - height - 8;
+    const left = Math.min(maxLeft, Math.max(minLeft, Math.round(pinBox.left)));
+    const top = Math.min(maxTop, Math.max(minTop, Math.round(pinBox.top) - height - 8));
+    popup.style.translate = `${left - popupBox.left}px ${top - popupBox.top}px`;
   });
 }
 
@@ -2563,7 +2606,14 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await page.getByRole('option', { name: 'Bitcoin' }).click();
-    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    const asset = page.getByRole('combobox', { name: 'Asset', exact: true });
+    // The pill sits on the first window's lower edge. The open list is a few
+    // pixels taller than the old one, so one capture flips it above the
+    // heading and the next opens it below. Centering the pill keeps it below.
+    await asset.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await asset.click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
     await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
   });
@@ -2733,10 +2783,12 @@ test.describe('screen baselines', () => {
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
     await waitForShopPhoto(page);
-    // The click leaves the pointer on the card. On a phone that hits the
-    // close button or the name, and those hover styles move between runs.
-    await page.locator('.shop-popup-photo').hover();
+    // The click leaves the pointer on the card. Move it off so a phone hover
+    // style is not part of the shot.
+    await page.mouse.move(0, 0);
     await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
     await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-marker');
   });
@@ -2749,6 +2801,8 @@ test.describe('screen baselines', () => {
       page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
     ).toHaveCount(1);
     await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-cluster');
   });
 
@@ -2761,6 +2815,8 @@ test.describe('screen baselines', () => {
     ).toHaveCount(4);
     await expect(page.getByRole('button', { name: '3 shops' })).toHaveCount(0);
     await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-pins');
   });
 
@@ -2788,6 +2844,8 @@ test.describe('screen baselines', () => {
     await expect(mapLibre).toBeVisible();
     await expect(attribution).toHaveClass(/maplibregl-compact-show/);
     await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-attribution');
   });
 

@@ -16,6 +16,7 @@ const copy = {
   asset: messages['homeShops.asset'],
   activity: messages['homeShops.activity'],
   all: messages['homeShops.all'],
+  otherShops: messages['homeShops.otherShops'],
   empty: messages['homeShops.empty'],
   error: messages['map.error'],
   retry: messages['forum.retry'],
@@ -110,6 +111,7 @@ type MapOptions = {
   center: [number, number];
   zoom: number;
   renderWorldCopies?: boolean;
+  trackResize?: boolean;
   attributionControl?: { compact: boolean; customAttribution: string };
   locale?: Record<string, string>;
 };
@@ -1679,6 +1681,7 @@ describe('HomeShops', () => {
     });
     expect(options.zoom).toBe(7);
     expect(options.renderWorldCopies).toBe(false);
+    expect(options.trackResize).toBe(false);
     expect(options.attributionControl).toEqual({
       compact: true,
       customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
@@ -1922,6 +1925,251 @@ describe('HomeShops', () => {
       maxZoom: 17.5,
       duration: 600,
     });
+  });
+
+  it('frames again when the map receives its real size, and stops after a cluster click', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    let width = 0;
+    let height = 0;
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }) {
+          void this.transform;
+          return { x: 10, y: 10 };
+        },
+        unproject(this: { transform: object }) {
+          void this.transform;
+          return { lng: 121, lat: 14.6 };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => height });
+    setRect(mapNode, { top: 0, left: 0, bottom: 416, right: 334, width: 334, height: 416 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(map.resize).not.toHaveBeenCalled();
+
+    width = 334;
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    height = 416;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.resize).toHaveBeenCalledTimes(1);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+
+    width = 400;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.resize).toHaveBeenCalledTimes(2);
+    expect(map.fitBounds).toHaveBeenCalledTimes(2);
+    const snapped = lib.bounds.at(-1);
+    if (snapped === undefined) throw new Error('missing snapped bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(snapped, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '2 shops' }));
+    const afterClick = map.fitBounds.mock.calls.length;
+    width = 360;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(afterClick);
+    expect(map.resize).toHaveBeenCalledTimes(2);
+
+    cleanup();
+    expect(observer.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not frame the empty map while shops are still loading', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => 1000 });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => 480 });
+    await fireScript('load');
+    const map = firstMap(lib);
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
+
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+  });
+
+  it('does not fit the map while the canvas is still the stand-in', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '400px';
+    canvas.style.height = '480px';
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        getCanvas(this: { transform: object }) {
+          void this.transform;
+          return canvas;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => 1000 });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => 480 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    canvas.style.width = '1000px';
+    canvas.style.height = '300px';
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    canvas.style.height = '480px';
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+  });
+
+  it('frames the map without resizing when the container is not an element', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          return document.createTextNode('x');
+        },
+      });
+    });
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.resize).not.toHaveBeenCalled();
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
   });
 
   it('labels a nameless pin with its activity title or an empty label', async () => {
@@ -3209,7 +3457,6 @@ describe('HomeShops', () => {
     setRect(popup, { top: 40, left: 20, bottom: 100, right: 390, width: 370, height: 60 });
     hankPopup.emit('open');
     expect(map.panBy).toHaveBeenCalledWith([6, 0], { duration: 250 });
-
     const focus = vi
       .spyOn(HTMLButtonElement.prototype, 'focus')
       .mockImplementation(() => undefined);
@@ -3306,6 +3553,15 @@ describe('HomeShops', () => {
     popup.emit('open');
     expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
     expect(connectedAtFocus).toBe(true);
+    map.panBy.mockClear();
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+    });
+    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 0 });
   });
 
   it('places a cluster marker on a whole pixel', async () => {
@@ -3352,6 +3608,27 @@ describe('HomeShops', () => {
     });
     expect(seen.at(-1)).toEqual([11, 21]);
     expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([11, 21]);
+  });
+
+  it('joins a chain of pins when any pair is closer than 44px', async () => {
+    await paintProjected([
+      giftsPlace('Ann', { lat: 0, lon: 0 }),
+      giftsPlace('Bea', { lat: 0, lon: 4 }),
+      giftsPlace('Cara', { lat: 0, lon: 8 }),
+    ]);
+    expect(document.querySelectorAll('.shop-cluster.is-daily')).toHaveLength(1);
+    expect(clusterButton('is-daily').textContent).toBe('3');
+  });
+
+  it('does not pull a farther pin into a cluster through the centroid', async () => {
+    await paintProjected([
+      giftsPlace('Ann', { lat: 0, lon: 0 }),
+      giftsPlace('Bea', { lat: 4.3, lon: 0 }),
+      giftsPlace('Cara', { lat: 2.15, lon: 4.3 }),
+    ]);
+    expect(document.querySelectorAll('.shop-cluster')).toHaveLength(1);
+    expect(clusterButton('is-daily').textContent).toBe('2');
+    expect(pinByName('Cara').classList.contains('is-clustered')).toBe(false);
   });
 
   it('sorts every column and keeps an equal name in ascending order', async () => {
@@ -3503,6 +3780,19 @@ describe('HomeShops', () => {
     fireEvent(window, new Event('scroll'));
     expect(dialog.style.top).toBe('172px');
     expect(dialog.style.left).toBe('40px');
+    expect(dialog.style.bottom).toBe('');
+
+    setWindowSize(1024, 768);
+    setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    setRect(dialog, { top: 0, left: 40, bottom: 800, right: 360, width: 320, height: 800 });
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
+    setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('172px');
+    expect(dialog.style.bottom).toBe('');
 
     fireEvent.mouseDown(dialog);
     expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);
@@ -3675,6 +3965,41 @@ function setRect(
 function setWindowSize(width: number, height: number): void {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+}
+
+async function paintProjected(places: readonly Place[]): Promise<void> {
+  installMapLibre();
+  wrapMap((map) => {
+    Object.assign(map, {
+      project(this: { transform: object }, position: [number, number]) {
+        void this.transform;
+        return { x: position[0] * 10, y: position[1] * 10 };
+      },
+      unproject(this: { transform: object }, point: [number, number]) {
+        void this.transform;
+        return { lng: point[0], lat: point[1] };
+      },
+      getContainer(this: { transform: object }) {
+        void this.transform;
+        const node = document.getElementById('shop-places-map');
+        if (node === null) throw new Error('missing map');
+        return node;
+      },
+    });
+  });
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    queueMicrotask(() => callback(0));
+    return 0;
+  });
+  renderShops();
+  const mapNode = document.getElementById('shop-places-map');
+  if (mapNode === null) throw new Error('missing map');
+  setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+  await resolveLatest(basicFilters({}), placesBody(places));
+  await fireScript('load');
+  await act(async () => {
+    await Promise.resolve();
+  });
 }
 
 function clusterRows(): { places: readonly unknown[] } {

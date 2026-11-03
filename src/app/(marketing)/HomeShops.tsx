@@ -26,6 +26,7 @@ type HomeShopsCopy = {
   asset: string;
   activity: string;
   all: string;
+  otherShops: string;
   empty: string;
   error: string;
   retry: string;
@@ -133,6 +134,7 @@ type MapHandle = {
   getZoom?: () => number;
   loaded?: () => boolean;
   getContainer?: () => HTMLElement;
+  getCanvas?: () => HTMLElement;
   panBy?: (offset: [number, number], options?: { duration?: number }) => void;
   on?: (event: string, handler: () => void) => void;
   off?: (event: string, handler: () => void) => void;
@@ -163,6 +165,7 @@ type MapLibreNamespace = {
     center: LngLat;
     zoom: number;
     renderWorldCopies?: boolean;
+    trackResize?: boolean;
     attributionControl?: { compact: boolean; customAttribution: string };
     locale?: Record<string, string>;
   }) => MapHandle;
@@ -181,7 +184,7 @@ type MapSession = { map: MapHandle; lib: MapLibreNamespace; onMove: (() => void)
 
 type PinRecord = { element: HTMLButtonElement; row: ShopRow; position: LngLat };
 
-type HelpBox = { top: number; left: number; width: number };
+type HelpBox = { top: number; left: number; width: number; bottom?: number };
 
 function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   const margin = 16;
@@ -197,6 +200,11 @@ function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   if (top < margin) top = margin;
   const limit = window.innerHeight - margin - panelHeight;
   if (top > limit) top = Math.max(margin, limit);
+  // A fitting box keeps only top. Setting bottom as well stretches the
+  // panel across a full-page capture, because that capture's fixed
+  // containing block is the whole page.
+  const bottom = window.innerHeight - top - panelHeight;
+  if (bottom < margin) return { top, bottom: margin, left, width };
   return { top, left, width };
 }
 
@@ -687,6 +695,18 @@ function textChoices(tokens: readonly string[], allLabel: string): MenuOption[] 
   return options;
 }
 
+function nameChoices(tokens: readonly string[], copy: HomeShopsCopy): MenuOption[] {
+  const options: MenuOption[] = [{ value: '', label: copy.all, swatch: null }];
+  for (const token of tokens) {
+    options.push({
+      value: token,
+      label: token === 'others' ? copy.otherShops : token,
+      swatch: null,
+    });
+  }
+  return options;
+}
+
 function countryChoices(codes: readonly string[], allLabel: string, locale: string): MenuOption[] {
   const options: MenuOption[] = [{ value: '', label: allLabel, swatch: null }];
   for (const code of codes) {
@@ -817,6 +837,26 @@ function findByUrl(tagName: 'script' | 'link', url: string): Element | null {
 }
 
 const framedMaps = new WeakSet<MapHandle>();
+const framedSizes = new WeakMap<MapHandle, string>();
+const userMovedMaps = new WeakSet<MapHandle>();
+
+function mapBox(map: MapHandle): { width: number; height: number } | null | undefined {
+  if (typeof map.getContainer !== 'function') return undefined;
+  const container = map.getContainer();
+  if (!(container instanceof HTMLElement)) return undefined;
+  // A zero box is not a real layout. MapLibre would fit a 400×300 stand-in
+  // and the pins would jump once the container received its width.
+  if (container.clientWidth < 2 || container.clientHeight < 2) return null;
+  return { width: container.clientWidth, height: container.clientHeight };
+}
+
+function usesStandIn(map: MapHandle, box: { width: number; height: number }): boolean {
+  const canvas = map.getCanvas?.();
+  if (!(canvas instanceof HTMLElement)) return false;
+  const width = Number.parseFloat(canvas.style.width);
+  const height = Number.parseFloat(canvas.style.height);
+  return Math.abs(width - box.width) > 1 || Math.abs(height - box.height) > 1;
+}
 
 function boundsMotion(map: MapHandle, first: boolean): { duration: number; animate?: false } {
   const unloaded = typeof map.loaded === 'function' && map.loaded() === false;
@@ -831,10 +871,26 @@ function clusterMotion(map: MapHandle): { duration: number; animate?: false } {
   return { duration: 600 };
 }
 
-function frameMap(map: MapHandle, lib: MapLibreNamespace, positions: readonly LngLat[]): void {
+function frameMap(
+  map: MapHandle,
+  lib: MapLibreNamespace,
+  positions: readonly LngLat[],
+  snap = false,
+): boolean {
+  const box = mapBox(map);
+  if (box === null) return false;
+  if (box !== undefined) {
+    map.resize();
+    // The canvas can still be the 400×300 stand-in. Fitting that, then
+    // stretching it, moves every pin by half the size difference.
+    if (usesStandIn(map, box)) return false;
+  }
   const first = !framedMaps.has(map);
   framedMaps.add(map);
-  const motion = boundsMotion(map, first);
+  if (box !== undefined) framedSizes.set(map, `${box.width}x${box.height}`);
+  const motion: { duration: number; animate?: false } = snap
+    ? { duration: 0, animate: false }
+    : boundsMotion(map, first);
   if (positions.length > 1) {
     const bounds = new lib.LngLatBounds();
     for (const position of positions) bounds.extend(position);
@@ -843,14 +899,15 @@ function frameMap(map: MapHandle, lib: MapLibreNamespace, positions: readonly Ln
       maxZoom: BOUNDS_MAX_ZOOM,
       ...motion,
     });
-    return;
+    return true;
   }
   if (positions.length === 0) {
     map.easeTo({ center: HOME_CENTER, zoom: HOME_ZOOM, ...motion });
-    return;
+    return true;
   }
   const position = positions[0] as LngLat;
   map.easeTo({ center: position, zoom: SINGLE_ZOOM, ...motion });
+  return true;
 }
 
 function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
@@ -912,7 +969,7 @@ function popupContent(
   onClose: () => void,
 ): HTMLElement {
   const content = document.createElement('div');
-  content.className = 'shop-popup-card';
+  content.className = 'shop-popup-card border border-app-border shadow-lg';
   const host = document.createElement('div');
   content.appendChild(host);
   const root = createRoot(host);
@@ -1085,7 +1142,7 @@ function revealAttribution(map: MapHandle): void {
   attrib.removeAttribute('open');
 }
 
-function fitPopup(map: MapHandle): void {
+function fitPopup(map: MapHandle, duration = 250): void {
   if (typeof map.getContainer !== 'function' || typeof map.panBy !== 'function') return;
   const container = map.getContainer();
   if (!(container instanceof HTMLElement)) return;
@@ -1100,7 +1157,7 @@ function fitPopup(map: MapHandle): void {
   else if (popupBox.bottom > mapBox.bottom - pad) dy = popupBox.bottom - (mapBox.bottom - pad);
   if (popupBox.left < mapBox.left + pad) dx = popupBox.left - (mapBox.left + pad);
   else if (popupBox.right > mapBox.right - pad) dx = popupBox.right - (mapBox.right - pad);
-  if (dx !== 0 || dy !== 0) map.panBy([dx, dy], { duration: 250 });
+  if (dx !== 0 || dy !== 0) map.panBy([dx, dy], { duration });
 }
 
 function mapRect(map: MapHandle): DOMRect | null {
@@ -1200,6 +1257,25 @@ function screenCentroid(
   return { x: x / group.length, y: y / group.length };
 }
 
+function groupsWithin(
+  leftGroup: readonly PinRecord[],
+  rightGroup: readonly PinRecord[],
+  points: ReadonlyMap<PinRecord, { x: number; y: number }>,
+): boolean {
+  for (const left of leftGroup) {
+    const a = points.get(left);
+    /* v8 ignore next -- clusterGroups only passes pins that are already in the point map */
+    if (a === undefined) continue;
+    for (const right of rightGroup) {
+      const b = points.get(right);
+      /* v8 ignore next -- clusterGroups only passes pins that are already in the point map */
+      if (b === undefined) continue;
+      if (Math.hypot(a.x - b.x, a.y - b.y) < CLUSTER_PX) return true;
+    }
+  }
+  return false;
+}
+
 function clusterGroups(
   pins: readonly PinRecord[],
   points: ReadonlyMap<PinRecord, { x: number; y: number }>,
@@ -1214,9 +1290,7 @@ function clusterGroups(
         const rightGroup = groups[right];
         /* v8 ignore next -- both indexes are inside groups.length */
         if (leftGroup === undefined || rightGroup === undefined) continue;
-        const a = screenCentroid(leftGroup, points);
-        const b = screenCentroid(rightGroup, points);
-        if (Math.hypot(a.x - b.x, a.y - b.y) >= CLUSTER_PX) continue;
+        if (!groupsWithin(leftGroup, rightGroup, points)) continue;
         groups[left] = leftGroup.concat(rightGroup);
         groups.splice(right, 1);
         merged = true;
@@ -1311,6 +1385,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
+  const sizeObserverRef = useRef<ResizeObserver | null>(null);
   const awaitingRef = useRef(false);
   const rowsRef = useRef<ShopRow[]>([]);
   const showCategoryRef = useRef(false);
@@ -1408,6 +1483,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         shell.className = 'shop-cluster-marker';
         shell.appendChild(button);
         button.addEventListener('click', () => {
+          userMovedMaps.add(session.map);
           const bounds = new session.lib.LngLatBounds();
           for (const pin of group) bounds.extend(pin.position);
           session.map.fitBounds(bounds, {
@@ -1476,12 +1552,21 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           element.click();
         });
         popup.on('open', () => {
+          userMovedMaps.add(session.map);
           if (element.dataset['keyboardOpen'] === '1') {
             delete element.dataset['keyboardOpen'];
             const close = content.querySelector('.shop-popup-close');
             if (close instanceof HTMLButtonElement) close.focus();
           }
           fitPopup(session.map);
+          // The open event can run before the popup box has its final rect.
+          // Measure again after layout and jump, so a capture does not record
+          // a 250ms pan that is still in flight.
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              fitPopup(session.map, 0);
+            });
+          });
         });
         const marker = new session.lib.Marker({ element });
         marker.setLngLat(row.position);
@@ -1613,6 +1698,9 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           center: HOME_CENTER,
           zoom: HOME_ZOOM,
           renderWorldCopies: false,
+          // MapLibre otherwise resizes on its own and can keep a frame that
+          // was measured while the box was still empty.
+          trackResize: false,
           attributionControl: {
             compact: true,
             customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
@@ -1639,6 +1727,25 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         else revealAttribution(map);
         sessionRef.current = { map, lib, onMove };
         paintMarkers();
+        if (typeof ResizeObserver === 'function' && typeof map.getContainer === 'function') {
+          const container = map.getContainer();
+          if (container instanceof HTMLElement) {
+            const observer = new ResizeObserver(() => {
+              if (userMovedMaps.has(map)) return;
+              // Places are still in flight. Framing the empty map here would
+              // make the real shops fly in afterwards, and a capture can land
+              // in the middle of that flight.
+              if (awaitingRef.current) return;
+              const box = mapBox(map);
+              if (box === null || box === undefined) return;
+              const key = `${box.width}x${box.height}`;
+              if (framedSizes.get(map) === key) return;
+              frameMap(map, lib, markerPositions(rowsRef.current, failedRef.current), true);
+            });
+            observer.observe(container);
+            sizeObserverRef.current = observer;
+          }
+        }
       } catch {
         setScriptFailed(true);
         setView('table');
@@ -1717,6 +1824,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       styleController.abort();
       if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
       clusterFrame.current = 0;
+      sizeObserverRef.current?.disconnect();
+      sizeObserverRef.current = null;
       const session = sessionRef.current;
       if (session !== null) {
         if (session.onMove !== null && typeof session.map.off === 'function') {
@@ -1758,6 +1867,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         if (
           current !== null &&
           current.top === next.top &&
+          current.bottom === next.bottom &&
           current.left === next.left &&
           current.width === next.width
         ) {
@@ -1886,7 +1996,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                   label={copy.name}
                   value={shopNameActive}
                   allLabel={copy.all}
-                  options={textChoices(shopNames, copy.all)}
+                  options={nameChoices(shopNames, copy)}
                   onChange={setShopName}
                 />
               </div>
@@ -2051,7 +2161,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           role="dialog"
           aria-label={copy.helpLabel}
           className="fixed z-40 rounded-xl border border-ink/10 bg-paper p-4 shadow-lg"
-          style={{ top: helpBox.top, left: helpBox.left, width: helpBox.width }}
+          style={{
+            top: helpBox.top,
+            left: helpBox.left,
+            width: helpBox.width,
+            ...(helpBox.bottom === undefined ? {} : { bottom: helpBox.bottom }),
+          }}
         >
           <dl className="grid gap-3">
             {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (

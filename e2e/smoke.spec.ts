@@ -67,6 +67,8 @@ test('http x-forwarded-proto upgrades to https://21.gifts/', async () => {
   expect(loopback.status).toBe(200);
   const localName = await probe(port, { host: 'localhost', 'x-forwarded-proto': 'http' });
   expect(localName.status).toBe(200);
+  const v6 = await probe(port, { host: `[::1]:${port}`, 'x-forwarded-proto': 'http' });
+  expect(v6.status).toBe(200);
 });
 
 test('favicon.ico is served as an image', async ({ request }) => {

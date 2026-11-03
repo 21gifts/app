@@ -310,6 +310,7 @@ export default async function Home(): Promise<ReactElement> {
           asset: t('homeShops.asset'),
           activity: t('homeShops.activity'),
           all: t('homeShops.all'),
+          otherShops: t('homeShops.otherShops'),
           empty: t('homeShops.empty'),
           error: t('map.error'),
           retry: t('forum.retry'),

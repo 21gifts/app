@@ -500,6 +500,7 @@ describe('FilterMenu', () => {
       expect(listbox.style.left).toBe('8px');
       expect(listbox.style.top).toBe('8px');
       expect(listbox.style.width).toBe(`${window.innerWidth - 16}px`);
+      expect(listbox.style.bottom).toBe('8px');
       expect(listbox.style.right).toBe('');
       expect(listbox.style.overflowY).toBe('');
       fireEvent(window, new Event('resize'));

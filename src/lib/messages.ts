@@ -1743,6 +1743,7 @@ const en = {
   'homeShops.closePopup': 'Close popup',
   'homeShops.mapTitle': 'Map',
   'homeShops.clusterCount': '{count, plural, one {# shop} other {# shops}}',
+  'homeShops.otherShops': 'others',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -3574,6 +3575,7 @@ const de = {
   'homeShops.closePopup': 'Popup schließen',
   'homeShops.mapTitle': 'Karte',
   'homeShops.clusterCount': '{count, plural, one {# Laden} other {# Läden}}',
+  'homeShops.otherShops': 'Andere',
 } satisfies Messages;
 
 const es = {
@@ -5356,6 +5358,7 @@ const es = {
   'homeShops.closePopup': 'Cerrar el popup',
   'homeShops.mapTitle': 'Mapa',
   'homeShops.clusterCount': '{count, plural, one {# tienda} other {# tiendas}}',
+  'homeShops.otherShops': 'Otros',
 } satisfies Messages;
 
 const fil = {
@@ -7147,6 +7150,7 @@ const fil = {
   'homeShops.closePopup': 'Isara ang popup',
   'homeShops.mapTitle': 'Mapa',
   'homeShops.clusterCount': '{count, plural, one {# tindahan} other {# mga tindahan}}',
+  'homeShops.otherShops': 'Iba pa',
 } satisfies Messages;
 
 /**

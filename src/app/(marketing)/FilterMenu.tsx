@@ -36,7 +36,7 @@ const ROW_CLASS =
 const VIEWPORT_INSET = 8;
 const COLUMN_MIN_PX = 96;
 
-type MenuPin = { left: number; top: number; width: number };
+type MenuPin = { left: number; top: number; bottom: number; width: number };
 
 /**
  * Column count that keeps the open list within eight rows when the window is
@@ -86,12 +86,19 @@ function pinFor(rect: DOMRect): MenuPin | null {
   let top = rect.top;
   if (top < VIEWPORT_INSET) top = VIEWPORT_INSET;
   if (top > maxBottom) top = VIEWPORT_INSET;
-  return { left, top, width };
+  let bottom = window.innerHeight - top - rect.height;
+  if (bottom < VIEWPORT_INSET) bottom = VIEWPORT_INSET;
+  return { left, top, bottom, width };
 }
 
 function samePin(current: MenuPin | null, next: MenuPin | null): boolean {
   if (current === null || next === null) return current === next;
-  return current.left === next.left && current.top === next.top && current.width === next.width;
+  return (
+    current.left === next.left &&
+    current.top === next.top &&
+    current.bottom === next.bottom &&
+    current.width === next.width
+  );
 }
 
 function clearPinStyle(panel: HTMLElement): void {
@@ -146,7 +153,7 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * The closed control is a pill: the label sits on the left and the chosen value
  * sits directly before the chevron. An open list floats under the pill, flips
  * inward when it would leave the window, and wraps into columns. If the flipped
- * panel still crosses an 8px inset, its left, top, and width are pinned inside
+ * panel still crosses an 8px inset, its top, bottom, left, and width are pinned inside
  * the window. The list is measured when it opens and when the window resizes.
  * Scrolling does not measure it again, and a resize while the pill is outside
  * the window does not measure it again, so the list stays on the pill. The list
@@ -408,8 +415,12 @@ export function FilterMenu({
           role="listbox"
           id={listboxId}
           aria-labelledby={labelId}
-          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-0.5 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${pin === null ? `absolute ${edge} ${stack}` : 'fixed'} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
-          style={pin === null ? undefined : { left: pin.left, top: pin.top, width: pin.width }}
+          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${pin === null ? `absolute ${edge} ${stack}` : 'fixed'} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
+          style={
+            pin === null
+              ? undefined
+              : { left: pin.left, top: pin.top, bottom: pin.bottom, width: pin.width }
+          }
         >
           {options[0] !== undefined ? (
             <FilterOption
@@ -423,7 +434,7 @@ export function FilterMenu({
           ) : null}
           {rest.length > 0 ? <div className="border-t border-ink/10" /> : null}
           {rest.length > 0 ? (
-            <div className={`grid gap-0.5 ${COLUMN_CLASS[columns]}`}>
+            <div className={`grid gap-1 ${COLUMN_CLASS[columns]}`}>
               {rest.map((option, index) => (
                 <FilterOption
                   key={option.value === '' ? 'all' : option.value}
