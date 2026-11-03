@@ -42,7 +42,7 @@ test('Function: MarketingHeader — the root info page shows no back arrow, the 
   await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
   await header.getByRole('link', { name: '21.gifts', exact: true }).click();
   await expect(page).toHaveURL(/\/en$/);
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeVisible();
   await expect(header.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
   await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
   await expect(header.getByRole('button', { name: 'Back' })).toHaveCount(0);

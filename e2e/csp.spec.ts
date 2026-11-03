@@ -141,7 +141,7 @@ test('Function: buildCsp — landing, welcome, and shops load without a violatio
   await expect(page.locator('main')).toBeVisible();
   expect(await violations()).toEqual([]);
   await page.goto('/shops');
-  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
   expect(await violations()).toEqual([]);
   // The listener does see a violation: an http image is outside img-src.
   await page.evaluate(() => {

@@ -359,7 +359,7 @@ test('the top-left arrow from a place on the shops map returns to the posts', as
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
   await expect(page).toHaveURL(`${origin}/shops?pin=m-two#map`);
   await page.getByRole('link', { name: 'Back', exact: true }).click();
-  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect(page).toHaveURL(`${origin}/shops#post`);
   await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 });
