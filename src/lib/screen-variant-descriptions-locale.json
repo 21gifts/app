@@ -85,9 +85,9 @@
     "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Napili ang Blockchain na Bitcoin. Sarado ang listahan ng Asset at kasama sa teksto ng combobox na Asset ang BTC."
   },
   "/:shops-attribution": {
-    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln, der Shop-Pin und jeder Cluster sind maskiert.",
-    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa, el pin de la tienda y cualquier grupo están enmascarados.",
-    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakamaskara ang mga tile ng mapa, ang pin ng tindahan, at ang anumang kumpol."
+    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln sind ausgeblendet. Der Shop-Pin bleibt sichtbar.",
+    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa están ocultas. El pin de la tienda sigue visible.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa. Nakikita pa rin ang pin ng tindahan."
   },
   "/:shops-blockchain": {
     "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt. Die Karte ist maskiert.",
@@ -135,9 +135,9 @@
     "fil": "Na-a-abort ang script ng MapLibre, tulad ng sa behavior test. Napili ang Talaan at nakikita ang error sa pag-load na Hindi ma-load ang mga lugar. Subukan ulit."
   },
   "/:shops-marker": {
-    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind maskiert.",
-    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están enmascaradas.",
-    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakamaskara ang mga tile ng mapa."
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakatago ang mga tile ng mapa."
   },
   "/:shops-name-selected": {
     "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Combobox Name zeigt SPAR.",
@@ -8055,14 +8055,14 @@
     "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pababa. Ang pamagat ng hanay na Aktibidad ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
   },
   "/:shops-cluster": {
-    "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind maskiert.",
-    "es": "Mapa sigue elegido y está alejado. Tres tiendas en Manila comparten un botón de grupo con la etiqueta 3 tiendas. La tienda de Nairobi sigue siendo su propio pin. Las teselas del mapa están enmascaradas.",
-    "fil": "Napili pa rin ang Mapa at naka-zoom out ito. Tatlong tindahan sa Maynila ang magkasalo sa isang pindutan ng kumpol na may label na 3 tindahan. Sariling pin pa rin ang tindahan sa Nairobi. Nakamaskara ang mga tile ng mapa."
+    "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido y está alejado. Tres tiendas en Manila comparten un botón de grupo con la etiqueta 3 tiendas. La tienda de Nairobi sigue siendo su propio pin. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa at naka-zoom out ito. Tatlong tindahan sa Maynila ang magkasalo sa isang pindutan ng kumpol na may label na 3 tindahan. Sariling pin pa rin ang tindahan sa Nairobi. Nakatago ang mga tile ng mapa."
   },
   "/:shops-pins": {
-    "de": "Karte bleibt gewählt, nachdem der Cluster geöffnet wurde. Die drei Läden in Manila sind eigene Pins im Bildausschnitt. Der Laden in Nairobi ist ebenfalls ein eigener Pin und liegt außerhalb dieses Ausschnitts. Die Schaltfläche 3 Läden ist weg. Das ist ein anderer Zustand als der herausgezoomte Cluster. Die Kartenkacheln sind maskiert.",
-    "es": "Mapa sigue elegido después de abrir el grupo. Las tres tiendas de Manila son pines separados dentro del encuadre. La tienda de Nairobi también es su propio pin y queda fuera de este encuadre. El botón 3 tiendas ha desaparecido. Es un estado distinto del grupo alejado. Las teselas del mapa están enmascaradas.",
-    "fil": "Napili pa rin ang Mapa pagkatapos buksan ang kumpol. Hiwalay na mga pin sa loob ng kuwadro ang tatlong tindahan sa Maynila. Sariling pin din ang tindahan sa Nairobi at nasa labas ng kuwadrong ito. Wala na ang pindutang 3 tindahan. Iba itong estado kaysa sa naka-zoom out na kumpol. Nakamaskara ang mga tile ng mapa."
+    "de": "Karte bleibt gewählt, nachdem der Cluster geöffnet wurde. Die drei Läden in Manila sind eigene Pins im Bildausschnitt. Der Laden in Nairobi ist ebenfalls ein eigener Pin und liegt außerhalb dieses Ausschnitts. Die Schaltfläche 3 Läden ist weg. Das ist ein anderer Zustand als der herausgezoomte Cluster. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido después de abrir el grupo. Las tres tiendas de Manila son pines separados dentro del encuadre. La tienda de Nairobi también es su propio pin y queda fuera de este encuadre. El botón 3 tiendas ha desaparecido. Es un estado distinto del grupo alejado. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa pagkatapos buksan ang kumpol. Hiwalay na mga pin sa loob ng kuwadro ang tatlong tindahan sa Maynila. Sariling pin din ang tindahan sa Nairobi at nasa labas ng kuwadrong ito. Wala na ang pindutang 3 tindahan. Iba itong estado kaysa sa naka-zoom out na kumpol. Nakatago ang mga tile ng mapa."
   },
   "/:shops-filters-hidden": {
     "de": "Die geladenen Läden unterscheiden sich nicht nach Land, Name, Blockchain, Asset oder Aktivität, daher wird keine Filter-Combobox gezeigt. Tabelle ist gewählt. Die Spalten sind Name, Ort und Aktivität. Die Hilfe-Schaltfläche bleibt, weil Läden geladen sind.",

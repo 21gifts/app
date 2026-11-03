@@ -566,7 +566,7 @@ button.shop-cluster.is-none {
 }
 .shop-popup-card:not(:has(.shop-popup-photo)) .shop-popup-title {
   padding-top: 16px;
-  padding-right: 48px;
+  padding-right: 62px;
 }
 .shop-popup-name {
   display: flex;
@@ -622,22 +622,8 @@ a.shop-popup-name:hover .shop-popup-arrow {
   position: absolute;
   top: 10px;
   right: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 0;
-  border: 1px solid rgb(10 9 12 / 0.1);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.94);
+  z-index: 1;
   color: var(--color-ink);
-  box-shadow: 0 1px 3px rgb(10 9 12 / 0.12);
-  cursor: pointer;
-}
-.shop-popup-close:hover {
-  background: var(--color-paper);
 }
 .shop-popup-close:focus {
   outline: none;
@@ -645,10 +631,6 @@ a.shop-popup-name:hover .shop-popup-arrow {
 .shop-popup-close:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
-}
-.shop-popup-x {
-  width: 14px;
-  height: 14px;
 }
 @media (max-width: 639px) {
   #shops .maplibregl-popup.shop-popup,

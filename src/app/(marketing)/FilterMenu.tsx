@@ -14,33 +14,92 @@ export type MenuOption = { value: string; label: string; swatch: string | null }
 type MenuAlign = 'start' | 'end';
 type MenuVertical = 'below' | 'above';
 
-const COLUMN_CLASS: Record<number, string> = {
-  1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-};
+const COLUMN_CLASS = [
+  'grid-cols-1',
+  'grid-cols-1',
+  'grid-cols-2',
+  'grid-cols-3',
+  'grid-cols-4',
+  'grid-cols-5',
+  'grid-cols-6',
+  'grid-cols-7',
+  'grid-cols-8',
+  'grid-cols-9',
+  'grid-cols-10',
+  'grid-cols-11',
+  'grid-cols-12',
+] as const;
 
 const ROW_CLASS =
   'flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
 
+const VIEWPORT_INSET = 8;
+const COLUMN_MIN_PX = 96;
+
+type MenuPin = { left: number; top: number; width: number };
+
 /**
- * Column count for a list that must not scroll. Lists of at most 8 options stay
- * one column. Longer lists wrap into as many columns of 8 as fit, at most 6.
+ * Column count that keeps the open list within eight rows when the window is
+ * wide enough. Eight options stay one column. The All row counts toward the
+ * eight. At most twelve columns, and only as many as fit the viewport.
  *
  * @param total - Option count, including All.
- * @returns A column count from 1 to 6.
+ * @param viewportWidth - Window width in CSS pixels.
+ * @param viewportHeight - Window height in CSS pixels.
+ * @returns A column count from 1 to 12.
  */
-function columnCount(total: number): 1 | 2 | 3 | 4 | 5 | 6 {
+function columnCount(total: number, viewportWidth: number, viewportHeight: number): number {
   if (total <= 8) return 1;
-  const columns = Math.ceil(total / 8);
-  if (columns >= 6) return 6;
-  if (columns === 5) return 5;
-  if (columns === 4) return 4;
-  if (columns === 3) return 3;
-  return 2;
+  const rest = total - 1;
+  const row = 40;
+  const chrome = 56;
+  const availableHeight = Math.max(row, viewportHeight - VIEWPORT_INSET * 2 - chrome);
+  const rowsThatFit = Math.max(1, Math.floor(availableHeight / row));
+  const rowBudget = Math.min(7, rowsThatFit);
+  const wanted = Math.max(1, Math.ceil(rest / rowBudget));
+  const fit = Math.max(1, Math.floor((viewportWidth - VIEWPORT_INSET * 2) / COLUMN_MIN_PX));
+  return Math.min(COLUMN_CLASS.length - 1, wanted, fit);
+}
+
+/**
+ * Box that keeps a still-overflowing panel inside the 8px window inset.
+ *
+ * @param rect - Panel rect after the candidate alignment is applied.
+ * @returns The pinned box, or null when the rect already fits.
+ */
+function pinFor(rect: DOMRect): MenuPin | null {
+  const maxRight = window.innerWidth - VIEWPORT_INSET;
+  const maxBottom = window.innerHeight - VIEWPORT_INSET;
+  if (
+    rect.left >= VIEWPORT_INSET &&
+    rect.top >= VIEWPORT_INSET &&
+    rect.right <= maxRight &&
+    rect.bottom <= maxBottom
+  ) {
+    return null;
+  }
+  const maxWidth = Math.max(0, window.innerWidth - VIEWPORT_INSET * 2);
+  const width = Math.min(rect.width, maxWidth);
+  let left = rect.left;
+  if (left < VIEWPORT_INSET) left = VIEWPORT_INSET;
+  if (left + width > maxRight) left = maxRight - width;
+  let top = rect.top;
+  if (top < VIEWPORT_INSET) top = VIEWPORT_INSET;
+  if (top > maxBottom) top = VIEWPORT_INSET;
+  return { left, top, width };
+}
+
+function samePin(current: MenuPin | null, next: MenuPin | null): boolean {
+  if (current === null || next === null) return current === next;
+  return current.left === next.left && current.top === next.top && current.width === next.width;
+}
+
+function clearPinStyle(panel: HTMLElement): void {
+  panel.style.left = '';
+  panel.style.top = '';
+  panel.style.right = '';
+  panel.style.bottom = '';
+  panel.style.width = '';
 }
 
 /**
@@ -75,8 +134,10 @@ function inMenu(target: EventTarget | null, menuId: string): boolean {
  *
  * The closed control is a pill: the label sits on the left and the chosen value
  * sits directly before the chevron. An open list floats under the pill, flips
- * inward when it would leave the window, and wraps into columns instead of
- * scrolling. Country, name, blockchain, asset, and activity all use it.
+ * inward when it would leave the window, and wraps into columns. If the flipped
+ * panel still crosses an 8px inset, its left, top, and width are pinned inside
+ * the window. The list stays on the page scrollport.
+ * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
  * @returns The combobox and, while open, its listbox.
@@ -98,12 +159,13 @@ export function FilterMenu({
   const [activeIndex, setActiveIndex] = useState(0);
   const [align, setAlign] = useState<MenuAlign>('start');
   const [vertical, setVertical] = useState<MenuVertical>('below');
+  const [columns, setColumns] = useState(() => columnCount(options.length, 4096, 4096));
+  const [pin, setPin] = useState<MenuPin | null>(null);
   const menuId = useId();
   const labelId = useId();
   const listboxId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const columns = columnCount(options.length);
   const chosen = selectedLabel(options, value, allLabel);
   const inverted = value !== '';
 
@@ -131,20 +193,47 @@ export function FilterMenu({
       const panel = panelRef.current;
       /* v8 ignore next -- the open panel is committed before this layout effect reads it */
       if (panel === null) return;
+      const nextColumns = columnCount(options.length, window.innerWidth, window.innerHeight);
+      const grid = panel.querySelector('.grid');
+      if (grid !== null) {
+        for (const name of COLUMN_CLASS) grid.classList.remove(name);
+        const columnClass = COLUMN_CLASS[nextColumns];
+        /* v8 ignore next -- columnCount returns only indexes of COLUMN_CLASS */
+        if (columnClass === undefined) return;
+        grid.classList.add(columnClass);
+      }
       const previous = panel.className;
+      const previousStyle = panel.getAttribute('style');
       panel.classList.remove('right-0', 'left-0', 'bottom-full', 'top-full', 'mb-1.5', 'mt-1.5');
       panel.classList.add('left-0', 'top-full', 'mt-1.5');
-      const rect = panel.getBoundingClientRect();
+      clearPinStyle(panel);
+      const natural = panel.getBoundingClientRect();
+      const nextAlign: MenuAlign =
+        natural.right > window.innerWidth - VIEWPORT_INSET ? 'end' : 'start';
+      const nextVertical: MenuVertical =
+        natural.bottom > window.innerHeight - VIEWPORT_INSET ? 'above' : 'below';
+      panel.classList.remove('left-0', 'top-full', 'mt-1.5');
+      panel.classList.add(
+        nextAlign === 'end' ? 'right-0' : 'left-0',
+        nextVertical === 'above' ? 'bottom-full' : 'top-full',
+        nextVertical === 'above' ? 'mb-1.5' : 'mt-1.5',
+      );
+      const flipped = panel.getBoundingClientRect();
+      const nextPin = pinFor(flipped);
       panel.className = previous;
-      const nextAlign: MenuAlign = rect.right > window.innerWidth - 8 ? 'end' : 'start';
-      const nextVertical: MenuVertical = rect.bottom > window.innerHeight - 8 ? 'above' : 'below';
+      if (previousStyle === null) panel.removeAttribute('style');
+      else panel.setAttribute('style', previousStyle);
+      setColumns((current) => (current === nextColumns ? current : nextColumns));
       setAlign((current) => (current === nextAlign ? current : nextAlign));
       setVertical((current) => (current === nextVertical ? current : nextVertical));
+      setPin((current) => (samePin(current, nextPin) ? current : nextPin));
     }
     place();
     window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
     return () => {
       window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
     };
   }, [open, options.length]);
 
@@ -294,7 +383,8 @@ export function FilterMenu({
           role="listbox"
           id={listboxId}
           aria-labelledby={labelId}
-          className={`shop-menu-in absolute z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-0.5 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${edge} ${stack} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
+          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-0.5 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${pin === null ? `absolute ${edge} ${stack}` : 'fixed'} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
+          style={pin === null ? undefined : { left: pin.left, top: pin.top, width: pin.width }}
         >
           {options[0] !== undefined ? (
             <FilterOption

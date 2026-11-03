@@ -305,7 +305,7 @@ describe('FilterMenu', () => {
     expect(screen.getByRole('listbox').querySelector('.border-t')).toBeTruthy();
   });
 
-  it('keeps one column up to 8 options and wraps longer lists, capped at 6', () => {
+  it('keeps one column up to 8 options and adds columns that fit the window', () => {
     function labels(count: number): MenuOption[] {
       const rows: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
       for (let index = 1; index < count; index += 1) {
@@ -332,7 +332,8 @@ describe('FilterMenu', () => {
       [25, 'grid-cols-4'],
       [33, 'grid-cols-5'],
       [41, 'grid-cols-6'],
-      [49, 'grid-cols-6'],
+      [49, 'grid-cols-7'],
+      [57, 'grid-cols-8'],
     ] as const) {
       const view = render(
         <FilterMenu
@@ -392,43 +393,50 @@ describe('FilterMenu', () => {
 
   it('flips the panel inward and upward when it would leave the window', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
-    rect.mockReturnValue({
-      x: 0,
-      y: 0,
-      top: 0,
-      left: 0,
-      right: 2000,
-      bottom: 20,
-      width: 200,
-      height: 20,
-      toJSON() {
-        return {};
-      },
+    let mode: 'wide' | 'tall' = 'wide';
+    rect.mockImplementation(function (this: HTMLElement) {
+      const end = this.classList.contains('right-0');
+      const above = this.classList.contains('bottom-full');
+      const wide = mode === 'wide';
+      const left = 20;
+      const top = 20;
+      const width = wide ? 200 : 20;
+      const height = wide ? 20 : 200;
+      const right = wide && !end ? window.innerWidth + 40 : left + width;
+      const bottom = !wide && !above ? window.innerHeight + 40 : top + height;
+      return {
+        x: left,
+        y: top,
+        top,
+        left,
+        right,
+        bottom,
+        width,
+        height,
+        toJSON() {
+          return {};
+        },
+      };
     });
-    renderMenu('');
-    fireEvent.click(trigger());
-    const listbox = screen.getByRole('listbox');
-    expect(listbox.className).toContain('right-0');
-    expect(listbox.className).toContain('top-full');
-    rect.mockReturnValue({
-      x: 0,
-      y: 0,
-      top: 0,
-      left: 0,
-      right: 20,
-      bottom: 2000,
-      width: 20,
-      height: 200,
-      toJSON() {
-        return {};
-      },
-    });
-    fireEvent(window, new Event('resize'));
-    expect(screen.getByRole('listbox').className).toContain('left-0');
-    expect(screen.getByRole('listbox').className).toContain('bottom-full');
-    fireEvent(window, new Event('resize'));
-    expect(screen.getByRole('listbox').className).toContain('bottom-full');
-    rect.mockRestore();
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('absolute');
+      expect(listbox.className).toContain('right-0');
+      expect(listbox.className).toContain('top-full');
+      expect(listbox.style.left).toBe('');
+      mode = 'tall';
+      fireEvent(window, new Event('scroll'));
+      const flipped = screen.getByRole('listbox');
+      expect(flipped.className).toContain('left-0');
+      expect(flipped.className).toContain('bottom-full');
+      expect(flipped.style.left).toBe('');
+      fireEvent(window, new Event('resize'));
+      expect(screen.getByRole('listbox').className).toContain('bottom-full');
+    } finally {
+      rect.mockRestore();
+    }
   });
 
   it('settles after one placement when the measured rect depends on the alignment class', () => {
@@ -441,10 +449,10 @@ describe('FilterMenu', () => {
       return {
         x: 0,
         y: 0,
-        top: 0,
-        left: 0,
-        right: end ? 20 : window.innerWidth + 40,
-        bottom: above ? 20 : window.innerHeight + 40,
+        top: 20,
+        left: 20,
+        right: end ? 40 : window.innerWidth + 40,
+        bottom: above ? 40 : window.innerHeight + 40,
         width: 200,
         height: 200,
         toJSON() {
@@ -455,7 +463,7 @@ describe('FilterMenu', () => {
     try {
       renderMenu('');
       fireEvent.click(trigger());
-      expect(measures).toBe(1);
+      expect(measures).toBe(2);
       const tokens = screen.getByRole('listbox').className.split(/\s+/);
       expect(tokens).toContain('right-0');
       expect(tokens).toContain('bottom-full');
@@ -463,6 +471,159 @@ describe('FilterMenu', () => {
       expect(tokens).not.toContain('top-full');
     } finally {
       rect.mockRestore();
+    }
+  });
+
+  it('pins the panel inside the window when flipping still overflows', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockReturnValue({
+      x: 0,
+      y: 0,
+      top: -40,
+      left: -40,
+      right: window.innerWidth + 80,
+      bottom: window.innerHeight + 80,
+      width: window.innerWidth + 120,
+      height: window.innerHeight + 120,
+      toJSON() {
+        return {};
+      },
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('fixed');
+      expect(listbox.className).not.toContain('absolute');
+      expect(listbox.style.left).toBe('8px');
+      expect(listbox.style.top).toBe('8px');
+      expect(listbox.style.width).toBe(`${window.innerWidth - 16}px`);
+      expect(listbox.style.right).toBe('');
+      expect(listbox.style.overflowY).toBe('');
+      fireEvent(window, new Event('resize'));
+      expect(listbox.style.left).toBe('8px');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('uses fewer columns when the window cannot fit eight-row columns', () => {
+    const previous = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 200 });
+    try {
+      const rows: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
+      for (let index = 1; index < 57; index += 1) {
+        rows.push({ value: `v${index}`, label: `Option ${index}`, swatch: null });
+      }
+      render(
+        <FilterMenu label="Blockchain" value="" allLabel="All" options={rows} onChange={vi.fn()} />,
+      );
+      fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+      expect(screen.getByRole('listbox').querySelector('.grid')?.className).toContain(
+        'grid-cols-1',
+      );
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previous });
+    }
+  });
+
+  it('leaves the panel unpinned when the flipped rect sits inside the inset', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockReturnValue({
+      x: 20,
+      y: 20,
+      top: 20,
+      left: 20,
+      right: 220,
+      bottom: 80,
+      width: 200,
+      height: 60,
+      toJSON() {
+        return {};
+      },
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('absolute');
+      expect(listbox.style.left).toBe('');
+      expect(listbox.style.top).toBe('');
+      expect(listbox.style.width).toBe('');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('pulls a panel back from the right edge and from below the window', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    const width = 200;
+    const parkedLeft = window.innerWidth - 100;
+    rect.mockReturnValue({
+      x: parkedLeft,
+      y: 40,
+      top: 40,
+      left: parkedLeft,
+      right: parkedLeft + width,
+      bottom: 120,
+      width,
+      height: 80,
+      toJSON() {
+        return {};
+      },
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('fixed');
+      expect(listbox.style.left).toBe(`${window.innerWidth - 8 - width}px`);
+      expect(listbox.style.top).toBe('40px');
+      expect(listbox.style.width).toBe(`${width}px`);
+      expect(listbox.style.right).toBe('');
+      rect.mockReturnValue({
+        x: 40,
+        y: window.innerHeight + 20,
+        top: window.innerHeight + 20,
+        left: 40,
+        right: 140,
+        bottom: window.innerHeight + 80,
+        width: 100,
+        height: 60,
+        toJSON() {
+          return {};
+        },
+      });
+      fireEvent(window, new Event('resize'));
+      expect(listbox.style.top).toBe('8px');
+      expect(listbox.style.left).toBe('40px');
+      expect(listbox.style.width).toBe('100px');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('uses the full twelve columns when the window is too short for eight rows', () => {
+    const previousWidth = window.innerWidth;
+    const previousHeight = window.innerHeight;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 2000 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 80 });
+    try {
+      const rows: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
+      for (let index = 1; index < 57; index += 1) {
+        rows.push({ value: `v${index}`, label: `Option ${index}`, swatch: null });
+      }
+      render(
+        <FilterMenu label="Blockchain" value="" allLabel="All" options={rows} onChange={vi.fn()} />,
+      );
+      fireEvent.click(screen.getByRole('combobox', { name: 'Blockchain' }));
+      const tokens =
+        screen.getByRole('listbox').querySelector('.grid')?.className.split(/\s+/) ?? [];
+      expect(tokens).toContain('grid-cols-12');
+      expect(tokens).not.toContain('grid-cols-1');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: previousHeight });
     }
   });
 

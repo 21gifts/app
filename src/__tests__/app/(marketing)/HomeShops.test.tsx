@@ -1266,10 +1266,11 @@ describe('HomeShops', () => {
     changeMenu(copy.country, '');
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
 
+    expect(cellTexts('Dee')).toContain('SPAR');
     changeMenu(copy.name, 'SPAR');
-    expect(bodyNames()).toEqual(['Ann', 'Cia']);
+    expect(bodyNames()).toEqual(['Ann', 'Cia', 'Dee']);
     changeMenu(copy.name, 'others');
-    expect(bodyNames()).toEqual(['Bea', 'Dee', 'Eve']);
+    expect(bodyNames()).toEqual(['Bea', 'Eve']);
     changeMenu(copy.name, '');
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
   });
@@ -3481,6 +3482,11 @@ describe('HomeShops', () => {
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('652px');
     expect(Number.parseFloat(dialog.style.top) + 100).toBeLessThanOrEqual(768 - 16);
+    setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
+    setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
+    fireEvent(window, new Event('scroll'));
+    expect(dialog.style.top).toBe('172px');
+    expect(dialog.style.left).toBe('40px');
 
     fireEvent.mouseDown(dialog);
     expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);

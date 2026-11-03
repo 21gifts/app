@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { CircleHelp } from 'lucide-react';
+import { flushSync } from 'react-dom';
+import { createRoot, type Root } from 'react-dom/client';
+import { CircleHelp, X } from 'lucide-react';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { countryDisplayName } from '@/lib/countries';
 import type { Locale } from '@/lib/locale';
@@ -404,10 +406,14 @@ function countryMatches(country: unknown, selected: string): boolean {
   return countryCode(country) === selected;
 }
 
+function isSpar(shopName: unknown): boolean {
+  return trimmedString(shopName) === 'SPAR';
+}
+
 function shopNameMatches(shopName: unknown, selected: string): boolean {
   if (selected === '') return true;
-  if (selected === 'SPAR') return shopName === 'SPAR';
-  return shopName !== 'SPAR';
+  if (selected === 'SPAR') return isSpar(shopName);
+  return !isSpar(shopName);
 }
 
 function activityMatches(activity: string, selected: string): boolean {
@@ -608,11 +614,11 @@ function countryValues(places: readonly Record<string, unknown>[], locale: strin
 
 function nameValues(places: readonly Record<string, unknown>[]): string[] {
   const values: string[] = [];
-  if (countWhere(places, (place) => place['shopName'] === 'SPAR') > 0) values.push('SPAR');
-  if (countWhere(places, (place) => place['shopName'] !== 'SPAR') > 0) values.push('others');
+  if (countWhere(places, (place) => isSpar(place['shopName'])) > 0) values.push('SPAR');
+  if (countWhere(places, (place) => !isSpar(place['shopName'])) > 0) values.push('others');
   return splittingValues(places, values, (place, value) => {
-    if (value === 'SPAR') return place['shopName'] === 'SPAR';
-    return place['shopName'] !== 'SPAR';
+    if (value === 'SPAR') return isSpar(place['shopName']);
+    return !isSpar(place['shopName']);
   });
 }
 
@@ -869,6 +875,32 @@ function svgIcon(path: string, className: string): SVGSVGElement {
   return svg;
 }
 
+type PopupClose = { root: Root; host: HTMLElement };
+
+const popupCloses = new Set<PopupClose>();
+
+function unmountPopupNode(entry: PopupClose): void {
+  // The button can already be gone: a test removes it, and map teardown can
+  // drop the node first. Unmounting then throws NotFoundError.
+  if (entry.host.querySelector('.shop-popup-close') === null) return;
+  entry.root.unmount();
+}
+
+function unmountPopupClose(entry: PopupClose): void {
+  popupCloses.delete(entry);
+  queueMicrotask(() => {
+    unmountPopupNode(entry);
+  });
+}
+
+function unmountPopupCloses(): void {
+  const entries = [...popupCloses];
+  popupCloses.clear();
+  queueMicrotask(() => {
+    for (const entry of entries) unmountPopupNode(entry);
+  });
+}
+
 function popupContent(
   row: ShopRow,
   showCategory: boolean,
@@ -877,16 +909,32 @@ function popupContent(
 ): HTMLElement {
   const content = document.createElement('div');
   content.className = 'shop-popup-card';
-  const close = document.createElement('button');
-  close.type = 'button';
-  close.className = 'shop-popup-close';
-  close.setAttribute('aria-label', closeLabel);
-  close.appendChild(svgIcon('M18 6 6 18M6 6l12 12', 'shop-popup-x'));
-  close.addEventListener('click', (event: MouseEvent) => {
-    event.stopPropagation();
-    onClose();
+  const host = document.createElement('div');
+  content.appendChild(host);
+  const root = createRoot(host);
+  const entry: PopupClose = { root, host };
+  popupCloses.add(entry);
+  // paintMarkers runs inside a React effect. Flushing here warns and can
+  // unmount a root mid-render, so the button commits on the next microtask.
+  queueMicrotask(() => {
+    flushSync(() => {
+      root.render(
+        <IconButton
+          aria-label={closeLabel}
+          variant="ghost"
+          size="md"
+          className="shop-popup-close border border-ink/12 bg-paper"
+          onClick={(event) => {
+            event.stopPropagation();
+            unmountPopupClose(entry);
+            onClose();
+          }}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>,
+      );
+    });
   });
-  content.appendChild(close);
   if (row.coverPhotoUrl !== null) {
     const image = document.createElement('img');
     image.src = row.coverPhotoUrl;
@@ -1385,6 +1433,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const paintMarkers = useCallback((): void => {
     const session = sessionRef.current;
     if (session === null) return;
+    unmountPopupCloses();
     clearClusters();
     for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
@@ -1665,6 +1714,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         session.map.remove();
       }
       sessionRef.current = null;
+      unmountPopupCloses();
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
       clearClusters();
@@ -1706,8 +1756,10 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     }
     place();
     window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
     return () => {
       window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
     };
   }, [helpOpen, helpBox]);
 

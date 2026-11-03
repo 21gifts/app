@@ -207,25 +207,25 @@ The table is sorted by Activity, descending. The Activity column header has aria
 
 ### Variant: shops-marker
 
-Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are masked.
+Map stays selected. The shop marker is open and shows the name Sample as a link. Map tiles are hidden.
 
 ![21.gifts home shops marker](images/root-shops-marker.png)
 
 ### Variant: shops-cluster
 
-Map stays selected and is zoomed out. Three Manila shops share one cluster button labelled 3 shops. The Nairobi shop stays its own pin. Map tiles are masked.
+Map stays selected and is zoomed out. Three Manila shops share one cluster button labelled 3 shops. The Nairobi shop stays its own pin. Map tiles are hidden.
 
 ![21.gifts home shops cluster](images/root-shops-cluster.png)
 
 ### Variant: shops-pins
 
-Map stays selected after the cluster is opened. The three Manila shops are separate pins inside the frame. The Nairobi shop is also its own pin and sits outside this frame. The 3 shops cluster button is gone. This is a different state from the zoomed-out cluster: those shops are drawn as individual pins. Map tiles are masked.
+Map stays selected after the cluster is opened. The three Manila shops are separate pins inside the frame. The Nairobi shop is also its own pin and sits outside this frame. The 3 shops cluster button is gone. This is a different state from the zoomed-out cluster: those shops are drawn as individual pins. Map tiles are hidden.
 
 ![21.gifts home shops pins](images/root-shops-pins.png)
 
 ### Variant: shops-attribution
 
-Map stays selected. The attribution control is open and shows MapLibre. Map tiles, the shop pin, and any cluster are masked.
+Map stays selected. The attribution control is open and shows MapLibre. Map tiles are hidden. The shop pin stays visible.
 
 ![21.gifts home shops attribution](images/root-shops-attribution.png)
 

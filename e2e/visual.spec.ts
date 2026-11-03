@@ -1152,6 +1152,12 @@ async function sortHomeShops(
   );
 }
 
+async function hideMapTiles(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: '#shop-places-map .maplibregl-canvas { visibility: hidden; }',
+  });
+}
+
 /**
  * Waits until no public grant-places panel is still loading, so a capture never
  * depends on how fast `GET /funding/places` answers.
@@ -2640,7 +2646,8 @@ test.describe('screen baselines', () => {
     await expect(marker).toHaveCount(1, { timeout: 20_000 });
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-marker');
   });
 
   test('state / shops-cluster', async ({ page }) => {
@@ -2650,7 +2657,8 @@ test.describe('screen baselines', () => {
     await expect(
       page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
     ).toHaveCount(1);
-    await shotScreen(page, 'state-root-shops-cluster', true, page.locator('.maplibregl-canvas'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-cluster');
   });
 
   test('state / shops-pins', async ({ page }) => {
@@ -2661,7 +2669,8 @@ test.describe('screen baselines', () => {
       page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
     ).toHaveCount(4);
     await expect(page.getByRole('button', { name: '3 shops' })).toHaveCount(0);
-    await shotScreen(page, 'state-root-shops-pins', true, page.locator('.maplibregl-canvas'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-pins');
   });
 
   test('state / shops-attribution', async ({ page }) => {
@@ -2687,12 +2696,8 @@ test.describe('screen baselines', () => {
     await pressToggle();
     await expect(mapLibre).toBeVisible();
     await expect(attribution).toHaveClass(/maplibregl-compact-show/);
-    await shotScreen(
-      page,
-      'state-root-shops-attribution',
-      true,
-      page.locator('#shop-places-map .maplibregl-canvas, #shop-places-map .maplibregl-marker'),
-    );
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-attribution');
   });
 
   test('state / shops-help', async ({ page }) => {
