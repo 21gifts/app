@@ -101,7 +101,7 @@ describe('LanguageSwitcher', () => {
   });
 
   it('reloads the open loopback page instead of requesting a language URL', () => {
-    for (const hostname of ['127.0.0.1', 'localhost', '::1']) {
+    for (const hostname of ['127.0.0.1', 'localhost', '::1', '0.0.0.0']) {
       const reload = vi.fn();
       const replace = vi.fn();
       vi.stubGlobal('location', {
