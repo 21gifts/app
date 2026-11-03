@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  canStepBack,
   goToPreviousView,
   markBackNavigation,
   previousViewPath,
@@ -884,6 +885,27 @@ describe('returnToView', () => {
     returnToView('/pos', nav);
     expect(nav.back).not.toHaveBeenCalled();
     expect(nav.replace).toHaveBeenCalledWith('/pos');
+  });
+});
+
+describe('canStepBack', () => {
+  it('previews the claim and leaves it for takeStepBack', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    expect(canStepBack('/shops')).toBe(true);
+    expect(canStepBack('/shops')).toBe(true);
+    expect(takeStepBack('/shops')).toBe(true);
+    expect(canStepBack('/shops')).toBe(false);
+  });
+
+  it('is false for another path and when the entry was not pushed over the view below', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    expect(canStepBack('/welcome')).toBe(false);
+    const state = { ...(window.history.state as Record<string, unknown>) };
+    delete state['giftsBelow'];
+    window.history.replaceState(state, '');
+    expect(canStepBack('/shops')).toBe(false);
   });
 });
 

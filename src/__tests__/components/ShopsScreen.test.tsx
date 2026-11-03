@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { canStepBack } from '@/lib/view-history';
 
 const forumLoader = vi.hoisted(() => vi.fn());
 const mounts = vi.hoisted(() => vi.fn());
@@ -15,6 +16,10 @@ const routerPush = vi.hoisted(() =>
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof routerPush } => ({ push: routerPush }),
+}));
+
+vi.mock('@/lib/view-history', () => ({
+  canStepBack: vi.fn(() => false),
 }));
 
 vi.mock('@/components/ForumLoader', () => ({
@@ -140,6 +145,8 @@ afterEach(() => {
   forumLoader.mockClear();
   routerPush.mockClear();
   mounts.mockClear();
+  vi.mocked(canStepBack).mockReset();
+  vi.mocked(canStepBack).mockImplementation(() => false);
 });
 
 describe('ShopsScreen', () => {
@@ -214,6 +221,29 @@ describe('ShopsScreen', () => {
     );
     popTo('/shops#post');
     expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+  });
+
+  it('keeps the restored posts view when the top-left arrow steps back', () => {
+    vi.mocked(canStepBack).mockImplementation((path: string) => path === '/shops');
+    window.history.replaceState(null, '', '/shops?pin=p2#map');
+    renderWithLocale(<ShopsScreen />);
+    expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
+    const link = document.createElement('a');
+    link.href = '/shops';
+    document.body.append(link);
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.history.replaceState(null, '', '/shops#post');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    vi.useFakeTimers();
+    fireEvent.click(link);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+    link.remove();
   });
 
   it('shows the map when the table opens a place, and ignores other clicks', () => {

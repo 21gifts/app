@@ -11,6 +11,7 @@ import { ShopsViewSwitch, type ShopsView } from '@/components/ShopsViewSwitch';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card } from '@/components/ui';
 import { shopCountryFromQuery } from '@/lib/shop-country';
+import { canStepBack } from '@/lib/view-history';
 
 /**
  * View named by `/shops#list`, `/shops#post`, `/shops#map`, or `/shops#table`.
@@ -63,7 +64,10 @@ function shopsCountryHref(country: string | null): string {
  * A plain click on a link to a view of this same page (a place opens `/shops?pin=…#map`)
  * shows that view (no or an unknown hash is List, as on load), since the client-side push
  * fires no `hashchange`. The push keeps the entry the link was clicked from for browser
- * Back (`popstate`). Links with `target` or `download` are ignored.
+ * Back (`popstate`). The top-left arrow steps back with `router.back()` when that entry
+ * was pushed in this document. Its href is the view-stack path and has no hash, so the
+ * view follows the restored entry (`popstate`), not that href. Links with `target` or
+ * `download` are ignored.
  * The view stays unset until the hash is read, so the list, post feed, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
@@ -118,8 +122,14 @@ export function ShopsScreen(): ReactElement {
       if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
         return;
       }
-      // Same rule as the hash on load: none or an unknown one is List. The
-      // top-left arrow back to `/shops` carries no hash.
+      // The top-left arrow's href is the previous view-stack path and carries
+      // no hash. When that click steps back, the restored entry keeps its hash
+      // (`/shops#post`). Applying the href would show List over those posts.
+      const historyPath = `${url.pathname}${url.search}`;
+      if (canStepBack(historyPath)) {
+        return;
+      }
+      // Same rule as the hash on load: none or an unknown one is List.
       const next = shopsViewFromHash(url.hash) ?? 'list';
       const nextCountry = shopCountryFromQuery(url.searchParams.get('country'));
       // The router push carries the hash and keeps the entry being left for Back.

@@ -597,6 +597,38 @@ export function markBackNavigation(path: string): void {
 }
 
 /**
+ * The in-memory stack when a plain click to `path` may step back, or null.
+ * Does not claim the step.
+ *
+ * @param path - In-app path the caller wants to open.
+ * @returns The slot to claim, or null when {@link takeStepBack} would return false.
+ */
+function stepBackClaim(path: string): ViewHistoryMemory | null {
+  const slot = hydrateSlot();
+  if (slot === null || !slot.pushed || previousViewPath() !== path) {
+    return null;
+  }
+  // The entry itself must say so: an entry the router pushed without a record
+  // (a hash link) has no stamp, and the entry below it is the same view.
+  if (stampedIndex() !== slot.cursor + slot.base || !stampedBelow()) {
+    return null;
+  }
+  return slot;
+}
+
+/**
+ * Whether a plain click toward `path` will step back with `router.back()`.
+ * Same conditions as {@link takeStepBack}, without claiming the step, so the
+ * arrow can still claim it on the same click.
+ *
+ * @param path - In-app path the caller wants to open.
+ * @returns True when {@link takeStepBack} would tell the caller to call `router.back()`.
+ */
+export function canStepBack(path: string): boolean {
+  return stepBackClaim(path) !== null;
+}
+
+/**
  * Claim a browser back step to `path` when the current history entry was
  * pushed in this document on top of it, the view before it in this tab. Then
  * `router.back()` opens `path` client-side, the same step as the browser's
@@ -607,13 +639,8 @@ export function markBackNavigation(path: string): void {
  * @returns True when the caller should now call `router.back()`.
  */
 export function takeStepBack(path: string): boolean {
-  const slot = hydrateSlot();
-  if (slot === null || !slot.pushed || previousViewPath() !== path) {
-    return false;
-  }
-  // The entry itself must say so: an entry the router pushed without a record
-  // (a hash link) has no stamp, and the entry below it is the same view.
-  if (stampedIndex() !== slot.cursor + slot.base || !stampedBelow()) {
+  const slot = stepBackClaim(path);
+  if (slot === null) {
     return false;
   }
   slot.pushed = false;
