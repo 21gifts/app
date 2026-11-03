@@ -249,7 +249,11 @@ const HELP_ROWS: readonly (readonly [keyof HomeShopsCopy, keyof HomeShopsCopy, s
 ];
 
 function placesEndpoint(hostname: string): string {
-  if (hostname === GIFTS || hostname === `www.${GIFTS}`) return PROD_PLACES;
+  // The local preview is opened on 127.0.0.1. That host reads the production
+  // map so shop photos are present; every other non-production host stays on dev.
+  if (hostname === GIFTS || hostname === `www.${GIFTS}` || hostname === '127.0.0.1') {
+    return PROD_PLACES;
+  }
   return DEV_PLACES;
 }
 
@@ -1024,22 +1028,30 @@ function restyleLayers(style: Record<string, unknown>, locale: string): Record<s
       layer['paint'] = { 'fill-color': '#eeebe5' };
     }
     if (type === 'symbol') {
-      const paint = paintRecord(layer);
-      const water = /water/.test(id);
-      paint['text-color'] = water ? 'rgba(10,9,12,0.32)' : 'rgba(10,9,12,0.58)';
-      paint['text-halo-color'] = water ? '#f5f2ec' : '#ffffff';
-      layer['paint'] = paint;
-      const layout = layer['layout'];
-      if (isRecord(layout) && layout['text-field'] !== undefined) {
+      if (/highway-shield|road_shield/.test(id)) {
+        const shieldLayout = layer['layout'];
         layer['layout'] = {
-          ...layout,
-          'text-field': [
-            'coalesce',
-            ['get', `name:${locale}`],
-            ['get', 'name:latin'],
-            ['get', 'name'],
-          ],
+          ...(isRecord(shieldLayout) ? shieldLayout : {}),
+          visibility: 'none',
         };
+      } else {
+        const paint = paintRecord(layer);
+        const water = /water/.test(id);
+        paint['text-color'] = water ? 'rgba(10,9,12,0.32)' : 'rgba(10,9,12,0.58)';
+        paint['text-halo-color'] = water ? '#f5f2ec' : '#ffffff';
+        layer['paint'] = paint;
+        const layout = layer['layout'];
+        if (isRecord(layout) && layout['text-field'] !== undefined) {
+          layer['layout'] = {
+            ...layout,
+            'text-field': [
+              'coalesce',
+              ['get', `name:${locale}`],
+              ['get', 'name:latin'],
+              ['get', 'name'],
+            ],
+          };
+        }
       }
     }
   }

@@ -43,6 +43,7 @@ describe('FilterMenu', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.hasAttribute('aria-activedescendant')).toBe(false);
     expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
+    expect(button.className.split(/\s+/)).toContain('gap-6');
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
@@ -428,12 +429,13 @@ describe('FilterMenu', () => {
       expect(listbox.style.left).toBe('');
       mode = 'tall';
       fireEvent(window, new Event('scroll'));
+      expect(screen.getByRole('listbox').className).toContain('right-0');
+      expect(screen.getByRole('listbox').className).toContain('top-full');
+      fireEvent(window, new Event('resize'));
       const flipped = screen.getByRole('listbox');
       expect(flipped.className).toContain('left-0');
       expect(flipped.className).toContain('bottom-full');
       expect(flipped.style.left).toBe('');
-      fireEvent(window, new Event('resize'));
-      expect(screen.getByRole('listbox').className).toContain('bottom-full');
     } finally {
       rect.mockRestore();
     }
@@ -555,6 +557,126 @@ describe('FilterMenu', () => {
     }
   });
 
+  it('keeps a fitting panel on the pill when a later scroll moves the pill offscreen', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    let pillOffscreen = false;
+    rect.mockImplementation(() => {
+      const top = pillOffscreen ? -61 : 20;
+      const bottom = pillOffscreen ? -1 : 80;
+      return {
+        x: 20,
+        y: top,
+        top,
+        left: 20,
+        right: 220,
+        bottom,
+        width: 200,
+        height: 60,
+        toJSON() {
+          return {};
+        },
+      };
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('absolute');
+      expect(listbox.className).not.toContain('fixed');
+      pillOffscreen = true;
+      fireEvent(window, new Event('scroll'));
+      fireEvent(window, new Event('resize'));
+      expect(listbox.className).toContain('absolute');
+      expect(listbox.className).not.toContain('fixed');
+      expect(listbox.style.left).toBe('');
+      expect(listbox.style.top).toBe('');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('keeps a fitting panel on the pill when a later scroll moves the pill below the window', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    let pillBelow = false;
+    rect.mockImplementation(() => {
+      const top = pillBelow ? window.innerHeight : 20;
+      const bottom = pillBelow ? window.innerHeight + 60 : 80;
+      return {
+        x: 20,
+        y: top,
+        top,
+        left: 20,
+        right: 220,
+        bottom,
+        width: 200,
+        height: 60,
+        toJSON() {
+          return {};
+        },
+      };
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('absolute');
+      pillBelow = true;
+      fireEvent(window, new Event('scroll'));
+      fireEvent(window, new Event('resize'));
+      expect(listbox.className).toContain('absolute');
+      expect(listbox.className).not.toContain('fixed');
+      expect(listbox.style.top).toBe('');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('repositions a pinned panel on scroll while the pill stays in the window', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    const width = 200;
+    const parkedLeft = window.innerWidth - 100;
+    rect.mockReturnValue({
+      x: parkedLeft,
+      y: 40,
+      top: 40,
+      left: parkedLeft,
+      right: parkedLeft + width,
+      bottom: 120,
+      width,
+      height: 80,
+      toJSON() {
+        return {};
+      },
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('fixed');
+      const pinnedLeft = `${window.innerWidth - 8 - width}px`;
+      expect(listbox.style.left).toBe(pinnedLeft);
+      rect.mockReturnValue({
+        x: 40,
+        y: window.innerHeight + 20,
+        top: window.innerHeight + 20,
+        left: 40,
+        right: 140,
+        bottom: window.innerHeight + 80,
+        width: 100,
+        height: 60,
+        toJSON() {
+          return {};
+        },
+      });
+      fireEvent(window, new Event('scroll'));
+      expect(listbox.style.left).toBe(pinnedLeft);
+      expect(listbox.style.top).toBe('40px');
+      expect(listbox.className).toContain('fixed');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
   it('pulls a panel back from the right edge and from below the window', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
     const width = 200;
@@ -581,18 +703,35 @@ describe('FilterMenu', () => {
       expect(listbox.style.top).toBe('40px');
       expect(listbox.style.width).toBe(`${width}px`);
       expect(listbox.style.right).toBe('');
-      rect.mockReturnValue({
-        x: 40,
-        y: window.innerHeight + 20,
-        top: window.innerHeight + 20,
-        left: 40,
-        right: 140,
-        bottom: window.innerHeight + 80,
-        width: 100,
-        height: 60,
-        toJSON() {
-          return {};
-        },
+      rect.mockImplementation(function (this: HTMLElement) {
+        if (this.getAttribute('role') !== 'listbox') {
+          return {
+            x: 40,
+            y: 40,
+            top: 40,
+            left: 40,
+            right: 180,
+            bottom: 80,
+            width: 140,
+            height: 40,
+            toJSON() {
+              return {};
+            },
+          };
+        }
+        return {
+          x: 40,
+          y: window.innerHeight + 20,
+          top: window.innerHeight + 20,
+          left: 40,
+          right: 140,
+          bottom: window.innerHeight + 80,
+          width: 100,
+          height: 60,
+          toJSON() {
+            return {};
+          },
+        };
       });
       fireEvent(window, new Event('resize'));
       expect(listbox.style.top).toBe('8px');

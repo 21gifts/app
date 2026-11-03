@@ -48,16 +48,24 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BUILD_ID: buildIdForBuild(),
   },
   async redirects() {
+    // Middleware rewrites a language URL onto `/` with an http address. On a local
+    // host that matches the canonical redirect below. Production http still redirects.
+    const localHost = [
+      { type: 'host' as const, value: 'localhost' },
+      { type: 'host' as const, value: '127.0.0.1' },
+    ];
     return [
       {
         source: '/',
         has: [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }],
+        missing: localHost,
         destination: 'https://21.gifts/',
         permanent: true,
       },
       {
         source: '/:path*',
         has: [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }],
+        missing: localHost,
         destination: 'https://21.gifts/:path*',
         permanent: true,
       },

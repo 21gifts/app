@@ -130,13 +130,27 @@ function inMenu(target: EventTarget | null, menuId: string): boolean {
 }
 
 /**
+ * Whether the pill sits fully outside the window.
+ *
+ * @param trigger - The combobox button.
+ * @returns True when the pill does not intersect the window.
+ */
+function triggerOutsideWindow(trigger: HTMLElement): boolean {
+  const rect = trigger.getBoundingClientRect();
+  return rect.bottom < 0 || rect.top >= window.innerHeight;
+}
+
+/**
  * Custom listbox for one homepage shop filter.
  *
  * The closed control is a pill: the label sits on the left and the chosen value
  * sits directly before the chevron. An open list floats under the pill, flips
  * inward when it would leave the window, and wraps into columns. If the flipped
  * panel still crosses an 8px inset, its left, top, and width are pinned inside
- * the window. The list stays on the page scrollport.
+ * the window. The list is measured when it opens and when the window resizes.
+ * Scrolling does not measure it again, and a resize while the pill is outside
+ * the window does not measure it again, so the list stays on the pill. The list
+ * stays on the page scrollport.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -191,8 +205,12 @@ export function FilterMenu({
     if (!open) return undefined;
     function place(): void {
       const panel = panelRef.current;
+      const trigger = triggerRef.current;
       /* v8 ignore next -- the open panel is committed before this layout effect reads it */
       if (panel === null) return;
+      /* v8 ignore next -- the trigger stays mounted while the list is open */
+      if (trigger === null) return;
+      if (triggerOutsideWindow(trigger)) return;
       const nextColumns = columnCount(options.length, window.innerWidth, window.innerHeight);
       const grid = panel.querySelector('.grid');
       if (grid !== null) {
@@ -204,8 +222,17 @@ export function FilterMenu({
       }
       const previous = panel.className;
       const previousStyle = panel.getAttribute('style');
-      panel.classList.remove('right-0', 'left-0', 'bottom-full', 'top-full', 'mb-1.5', 'mt-1.5');
-      panel.classList.add('left-0', 'top-full', 'mt-1.5');
+      panel.classList.remove(
+        'fixed',
+        'absolute',
+        'right-0',
+        'left-0',
+        'bottom-full',
+        'top-full',
+        'mb-1.5',
+        'mt-1.5',
+      );
+      panel.classList.add('absolute', 'left-0', 'top-full', 'mt-1.5');
       clearPinStyle(panel);
       const natural = panel.getBoundingClientRect();
       const nextAlign: MenuAlign =
@@ -230,10 +257,8 @@ export function FilterMenu({
     }
     place();
     window.addEventListener('resize', place);
-    window.addEventListener('scroll', place, true);
     return () => {
       window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place, true);
     };
   }, [open, options.length]);
 
@@ -355,7 +380,7 @@ export function FilterMenu({
         type="button"
         role="combobox"
         data-value={value}
-        className={`flex h-10 w-full min-w-0 items-center rounded-full border py-0 pr-4 pl-4 ${triggerTone}`}
+        className={`flex h-10 w-full min-w-0 items-center gap-6 rounded-full border py-0 pr-4 pl-4 ${triggerTone}`}
         aria-controls={listboxId}
         aria-haspopup="listbox"
         aria-expanded={open}

@@ -704,6 +704,15 @@ describe('HomeShops', () => {
     expect(latestPlaces().url).toBe(PROD_PLACES);
   });
 
+  it('uses the production map on the local preview host', async () => {
+    setHostname('127.0.0.1');
+    renderShops();
+    expect(latestFilters().url).toBe(PROD_FILTERS);
+    await act(async () => latestFilters().resolve(jsonResponse(basicFilters({}), 200)));
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+    expect(latestPlaces().url).toBe(PROD_PLACES);
+  });
+
   it('shows the error text when the response is not usable and hides empty', async () => {
     renderShops();
     await resolveRaw(jsonResponse({ countries: [] }, 500), jsonResponse({ places: [] }, 200));
@@ -2812,6 +2821,13 @@ describe('HomeShops', () => {
     expect(layerField(painted[26], 'layout')).toEqual({});
     expect(layerField(painted[27], 'layout')).toBeUndefined();
     expect(painted[28]).toBeNull();
+    expect(layerField(painted[29], 'layout')).toEqual({
+      'text-field': '{ref}',
+      'icon-image': 'road_1',
+      visibility: 'none',
+    });
+    expect(paintOf(painted[29])).toEqual({});
+    expect(layerField(painted[30], 'layout')).toEqual({ visibility: 'none' });
   });
 
   it('keeps the map when the positron style cannot be applied', async () => {
@@ -3607,6 +3623,10 @@ function positronStyle(): { style: Place; layers: (Place | null)[] } {
     mapLayer('poi', 'symbol', { layout: {} }),
     mapLayer('road-label', 'symbol'),
     null,
+    mapLayer('highway-shield-non-us', 'symbol', {
+      layout: { 'text-field': '{ref}', 'icon-image': 'road_1' },
+    }),
+    mapLayer('road_shield_us', 'symbol'),
   ];
   return { style: { layers }, layers };
 }
