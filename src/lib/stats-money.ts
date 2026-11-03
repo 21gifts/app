@@ -6,13 +6,13 @@ import {
   type NumberFormatStyle,
 } from '@/lib/number-format';
 
-/** Supported preferred-fiat codes (switchers on Profile, the activity chart, `/stats`, and `/stats/[day]`; forum and the pay sheet display the code). */
+/** Supported preferred-fiat codes (switchers on Settings, the activity chart, `/stats`, and `/stats/[day]`; forum and the pay sheet display the code). */
 export const FIAT_CODES = ['CHF', 'EUR', 'USD', 'PHP'] as const;
 
 /** One of {@link FIAT_CODES}. */
 export type FiatCode = (typeof FIAT_CODES)[number];
 
-/** Cookie written when the visitor picks a fiat on Profile, the activity chart, `/stats`, or `/stats/[day]`. */
+/** Cookie written when the visitor picks a fiat on Settings, the activity chart, `/stats`, or `/stats/[day]`. */
 export const FIAT_COOKIE = 'fiat';
 
 /**
@@ -158,12 +158,15 @@ export function formatUsdTick(
   return formatFiatTick(usd, 'USD', style);
 }
 
-/** One gift-day row used to scale sats into CHF/EUR/USD/PHP. */
+/**
+ * Sats and their price in CHF/EUR/USD/PHP, used to scale sats into fiat:
+ * one gift day's totals, or the current spot price of 1 BTC ({@link spotRateDay}).
+ */
 export interface FiatRateDay {
-  /** Gift sats on that UTC day (must be greater than 0). */
+  /** Sats priced by the fiat fields (must be greater than 0). */
   sats: number;
-  /** USD total for that day. */
-  usd: string;
+  /** USD total, or `null` when there is no USD price. */
+  usd: string | null;
   /** CHF total, or `null` when unsummed. */
   chf: string | null;
   /** EUR total, or `null` when unsummed. */
@@ -185,12 +188,15 @@ function fiatFieldOnDay(day: FiatRateDay, code: FiatCode): string | null {
   }
 }
 
+/** Sats in one bitcoin, the amount a spot price is quoted for. */
+const SATS_PER_BTC = 100_000_000;
+
 /**
- * True when a gift-day total can scale sats into that currency.
+ * True when a total or price can scale sats into that currency.
  *
  * A null total, a non-numeric total, and `"0.00"` are not rates.
  *
- * @param raw - Stored gift-day total, or `null`.
+ * @param raw - Gift-day total or spot price, or `null`.
  * @returns Whether conversion may use it.
  */
 function fiatTotalUsable(raw: string | null): boolean {
@@ -202,46 +208,22 @@ function fiatTotalUsable(raw: string | null): boolean {
 }
 
 /**
- * Latest spend-over-time day that has gifts, for sats→fiat scaling.
+ * The current price of 1 BTC as a rate for sats→fiat scaling.
  *
- * This is the newest day with gifts, even when a currency total is missing.
- * Conversion uses {@link latestRateDayFor}, which skips that day.
- *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @returns Last day with `sats > 0`, or `null`.
+ * @param rates - `GET /fx/spot` prices of 1 BTC by code. A missing code has no rate.
+ * @returns A rate of 100'000'000 sats, or `null` when no code has a usable price.
  */
-export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0) {
-      return day;
-    }
-  }
-  return null;
-}
-
-/**
- * Latest gift day that can convert the preferred currency.
- *
- * Walks newest first. A day with gifts but a null or zero total for `code`
- * is skipped, so one incomplete gift cannot block the till. Returns `null`
- * when no earlier day has that currency either.
- *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @param code - Preferred fiat.
- * @returns That day, or `null`.
- */
-export function latestRateDayFor(
-  series: readonly FiatRateDay[],
-  code: FiatCode,
+export function spotRateDay(
+  rates: Partial<Record<FiatCode, string | undefined>>,
 ): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0 && fiatTotalUsable(fiatFieldOnDay(day, code))) {
-      return day;
-    }
-  }
-  return null;
+  const day: FiatRateDay = {
+    sats: SATS_PER_BTC,
+    usd: rates.USD ?? null,
+    chf: rates.CHF ?? null,
+    eur: rates.EUR ?? null,
+    php: rates.PHP ?? null,
+  };
+  return FIAT_CODES.some((code) => satsToFiatAmount(SATS_PER_BTC, day, code) !== null) ? day : null;
 }
 
 /** The four amounts shown next to a sat amount, or null when that currency has no rate. */
@@ -253,29 +235,77 @@ export interface ShownFiat {
 }
 
 /**
- * The fiat the payer sees for these sats, using the same day as the preview.
+ * Two-decimal form of a typed figure for a stored snapshot column.
+ * Missing fraction digits are padded. Further digits round half up.
+ * This rounds the typed figure, not the sats.
+ */
+function twoDecimalStored(amount: string): string | null {
+  if (!/^\d+(\.\d+)?$/.test(amount)) {
+    return null;
+  }
+  const dot = amount.indexOf('.');
+  const whole = dot < 0 ? amount : amount.slice(0, dot);
+  const frac = dot < 0 ? '' : amount.slice(dot + 1);
+  if (frac.length <= 2) {
+    return `${whole}.${frac.padEnd(2, '0')}`;
+  }
+  const keep = frac.slice(0, 2);
+  const next = frac.charAt(2);
+  if (next < '5') {
+    return `${whole}.${keep}`;
+  }
+  const bumped = (BigInt(`${whole}${keep}`) + 1n).toString().padStart(whole.length + 2, '0');
+  return `${bumped.slice(0, -2)}.${bumped.slice(-2)}`;
+}
+
+/**
+ * The fiat stored with these sats, using the same rate as the preview.
+ * A typed figure replaces that currency's spot. The other three stay the spot.
  *
  * @param sats - Whole sats about to be paid.
- * @param rateDay - Latest gift day, or null when no rate is on screen.
+ * @param rateDay - Current spot rate, or null when no rate is on screen.
+ * @param typed - Fiat the payer typed, or null when the field was bitcoin.
  * @returns Four strings or nulls. Null is stored as empty, not filled in later.
  */
-export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): ShownFiat {
-  return {
+export function shownFiatForSats(
+  sats: number,
+  rateDay: FiatRateDay | null,
+  typed?: { code: FiatCode; amount: string } | null,
+): ShownFiat {
+  const shown: ShownFiat = {
     amountUsd: satsToFiatAmount(sats, rateDay, 'USD'),
     amountChf: satsToFiatAmount(sats, rateDay, 'CHF'),
     amountEur: satsToFiatAmount(sats, rateDay, 'EUR'),
     amountPhp: satsToFiatAmount(sats, rateDay, 'PHP'),
   };
+  if (typed === undefined || typed === null) {
+    return shown;
+  }
+  const exact = twoDecimalStored(typed.amount);
+  if (exact === null) {
+    return shown;
+  }
+  if (typed.code === 'USD') {
+    shown.amountUsd = exact;
+  } else if (typed.code === 'CHF') {
+    shown.amountChf = exact;
+  } else if (typed.code === 'EUR') {
+    shown.amountEur = exact;
+  } else {
+    shown.amountPhp = exact;
+  }
+  return shown;
 }
 
 /**
- * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
+ * Scales whole sats into a two-decimal fiat amount using one rate: the spot
+ * rate, or one gift day's totals on the statistics pages.
  *
  * @param sats - Whole sats to convert (may be 0).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Two-decimal string, or `null` when the day or that fiat is missing
- *   or zero (a `"0.00"` gift-day total is not a usable rate).
+ *   or zero (a `"0.00"` price is not a usable rate).
  */
 export function satsToFiatAmount(
   sats: number,
@@ -310,7 +340,7 @@ export function satsToFiatAmount(
  * or when no digit count round-trips.
  *
  * @param sats - Whole sats to show.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns A plain dot-decimal string, or `null`.
  */
@@ -347,9 +377,9 @@ export function fiatDraftForSats(
 /**
  * A trimmed amount draft, as whole sats or a reason it is not.
  *
- * `no-rate` means a positive fiat amount whose gift-day total for that
- * currency is missing, not finite, or zero. A well-formed amount on a usable
- * total that does not become a safe sat count is `invalid`, not `no-rate`.
+ * `no-rate` means a positive fiat amount whose rate for that currency is
+ * missing, not finite, or zero. A well-formed amount on a usable rate that
+ * does not become a safe sat count is `invalid`, not `no-rate`.
  */
 export type AmountDraft =
   { kind: 'empty' } | { kind: 'invalid' } | { kind: 'no-rate' } | { kind: 'sats'; sats: number };
@@ -357,10 +387,10 @@ export type AmountDraft =
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /**
- * Inverse of {@link satsToFiatAmount} on the same gift-day totals.
+ * Inverse of {@link satsToFiatAmount} on the same rate.
  *
  * @param amount - Fiat amount (not a grouped string).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Whole sats, `0` when `amount` is 0, `1` when a positive amount
  *   rounds to 0, or `null` when the day or that fiat is missing or zero.
@@ -395,12 +425,12 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  *
  * @param unit - `btc` for digits-only sats, `fiat` for up to eight decimal places.
  * @param draft - Raw field value.
- * @param day - Gift day used for fiat conversion, or `null`.
+ * @param day - Rate used for fiat conversion (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns `empty` when blank, `invalid` when the text is not an amount
- *   or a well-formed amount on a usable total that does not become a safe
- *   sat count, `no-rate` when a positive fiat amount's gift-day total for
- *   that currency is missing, not finite, or zero, or `sats` (including 0;
+ *   or a well-formed amount on a usable rate that does not become a safe
+ *   sat count, `no-rate` when a positive fiat amount's rate for that
+ *   currency is missing, not finite, or zero, or `sats` (including 0;
  *   callers still clamp).
  */
 export function parseAmountDraft(
@@ -447,11 +477,84 @@ export function parseAmountDraft(
 }
 
 /**
+ * The fiat the member typed, kept exactly, or `null` when the field is bitcoin
+ * or the text is not a fiat amount. A trailing separator is dropped. The spot
+ * of the sats is not this figure.
+ */
+export function typedFiatFigure(
+  unit: 'btc' | 'fiat',
+  draft: string,
+  code: FiatCode,
+): { code: FiatCode; amount: string } | null {
+  if (unit !== 'fiat') {
+    return null;
+  }
+  const trimmed = draft.trim();
+  if (!FIAT_DRAFT.test(trimmed)) {
+    return null;
+  }
+  const normalized = trimmed.replace(',', '.');
+  const amount = normalized.endsWith('.') ? normalized.slice(0, -1) : normalized;
+  return { code, amount };
+}
+
+/**
+ * Copies `value` and, when `draft` is a typed fiat amount, adds that figure.
+ * A bitcoin field is returned unchanged.
+ */
+export function attachTypedFigure<T extends object>(
+  value: T,
+  unit: 'btc' | 'fiat',
+  draft: string,
+  code: FiatCode,
+): T & { figure?: { code: FiatCode; amount: string } } {
+  const figure = typedFiatFigure(unit, draft, code);
+  return figure === null ? value : { ...value, figure };
+}
+
+/** Fraction digits of a dot-decimal. A missing dot is zero. */
+function fractionDigits(value: string): number {
+  const dot = value.indexOf('.');
+  return dot < 0 ? 0 : value.length - dot - 1;
+}
+
+/** Whole units of a non-negative dot-decimal at `scale`, or `null` when it is not one. */
+function scaledDecimal(value: string, scale: number): bigint | null {
+  if (!/^\d+(\.\d+)?$/.test(value)) {
+    return null;
+  }
+  const dot = value.indexOf('.');
+  const whole = dot < 0 ? value : value.slice(0, dot);
+  const frac = dot < 0 ? '' : value.slice(dot + 1);
+  const digits = `${whole}${frac.padEnd(scale, '0')}`.replace(/^0+(?=\d)/, '');
+  return BigInt(digits);
+}
+
+/**
+ * Sum of two dot-decimal strings, or `null` when either is not a figure.
+ * A whole stored figure such as `12` plus `1.00` is `13.00`. This never
+ * prices a sat sum.
+ */
+export function addDecimalStrings(left: string, right: string): string | null {
+  const scale = Math.max(fractionDigits(left), fractionDigits(right), 1);
+  let sum = 0n;
+  for (const part of [left, right]) {
+    const scaled = scaledDecimal(part, scale);
+    if (scaled === null) {
+      return null;
+    }
+    sum += scaled;
+  }
+  const text = sum.toString().padStart(scale + 1, '0');
+  return `${text.slice(0, -scale)}.${text.slice(-scale)}`;
+}
+
+/**
  * Reply and inbox amount: blank stays blank, and 0 is billed as 1 sat.
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, `empty`, or `invalid`.
  */
@@ -472,11 +575,34 @@ export function replySatsFromDraft(
 }
 
 /**
+ * Unit a draft is read in.
+ *
+ * The amount field reports bitcoin when a fiat preference has no rate yet.
+ * A draft that is not a whole bitcoin amount stays fiat, so it waits for the
+ * spot rate instead of being rejected as sats.
+ *
+ * @param shown - Unit the field last reported.
+ * @param accountUnit - Signed-in preference. Missing means bitcoin.
+ * @param draft - Raw field value.
+ * @returns The unit used to parse `draft`.
+ */
+export function draftUnit(
+  shown: 'btc' | 'fiat',
+  accountUnit: 'btc' | 'fiat' | null | undefined,
+  draft: string,
+): 'btc' | 'fiat' {
+  if (shown === 'btc' && accountUnit === 'fiat' && !/^\d+$/.test(draft.trim())) {
+    return 'fiat';
+  }
+  return shown;
+}
+
+/**
  * Pay-sheet amount. A blank field is 21 sats in either unit.
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, or `invalid`.
  */

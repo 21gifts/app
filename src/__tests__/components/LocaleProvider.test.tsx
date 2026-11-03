@@ -12,7 +12,7 @@ function Probe(): ReactElement {
     <div>
       <span data-testid="locale">{locale}</span>
       <span data-testid="label">{t('language.label')}</span>
-      <span data-testid="pay">{t('forum.payConfirm', { amount: '1 Sat' })}</span>
+      <span data-testid="pay">{t('paySheet.sendAmount', { amount: '1 Sat' })}</span>
     </div>
   );
 }
@@ -26,7 +26,7 @@ describe('LocaleProvider', () => {
     );
     expect(screen.getByTestId('locale').textContent).toBe('de');
     expect(screen.getByTestId('label').textContent).toBe('Sprache');
-    expect(screen.getByTestId('pay').textContent).toBe('1 Sat zahlen');
+    expect(screen.getByTestId('pay').textContent).toBe('1 Sat senden');
   });
 });
 

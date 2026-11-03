@@ -34,4 +34,31 @@ describe('/messages/[id]/photo/[file]', () => {
     ).toBe(404);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('returns 404 for 1.jpeg, 1.png and 1.webp without proxying', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    expect(
+      (
+        await GET(new Request('http://localhost/messages/m1/photo/1.jpeg'), {
+          params: Promise.resolve({ id: 'm1', file: '1.jpeg' }),
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await GET(new Request('http://localhost/messages/m1/photo/1.png'), {
+          params: Promise.resolve({ id: 'm1', file: '1.png' }),
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await GET(new Request('http://localhost/messages/m1/photo/1.webp'), {
+          params: Promise.resolve({ id: 'm1', file: '1.webp' }),
+        })
+      ).status,
+    ).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

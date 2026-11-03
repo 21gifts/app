@@ -33,6 +33,7 @@ export function ExternalLinkWarning({
       role="dialog"
       aria-modal="true"
       aria-label={t('link.externalTitle')}
+      data-covers-chrome
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
       onClick={(event) => {
         event.stopPropagation();

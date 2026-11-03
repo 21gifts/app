@@ -3,7 +3,7 @@ import { useLayoutEffect, type ReactElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import WelcomePage from '@/app/welcome/page';
 import { ChromeBackProvider, useChromeBack } from '@/components/ViewHistoryRoot';
-import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
+import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -22,7 +22,7 @@ vi.mock('@/components/SignedInChrome', () => ({
 afterEach(() => {
   cleanup();
   resetViewHistory();
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null });
 });
 
 describe('WelcomePage', () => {
@@ -42,6 +42,13 @@ describe('WelcomePage', () => {
     expect(screen.getByTestId('welcome-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('shows no Log in link for a held-back session (the login card is in the page)', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'held' });
+    renderWithLocale(<WelcomePage />);
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 
   it('shows the one chrome back button while an ask step is open', () => {
@@ -64,15 +71,17 @@ describe('WelcomePage', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('returns to the previous view when this tab has one', () => {
+  it('shows no back arrow when this tab has an earlier view', () => {
     recordCurrentView('/shops');
     Object.defineProperty(window.history, 'length', {
       configurable: true,
       value: window.history.length + 1,
     });
     recordCurrentView('/welcome');
+    expect(previousViewPath()).toBe('/shops');
     renderWithLocale(<WelcomePage />);
-    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 });

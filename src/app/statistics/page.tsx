@@ -13,7 +13,9 @@ import { useAuthStore } from '@/stores/auth-store';
 function StatisticsTopRight(): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
-  if (session !== null) {
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  // A held-back session gets the login card in the page, not a Log in link.
+  if (session !== null || lockedSession !== null) {
     return <SignedInChrome />;
   }
   return (

@@ -21,6 +21,16 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
     steps:
+      - name: Require the production Breez API key
+        env:
+          BREEZ_API_KEY_PRD: ${{ secrets.BREEZ_API_KEY_PRD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BREEZ_API_KEY_PRD//[[:space:]]/}" ]; then
+            echo "::error::BREEZ_API_KEY_PRD is empty — the production image needs it for the in-app wallet. Set the repository secret and re-run."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -38,12 +48,16 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKER_TAGS }}
+          tags: |
+            ${{ env.DOCKER_TAGS }}
+            21gifts/app:latest-${{ github.sha }}
           platforms: linux/arm64
           cache-from: type=registry,ref=21gifts/app:buildcache
           cache-to: type=registry,ref=21gifts/app:buildcache,mode=max
           build-args: |
             APP_VERSION=${{ github.run_number }}
+            NEXT_PUBLIC_BREEZ_API_KEY=${{ secrets.BREEZ_API_KEY_PRD }}
+            NEXT_PUBLIC_BUILD_ID=${{ github.sha }}
 
       - name: Notify infrastructure to pull :latest
         env:

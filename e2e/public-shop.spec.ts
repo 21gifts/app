@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ogDescriptionText } from '../src/lib/public-message-og';
-import { resolveShopPhotoUrl } from '../src/lib/shop-photo-url';
+import { resolveShopPhotoUrl, sameOriginShopPhotoSrc } from '../src/lib/shop-photo-url';
 
 const LISTED_NPUB = `npub1${'2'.repeat(58)}`;
 const GONE_NPUB = `npub1${'3'.repeat(58)}`;
@@ -227,15 +227,29 @@ test('Function: resolveShopPhotoUrl — a relative shop photo becomes an api URL
   await expect(stills).toHaveCount(2);
   await expect(stills.nth(0)).toHaveAttribute(
     'src',
-    'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
+    '/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
   );
   await expect(stills.nth(1)).toHaveAttribute(
     'src',
-    'http://127.0.0.1:3001/e2e/shop-photos/two.jpg',
+    '/messages/22222222-2222-4222-8222-222222222222/photo.jpg',
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
-    'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
+    'http://127.0.0.1:3001/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
+  );
+});
+
+test('Function: sameOriginShopPhotoSrc — a forum still loads from the app, not the api host', async ({
+  page,
+}) => {
+  expect(sameOriginShopPhotoSrc('https://api.21.gifts/messages/111/photo.png')).toBe(
+    '/messages/111/photo.jpg',
+  );
+  expect(sameOriginShopPhotoSrc('https://cdn.example/a.jpg')).toBe('https://cdn.example/a.jpg');
+  await page.goto(`/${LISTED_NPUB}`);
+  await expect(page.getByRole('img', { name: 'Photo from Cafe Luna' }).first()).toHaveAttribute(
+    'src',
+    '/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
   );
 });
 

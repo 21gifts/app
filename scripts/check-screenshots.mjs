@@ -2,8 +2,9 @@
 /**
  * Fail if a UI screen or listed variant lacks a committed Playwright
  * screenshot baseline, an unexpected PNG is present under
- * `e2e/visual.spec.ts-snapshots/`, or a variant is not shot in
- * `e2e/visual.spec.ts`. Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are
+ * `e2e/visual.spec.ts-snapshots/`, a variant is not shot in
+ * `e2e/visual.spec.ts`, or a changed baseline would still pass the visual
+ * test in its base version (`check-snapshot-changes.mjs`). Handbook doc routes (`HANDBOOK_DOC_ROUTES`) are
  * skipped: they are documentation pages, not product screens.
  * `/setup/rules` must list one variant per `RULES_CHAPTER_IDS` chapter.
  * Run from the repo root. No extra packages.
@@ -19,6 +20,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extractScreens, sectionBody } from './check-handbook.mjs';
+import { needlessBaselineChanges } from './check-snapshot-changes.mjs';
 import {
   BASELINE_COMBOS,
   SCREEN_VARIANTS,
@@ -190,6 +192,8 @@ if (chapterIds.length === 0) {
     }
   }
 }
+
+missing.push(...needlessBaselineChanges(ROOT));
 
 if (screens.size === 0) {
   console.error('SCREENSHOTS: no screens discovered — refusing to pass');

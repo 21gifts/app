@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui/IconButton';
+import { useActiveSession } from '@/hooks/useActiveSession';
 import { markNotificationsReadForMessage } from '@/lib/api';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import {
@@ -18,7 +19,6 @@ import {
   translateConversationMessage,
   translateNote,
 } from '@/lib/note-translate';
-import { useAuthStore } from '@/stores/auth-store';
 
 /** Translation API source for a painted prose body. */
 export type NoteTranslateSource =
@@ -83,7 +83,7 @@ export function NoteTranslate({
   placement = 'block',
 }: NoteTranslateProps): ReactElement | null {
   const { locale, t } = useTranslations();
-  const session = useAuthStore((state) => state.session);
+  const session = useActiveSession();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const requestId = useRef(0);

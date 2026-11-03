@@ -91,6 +91,28 @@ export async function proxyAuthPasskeySeedFinishPost(request: Request): Promise<
 }
 
 /**
+ * Proxies POST /auth/passkey/recovery/begin (social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (no session; JSON body with
+ *   the old wallet's signed lookup).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyRecoveryBeginPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/recovery/begin');
+}
+
+/**
+ * Proxies POST /auth/passkey/recovery/finish (social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (no session; JSON body signed
+ *   by the old wallet).
+ * @returns The upstream response.
+ */
+export async function proxyAuthPasskeyRecoveryFinishPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/auth/passkey/recovery/finish');
+}
+
+/**
  * Proxies GET /me to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -138,6 +160,16 @@ export async function proxyPosDelete(request: Request): Promise<Response> {
  */
 export async function proxyMeActivityGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/activity');
+}
+
+/**
+ * Proxies GET /me/loans to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeLoansGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/loans');
 }
 
 /**
@@ -230,6 +262,50 @@ export async function proxyWideBannerPut(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/banners/me');
 }
 
+/** Account id accepted by the public picture and banner file routes. */
+const PUBLIC_PROFILE_ID_RE = /^[0-9A-Za-z_-]{1,80}$/;
+
+/** Extensions the api pairs with a stored JPEG, PNG, or WebP. */
+const PUBLIC_PROFILE_EXTS = ['jpg', 'png', 'webp'] as const;
+
+/**
+ * Proxies a public profile photo or wide image.
+ *
+ * The api file is `/{slot}/{accountId}.{ext}` and the extension must match
+ * the stored MIME. This tries JPEG, then PNG, then WebP, and returns the
+ * first image. A missing slot is 404. An upstream status of 500 or more,
+ * including 502 when the api is unreachable, is returned as-is. No bearer.
+ *
+ * @param request - Incoming App Router request.
+ * @param slot - `pictures` for the round photo, `banners` for the wide image.
+ * @param accountId - Account id from the URL. Anything else is 404.
+ * @returns The image response, or 404 JSON when none of the three files match.
+ */
+export async function proxyPublicProfileSlotGet(
+  request: Request,
+  slot: 'pictures' | 'banners',
+  accountId: string,
+): Promise<Response> {
+  if (!PUBLIC_PROFILE_ID_RE.test(accountId)) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  for (const ext of PUBLIC_PROFILE_EXTS) {
+    const upstream = await proxyApiRequest(
+      request,
+      `/${slot}/${encodeURIComponent(accountId)}.${ext}`,
+    );
+    const type = upstream.headers.get('content-type') ?? '';
+    if (upstream.status === 200 && type.startsWith('image/')) {
+      return upstream;
+    }
+    if (upstream.status >= 500) {
+      return upstream;
+    }
+    await upstream.body?.cancel();
+  }
+  return Response.json({ error: 'Not found' }, { status: 404 });
+}
+
 /**
  * Proxies POST /me/setup/skip to the 21.gifts api.
  *
@@ -248,6 +324,178 @@ export async function proxyMeSetupSkipPost(request: Request): Promise<Response> 
  */
 export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/wallet-backup-seen');
+}
+
+/**
+ * Proxies PUT /me/wallet to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sparkPubkey }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet');
+}
+
+/**
+ * Proxies PUT /me/recovery-share (21.gifts' share of a social recovery) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sparkPubkey, share }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeRecoverySharePut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/recovery-share');
+}
+
+/**
+ * Proxies GET /me/previous-wallets to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMePreviousWalletsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/previous-wallets');
+}
+
+/**
+ * Proxies DELETE /me/previous-wallets/:sparkPubkey to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param sparkPubkey - Previous wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyMePreviousWalletDelete(
+  request: Request,
+  sparkPubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/me/previous-wallets/${encodeURIComponent(sparkPubkey)}`);
+}
+
+/**
+ * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON
+ *   `{ balanceSats, syncedAt, payments }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletReportPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/report');
+}
+
+/**
+ * Proxies POST /me/wallet/hearts (heart payment lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ hashes }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletHeartsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/hearts');
+}
+
+/**
+ * Proxies POST /me/events (interaction log batch) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ events }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeEventsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/events');
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey (wallet address registration) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRegisterPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}`);
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey/recover (wallet address lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRecoverPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/recover`);
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey/transfer (the new wallet claims an address
+ * the old wallet authorized) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (JSON body signed by both wallets).
+ * @param pubkey - New wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayTransferPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/transfer`);
+}
+
+/**
+ * Proxies GET /lnurlpay/:pubkey/metadata (received-payment notes) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed query from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayMetadataGet(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/metadata`);
+}
+
+/**
+ * Copies an upstream response and allows any origin to read it.
+ *
+ * @param upstream - Proxied api response.
+ * @returns The same status and body with `Access-Control-Allow-Origin: *`.
+ */
+function withAnyOrigin(upstream: Response): Response {
+  const headers = new Headers(upstream.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+/**
+ * Proxies GET /lnurlp/:username/invoice (a payer asks for a payment request
+ * to a member's in-app wallet) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request (query carries the amount).
+ * @param username - Member username from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyLnurlpInvoiceGet(request: Request, username: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/lnurlp/${encodeURIComponent(username)}/invoice`),
+  );
+}
+
+/**
+ * Proxies GET /verify/:paymentHash (a payer checks whether a payment
+ * settled) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request.
+ * @param paymentHash - Payment hash from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyVerifyGet(request: Request, paymentHash: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/verify/${encodeURIComponent(paymentHash)}`),
+  );
 }
 
 /**
@@ -307,6 +555,31 @@ export async function proxyMembersPostsGet(request: Request, accountId: string):
 }
 
 /**
+ * Proxies GET /members/:accountId/shops to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersShopsGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/shops`);
+}
+
+/**
+ * Proxies GET /members/:accountId/credits to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersCreditsGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/credits`);
+}
+
+/**
  * Proxies GET /members/:accountId/replies to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -331,6 +604,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/wallet-intro-seen to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletIntroSeenPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet-intro-seen');
+}
+
+/**
  * Proxies POST /me/notification-level to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ level }`).
@@ -338,6 +621,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
  */
 export function proxyMeNotificationLevelPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/notification-level');
+}
+
+/**
+ * Proxies POST /me/heart-notifications to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ enabled }`).
+ * @returns The upstream response.
+ */
+export function proxyMeHeartNotificationsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/heart-notifications');
 }
 
 /**
@@ -371,26 +664,6 @@ export function proxyMeFiatPost(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies POST /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session + JSON body).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressPost(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
- * Proxies DELETE /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressDelete(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
  * Proxies POST /me/rules-agreement to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session, no body).
@@ -398,16 +671,6 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
  */
 export async function proxyMeRulesAgreementPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/rules-agreement');
-}
-
-/**
- * Proxies GET /lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (`address` query param).
- * @returns The upstream response.
- */
-export async function proxyLightningAddressGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/lightning-address');
 }
 
 /**
@@ -421,6 +684,18 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /fx/spot to the 21.gifts api.
+ *
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFxSpotGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fx/spot');
+}
+
+/**
  * Proxies GET /shops/activity to the 21.gifts api.
  *
  * No session is required. The incoming request is forwarded as received.
@@ -430,6 +705,18 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
  */
 export async function proxyShopActivityGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/shops/activity');
+}
+
+/**
+ * Proxies GET /funding/places to the 21.gifts api.
+ *
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFundingPlacesGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/places');
 }
 
 /**
@@ -621,6 +908,52 @@ export async function proxyFundingDailyRosterRecipientsDeletePost(
   request: Request,
 ): Promise<Response> {
   return proxyApiRequest(request, '/funding/daily-roster/recipients/delete');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId, amountUsd }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/update to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address, amountUsd }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsUpdatePost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/update');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/delete to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsDeletePost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/delete');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/payments to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ enabled }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsPaymentsPost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/payments');
 }
 
 /**
@@ -910,6 +1243,38 @@ export async function proxyExternalAuthorPostsGet(
 }
 
 /**
+ * Proxies GET /messages/:id/external-shops to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-shops`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorShopsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-shops`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-credits to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-credits`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorCreditsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-credits`);
+}
+
+/**
  * Proxies GET /messages/:id/external-replies to the 21.gifts api (public; no auth).
  *
  * App path is `/public-messages/:id/external-replies`.
@@ -997,6 +1362,20 @@ export async function proxyMessagesRepaymentPost(
 }
 
 /**
+ * Proxies POST /messages/:id/repayment/due to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Credit note id.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepaymentDuePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment/due`);
+}
+
+/**
  * Proxies POST /contact to the 21.gifts api (same-origin path `/contact/submit`).
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -1004,6 +1383,29 @@ export async function proxyMessagesRepaymentPost(
  */
 export async function proxyContactPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/contact');
+}
+
+/**
+ * Proxies POST /lnurl/pay-request to the 21.gifts api (pay request of a
+ * Lightning address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session + `{ target }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlPayRequestPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/pay-request');
+}
+
+/**
+ * Proxies POST /lnurl/invoice to the 21.gifts api (invoice from a Lightning
+ * address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session +
+ * `{ target, amountMsat, comment? }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlInvoicePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/invoice');
 }
 
 /**
@@ -1213,6 +1615,26 @@ export async function proxyMessagesPhotoGet(
 }
 
 /**
+ * Proxies GET /messages/:id/photo.jpg without forwarding Authorization, so
+ * the edge can store the public still.
+ *
+ * @param request - Incoming App Router request.
+ * @param id - Forum message id from the dynamic route segment.
+ * @param ext - Still file extension (`jpg`).
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyMessagesPhotoExtGet(
+  request: Request,
+  id: string,
+  ext: 'jpg',
+): Promise<Response> {
+  const headers = new Headers(request.headers);
+  headers.delete('authorization');
+  const stripped = new Request(request.url, { method: 'GET', headers });
+  return proxyApiRequest(stripped, `/messages/${encodeURIComponent(id)}/photo.${ext}`);
+}
+
+/**
  * Proxies GET /messages/:id/video.mp4, video.webm, or video.mov to the 21.gifts api (public; no auth).
  *
  * @param request - Incoming App Router request.
@@ -1248,6 +1670,22 @@ export async function proxyViewGet(request: Request, viewKey: string): Promise<R
  */
 export async function proxyViewActivityGet(request: Request, viewKey: string): Promise<Response> {
   return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/activity`);
+}
+
+/**
+ * Proxies GET /view/:viewKey/posts|shops|credits|replies (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @param kind - Which public list to load.
+ * @returns The upstream response.
+ */
+export async function proxyViewListGet(
+  request: Request,
+  viewKey: string,
+  kind: 'posts' | 'shops' | 'credits' | 'replies',
+): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/${kind}`);
 }
 
 /**

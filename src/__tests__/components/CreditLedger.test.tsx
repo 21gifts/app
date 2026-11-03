@@ -155,6 +155,36 @@ describe('CreditLedger', () => {
     expect(screen.getByText('Still owed')).toBeTruthy();
   });
 
+  it('marks a due line that waits for the giver wallet in muted type', async () => {
+    ledger({
+      ...btc,
+      repayments: btc.repayments.map((row) =>
+        row.status === 'due' ? { ...row, waiting: true } : row,
+      ),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    const lines = await screen.findAllByText(/^Waiting for .+ to set up their wallet$/);
+    expect(lines.length).toBe(btc.repayments.filter((row) => row.status === 'due').length);
+    for (const line of lines) {
+      expect(line.className).toContain('text-app-muted');
+    }
+    const status = screen.getAllByText('Waiting', { exact: true });
+    expect(status.length).toBe(lines.length);
+    expect(status[0]!.className).toContain('text-app-muted');
+  });
+
+  it('marks a due line as waiting from the giver when the api sends no waiting flag', async () => {
+    ledger({
+      ...btc,
+      givers: btc.givers.map((giver) => ({ ...giver, canReceive: giver.name !== 'Bea' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Waiting for Bea @bea to set up their wallet')).toBeTruthy();
+    expect(screen.getAllByText('Waiting', { exact: true })).toHaveLength(1);
+    expect(screen.queryByText('Due', { exact: true })).toBeNull();
+    expect(document.body.textContent).toContain('Scheduled');
+  });
+
   it('shows a repayment list link and hides the day rows', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" />);
@@ -463,49 +493,17 @@ describe('CreditLedger', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('prices the bitcoin chart total in the visitor fiat when a rate exists', async () => {
+  it('shows the spot beside the bitcoin chart total when no fiat was stored', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo) => {
         const url = String(input);
-        if (url.includes('/gifts/stats')) {
+        if (url.includes('/fx/spot')) {
           return new Response(
             JSON.stringify({
-              totalSats: 100_000_000,
-              totalBtc: '1.00000000',
-              totalUsd: '100000.00',
-              totalChf: '80000.00',
-              totalEur: '90000.00',
-              totalPhp: '5600000.00',
-              giftCount: 1,
-              recipientCount: 1,
-              firstPaidAt: '2026-09-26T00:00:00.000Z',
-              lastPaidAt: '2026-09-26T00:00:00.000Z',
-              spendOverTime: [
-                {
-                  day: '2026-09-26',
-                  sats: 100_000_000,
-                  cumulativeSats: 100_000_000,
-                  btc: '1.00000000',
-                  cumulativeBtc: '1.00000000',
-                  usd: '100000.00',
-                  cumulativeUsd: '100000.00',
-                  chf: '80000.00',
-                  cumulativeChf: '80000.00',
-                  eur: '90000.00',
-                  cumulativeEur: '90000.00',
-                  php: '5600000.00',
-                  cumulativePhp: '5600000.00',
-                },
-              ],
-              byRecipient: [],
-              byMonth: [],
-              fx: {
-                quote: 'BTC-USD',
-                dayBasis: 'utc',
-                source: 'coinbase-exchange-daily-close',
-                quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-              },
+              asOf: '2026-09-26T00:00:00.000Z',
+              source: 'test',
+              rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
             }),
             { status: 200 },
           );
@@ -515,10 +513,9 @@ describe('CreditLedger', () => {
     );
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Nov 1/ });
-    await waitFor(() => {
-      expect(chart.textContent).toContain('·');
-      expect(chart.textContent).toContain('$0.02');
-    });
+    expect(chart.textContent).toContain('₿21');
+    expect(chart.textContent).toContain('·');
+    expect(chart.textContent).toContain('$0.02');
   });
 
   it('keeps the feed ledger closed until the visitor asks', async () => {
@@ -625,8 +622,9 @@ describe('CreditLedger', () => {
     const chart = await screen.findByRole('img', { name: /Day 1/ });
     const label = chart.getAttribute('aria-label') ?? '';
     expect(label).toMatch(/\$1\.50 owed/);
-    expect(label).toContain('2026');
     expect(label).not.toMatch(/₿|\$5/);
+    expect(label).toContain('2026');
+    expect(label).not.toMatch(/\$5/);
   });
 
   it('calls an open German plan a Darlehen', async () => {
@@ -635,4 +633,509 @@ describe('CreditLedger', () => {
     expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
     expect(screen.queryByText(/Kredit/)).toBeNull();
   });
+
+  it('hands every loaded ledger to onLedger, the first read and each refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      ledger(btc);
+      const onLedger = vi.fn();
+      renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
+      expect(await screen.findByText('Given')).toBeTruthy();
+      await waitFor(() => expect(onLedger).toHaveBeenCalled());
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.some((row: { status: string }) => row.status === 'due'),
+      ).toBe(true);
+      ledger({
+        ...btc,
+        repayments: btc.repayments.map((row) =>
+          row.status === 'due' ? { ...row, status: 'paid' as const } : row,
+        ),
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.every((row: { status: string }) => row.status !== 'due'),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the paid-back share in the loan block of the open note from that one read', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      return new Response(
+        JSON.stringify({
+          ...btc,
+          repayments: btc.repayments.map((row, index) => ({
+            ...row,
+            status: index === 0 ? 'paid' : 'scheduled',
+          })),
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" />);
+    expect(await screen.findByText('Fully funded · being repaid')).toBeTruthy();
+    expect(screen.getByRole('img', { name: '47% paid back' })).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).includes('/repayment')),
+    ).toHaveLength(1);
+  });
+
+  it('groups a long fiat plan by month and keeps the summary link free of that overview', async () => {
+    const plan = longPlan();
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('Nov 1, 2026');
+    expect(document.body.textContent).toContain('7 days at');
+    expect(document.body.textContent).toContain('₱40.00');
+    expect(document.body.textContent).not.toContain('₱40.00 · ₿');
+    expect(document.body.textContent).toContain('8 days · Scheduled');
+    expect(document.body.textContent).toContain('Nov 8, 2026');
+    expect(document.body.textContent).not.toContain('Nov 2, 2026');
+    expect(screen.getByText('Together')).toBeTruthy();
+    expect(document.body.textContent).toContain('All other days are');
+    cleanup();
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect(await screen.findByRole('link', { name: 'Repayment list' })).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('names the next repayment in German', async () => {
+    ledger(longPlan());
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />, 'de');
+    expect(await screen.findByText('Nächste Rate')).toBeTruthy();
+    expect(document.body.textContent).toContain('7 Tage zu je');
+  });
+
+  it('omits the next repayment once every day is paid', async () => {
+    ledger(
+      longPlan({
+        daysPaid: 8,
+        status: () => 'paid',
+        cyrillAmount: () => '40.00',
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('8 of 8 days paid.')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+    expect(document.body.textContent).not.toContain('All other days are');
+    expect(document.body.textContent).toContain('8 days · Paid');
+  });
+
+  it('marks a month due when one share is due', async () => {
+    ledger(longPlan({ status: (day) => (day === 0 ? 'due' : 'scheduled') }));
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(screen.getAllByText('Due').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('8 days · Due');
+  });
+
+  it('lists a later waiting day of a long plan with its waiting line', async () => {
+    const plan = longPlan({ status: (day) => (day < 3 ? 'due' : 'scheduled') });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.dayIndex > 0 && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
+  it('lists the waiting days of a month apart even when most of its days wait', async () => {
+    const plan = longPlan({
+      status: (day) => (day < 6 ? 'due' : 'scheduled'),
+      cyrillAmount: () => '40.00',
+    });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.name === 'Yorelene',
+      })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet').length,
+    ).toBeGreaterThanOrEqual(6);
+  });
+
+  it('names the waiting lender under the usual split when every day has a waiting share', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({
+      ...plan,
+      repayments: plan.repayments.map((row) => ({ ...row, waiting: row.name === 'Yorelene' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(
+      screen.getAllByText('Waiting for Yorelene @yorelene to set up their wallet'),
+    ).toHaveLength(2);
+  });
+
+  it('names a month waiting when every share of it waits', async () => {
+    const plan = longPlan({ status: () => 'due', cyrillAmount: () => '40.00' });
+    ledger({ ...plan, repayments: plan.repayments.map((row) => ({ ...row, waiting: true })) });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('8 days · Waiting');
+  });
+
+  it('prices a long bitcoin plan in bitcoin across two months', async () => {
+    ledger(longBitcoinPlan());
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(screen.getByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('All other days are');
+    expect(document.body.textContent).toContain('₿10');
+  });
+
+  it('keeps seven dated days as a day list', async () => {
+    ledger(longPlan({ count: 7 }));
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Nov 2, 2026')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('keeps a long plan on day numbers while a date is missing', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => (day === 7 ? null : isoDay(day)),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect((await screen.findAllByText('Day 8')).length).toBeGreaterThan(0);
+    expect(screen.getByText('Nov 2, 2026')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('uses the singular when a month has one day', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 30 + day)).toISOString().slice(0, 10),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('1 day');
+    expect(document.body.textContent).not.toContain('1 days');
+  });
+
+  it('counts only unpaid shares and omits a status when the month is mixed', async () => {
+    const plan = longPlan({ cyrillAmount: () => '40.00' });
+    plan.repayments = plan.repayments.map((row) =>
+      row.dayIndex === 0 && row.accountId === '11111111-1111-4111-8111-111111111111'
+        ? { ...row, status: 'paid' as const }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('Still owed ₱286.40');
+    expect(document.body.textContent).not.toContain('Still owed ₱326.40');
+    expect(document.body.textContent).not.toContain('8 days · Scheduled');
+  });
+
+  it('keeps the same fiat split together when the bitcoin amount differs', async () => {
+    const plan = longPlan({ cyrillAmount: () => '40.00' });
+    plan.repayments = plan.repayments.map((row) =>
+      row.dayIndex === 7 && row.accountId === '11111111-1111-4111-8111-111111111111'
+        ? { ...row, sats: 100 }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('8 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+  });
+
+  it('shows the spot beside a long bitcoin overview when a rate exists', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo) => {
+        const url = String(input);
+        if (url.includes('/gifts/stats')) {
+          return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+        }
+        if (url.includes('/fx/spot')) {
+          return new Response(
+            JSON.stringify({
+              asOf: '2026-09-26T00:00:00.000Z',
+              source: 'test',
+              rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify(longBitcoinPlan()), { status: 200 });
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('₿10');
+      expect(document.body.textContent).toContain('$0.01');
+      expect(document.body.textContent).toContain('$0.08');
+    });
+  });
+
+  it('does not treat a later month as an exception of an earlier month', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+        cyrillAmount: (day) => (day < 3 ? '50.00' : '40.00'),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(screen.getByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('3 days at');
+    expect(document.body.textContent).toContain('5 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+    expect(document.body.textContent).not.toContain('Dec 1, 2026');
+  });
+
+  it('names one usual daily total when the unlisted days share it under a different split', async () => {
+    const plan = longPlan({
+      dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+      cyrillAmount: (day) => {
+        if (day < 3) {
+          return '40.00';
+        }
+        if (day === 7) {
+          return '40.02';
+        }
+        return '39.99';
+      },
+    });
+    plan.repayments = plan.repayments.map((row) =>
+      row.accountId === '22222222-2222-4222-8222-222222222222' &&
+      row.dayIndex >= 3 &&
+      row.dayIndex <= 6
+        ? { ...row, amount: '0.81' }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('3 days at');
+    expect(document.body.textContent).toContain('4 days at');
+    expect(document.body.textContent).toContain('Dec 5, 2026');
+    expect(document.body.textContent).toContain('All other days are');
+  });
+
+  it('lists only a month exception when the other days do not share one total', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+        cyrillAmount: (day) => (day < 4 ? '50.00' : '40.00'),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Dec 1, 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('4 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+  });
+
+  it('lists each day of a long plan while the credit is not fully given', async () => {
+    ledger({ ...longPlan(), fundedAt: null });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect((await screen.findAllByText('Day 1')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
 });
+
+function isoDay(day: number): string {
+  const date = new Date(Date.UTC(2026, 10, 1 + day));
+  return date.toISOString().slice(0, 10);
+}
+
+function longPlan(options?: {
+  count?: number;
+  daysPaid?: number;
+  status?: (day: number) => 'scheduled' | 'due' | 'paid';
+  cyrillAmount?: (day: number) => string;
+  dueOn?: (day: number) => string | null;
+}): {
+  currency: 'PHP';
+  fundedAt: string;
+  startsOn: string;
+  termDays: number;
+  daysDue: number;
+  daysPaid: number;
+  unassignedSats: number;
+  givers: [];
+  repayments: {
+    dayIndex: number;
+    dueOn: string | null;
+    accountId: string;
+    name: string;
+    username: string | null;
+    amount: string | null;
+    sats: number | null;
+    status: 'scheduled' | 'due' | 'paid';
+    via: 'lightning';
+  }[];
+  next: null;
+} {
+  const count = options?.count ?? 8;
+  const status = options?.status ?? (() => 'scheduled' as const);
+  const cyrillAmount =
+    options?.cyrillAmount ?? ((day: number) => (day === count - 1 ? '40.02' : '40.00'));
+  const dueOn = options?.dueOn ?? isoDay;
+  const repayments: {
+    dayIndex: number;
+    dueOn: string | null;
+    accountId: string;
+    name: string;
+    username: string | null;
+    amount: string | null;
+    sats: number | null;
+    status: 'scheduled' | 'due' | 'paid';
+    via: 'lightning';
+  }[] = [];
+  for (let day = 0; day < count; day += 1) {
+    const rowStatus = status(day);
+    repayments.push({
+      dayIndex: day,
+      dueOn: dueOn(day),
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Cyrill',
+      username: 'cyrill',
+      amount: cyrillAmount(day),
+      sats: 4,
+      status: rowStatus,
+      via: 'lightning' as const,
+    });
+    repayments.push({
+      dayIndex: day,
+      dueOn: dueOn(day),
+      accountId: '22222222-2222-4222-8222-222222222222',
+      name: 'Yorelene',
+      username: 'yorelene',
+      amount: '0.80',
+      sats: null,
+      status: rowStatus,
+      via: 'lightning' as const,
+    });
+    if (day === count - 1 && cyrillAmount(day) !== '40.00') {
+      repayments.push({
+        dayIndex: day,
+        dueOn: dueOn(day),
+        accountId: '33333333-3333-4333-8333-333333333333',
+        name: 'Gap',
+        username: null,
+        amount: null,
+        sats: null,
+        status: rowStatus,
+        via: 'lightning' as const,
+      });
+    }
+  }
+  return {
+    currency: 'PHP',
+    fundedAt: '2026-10-09T12:00:00.000Z',
+    startsOn: '2026-11-01',
+    termDays: count,
+    daysDue: 0,
+    daysPaid: options?.daysPaid ?? 0,
+    unassignedSats: 0,
+    givers: [],
+    repayments,
+    next: null,
+  };
+}
+
+function longBitcoinPlan(): {
+  currency: 'BTC';
+  fundedAt: string;
+  startsOn: string;
+  termDays: number;
+  daysDue: number;
+  daysPaid: number;
+  unassignedSats: number;
+  givers: {
+    accountId: string;
+    name: string;
+    username: string;
+    givenSats: number;
+    givenAmount: null;
+  }[];
+  repayments: {
+    dayIndex: number;
+    dueOn: string;
+    accountId: string;
+    name: string;
+    username: string;
+    amount: null;
+    sats: number;
+    status: 'scheduled';
+    via: 'lightning';
+  }[];
+  next: null;
+} {
+  const repayments: {
+    dayIndex: number;
+    dueOn: string;
+    accountId: string;
+    name: string;
+    username: string;
+    amount: null;
+    sats: number;
+    status: 'scheduled';
+    via: 'lightning';
+  }[] = [];
+  for (let day = 0; day < 8; day += 1) {
+    const date = new Date(Date.UTC(2026, 10, 28 + day));
+    repayments.push({
+      dayIndex: day,
+      dueOn: date.toISOString().slice(0, 10),
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Bea',
+      username: 'bea',
+      amount: null,
+      sats: day === 7 ? 11 : 10,
+      status: 'scheduled' as const,
+      via: 'lightning' as const,
+    });
+  }
+  return {
+    currency: 'BTC',
+    fundedAt: '2026-10-09T12:00:00.000Z',
+    startsOn: '2026-11-28',
+    termDays: 8,
+    daysDue: 0,
+    daysPaid: 0,
+    unassignedSats: 0,
+    givers: [
+      {
+        accountId: '11111111-1111-4111-8111-111111111111',
+        name: 'Bea',
+        username: 'bea',
+        givenSats: 81,
+        givenAmount: null,
+      },
+    ],
+    repayments,
+    next: null,
+  };
+}

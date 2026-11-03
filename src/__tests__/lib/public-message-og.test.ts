@@ -25,6 +25,8 @@ const sample: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 afterEach(() => {
@@ -194,7 +196,7 @@ describe('publicMessageOgMetadata', () => {
   it('uses the note photo URL when hasPhoto is true', () => {
     const note: ForumMessage = { ...sample, hasPhoto: true, photoCount: 1 };
     const meta = publicMessageOgMetadata(MESSAGE_ID, note);
-    const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Hello from Ada' };
+    const photo = { url: `/messages/${MESSAGE_ID}/photo.jpg`, alt: 'Hello from Ada' };
     expect(meta.openGraph).toEqual({
       type: 'website',
       url: 'https://21.gifts/l/11111111',
@@ -214,7 +216,7 @@ describe('publicMessageOgMetadata', () => {
   it('uses the author name as photo alt when hasPhoto is true and text is empty', () => {
     const note: ForumMessage = { ...sample, text: '', hasPhoto: true, photoCount: 1 };
     const meta = publicMessageOgMetadata(MESSAGE_ID, note);
-    const photo = { url: `/messages/${MESSAGE_ID}/photo`, alt: 'Ada' };
+    const photo = { url: `/messages/${MESSAGE_ID}/photo.jpg`, alt: 'Ada' };
     expect(meta.openGraph).toEqual({
       type: 'website',
       url: 'https://21.gifts/l/11111111',
@@ -261,7 +263,7 @@ describe('publicMessageOgMetadata', () => {
     });
     const authorName = '21.gifts Support';
     const noteText = 'Official announcement https://example.com';
-    const photoRoute = `/messages/${MESSAGE_ID}/photo`;
+    const photoRoute = `/messages/${MESSAGE_ID}/photo.jpg`;
     expect(meta.title).not.toContain(authorName);
     expect(meta.title).not.toContain(noteText);
     expect(meta.title).not.toContain(photoRoute);

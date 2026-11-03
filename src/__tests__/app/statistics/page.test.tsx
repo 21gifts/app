@@ -35,7 +35,7 @@ vi.mock('@/components/SignedInChrome', () => ({
 
 afterEach(() => {
   cleanup();
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null });
 });
 
 describe('StatisticsPage', () => {
@@ -57,5 +57,12 @@ describe('StatisticsPage', () => {
     expect(screen.getByTestId('statistics-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('shows no Log in link for a held-back session (the login card is in the page)', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'held' });
+    renderWithLocale(<StatisticsPage />);
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 });

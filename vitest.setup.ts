@@ -1,5 +1,6 @@
 /**
- * Test setup: install an in-memory `localStorage` on the jsdom `window`.
+ * Test setup: install an in-memory `localStorage` on the jsdom `window`, and
+ * keep the interaction log off the network.
  *
  * The jsdom environment vitest uses here does not expose `window.localStorage`,
  * so the session-storage module has no backing store under test. This provides
@@ -7,6 +8,27 @@
  * only; the SSR (node) environment has no `window` and keeps exercising the
  * module's server guard.
  */
+
+import { configure } from '@testing-library/react';
+import { vi } from 'vitest';
+
+// Sheets and views ease in and out (`Collapse`, `Swap`): a pay flow can wait for two
+// 180 ms swaps and a 320 ms fold. The default 1 s for `findBy…` and `waitFor` is too tight for that
+// on a busy runner; a failing wait only takes longer to report.
+configure({ asyncUtilTimeout: 3000 });
+
+// The interaction log queues events in module state and sends them with
+// `fetch`. Left real, a full queue in one test would post to `/me/events` and
+// take a response another test stubbed. Tests that record events assert the
+// `logInteraction` calls instead; `interaction-log.test.ts` unmocks it.
+vi.mock('@/lib/interaction-log', () => ({
+  INTERACTION_FLUSH_MS: 10_000,
+  INTERACTION_BATCH_SIZE: 50,
+  logInteraction: vi.fn(),
+  flushInteractions: vi.fn(() => Promise.resolve()),
+  logLogout: vi.fn(() => Promise.resolve()),
+  startInteractionLog: vi.fn(() => () => undefined),
+}));
 
 /** Minimal in-memory implementation of the Web Storage API for tests. */
 class MemoryStorage {

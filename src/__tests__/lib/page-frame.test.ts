@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { pageFrameProblems } from '@/lib/page-frame';
+import { fitBoxInFrame, pageFrameProblems } from '@/lib/page-frame';
 
 const restorers: Array<() => void> = [];
 
@@ -415,5 +415,64 @@ describe('pageFrameProblems', () => {
       'sticks out: div#c left=-2 right=400',
       '1 more boxes stick out',
     ]);
+  });
+
+  it('fails a fixed overlay that covers the app chrome', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    stubBox(overlay, { left: 0, right: 375, top: 0, bottom: 200 });
+    document.body.append(chromeEl, overlay);
+    expect(pageFrameProblems()).toContain('fixed overlay covers the app chrome: div');
+  });
+
+  it('allows a covering overlay under a data-covers-chrome root', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const root = document.createElement('div');
+    root.setAttribute('data-covers-chrome', '');
+    root.style.position = 'fixed';
+    stubBox(root, { left: 0, right: 375, top: 0, bottom: 200 });
+    document.body.append(chromeEl, root);
+    expect(pageFrameProblems()).not.toContain('fixed overlay covers the app chrome: div');
+  });
+
+  it('allows a fixed overlay that sits fully below the app chrome', () => {
+    preparePageFrame(375, 375);
+    const chromeEl = document.createElement('div');
+    chromeEl.setAttribute('data-app-chrome', '');
+    stubBox(chromeEl, { left: 0, right: 375, top: 0, bottom: 60 });
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    stubBox(overlay, { left: 0, right: 320, top: 100, bottom: 200 });
+    document.body.append(chromeEl, overlay);
+    expect(pageFrameProblems()).not.toContain('fixed overlay covers the app chrome: div');
+  });
+});
+
+describe('fitBoxInFrame', () => {
+  it('uses the whole frame when neither side has 280px', () => {
+    // Frame is 200px tall with 8px inset, so both the gap below the anchor and the
+    // gap above it stay under the 280px minimum. The box then fills the frame.
+    expect(
+      fitBoxInFrame({
+        frameLeft: 0,
+        frameRight: 400,
+        frameTop: 0,
+        frameBottom: 200,
+        anchorLeft: 40,
+        anchorTop: 80,
+        anchorBottom: 100,
+        gap: 8,
+        preferredWidth: 220,
+        inset: 8,
+        viewportHeight: 800,
+      }),
+    ).toEqual({ left: 40, width: 220, maxHeight: 184, top: 8, bottom: null });
   });
 });

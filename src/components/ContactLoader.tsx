@@ -7,6 +7,7 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { fetchConversations, postContact } from '@/lib/api';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { MissingRequirementsError, nextContactRequirement } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -18,7 +19,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * then opens in the inbox (`/messages?c=`). A failed post clears `posting`
  * so Send can retry. Missing name/rules open
  * {@link RequirementsOverlay} and retry the same send after the field is
- * added. Lightning Address is not required for contact. Renders nothing when
+ * added. A wallet is not required for contact. Renders nothing when
  * there is no session.
  *
  * @returns The contact screen, or `null` without a session.
@@ -61,7 +62,7 @@ export function ContactLoader(): ReactElement | null {
     } catch {
       // Inbox list is the fallback when the thread cannot be resolved.
     }
-    router.push(href);
+    returnToView(href, router);
   };
 
   const runContactPost = async (trimmed: string, isRetry: boolean): Promise<void> => {

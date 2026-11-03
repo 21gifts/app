@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CannotReceiveError } from '@/lib/api';
 import { fetchMemberHabits, postMemberHabit } from '@/lib/member-habits';
 
 const LOAD_ERROR = 'Could not load the habit tracker. Please try again.';
@@ -96,5 +97,21 @@ describe('postMemberHabit', () => {
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
+  });
+
+  it('throws CannotReceiveError when the body carries code cannot_receive, whatever the text', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(json({ error: 'Any text', code: 'cannot_receive' }, 409))
+        .mockResolvedValueOnce(json({ error: 'Other code', code: 'wallet_required' }, 409)),
+    );
+    await expect(
+      postMemberHabit('tok', { action: 'invoice', commentId: 'c', amountSats: 1 }, true),
+    ).rejects.toBeInstanceOf(CannotReceiveError);
+    await expect(
+      postMemberHabit('tok', { action: 'invoice', commentId: 'c', amountSats: 1 }, true),
+    ).rejects.toThrow('Other code');
   });
 });

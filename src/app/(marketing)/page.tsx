@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -17,8 +18,9 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { ButtonLink } from '@/components/ui';
 import { getCatalog, type MessageKey } from '@/lib/messages';
+import { lightningHref } from '@/lib/payment-link';
+import { projectDonateAddress } from '@/lib/project-donate';
 import { marketingMetadata } from '@/lib/marketing-metadata';
-import { PROJECT_DONATE_ADDRESS } from '@/lib/project-donate';
 import { getRequestLocale } from '@/lib/request-locale';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 import { translate } from '@/lib/translate';
@@ -39,13 +41,33 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
+ * 21.gifts host this request was made on, without a port (`x-forwarded-host`
+ * first). Only `21.gifts` and its subdomains are taken from the request; any
+ * other or missing host yields `21.gifts`, so a forged header cannot redirect
+ * the donation address.
+ *
+ * @returns `21.gifts` or one of its subdomains.
+ */
+async function requestHostname(): Promise<string> {
+  const headerStore = await headers();
+  const raw = headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? '';
+  const host = raw.replace(/,.*$/, '').trim().replace(/:\d+$/, '').toLowerCase();
+  return /^([a-z0-9-]+\.)*21\.gifts$/.test(host) ? host : '21.gifts';
+}
+
+/**
  * Direct Bitcoin giving journey, project context, and the Happyland place portrait.
+ * Marketing landing at `/`: pitch, how it works, why, project donate (`#project`,
+ * only when the build names the platform account), FAQ, CTAs into the app,
+ * and an optional PWA install control after Send help.
+ *
  * @returns The localized marketing home.
  */
 export default async function Home(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   const t = (key: MessageKey): string => translate(messages, key);
+  const donateAddress = projectDonateAddress(await requestHostname());
   const faq = [
     ['home.faq1Q', 'home.faq1A'],
     ['home.faq2Q', 'home.faq2A'],
@@ -471,17 +493,16 @@ export default async function Home(): Promise<ReactElement> {
             <p className="max-w-xl text-lg leading-relaxed text-paper/70">
               {t('home.projectLead')}
             </p>
-            <div className="mt-8 inline-flex max-w-full flex-col gap-2 rounded-xl border border-paper/15 bg-paper/5 px-5 py-4">
-              <span className="text-xs font-semibold tracking-widest text-paper/50 uppercase">
-                Wallet of Satoshi
-              </span>
-              <a
-                href={`lightning:${PROJECT_DONATE_ADDRESS}`}
-                className="text-accent underline underline-offset-2 hover:text-paper"
-              >
-                <code className="font-mono text-sm break-all">{PROJECT_DONATE_ADDRESS}</code>
-              </a>
-            </div>
+            {donateAddress !== null ? (
+              <div className="mt-8 inline-flex max-w-full flex-col gap-2 rounded-xl border border-paper/15 bg-paper/5 px-5 py-4">
+                <a
+                  href={lightningHref(donateAddress)}
+                  className="text-accent underline underline-offset-2 hover:text-paper"
+                >
+                  <code className="font-mono text-sm break-all">{donateAddress}</code>
+                </a>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

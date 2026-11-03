@@ -30,7 +30,12 @@ export default defineConfig({
     include: ['src/__tests__/**/*.test.{ts,tsx}', 'src/__tests__/app/.well-known/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'text-summary', 'html', 'lcov'],
+      // html and lcov are not uploaded. Writing them in CI pushes the check
+      // job past its 10-minute limit. Thresholds still apply.
+      reporter:
+        process.env.CI === 'true'
+          ? ['text', 'text-summary']
+          : ['text', 'text-summary', 'html', 'lcov'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/*.test.{ts,tsx}',

@@ -34,16 +34,51 @@ test('opening a second FAQ question closes the first', async ({ page }) => {
   await expect(questions.nth(0)).toHaveJSProperty('open', false);
 });
 
+test('Function: MarketingHeader — the root info page shows no back arrow, the other marketing pages keep it', async ({
+  page,
+}) => {
+  await page.goto('/about');
+  const header = page.locator('header');
+  await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
+  await header.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(header.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect(header.getByRole('button', { name: 'Back' })).toHaveCount(0);
+  await page.goto('/');
+  await expect(header.getByRole('link', { name: '21.gifts' })).toBeVisible();
+  await expect(header.getByRole('link', { name: /^Back/ })).toHaveCount(0);
+});
+
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '21.gifts also needs support' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
     'href',
-    'lightning:21gifts@walletofsatoshi.com',
+    'lightning:21gifts@21.gifts',
   );
 });
 
-test('Happyland follows the giving journey and keeps unverified claims out', async ({ page }) => {
+test('Function: projectDonateAddress — the landing donate link is the platform account on this host', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const project = page.locator('#project');
+  await expect(project.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
+    'href',
+    'lightning:21gifts@21.gifts',
+  );
+});
+
+test('Function: getPlatformUsername — the build platform username names the donate address', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#project').getByRole('link', { name: /^21gifts@/ })).toBeVisible();
+});
+
+test('Happyland follows the giving journey and hides unverified claims', async ({ page }) => {
   await page.goto('/');
   const sections = page.locator('main > section');
   await expect(sections.nth(1)).toHaveAttribute('id', 'shops');

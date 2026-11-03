@@ -4,6 +4,8 @@ import {
   proxyDiagnosticsPost,
   proxyAuthPasskeyAuthenticateBeginPost,
   proxyAuthPasskeyAuthenticateFinishPost,
+  proxyAuthPasskeyRecoveryBeginPost,
+  proxyAuthPasskeyRecoveryFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
   proxyAuthPasskeyRegisterFinishPost,
   proxyAuthPasskeyReplaceBeginPost,
@@ -11,29 +13,44 @@ import {
   proxyAuthPasskeySeedBeginPost,
   proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
+  proxyMeWalletHeartsPost,
+  proxyMeWalletReportPost,
+  proxyMeEventsPost,
+  proxyMeWalletPut,
+  proxyLnurlpayRegisterPost,
+  proxyLnurlpayRecoverPost,
+  proxyLnurlpayTransferPost,
+  proxyLnurlpayMetadataGet,
+  proxyLnurlpInvoiceGet,
+  proxyVerifyGet,
   proxyMePasskeyRenewAckPost,
   proxyMePasskeyRenewReportPost,
-  proxyLightningAddressGet,
+  proxyMePreviousWalletDelete,
+  proxyMePreviousWalletsGet,
+  proxyMeRecoverySharePut,
   proxyGiftsGet,
   proxyGiftsStatsGet,
+  proxyFxSpotGet,
   proxyMeActivityGet,
+  proxyMeLoansGet,
   proxyMeGet,
   proxyPosDelete,
   proxyPosGet,
   proxyPosPost,
   proxyMeForumLawsDismissedPost,
+  proxyMeWalletIntroSeenPost,
   proxyMeAmountUnitPost,
   proxyMeFiatPost,
   proxyMeLocalePost,
   proxyMeNotificationLevelPost,
-  proxyMeLightningAddressDelete,
-  proxyMeLightningAddressPost,
+  proxyMeHeartNotificationsPost,
   proxyMeLocationPost,
   proxyMeAboutPhotoGet,
   proxyProfilePhotoGet,
   proxyProfilePhotoPut,
   proxyWideBannerGet,
   proxyWideBannerPut,
+  proxyPublicProfileSlotGet,
   proxyMeAboutPut,
   proxyMeNamePost,
   proxyMeUsernamePost,
@@ -42,8 +59,12 @@ import {
   proxyMembersActivityGet,
   proxyMembersGet,
   proxyMembersPostsGet,
+  proxyMembersShopsGet,
+  proxyMembersCreditsGet,
   proxyMembersRepliesGet,
   proxyContactPost,
+  proxyLnurlInvoicePost,
+  proxyLnurlPayRequestPost,
   proxyConversationGet,
   proxyConversationInvoicePost,
   proxyConversationMessagePhotoGet,
@@ -65,7 +86,9 @@ import {
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
   proxyMessagesInvoicePost,
+  proxyMessagesRepaymentDuePost,
   proxyMessagesPhotoGet,
+  proxyMessagesPhotoExtGet,
   proxyMessagesPost,
   proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
@@ -73,6 +96,8 @@ import {
   proxyPublicMessageGet,
   proxyExternalAuthorProfileGet,
   proxyExternalAuthorPostsGet,
+  proxyExternalAuthorShopsGet,
+  proxyExternalAuthorCreditsGet,
   proxyExternalAuthorRepliesGet,
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
@@ -81,6 +106,7 @@ import {
   proxyTranslateConversationMessagePost,
   proxyTranslateNotePost,
   proxyViewActivityGet,
+  proxyViewListGet,
   proxyTrustAppointModeratorPost,
   proxyTrustChainGet,
   proxyTrustConfirmModeratorPost,
@@ -155,6 +181,222 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
   });
 
+  it('proxyMeWalletReportPost hits POST /me/wallet/report with the body', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ balanceSats: 1, syncedAt: 'now', payments: [] });
+    await proxyMeWalletReportPost(
+      new Request('http://localhost/me/wallet/report', {
+        method: 'POST',
+        headers: { authorization: 'Bearer sess', 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet/report');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
+  });
+
+  it('proxyMeWalletHeartsPost hits POST /me/wallet/hearts with the body', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ hashes: ['a'.repeat(64)] });
+    await proxyMeWalletHeartsPost(
+      new Request('http://localhost/me/wallet/hearts', {
+        method: 'POST',
+        headers: { authorization: 'Bearer sess', 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet/hearts');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
+  });
+
+  it('proxyMeEventsPost hits POST /me/events with the body', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ events: [] });
+    await proxyMeEventsPost(
+      new Request('http://localhost/me/events', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/events');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+  });
+
+  it('proxyMeWalletPut hits PUT /me/wallet with the body', async () => {
+    const fetchMock = stubApi();
+    await proxyMeWalletPut(
+      new Request('http://localhost/me/wallet', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: '{"sparkPubkey":"02ab"}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet');
+    expect(init.method).toBe('PUT');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"sparkPubkey":"02ab"}');
+  });
+
+  it('proxyLnurlpayRegisterPost hits POST /lnurlpay/:pubkey', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayRegisterPost(
+      new Request('http://localhost/lnurlpay/02ab', { method: 'POST', body: '{}' }),
+      '02ab',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/lnurlpay/02ab');
+    expect(init.method).toBe('POST');
+  });
+
+  it('proxyLnurlpayRecoverPost hits POST /lnurlpay/:pubkey/recover', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayRecoverPost(
+      new Request('http://localhost/lnurlpay/02ab/recover', { method: 'POST', body: '{}' }),
+      '02ab',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurlpay/02ab/recover');
+  });
+
+  it('proxyLnurlpayTransferPost hits POST /lnurlpay/:pubkey/transfer', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayTransferPost(
+      new Request('http://localhost/lnurlpay/02ab/transfer', { method: 'POST', body: '{}' }),
+      '02ab',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/lnurlpay/02ab/transfer');
+    expect(init.method).toBe('POST');
+    expect(init.signal).toBeUndefined();
+    await proxyLnurlpayTransferPost(
+      new Request('http://localhost/lnurlpay/x/transfer', { method: 'POST', body: '{}' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/lnurlpay/a%2Fb/transfer');
+  });
+
+  it('proxyAuthPasskeyRecoveryBeginPost hits POST /auth/passkey/recovery/begin', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRecoveryBeginPost(
+      new Request('http://localhost/auth/passkey/recovery/begin', {
+        method: 'POST',
+        headers: { 'x-app-build': 'build-1' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/auth/passkey/recovery/begin');
+    expect(init.method).toBe('POST');
+    expect(new Headers(init.headers).get('x-app-build')).toBe('build-1');
+  });
+
+  it('proxyAuthPasskeyRecoveryFinishPost hits POST /auth/passkey/recovery/finish', async () => {
+    const fetchMock = stubApi();
+    await proxyAuthPasskeyRecoveryFinishPost(
+      new Request('http://localhost/auth/passkey/recovery/finish', {
+        method: 'POST',
+        headers: { 'x-app-build': 'build-1', origin: 'http://localhost' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/auth/passkey/recovery/finish');
+    expect(init.method).toBe('POST');
+    expect(new Headers(init.headers).get('x-app-build')).toBe('build-1');
+    expect(new Headers(init.headers).get('origin')).toBe('http://localhost');
+  });
+
+  it('proxyMeRecoverySharePut hits PUT /me/recovery-share', async () => {
+    const fetchMock = stubApi();
+    await proxyMeRecoverySharePut(
+      new Request('http://localhost/me/recovery-share', {
+        method: 'PUT',
+        headers: { authorization: 'Bearer token' },
+        body: '{}',
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/recovery-share');
+    expect(init.method).toBe('PUT');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+  });
+
+  it('proxyMePreviousWalletsGet hits GET /me/previous-wallets', async () => {
+    const fetchMock = stubApi();
+    await proxyMePreviousWalletsGet(new Request('http://localhost/me/previous-wallets'));
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/previous-wallets');
+    expect(init.method).toBe('GET');
+  });
+
+  it('proxyMePreviousWalletDelete hits DELETE /me/previous-wallets/:sparkPubkey', async () => {
+    const fetchMock = stubApi();
+    await proxyMePreviousWalletDelete(
+      new Request('http://localhost/me/previous-wallets/02ab', { method: 'DELETE' }),
+      '02ab',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/previous-wallets/02ab');
+    expect(init.method).toBe('DELETE');
+    await proxyMePreviousWalletDelete(
+      new Request('http://localhost/me/previous-wallets/x', { method: 'DELETE' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/me/previous-wallets/a%2Fb');
+  });
+
+  it('proxyLnurlpayMetadataGet hits GET /lnurlpay/:pubkey/metadata with the query', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayMetadataGet(
+      new Request('http://localhost/lnurlpay/02ab/metadata?offset=0&limit=5'),
+      '02ab',
+    );
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/lnurlpay/02ab/metadata');
+    expect(url.search).toBe('?offset=0&limit=5');
+  });
+
+  it('encodes path segments', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlpayRegisterPost(
+      new Request('http://localhost/lnurlpay/x', { method: 'POST', body: '{}' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurlpay/a%2Fb');
+  });
+
+  it('proxyLnurlpInvoiceGet hits GET /lnurlp/:username/invoice and allows any origin', async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockResolvedValueOnce(
+      new Response('{"pr":"x"}', { status: 200, headers: { 'content-type': 'application/json' } }),
+    );
+    const res = await proxyLnurlpInvoiceGet(
+      new Request('http://localhost/lnurlp/ada/invoice?amount=1000'),
+      'ada',
+    );
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/lnurlp/ada/invoice');
+    expect(url.search).toBe('?amount=1000');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('content-type')).toBe('application/json');
+    expect(await res.json()).toEqual({ pr: 'x' });
+  });
+
+  it('proxyVerifyGet hits GET /verify/:paymentHash and allows any origin', async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockResolvedValueOnce(new Response('{}', { status: 404 }));
+    const res = await proxyVerifyGet(new Request('http://localhost/verify/abc'), 'abc');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/verify/abc');
+    expect(res.status).toBe(404);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+  });
+
   it('proxyMePasskeyRenewReportPost hits POST /me/passkey-renew/report', async () => {
     const fetchMock = stubApi();
     await proxyMePasskeyRenewReportPost(
@@ -205,6 +447,12 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/activity');
   });
 
+  it('proxyMeLoansGet hits /me/loans', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLoansGet(new Request('http://localhost/me/loans'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/loans');
+  });
+
   it('proxyMeNamePost hits POST /me/name', async () => {
     const fetchMock = stubApi();
     await proxyMeNamePost(new Request('http://localhost/me/name', { method: 'POST', body: '{}' }));
@@ -247,6 +495,82 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/pictures/me', { method: 'PUT', body: '{"photo":null}' }),
     );
     expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/pictures/me');
+  });
+
+  it('proxyPublicProfileSlotGet returns the first image and 404 otherwise', async () => {
+    const fetchMock = stubApi();
+    const missing = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/bad'),
+      'pictures',
+      '[accountId]',
+    );
+    expect(missing.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const jpeg = new Response(new Uint8Array([1]), {
+      status: 200,
+      headers: { 'content-type': 'image/jpeg' },
+    });
+    fetchMock.mockResolvedValueOnce(jpeg);
+    const picture = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(picture.status).toBe(200);
+    expect(picture.headers.get('content-type')).toBe('image/jpeg');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/acc_1.jpg');
+
+    const plain = new Response('{}', { status: 200 });
+    plain.headers.delete('content-type');
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(plain)
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([2]), {
+          status: 200,
+          headers: { 'content-type': 'image/webp' },
+        }),
+      );
+    const webp = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(webp.headers.get('content-type')).toBe('image/webp');
+    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/pictures/acc_1.webp');
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue(new Response(null, { status: 404 }));
+    const banner = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/banners/acc_1'),
+      'banners',
+      'acc_1',
+    );
+    expect(banner.status).toBe(404);
+    expect(await banner.json()).toEqual({ error: 'Not found' });
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/banners/acc_1.jpg');
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/banners/acc_1.png');
+    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/banners/acc_1.webp');
+  });
+
+  it('proxyPublicProfileSlotGet returns an upstream 502 without the other extensions', async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Upstream api unreachable' }), {
+        status: 502,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    const down = await proxyPublicProfileSlotGet(
+      new Request('http://localhost/pictures/acc_1'),
+      'pictures',
+      'acc_1',
+    );
+    expect(down.status).toBe(502);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/pictures/acc_1.jpg');
   });
 
   it('proxyWideBannerGet and proxyWideBannerPut hit /banners/me', async () => {
@@ -296,6 +620,21 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/posts');
   });
 
+  it('proxyMembersShopsGet encodes the id in GET /members/:id/shops', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersShopsGet(new Request('http://localhost/forum/members/a%2Fb/shops'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/shops');
+  });
+
+  it('proxyMembersCreditsGet encodes the id in GET /members/:id/credits', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersCreditsGet(
+      new Request('http://localhost/forum/members/a%2Fb/credits'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/credits');
+  });
+
   it('proxyMembersRepliesGet encodes the id in GET /members/:id/replies', async () => {
     const fetchMock = stubApi();
     await proxyMembersRepliesGet(
@@ -314,6 +653,15 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/forum-laws-dismissed');
   });
 
+  it('proxyMeWalletIntroSeenPost hits POST /me/wallet-intro-seen', async () => {
+    const fetchMock = stubApi();
+    await proxyMeWalletIntroSeenPost(
+      new Request('http://localhost/me/wallet-intro-seen', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-intro-seen');
+  });
+
   it('proxyMeNotificationLevelPost hits POST /me/notification-level', async () => {
     const fetchMock = stubApi();
     await proxyMeNotificationLevelPost(
@@ -321,6 +669,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/notification-level');
+  });
+
+  it('proxyMeHeartNotificationsPost hits POST /me/heart-notifications', async () => {
+    const fetchMock = stubApi();
+    await proxyMeHeartNotificationsPost(
+      new Request('http://localhost/me/heart-notifications', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/heart-notifications');
   });
 
   it('proxyMeAmountUnitPost hits POST /me/amount-unit', async () => {
@@ -344,22 +701,6 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/fiat');
   });
 
-  it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressPost(
-      new Request('http://localhost/me/lightning-address', { method: 'POST', body: '{}' }),
-    );
-    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
-  });
-
-  it('proxyMeLightningAddressDelete hits DELETE /me/lightning-address', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressDelete(
-      new Request('http://localhost/me/lightning-address', { method: 'DELETE' }),
-    );
-    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
-  });
-
   it('proxyMeRulesAgreementPost hits POST /me/rules-agreement', async () => {
     const fetchMock = stubApi();
     await proxyMeRulesAgreementPost(
@@ -369,12 +710,10 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/rules-agreement');
   });
 
-  it('proxyLightningAddressGet hits /lightning-address', async () => {
+  it('proxyFxSpotGet hits /fx/spot', async () => {
     const fetchMock = stubApi();
-    await proxyLightningAddressGet(
-      new Request('http://localhost/lightning-address?address=a@b.com'),
-    );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lightning-address');
+    await proxyFxSpotGet(new Request('http://localhost/fx/spot'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/fx/spot');
   });
 
   it('proxyGiftsStatsGet hits /gifts/stats', async () => {
@@ -476,6 +815,24 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-posts');
   });
 
+  it('proxyExternalAuthorShopsGet encodes the id in /messages/:id/external-shops', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorShopsGet(
+      new Request('http://localhost/public-messages/a%2Fb/external-shops'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/external-shops');
+  });
+
+  it('proxyExternalAuthorCreditsGet encodes the id in /messages/:id/external-credits', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorCreditsGet(
+      new Request('http://localhost/public-messages/a%2Fb/external-credits'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/external-credits');
+  });
+
   it('proxyExternalAuthorRepliesGet hits /messages/:id/external-replies', async () => {
     const fetchMock = stubApi();
     await proxyExternalAuthorRepliesGet(
@@ -511,6 +868,24 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
+  });
+
+  it('proxyLnurlPayRequestPost hits POST /lnurl/pay-request', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlPayRequestPost(
+      new Request('http://localhost/lnurl/pay-request', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurl/pay-request');
+  });
+
+  it('proxyLnurlInvoicePost hits POST /lnurl/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlInvoicePost(
+      new Request('http://localhost/lnurl/invoice', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurl/invoice');
   });
 
   it('proxyConversationsGet hits /conversations', async () => {
@@ -671,6 +1046,33 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo/1.jpg');
   });
 
+  it('proxyMessagesPhotoExtGet hits /messages/:id/photo.jpg without Authorization', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/m1/photo.jpg?v=1', {
+        headers: { Authorization: 'Bearer secret' },
+      }),
+      'm1',
+      'jpg',
+    );
+    const destination = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(destination.pathname).toBe('/messages/m1/photo.jpg');
+    expect(destination.pathname).not.toBe('/messages/m1/photo');
+    expect(destination.search).toBe('?v=1');
+    const headers = new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers);
+    expect(headers.get('authorization')).toBeNull();
+  });
+
+  it('proxyMessagesPhotoExtGet encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/a%2Fb/photo.jpg'),
+      'a/b',
+      'jpg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo.jpg');
+  });
+
   it('proxyMessagesVideoGet hits /messages/m1/video.mp4', async () => {
     const fetchMock = stubApi();
     await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mp4'), 'm1', 'mp4');
@@ -760,6 +1162,15 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/invoice');
   });
 
+  it('proxyMessagesRepaymentDuePost hits POST /messages/:id/repayment/due', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentDuePost(
+      new Request('http://localhost/messages/m1/repayment/due', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/due');
+  });
+
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {
     const fetchMock = stubApi();
     const viewKey = 'a'.repeat(64);
@@ -791,6 +1202,17 @@ describe('api proxy wrappers', () => {
       viewKey,
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/activity`);
+  });
+
+  it('proxyViewListGet hits /view/:viewKey/posts', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewListGet(
+      new Request(`http://localhost/view-key/${viewKey}/posts`),
+      viewKey,
+      'posts',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/posts`);
   });
 
   it('proxyPushVapidPublicGet hits /push/vapid-public', async () => {

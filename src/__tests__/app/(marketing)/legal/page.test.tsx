@@ -57,4 +57,60 @@ describe('LegalPage', () => {
       expect(link.getAttribute('href')).toBe('/contact');
     }
   });
+
+  it('describes only the in-app wallet and names no other wallet app', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).toContain('your own Bitcoin wallet');
+    expect(container.textContent).not.toMatch(
+      new RegExp(['wallet', 'of', 'satoshi'].join(' '), 'i'),
+    );
+  });
+
+  it('links the Terms of Use from the imprint', () => {
+    render(<LegalPage />);
+    expect(screen.getByRole('link', { name: 'Terms of Use' }).getAttribute('href')).toBe('/terms');
+  });
+
+  it('keeps what is true about the website and no longer promises no tracking', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).toContain(
+      'The website does not run advertising and does not load analytics scripts.',
+    );
+    expect(container.textContent).not.toMatch(/sell data/i);
+    expect(container.textContent).not.toMatch(/track visitors/i);
+  });
+
+  it('says where a kept Social Recovery share and the recovery words are stored', () => {
+    const { container } = render(<LegalPage />);
+    const text = (container.textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain(
+      'If another member chose you to keep a Social Recovery share for them, the application stores that share in localStorage under your account until you delete it.',
+    );
+    expect(text).toContain(
+      "While recovering an account or moving a balance, the 12 recovery words and the shares stay only in the open tab's memory.",
+    );
+  });
+
+  it('says which part of the 12 words and which previous wallet data 21.gifts keeps after Social Recovery', () => {
+    const { container } = render(<LegalPage />);
+    const text = (container.textContent ?? '').replace(/\s+/g, ' ');
+    expect(text).toContain(
+      'If you set up Social Recovery, your 12 recovery words are split into three parts: the two people you choose each keep one, and 21.gifts stores the third, encrypted, with your account, for your current wallet and for each previous wallet until you remove that wallet.',
+    );
+    expect(text).toContain('One part alone opens nothing; any two parts together open the wallet.');
+    expect(text).toContain(
+      "After a recovery, the key and the address of the previous wallet stay with your account until you remove it, and 21.gifts reads that wallet's balance by its address from a public blockchain explorer, without your account details.",
+    );
+  });
+
+  it('points wallet and payment data to the Wallet and data section of the Terms of Use', () => {
+    const { container } = render(<LegalPage />);
+    expect(screen.getByRole('heading', { name: 'Wallet and payment data', level: 3 })).toBeTruthy();
+    expect(container.textContent).toContain(
+      '21.gifts sees the balance and the complete transaction history of the wallet in the app.',
+    );
+    expect(screen.getByRole('link', { name: 'Wallet and data' }).getAttribute('href')).toBe(
+      '/terms#wallet-and-data',
+    );
+  });
 });

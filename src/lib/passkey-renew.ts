@@ -7,7 +7,13 @@ import {
   passkeyRenewDebugFields,
   type PasskeyRenewDebug,
 } from '@/lib/passkey-renew-debug';
-import { classifyWebAuthnError, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
+import {
+  classifyWebAuthnError,
+  obtainPrfFirst,
+  prfEvalFirstSalt,
+  rememberCeremonyRpId,
+} from '@/lib/prf-mnemonic';
+import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { creationOptionsFromJSON, credentialToJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -195,7 +201,15 @@ function reportSeedDiagnostic(
   });
 }
 
-async function mergePrfExtension(
+/**
+ * Adds the PRF request (`prf.eval.first` = the PRF salt) to passkey creation
+ * options, so the new passkey yields the bytes behind a recovery phrase.
+ * Other extensions and options stay as they are.
+ *
+ * @param options - Creation options as decoded from the api.
+ * @returns A copy with the PRF extension.
+ */
+export async function mergePrfExtension(
   options: PublicKeyCredentialCreationOptions,
 ): Promise<PublicKeyCredentialCreationOptions> {
   const salt = await prfEvalFirstSalt();
@@ -248,7 +262,7 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
       return { outcome: 'cancelled' };
     }
     debug = passkeyRenewDebug(credential, null);
-    const prfFirst = await obtainPrfFirst(credential);
+    const prfFirst = await obtainPrfFirst(credential, rememberCeremonyRpId(begin.options));
     if (!isCurrentSession(sessionToken)) {
       return { outcome: 'cancelled' };
     }
@@ -274,6 +288,12 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
     if (!isCurrentSession(sessionToken)) {
       return { outcome: 'cancelled' };
     }
+    void rememberPhraseFromPrf({
+      prfFirst,
+      credentialId: credential.id,
+      account: nextAccount,
+      sessionToken,
+    });
     return { outcome: 'ok', account: nextAccount, prfFirst };
   } catch (err) {
     reportSeedDiagnostic(stage, err, challengeId);
