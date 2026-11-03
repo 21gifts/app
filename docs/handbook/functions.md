@@ -657,6 +657,13 @@
 - **Returns / side effects:** When the current entry was pushed in this document on top of that path, calls `router.back()` once (a client-side step back, no document load). A second call for the same view before the browser has left this one (an effect that runs again) does nothing, so it neither steps back twice nor replaces under the step. Otherwise (a direct link, the first view after a document load, an arrival by the arrow or a browser step) calls `router.replace(path)`; `recordCurrentView` then steps back onto the view before when it is the same path. No network.
 - **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), `SocialRecoveryScreen` (**Done** back to `/settings`), `RecoverScreen` (**Log in** back to `/login` after a recovery done before), `useRemainingBalance` (**Done** and the removal back to `/settings`), and every in-app redirect that used `router.replace`: `OnboardingGate` (`/login` and the next onboarding step), `LogoutButton` (`/login`), `ViewProfileClaim` (the next onboarding step), `ForumLoader` (`/login`, `/setup/rules`), and `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen`, `ShopTable` (`/setup/rules`).
 
+## Function: canStepBack
+
+- **Purpose:** Preview whether a plain click toward a path will step back with `router.back()`. Same conditions as `takeStepBack`, without clearing the claim, so the arrow can still claim the step on the same click. `ShopsScreen` uses it when the top-left arrow's href is the view-stack path and has no hash: the view then follows the restored entry (`popstate`) instead of that href.
+- **Inputs:** An in-app path.
+- **Returns / side effects:** A boolean. True when `takeStepBack` would tell the caller to call `router.back()`. Does not clear `pushed`. No network.
+- **Used by:** `ShopsScreen`.
+
 ## Function: takeStepBack
 
 - **Purpose:** Claim a browser back step to a given view: true only when this document pushed the current history entry on top of that view, which is the previous view in this tab. The claim holds until the browser arrives, so a second call before that (a second click) returns false and cannot step back twice. The arrow and the step returns use it, so they step back instead of adding an entry when the browser's back would do the same.
