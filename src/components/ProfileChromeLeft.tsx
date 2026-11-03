@@ -106,6 +106,7 @@ export function ProfileChromeLeft({
           href={target.href}
           aria-label={t(target.labelKey)}
           className={arrowClass}
+          data-view-history-back=""
           onClick={(event) => {
             if (
               event.metaKey ||

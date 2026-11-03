@@ -230,6 +230,7 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
     const link = document.createElement('a');
     link.href = '/shops';
+    link.setAttribute('data-view-history-back', '');
     document.body.append(link);
     link.addEventListener('click', (event) => {
       event.preventDefault();
@@ -243,6 +244,28 @@ describe('ShopsScreen', () => {
     });
     vi.useRealTimers();
     expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+    link.remove();
+  });
+
+  it('selects List for a hashless shops link that is not the history arrow', () => {
+    vi.mocked(canStepBack).mockImplementation((path: string) => path === '/shops');
+    window.history.replaceState(null, '', '/shops?pin=p2#map');
+    renderWithLocale(<ShopsScreen />);
+    expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
+    const link = document.createElement('a');
+    link.href = '/shops';
+    document.body.append(link);
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.history.pushState(null, '', '/shops');
+    });
+    vi.useFakeTimers();
+    fireEvent.click(link);
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    vi.useRealTimers();
+    expect(screen.getByRole('button', { name: 'List', pressed: true })).toBeTruthy();
     link.remove();
   });
 

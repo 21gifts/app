@@ -125,8 +125,10 @@ export function ShopsScreen(): ReactElement {
       // The top-left arrow's href is the previous view-stack path and carries
       // no hash. When that click steps back, the restored entry keeps its hash
       // (`/shops#post`). Applying the href would show List over those posts.
+      // Only the history arrow steps back. Another link to the same path
+      // (the menu, or the #Shop tag) still selects the view in its href.
       const historyPath = `${url.pathname}${url.search}`;
-      if (canStepBack(historyPath)) {
+      if (anchor.hasAttribute('data-view-history-back') && canStepBack(historyPath)) {
         return;
       }
       // Same rule as the hash on load: none or an unknown one is List.

@@ -5040,6 +5040,55 @@ test('Function: takeStepBack — after the arrow, the browser back continues to 
   await expect(page).toHaveURL(`${origin}/welcome`);
 });
 
+test('Function: canStepBack — the arrow back from a place keeps the posts', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-shop',
+            name: 'Ada',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 5,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+            place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/forum\/messages\/places(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ places: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await openSignedInMenu(page);
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Shops', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'List', pressed: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Happyland', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Happyland', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/shops\?pin=m-shop#map$/);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(/\/shops#post$/);
+  await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
+});
+
 test('Function: previousViewPath is the shops href on the back link', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
