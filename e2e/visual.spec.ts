@@ -1881,7 +1881,10 @@ async function openShopTextNotLongerError(page: Page): Promise<void> {
     .click();
   await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery and Coffee House Zurich");
   // Some edit fixtures store a place without a country.
-  await page.getByTestId('shop-address-fields').getByLabel('Country', { exact: true }).selectOption('CH');
+  await page
+    .getByTestId('shop-address-fields')
+    .getByLabel('Country', { exact: true })
+    .selectOption('CH');
   await page.getByRole('button', { name: 'Use this place' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');

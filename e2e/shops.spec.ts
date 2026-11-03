@@ -1275,7 +1275,7 @@ test('Function: shopAddressProblems — address errors appear before confirm', a
     page.getByText('The house number must start with a digit, for example 12 or 12a.'),
   ).toBeVisible();
   await expect(house).toHaveAttribute('aria-invalid', 'true');
-  const country = page.getByLabel('Country', { exact: true });
+  const country = page.getByTestId('shop-address-fields').getByLabel('Country', { exact: true });
   await country.focus();
   await country.blur();
   await expect(page.getByText('Choose a country.')).toBeVisible();
@@ -1461,6 +1461,7 @@ test('a living-room shop note shows live guidance and never posts', async ({ pag
     }
   });
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write a post' }).click();
   const composer = page.getByLabel('Your message');
   await composer.fill('Cafe Luna is open every day. #21GiftsShop');
   const feedback = page.getByText(
@@ -1548,7 +1549,7 @@ test('Function: apiMediaProblem — an API video rejection returns to the photo 
   );
   await page.goto('/shops#post');
   await page.getByRole('button', { name: 'Add a shop' }).click();
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await page.locator('input[type="file"][accept*="video"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();

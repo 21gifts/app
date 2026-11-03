@@ -1623,88 +1623,88 @@ export function ForumBoard({
                     }
                   }}
                 >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <MessageKindTags
-                    kinds={noteKinds({
-                      parentId: message.parentId,
-                      text: message.text,
-                      goalSats: message.goalSats,
-                      goalRepayable: message.goalRepayable,
-                    })}
-                  >
-                    {typeof message.accountId === 'string' && message.accountId !== '' ? (
-                      <button
-                        type="button"
-                        aria-label={t('forum.authorProfile')}
-                        className="text-sm font-medium text-app-fg underline underline-offset-2"
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          router.push(`/members/${message.accountId}`);
-                        }}
-                      >
-                        {message.name}
-                      </button>
-                    ) : message.via === 'nostr' ? (
-                      <button
-                        type="button"
-                        aria-label={t('forum.authorProfile')}
-                        className="text-sm font-medium text-app-fg underline underline-offset-2"
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          router.push(
-                            `/messages/${message.id}/author?name=${encodeURIComponent(message.name)}`,
-                          );
-                        }}
-                      >
-                        {message.name}
-                      </button>
-                    ) : (
-                      <span className="text-sm font-medium text-app-fg">{message.name}</span>
-                    )}
-                    {roleKeys !== null ? (
-                      <button
-                        type="button"
-                        aria-expanded={roleHintOpen}
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          setOpenRoleMessageId(roleHintOpen ? null : message.id);
-                        }}
-                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                      >
-                        {t(roleKeys.label)}
-                      </button>
-                    ) : message.via === 'nostr' && !hideVerified ? (
-                      <button
-                        type="button"
-                        aria-expanded={roleHintOpen}
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          setOpenRoleMessageId(roleHintOpen ? null : message.id);
-                        }}
-                        className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                      >
-                        {t('forum.via.nostr')}
-                      </button>
-                    ) : null}
-                    {message.staffTag === 'software_developer' ? (
-                      <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                        {t('forum.staff.softwareDeveloper')}
-                      </span>
-                    ) : null}
-                  </MessageKindTags>
-                  <time dateTime={message.createdAt} className="text-xs text-app-subtle">
-                    {formatForumTime(message.createdAt, locale)}
-                  </time>
-                </div>
-                {roleHintOpen && roleKeys !== null ? (
-                  <p role="status" className="mt-1 text-xs text-app-muted">
-                    {t(roleKeys.hint)}
-                  </p>
-                ) : roleHintOpen && message.via === 'nostr' ? (
-                  <p role="status" className="mt-1 text-xs text-app-muted">
-                    {t('forum.via.nostrHint')}
-                  </p>
-                ) : null}
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <MessageKindTags
+                      kinds={noteKinds({
+                        parentId: message.parentId,
+                        text: message.text,
+                        goalSats: message.goalSats,
+                        goalRepayable: message.goalRepayable,
+                      })}
+                    >
+                      {typeof message.accountId === 'string' && message.accountId !== '' ? (
+                        <button
+                          type="button"
+                          aria-label={t('forum.authorProfile')}
+                          className="text-sm font-medium text-app-fg underline underline-offset-2"
+                          onClick={(event) => {
+                            stopCardToggle(event);
+                            router.push(`/members/${message.accountId}`);
+                          }}
+                        >
+                          {message.name}
+                        </button>
+                      ) : message.via === 'nostr' ? (
+                        <button
+                          type="button"
+                          aria-label={t('forum.authorProfile')}
+                          className="text-sm font-medium text-app-fg underline underline-offset-2"
+                          onClick={(event) => {
+                            stopCardToggle(event);
+                            router.push(
+                              `/messages/${message.id}/author?name=${encodeURIComponent(message.name)}`,
+                            );
+                          }}
+                        >
+                          {message.name}
+                        </button>
+                      ) : (
+                        <span className="text-sm font-medium text-app-fg">{message.name}</span>
+                      )}
+                      {roleKeys !== null ? (
+                        <button
+                          type="button"
+                          aria-expanded={roleHintOpen}
+                          onClick={(event) => {
+                            stopCardToggle(event);
+                            setOpenRoleMessageId(roleHintOpen ? null : message.id);
+                          }}
+                          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                        >
+                          {t(roleKeys.label)}
+                        </button>
+                      ) : message.via === 'nostr' && !hideVerified ? (
+                        <button
+                          type="button"
+                          aria-expanded={roleHintOpen}
+                          onClick={(event) => {
+                            stopCardToggle(event);
+                            setOpenRoleMessageId(roleHintOpen ? null : message.id);
+                          }}
+                          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                        >
+                          {t('forum.via.nostr')}
+                        </button>
+                      ) : null}
+                      {message.staffTag === 'software_developer' ? (
+                        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                          {t('forum.staff.softwareDeveloper')}
+                        </span>
+                      ) : null}
+                    </MessageKindTags>
+                    <time dateTime={message.createdAt} className="text-xs text-app-subtle">
+                      {formatForumTime(message.createdAt, locale)}
+                    </time>
+                  </div>
+                  {roleHintOpen && roleKeys !== null ? (
+                    <p role="status" className="mt-1 text-xs text-app-muted">
+                      {t(roleKeys.hint)}
+                    </p>
+                  ) : roleHintOpen && message.via === 'nostr' ? (
+                    <p role="status" className="mt-1 text-xs text-app-muted">
+                      {t('forum.via.nostrHint')}
+                    </p>
+                  ) : null}
                 </div>
                 {videoSrc !== undefined ? (
                   <ForumVideo
@@ -2411,7 +2411,7 @@ export function ForumBoard({
                                 placeholder={t('forum.replyPlaceholder')}
                                 value={replyDraft}
                                 onChange={onReplyDraftChange}
-                                maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                                maxLength={FORUM_MESSAGE_MAX_LENGTH + 1}
                                 rows={1}
                                 disabled={
                                   replyPayLocked ||
@@ -2622,7 +2622,7 @@ export function ForumBoard({
             onUsernameChange={onShopUsernameChange!}
             onSubmit={onPost}
             resetToken={shopResetToken}
-            maxLength={composerMaxLength}
+            maxLength={composerMaxLength + 1}
             photoError={
               formError === 'unsupported' ||
               formError === 'tooLarge' ||

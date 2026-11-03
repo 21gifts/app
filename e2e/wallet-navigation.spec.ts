@@ -352,7 +352,7 @@ test('the top-left arrow from a place on the shops map returns to the posts', as
       });
     });
   }
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await markDocument(page);
   const origin = new URL(page.url()).origin;
   await page.getByRole('link', { name: 'Bakery' }).first().click();

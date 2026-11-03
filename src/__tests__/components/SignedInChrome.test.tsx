@@ -1037,15 +1037,11 @@ describe('SignedInChrome', () => {
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
       fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
       expectMenuClosed();
-      expect(
-        screen.getByRole('dialog', { name: 'Add 21.gifts to your Home Screen' }),
-      ).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: 'Add 21.gifts to your Home Screen' })).toBeTruthy();
       expect(menuPanel()).toBe(panel);
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
       fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-      expect(
-        screen.queryByRole('dialog', { name: 'Add 21.gifts to your Home Screen' }),
-      ).toBeNull();
+      expect(screen.queryByRole('dialog', { name: 'Add 21.gifts to your Home Screen' })).toBeNull();
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(menuPanel())).toBe(false);
     } finally {
       if (previousInnerHeight === undefined) {

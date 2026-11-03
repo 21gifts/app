@@ -6246,7 +6246,8 @@ test('Function: AutoHeight — the open reaction box glides to the height its co
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
   // An amount that is not a number brings the amount error line in without a request.
   await form.getByLabel('Amount').fill('abc');
-  await form.getByRole('button', { name: 'Post' }).click();
+  // An invalid amount disables Post and shows the error at once, so the click cannot run.
+  await expect(form.getByRole('button', { name: 'Post' })).toBeDisabled();
   await expect(form.getByRole('alert')).toHaveText('Send at least ₿1 with your reaction');
   // While the height moved, a box glided and clipped; at rest it clips no more (below).
   await expect
@@ -14026,9 +14027,9 @@ test('Function: pushRenewalPending — a pending key renewal shows this device a
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'granted' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'On' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'On' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -14040,9 +14041,9 @@ test('Function: pushRenewalPending — a stored marker without notification perm
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'denied' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -14053,9 +14054,9 @@ test('Function: pushTurnedOff — an earlier Off shows this device as Off', asyn
     Object.defineProperty(Notification, 'permission', { configurable: true, get: () => 'granted' });
   });
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
@@ -16927,6 +16928,7 @@ test('Function: composerTextProblem — a living-room draft over 8000 keeps Post
     });
   });
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write a post' }).click();
   const draft = page.getByRole('textbox', { name: 'Your message' });
   const post = page.getByRole('button', { name: 'Post', exact: true });
   await expect(post).toBeEnabled();
@@ -16946,6 +16948,7 @@ test('Function: optionalTextProblem — a long place name shows the limit', asyn
     });
   });
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write a post' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   const name = page.getByRole('textbox', { name: 'Place name' });
   await name.fill('a'.repeat(81));
@@ -16966,6 +16969,7 @@ test('Function: placeLabelProblem — a control in a short place name names the 
     });
   });
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write a post' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   const name = page.getByRole('textbox', { name: 'Place name' });
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();

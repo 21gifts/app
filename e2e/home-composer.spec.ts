@@ -690,7 +690,7 @@ test('Function: WalletFooterActions — /wallet follows the scroll too and has n
     .poll(async () => (await page.getByRole('button', { name: 'Receive' }).boundingBox())!.height)
     .toBe(36);
 
-  await page.goto('/shops');
+  await page.goto('/shops#post');
   await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
 

@@ -42,8 +42,14 @@ test('ShopScreen gallery: two photos show dots and the second dot selects photo 
   await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
   const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
   await expect(stills).toHaveCount(2);
-  await expect(stills.nth(0)).toHaveAttribute('src', /\/e2e\/shop-photos\/one\.jpg$/);
-  await expect(stills.nth(1)).toHaveAttribute('src', /\/e2e\/shop-photos\/two\.jpg$/);
+  await expect(stills.nth(0)).toHaveAttribute(
+    'src',
+    '/messages/11111111-1111-4111-8111-111111111111/photo.jpg',
+  );
+  await expect(stills.nth(1)).toHaveAttribute(
+    'src',
+    '/messages/22222222-2222-4222-8222-222222222222/photo.jpg',
+  );
   const first = page.getByRole('button', { name: 'Photo 1 of 2' });
   const second = page.getByRole('button', { name: 'Photo 2 of 2' });
   await expect(first).toHaveAttribute('aria-current', 'true');

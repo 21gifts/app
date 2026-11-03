@@ -138,18 +138,16 @@ export function ForumPaySheet({
         rateDay={rateDay}
         onValueChange={onPayDraftChange}
         {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
+        {...(payError === 'amount'
+          ? { error: t('forum.payErrorAmount') }
+          : payError === 'habitAmount'
+            ? { error: t('habit.payErrorAmount') }
+            : {})}
       />
-      <Collapse show={payError !== null} instant>
-        {payError === 'amount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('forum.payErrorAmount')}
-          </p>
-        ) : null}
-        {payError === 'habitAmount' ? (
-          <p role="alert" className="text-sm text-app-danger">
-            {t('habit.payErrorAmount')}
-          </p>
-        ) : null}
+      <Collapse
+        show={payError !== null && payError !== 'amount' && payError !== 'habitAmount'}
+        instant
+      >
         {payError === 'noRate' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('pos.noRate', { code: fiat })}

@@ -22,8 +22,10 @@ export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { locale, t } = useTranslations();
-  const home = pathname === '/' ? '/' : localizedPublicPath(locale, '/');
-  const isRoot = pathname === '/' || pathname === home;
+  const localizedHome = localizedPublicPath(locale, '/');
+  // The unprefixed root keeps its wordmark on `/`. Section links always use the language URL.
+  const home = pathname === '/' ? '/' : localizedHome;
+  const isRoot = pathname === '/' || pathname === localizedHome;
 
   const closeMenu = (): void => {
     setOpen(false);
@@ -44,16 +46,16 @@ export function MarketingHeader(): ReactElement {
           aria-label={t('aria.primary')}
           className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden lg:flex'}`}
         >
-          <Link href={`${home}#how`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#how`} onClick={closeMenu}>
             {t('nav.how')}
           </Link>
-          <Link href={`${home}#happyland`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#happyland`} onClick={closeMenu}>
             {t('nav.happyland')}
           </Link>
-          <Link href={`${home}#why`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#why`} onClick={closeMenu}>
             {t('nav.why')}
           </Link>
-          <Link href={`${home}#faq`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#faq`} onClick={closeMenu}>
             {t('nav.faq')}
           </Link>
           <Link href={localizedPublicPath(locale, '/about')} onClick={closeMenu}>
