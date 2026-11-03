@@ -64,7 +64,7 @@ test('Function: publicPathFromUrl — switching language keeps the current page'
   await page.goto('/de/about');
   await page.getByLabel('Sprache').click();
   await page.getByRole('option', { name: 'Español' }).click();
-  await expect(page).toHaveURL(/\/es\/about$/);
+  await expect(page).toHaveURL(/:\/\/[^/]+\/about$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.getByRole('heading', { name: 'Lo que representa 21.gifts' })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toContainText('Mateo 10:8');
@@ -112,7 +112,7 @@ test('language switching updates the preview, navigation, and footer in every la
       await expect(option).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 10000 });
     await option.click();
-    await expect(page).toHaveURL(new RegExp(`/${choice.locale}$`));
+    await expect(page).toHaveURL(/:\/\/[^/]+\/$/);
     await expect(page.locator('html')).toHaveAttribute('lang', choice.locale);
     await expect(page.getByRole('heading', { name: choice.preview })).toBeVisible();
     await expect(page.getByRole('navigation').first()).toContainText(choice.navigation);

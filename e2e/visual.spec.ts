@@ -1152,6 +1152,89 @@ async function sortHomeShops(
   );
 }
 
+async function settleShopMarkers(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const holder = document.documentElement;
+    delete holder.dataset['shopMarkerSig'];
+    delete holder.dataset['shopMarkerStable'];
+  });
+  await page.waitForFunction(
+    () => {
+      const nodes = document.querySelectorAll(
+        '#shop-places-map .shop-place-marker, #shop-places-map .shop-cluster-marker, #shop-places-map .maplibregl-popup',
+      );
+      const signature = Array.from(nodes)
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return [rect.left, rect.top, rect.width, rect.height]
+            .map((value) => Math.round(value))
+            .join(',');
+        })
+        .join('|');
+      const holder = document.documentElement;
+      const previous = holder.dataset['shopMarkerSig'] ?? '';
+      const stable = Number(holder.dataset['shopMarkerStable'] ?? '0');
+      if (signature !== '' && signature === previous) {
+        holder.dataset['shopMarkerStable'] = String(stable + 1);
+      } else {
+        holder.dataset['shopMarkerSig'] = signature;
+        holder.dataset['shopMarkerStable'] = '0';
+      }
+      return Number(holder.dataset['shopMarkerStable']) >= 4;
+    },
+    undefined,
+    { timeout: 10_000, polling: 50 },
+  );
+}
+
+const SHOP_PHOTO_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAAH0lEQVR4AWP8+unNfwY8gImBAGBiIACYGAgAJgYCAABwvQPcvej1igAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** The browser's broken-image icon moves between captures. Serve one flat picture. */
+async function stubShopPhoto(page: Page): Promise<void> {
+  await page.route(
+    (url) => url.hostname === 'images.example',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: SHOP_PHOTO_PNG,
+      });
+    },
+  );
+}
+
+async function waitForShopPhoto(page: Page): Promise<void> {
+  const photo = page.locator('.shop-popup-photo');
+  await expect(photo).toBeVisible();
+  await photo.evaluate(async (node) => {
+    const image = node as HTMLImageElement;
+    image.loading = 'eager';
+    if (image.complete && image.naturalWidth > 0) return;
+    const src = image.currentSrc || image.src;
+    image.src = src;
+    await image.decode();
+  });
+}
+
+/** Whole pixels. A fraction here changes how the name, the arrow, and the close icon rasterize. */
+async function snapShopPopup(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(popup instanceof HTMLElement)) return;
+    popup.style.translate = '0px 0px';
+    const rect = popup.getBoundingClientRect();
+    const dx = Math.round(rect.left) - rect.left;
+    const dy = Math.round(rect.top) - rect.top;
+    popup.style.translate = `${dx}px ${dy}px`;
+    // The click lands on the card. Hover would underline the name, slide the
+    // arrow, and fill the close button, and the reflow decides which one.
+    popup.style.pointerEvents = 'none';
+  });
+}
+
 async function hideMapTiles(page: Page): Promise<void> {
   await page.addStyleTag({
     content: '#shop-places-map .maplibregl-canvas { visibility: hidden; }',
@@ -1200,6 +1283,7 @@ async function shotScreen(
   if (captureFullPage) {
     await expandScrollportForFullShot(page);
   }
+  await snapShopPopup(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
@@ -2641,12 +2725,19 @@ test.describe('screen baselines', () => {
 
   test('state / shops-marker', async ({ page }) => {
     await stubHomeMap(page);
+    await stubShopPhoto(page);
     await page.goto('/');
     const marker = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
     await expect(marker).toHaveCount(1, { timeout: 20_000 });
+    await settleShopMarkers(page);
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
+    await waitForShopPhoto(page);
+    // The click leaves the pointer on the card. On a phone that hits the
+    // close button or the name, and those hover styles move between runs.
+    await page.locator('.shop-popup-photo').hover();
     await hideMapTiles(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-marker');
   });
 
