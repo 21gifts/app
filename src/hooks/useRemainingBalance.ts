@@ -3,13 +3,16 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deletePreviousWallet, fetchPreviousWallets } from '@/lib/api';
+import { relockHeldShares } from '@/lib/held-shares';
 import {
   closePreviousWallet,
   openPreviousWallet,
   transferRemainingBalance,
 } from '@/lib/remaining-balance';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { returnToView } from '@/lib/view-history';
 import { visualPin } from '@/lib/visual-pin';
+import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -127,8 +130,13 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * removed), which closes it and returns to `/settings`. **Done** (after a
  * synced read of 0) returns there too. The words stay in component memory until the wallet
  * opened or the page closes; leaving the page closes the wallet
- * ({@link closePreviousWallet}). In a Playwright build the `prev-…` pins open
- * a fixture step.
+ * ({@link closePreviousWallet}). Words entered here also move the shares the
+ * member keeps for others from these words to the signed-in wallet's words in
+ * tab memory, read once the running phrase derivations have settled
+ * ({@link settlePhraseDerivations}, then {@link relockHeldShares}; on its own,
+ * never holding up the page; without words in tab memory, or for boxes that
+ * do not open with these words, nothing moves). In a Playwright
+ * build the `prev-…` pins open a fixture step.
  *
  * @param sparkPubkey - The previous wallet's identity key, from the address.
  * @returns The state and its actions.
@@ -183,6 +191,12 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
     (words: string): void => {
       const run = ++runRef.current;
       wordsRef.current = words;
+      const holder = useAuthStore.getState().account;
+      if (session !== null && holder !== null) {
+        void settlePhraseDerivations().then(() =>
+          relockHeldShares(session, holder.id, words, peekSessionPhrase()),
+        );
+      }
       setState({ step: 'opening', balanceSats: null, removal: 'idle' });
       void openPreviousWallet(words, key).then((result) => {
         if (runRef.current !== run) {
@@ -200,7 +214,7 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
         );
       });
     },
-    [key],
+    [key, session],
   );
 
   const retryOpen = (): void => {

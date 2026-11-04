@@ -4,6 +4,7 @@ import { expect, test, type Locator, type Page, type Route } from '@playwright/t
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
 import { installFakeWebAuthn } from './fake-webauthn';
+import { PREVIOUS_WORDS, routeHeldShares, sealedBox, type E2eHeldBox } from './held-boxes';
 import {
   installNoPrfWebAuthn,
   NO_PRF_REGISTER_BEGIN,
@@ -230,6 +231,37 @@ async function fillPayAmount(field: Locator, value: string): Promise<void> {
   await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
   await footerAtRest(page);
   await field.fill(value);
+}
+
+/**
+ * Blurs the focused field and waits until the page rests. A focused field folds the footer, and
+ * `AppHeightSync` reveals it again after every viewport resize, so a capture taken while a field
+ * holds the focus comes to rest wherever the last reveal left the scrollport.
+ *
+ * @param page - Page under test.
+ */
+async function restUnfocused(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+  await motionSettled(page);
+  await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+  await footerAtRest(page);
+}
+
+/**
+ * Centres a node in the window once the page rests with no field in focus ({@link restUnfocused}).
+ * A picked file input or a typed field otherwise keeps the focus and is revealed again on a
+ * viewport resize, so the node would come to rest wherever that reveal left the scrollport.
+ *
+ * @param node - The node to centre, typically the error under test.
+ */
+async function centreAtRest(node: Locator): Promise<void> {
+  await restUnfocused(node.page());
+  await node.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await expect(node).toBeInViewport();
 }
 
 /**
@@ -21731,7 +21763,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'unsupported');
     const error = page.getByText('Use a JPEG, PNG, or WebP photo');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
   });
 
@@ -21741,7 +21773,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooLarge');
     const error = page.getByText('Keep photos under 1 MB');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-large');
   });
 
@@ -21750,7 +21782,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -21759,7 +21791,7 @@ test.describe('onboarding screens', () => {
     await submitRejectedShopPhotoEdit(page);
     const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-format-or-size');
   });
 
@@ -25861,8 +25893,14 @@ test.describe('profile activity chart variants', () => {
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Edit location' }).click();
-    await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
+    const location = page.getByRole('textbox', { name: 'Location' });
+    await expect(location).toBeVisible();
     await expect(page.getByText('Not set')).toHaveCount(0);
+    // The field's own focus scroll and the pointer left on the replaced button vary between runs.
+    await page.mouse.move(0, 0);
+    await location.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-members-location-editing');
   });
 
@@ -31299,14 +31337,19 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const form = page.locator('form').filter({ has: page.getByLabel('Your reaction') });
-    await form.getByLabel('Amount').fill('1.00');
+    await fillPayAmount(form.getByLabel('Amount'), '1.00');
     const post = form.getByRole('button', { name: 'Post', exact: true });
     await expect(post).toBeEnabled();
     await post.click();
     const sentence = form.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(post).toBeDisabled();
-    await sentence.scrollIntoViewIfNeeded();
+    // The footer fold sets how far the page scrolls; start the scrollport at the top once it rests.
+    await restUnfocused(page);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await expect(sentence).toBeInViewport();
     await shotScreen(page, 'state-welcome-reply-rate-loading');
   });
 
@@ -34524,9 +34567,7 @@ test.describe('shops screens', () => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopTextNotLongerError(page);
-    await page
-      .getByText('The shop text must be longer than the shop name.')
-      .scrollIntoViewIfNeeded();
+    await centreAtRest(page.getByText('The shop text must be longer than the shop name.'));
     await shotScreen(page, 'state-shops-table-edit-text-not-longer');
   });
 
@@ -42014,13 +42055,19 @@ test.describe('habit tracker baselines', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     const cont = page.getByRole('button', { name: 'Continue' });
     await expect(cont).toBeEnabled();
-    await page.getByLabel('Amount').fill('1.00');
+    await fillPayAmount(page.getByLabel('Amount'), '1.00');
     await expect(cont).toBeEnabled();
     await cont.click();
     const sentence = page.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(cont).toBeDisabled();
-    await cont.scrollIntoViewIfNeeded();
+    // The sentence opens the form and the footer moves on its own timers; centre the button once
+    // both rest, so the capture never depends on where the click left the page.
+    await motionSettled(page);
+    await footerAtRest(page);
+    await cont.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await expect(cont).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-rate-loading');
   });
@@ -43221,20 +43268,28 @@ test.describe('held shares states', () => {
   /** Cara's share, of another set. */
   const HELD_CARA =
     '21gifts-share:v1:acc_cara:cara:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** Seed passkey id of the fake passkey: any base64url decodes, `cred-seed` does not. */
+  const HELD_CREDENTIAL_ID = 'Y3JlZC1zZWVk';
+  /** A share of a second set of Bob's (identifier 2864), member 0. */
+  const HELD_BOB_SET_2 =
+    '21gifts-share:v1:acc_bob:bob:body lily academic acid acne violence volume package glen escape prospect wealthy gesture venture legal already activity raspy camera easel';
+  /** Member 1 of {@link HELD_BOB_SET_2}'s set. */
+  const HELD_BOB_SET_2_SECOND =
+    '21gifts-share:v1:acc_bob:bob:body lily academic agency domain sugar learn owner kitchen exhaust aircraft sled fused dragon froth argue traveler reunion library geology';
   /** A share of the signed-in member's own account. */
   const HELD_OWN =
     '21gifts-share:v1:acc_e2e:ada:domain morning academic acid disease humidity peasant cleanup trend describe romp terminal should knit often alarm visitor tension universe peanut';
-  /** Where the signed-in member keeps shares. */
-  const HELD_KEY = '21gifts.recoveryShares.acc_e2e';
 
   /**
-   * Signs in Ada with her stubbed camera.
+   * Signs in Ada with her stubbed camera and the fake passkey that opens her
+   * boxes.
    *
    * @param page - Page under test.
    * @param camera - Camera behaviour.
    */
   async function seedHolder(page: Page, camera: CameraStub = { kind: 'blank' }): Promise<void> {
     await stubCamera(page, camera);
+    await installFakeWebAuthn(page, true);
     await page.clock.install({ time: new Date('2026-01-07T12:00:00.000Z') });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -43253,68 +43308,174 @@ test.describe('held shares states', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
+          passkeyCredentialId: HELD_CREDENTIAL_ID,
         }),
       });
     });
   }
 
   /**
-   * Keeps shares under Ada's key before the page loads.
+   * Ada's boxes of these codes, sealed with her passkey's words.
    *
-   * @param page - Page under test.
-   * @param codes - Payloads, oldest first.
+   * @param codes - Share codes, oldest first.
+   * @returns The boxes.
    */
-  async function seedKept(page: Page, codes: readonly string[]): Promise<void> {
-    await page.addInitScript(
-      ({ key, value }) => {
-        localStorage.setItem(key, value);
-      },
-      {
-        key: HELD_KEY,
-        value: JSON.stringify({
-          v: 1,
-          shares: codes.map((code, index) => ({
-            code,
-            storedAt: 1_767_268_800_000 + index * 86_400_000,
-          })),
-        }),
-      },
+  async function keptBoxes(codes: readonly string[]): Promise<E2eHeldBox[]> {
+    return Promise.all(
+      codes.map((code, index) => sealedBox('acc_e2e', String(index + 1).repeat(32), code)),
     );
   }
 
   /**
-   * Opens the kept-shares page.
+   * Opens the kept-shares page and its boxes with **Open my shares**.
    *
    * @param page - Page under test.
+   * @param path - The path to open, with a pin when needed.
    */
-  async function openHeldShares(page: Page): Promise<void> {
-    await page.goto('/settings/held-shares');
+  async function openHeldShares(page: Page, path = '/settings/held-shares'): Promise<void> {
+    await page.goto(path);
     await expect(
       page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
     ).toBeVisible();
+    await page.getByRole('button', { name: 'Open my shares' }).click();
+    await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
   }
 
   test('screen /settings/held-shares', async ({ page }) => {
     await seedHolder(page);
+    await routeHeldShares(page);
     await openHeldShares(page);
     await expect(page.getByText('You keep no shares for others yet.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Keep a share' })).toBeVisible();
     await shotScreen(page, 'screen-settings-held-shares');
+  });
+
+  test('held shares unlock', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares');
+    await expect(
+      page.getByText('Confirm with your passkey to open the shares you keep.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open my shares' })).toBeEnabled();
+    await shotScreen(page, 'state-held-shares-unlock');
+  });
+
+  test('held shares unlock-error', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares?visual=error');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The recovery phrase could not be created or opened. Check this device and try again.',
+    );
+    await expect(page.getByRole('button', { name: 'Open my shares' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-unlock-error');
+  });
+
+  test('held shares unlock-timeout', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares?visual=timeout');
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The device prompt timed out before you finished. Try again.',
+    );
+    await expect(page.getByRole('button', { name: 'Open my shares' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-unlock-timeout');
+  });
+
+  test('held shares unlock-prf-unsupported', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares?visual=prf-unsupported');
+    await expect(page.locator('p[role="alert"]')).toHaveText(PRF_UNSUPPORTED_MESSAGE);
+    await expect(page.getByRole('button', { name: 'Open my shares' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-unlock-prf-unsupported');
+  });
+
+  test('held shares unlock-busy', async ({ page }) => {
+    await seedHolder(page);
+    // The passkey prompt stays open, so the button stays busy.
+    await page.addInitScript(() => {
+      const credentials = navigator.credentials;
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: credentials.create.bind(credentials),
+          get: () => new Promise<never>(() => undefined),
+        },
+      });
+    });
+    await routeHeldShares(page);
+    await page.goto('/settings/held-shares');
+    const unlock = page.getByRole('button', { name: 'Open my shares' });
+    await unlock.click();
+    await expect(unlock).toBeDisabled();
+    await shotScreen(page, 'state-held-shares-unlock-busy');
+  });
+
+  test('held shares opening', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page);
+    await page.route(/\/me\/held-shares$/, async () => {
+      // Never answered: the boxes stay opening.
+    });
+    await page.goto('/settings/held-shares');
+    await page.getByRole('button', { name: 'Open my shares' }).click();
+    await expect(page.getByRole('status')).toHaveText('Opening your shares…');
+    await shotScreen(page, 'state-held-shares-opening');
+  });
+
+  test('held shares load-error', async ({ page }) => {
+    await seedHolder(page);
+    const held = await routeHeldShares(page);
+    held.getStatus = 503;
+    await page.goto('/settings/held-shares');
+    await page.getByRole('button', { name: 'Open my shares' }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText('Your shares could not be loaded.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-held-shares-load-error');
   });
 
   test('held shares list', async ({ page }) => {
     await seedHolder(page);
-    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await routeHeldShares(page, await keptBoxes([HELD_CARA, HELD_BOB]));
     await openHeldShares(page);
-    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await expect(page.getByRole('listitem')).toHaveText(['@bob', '@cara']);
     await expect(page.getByRole('button', { name: 'Show code for @cara' })).toBeVisible();
-    await expect(page.getByText('Kept since Jan 1, 2026')).toBeVisible();
     await shotScreen(page, 'state-held-shares-list');
+  });
+
+  test('held shares locked', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page, [
+      ...(await keptBoxes([HELD_BOB])),
+      await sealedBox('acc_e2e', 'a'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+      await sealedBox('acc_e2e', 'b'.repeat(32), HELD_OWN, PREVIOUS_WORDS),
+    ]);
+    await openHeldShares(page);
+    await expect(page.getByRole('listitem')).toHaveText([
+      '@bob',
+      '2 kept shares cannot be opened with your current 12 words.',
+    ]);
+    await shotScreen(page, 'state-held-shares-locked');
+  });
+
+  test('held shares locked-delete-confirm', async ({ page }) => {
+    await seedHolder(page);
+    await routeHeldShares(page, [
+      ...(await keptBoxes([HELD_BOB])),
+      await sealedBox('acc_e2e', 'a'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+    ]);
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete the shares that cannot be opened' }).click();
+    await expect(
+      page.getByRole('group', { name: 'Delete the shares that cannot be opened?' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-held-shares-locked-delete-confirm');
   });
 
   test('held shares scan', async ({ page }) => {
     await seedHolder(page);
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByText('Point the camera at the code on the other phone')).toBeVisible();
@@ -43324,17 +43485,31 @@ test.describe('held shares states', () => {
     await shotScreen(page, 'state-held-shares-scan');
   });
 
+  test('held shares saving', async ({ page }) => {
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await routeHeldShares(page);
+    await page.route(/\/me\/held-shares\/[0-9a-f]{32}$/, async () => {
+      // Never answered: the share stays being kept.
+    });
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Keep a share' }).click();
+    await expect(page.getByRole('status')).toHaveText('Keeping the share…');
+    await shotScreen(page, 'state-held-shares-saving');
+  });
+
   test('held shares stored', async ({ page }) => {
     await seedHolder(page, { kind: 'qr', text: HELD_BOB });
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.getByRole('status')).toHaveText('You now keep a share for @bob.');
-    await expect(page.getByText('Kept since Jan 7, 2026')).toBeVisible();
+    await expect(page.getByRole('listitem')).toHaveText(['@bob']);
     await shotScreen(page, 'state-held-shares-stored');
   });
 
   test('held shares refused-own', async ({ page }) => {
     await seedHolder(page, { kind: 'qr', text: HELD_OWN });
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -43344,38 +43519,66 @@ test.describe('held shares states', () => {
   });
 
   test('held shares refused-duplicate', async ({ page }) => {
-    await seedHolder(page, { kind: 'qr', text: HELD_BOB });
-    await seedKept(page, [HELD_BOB]);
+    await seedHolder(page, { kind: 'qr', text: HELD_BOB_SET_2_SECOND });
+    await routeHeldShares(page, await keptBoxes([HELD_BOB_SET_2]));
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
-      'This phone already keeps a share of this setup for @bob. One phone keeps only one share of a setup.',
+      'This account already keeps a share of this setup for @bob. One person keeps only one share of a setup.',
     );
     await expect(page.getByRole('listitem')).toHaveCount(1);
     await shotScreen(page, 'state-held-shares-refused-duplicate');
   });
 
-  test('held shares refused-storage', async ({ page }) => {
+  test('held shares save-error', async ({ page }) => {
     await seedHolder(page, { kind: 'qr', text: HELD_BOB });
-    await page.addInitScript(() => {
-      const setItem = Storage.prototype.setItem;
-      Storage.prototype.setItem = function (key: string, value: string): void {
-        if (key.startsWith('21gifts.recoveryShares.')) {
-          throw new DOMException('Storage is full', 'QuotaExceededError');
-        }
-        setItem.call(this, key, value);
-      };
-    });
+    const held = await routeHeldShares(page);
+    held.putStatus = 503;
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
-      'This browser cannot keep shares. Allow site data and try again.',
+      'The share could not be kept. Try again.',
     );
-    await shotScreen(page, 'state-held-shares-refused-storage');
+    await shotScreen(page, 'state-held-shares-save-error');
+  });
+
+  test('held shares delete-error', async ({ page }) => {
+    await seedHolder(page);
+    const held = await routeHeldShares(page, await keptBoxes([HELD_BOB, HELD_CARA]));
+    held.deleteStatus = 503;
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete share of @bob' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The share could not be deleted. Try again.',
+    );
+    await expect(page.getByRole('listitem')).toHaveCount(2);
+    await shotScreen(page, 'state-held-shares-delete-error');
+  });
+
+  test('held shares locked-delete-error', async ({ page }) => {
+    await seedHolder(page);
+    const held = await routeHeldShares(page, [
+      ...(await keptBoxes([HELD_BOB])),
+      await sealedBox('acc_e2e', 'a'.repeat(32), HELD_CARA, PREVIOUS_WORDS),
+    ]);
+    held.deleteStatus = 503;
+    await openHeldShares(page);
+    await page.getByRole('button', { name: 'Delete the shares that cannot be opened' }).click();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page.locator('p[role="alert"]')).toHaveText(
+      'The shares that cannot be opened could not be deleted. Try again.',
+    );
+    await expect(page.getByRole('listitem')).toHaveText([
+      '@bob',
+      '1 kept share cannot be opened with your current 12 words.',
+    ]);
+    await shotScreen(page, 'state-held-shares-locked-delete-error');
   });
 
   test('held shares invalid', async ({ page }) => {
     await seedHolder(page, { kind: 'qr', text: 'https://example.com/not-a-share' });
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText('This is not a Social Recovery code.');
@@ -43384,7 +43587,7 @@ test.describe('held shares states', () => {
 
   test('held shares qr', async ({ page }) => {
     await seedHolder(page);
-    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await routeHeldShares(page, await keptBoxes([HELD_BOB, HELD_CARA]));
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Show code for @bob' }).click();
     await expect(page.getByRole('heading', { level: 2, name: 'Share of @bob' })).toBeVisible();
@@ -43394,7 +43597,7 @@ test.describe('held shares states', () => {
 
   test('held shares delete-confirm', async ({ page }) => {
     await seedHolder(page);
-    await seedKept(page, [HELD_BOB, HELD_CARA]);
+    await routeHeldShares(page, await keptBoxes([HELD_BOB, HELD_CARA]));
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Delete share of @bob' }).click();
     await expect(
@@ -43405,6 +43608,7 @@ test.describe('held shares states', () => {
 
   test('held shares camera-denied', async ({ page }) => {
     await seedHolder(page, { kind: 'denied' });
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
@@ -43415,6 +43619,7 @@ test.describe('held shares states', () => {
 
   test('held shares camera-unavailable', async ({ page }) => {
     await seedHolder(page, { kind: 'none' });
+    await routeHeldShares(page);
     await openHeldShares(page);
     await page.getByRole('button', { name: 'Keep a share' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(

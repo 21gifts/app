@@ -24,6 +24,7 @@ import {
 } from '@/lib/api';
 import type { RecoveryBegin } from '@/lib/api-types';
 import { getBreezApiKey } from '@/lib/config';
+import { relockHeldShares } from '@/lib/held-shares';
 import { logInteraction } from '@/lib/interaction-log';
 import { mergePrfExtension } from '@/lib/passkey-renew';
 import {
@@ -639,6 +640,9 @@ function restart(f: Flow, a: Attempt, begin: RecoveryBegin): void {
  * PRF output into the tab phrase, the session is stored, `login` and
  * `recovery_done` are logged, and every part of the move but the balance is
  * done (the api lets the passkey sign in only once the account and address moved).
+ * While the old words are still in memory, the shares the member keeps for
+ * others move from the old words to the new ones ({@link relockHeldShares});
+ * that runs on its own and never holds up or fails the recovery.
  *
  * @param f - The flow.
  * @param a - The attempt.
@@ -682,6 +686,7 @@ async function signIn(f: Flow, a: Attempt): Promise<SignInOutcome> {
       account: session.account,
       sessionToken: session.token,
     });
+    void relockHeldShares(session.token, session.account.id, f.oldWords, a.newWords);
     useAuthStore.getState().setAuth(session.token, session.account);
     logInteraction('login');
     logInteraction('recovery_done');
