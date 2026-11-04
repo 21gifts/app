@@ -31309,17 +31309,25 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
     const form = page.locator('form').filter({ has: page.getByLabel('Your reaction') });
-    await form.getByLabel('Amount').fill('1.00');
+    await fillPayAmount(form.getByLabel('Amount'), '1.00');
     const post = form.getByRole('button', { name: 'Post', exact: true });
     await expect(post).toBeEnabled();
     await post.click();
     const sentence = form.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(post).toBeDisabled();
-    // Where the post click leaves the page varies between runs; centre the sentence.
-    await sentence.evaluate((node) => {
-      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    // A focused field folds the footer, and the fold sets how far the page scrolls; blur it, let
+    // the footer rest, and start the scrollport at the top, so the capture never depends on that timer.
+    await sentence.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
     });
+    await motionSettled(page);
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+    await footerAtRest(page);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await expect(sentence).toBeInViewport();
     await shotScreen(page, 'state-welcome-reply-rate-loading');
   });
 
