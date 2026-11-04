@@ -21751,7 +21751,10 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    await error.scrollIntoViewIfNeeded();
+    // Where the photo picks leave the page varies between runs; centre the error.
+    await error.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -25862,8 +25865,14 @@ test.describe('profile activity chart variants', () => {
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Edit location' }).click();
-    await expect(page.getByRole('textbox', { name: 'Location' })).toBeVisible();
+    const location = page.getByRole('textbox', { name: 'Location' });
+    await expect(location).toBeVisible();
     await expect(page.getByText('Not set')).toHaveCount(0);
+    // The field's own focus scroll and the pointer left on the replaced button vary between runs.
+    await page.mouse.move(0, 0);
+    await location.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-members-location-editing');
   });
 
@@ -31307,7 +31316,10 @@ test.describe('welcome forum variants', () => {
     const sentence = form.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(post).toBeDisabled();
-    await sentence.scrollIntoViewIfNeeded();
+    // Where the post click leaves the page varies between runs; centre the sentence.
+    await sentence.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-welcome-reply-rate-loading');
   });
 
@@ -42015,13 +42027,19 @@ test.describe('habit tracker baselines', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     const cont = page.getByRole('button', { name: 'Continue' });
     await expect(cont).toBeEnabled();
-    await page.getByLabel('Amount').fill('1.00');
+    await fillPayAmount(page.getByLabel('Amount'), '1.00');
     await expect(cont).toBeEnabled();
     await cont.click();
     const sentence = page.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(cont).toBeDisabled();
-    await cont.scrollIntoViewIfNeeded();
+    // The sentence opens the form and the footer moves on its own timers; centre the button once
+    // both rest, so the capture never depends on where the click left the page.
+    await motionSettled(page);
+    await footerAtRest(page);
+    await cont.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await expect(cont).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-rate-loading');
   });
