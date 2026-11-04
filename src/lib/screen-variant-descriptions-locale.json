@@ -8005,9 +8005,9 @@
     "fil": "Bukas ang listahan ng Bansa. Nakikita ang opsyong Pilipinas. Nasa listahan ang Kenya. Wala ang Switzerland, dahil walang na-load na tindahan ng 21.gifts sa Switzerland. Napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-name-open": {
-    "de": "Die Namensliste ist geöffnet. Die Option others ist sichtbar, als rohes Shop-Namen-Token. SPAR steht in der Liste. Karte bleibt gewählt. Die Karte ist maskiert.",
-    "es": "La lista Nombre está abierta. La opción others es visible, como token crudo del nombre de tienda. SPAR está en la lista. Mapa sigue elegido. El mapa está enmascarado.",
-    "fil": "Bukas ang listahan ng Pangalan. Nakikita ang opsyong others, bilang hilaw na token ng pangalan ng tindahan. Nasa listahan ang SPAR. Napili pa rin ang Mapa. Nakamaskara ang mapa."
+    "de": "Die Namensliste ist geöffnet. Die Option Andere ist sichtbar. SPAR steht in der Liste. Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "La lista Nombre está abierta. La opción Otros es visible. SPAR está en la lista. Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Bukas ang listahan ng Pangalan. Nakikita ang opsyong Iba pa. Nasa listahan ang SPAR. Napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-sorted-desc": {
     "de": "Die Tabelle ist nach Ort absteigend sortiert. Die Spaltenüberschrift Ort hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
@@ -8057,12 +8057,12 @@
   "/:shops-cluster": {
     "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind ausgeblendet.",
     "es": "Mapa sigue elegido y está alejado. Tres tiendas en Manila comparten un botón de grupo con la etiqueta 3 tiendas. La tienda de Nairobi sigue siendo su propio pin. Las teselas del mapa están ocultas.",
-    "fil": "Napili pa rin ang Mapa at naka-zoom out ito. Tatlong tindahan sa Maynila ang magkasalo sa isang pindutan ng kumpol na may label na 3 tindahan. Sariling pin pa rin ang tindahan sa Nairobi. Nakatago ang mga tile ng mapa."
+    "fil": "Napili pa rin ang Mapa at naka-zoom out ito. Tatlong tindahan sa Maynila ang magkasalo sa isang pindutan ng kumpol na may label na 3 mga tindahan. Sariling pin pa rin ang tindahan sa Nairobi. Nakatago ang mga tile ng mapa."
   },
   "/:shops-pins": {
     "de": "Karte bleibt gewählt, nachdem der Cluster geöffnet wurde. Die drei Läden in Manila sind eigene Pins im Bildausschnitt. Der Laden in Nairobi ist ebenfalls ein eigener Pin und liegt außerhalb dieses Ausschnitts. Die Schaltfläche 3 Läden ist weg. Das ist ein anderer Zustand als der herausgezoomte Cluster. Die Kartenkacheln sind ausgeblendet.",
     "es": "Mapa sigue elegido después de abrir el grupo. Las tres tiendas de Manila son pines separados dentro del encuadre. La tienda de Nairobi también es su propio pin y queda fuera de este encuadre. El botón 3 tiendas ha desaparecido. Es un estado distinto del grupo alejado. Las teselas del mapa están ocultas.",
-    "fil": "Napili pa rin ang Mapa pagkatapos buksan ang kumpol. Hiwalay na mga pin sa loob ng kuwadro ang tatlong tindahan sa Maynila. Sariling pin din ang tindahan sa Nairobi at nasa labas ng kuwadrong ito. Wala na ang pindutang 3 tindahan. Iba itong estado kaysa sa naka-zoom out na kumpol. Nakatago ang mga tile ng mapa."
+    "fil": "Napili pa rin ang Mapa pagkatapos buksan ang kumpol. Hiwalay na mga pin sa loob ng kuwadro ang tatlong tindahan sa Maynila. Sariling pin din ang tindahan sa Nairobi at nasa labas ng kuwadrong ito. Wala na ang pindutang 3 mga tindahan. Iba itong estado kaysa sa naka-zoom out na kumpol. Nakatago ang mga tile ng mapa."
   },
   "/:shops-filters-hidden": {
     "de": "Die geladenen Läden unterscheiden sich nicht nach Land, Name, Blockchain, Asset oder Aktivität, daher wird keine Filter-Combobox gezeigt. Tabelle ist gewählt. Die Spalten sind Name, Ort und Aktivität. Die Hilfe-Schaltfläche bleibt, weil Läden geladen sind.",
