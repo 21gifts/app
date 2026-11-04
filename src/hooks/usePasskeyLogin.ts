@@ -574,7 +574,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const [lastError, setLastError] = useState<string | null>(null);
   const [recoveryPending, setRecoveryPending] = useState(false);
-  const [walletPasskeyMissed, setWalletPasskeyMissed] = useState(false);
+  const [walletPasskeyMissed, setWalletPasskeyMissed] = useState(() => {
+    const { lockedSession, lockedPasskeyMissed } = useAuthStore.getState();
+    return lockedSession !== null && lockedPasskeyMissed === lockedSession;
+  });
   const [nameError, setNameError] = useState<'invalid' | 'taken' | null>(null);
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
@@ -584,8 +587,6 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const choiceOfferedRef = useRef(false);
   const unknownOfferedRef = useRef(false);
   const nameOfferedRef = useRef(false);
-  /** The held-back session whose wallet passkey did not answer its prompt. */
-  const missedSessionRef = useRef<string | null>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setWrongAccount = useAuthStore((state) => state.setWrongAccount);
@@ -843,7 +844,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       const noteWalletPasskeyMissed = (): void => {
         if (walletCredentialId !== null && runId === runIdRef.current) {
-          missedSessionRef.current = useAuthStore.getState().lockedSession;
+          useAuthStore.getState().noteLockedPasskeyMissed();
           setWalletPasskeyMissed(true);
         }
       };
@@ -1079,8 +1080,8 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   }, [startAuthentication]);
 
   const authenticateHeld = useCallback((): void => {
-    const { lockedSession, lockedCredentialId } = useAuthStore.getState();
-    startAuthentication(missedSessionRef.current === lockedSession ? null : lockedCredentialId);
+    const { lockedSession, lockedCredentialId, lockedPasskeyMissed } = useAuthStore.getState();
+    startAuthentication(lockedPasskeyMissed === lockedSession ? null : lockedCredentialId);
   }, [startAuthentication]);
 
   const login = useCallback((): void => {

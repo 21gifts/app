@@ -1446,11 +1446,17 @@ describe('usePasskeyLogin', () => {
         lockedSession: 'held',
         lockedName: 'Ada',
         lockedCredentialId: credentialId,
+        lockedPasskeyMissed: null,
       });
     }
 
     afterEach(() => {
-      useAuthStore.setState({ lockedSession: null, lockedName: null, lockedCredentialId: null });
+      useAuthStore.setState({
+        lockedSession: null,
+        lockedName: null,
+        lockedCredentialId: null,
+        lockedPasskeyMissed: null,
+      });
       vi.unstubAllGlobals();
     });
 
@@ -1513,12 +1519,32 @@ describe('usePasskeyLogin', () => {
         first.result.current.authenticateHeld();
       });
       expect(first.result.current.walletPasskeyMissed).toBe(true);
+      useAuthStore.setState({ lockedSession: 'held-after-login' });
       const second = renderHook(() => usePasskeyLogin());
       await act(async () => {
         second.result.current.authenticateHeld();
       });
       expect(second.result.current.walletPasskeyMissed).toBe(true);
       expect(second.result.current.status).toBe('error');
+    });
+
+    it('keeps the missed wallet passkey and its alert when the login card mounts again', async () => {
+      const get = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'))
+        .mockResolvedValue({ id: 'cred-other', type: 'public-key' });
+      hold(get);
+      const first = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        first.result.current.authenticateHeld();
+      });
+      first.unmount();
+      const second = renderHook(() => usePasskeyLogin());
+      expect(second.result.current.walletPasskeyMissed).toBe(true);
+      await act(async () => {
+        second.result.current.authenticateHeld();
+      });
+      expect(askedCredentials()).toEqual([LIMITED, undefined]);
     });
 
     it('asks for the wallet passkey again once another session is held back', async () => {

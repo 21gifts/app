@@ -53,6 +53,13 @@ interface AuthState {
    */
   lockedCredentialId: string | null;
   /**
+   * The held-back session whose wallet passkey did not answer a prompt limited
+   * to it, so its next **Log in** offers every passkey, also after the login
+   * card mounted again; `null` until then. A later held-back session has
+   * another token, so it asks for its wallet passkey again.
+   */
+  lockedPasskeyMissed: string | null;
+  /**
    * True after a wrong-account 403 until the visitor retries login.
    * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
    */
@@ -90,6 +97,8 @@ interface AuthState {
    * the home-screen badge; does nothing without a current session.
    */
   lockSession(): void;
+  /** Records that the wallet passkey of the held-back session did not answer. */
+  noteLockedPasskeyMissed(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
   /**
@@ -116,6 +125,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   lockedSession: null,
   lockedName: null,
   lockedCredentialId: null,
+  lockedPasskeyMissed: null,
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
@@ -125,6 +135,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       lockedSession: null,
       lockedName: null,
       lockedCredentialId: null,
+      lockedPasskeyMissed: null,
       wrongAccount: false,
     });
   },
@@ -157,6 +168,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       lockedCredentialId: lockedCredentialOf(account),
     });
   },
+  noteLockedPasskeyMissed: () => {
+    set((state) => ({ lockedPasskeyMissed: state.lockedSession }));
+  },
   clearAuth: () => {
     clearSessionPhrase();
     clearSession();
@@ -168,6 +182,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       lockedSession: null,
       lockedName: null,
       lockedCredentialId: null,
+      lockedPasskeyMissed: null,
     });
   },
   setWrongAccount: (value) => {

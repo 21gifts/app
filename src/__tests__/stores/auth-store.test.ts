@@ -116,6 +116,20 @@ describe('useAuthStore', () => {
     useAuthStore.setState({ lockedSession: null, lockedName: null });
   });
 
+  it('keeps the missed wallet passkey for its held-back session until a login or log out', () => {
+    useAuthStore.getState().setLockedSession('stored', account);
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    useAuthStore.getState().setLockedSession('stored', account);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    useAuthStore.getState().setAuth('tok', account);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+    useAuthStore.getState().lockSession();
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    useAuthStore.getState().clearAuth();
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+  });
+
   it('leaves state unchanged when there is no active session to lock', () => {
     useAuthStore.getState().setLockedSession('stored', account);
     const before = useAuthStore.getState();
