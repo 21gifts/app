@@ -512,6 +512,56 @@ describe('FilterMenu', () => {
     }
   });
 
+  it('reveals the active option inside a pinned menu scrollport', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockReturnValue({
+      x: 0,
+      y: 0,
+      top: -40,
+      left: -40,
+      right: window.innerWidth + 80,
+      bottom: window.innerHeight + 80,
+      width: window.innerWidth + 120,
+      height: window.innerHeight + 120,
+      toJSON() {
+        return {};
+      },
+    });
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      const port = listbox.querySelector('[data-scrollport]');
+      if (!(port instanceof HTMLElement)) throw new Error('missing menu scrollport');
+      let scrolled = 0;
+      Object.defineProperty(port, 'scrollTop', {
+        configurable: true,
+        get() {
+          return scrolled;
+        },
+        set(value: number) {
+          scrolled = value;
+        },
+      });
+      expect(port.scrollTop).toBe(0);
+      fireEvent.keyDown(trigger(), { key: 'End' });
+      const options = within(listbox).getAllByRole('option');
+      const last = options[options.length - 1];
+      if (last === undefined) throw new Error('missing last option');
+      expect(trigger().getAttribute('aria-activedescendant')).toBe(last.id);
+      expect(port.scrollTop).toBe(12);
+      fireEvent.keyDown(trigger(), { key: 'Home' });
+      const first = options[0];
+      if (first === undefined) throw new Error('missing first option');
+      expect(trigger().getAttribute('aria-activedescendant')).toBe(first.id);
+      expect(port.scrollTop).toBe(24);
+      fireEvent.keyDown(trigger(), { key: 'ArrowDown' });
+      expect(port.scrollTop).toBe(36);
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
   it('uses fewer columns when the window cannot fit eight-row columns', () => {
     const previous = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 200 });

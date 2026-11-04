@@ -3792,7 +3792,7 @@ describe('HomeShops', () => {
     fireEvent(window, new Event('scroll'));
     expect(dialog.style.top).toBe('172px');
     expect(dialog.style.left).toBe('40px');
-    expect(dialog.style.bottom).toBe('');
+    expect(dialog.style.bottom).toBe('496px');
 
     setWindowSize(1024, 768);
     setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
@@ -3804,7 +3804,7 @@ describe('HomeShops', () => {
     setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('172px');
-    expect(dialog.style.bottom).toBe('');
+    expect(dialog.style.bottom).toBe('496px');
 
     fireEvent.mouseDown(dialog);
     expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);

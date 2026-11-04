@@ -184,7 +184,7 @@ type MapSession = { map: MapHandle; lib: MapLibreNamespace; onMove: (() => void)
 
 type PinRecord = { element: HTMLButtonElement; row: ShopRow; position: LngLat };
 
-type HelpBox = { top: number; left: number; width: number; bottom?: number };
+type HelpBox = { top: number; bottom: number; left: number; width: number };
 
 function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   const margin = 16;
@@ -200,12 +200,12 @@ function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   if (top < margin) top = margin;
   const limit = window.innerHeight - margin - panelHeight;
   if (top > limit) top = Math.max(margin, limit);
-  // A fitting box keeps only top. Setting bottom as well stretches the
-  // panel across a full-page capture, because that capture's fixed
-  // containing block is the whole page.
+  // The live overlay always sets top, bottom, left, and width. A fitting
+  // bottom is the space under the content. A panel that does not fit uses
+  // the 16px inset. A full-page capture clears that bottom edge itself.
   const bottom = window.innerHeight - top - panelHeight;
   if (bottom < margin) return { top, bottom: margin, left, width };
-  return { top, left, width };
+  return { top, bottom, left, width };
 }
 
 declare global {
@@ -2168,9 +2168,9 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           className="fixed z-40 rounded-xl border border-ink/10 bg-paper p-4 shadow-lg"
           style={{
             top: helpBox.top,
+            bottom: helpBox.bottom,
             left: helpBox.left,
             width: helpBox.width,
-            ...(helpBox.bottom === undefined ? {} : { bottom: helpBox.bottom }),
           }}
         >
           <dl className="grid gap-3">
