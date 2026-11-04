@@ -39,7 +39,7 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
  * wallet setup runs in the background, without a dialog. When the wallet
  * cannot be opened the session is held back again: a passkey without PRF
  * output shows `wallet.prfUnsupported`, any other failure or a dismissed
- * prompt `login.error`, above **Log in** on `LoginCard`'s held start view.
+ * wallet-opening prompt `login.error`, above **Log in** on `LoginCard`'s held start view.
  * That view is the ordinary login (**Log in**, **Open a new account**) with
  * no **Log out**. When the wallet passkey did not answer, it says so and its
  * next **Log in** offers every passkey: whichever passkey logs in decides the

@@ -392,7 +392,7 @@ The same ready wallet after **Show loan** is pressed. The disclosure is open as 
 
 ### Variant: balance-locked
 
-Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, the muted line **Confirm to open your wallet**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: logging in with any passkey decides the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.
+Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, the muted line **Confirm to open your wallet**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: **Log in** asks only for the wallet passkey, and after a miss the next **Log in** offers every passkey, whichever answers it deciding the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.
 
 ![21.gifts wallet balance locked](images/wallet-balance-locked.png)
 
@@ -404,7 +404,7 @@ Pinned fixture (`?visual=balance-locked-prf-unsupported`, Playwright builds only
 
 ### Variant: balance-locked-error
 
-Pinned fixture (`?visual=balance-locked-error`, Playwright builds only), not a live wallet. The same in-place login card stays on `/wallet`, with **Something went wrong. Please try again.** (`login.error`) inside the card, above **Log in**. No wallet content is mounted. In live use another failure, or a cancelled passkey prompt, holds the session back again with this alert.
+Pinned fixture (`?visual=balance-locked-error`, Playwright builds only), not a live wallet. The same in-place login card stays on `/wallet`, with **Something went wrong. Please try again.** (`login.error`) inside the card, above **Log in**. No wallet content is mounted. In live use another failure, or a cancelled prompt that offered every passkey or opened the wallet after a login, holds the session back again with this alert.
 
 ![21.gifts wallet balance locked error](images/wallet-balance-locked-error.png)
 
