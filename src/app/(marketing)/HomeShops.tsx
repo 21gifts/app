@@ -1858,7 +1858,15 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       const node = helpRef.current;
       if (node === null) return;
       const panel = helpPanelRef.current;
-      const panelHeight = panel === null ? 0 : panel.getBoundingClientRect().height;
+      // A top-and-bottom pin stretches the border box to the window. Reading
+      // that box reports a height that fits, drops the pin, and loops.
+      let panelHeight = 0;
+      if (panel !== null) {
+        const pinnedBottom = panel.style.bottom;
+        panel.style.bottom = 'auto';
+        panelHeight = panel.getBoundingClientRect().height;
+        panel.style.bottom = pinnedBottom;
+      }
       const next = helpPanelBox(node.getBoundingClientRect(), panelHeight);
       setHelpBox((current) => {
         if (

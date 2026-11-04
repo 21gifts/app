@@ -3832,6 +3832,43 @@ describe('HomeShops', () => {
     expect(document.querySelector('.shop-legend')).toBeNull();
     fireEvent(window, new Event('resize'));
   });
+
+  it('keeps the bottom inset when a tall help panel is stretched to the window', async () => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', { country: 'PH' }), giftsPlace('Bea', { country: 'DE' })]),
+    );
+    setWindowSize(1024, 768);
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    const span = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
+    if (!(span instanceof HTMLElement)) throw new Error('missing help anchor');
+    setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    const contentHeight = 800;
+    dialog.getBoundingClientRect = () => {
+      const pinned = dialog.style.bottom !== '' && dialog.style.bottom !== 'auto';
+      const height = pinned ? 736 : contentHeight;
+      return {
+        x: 40,
+        y: 0,
+        top: 0,
+        left: 40,
+        bottom: height,
+        right: 360,
+        width: 320,
+        height,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.bottom).toBe('16px');
+  });
 });
 
 function omitAddress(): Place {
