@@ -164,6 +164,16 @@ describe('sentryOptions', () => {
 });
 
 describe('beforeSendTransaction scrubber', () => {
+  it('keeps the fixed display and held words of a wallet span', () => {
+    const data = { display: 'standalone', held: true, prompt: 'login' };
+    const scrubbed = on().beforeSendTransaction({
+      type: 'transaction',
+      transaction: 'wallet.passkey',
+      contexts: { trace: { trace_id: 'a', span_id: 'b', data } },
+    });
+    expect(scrubbed?.contexts?.trace?.data).toEqual(data);
+  });
+
   /**
    * Scrub one transaction through `beforeSendTransaction`.
    *
@@ -495,12 +505,45 @@ describe('beforeSendTransaction scrubber', () => {
 });
 
 describe('traceWallet', () => {
+  /**
+   * Stubs the browser globals `isStandaloneDisplay` reads.
+   *
+   * @param standalone - Whether the display mode query matches.
+   */
+  function stubDisplay(standalone: boolean): void {
+    vi.stubGlobal('window', { matchMedia: () => ({ matches: standalone }) });
+    vi.stubGlobal('navigator', {});
+  }
+
   beforeEach(() => {
     vi.mocked(startSpan).mockClear();
+    stubDisplay(false);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   // jsdom reports no navigation entry and the tab holds no marker.
-  const PAGE_LOAD = { load: 'unknown', load_trigger: 'other' };
+  const PAGE_LOAD = { load: 'unknown', load_trigger: 'other', display: 'browser' };
+
+  it('sends how the app is displayed on every wallet span', async () => {
+    stubDisplay(true);
+    await traceWallet('wallet.connect', async () => undefined);
+    expect(vi.mocked(startSpan).mock.calls[0]?.[0].attributes).toEqual({
+      ...PAGE_LOAD,
+      display: 'standalone',
+    });
+  });
+
+  it('passes whether a held-back session was waiting on beside the prompt', async () => {
+    await traceWallet('wallet.passkey', async () => undefined, { prompt: 'login', held: true });
+    await traceWallet('wallet.passkey', async () => undefined, { prompt: 'login', held: false });
+    expect(vi.mocked(startSpan).mock.calls.map(([options]) => options.attributes)).toEqual([
+      { ...PAGE_LOAD, prompt: 'login', held: true },
+      { ...PAGE_LOAD, prompt: 'login', held: false },
+    ]);
+  });
 
   it('starts a wallet span of its own with a fixed name and only the page load by default', async () => {
     await expect(traceWallet('wallet.connect', async () => 'connected')).resolves.toBe('connected');
@@ -532,7 +575,8 @@ describe('traceWallet', () => {
   it('carries only fixed words: no value of the page load is free text', async () => {
     await traceWallet('wallet.passkey', async () => undefined, { prompt: 'unlock' });
     const attributes = vi.mocked(startSpan).mock.calls[0]?.[0].attributes ?? {};
-    expect(Object.keys(attributes).sort()).toEqual(['load', 'load_trigger', 'prompt']);
+    expect(Object.keys(attributes).sort()).toEqual(['display', 'load', 'load_trigger', 'prompt']);
+    expect(['standalone', 'browser']).toContain(attributes['display']);
     expect(['navigate', 'reload', 'back_forward', 'prerender', 'unknown']).toContain(
       attributes['load'],
     );

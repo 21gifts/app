@@ -294,6 +294,8 @@ const en = {
   'login.logOut': 'Log out',
   'login.heldGreeting': 'Welcome back, {name}',
   'login.heldConfirm': 'Confirm to open your wallet',
+  'login.heldPasskeyMissed':
+    "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
   'login.welcomeHeading': 'Welcome, {name}',
   'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Your name',
@@ -2048,6 +2050,8 @@ const de = {
   'login.logOut': 'Abmelden',
   'login.heldGreeting': 'Willkommen zurück, {name}',
   'login.heldConfirm': 'Bestätigen Sie, um Ihre Wallet zu öffnen',
+  'login.heldPasskeyMissed':
+    'Der Passkey Ihrer Wallet hat nicht geantwortet. Wenn er auf einem anderen Gerät liegt, drücken Sie noch einmal Anmelden und wählen Sie dieses Gerät oder einen anderen Passkey.',
   'login.welcomeHeading': 'Willkommen, {name}',
   'login.welcomeSignedOut': 'Willkommen',
   'setup.nameTitle': 'Dein Name',
@@ -3867,6 +3871,8 @@ const es = {
   'login.logOut': 'Cerrar sesión',
   'login.heldGreeting': 'Hola de nuevo, {name}',
   'login.heldConfirm': 'Confirma para abrir tu wallet',
+  'login.heldPasskeyMissed':
+    'La passkey de tu wallet no respondió. Si está en otro dispositivo, pulsa Iniciar sesión de nuevo para elegir ese dispositivo u otra passkey.',
   'login.welcomeHeading': 'Hola, {name}',
   'login.welcomeSignedOut': 'Hola',
   'setup.nameTitle': 'Tu nombre',
@@ -5647,6 +5653,8 @@ const fil = {
   'login.logOut': 'Mag-log out',
   'login.heldGreeting': 'Maligayang pagbabalik, {name}',
   'login.heldConfirm': 'Kumpirmahin para mabuksan ang wallet mo',
+  'login.heldPasskeyMissed':
+    'Hindi sumagot ang passkey ng wallet mo. Kung nasa ibang device ito, pindutin ulit ang Mag-log in para piliin ang device na iyon o ibang passkey.',
   'login.welcomeHeading': 'Welcome, {name}',
   'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Ang pangalan mo',

@@ -3646,7 +3646,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
+          passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
         }),
       });
     });
@@ -3790,7 +3790,7 @@ test.describe('screen baselines', () => {
           missing: [],
           walletRequired: true,
           walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
+          passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
         }),
       });
     });
@@ -3867,6 +3867,27 @@ test.describe('screen baselines', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
     await shotScreen(page, 'state-welcome-held-session-recovery-pending');
+  });
+
+  test('welcome held-session-passkey-missed', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          get: async () => {
+            throw new DOMException('No passkey answered', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+      "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
+    );
+    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-passkey-missed');
   });
 
   test('wallet balance-connecting', async ({ page }) => {

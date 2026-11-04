@@ -101,6 +101,21 @@ describe('useAuthStore', () => {
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 
+  it('keeps the wallet passkey id of a held-back session until a login or log out', () => {
+    const seeded = { ...account, passkeyCredentialId: 'cred-seed' };
+    useAuthStore.getState().setLockedSession('stored', seeded);
+    expect(useAuthStore.getState().lockedCredentialId).toBe('cred-seed');
+    useAuthStore.getState().setAuth('tok', seeded);
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.getState().lockSession();
+    expect(useAuthStore.getState().lockedCredentialId).toBe('cred-seed');
+    useAuthStore.getState().clearAuth();
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.getState().setLockedSession('stored', { ...account, passkeyCredentialId: null });
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.setState({ lockedSession: null, lockedName: null });
+  });
+
   it('leaves state unchanged when there is no active session to lock', () => {
     useAuthStore.getState().setLockedSession('stored', account);
     const before = useAuthStore.getState();

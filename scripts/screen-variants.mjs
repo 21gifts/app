@@ -2849,6 +2849,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'held-session-passkey-missed',
+    image: 'welcome-held-session-passkey-missed.png',
+    visual: 'state-welcome-held-session-passkey-missed',
+    needle: "shotScreen(page, 'state-welcome-held-session-passkey-missed')",
+  },
+  {
+    route: '/welcome',
     id: 'wallet-buttons',
     image: 'welcome-wallet-buttons.png',
     visual: 'state-welcome-wallet-buttons',

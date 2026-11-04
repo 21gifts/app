@@ -2376,6 +2376,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:held-session-passkey-missed",
+    "label": "/welcome held-session-passkey-missed",
+    "visual": "state-welcome-held-session-passkey-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:wallet-buttons",
     "label": "/welcome wallet-buttons",
     "visual": "state-welcome-wallet-buttons",

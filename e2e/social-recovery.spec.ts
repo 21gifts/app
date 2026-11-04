@@ -516,7 +516,7 @@ test('a held session whose Log in is answered by the passkey of an unfinished re
         missing: [],
         walletRequired: true,
         walletBackupSeenAt: 1,
-        passkeyCredentialId: 'cred-seed',
+        passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
       }),
     });
   });

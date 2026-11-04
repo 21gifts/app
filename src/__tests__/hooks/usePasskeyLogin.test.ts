@@ -1,4 +1,4 @@
-import { act, cleanup, renderHook } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   mnemonicFromPrfFirst,
@@ -1420,10 +1420,151 @@ describe('usePasskeyLogin', () => {
     expect(traceWallet).toHaveBeenCalledTimes(1);
     expect(traceWallet).toHaveBeenCalledWith('wallet.passkey', expect.any(Function), {
       prompt: 'login',
+      held: false,
     });
     expect(get).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().account?.id).toBe('acc_1');
     vi.unstubAllGlobals();
+  });
+
+  describe('Log in of a held-back session', () => {
+    const LIMITED = [{ type: 'public-key', id: 'cred-seed' }];
+
+    /** The `allowCredentials` of every prompt built so far. */
+    function askedCredentials(): unknown[] {
+      return vi
+        .mocked(requestOptionsFromJSON)
+        .mock.calls.map(([options]) => options['allowCredentials']);
+    }
+
+    /** Stubs the prompt with `get` and holds a session back with `credentialId`. */
+    function hold(get: ReturnType<typeof vi.fn>, credentialId: string | null = 'cred-seed'): void {
+      vi.stubGlobal('navigator', { ...navigator, credentials: { create: vi.fn(), get } });
+      vi.mocked(requestOptionsFromJSON).mockClear();
+      vi.mocked(traceWallet).mockClear();
+      useAuthStore.setState({
+        lockedSession: 'held',
+        lockedName: 'Ada',
+        lockedCredentialId: credentialId,
+      });
+    }
+
+    afterEach(() => {
+      useAuthStore.setState({ lockedSession: null, lockedName: null, lockedCredentialId: null });
+      vi.unstubAllGlobals();
+    });
+
+    it('asks only for the wallet passkey, with one prompt, and marks the span held', async () => {
+      const get = vi.fn().mockResolvedValue({ id: 'cred-seed', type: 'public-key' });
+      hold(get);
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      expect(get).toHaveBeenCalledTimes(1);
+      expect(askedCredentials()).toEqual([LIMITED]);
+      expect(traceWallet).toHaveBeenCalledWith('wallet.passkey', expect.any(Function), {
+        prompt: 'login',
+        held: true,
+      });
+      expect(result.current.walletPasskeyMissed).toBe(false);
+      expect(useAuthStore.getState().account?.id).toBe('acc_1');
+    });
+
+    it('offers every passkey to an account without a wallet passkey', async () => {
+      const get = vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' });
+      hold(get, null);
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      expect(askedCredentials()).toEqual([undefined]);
+    });
+
+    it('says the wallet passkey did not answer, then offers every passkey on the next press', async () => {
+      const get = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'))
+        .mockResolvedValue({ id: 'cred-other', type: 'public-key' });
+      hold(get);
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      expect(result.current.walletPasskeyMissed).toBe(true);
+      expect(result.current.status).toBe('idle');
+      expect(useAuthStore.getState().lockedSession).toBe('held');
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      expect(get).toHaveBeenCalledTimes(2);
+      expect(askedCredentials()).toEqual([LIMITED, undefined]);
+      expect(result.current.walletPasskeyMissed).toBe(false);
+    });
+
+    it('treats any other failure of the limited prompt, or no credential, as no answer', async () => {
+      const get = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('Refused', 'SecurityError'))
+        .mockResolvedValueOnce(null);
+      hold(get);
+      const first = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        first.result.current.authenticateHeld();
+      });
+      expect(first.result.current.walletPasskeyMissed).toBe(true);
+      const second = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        second.result.current.authenticateHeld();
+      });
+      expect(second.result.current.walletPasskeyMissed).toBe(true);
+      expect(second.result.current.status).toBe('error');
+    });
+
+    it('asks for the wallet passkey again once another session is held back', async () => {
+      const get = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'))
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'));
+      hold(get);
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      useAuthStore.setState({ lockedSession: 'held-after-login' });
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      expect(askedCredentials()).toEqual([LIMITED, LIMITED]);
+    });
+
+    it('does not count a prompt that was cancelled or a prompt that offered every passkey', async () => {
+      let reject: (error: unknown) => void = () => undefined;
+      const get = vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise((_resolve, rejectGet) => {
+              reject = rejectGet;
+            }),
+        )
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'));
+      hold(get);
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticateHeld();
+      });
+      await waitFor(() => expect(get).toHaveBeenCalledTimes(1));
+      await act(async () => {
+        result.current.cancel();
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+      expect(result.current.walletPasskeyMissed).toBe(false);
+      await act(async () => {
+        result.current.authenticate();
+      });
+      expect(result.current.walletPasskeyMissed).toBe(false);
+    });
   });
 
   it('login uses an existing passkey without creating one', async () => {
