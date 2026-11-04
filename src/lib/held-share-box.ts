@@ -36,6 +36,8 @@ const encoder = new TextEncoder();
  * @param words - The holder's 12 words.
  * @returns The key, which can encrypt and decrypt boxes only.
  * @throws Error from `mnemonicToEntropy` for words that are not a valid phrase.
+ * @throws DOMException from `crypto.subtle.importKey` or `deriveKey` when the
+ *   browser cannot import or derive the key.
  */
 export async function heldShareBoxKey(words: string): Promise<CryptoKey> {
   const entropy = Uint8Array.from(mnemonicToEntropy(words.trim(), wordlist));
@@ -84,6 +86,8 @@ function additionalData(holderAccountId: string, boxId: string): Uint8Array<Arra
  * @param boxId - The box id it is stored under.
  * @param code - The share code.
  * @returns The box, base64url without padding.
+ * @throws DOMException from `crypto.getRandomValues` or `crypto.subtle.encrypt`
+ *   when the browser cannot make the IV or encrypt with the key.
  */
 export async function sealHeldShare(
   key: CryptoKey,

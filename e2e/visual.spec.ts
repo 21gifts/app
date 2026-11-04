@@ -250,6 +250,21 @@ async function restUnfocused(page: Page): Promise<void> {
 }
 
 /**
+ * Centres a node in the window once the page rests with no field in focus ({@link restUnfocused}).
+ * A picked file input or a typed field otherwise keeps the focus and is revealed again on a
+ * viewport resize, so the node would come to rest wherever that reveal left the scrollport.
+ *
+ * @param node - The node to centre, typically the error under test.
+ */
+async function centreAtRest(node: Locator): Promise<void> {
+  await restUnfocused(node.page());
+  await node.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await expect(node).toBeInViewport();
+}
+
+/**
  * Waits until the pay sheet has slid up over the dimmed page and the page behind it has come to
  * rest. The slide and the scrim fade are plain transitions, which `motionSettled` does not watch.
  *
@@ -21748,7 +21763,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'unsupported');
     const error = page.getByText('Use a JPEG, PNG, or WebP photo');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-unsupported');
   });
 
@@ -21758,7 +21773,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooLarge');
     const error = page.getByText('Keep photos under 1 MB');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-large');
   });
 
@@ -21767,13 +21782,7 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    // The picked file input keeps the focus and is revealed again on a resize; centre the error
-    // once the page rests without it.
-    await restUnfocused(page);
-    await error.evaluate((node) => {
-      node.scrollIntoView({ block: 'center', inline: 'nearest' });
-    });
-    await expect(error).toBeInViewport();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -21782,7 +21791,7 @@ test.describe('onboarding screens', () => {
     await submitRejectedShopPhotoEdit(page);
     const error = page.getByText('Use a JPEG, PNG, or WebP photo under 1 MB.');
     await expect(error).toBeVisible();
-    await error.scrollIntoViewIfNeeded();
+    await centreAtRest(error);
     await shotScreen(page, 'state-messages-id-shop-edit-photos-format-or-size');
   });
 
@@ -34558,14 +34567,7 @@ test.describe('shops screens', () => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopTextNotLongerError(page);
-    // The shop text keeps the focus and is revealed again on a resize; centre the error once the
-    // page rests without it.
-    await restUnfocused(page);
-    const error = page.getByText('The shop text must be longer than the shop name.');
-    await error.evaluate((node) => {
-      node.scrollIntoView({ block: 'center', inline: 'nearest' });
-    });
-    await expect(error).toBeInViewport();
+    await centreAtRest(page.getByText('The shop text must be longer than the shop name.'));
     await shotScreen(page, 'state-shops-table-edit-text-not-longer');
   });
 

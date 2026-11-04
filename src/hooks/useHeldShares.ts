@@ -86,12 +86,14 @@ export interface UseHeldSharesResult {
 /**
  * The holder side of social recovery for the signed-in member
  * (`/settings/held-shares`): the shares other members gave them, kept as
- * encrypted boxes on the api under the member's own login
- * ({@link loadHeldShares}). The boxes open with a key from the member's 12
- * words: the words of the open wallet in tab memory ({@link peekSessionPhrase},
- * after {@link settlePhraseDerivations}, no prompt), otherwise **Open my
- * shares** asks for the passkey as the recovery phrase does
- * ({@link useWalletPhrase}); only the key stays in memory, and only for the
+ * encrypted boxes on the api under the member's own login ({@link
+ * loadHeldShares}). The boxes open with a key from the member's 12 words: the
+ * words of the open wallet in tab memory ({@link peekSessionPhrase}, after
+ * {@link settlePhraseDerivations}, no prompt), otherwise **Open my shares**
+ * asks for the passkey as the recovery phrase does ({@link useWalletPhrase}).
+ * That prompt opens the wallet too, so from then on the words sit in tab memory
+ * like any open wallet's, until the tab closes or a sign-out, sign-in or
+ * recovery clears them. The hook itself keeps only the key, and only for the
  * account it was derived for: another account in this tab looks its words up
  * again and starts from an empty list, and an answer that arrives for the
  * previous account (key, read, keep, delete, or a passkey prompt started for
@@ -102,15 +104,15 @@ export interface UseHeldSharesResult {
  * share** opens the camera; a scanned payload is kept ({@link keepHeldShare}:
  * the boxes are read again, a box that already holds the code is used,
  * otherwise a new box); the list comes back, then a notice: kept for the
- * owner's username, or refused as not a share, the member's own, a second
- * share of one setup, or boxes the api did not read or save. The QR icon
- * shows a share's code for its owner; the trash icon asks to confirm, and the
- * confirmed delete removes the box ({@link deleteHeldShareBox}; a box the api
- * did not delete stays and gives the delete notice). The top-left arrow steps
- * from the camera or a code back to the list, otherwise it leaves. One keep
- * or delete runs at a time: a scan, a delete of one share, or the delete of
- * the boxes that do not open asked while another runs does nothing. Without
- * an account it reads, keeps, and deletes nothing, and starts no passkey prompt.
+ * owner's username, or refused as not a share, the member's own, a second share
+ * of one setup, or boxes the api did not read or save. The QR icon shows a
+ * share's code for its owner; the trash icon asks to confirm, and the confirmed
+ * delete removes the box ({@link deleteHeldShareBox}; a box the api did not
+ * delete stays and gives the delete notice). The top-left arrow steps from the
+ * camera or a code back to the list, otherwise it leaves. One keep or delete
+ * runs at a time: a scan, a delete of one share, or the delete of the boxes
+ * that do not open asked while another runs does nothing. Without an account it
+ * reads, keeps, and deletes nothing, and starts no passkey prompt.
  *
  * @returns Load state, shares, view, notice, the pending delete, and the actions.
  */
