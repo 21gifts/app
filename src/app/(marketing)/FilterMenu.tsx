@@ -6,7 +6,9 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   ReactElement,
+  ReactNode,
 } from 'react';
+import { Scrollport } from '@/components/ui/Scrollport';
 
 /** One homepage filter option, with an optional decorative swatch. */
 export type MenuOption = { value: string; label: string; swatch: string | null };
@@ -36,7 +38,7 @@ const ROW_CLASS =
 const VIEWPORT_INSET = 8;
 const COLUMN_MIN_PX = 96;
 
-type MenuPin = { left: number; top: number; bottom: number; width: number };
+type MenuPin = { left: number; top: number; bottom: number; width: number; scrolls: boolean };
 
 /**
  * Column count that keeps the open list within eight rows when the window is
@@ -87,8 +89,9 @@ function pinFor(rect: DOMRect): MenuPin | null {
   if (top < VIEWPORT_INSET) top = VIEWPORT_INSET;
   if (top > maxBottom) top = VIEWPORT_INSET;
   let bottom = window.innerHeight - top - rect.height;
-  if (bottom < VIEWPORT_INSET) bottom = VIEWPORT_INSET;
-  return { left, top, bottom, width };
+  const scrolls = bottom < VIEWPORT_INSET;
+  if (scrolls) bottom = VIEWPORT_INSET;
+  return { left, top, bottom, width, scrolls };
 }
 
 function samePin(current: MenuPin | null, next: MenuPin | null): boolean {
@@ -97,7 +100,8 @@ function samePin(current: MenuPin | null, next: MenuPin | null): boolean {
     current.left === next.left &&
     current.top === next.top &&
     current.bottom === next.bottom &&
-    current.width === next.width
+    current.width === next.width &&
+    current.scrolls === next.scrolls
   );
 }
 
@@ -154,10 +158,11 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * sits directly before the chevron. An open list floats under the pill, flips
  * inward when it would leave the window, and wraps into columns. If the flipped
  * panel still crosses an 8px inset, its top, bottom, left, and width are pinned inside
- * the window. The list is measured when it opens and when the window resizes.
- * Scrolling does not measure it again, and a resize while the pill is outside
- * the window does not measure it again, so the list stays on the pill. The list
- * stays on the page scrollport.
+ * the window. The list is measured when it opens, when the window resizes, and
+ * when the page scrolls while the pill is still in the window, so a pinned list
+ * stays on the pill. A scroll or resize while the pill is outside the window
+ * does not measure it again. A pinned list that is taller than the window
+ * scrolls its options on the active scrollport.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -189,6 +194,7 @@ export function FilterMenu({
   const panelRef = useRef<HTMLDivElement>(null);
   const chosen = selectedLabel(options, value, allLabel);
   const inverted = value !== '';
+  const menuScrolls = pin !== null && pin.scrolls;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -262,10 +268,18 @@ export function FilterMenu({
       setVertical((current) => (current === nextVertical ? current : nextVertical));
       setPin((current) => (samePin(current, nextPin) ? current : nextPin));
     }
+    function onScroll(event: Event): void {
+      const panel = panelRef.current;
+      const target = event.target;
+      if (panel !== null && target instanceof Node && panel.contains(target)) return;
+      place();
+    }
     place();
     window.addEventListener('resize', place);
+    document.addEventListener('scroll', onScroll, true);
     return () => {
       window.removeEventListener('resize', place);
+      document.removeEventListener('scroll', onScroll, true);
     };
   }, [open, options.length]);
 
@@ -379,6 +393,9 @@ export function FilterMenu({
       : 'border-ink/12 bg-paper text-ink';
   const labelTone = inverted ? 'text-paper/60' : 'text-ink/60';
   const chevronTone = inverted ? 'text-paper' : 'text-ink';
+  let placed = `absolute ${edge} ${stack}`;
+  if (pin !== null) placed = 'fixed';
+  if (menuScrolls) placed = 'fixed min-h-0';
 
   return (
     <div data-shops-menu={menuId} className="relative w-full min-w-0 sm:w-auto">
@@ -415,43 +432,62 @@ export function FilterMenu({
           role="listbox"
           id={listboxId}
           aria-labelledby={labelId}
-          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${pin === null ? `absolute ${edge} ${stack}` : 'fixed'} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
+          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${placed} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
           style={
             pin === null
               ? undefined
               : { left: pin.left, top: pin.top, bottom: pin.bottom, width: pin.width }
           }
         >
-          {options[0] !== undefined ? (
-            <FilterOption
-              option={options[0]}
-              index={0}
-              activeIndex={activeIndex}
-              value={value}
-              optionDomId={optionDomId}
-              onChoose={choose}
-            />
-          ) : null}
-          {rest.length > 0 ? <div className="border-t border-ink/10" /> : null}
-          {rest.length > 0 ? (
-            <div className={`grid gap-1 ${COLUMN_CLASS[columns]}`}>
-              {rest.map((option, index) => (
-                <FilterOption
-                  key={option.value === '' ? 'all' : option.value}
-                  option={option}
-                  index={index + 1}
-                  activeIndex={activeIndex}
-                  value={value}
-                  optionDomId={optionDomId}
-                  onChoose={choose}
-                />
-              ))}
-            </div>
-          ) : null}
+          <MenuScroll scrolling={menuScrolls}>
+            {options[0] !== undefined ? (
+              <FilterOption
+                option={options[0]}
+                index={0}
+                activeIndex={activeIndex}
+                value={value}
+                optionDomId={optionDomId}
+                onChoose={choose}
+              />
+            ) : null}
+            {rest.length > 0 ? <div className="border-t border-ink/10" /> : null}
+            {rest.length > 0 ? (
+              <div className={`grid gap-1 ${COLUMN_CLASS[columns]}`}>
+                {rest.map((option, index) => (
+                  <FilterOption
+                    key={option.value === '' ? 'all' : option.value}
+                    option={option}
+                    index={index + 1}
+                    activeIndex={activeIndex}
+                    value={value}
+                    optionDomId={optionDomId}
+                    onChoose={choose}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </MenuScroll>
         </div>
       ) : null}
     </div>
   );
+}
+
+/**
+ * Scrolls the open list only when the pinned box is shorter than the options.
+ *
+ * @param props - Whether the list scrolls, and the option rows.
+ * @returns The rows, or those rows inside the active scrollport.
+ */
+function MenuScroll({
+  scrolling,
+  children,
+}: {
+  scrolling: boolean;
+  children: ReactNode;
+}): ReactElement {
+  if (!scrolling) return <>{children}</>;
+  return <Scrollport className="flex-1">{children}</Scrollport>;
 }
 
 /**
