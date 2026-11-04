@@ -234,6 +234,22 @@ async function fillPayAmount(field: Locator, value: string): Promise<void> {
 }
 
 /**
+ * Blurs the focused field and waits until the page rests. A focused field folds the footer, and
+ * `AppHeightSync` reveals it again after every viewport resize, so a capture taken while a field
+ * holds the focus comes to rest wherever the last reveal left the scrollport.
+ *
+ * @param page - Page under test.
+ */
+async function restUnfocused(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+  await motionSettled(page);
+  await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+  await footerAtRest(page);
+}
+
+/**
  * Waits until the pay sheet has slid up over the dimmed page and the page behind it has come to
  * rest. The slide and the scrim fade are plain transitions, which `motionSettled` does not watch.
  *
@@ -21751,10 +21767,13 @@ test.describe('onboarding screens', () => {
     await pickShopPhotoError(page, 'tooMany');
     const error = page.getByText('You can add up to 10 photos');
     await expect(error).toBeVisible({ timeout: 10_000 });
-    // Where the photo picks leave the page varies between runs; centre the error.
+    // The picked file input keeps the focus and is revealed again on a resize; centre the error
+    // once the page rests without it.
+    await restUnfocused(page);
     await error.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
+    await expect(error).toBeInViewport();
     await shotScreen(page, 'state-messages-id-shop-edit-photos-too-many');
   });
 
@@ -31316,14 +31335,8 @@ test.describe('welcome forum variants', () => {
     const sentence = form.getByText('The USD exchange rate is still loading.');
     await expect(sentence).toBeVisible();
     await expect(post).toBeDisabled();
-    // A focused field folds the footer, and the fold sets how far the page scrolls; blur it, let
-    // the footer rest, and start the scrollport at the top, so the capture never depends on that timer.
-    await sentence.evaluate(() => {
-      (document.activeElement as HTMLElement | null)?.blur();
-    });
-    await motionSettled(page);
-    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
-    await footerAtRest(page);
+    // The footer fold sets how far the page scrolls; start the scrollport at the top once it rests.
+    await restUnfocused(page);
     await page.locator('main [data-scrollport]').evaluate((node) => {
       node.scrollTop = 0;
     });
@@ -34545,9 +34558,14 @@ test.describe('shops screens', () => {
     await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopTextNotLongerError(page);
-    await page
-      .getByText('The shop text must be longer than the shop name.')
-      .scrollIntoViewIfNeeded();
+    // The shop text keeps the focus and is revealed again on a resize; centre the error once the
+    // page rests without it.
+    await restUnfocused(page);
+    const error = page.getByText('The shop text must be longer than the shop name.');
+    await error.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await expect(error).toBeInViewport();
     await shotScreen(page, 'state-shops-table-edit-text-not-longer');
   });
 
