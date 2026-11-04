@@ -155,7 +155,7 @@ const en = {
   'home.why2Title': 'The person provides their address',
   'home.why2Num': '02',
   'home.why2Body':
-    'Before they can receive donations, they specify the wallet address where Bitcoin should reach them.',
+    'Before they can receive donations, they set up their own 21.gifts wallet. If 21.gifts disappeared tomorrow, the @21.gifts address would stop working, but their 12 recovery words would still open the Bitcoin in any compatible wallet.',
   'home.why3Title': 'You pay from your wallet',
   'home.why3Num': '03',
   'home.why3Body':
@@ -178,10 +178,10 @@ const en = {
     '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
   'home.faq3Q': 'Does 21.gifts store my password?',
   'home.faq3A':
-    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.',
   'home.faq4Q': 'What if I lose my device?',
   'home.faq4A':
-    'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+    'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
   'home.faq5Q': 'Who receives the Bitcoin?',
   'home.faq5A':
     "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
@@ -212,7 +212,7 @@ const en = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directly from person to person',
   'about.conv2Body':
-    'You choose whom you donate to. The person has added their wallet address so your Bitcoin donation reaches them. 21.gifts takes no share. They can keep using their address without our website. We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The wallet and its Bitcoin are yours, not ours; if 21.gifts disappeared tomorrow, your @21.gifts address would stop working, but your 12 recovery words would still open your Bitcoin in any compatible wallet.',
+    'You choose whom you donate to. The person has set up their own 21.gifts wallet so your Bitcoin donation reaches them. 21.gifts takes no share. We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The wallet and its Bitcoin belong to the receiver, not us; if 21.gifts disappeared tomorrow, the @21.gifts address would stop working, but the 12 recovery words would still open the Bitcoin in any compatible wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Why Bitcoin?',
   'about.conv3Body':
@@ -1895,7 +1895,7 @@ const de = {
   'home.why2Title': 'Die Person hinterlegt ihre Adresse',
   'home.why2Num': '02',
   'home.why2Body':
-    'Bevor sie Spenden empfangen kann, gibt sie an, unter welcher Wallet-Adresse Bitcoin bei ihr ankommen soll.',
+    'Bevor sie Spenden empfangen kann, richtet sie ihre eigene 21.gifts-Wallet ein. Verschwände 21.gifts morgen, funktionierte die @21.gifts-Adresse nicht mehr, aber die 12 Wiederherstellungswörter öffneten den Bitcoin weiterhin in jeder kompatiblen Wallet.',
   'home.why3Title': 'Du bezahlst in deiner Wallet',
   'home.why3Num': '03',
   'home.why3Body':
@@ -1918,10 +1918,10 @@ const de = {
     '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
   'home.faq3Q': 'Speichert 21.gifts mein Passwort?',
   'home.faq3A':
-    'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.',
+    'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Sobald du Social Recovery eingerichtet hast, bewahrt 21.gifts einen gesicherten Teil deiner 12 Wörter auf, der allein nichts öffnet. Gib Wiederherstellungswörter nie weiter.',
   'home.faq4Q': 'Was passiert, wenn ich mein Gerät verliere?',
   'home.faq4A':
-    'Wenn dein Zugang auf dem Gerät und in jeder Synchronisierung verloren ist, können wir dein Konto derzeit nicht wiederherstellen. Prüfe deshalb, wie dein Gerät den Zugang sichert.',
+    'Du kannst dein Konto mit deinen 12 Wörtern wiederherstellen oder mit Social Recovery, falls du es eingerichtet hast. Richte Social Recovery in den Einstellungen ein.',
   'home.faq5Q': 'Wer bekommt den Bitcoin?',
   'home.faq5A':
     'Die Person, die den Beitrag geschrieben hat. Schreib eine Reaktion darunter und gib einen Betrag an. Dein Bitcoin geht an ihre Wallet-Adresse.',
@@ -1952,7 +1952,7 @@ const de = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt von Mensch zu Mensch',
   'about.conv2Body':
-    'Du suchst selbst aus, wem du etwas spendest. Die Person hat ihre Wallet-Adresse hinterlegt, damit deine Bitcoin-Spende bei ihr ankommt. 21.gifts nimmt keinen Anteil. Ihre Adresse kann sie auch ohne unsere Website weiter nutzen. Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Wallet und ihr Bitcoin gehören der empfangenden Person, nicht uns; verschwände 21.gifts morgen, funktionierte die @21.gifts-Adresse nicht mehr, aber die 12 Wiederherstellungswörter öffneten den Bitcoin weiterhin in jeder kompatiblen Wallet.',
+    'Du suchst selbst aus, wem du etwas spendest. Die Person hat ihre eigene 21.gifts-Wallet eingerichtet, damit deine Bitcoin-Spende bei ihr ankommt. 21.gifts nimmt keinen Anteil. Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Wallet und ihr Bitcoin gehören der empfangenden Person, nicht uns; verschwände 21.gifts morgen, funktionierte die @21.gifts-Adresse nicht mehr, aber die 12 Wiederherstellungswörter öffneten den Bitcoin weiterhin in jeder kompatiblen Wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Warum Bitcoin?',
   'about.conv3Body':
@@ -2004,13 +2004,13 @@ const de = {
   'login.closed': '21.gifts wird gerade aktualisiert. Bitte versuchen Sie es etwas später erneut.',
   'login.outdated': 'Eine neue Version ist bereit',
   'login.reload': 'Neu laden',
-  'login.choiceHeading': 'Haben Sie schon ein Konto?',
+  'login.choiceHeading': 'Hast du schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
   'login.create': 'Ein neues Konto eröffnen',
   'login.recoveryPending':
     'Die Wiederherstellung Ihres Kontos ist noch nicht abgeschlossen. Öffnen Sie „Account über Social Recovery wiederherstellen“, um sie abzuschließen.',
   'login.newHere': 'Neu bei 21.gifts?',
-  'login.nameHeading': 'Wählen Sie Ihren Namen',
+  'login.nameHeading': 'Wähle deinen Namen',
   'login.nameBody':
     'Dieser Name wird im Passkey gespeichert. Er ist auch dein Kontoname und dein 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
@@ -3703,7 +3703,7 @@ const es = {
   'home.why2Title': 'La persona indica su dirección',
   'home.why2Num': '02',
   'home.why2Body':
-    'Antes de poder recibir donaciones, la persona indica la dirección de cartera a la que debe llegarle el Bitcoin.',
+    'Antes de poder recibir donaciones, la persona configura su propia cartera de 21.gifts. Si 21.gifts desapareciera mañana, la dirección @21.gifts dejaría de funcionar, pero las 12 palabras de recuperación seguirían abriendo el Bitcoin en cualquier wallet compatible.',
   'home.why3Title': 'Pagas desde tu cartera',
   'home.why3Num': '03',
   'home.why3Body':
@@ -3726,10 +3726,10 @@ const es = {
     '21.gifts no se queda con ninguna parte. Tu cartera o la red de pago pueden cobrar sus propias comisiones.',
   'home.faq3Q': '¿Guarda 21.gifts mi contraseña?',
   'home.faq3A':
-    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.',
+    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Cuando configuras Social Recovery, 21.gifts guarda una parte cifrada de tus 12 palabras, que por sí sola no abre nada. Nunca compartas tus palabras de recuperación.',
   'home.faq4Q': '¿Y si pierdo mi dispositivo?',
   'home.faq4A':
-    'Si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta. Comprueba cómo guarda tu dispositivo el acceso.',
+    'Puedes recuperar tu cuenta con tus 12 palabras, o con Social Recovery si lo configuraste. Configura Social Recovery en los ajustes.',
   'home.faq5Q': '¿Quién recibe el Bitcoin?',
   'home.faq5A':
     'Quien escribió la publicación. Escribe una reacción debajo e indica un importe. El Bitcoin va a la dirección de cartera de esa persona.',
@@ -3759,7 +3759,7 @@ const es = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directamente de persona a persona',
   'about.conv2Body':
-    'Tú eliges a quién donas. La persona ha añadido su dirección de cartera para que tu donación en Bitcoin le llegue. 21.gifts no se queda con ninguna parte. Puede seguir usando su dirección sin nuestra web. Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La wallet y su Bitcoin son de quien recibe, no nuestros; si 21.gifts desapareciera mañana, la dirección @21.gifts dejaría de funcionar, pero las 12 palabras de recuperación seguirían abriendo el Bitcoin en cualquier wallet compatible.',
+    'Tú eliges a quién donas. La persona ha configurado su propia cartera de 21.gifts para que tu donación en Bitcoin le llegue. 21.gifts no se queda con ninguna parte. Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La wallet y su Bitcoin son de quien recibe, no nuestros; si 21.gifts desapareciera mañana, la dirección @21.gifts dejaría de funcionar, pero las 12 palabras de recuperación seguirían abriendo el Bitcoin en cualquier wallet compatible.',
   'about.conv3Num': '3',
   'about.conv3Title': '¿Por qué Bitcoin?',
   'about.conv3Body':
@@ -5471,7 +5471,7 @@ const fil = {
   'home.why2Title': 'Inilalagay ng tao ang kanyang address',
   'home.why2Num': '02',
   'home.why2Body':
-    'Bago siya makatanggap ng donasyon, itinuturo niya ang wallet address kung saan dapat dumating ang Bitcoin sa kanya.',
+    'Bago siya makatanggap ng donasyon, nagse-set up siya ng sarili niyang 21.gifts wallet. Kung mawala man ang 21.gifts bukas, hihinto ang @21.gifts address, pero mabubuksan pa rin ng 12 recovery word ang Bitcoin sa anumang compatible na wallet.',
   'home.why3Title': 'Nagbabayad ka gamit ang wallet mo',
   'home.why3Num': '03',
   'home.why3Body':
@@ -5494,10 +5494,10 @@ const fil = {
     'Walang bahaging kinukuha ang 21.gifts. Maaaring may sariling bayarin ang wallet mo o ang payment network.',
   'home.faq3Q': 'Iniimbak ba ng 21.gifts ang password ko?',
   'home.faq3A':
-    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word.',
+    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Kapag na-set up mo na ang Social Recovery, nagtatago ang 21.gifts ng isang naka-encrypt na bahagi ng 12 salita mo na walang nabubuksan nang mag-isa. Huwag kailanman ibahagi ang iyong mga recovery word.',
   'home.faq4Q': 'Paano kung mawala ang device ko?',
   'home.faq4A':
-    'Kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account. Alamin kung paano bina-back up ng device mo ang pag-log in.',
+    'Maibabalik mo ang account mo gamit ang iyong 12 salita, o gamit ang Social Recovery kung na-set up mo ito. I-set up ang Social Recovery sa mga setting.',
   'home.faq5Q': 'Sino ang tatanggap ng Bitcoin?',
   'home.faq5A':
     'Ang sumulat ng post. Sumulat ng reaksyon sa ilalim nito at maglagay ng halaga. Sa wallet address niya mapupunta ang Bitcoin.',
@@ -5528,7 +5528,7 @@ const fil = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta mula sa isang tao patungo sa iba',
   'about.conv2Body':
-    'Ikaw ang pipili kung kanino ka magdo-donate. Inilagay ng tao ang wallet address niya para makarating sa kanya ang Bitcoin donation mo. Walang bahaging kinukuha ang 21.gifts. Magagamit pa rin niya ang address niya kahit wala ang website namin. Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang wallet at ang Bitcoin nito, hindi sa amin; kung mawala man ang 21.gifts bukas, hihinto ang @21.gifts address, pero mabubuksan pa rin ng 12 recovery word ang Bitcoin sa anumang compatible na wallet.',
+    'Ikaw ang pipili kung kanino ka magdo-donate. Nag-set up ang tao ng sarili niyang 21.gifts wallet para makarating sa kanya ang Bitcoin donation mo. Walang bahaging kinukuha ang 21.gifts. Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang wallet at ang Bitcoin nito, hindi sa amin; kung mawala man ang 21.gifts bukas, hihinto ang @21.gifts address, pero mabubuksan pa rin ng 12 recovery word ang Bitcoin sa anumang compatible na wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bakit Bitcoin?',
   'about.conv3Body':

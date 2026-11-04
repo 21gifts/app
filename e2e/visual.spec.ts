@@ -2599,7 +2599,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('Does 21.gifts store my password?').click();
     await expect(
       faq.getByText(
-        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-password-open', true, page.locator('#shop-places-map'));
@@ -2615,7 +2615,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('What if I lose my device?').click();
     await expect(
       faq.getByText(
-        'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+        'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-device-open', true, page.locator('#shop-places-map'));
