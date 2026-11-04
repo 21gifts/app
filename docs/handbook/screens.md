@@ -93,31 +93,31 @@ The shops block under the hero is on the table. The visible filters stay above a
 
 ### Variant: shops-blockchain
 
-The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected. The map is masked.
+The shops block under the hero has the Blockchain list open. The listbox option Bitcoin is visible. Country, Name, Blockchain, Asset, and Activity stay in that order, and Map stays selected. Map tiles are hidden.
 
 ![21.gifts home shops blockchain](images/root-shops-blockchain.png)
 
 ### Variant: shops-asset
 
-Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected. The map is masked.
+Bitcoin is already chosen. The Asset list is open and the listbox option BTC is visible. Map stays selected. Map tiles are hidden.
 
 ![21.gifts home shops asset](images/root-shops-asset.png)
 
 ### Variant: shops-activity
 
-The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query. The map is masked.
+The Activity list is open and the listbox option Daily is visible. Map stays selected. Activity is not sent on the places query. Map tiles are hidden.
 
 ![21.gifts home shops activity](images/root-shops-activity.png)
 
 ### Variant: shops-country-open
 
-The Country list is open. The option Philippines is visible. Kenya is listed. Switzerland is not, because no loaded 21.gifts shop is in Switzerland. Map stays selected. The map is masked.
+The Country list is open. The option Philippines is visible. Kenya is listed. Switzerland is not, because no loaded 21.gifts shop is in Switzerland. Map stays selected. Map tiles are hidden.
 
 ![21.gifts home shops country open](images/root-shops-country-open.png)
 
 ### Variant: shops-name-open
 
-The Name list is open. The option others is visible, as the raw shop-name token. SPAR is listed. Map stays selected. The map is masked.
+The Name list is open. The option others is visible, as the raw shop-name token. SPAR is listed. Map stays selected. Map tiles are hidden.
 
 ![21.gifts home shops name open](images/root-shops-name-open.png)
 

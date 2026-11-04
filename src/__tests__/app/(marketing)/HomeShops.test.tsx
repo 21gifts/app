@@ -2238,6 +2238,10 @@ describe('HomeShops', () => {
     if (!(close instanceof HTMLButtonElement)) throw new Error('missing close');
     close.click();
     expect(linked.remove).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    expect(linked.content.querySelector('.shop-popup-close')).toBe(close);
     expect(linked.content.querySelector('.shop-popup-category')?.textContent).toBe('Cafe');
     expect(linked.content.querySelector('.shop-popup-chip')?.textContent).toContain(copy.daily);
     expect(linked.content.querySelector('p')).toBeNull();

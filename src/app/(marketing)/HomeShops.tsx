@@ -947,13 +947,6 @@ function unmountPopupNode(entry: PopupClose): void {
   entry.root.unmount();
 }
 
-function unmountPopupClose(entry: PopupClose): void {
-  popupCloses.delete(entry);
-  queueMicrotask(() => {
-    unmountPopupNode(entry);
-  });
-}
-
 function unmountPopupCloses(): void {
   const entries = [...popupCloses];
   popupCloses.clear();
@@ -987,7 +980,6 @@ function popupContent(
           className="shop-popup-close border border-ink/12 bg-paper"
           onClick={(event) => {
             event.stopPropagation();
-            unmountPopupClose(entry);
             onClose();
           }}
         >

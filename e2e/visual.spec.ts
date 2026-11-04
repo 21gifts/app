@@ -1106,6 +1106,24 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     if (!(port instanceof HTMLElement)) {
       return;
     }
+    const panel = document.querySelector('[data-shops-help-panel]');
+    const button =
+      panel instanceof HTMLElement && panel.id !== ''
+        ? document.querySelector(`[aria-controls="${CSS.escape(panel.id)}"]`)
+        : null;
+    const anchor = button instanceof HTMLElement ? button.getBoundingClientRect() : null;
+    const portBox = port.getBoundingClientRect();
+    const panelBox = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
+    // Fixed `top` is a viewport offset. The capture stretches the page, so
+    // that offset paints on the hero. Keep the content offset under the button.
+    const pin =
+      anchor === null || panelBox === null
+        ? null
+        : {
+            top: anchor.bottom - portBox.top + port.scrollTop + 8,
+            left: anchor.left - portBox.left + port.scrollLeft,
+            width: panelBox.width,
+          };
     const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
     port.style.setProperty('overflow', 'visible', 'important');
     port.style.flex = 'none';
@@ -1114,6 +1132,30 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     document.body.style.setProperty('overflow', 'visible', 'important');
     document.documentElement.style.height = `${height}px`;
     document.body.style.height = `${height}px`;
+    if (pin === null || !(panel instanceof HTMLElement)) return;
+    port.scrollTop = 0;
+    port.scrollLeft = 0;
+    const margin = 16;
+    let left = pin.left;
+    if (left + pin.width > port.clientWidth - margin) {
+      left = Math.max(margin, port.clientWidth - margin - pin.width);
+    }
+    panel.style.setProperty('position', 'absolute', 'important');
+    const host =
+      panel.offsetParent instanceof HTMLElement ? panel.offsetParent : document.documentElement;
+    const hostBox = host.getBoundingClientRect();
+    const portNow = port.getBoundingClientRect();
+    const top = portNow.top + pin.top - hostBox.top + host.scrollTop;
+    const side = portNow.left + left - hostBox.left + host.scrollLeft;
+    const rule = document.createElement('style');
+    rule.setAttribute('data-shot-help-pin', '');
+    rule.textContent = [
+      '[data-shops-help-panel]{position:absolute !important;',
+      `top:${top}px !important;left:${side}px !important;`,
+      'bottom:auto !important;right:auto !important;',
+      `width:${pin.width}px !important;margin:0 !important;}`,
+    ].join('');
+    document.head.appendChild(rule);
   });
 }
 
@@ -2598,7 +2640,8 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-blockchain', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-blockchain');
   });
 
   test('state / shops-asset', async ({ page }) => {
@@ -2615,7 +2658,8 @@ test.describe('screen baselines', () => {
     });
     await asset.click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-asset');
   });
 
   test('state / shops-activity', async ({ page }) => {
@@ -2623,7 +2667,8 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-activity');
   });
 
   test('state / shops-country-open', async ({ page }) => {
@@ -2633,7 +2678,8 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('option', { name: 'Philippines' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Kenya' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'Switzerland' })).toHaveCount(0);
-    await shotScreen(page, 'state-root-shops-country-open', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-country-open');
   });
 
   test('state / shops-name-open', async ({ page }) => {
@@ -2642,7 +2688,8 @@ test.describe('screen baselines', () => {
     await page.getByRole('combobox', { name: 'Name', exact: true }).click();
     await expect(page.getByRole('option', { name: 'others' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'SPAR' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-name-open', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-name-open');
   });
 
   test('state / shops-country-selected', async ({ page }) => {
@@ -26016,7 +26063,11 @@ test.describe('profile activity chart variants', () => {
       .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    // The hint is up before the photo is placed. An unplaced photo is its
+    // full file size and leaves the phone window.
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled({
+      timeout: 15000,
+    });
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-view-banner-not-wide');

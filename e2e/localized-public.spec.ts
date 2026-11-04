@@ -281,6 +281,9 @@ test('Function: readLocaleCookie — a stored language follows client navigation
       documents += 1;
     }
   });
+  // The router is ready before this page applies its language. Wait for that
+  // application, then store a language for the next page.
+  await expect(page.locator('html')).toHaveAttribute('data-locale-applied', '/en');
   await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
   await page.getByRole('link', { name: 'Ask for help' }).first().click();
   await expect(page).toHaveURL(/\/login$/);
