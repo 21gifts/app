@@ -420,6 +420,12 @@ The in-place login card on `/wallet` (`?visual=balance-locked`) after **Log in**
 
 ![21.gifts wallet balance locked, new version](images/wallet-balance-locked-outdated.png)
 
+### Variant: balance-locked-passkey-missed
+
+The login card in place of the wallet on `/wallet` (`?visual=balance-locked`) after **Log in** when the prompt that asks only for the account's wallet passkey ended without an answer. The card stays, with **Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.** (`login.heldPasskeyMissed`) above **Log in**, and the next **Log in** offers every passkey. No wallet content is mounted.
+
+![21.gifts wallet login card, wallet passkey did not answer](images/wallet-balance-locked-passkey-missed.png)
+
 ### Variant: balance-connecting
 
 Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
@@ -1061,6 +1067,12 @@ The same on a phone or browser that cannot hold the wallet (pin `?visual=balance
 The same when opening the wallet failed for another reason (pin `?visual=balance-locked-error`): the login card stays in place of the payment, with **Something went wrong. Please try again.** (`login.error`) above **Log in**.
 
 ![21.gifts wallet payment login error](images/wallet-payment-locked-error.png)
+
+### Variant: locked-passkey-missed
+
+The login card in place of the payment on `/wallet/payment` (`?visual=balance-locked`) after **Log in** when the prompt that asks only for the account's wallet passkey ended without an answer. The card stays, with **Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.** (`login.heldPasskeyMissed`) above **Log in**, and the next **Log in** offers every passkey. The payment is not loaded.
+
+![21.gifts wallet payment login card, wallet passkey did not answer](images/wallet-payment-locked-passkey-missed.png)
 
 ### Variant: setup-failed
 
@@ -2300,6 +2312,12 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then the muted line **Confirm to open your wallet**, **Log in**, **New to 21.gifts?**, and **Open a new account**, and no Social Recovery entry, because the held card is `WalletLoginCard`, which stands in for a member session. There is no **Log out**: **Log in** is one passkey prompt for the account's wallet passkey that opens the session and the wallet. When that prompt ends without an answer, the card shows **Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.** above **Log in**, and the next **Log in** offers every passkey; if another account's passkey answers it, that account replaces the held session. A dismissed prompt that offered every passkey or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
 
 ![21.gifts login for a held-back session](images/login-held-session.png)
+
+### Variant: held-session-passkey-missed
+
+The held-back session on `/login` (`?visual=held-session`) after **Log in** when the prompt that asks only for the account's wallet passkey ended without an answer. The card stays, with **Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.** (`login.heldPasskeyMissed`) above **Log in**, and the next **Log in** offers every passkey.
+
+![21.gifts login for a held-back session, wallet passkey did not answer](images/login-held-session-passkey-missed.png)
 
 ### Variant: recovery-pending
 

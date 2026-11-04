@@ -339,7 +339,7 @@ async function stubWalletSetupAccount(
         missing: [],
         walletRequired: true,
         walletBackupSeenAt: 1,
-        passkeyCredentialId: 'cred-seed',
+        passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
         sparkPubkey: null,
         sparkWalletVerified: false,
         ...overrides,
@@ -3869,7 +3869,8 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-welcome-held-session-recovery-pending');
   });
 
-  test('welcome held-session-passkey-missed', async ({ page }) => {
+  /** Makes every passkey prompt end without an answer. */
+  async function stubUnansweredPasskey(page: Page): Promise<void> {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, 'credentials', {
         configurable: true,
@@ -3880,14 +3881,38 @@ test.describe('screen baselines', () => {
         },
       });
     });
-    await openHeldSession(page, '/welcome');
+  }
+
+  /** Presses Log in and expects the wallet passkey alert on the card. */
+  async function pressLogInWithoutAnswer(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
       "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
     );
-    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  }
+
+  test('welcome held-session-passkey-missed', async ({ page }) => {
+    await stubUnansweredPasskey(page);
+    await openHeldSession(page, '/welcome');
+    await pressLogInWithoutAnswer(page);
+    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
     await shotScreen(page, 'state-welcome-held-session-passkey-missed');
+  });
+
+  test('login held-session-passkey-missed', async ({ page }) => {
+    await stubUnansweredPasskey(page);
+    await openHeldSession(page, '/login');
+    await pressLogInWithoutAnswer(page);
+    await shotScreen(page, 'state-login-held-session-passkey-missed');
+  });
+
+  test('wallet balance-locked-passkey-missed', async ({ page }) => {
+    await stubUnansweredPasskey(page);
+    await openBalanceLocked(page);
+    await pressLogInWithoutAnswer(page);
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-locked-passkey-missed');
   });
 
   test('wallet balance-connecting', async ({ page }) => {
@@ -4494,6 +4519,29 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('alert').filter({ hasText: /phone or browser/ })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-prf-unsupported');
+  });
+
+  test('state-wallet-payment-locked-passkey-missed', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          get: async () => {
+            throw new DOMException('No passkey answered', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-locked',
+    );
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+      "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
+    );
+    await shotScreen(page, 'state-wallet-payment-locked-passkey-missed');
   });
 
   test('state-wallet-payment-locked-error', async ({ page }) => {
