@@ -193,7 +193,7 @@ if (chapterIds.length === 0) {
   }
 }
 
-missing.push(...needlessBaselineChanges(ROOT));
+missing.push(...(await needlessBaselineChanges(ROOT)));
 
 if (screens.size === 0) {
   console.error('SCREENSHOTS: no screens discovered — refusing to pass');

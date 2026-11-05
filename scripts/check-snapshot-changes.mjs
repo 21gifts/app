@@ -7,6 +7,10 @@
  * is reported, so it can be restored. Added and deleted baselines are not
  * judged here (`check-screenshots.mjs` covers which ones must exist).
  *
+ * Changed files are compared on up to four workers. A release can change
+ * thousands of baselines, and a single thread does not finish inside the job
+ * that also runs the coverage gate.
+ *
  * The base is `SCREENSHOT_BASE` when set; in a GitHub pull request run it is
  * the base commit the checked-out merge was built on (its first parent,
  * fetched here), so a later push to the base branch changes nothing; locally
@@ -15,8 +19,11 @@
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
+import { fileURLToPath } from 'node:url';
 
 const SNAP_DIR = path.join('e2e', 'visual.spec.ts-snapshots');
 
@@ -73,14 +80,101 @@ function baseRevision(root) {
 }
 
 /**
+ * Baselines in `files` whose base bytes still pass the visual comparator.
+ *
+ * @param {string} root - Repository root.
+ * @param {string} rev - Base revision.
+ * @param {string[]} files - Repo-relative PNG paths.
+ * @returns {string[]} One sentence per needless change.
+ */
+function compareChanged(root, rev, files) {
+  const require = createRequire(path.join(root, 'package.json'));
+  const { utils } = require('playwright-core/lib/coreBundle');
+  const compare = utils.getComparator('image/png');
+  const needless = [];
+  for (const file of files) {
+    const before = execFileSync('git', ['show', `${rev}:${file}`], {
+      cwd: root,
+      maxBuffer: 1 << 28,
+    });
+    const after = fs.readFileSync(path.join(root, file));
+    if (compare(after, before, { maxDiffPixelRatio: 0 }) === null) {
+      needless.push(
+        `Baseline ${path.basename(file)} changed, but the visual test passes with the base version; restore it (git checkout ${rev} -- ${file})`,
+      );
+    }
+  }
+  return needless;
+}
+
+/**
+ * Splits `files` into `count` contiguous slices.
+ *
+ * @param {string[]} files - Paths, in git order.
+ * @param {number} count - Slice count, at least 1.
+ * @returns {string[][]} Slices that preserve `files` order when flattened.
+ */
+function sliceFiles(files, count) {
+  const size = Math.ceil(files.length / count);
+  const slices = [];
+  for (let index = 0; index < files.length; index += size) {
+    slices.push(files.slice(index, index + size));
+  }
+  return slices;
+}
+
+/**
+ * Compares one slice on a worker thread.
+ *
+ * @param {string} root - Repository root.
+ * @param {string} rev - Base revision.
+ * @param {string[]} files - Repo-relative PNG paths.
+ * @returns {Promise<string[]>} Needless-change sentences from that slice.
+ */
+function compareInWorker(root, rev, files) {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(fileURLToPath(import.meta.url), {
+      workerData: { root, rev, files },
+    });
+    let settled = false;
+    const finish = (error, value) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(value);
+    };
+    worker.once('message', (message) => {
+      finish(null, message);
+    });
+    worker.once('error', (error) => {
+      finish(error);
+    });
+    worker.once('exit', (code) => {
+      if (!settled) {
+        finish(new Error(`snapshot compare worker exited ${code}`));
+      }
+    });
+  });
+}
+
+if (!isMainThread) {
+  parentPort?.postMessage(compareChanged(workerData.root, workerData.rev, workerData.files));
+}
+
+/**
  * Lists every changed baseline whose base version would still pass the visual
  * test, with the reason as a sentence each.
  *
  * @param {string} root - Repository root.
- * @returns {string[]} One message per needless baseline change, or why the
+ * @returns {Promise<string[]>} One message per needless baseline change, or why the
  *   comparison could not run when it is required.
  */
-export function needlessBaselineChanges(root) {
+export async function needlessBaselineChanges(root) {
   const base = baseRevision(root);
   if (base.rev === null) {
     if (base.required) {
@@ -89,26 +183,22 @@ export function needlessBaselineChanges(root) {
     console.warn('Baseline changes not compared: no origin/staging to compare with.');
     return [];
   }
-  const require = createRequire(path.join(root, 'package.json'));
-  const { utils } = require('playwright-core/lib/coreBundle');
-  const compare = utils.getComparator('image/png');
   const changed = git(root, ['diff', '--name-status', '--no-renames', base.rev, '--', SNAP_DIR])
     .split('\n')
     .filter((line) => line.startsWith('M\t'))
     .map((line) => line.slice(2))
     .filter((file) => file.endsWith('.png'));
-  const needless = [];
-  for (const file of changed) {
-    const before = execFileSync('git', ['show', `${base.rev}:${file}`], {
-      cwd: root,
-      maxBuffer: 1 << 28,
-    });
-    const after = fs.readFileSync(path.join(root, file));
-    if (compare(after, before, { maxDiffPixelRatio: 0 }) === null) {
-      needless.push(
-        `Baseline ${path.basename(file)} changed, but the visual test passes with the base version; restore it (git checkout ${base.rev} -- ${file})`,
-      );
-    }
+  if (changed.length === 0) {
+    return [];
   }
-  return needless;
+  // The hosted runner has four CPUs. More workers do not shorten that job,
+  // and each worker holds two decoded screenshots.
+  const workers = Math.min(4, os.availableParallelism(), changed.length);
+  if (workers === 1) {
+    return compareChanged(root, base.rev, changed);
+  }
+  const parts = await Promise.all(
+    sliceFiles(changed, workers).map((files) => compareInWorker(root, base.rev, files)),
+  );
+  return parts.flat();
 }

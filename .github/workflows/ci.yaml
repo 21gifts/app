@@ -12,9 +12,12 @@ concurrency:
 permissions:
   contents: read
 
-# Lint, behavior, and visual jobs finish within 10 minutes.
+# Lint, behavior, visual, and screenshot jobs finish within 10 minutes.
 # The Check job is 15 minutes because coverage needs about 10:30.
-# Do not raise a timeout to hide a hang.
+# Screenshot compare is its own job: a release can change thousands of
+# baselines, and that work must not consume the coverage budget.
+# Do not raise a timeout to hide a hang. The Check job name stays,
+# because the guard on the base branch requires that exact name.
 jobs:
   lint:
     name: Lint
@@ -64,14 +67,31 @@ jobs:
       - name: E2E completeness
         run: npm run e2e:check
 
-      - name: Screenshot baselines
-        run: npm run screenshot:check
-
       - name: Test with 100% coverage gate
         run: npm run test:coverage
 
       - name: Build
         run: npm run build
+
+  screenshots:
+    name: Screenshot baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Screenshot baselines
+        run: npm run screenshot:check
 
   e2e:
     name: E2E (behavior, shard ${{ matrix.shard }}/${{ matrix.shards }})
