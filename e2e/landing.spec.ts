@@ -380,6 +380,25 @@ test('Function: FilterMenu opens the blockchain list', async ({ page }) => {
   await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
 });
 
+test('Function: MenuScroll shows the blockchain rows', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
+  const list = page.getByRole('listbox', { name: 'Blockchain' });
+  await expect(list.getByRole('option', { name: 'All', exact: true })).toBeVisible();
+  await expect(list.getByRole('option', { name: 'Bitcoin', exact: true })).toBeVisible();
+});
+
+test('Function: FilterOption selects Bitcoin', async ({ page }) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const filter = page.getByRole('combobox', { name: 'Blockchain', exact: true });
+  await filter.click();
+  await page.getByRole('option', { name: 'Bitcoin', exact: true }).click();
+  await expect(filter).toContainText('Bitcoin');
+  await expect(page.getByRole('listbox', { name: 'Blockchain' })).toHaveCount(0);
+});
+
 test('Function: HomeShops shows only filters and options the shops distinguish', async ({
   page,
 }) => {

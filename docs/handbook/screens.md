@@ -211,6 +211,12 @@ Map stays selected. The shop marker is open and shows the name Sample as a link.
 
 ![21.gifts home shops marker](images/root-shops-marker.png)
 
+### Variant: shops-marker-no-photo
+
+Map stays selected. The shop marker is open and shows the name North without a link and without a photo. Map tiles are hidden.
+
+![21.gifts home shops marker without a photo](images/root-shops-marker-no-photo.png)
+
 ### Variant: shops-cluster
 
 Map stays selected and is zoomed out. Three Manila shops share one cluster button labelled 3 shops. The Nairobi shop stays its own pin. Map tiles are hidden.

@@ -1,15 +1,15 @@
 'use client';
 
-import { Check, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   ReactElement,
-  ReactNode,
 } from 'react';
-import { Scrollport } from '@/components/ui/Scrollport';
 import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+import { FilterOption } from './FilterOption';
+import { MenuScroll } from './MenuScroll';
 
 /** One homepage filter option, with an optional decorative swatch. */
 export type MenuOption = { value: string; label: string; swatch: string | null };
@@ -32,9 +32,6 @@ const COLUMN_CLASS = [
   'grid-cols-11',
   'grid-cols-12',
 ] as const;
-
-const ROW_CLASS =
-  'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
 
 const VIEWPORT_INSET = 8;
 const COLUMN_MIN_PX = 96;
@@ -491,70 +488,5 @@ export function FilterMenu({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/**
- * Scrolls the open list only when the pinned box is shorter than the options.
- *
- * @param props - Whether the list scrolls, and the option rows.
- * @returns The rows, or those rows inside the active scrollport.
- */
-function MenuScroll({
-  scrolling,
-  children,
-}: {
-  scrolling: boolean;
-  children: ReactNode;
-}): ReactElement {
-  if (!scrolling) return <>{children}</>;
-  return <Scrollport className="flex-1">{children}</Scrollport>;
-}
-
-/**
- * One listbox row: swatch, label, and a check when it is the committed value.
- *
- * @param props - Option, indexes, committed value, id builder, and choose handler.
- * @returns The option button.
- */
-function FilterOption({
-  option,
-  index,
-  activeIndex,
-  value,
-  optionDomId,
-  onChoose,
-}: {
-  option: MenuOption;
-  index: number;
-  activeIndex: number;
-  value: string;
-  optionDomId: (index: number) => string;
-  onChoose: (event: ReactMouseEvent<HTMLButtonElement>, next: string) => void;
-}): ReactElement {
-  const active = index === activeIndex;
-  const selected = option.value === value;
-  return (
-    <button
-      id={optionDomId(index)}
-      type="button"
-      role="option"
-      tabIndex={-1}
-      data-value={option.value}
-      aria-selected={selected}
-      className={
-        active
-          ? `${ROW_CLASS} is-active bg-home-why ${selected ? 'font-semibold' : ''}`
-          : `${ROW_CLASS} hover:bg-home-why ${selected ? 'font-semibold' : ''}`
-      }
-      onClick={(event) => {
-        event.stopPropagation();
-        onChoose(event, option.value);
-      }}
-    >
-      {option.swatch === null ? null : <span className={option.swatch} aria-hidden="true" />}
-      <span className="min-w-0 flex-1 truncate">{option.label}</span>
-      {selected ? <Check aria-hidden="true" className="h-4 w-4 shrink-0" /> : null}
-    </button>
   );
 }

@@ -8054,6 +8054,11 @@
     "es": "La tabla está ordenada por Actividad, descendente. El encabezado de columna Actividad tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
     "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pababa. Ang pamagat ng hanay na Aktibidad ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
   },
+  "/:shops-marker-no-photo": {
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen North ohne Link und ohne Foto. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre North sin enlace y sin foto. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang North na walang link at walang larawan. Nakatago ang mga tile ng mapa."
+  },
   "/:shops-cluster": {
     "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind ausgeblendet.",
     "es": "Mapa sigue elegido y está alejado. Tres tiendas en Manila comparten un botón de grupo con la etiqueta 3 tiendas. La tienda de Nairobi sigue siendo su propio pin. Las teselas del mapa están ocultas.",

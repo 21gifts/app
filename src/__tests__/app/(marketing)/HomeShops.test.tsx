@@ -99,6 +99,7 @@ type PopupDouble = {
   content: HTMLElement | null;
   setDOMContent: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
+  originalRemove: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
   emit: (event: string) => void;
 };
@@ -494,6 +495,7 @@ function installMapLibre(): LibDouble {
 
   function Popup(input: { offset: number }): PopupDouble {
     const handlers: Record<string, (() => void)[]> = {};
+    const originalRemove = vi.fn();
     const popup: PopupDouble = {
       offset: input.offset,
       content: null,
@@ -501,7 +503,8 @@ function installMapLibre(): LibDouble {
         popup.content = content;
         return popup;
       }),
-      remove: vi.fn(),
+      remove: originalRemove,
+      originalRemove,
       on: vi.fn((event: string, handler: () => void) => {
         const list = handlers[event] ?? [];
         list.push(handler);
@@ -2027,6 +2030,62 @@ describe('HomeShops', () => {
     expect(observer.disconnect).toHaveBeenCalledTimes(1);
   });
 
+  it('preserves a user-moved view on resize but still frames after programmatic movement', async () => {
+    const observers: ResizeObserverCallback[] = [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push(callback);
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const handlers: Record<string, (event: { originalEvent?: Event }) => void> = {};
+    const off = vi.fn();
+    const lib = installMapLibre();
+    let width = 300;
+    wrapMap((map) => {
+      Object.assign(map, {
+        on: (event: string, handler: (event: { originalEvent?: Event }) => void): void => {
+          handlers[event] = handler;
+        },
+        off,
+        getContainer: (): HTMLElement => {
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, value: 400 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', {}), giftsPlace('Bea', { lon: 122 })]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    const observe = observers.at(-1);
+    if (observe === undefined) throw new Error('missing observer');
+    const before = map.fitBounds.mock.calls.length;
+    handlers['zoomstart']?.({});
+    width = 320;
+    observe([], {} as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    handlers['dragstart']?.({ originalEvent: new Event('mousedown') });
+    width = 340;
+    observe([], {} as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    cleanup();
+    expect(off).toHaveBeenCalledWith('dragstart', handlers['dragstart']);
+    expect(off).toHaveBeenCalledWith('zoomstart', handlers['zoomstart']);
+    expect(off).toHaveBeenCalledWith('rotatestart', handlers['rotatestart']);
+    expect(off).toHaveBeenCalledWith('pitchstart', handlers['pitchstart']);
+  });
+
   it('does not frame the empty map while shops are still loading', async () => {
     const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
       [];
@@ -2228,7 +2287,7 @@ describe('HomeShops', () => {
     expect(close?.getAttribute('aria-label')).toBe(copy.closePopup);
     if (!(close instanceof HTMLButtonElement)) throw new Error('missing close');
     close.click();
-    expect(linked.remove).toHaveBeenCalledTimes(1);
+    expect(linked.originalRemove).toHaveBeenCalledTimes(1);
     await new Promise((resolve) => {
       setTimeout(resolve, 0);
     });
@@ -3273,6 +3332,48 @@ describe('HomeShops', () => {
     expect(pinByName('Bea').classList.contains('is-offscreen')).toBe(false);
   });
 
+  it('keeps focus on another button when a keyboard cluster movement ends', async () => {
+    const handlers = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+    fireEvent.click(cluster, { detail: 0 });
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    elsewhere.focus();
+    expect(document.activeElement).toBe(elsewhere);
+
+    handlers['moveend']?.();
+
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
+  });
+
+  it('restores cluster focus and cancels only a pending frame on movement end', async () => {
+    const handlers = await setupClusterFocus();
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+    fireEvent.click(cluster, { detail: 0 });
+    expect(document.activeElement).toBe(cluster);
+
+    handlers['moveend']?.();
+
+    const replacement = clusterButton('is-daily');
+    expect(replacement).not.toBe(cluster);
+    expect(document.activeElement).toBe(replacement);
+    expect(cancel).not.toHaveBeenCalled();
+
+    fireEvent.click(replacement, { detail: 0 });
+    vi.mocked(window.requestAnimationFrame).mockImplementation(() => 77);
+    handlers['move']?.();
+    expect(document.activeElement).toBe(replacement);
+    handlers['moveend']?.();
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledWith(77);
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+  });
+
   it('clusters nearby pins, pans a popup into view, and drops a failed frame', async () => {
     const state = {
       unproject: 'point' as 'point' | 'throw' | 'nan',
@@ -3366,6 +3467,33 @@ describe('HomeShops', () => {
       maxZoom: 17.5,
       duration: 600,
     });
+
+    daily.focus();
+    fireEvent.click(daily, { detail: 0 });
+    await act(async () => {
+      handlers['move']?.();
+    });
+    expect(document.activeElement).toBe(document.body);
+    handlers['moveend']?.();
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+    fireEvent.click(clusterButton('is-daily'), { detail: 0 });
+    map.transform.zoom = 18;
+    await act(async () => {
+      handlers['move']?.();
+    });
+    handlers['moveend']?.();
+    expect(document.activeElement).toBe(pinByName('Ann'));
+    map.transform.zoom = 10;
+    await act(async () => {
+      handlers['move']?.();
+    });
+    const currentCluster = clusterButton('is-daily');
+    fireEvent.click(currentCluster, { detail: 1 });
+    await act(async () => {
+      handlers['move']?.();
+    });
+    handlers['moveend']?.();
+    expect(document.activeElement).toBe(pinByName('Ann'));
 
     state.unproject = 'throw';
     await act(async () => {
@@ -3590,6 +3718,35 @@ describe('HomeShops', () => {
     fireEvent.click(pin);
     expect(focus).not.toHaveBeenCalled();
     expect(document.activeElement).not.toBe(close);
+  });
+
+  it('returns focus to a connected pin only when focus was inside the closing popup', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    document.body.appendChild(content);
+    popup.originalRemove.mockImplementation(() => {
+      content.remove();
+      popup.emit('close');
+    });
+    close.focus();
+    fireEvent.click(close);
+    expect(document.activeElement).toBe(pin);
+
+    document.body.appendChild(content);
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    elsewhere.focus();
+    popup.remove();
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
   });
 
   it('measures the popup next frame, avoids obstacles, and skips animation while unloaded', async () => {
@@ -4208,6 +4365,40 @@ function setRect(
 function setWindowSize(width: number, height: number): void {
   Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+}
+
+async function setupClusterFocus(): Promise<Record<string, () => void>> {
+  const handlers: Record<string, () => void> = {};
+  const lib = installMapLibre();
+  wrapMap((map) => {
+    Object.assign(map, {
+      project: (position: [number, number]) => ({ x: position[0] * 10, y: position[1] * 10 }),
+      unproject: (point: [number, number]) => ({ lng: point[0], lat: point[1] }),
+      on: (event: string, handler: () => void) => {
+        handlers[event] = handler;
+      },
+      getContainer: () => {
+        const node = document.getElementById('shop-places-map');
+        if (node === null) throw new Error('missing map');
+        return node;
+      },
+    });
+  });
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    queueMicrotask(() => callback(0));
+    return 0;
+  });
+  renderShops();
+  const mapNode = document.getElementById('shop-places-map');
+  if (mapNode === null) throw new Error('missing map');
+  setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+  await resolveLatest(basicFilters({}), clusterRows());
+  await fireScript('load');
+  firstMap(lib).transform.zoom = 10;
+  await act(async () => {
+    handlers['zoom']?.();
+  });
+  return handlers;
 }
 
 async function paintProjected(places: readonly Place[]): Promise<void> {

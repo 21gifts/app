@@ -304,6 +304,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/',
+    id: 'shops-marker-no-photo',
+    image: 'root-shops-marker-no-photo.png',
+    visual: 'state-root-shops-marker-no-photo',
+    needle: "locator('.maplibregl-popup a.shop-popup-name')).toHaveCount(0)",
+  },
+  {
+    route: '/',
     id: 'shops-cluster',
     image: 'root-shops-cluster.png',
     visual: 'state-root-shops-cluster',

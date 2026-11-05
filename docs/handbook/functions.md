@@ -7347,6 +7347,20 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** A combobox and, while open, a listbox. Choosing an option commits that value, closes the list, and returns focus to the trigger. Keyboard arrows, Home, and End move the highlight. No network request.
 - **Used by:** HomeShops on the marketing page at `/`.
 
+## Function: MenuScroll
+
+- **Purpose:** Wrap homepage filter rows in a scrollport when their pinned panel needs scrolling.
+- **Inputs:** The scrolling flag and the option rows.
+- **Returns / side effects:** The rows directly, or inside a `Scrollport` when scrolling is needed.
+- **Used by:** FilterMenu on the marketing page at `/`.
+
+## Function: FilterOption
+
+- **Purpose:** Render one homepage filter option with its active and selected states and optional decorative swatch.
+- **Inputs:** The option, its index, the active index, the selected value, an id builder, and a selection handler.
+- **Returns / side effects:** An option button that stops click propagation and passes its value to the selection handler.
+- **Used by:** FilterMenu on the marketing page at `/`.
+
 ## Function: getMyLoans
 
 - **Purpose:** Loads the signed-in member's live loans from same-origin `GET /me/loans`, including collecting asks, repayment totals, due shares, the next due day, and Sunday rest.

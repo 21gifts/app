@@ -136,8 +136,8 @@ type MapHandle = {
   getContainer?: () => HTMLElement;
   getCanvas?: () => HTMLElement;
   panBy?: (offset: [number, number], options?: { duration?: number }) => void;
-  on?: (event: string, handler: () => void) => void;
-  off?: (event: string, handler: () => void) => void;
+  on?: (event: string, handler: (event: { originalEvent?: Event }) => void) => void;
+  off?: (event: string, handler: (event: { originalEvent?: Event }) => void) => void;
   once?: (event: string, handler: () => void) => void;
 };
 
@@ -180,7 +180,13 @@ type MapLibreNamespace = {
   LngLatBounds: new () => LngLatBoundsHandle;
 };
 
-type MapSession = { map: MapHandle; lib: MapLibreNamespace; onMove: (() => void) | null };
+type MapSession = {
+  map: MapHandle;
+  lib: MapLibreNamespace;
+  onMove: () => void;
+  onMoveStart: (event: { originalEvent?: Event }) => void;
+  onMoveEnd: () => void;
+};
 
 type PinRecord = { element: HTMLButtonElement; row: ShopRow; position: LngLat };
 
@@ -1398,6 +1404,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
+  const clusterFocus = useRef<{ pin: PinRecord; button: HTMLElement } | null>(null);
   const popupFrame = useRef(0);
   const sizeObserverRef = useRef<ResizeObserver | null>(null);
   const awaitingRef = useRef(false);
@@ -1459,68 +1466,78 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     for (const pin of pinsRef.current) pin.element.classList.remove('is-clustered');
   }, []);
 
-  const paintClusters = useCallback((): void => {
-    const session = sessionRef.current;
-    clearClusters();
-    if (session === null || awaitingRef.current || failedRef.current) return;
-    const rect = clusterBox(session.map);
-    if (rect === null) return;
-    const readZoom = session.map.getZoom;
-    /* v8 ignore next -- clusterBox already required getZoom */
-    if (readZoom === undefined) return;
-    const zoom = readZoom.call(session.map);
-    const clusters: { element: HTMLElement; position: LngLat }[] = [];
-    if (typeof zoom === 'number' && zoom < CLUSTER_ZOOM) {
-      const points = new Map<PinRecord, { x: number; y: number }>();
-      for (const pin of pinsRef.current) {
-        const point = projectPoint(session.map, pin.position);
-        if (point !== null) points.set(pin, point);
-      }
-      const groups = clusterGroups(
-        pinsRef.current.filter((pin) => points.has(pin)),
-        points,
-      );
-      for (const group of groups) {
-        if (group.length < 2) continue;
-        for (const pin of group) pin.element.classList.add('is-clustered');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = `shop-cluster ${clusterTone(bestToken(group))}`;
-        button.textContent = String(group.length);
-        button.setAttribute(
-          'aria-label',
-          translate(getCatalog(localeRef.current), 'homeShops.clusterCount', {
-            count: group.length,
-          }),
+  const paintClusters = useCallback(
+    (focusPin?: PinRecord): void => {
+      const session = sessionRef.current;
+      clearClusters();
+      if (session === null || awaitingRef.current || failedRef.current) return;
+      const rect = clusterBox(session.map);
+      if (rect === null) return;
+      const readZoom = session.map.getZoom;
+      /* v8 ignore next -- clusterBox already required getZoom */
+      if (readZoom === undefined) return;
+      const zoom = readZoom.call(session.map);
+      const clusters: { element: HTMLElement; position: LngLat }[] = [];
+      let focusTarget: HTMLElement | undefined;
+      if (typeof zoom === 'number' && zoom < CLUSTER_ZOOM) {
+        const points = new Map<PinRecord, { x: number; y: number }>();
+        for (const pin of pinsRef.current) {
+          const point = projectPoint(session.map, pin.position);
+          if (point !== null) points.set(pin, point);
+        }
+        const groups = clusterGroups(
+          pinsRef.current.filter((pin) => points.has(pin)),
+          points,
         );
-        const shell = document.createElement('div');
-        shell.className = 'shop-cluster-marker';
-        shell.appendChild(button);
-        button.addEventListener('click', () => {
-          userMovedMaps.add(session.map);
-          const bounds = new session.lib.LngLatBounds();
-          for (const pin of group) bounds.extend(pin.position);
-          session.map.fitBounds(bounds, {
-            padding: FRAME_PADDING,
-            maxZoom: CLUSTER_MAX_ZOOM,
-            ...clusterMotion(session.map),
+        for (const group of groups) {
+          const firstPin = group[0];
+          if (group.length < 2 || firstPin === undefined) continue;
+          for (const pin of group) pin.element.classList.add('is-clustered');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `shop-cluster ${clusterTone(bestToken(group))}`;
+          button.textContent = String(group.length);
+          button.setAttribute(
+            'aria-label',
+            translate(getCatalog(localeRef.current), 'homeShops.clusterCount', {
+              count: group.length,
+            }),
+          );
+          const shell = document.createElement('div');
+          shell.className = 'shop-cluster-marker';
+          shell.appendChild(button);
+          if (focusPin !== undefined && group.includes(focusPin)) focusTarget = button;
+          button.addEventListener('click', (event: MouseEvent) => {
+            clusterFocus.current = event.detail === 0 ? { pin: firstPin, button } : null;
+            userMovedMaps.add(session.map);
+            const bounds = new session.lib.LngLatBounds();
+            for (const pin of group) bounds.extend(pin.position);
+            session.map.fitBounds(bounds, {
+              padding: FRAME_PADDING,
+              maxZoom: CLUSTER_MAX_ZOOM,
+              ...clusterMotion(session.map),
+            });
           });
-        });
-        const position = clusterPosition(session.map, group);
-        const marker = new session.lib.Marker({ element: shell });
-        marker.setLngLat(position);
-        marker.addTo(session.map);
-        clusterMarkersRef.current.push(marker);
-        clusters.push({ element: shell, position });
+          const position = clusterPosition(session.map, group);
+          const marker = new session.lib.Marker({ element: shell });
+          marker.setLngLat(position);
+          marker.addTo(session.map);
+          clusterMarkersRef.current.push(marker);
+          clusters.push({ element: shell, position });
+        }
       }
-    }
-    for (const pin of pinsRef.current) {
-      markOffscreen(session.map, rect, pin.element, pin.position);
-    }
-    for (const cluster of clusters) {
-      markOffscreen(session.map, rect, cluster.element, cluster.position);
-    }
-  }, [clearClusters]);
+      for (const pin of pinsRef.current) {
+        markOffscreen(session.map, rect, pin.element, pin.position);
+      }
+      for (const cluster of clusters) {
+        markOffscreen(session.map, rect, cluster.element, cluster.position);
+      }
+      if (focusPin !== undefined && focusPin.element.isConnected) {
+        (focusTarget ?? focusPin.element).focus();
+      }
+    },
+    [clearClusters],
+  );
 
   const scheduleClusters = useCallback((): void => {
     const session = sessionRef.current;
@@ -1558,6 +1575,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           focusAfterOpen: false,
           className: 'shop-popup',
         });
+        const removePopup = popup.remove.bind(popup);
+        popup.remove = (): void => {
+          const restoreFocus = content.contains(document.activeElement);
+          removePopup();
+          if (restoreFocus && element.isConnected) element.focus();
+        };
         const content = popupContent(row, showCategoryRef.current, closeLabelRef.current, () => {
           popup.remove();
         });
@@ -1736,13 +1759,30 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         const onMove = (): void => {
           scheduleClusters();
         };
+        const onMoveStart = (event: { originalEvent?: Event }): void => {
+          if (event.originalEvent !== undefined) userMovedMaps.add(map);
+        };
+        const onMoveEnd = (): void => {
+          const pending = clusterFocus.current;
+          if (pending === null) return;
+          clusterFocus.current = null;
+          if (document.activeElement !== document.body && document.activeElement !== pending.button)
+            return;
+          if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
+          clusterFrame.current = 0;
+          paintClusters(pending.pin);
+        };
         if (typeof map.on === 'function') {
           map.on('move', onMove);
           map.on('zoom', onMove);
+          for (const event of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) {
+            map.on(event, onMoveStart);
+          }
+          map.on('moveend', onMoveEnd);
         }
         if (typeof map.once === 'function') map.once('load', () => revealAttribution(map));
         else revealAttribution(map);
-        sessionRef.current = { map, lib, onMove };
+        sessionRef.current = { map, lib, onMove, onMoveStart, onMoveEnd };
         paintMarkers();
         if (typeof ResizeObserver === 'function' && typeof map.getContainer === 'function') {
           const container = map.getContainer();
@@ -1852,10 +1892,15 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       sizeObserverRef.current = null;
       const session = sessionRef.current;
       if (session !== null) {
-        if (session.onMove !== null && typeof session.map.off === 'function') {
+        if (typeof session.map.off === 'function') {
           session.map.off('move', session.onMove);
           session.map.off('zoom', session.onMove);
+          for (const event of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) {
+            session.map.off(event, session.onMoveStart);
+          }
+          session.map.off('moveend', session.onMoveEnd);
         }
+        clusterFocus.current = null;
         session.map.remove();
       }
       sessionRef.current = null;
@@ -1875,6 +1920,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     copy.mapTitle,
     clearClusters,
     locale,
+    paintClusters,
     paintMarkers,
     scheduleClusters,
   ]);

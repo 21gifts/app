@@ -2825,6 +2825,22 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-marker');
   });
 
+  test('state / shops-marker-no-photo', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'North, Weekly' }).click();
+    await expect(page.locator('.shop-popup-name')).toHaveText('North');
+    await expect(page.locator('.maplibregl-popup a.shop-popup-name')).toHaveCount(0);
+    await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
+    await page.mouse.move(0, 0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-marker-no-photo');
+  });
+
   test('state / shops-cluster', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
