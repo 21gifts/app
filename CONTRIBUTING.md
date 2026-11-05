@@ -1126,12 +1126,13 @@ What a trace holds:
   `wallet.prepare`, `wallet.send`, `wallet.address.register`,
   `wallet.address.transfer`, and `wallet.passkey`. The only attributes are
   `route` (`spark`, `lightning`, or `onchain`), `prompt` (`login`, `unlock`,
-  or `recovery`), and on every wallet span why the
-  page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
+  or `recovery`), `held` on the login prompt (whether a held-back session was
+  waiting), and on every wallet span how the app is displayed (`display`:
+  `standalone` or `browser`) and why the page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
   or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
   page load during a client-side navigation, otherwise `other`;
-  `src/lib/page-load.ts`). That lets passkey prompts be counted per page load
-  and cause; there is no member id on any span. The browser never creates a
+  `src/lib/page-load.ts`). That lets passkey prompts be counted per page load,
+  cause, and display; there is no member id on any span. The browser never creates a
   receive invoice; the api issues it, and that request is a fetch span.
 - Wallet steps start their own transaction in the page's trace, so a slow
   connect does not stretch the page load, and all steps of a page share its
