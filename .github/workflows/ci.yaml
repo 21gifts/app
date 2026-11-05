@@ -12,7 +12,9 @@ concurrency:
 permissions:
   contents: read
 
-# Each job must finish within 10 minutes; do not raise the timeout.
+# Lint, behavior, and visual jobs finish within 10 minutes.
+# The Check job is 15 minutes because coverage needs about 10:30.
+# Do not raise a timeout to hide a hang.
 jobs:
   lint:
     name: Lint

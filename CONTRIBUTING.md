@@ -708,7 +708,7 @@ icon-only when the table says labeled) is an undeclared deviation.
 The signed-in **Menu** trigger is icon-only: the lucide `Menu` icon with the
 accessible name `aria.menu` and no visible Menu word.
 **Log out**, **Continue**, **I agree to these rules**,
-**Activate**, **Try again**, pay-sheet **Pay**, and sentence-length
+**Activate**, **Try again**, pay-link **Pay**, and sentence-length
 links stay labeled. Shop wizard **Add a shop**, step **Next**, summary
 **Post**, and **Save changes** stay labeled in that same column. The photo
 step's Close (X) is icon-only, accessible name Cancel, the same dismiss as
@@ -921,7 +921,7 @@ unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or
 `## Function: <Name>` section and an e2e `Function: <Name>` needle, not a
 screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
-combo projects in eight parallel shard jobs on every PR (each with a 10-minute budget) so
+combo projects in sixteen parallel shard jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
 A PR's snapshot diff must contain only screens whose intended appearance
@@ -1272,7 +1272,7 @@ performance traces, both through its scrubber.
 
 | Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + sixteen visual shard jobs (`Visual (<combo>, shard 1/4)` to `4/4`) + four Visual (<combo>) jobs, green only when all sixteen visual shards are green; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + sixteen visual shard jobs (`Visual (<combo>, shard 1/4)` to `4/4`) + four Visual (<combo>) jobs, green only when all sixteen visual shards are green; Check **15 minutes**, every other job **10 minutes**; Playwright `v1.61.1-noble` |
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                   |
 | `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                         |
 | `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                      |
