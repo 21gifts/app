@@ -324,7 +324,7 @@ app/
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
-│   │   ├── ShopsCountryFilter.tsx # Country select above that pill (All countries + countries with shops)
+│   │   ├── ShopsCountryFilter.tsx # Country chip in the top bar, right of the wordmark (All countries + countries with shops)
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Place pin on the forum composer; shop place-and-address dialog
 │   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
