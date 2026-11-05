@@ -34,7 +34,7 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 
 ### Variant: faq-account-open
 
-The first question is open: **Do I need an account to see the forum?** The answer says you can read the forum without an account, but need to sign in to react with an amount or write something. To receive Bitcoin donations yourself, also add a Wallet of Satoshi address.
+The first question is open: **Do I need an account to see the forum?** The answer says you can read the forum without an account, but need to sign in to react with an amount or write something. To receive Bitcoin donations yourself, you use your own you@21.gifts wallet in this app.
 
 ![21.gifts home FAQ account open](images/root-faq-account-open.png)
 
@@ -46,13 +46,13 @@ The second question is open: **Does 21.gifts keep any of my donation?** The answ
 
 ### Variant: faq-password-open
 
-The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.
+The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.
 
 ![21.gifts home FAQ password open](images/root-faq-password-open.png)
 
 ### Variant: faq-device-open
 
-The fourth question is open: **What if I lose my device?** The answer says that if you lose access on your device and in any sync, the account cannot be recovered yet. Check how your device backs up your sign-in.
+The fourth question is open: **What if I lose my device?** The answer says you can restore your account with your 12 words, or with Social Recovery if you set it up, and to set up Social Recovery in the settings.
 
 ![21.gifts home FAQ device open](images/root-faq-device-open.png)
 
