@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterOption } from '@/app/(marketing)/FilterOption';
 
@@ -80,5 +80,25 @@ describe('FilterOption', () => {
     const option = screen.getByRole('option', { selected: false });
     expect(option.className).toContain('is-active');
     expect(option.className).not.toContain('font-semibold');
+  });
+
+  it('allows a long label to wrap while keeping a minimum row height', () => {
+    render(
+      <FilterOption
+        option={{ value: 'country', label: 'A very long country name', swatch: null }}
+        index={0}
+        activeIndex={0}
+        value=""
+        optionDomId={(index) => `option-${index}`}
+        onChoose={vi.fn()}
+      />,
+    );
+    const option = screen.getByRole('option', { name: 'A very long country name' });
+    const label = within(option).getByText('A very long country name');
+    expect(option.classList.contains('min-h-11')).toBe(true);
+    expect(label.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['min-w-0', 'flex-1', 'break-words']),
+    );
+    expect(label.classList.contains('truncate')).toBe(false);
   });
 });

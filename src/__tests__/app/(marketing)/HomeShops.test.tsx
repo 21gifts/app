@@ -3720,7 +3720,7 @@ describe('HomeShops', () => {
     expect(document.activeElement).not.toBe(close);
   });
 
-  it('returns focus to a connected pin only when focus was inside the closing popup', async () => {
+  it('restores focus only from the popup to a connected pin', async (): Promise<void> => {
     const lib = installMapLibre();
     renderShops();
     await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
@@ -3732,21 +3732,36 @@ describe('HomeShops', () => {
     const close = content.querySelector('.shop-popup-close');
     if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
     document.body.appendChild(content);
-    popup.originalRemove.mockImplementation(() => {
+    popup.originalRemove.mockImplementation((): void => {
       content.remove();
       popup.emit('close');
     });
+    const focusPin = vi.spyOn(pin, 'focus');
     close.focus();
     fireEvent.click(close);
+    expect(focusPin).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(pin);
 
+    focusPin.mockClear();
     document.body.appendChild(content);
     const elsewhere = document.createElement('button');
     document.body.appendChild(elsewhere);
     elsewhere.focus();
     popup.remove();
+    expect(focusPin).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(elsewhere);
     elsewhere.remove();
+
+    document.body.appendChild(content);
+    close.focus();
+    expect(document.activeElement).toBe(close);
+    pin.remove();
+    expect(pin.isConnected).toBe(false);
+    fireEvent.click(close);
+    expect(popup.originalRemove).toHaveBeenCalledTimes(3);
+    expect(content.isConnected).toBe(false);
+    expect(focusPin).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(document.body);
   });
 
   it('measures the popup next frame, avoids obstacles, and skips animation while unloaded', async () => {
@@ -3994,7 +4009,7 @@ describe('HomeShops', () => {
     expect(pinByName('Cara').classList.contains('is-clustered')).toBe(false);
   });
 
-  it('sorts every column and keeps an equal name in ascending order', async () => {
+  it('sorts every column and orders equal values by ascending name', async (): Promise<void> => {
     renderShops();
     await resolveLatest(basicFilters({}), sortRows());
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cal', 'Dee', 'Eve']);
@@ -4459,8 +4474,8 @@ function clusterRows(): { places: readonly unknown[] } {
 
 function sortRows(): { places: readonly unknown[] } {
   return placesBody([
-    giftsPlace('Ann', { street: 'Same', country: 'PH', activity: 'daily', shopName: 'SPAR' }),
     giftsPlace('Bea', { street: 'Same', country: 'DE', activity: 'daily', shopName: null }),
+    giftsPlace('Ann', { street: 'Same', country: 'PH', activity: 'daily', shopName: 'SPAR' }),
     giftsPlace('Cal', { street: 'Late', country: 'PH', activity: 'within7Days', shopName: 'SPAR' }),
     giftsPlace('Dee', { street: 'Early', country: 'KE', activity: 'none', shopName: 'SPAR' }),
     giftsPlace('Eve', { street: 'Mid', country: 'PH', activity: 'zeta', shopName: 'SPAR' }),

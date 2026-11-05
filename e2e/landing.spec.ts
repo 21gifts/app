@@ -348,6 +348,9 @@ test('Function: HomeShops hides filters and help when no shops are published', a
   await expect(page.getByText(getCatalog('en')['homeShops.empty'])).toBeVisible();
   await expect(page.getByRole('combobox', { name: 'Activity', exact: true })).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Blockchain', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: 'Asset', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'What the activity words mean' })).toHaveCount(0);
   await expect(page.locator('.shop-legend')).toHaveCount(0);
 });
@@ -497,6 +500,8 @@ test('Function: HomeShops sorts each column in both directions', async ({ page }
   await expectFirstCells(page, ['Sample', 'North', 'Mid', 'South']);
   await page.getByRole('button', { name: 'Activity', exact: true }).click();
   await expectFirstCells(page, ['South', 'Mid', 'North', 'Sample']);
+  await page.getByRole('button', { name: 'Name', exact: true }).click();
+  await expectFirstCells(page, ['Mid', 'North', 'Sample', 'South']);
   await page.getByRole('button', { name: 'Location', exact: true }).click();
   await page.getByRole('button', { name: 'Location', exact: true }).click();
   await page.getByRole('combobox', { name: 'Country', exact: true }).click();
@@ -584,7 +589,25 @@ test('Function: HomeShops keeps an open filter list inside a narrow window', asy
       if (box === null) return false;
       const right = box.x + box.width;
       const bottom = box.y + box.height;
-      return box.x >= 0 && right <= 390 && box.width <= 358 && bottom <= 844;
+      return box.x >= 0 && box.y >= 0 && right <= 390 && box.width <= 358 && bottom <= 844;
+    })
+    .toBe(true);
+});
+
+test('Function: HomeShops keeps a pinned filter list inside a short window', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 180 });
+  await stubPublicMap(page);
+  await page.goto('/');
+  const country = page.getByRole('combobox', { name: 'Country', exact: true });
+  await country.scrollIntoViewIfNeeded();
+  await country.click();
+  const listbox = page.getByRole('listbox', { name: 'Country' });
+  await expect(listbox).toHaveCSS('position', 'fixed');
+  await expect
+    .poll(async () => {
+      const box = await listbox.boundingBox();
+      if (box === null) return false;
+      return box.x >= 0 && box.y >= 0 && box.x + box.width <= 390 && box.y + box.height <= 180;
     })
     .toBe(true);
 });

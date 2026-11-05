@@ -509,6 +509,7 @@ describe('FilterMenu', () => {
       const listbox = screen.getByRole('listbox');
       expect(listbox.className).toContain('fixed');
       expect(listbox.className).not.toContain('absolute');
+      expect(listbox.classList.contains('min-w-[max(100%,14.5rem)]')).toBe(false);
       expect(listbox.style.left).toBe('8px');
       expect(listbox.style.top).toBe('8px');
       expect(listbox.style.width).toBe(`${window.innerWidth - 16}px`);
@@ -523,20 +524,33 @@ describe('FilterMenu', () => {
     }
   });
 
-  it('reveals the active option inside a pinned menu scrollport', () => {
+  it('reveals options above and below the pinned scrollport on keyboard movement', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
-    rect.mockReturnValue({
-      x: 0,
-      y: 0,
-      top: -40,
-      left: -40,
-      right: window.innerWidth + 80,
-      bottom: window.innerHeight + 80,
-      width: window.innerWidth + 120,
-      height: window.innerHeight + 120,
-      toJSON() {
-        return {};
-      },
+    rect.mockImplementation(function (this: HTMLElement): DOMRect {
+      let top = -40;
+      let height = window.innerHeight + 120;
+      if (this.hasAttribute('data-scrollport')) {
+        top = 100;
+        height = 100;
+      } else if (this.getAttribute('role') === 'option') {
+        const port = this.closest('[data-scrollport]');
+        const index = options.findIndex((option) => option.value === this.dataset['value']);
+        top = 112 + index * 60 - (port instanceof HTMLElement ? port.scrollTop : 0);
+        height = 44;
+      }
+      return {
+        x: 0,
+        y: top,
+        top,
+        left: -40,
+        right: window.innerWidth + 80,
+        bottom: top + height,
+        width: window.innerWidth + 120,
+        height,
+        toJSON() {
+          return {};
+        },
+      };
     });
     try {
       renderMenu('');
@@ -544,30 +558,76 @@ describe('FilterMenu', () => {
       const listbox = screen.getByRole('listbox');
       const port = listbox.querySelector('[data-scrollport]');
       if (!(port instanceof HTMLElement)) throw new Error('missing menu scrollport');
-      let scrolled = 0;
-      Object.defineProperty(port, 'scrollTop', {
-        configurable: true,
-        get() {
-          return scrolled;
-        },
-        set(value: number) {
-          scrolled = value;
-        },
-      });
       expect(port.scrollTop).toBe(0);
       fireEvent.keyDown(trigger(), { key: 'End' });
       const options = within(listbox).getAllByRole('option');
       const last = options[options.length - 1];
       if (last === undefined) throw new Error('missing last option');
       expect(trigger().getAttribute('aria-activedescendant')).toBe(last.id);
-      expect(port.scrollTop).toBe(12);
+      expect(port.scrollTop).toBeGreaterThan(0);
+      expect(last.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        port.getBoundingClientRect().bottom,
+      );
+      const afterEnd = port.scrollTop;
       fireEvent.keyDown(trigger(), { key: 'Home' });
       const first = options[0];
       if (first === undefined) throw new Error('missing first option');
       expect(trigger().getAttribute('aria-activedescendant')).toBe(first.id);
-      expect(port.scrollTop).toBe(24);
-      fireEvent.keyDown(trigger(), { key: 'ArrowDown' });
-      expect(port.scrollTop).toBe(36);
+      expect(port.scrollTop).toBeLessThan(afterEnd);
+      expect(first.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+        port.getBoundingClientRect().top,
+      );
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('reveals the selected option each time a pinned scrolling menu opens', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    rect.mockImplementation(function (this: HTMLElement): DOMRect {
+      let top = -40;
+      let height = window.innerHeight + 120;
+      if (this.hasAttribute('data-scrollport')) {
+        top = 100;
+        height = 100;
+      } else if (this.getAttribute('role') === 'option') {
+        const port = this.closest('[data-scrollport]');
+        const index = options.findIndex((option) => option.value === this.dataset['value']);
+        top = 112 + index * 60 - (port instanceof HTMLElement ? port.scrollTop : 0);
+        height = 44;
+      }
+      return {
+        x: 0,
+        y: top,
+        top,
+        left: -40,
+        right: window.innerWidth + 80,
+        bottom: top + height,
+        width: window.innerWidth + 120,
+        height,
+        toJSON() {
+          return {};
+        },
+      };
+    });
+    try {
+      renderMenu('daily');
+      for (let count = 0; count < 2; count += 1) {
+        fireEvent.click(trigger());
+        const listbox = screen.getByRole('listbox');
+        const port = listbox.querySelector('[data-scrollport]');
+        if (!(port instanceof HTMLElement)) throw new Error('missing menu scrollport');
+        const selected = within(listbox).getByRole('option', { selected: true });
+        expect(trigger().getAttribute('aria-activedescendant')).toBe(selected.id);
+        expect(port.scrollTop).toBeGreaterThan(0);
+        expect(selected.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+          port.getBoundingClientRect().top,
+        );
+        expect(selected.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+          port.getBoundingClientRect().bottom,
+        );
+        fireEvent.click(trigger());
+      }
     } finally {
       rect.mockRestore();
     }
@@ -613,6 +673,7 @@ describe('FilterMenu', () => {
       fireEvent.click(trigger());
       const listbox = screen.getByRole('listbox');
       expect(listbox.className).toContain('absolute');
+      expect(listbox.classList.contains('min-w-[max(100%,14.5rem)]')).toBe(true);
       expect(listbox.style.left).toBe('');
       expect(listbox.style.top).toBe('');
       expect(listbox.style.width).toBe('');
@@ -695,7 +756,7 @@ describe('FilterMenu', () => {
     }
   });
 
-  it('repositions a pinned panel on scroll while the pill stays in the window', () => {
+  it('keeps a pinned panel in place when the pill scrolls below the window', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
     const width = 200;
     const parkedLeft = window.innerWidth - 100;
@@ -741,7 +802,38 @@ describe('FilterMenu', () => {
     }
   });
 
-  it('moves a pinned panel with the pill while the pill stays in the window', () => {
+  it('moves a pinned panel when the visible pill moves and the panel still overflows', () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    let top = 40;
+    rect.mockImplementation((): DOMRect => ({
+      x: -40,
+      y: top,
+      top,
+      left: -40,
+      right: 160,
+      bottom: top + 80,
+      width: 200,
+      height: 80,
+      toJSON() {
+        return {};
+      },
+    }));
+    try {
+      renderMenu('');
+      fireEvent.click(trigger());
+      const listbox = screen.getByRole('listbox');
+      expect(listbox.className).toContain('fixed');
+      expect(listbox.style.top).toBe('40px');
+      top = 80;
+      fireEvent(document, new Event('scroll'));
+      expect(listbox.className).toContain('fixed');
+      expect(listbox.style.top).toBe('80px');
+    } finally {
+      rect.mockRestore();
+    }
+  });
+
+  it('returns a pinned panel to the pill when its new position fits', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
     const width = 200;
     const parkedLeft = window.innerWidth - 100;

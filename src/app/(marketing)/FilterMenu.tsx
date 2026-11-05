@@ -160,8 +160,8 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * when the page scrolls while the pill is still in the window, so a pinned list
  * stays on the pill. A scroll or resize while the pill is outside the window
  * does not measure it again. A pinned list that is taller than the window
- * scrolls its options on the active scrollport. Arrow, Home, and End reveal
- * the active option inside that scrollport.
+ * scrolls its options on the active scrollport. Opening reveals the selected
+ * option, and Arrow, Home, and End reveal the active option there.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -191,6 +191,7 @@ export function FilterMenu({
   const listboxId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const revealedOnOpen = useRef(false);
   const chosen = selectedLabel(options, value, allLabel);
   const inverted = value !== '';
   const menuScrolls = pin !== null && pin.scrolls;
@@ -245,6 +246,7 @@ export function FilterMenu({
         'mt-1.5',
       );
       panel.classList.add('absolute', 'left-0', 'top-full', 'mt-1.5');
+      panel.classList.add('min-w-[max(100%,14.5rem)]');
       clearPinStyle(panel);
       const natural = panel.getBoundingClientRect();
       const nextAlign: MenuAlign =
@@ -318,9 +320,11 @@ export function FilterMenu({
   }
 
   function openAtCurrent(): void {
+    revealedOnOpen.current = false;
     setActiveIndex(highlightIndex());
     setAlign('start');
     setVertical('below');
+    setPin(null);
     setOpen(true);
   }
 
@@ -354,6 +358,12 @@ export function FilterMenu({
     if (option === null) return;
     revealInScrollport(scroller, option);
   }
+
+  useLayoutEffect(() => {
+    if (!open || !menuScrolls || revealedOnOpen.current) return;
+    revealActive(activeIndex);
+    revealedOnOpen.current = true;
+  });
 
   function move(delta: number): void {
     const next = clampIndex(activeIndex + delta);
@@ -450,7 +460,7 @@ export function FilterMenu({
           role="listbox"
           id={listboxId}
           aria-labelledby={labelId}
-          className={`shop-menu-in z-30 flex min-w-[max(100%,14.5rem)] flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${placed} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
+          className={`shop-menu-in z-30 flex ${pin === null ? 'min-w-[max(100%,14.5rem)]' : ''} flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${placed} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}
           style={
             pin === null
               ? undefined

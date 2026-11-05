@@ -47,7 +47,7 @@ export function FilterOption({
       }}
     >
       {option.swatch === null ? null : <span className={option.swatch} aria-hidden="true" />}
-      <span className="min-w-0 flex-1 truncate">{option.label}</span>
+      <span className="min-w-0 flex-1 break-words">{option.label}</span>
       {selected ? <Check aria-hidden="true" className="h-4 w-4 shrink-0" /> : null}
     </button>
   );
