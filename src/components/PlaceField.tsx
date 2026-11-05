@@ -145,9 +145,9 @@ const ADDRESS_ERROR_KEY: Record<ShopAddressField, Record<ShopAddressFieldProblem
  * Optional place pin control for a forum composer or staff editor.
  *
  * @param props - Current pin, disabled flag, change handler, optional
- * `previewSlot`, optional staff-commit overrides (size, variant, preview,
- * label, `onCommit`), and shop validation state.
- * @returns Attach button, optional preview, and the place dialog.
+ * `previewSlot` (accepted and not read), optional staff-commit overrides
+ * (size, variant, label, `onCommit`), and shop validation state.
+ * @returns Attach button and the place dialog.
  */
 export function PlaceField(props: {
   place: ForumPlacePin | null;
