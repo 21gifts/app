@@ -7,7 +7,7 @@ import { WalletScreen } from '@/components/WalletScreen';
 
 /**
  * `/wallet` shows the balance with Receive and Send below it. Recovery-phrase
- * access is on `/settings`.
+ * access is on `/security`.
  *
  * @returns The wallet screen.
  */

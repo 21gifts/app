@@ -6491,7 +6491,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: RecoverPage
 
-- **Purpose:** Next.js page for `/recover`, the signed-out social recovery of an account whose passkey is lost, opened from **Recover account via Social Recovery** on the `/login` card after a login problem.
+- **Purpose:** Next.js page for `/recover`, the signed-out social recovery of an account whose passkey is lost, opened from **Recover account via Social Recovery** on the `/login` card: the quiet link on its idle view, or the secondary control on a login problem.
 - **Inputs:** None.
 - **Returns / side effects:** Fill `AppShell` with `align="center"`, `ProfileChromeLeft` with `HomeWordmark`, and the light `LanguageSwitcher` (the `/login` chrome), then `RecoverScreen`. Not behind `OnboardingGate`: its login gate would leave the page once the recovered account signs in, before the balance moved.
 - **Used by:** Route `/recover`.
