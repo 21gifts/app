@@ -836,7 +836,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/push/vapid-public` (VAPID application server public key for Web Push subscribe).
 - **Errors:** Upstream 401, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/settings` and on `/profile`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
+- **Used by:** `fetchVapidPublicKey` via `enablePush` on `/settings`, via `enablePush` from the SignedInChrome Notifications click, and via `resyncPushSubscription` in `SignedInChrome`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /me/push-subscriptions

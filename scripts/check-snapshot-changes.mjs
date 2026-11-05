@@ -7,9 +7,9 @@
  * is reported, so it can be restored. Added and deleted baselines are not
  * judged here (`check-screenshots.mjs` covers which ones must exist).
  *
- * Changed files are compared on up to four workers. A release can change
- * thousands of baselines, and a single thread does not finish inside the job
- * that also runs the coverage gate.
+ * Changed files are compared on up to four workers. Each worker reads the
+ * base blobs from one git cat-file process, because one git process per file
+ * does not finish on the hosted runner.
  *
  * The base is `SCREENSHOT_BASE` when set; in a GitHub pull request run it is
  * the base commit the checked-out merge was built on (its first parent,
@@ -17,7 +17,7 @@
  * it is the merge base of `HEAD` with `origin/staging`. Without a base the check is skipped, except in a pull
  * request run, where a missing base fails.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import { createRequire } from 'node:module';
@@ -91,20 +91,87 @@ function compareChanged(root, rev, files) {
   const require = createRequire(path.join(root, 'package.json'));
   const { utils } = require('playwright-core/lib/coreBundle');
   const compare = utils.getComparator('image/png');
-  const needless = [];
-  for (const file of files) {
-    const before = execFileSync('git', ['show', `${rev}:${file}`], {
-      cwd: root,
-      maxBuffer: 1 << 28,
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', ['cat-file', '--batch'], { cwd: root });
+    const needless = [];
+    let pending = Buffer.alloc(0);
+    let expected = null;
+    let received = 0;
+    let settled = false;
+    const fail = (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      child.kill();
+      reject(error);
+    };
+    const succeed = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(needless);
+    };
+    const pump = () => {
+      while (!settled) {
+        if (expected === null) {
+          const newline = pending.indexOf(0x0a);
+          if (newline < 0) {
+            return;
+          }
+          const header = pending.subarray(0, newline).toString('utf8');
+          pending = pending.subarray(newline + 1);
+          const tokens = header.split(' ');
+          const kind = tokens.at(-2);
+          const size = Number(tokens.at(-1));
+          const file = files[received];
+          if (
+            tokens.at(-1) === 'missing' ||
+            kind !== 'blob' ||
+            !Number.isInteger(size) ||
+            size < 0
+          ) {
+            fail(new Error(`baseline ${file} is missing at ${rev}`));
+            return;
+          }
+          expected = { file, size };
+        }
+        if (pending.length < expected.size + 1) {
+          return;
+        }
+        const before = pending.subarray(0, expected.size);
+        pending = pending.subarray(expected.size + 1);
+        const after = fs.readFileSync(path.join(root, expected.file));
+        if (compare(after, before, { maxDiffPixelRatio: 0 }) === null) {
+          needless.push(
+            `Baseline ${path.basename(expected.file)} changed, but the visual test passes with the base version; restore it (git checkout ${rev} -- ${expected.file})`,
+          );
+        }
+        received += 1;
+        expected = null;
+        if (received === files.length) {
+          succeed();
+        }
+      }
+    };
+    child.stdout.on('data', (chunk) => {
+      pending = Buffer.concat([pending, chunk]);
+      pump();
     });
-    const after = fs.readFileSync(path.join(root, file));
-    if (compare(after, before, { maxDiffPixelRatio: 0 }) === null) {
-      needless.push(
-        `Baseline ${path.basename(file)} changed, but the visual test passes with the base version; restore it (git checkout ${rev} -- ${file})`,
-      );
+    child.on('error', (error) => {
+      fail(error);
+    });
+    child.on('close', (code) => {
+      if (!settled) {
+        fail(new Error(`git cat-file closed ${code} after ${received} of ${files.length}`));
+      }
+    });
+    for (const file of files) {
+      child.stdin.write(`${rev}:${file}\n`);
     }
-  }
-  return needless;
+    child.stdin.end();
+  });
 }
 
 /**
@@ -163,7 +230,7 @@ function compareInWorker(root, rev, files) {
 }
 
 if (!isMainThread) {
-  parentPort?.postMessage(compareChanged(workerData.root, workerData.rev, workerData.files));
+  parentPort?.postMessage(await compareChanged(workerData.root, workerData.rev, workerData.files));
 }
 
 /**
@@ -194,6 +261,7 @@ export async function needlessBaselineChanges(root) {
   // The hosted runner has four CPUs. More workers do not shorten that job,
   // and each worker holds two decoded screenshots.
   const workers = Math.min(4, os.availableParallelism(), changed.length);
+  console.log(`Comparing ${changed.length} changed baselines on ${workers} workers.`);
   if (workers === 1) {
     return compareChanged(root, base.rev, changed);
   }
