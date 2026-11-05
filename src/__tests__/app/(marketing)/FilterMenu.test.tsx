@@ -711,6 +711,7 @@ describe('FilterMenu', () => {
       pillOffscreen = true;
       fireEvent(window, new Event('scroll'));
       fireEvent(window, new Event('resize'));
+      expect(screen.getByRole('listbox')).toBe(listbox);
       expect(listbox.className).toContain('absolute');
       expect(listbox.className).not.toContain('fixed');
       expect(listbox.style.left).toBe('');
@@ -756,51 +757,58 @@ describe('FilterMenu', () => {
     }
   });
 
-  it('keeps a pinned panel in place when the pill scrolls below the window', () => {
-    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
-    const width = 200;
-    const parkedLeft = window.innerWidth - 100;
-    rect.mockReturnValue({
-      x: parkedLeft,
-      y: 40,
-      top: 40,
-      left: parkedLeft,
-      right: parkedLeft + width,
-      bottom: 120,
-      width,
-      height: 80,
-      toJSON() {
-        return {};
-      },
-    });
-    try {
-      renderMenu('');
-      fireEvent.click(trigger());
-      const listbox = screen.getByRole('listbox');
-      expect(listbox.className).toContain('fixed');
-      const pinnedLeft = `${window.innerWidth - 8 - width}px`;
-      expect(listbox.style.left).toBe(pinnedLeft);
+  it.each(['scroll', 'resize'])(
+    'closes a pinned panel on %s when the pill is below the window',
+    (event) => {
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+      const width = 200;
+      const parkedLeft = window.innerWidth - 100;
       rect.mockReturnValue({
-        x: 40,
-        y: window.innerHeight + 20,
-        top: window.innerHeight + 20,
-        left: 40,
-        right: 140,
-        bottom: window.innerHeight + 80,
-        width: 100,
-        height: 60,
+        x: parkedLeft,
+        y: 40,
+        top: 40,
+        left: parkedLeft,
+        right: parkedLeft + width,
+        bottom: 120,
+        width,
+        height: 80,
         toJSON() {
           return {};
         },
       });
-      fireEvent(window, new Event('scroll'));
-      expect(listbox.style.left).toBe(pinnedLeft);
-      expect(listbox.style.top).toBe('40px');
-      expect(listbox.className).toContain('fixed');
-    } finally {
-      rect.mockRestore();
-    }
-  });
+      const focus = document.createElement('button');
+      try {
+        renderMenu('');
+        fireEvent.click(trigger());
+        const listbox = screen.getByRole('listbox');
+        expect(listbox.className).toContain('fixed');
+        const pinnedLeft = `${window.innerWidth - 8 - width}px`;
+        expect(listbox.style.left).toBe(pinnedLeft);
+        document.body.appendChild(focus);
+        focus.focus();
+        rect.mockReturnValue({
+          x: 40,
+          y: window.innerHeight + 20,
+          top: window.innerHeight + 20,
+          left: 40,
+          right: 140,
+          bottom: window.innerHeight + 80,
+          width: 100,
+          height: 60,
+          toJSON() {
+            return {};
+          },
+        });
+        fireEvent(event === 'scroll' ? document : window, new Event(event));
+        expect(screen.queryByRole('listbox')).toBeNull();
+        expect(trigger().getAttribute('aria-expanded')).toBe('false');
+        expect(document.activeElement).toBe(focus);
+      } finally {
+        focus.remove();
+        rect.mockRestore();
+      }
+    },
+  );
 
   it('moves a pinned panel when the visible pill moves and the panel still overflows', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');

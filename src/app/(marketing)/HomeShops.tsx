@@ -1402,6 +1402,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const sessionRef = useRef<MapSession | null>(null);
   const markersRef = useRef<MarkerHandle[]>([]);
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
+  const clusterPinsRef = useRef(new Map<Element, PinRecord>());
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
   const clusterFocus = useRef<{ pin: PinRecord; button: HTMLElement } | null>(null);
@@ -1463,12 +1464,17 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const clearClusters = useCallback((): void => {
     for (const marker of clusterMarkersRef.current) marker.remove();
     clusterMarkersRef.current = [];
+    clusterPinsRef.current.clear();
     for (const pin of pinsRef.current) pin.element.classList.remove('is-clustered');
   }, []);
 
   const paintClusters = useCallback(
     (focusPin?: PinRecord): void => {
       const session = sessionRef.current;
+      const focusedElement = document.activeElement;
+      const activePin =
+        focusPin ??
+        (focusedElement === null ? undefined : clusterPinsRef.current.get(focusedElement));
       clearClusters();
       if (session === null || awaitingRef.current || failedRef.current) return;
       const rect = clusterBox(session.map);
@@ -1506,7 +1512,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           const shell = document.createElement('div');
           shell.className = 'shop-cluster-marker';
           shell.appendChild(button);
-          if (focusPin !== undefined && group.includes(focusPin)) focusTarget = button;
+          if (activePin !== undefined && group.includes(activePin)) focusTarget = button;
+          clusterPinsRef.current.set(button, firstPin);
           button.addEventListener('click', (event: MouseEvent) => {
             clusterFocus.current = event.detail === 0 ? { pin: firstPin, button } : null;
             userMovedMaps.add(session.map);
@@ -1532,8 +1539,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       for (const cluster of clusters) {
         markOffscreen(session.map, rect, cluster.element, cluster.position);
       }
-      if (focusPin !== undefined && focusPin.element.isConnected) {
-        (focusTarget ?? focusPin.element).focus();
+      if (activePin !== undefined && activePin.element.isConnected) {
+        (focusTarget ?? activePin.element).focus();
       }
     },
     [clearClusters],
@@ -1766,8 +1773,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           const pending = clusterFocus.current;
           if (pending === null) return;
           clusterFocus.current = null;
-          if (document.activeElement !== document.body && document.activeElement !== pending.button)
-            return;
+          if (document.activeElement !== pending.button) return;
           if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
           clusterFrame.current = 0;
           paintClusters(pending.pin);

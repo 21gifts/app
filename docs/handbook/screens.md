@@ -87,7 +87,7 @@ The hero **Install app** button on iPhone opens the dialog **Add 21.gifts to you
 
 ### Variant: shops-table
 
-The shops block under the hero is on the table. The visible filters stay above a Map/Table control with Table selected. The table lists only shops whose tech provider is exactly 21.gifts. With this fixture the columns are Name, Location, Country, Shop, and Activity. The table has no Tech provider column. The CSV download still includes Tech provider.
+The shops block under the hero is on the table. The visible filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. The table lists only shops whose tech provider is exactly 21.gifts. With this fixture the columns are Name, Location, Country, Shop, and Activity. The table has no Tech provider column. The CSV download still includes Tech provider.
 
 ![21.gifts home shops table](images/root-shops-table.png)
 
@@ -123,31 +123,31 @@ The Name list is open. The option others is visible, as the raw shop-name token.
 
 ### Variant: shops-country-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Country combobox shows Philippines, the localized country name.
+The shops block under the hero is on the table. Filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. The Country combobox shows Philippines, the localized country name.
 
 ![21.gifts home shops country selected](images/root-shops-country-selected.png)
 
 ### Variant: shops-name-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Name combobox shows SPAR.
+The shops block under the hero is on the table. Filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. The Name combobox shows SPAR.
 
 ![21.gifts home shops name selected](images/root-shops-name-selected.png)
 
 ### Variant: shops-blockchain-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Blockchain combobox is closed and its text includes Bitcoin. The listbox is not open.
+The shops block under the hero is on the table. Filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. The Blockchain combobox is closed and its text includes Bitcoin. The listbox is not open.
 
 ![21.gifts home shops blockchain selected](images/root-shops-blockchain-selected.png)
 
 ### Variant: shops-asset-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. Blockchain Bitcoin is chosen. The Asset list is closed and the Asset combobox text includes BTC.
+The shops block under the hero is on the table. Filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. Blockchain Bitcoin is chosen. The Asset list is closed and the Asset combobox text includes BTC.
 
 ![21.gifts home shops asset selected](images/root-shops-asset-selected.png)
 
 ### Variant: shops-activity-selected
 
-The shops block under the hero is on the table. Filters stay above a Map/Table control with Table selected. The Activity list is closed and its text includes Daily. Activity is not sent on the places query.
+The shops block under the hero is on the table. Filters and a Map/Table control are shown with Table selected; on a phone the control sits above the filters, and on a wider screen the filters come first. The Activity list is closed and its text includes Daily. Activity is not sent on the places query.
 
 ![21.gifts home shops activity selected](images/root-shops-activity-selected.png)
 

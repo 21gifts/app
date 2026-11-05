@@ -158,10 +158,11 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * panel still crosses an 8px inset, its top, bottom, left, and width are pinned inside
  * the window. The list is measured when it opens, when the window resizes, and
  * when the page scrolls while the pill is still in the window, so a pinned list
- * stays on the pill. A scroll or resize while the pill is outside the window
- * does not measure it again. A pinned list that is taller than the window
- * scrolls its options on the active scrollport. Opening reveals the selected
- * option, and Arrow, Home, and End reveal the active option there.
+ * stays on the pill. A scroll or resize closes a pinned list when the pill is
+ * outside the window; an unpinned list is not measured again. A pinned list
+ * that is taller than the window scrolls its options on the active scrollport.
+ * Opening reveals the selected option, and Arrow, Home, and End reveal the
+ * active option there.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -223,7 +224,10 @@ export function FilterMenu({
       if (panel === null) return;
       /* v8 ignore next -- the trigger stays mounted while the list is open */
       if (trigger === null) return;
-      if (triggerOutsideWindow(trigger)) return;
+      if (triggerOutsideWindow(trigger)) {
+        if (panel.classList.contains('fixed')) setOpen(false);
+        return;
+      }
       const nextColumns = columnCount(options.length, window.innerWidth, window.innerHeight);
       const grid = panel.querySelector('.grid');
       if (grid !== null) {

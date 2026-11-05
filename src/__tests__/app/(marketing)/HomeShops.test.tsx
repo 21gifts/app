@@ -3333,7 +3333,7 @@ describe('HomeShops', () => {
   });
 
   it('keeps focus on another button when a keyboard cluster movement ends', async () => {
-    const handlers = await setupClusterFocus();
+    const { handlers } = await setupClusterFocus();
     const cluster = clusterButton('is-daily');
     cluster.focus();
     fireEvent.click(cluster, { detail: 0 });
@@ -3349,7 +3349,7 @@ describe('HomeShops', () => {
   });
 
   it('restores cluster focus and cancels only a pending frame on movement end', async () => {
-    const handlers = await setupClusterFocus();
+    const { handlers } = await setupClusterFocus();
     const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
     const cluster = clusterButton('is-daily');
     cluster.focus();
@@ -3372,6 +3372,65 @@ describe('HomeShops', () => {
     expect(cancel).toHaveBeenCalledTimes(1);
     expect(cancel).toHaveBeenCalledWith(77);
     expect(document.activeElement).toBe(clusterButton('is-daily'));
+  });
+
+  it('focuses the replacement cluster after a move repaint', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+
+    await act(async () => {
+      handlers['move']?.();
+    });
+
+    const replacement = clusterButton('is-daily');
+    expect(replacement).not.toBe(cluster);
+    expect(document.activeElement).toBe(replacement);
+  });
+
+  it('focuses the first pin when a focused cluster splits on zoom', async () => {
+    const { handlers, map } = await setupClusterFocus();
+    clusterButton('is-daily').focus();
+    map.transform.zoom = 18;
+
+    await act(async () => {
+      handlers['zoom']?.();
+    });
+
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
+    expect(document.activeElement).toBe(pinByName('Ann'));
+  });
+
+  it('keeps focus on another cluster during a keyboard-initiated movement', async () => {
+    const { handlers } = await setupClusterFocus();
+    const daily = clusterButton('is-daily');
+    daily.focus();
+    fireEvent.click(daily, { detail: 0 });
+    const weekly = clusterButton('is-weekly');
+    weekly.focus();
+
+    await act(async () => {
+      handlers['move']?.();
+    });
+    handlers['moveend']?.();
+
+    expect(clusterButton('is-weekly')).not.toBe(weekly);
+    expect(document.activeElement).toBe(clusterButton('is-weekly'));
+  });
+
+  it('keeps focus elsewhere when a cluster is repainted', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    const elsewhere = screen.getByRole('button', { name: copy.helpLabel });
+    elsewhere.focus();
+    expect(document.activeElement).toBe(elsewhere);
+
+    await act(async () => {
+      handlers['move']?.();
+    });
+
+    expect(clusterButton('is-daily')).not.toBe(cluster);
+    expect(document.activeElement).toBe(elsewhere);
   });
 
   it('clusters nearby pins, pans a popup into view, and drops a failed frame', async () => {
@@ -3473,7 +3532,7 @@ describe('HomeShops', () => {
     await act(async () => {
       handlers['move']?.();
     });
-    expect(document.activeElement).toBe(document.body);
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
     handlers['moveend']?.();
     expect(document.activeElement).toBe(clusterButton('is-daily'));
     fireEvent.click(clusterButton('is-daily'), { detail: 0 });
@@ -4382,7 +4441,10 @@ function setWindowSize(width: number, height: number): void {
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
 }
 
-async function setupClusterFocus(): Promise<Record<string, () => void>> {
+async function setupClusterFocus(): Promise<{
+  handlers: Record<string, () => void>;
+  map: MapDouble;
+}> {
   const handlers: Record<string, () => void> = {};
   const lib = installMapLibre();
   wrapMap((map) => {
@@ -4413,7 +4475,7 @@ async function setupClusterFocus(): Promise<Record<string, () => void>> {
   await act(async () => {
     handlers['zoom']?.();
   });
-  return handlers;
+  return { handlers, map: firstMap(lib) };
 }
 
 async function paintProjected(places: readonly Place[]): Promise<void> {
