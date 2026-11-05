@@ -74,6 +74,7 @@ jobs:
             done
 
       - name: Collect changed snapshots
+        id: collect
         run: |
           set -eu
           # The container runs as root while the checkout belongs to the
@@ -86,12 +87,21 @@ jobs:
           git -c safe.directory="$GITHUB_WORKSPACE" status --porcelain -- e2e/visual.spec.ts-snapshots \
             | awk '{print $NF}' | sort -u > /tmp/changed.txt
           wc -l /tmp/changed.txt
-          # Seeded placeholders can only stay unchanged if nothing ran.
-          test -s /tmp/changed.txt
+          # The drop step removes seed placeholders this shard did not
+          # overwrite. An empty list then means the pixels already match,
+          # which is success and leaves nothing to upload. The update step
+          # above fails the job when the snapshot run itself does not.
+          if [ ! -s /tmp/changed.txt ]; then
+            echo "No snapshot bytes changed on this shard."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
           tar czf /tmp/baselines.tgz -T /tmp/changed.txt
           cp /tmp/changed.txt /tmp/changed-snapshots.txt
 
       - name: Upload baselines
+        if: steps.collect.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: baselines-${{ matrix.project }}-${{ matrix.shard }}
