@@ -264,7 +264,7 @@ describe('WalletScreenView', () => {
     ['empty', ''],
     ['null', null],
   ])(
-    'links Back up your wallet to the Settings recovery entry when passkeyCredentialId is %s',
+    'links Back up your wallet to Account security when passkeyCredentialId is %s',
     (_label, credentialId) => {
       setWalletAccount();
       const account = useAuthStore.getState().account;
@@ -273,7 +273,7 @@ describe('WalletScreenView', () => {
       });
       renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
       expect(screen.getByRole('link', { name: 'Back up your wallet' }).getAttribute('href')).toBe(
-        '/settings#recovery',
+        '/security',
       );
     },
   );

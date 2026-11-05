@@ -2,7 +2,7 @@
 
 import { validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english';
-import { Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrScanner } from '@/components/QrScanner';
@@ -52,10 +52,11 @@ const FLOAT_CLASS = 'min-h-12 text-base';
  * `scan` fills its positioned parent with the camera layer of the wallet Send
  * view (`data-port-fill`) and reads two share codes in turn, with the hint
  * **Scan code 1 of 2**, then **Scan code 2 of 2**. After the first code, the
- * line **Code 1 of 2 scanned** with the owner's username stays at the bottom,
- * and the camera stays off until the member presses **Scan code 2 of 2**, so
- * the first code, often still in front of the camera, is not read again as
- * the second. Two codes of one setup are combined into the 12 words. A refused
+ * camera stays off and a check mark, **Code 1 of 2 scanned** with the owner's
+ * username, **Now ask the second person to show you their code.**, and **Scan
+ * the second code** fill the layer, so the first code, often still in front of
+ * the camera, is not read again as the second. While the camera runs for the
+ * second code, the scanned line stays at the bottom. Two codes of one setup are combined into the 12 words. A refused
  * code (not a share code, the same code twice, codes of different setups, or
  * of an account other than `expectedOwnerAccountId`) stops the camera and
  * shows its alert with **Try again**, which starts the camera again, as the
@@ -158,17 +159,25 @@ function ScanCodes({
           }}
         />
       ) : null}
-      {paused ? (
-        <div className="absolute inset-x-0 top-1/3 flex -translate-y-1/2 justify-center px-8">
+      {paused && first !== null ? (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
+            <Check aria-hidden="true" className="h-7 w-7 text-white" />
+          </span>
+          <p role="status" className="text-lg font-medium text-white">
+            {t('recover.scanFirstDone', { username: first.ownerUsername })}
+          </p>
+          <p className="text-sm text-white/70">{t('recover.scanNextPerson')}</p>
           <Button
-            variant="overlay"
-            className={FLOAT_CLASS}
+            tone="dark"
+            size="lg"
+            className="mt-2"
             onClick={() => {
               setPaused(false);
               setScanner((count) => count + 1);
             }}
           >
-            {t('recover.scanHint', { n: 2 })}
+            {t('recover.scanSecond')}
           </Button>
         </div>
       ) : null}
@@ -194,7 +203,7 @@ function ScanCodes({
           </Button>
         </div>
       )}
-      {first === null ? null : (
+      {first === null || paused ? null : (
         <div className="absolute inset-x-0 bottom-6 flex justify-center px-4">
           <p
             role="status"

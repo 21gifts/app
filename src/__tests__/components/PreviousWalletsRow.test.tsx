@@ -141,7 +141,7 @@ describe('PreviousWalletsRow', () => {
   });
 
   it('scrolls itself into view once loaded when the hash names it', () => {
-    window.history.replaceState(null, '', '/settings#previous-wallets');
+    window.history.replaceState(null, '', '/security#previous-wallets');
     answer('loading');
     const view = renderWithLocale(<PreviousWalletsRow />);
     expect(scrollIntoView).not.toHaveBeenCalled();
@@ -157,8 +157,8 @@ describe('PreviousWalletsRow', () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
-  it.each(['', '#recovery'])('does not scroll with the hash %j', (hash) => {
-    window.history.replaceState(null, '', `/settings${hash}`);
+  it.each(['', '#more'])('does not scroll with the hash %j', (hash) => {
+    window.history.replaceState(null, '', `/security${hash}`);
     answer('ready', WALLETS);
     renderWithLocale(<PreviousWalletsRow />);
     expect(scrollIntoView).not.toHaveBeenCalled();

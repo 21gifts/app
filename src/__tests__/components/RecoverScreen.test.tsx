@@ -278,23 +278,72 @@ describe('RecoverScreen', () => {
     expect(flow.balanceLater).toHaveBeenCalled();
   });
 
+  it('done with nothing left in the old wallet says the old share can go, and asks to secure the account', () => {
+    show({ step: 'done', balanceMissing: false });
+    expect(screen.getByRole('heading', { level: 2, name: 'Your account is back' })).toBeTruthy();
+    expect(screen.getByText('You can use your account on this phone again.')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'One more step: choose two people again, so they can help you get back in if you ever lose access.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText(/^Your two people can now delete your old share\./)).toBeTruthy();
+    expect(screen.queryByText(/Some balance stayed/)).toBeNull();
+    expect(screen.queryByText(/passkey|12 words/i)).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show new 12 words' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Secure my account' }).getAttribute('href')).toBe(
+      '/settings/social-recovery',
+    );
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeTruthy();
+  });
+
+  it('done with a balance left keeps the old share and notes the balance instead', () => {
+    show({ step: 'done', balanceMissing: true });
+    expect(
+      screen.getByText(
+        'Some balance stayed in the previous wallet. You can move it later under Account security in the menu.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/delete your old share/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Secure my account' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Not now' })).toBeTruthy();
+  });
+
   it.each([false, true])(
-    'done (balance missing %s) links to the new words and the setup',
+    'Not now (balance missing %s) warns first, then offers both exits',
     (missing) => {
       show({ step: 'done', balanceMissing: missing });
-      expect(screen.getByRole('heading', { level: 2, name: 'Your account is back' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
       expect(
-        screen.getByText(
-          'Set up Social Recovery again for the new words. Old shares now only open the previous wallet.',
-        ),
+        screen.getByRole('heading', { level: 2, name: 'Continue without protection?' }),
       ).toBeTruthy();
-      expect(screen.queryByText(/Some balance stayed/) !== null).toBe(missing);
-      expect(screen.getByRole('link', { name: 'Show new 12 words' }).getAttribute('href')).toBe(
-        '/wallet/phrase',
-      );
+      expect(
+        screen.getByText(/^The codes your two people keep no longer work for this account\./),
+      ).toBeTruthy();
+      expect(screen.queryByRole('heading', { name: 'Your account is back' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Not now' })).toBeNull();
       expect(screen.getByRole('link', { name: 'Secure my account' }).getAttribute('href')).toBe(
         '/settings/social-recovery',
       );
+      expect(screen.getByRole('link', { name: 'Continue anyway' }).getAttribute('href')).toBe(
+        '/welcome',
+      );
     },
   );
+
+  it('the arrow steps from the warning back to the done step, and only then leaves', () => {
+    show({ step: 'done', balanceMissing: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    const flow = vi.mocked(useRecoveryFlow).mock.results.at(-1)?.value as UseRecoveryFlowResult;
+    vi.mocked(flow.back).mockReturnValue(false);
+    backResults.list.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(backResults.list).toEqual([true]);
+    expect(flow.back).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 2, name: 'Your account is back' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Continue without protection?' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(flow.back).toHaveBeenCalledTimes(1);
+    expect(backResults.list).toEqual([true, false]);
+  });
 });

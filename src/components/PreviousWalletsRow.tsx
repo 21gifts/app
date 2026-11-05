@@ -9,12 +9,12 @@ import { usePreviousWallets } from '@/hooks/usePreviousWallets';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
-/** The row's element id, also its `/settings#previous-wallets` anchor. */
+/** The row's element id, also its `/security#previous-wallets` anchor. */
 const ROW_ID = 'previous-wallets';
 
 /**
- * The previous wallets row of the settings Wallet section (id
- * `previous-wallets`), under the Social Recovery row: the wallets the account
+ * The previous wallets row of **More options** on `/security` (id
+ * `previous-wallets`), under the recovery phrase: the wallets the account
  * used before a social recovery ({@link usePreviousWallets}). Nothing shows
  * while the list loads or when it is empty, so accounts without one see no
  * change. A failed read shows the overline, an alert, and **Try again**.
@@ -23,9 +23,9 @@ const ROW_ID = 'previous-wallets';
  * current spot in the member's fiat beside it), and one **Transfer remaining
  * balance** link to `/settings/previous-wallets/<key>`. The explorer can lag,
  * so its value is information only: every wallet gets that link, and no
- * control here removes a wallet. The settings screen scrolls to its hash before
- * this row has loaded, so once the row first shows, it scrolls itself into view
- * when the address hash is `#previous-wallets`. No key or address is shown.
+ * control here removes a wallet. The row loads after the screen has rendered,
+ * so once it first shows, it scrolls itself into view when the address hash is
+ * `#previous-wallets`. No key or address is shown.
  *
  * @returns The row, or `null` while loading or without previous wallets.
  */

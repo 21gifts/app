@@ -109,6 +109,18 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
+      const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+      expect(entry.getAttribute('href')).toBe('/recover');
+      expect(entry.className).toContain('underline');
+      expect(
+        screen.getByRole('button', { name: 'Log in' }).compareDocumentPosition(entry) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it('hides the quiet Social Recovery link inside the wallet login card', () => {
+      renderWithLocale(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
       expect(
         screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
       ).toBeNull();
@@ -323,11 +335,18 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows Log in without the Social Recovery entry when logged out and idle', () => {
+  it('shows Log in and the Social Recovery entry as a quiet link when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((button) => button.textContent)).toEqual(['Log in']);
-    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    expect(entry.className).toContain('text-app-muted');
+    expect(entry.className).toContain('underline');
+    expect(entry.className).toContain('min-h-11');
+    expect(
+      buttons[0]!.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.queryByText('New to 21.gifts?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);

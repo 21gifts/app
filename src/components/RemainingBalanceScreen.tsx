@@ -41,7 +41,7 @@ const ALERT = 'text-center text-sm text-app-danger';
  * **This wallet is empty. You can remove it from your account.**. After a
  * move, **Moved to your wallet.**. At 0 and after a move, **Remove previous
  * wallet** opens a confirm (check removes, X keeps; a spinner while it runs,
- * an alert when it failed), and the removal returns to `/settings`, as
+ * an alert when it failed), and the removal returns to `/security`, as
  * **Done** does, without a second copy of it in the history. The one top-left
  * arrow steps from the camera or the words field back to the start, otherwise
  * it returns to the previous view. No key or address is shown.

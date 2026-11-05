@@ -178,7 +178,7 @@ describe('SocialRecoveryScreen', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Secure my account' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Ask person 1 to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
+        'Ask person 1 to open 21.gifts, open Account security in the menu, choose “Shares I keep for others”, tap “Keep a share” and scan this code.',
       ),
     ).toBeTruthy();
     expect(screen.queryByText('Person 2 must be someone other than person 1.')).toBeNull();
@@ -229,7 +229,7 @@ describe('SocialRecoveryScreen', () => {
     expect(ensureWalletConnected).toHaveBeenCalledTimes(1);
   });
 
-  it('saves the 21.gifts backup after person 2, stores the account, and Done returns to /settings', async () => {
+  it('saves the 21.gifts backup after person 2, stores the account, and Done returns to /security', async () => {
     renderWithLocale(<SocialRecoveryScreen />);
     await toPerson1();
     fireEvent.click(screen.getByRole('button', { name: 'Person 1 has scanned it' }));
@@ -248,7 +248,7 @@ describe('SocialRecoveryScreen', () => {
     expect(body.share.split(' ')).toHaveLength(20);
     expect(useAuthStore.getState().account?.socialRecoverySetUp).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(backResults.list).toEqual([false]);
   });

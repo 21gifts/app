@@ -1518,15 +1518,45 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/settings:default",
-    "label": "/settings default",
-    "visual": "screen-settings",
+    "id": "/security:default",
+    "label": "/security default",
+    "visual": "screen-security",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/settings:activate",
-    "label": "/settings activate",
-    "visual": "state-settings-activate",
+    "id": "/security:no-phrase",
+    "label": "/security no-phrase",
+    "visual": "state-security-no-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:social-recovery-off",
+    "label": "/security social-recovery-off",
+    "visual": "state-security-social-recovery-off",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:social-recovery-on",
+    "label": "/security social-recovery-on",
+    "visual": "state-security-social-recovery-on",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:previous-wallets",
+    "label": "/security previous-wallets",
+    "visual": "state-security-previous-wallets",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:previous-wallets-error",
+    "label": "/security previous-wallets-error",
+    "visual": "state-security-previous-wallets-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:default",
+    "label": "/settings default",
+    "visual": "screen-settings",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1575,30 +1605,6 @@
     "id": "/settings:push-enable-error",
     "label": "/settings push-enable-error",
     "visual": "state-settings-push-enable-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:social-recovery-off",
-    "label": "/settings social-recovery-off",
-    "visual": "state-settings-social-recovery-off",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:social-recovery-on",
-    "label": "/settings social-recovery-on",
-    "visual": "state-settings-social-recovery-on",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:previous-wallets",
-    "label": "/settings previous-wallets",
-    "visual": "state-settings-previous-wallets",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:previous-wallets-error",
-    "label": "/settings previous-wallets-error",
-    "visual": "state-settings-previous-wallets-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2025,6 +2031,12 @@
     "id": "/recover:done-balance-missing",
     "label": "/recover done-balance-missing",
     "visual": "state-recover-done-balance-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done-warning",
+    "label": "/recover done-warning",
+    "visual": "state-recover-done-warning",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

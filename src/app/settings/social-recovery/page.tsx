@@ -8,7 +8,8 @@ import { SocialRecoveryScreen } from '@/components/SocialRecoveryScreen';
 /**
  * `/settings/social-recovery` — **Secure my account**: the owner gives two
  * people a Social Recovery share each and 21.gifts keeps the third, opened
- * from the Social Recovery row on `/settings` or the grant prompt on
+ * from **Protect my account** on `/security`, the done step of `/recover`,
+ * or the grant prompt on
  * `/welcome`.
  *
  * Requires name + username + living-room rules agreement via {@link OnboardingGate}

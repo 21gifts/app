@@ -641,7 +641,7 @@ async function openRecover(page: Page, pin?: string): Promise<void> {
 
 /**
  * Scans codes on `/recover` with the stubbed camera, one per camera start,
- * and presses **Scan code 2 of 2** between the first and the second.
+ * and presses **Scan the second code** between the first and the second.
  *
  * @param page - The page.
  * @param codes - The QR texts in turn.
@@ -651,7 +651,7 @@ async function scanOnRecover(page: Page, codes: readonly string[]): Promise<void
   await openRecover(page);
   await page.getByRole('button', { name: 'Scan two codes' }).click();
   if (codes.length > 1) {
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
   }
 }
 
@@ -700,7 +700,7 @@ test.describe('social recovery libraries', () => {
     await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
     await openRecover(page);
     await page.getByRole('button', { name: 'Scan two codes' }).click();
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -715,7 +715,7 @@ test.describe('social recovery libraries', () => {
     page,
   }) => {
     await scanOnRecover(page, [ADA_CODES[0]]);
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
   });
 
@@ -1023,35 +1023,35 @@ async function answerPreviousWallets(
   return () => reads;
 }
 
-test.describe('social recovery in the settings', () => {
-  test('Function: SocialRecoveryRow — without a connected wallet only the kept shares open', async ({
+test.describe('social recovery on Account security', () => {
+  test('Function: SecurityScreen — without a connected wallet only the kept shares open', async ({
     page,
   }) => {
     await signInOwner(page);
     const reads = await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
-    await page.goto('/settings');
-    const row = page.locator('#social-recovery');
-    await expect(row.getByText('Social Recovery', { exact: true })).toBeVisible();
+    await page.goto('/security');
+    const row = page.getByRole('region', { name: 'Protect my account' });
     await expect(row.getByText('Available once your wallet is connected.')).toBeVisible();
     await expect(row.getByRole('link', { name: 'Secure my account' })).toHaveCount(0);
-    await row.getByRole('link', { name: 'Shares I keep for others' }).click();
+    await page
+      .getByRole('region', { name: 'Help someone else' })
+      .getByRole('link', { name: 'Shares I keep for others' })
+      .click();
     await expect(page).toHaveURL(/\/settings\/held-shares$/);
     await expect(
       page.getByRole('heading', { level: 1, name: 'Shares I keep for others' }),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.locator('#social-recovery')).toBeVisible();
+    await expect(page).toHaveURL(/\/security$/);
+    await expect(page.getByRole('region', { name: 'Protect my account' })).toBeVisible();
     expect(reads()).toBe(0);
   });
 
-  test('Function: SettingsScreen — the Social Recovery row says whether it is set up for this wallet', async ({
-    page,
-  }) => {
+  test('Protect my account says whether it is set up for this wallet', async ({ page }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
-    await page.goto('/settings');
-    const row = page.locator('#social-recovery');
+    await page.goto('/security');
+    const row = page.getByRole('region', { name: 'Protect my account' });
     await expect(
       row.getByText('Not set up yet. Two people you trust can help you get your account back.'),
     ).toBeVisible();
@@ -1062,16 +1062,13 @@ test.describe('social recovery in the settings', () => {
     await expect(page.locator('#previous-wallets')).toHaveCount(0);
   });
 
-  test('the Social Recovery row says it is set up once 21.gifts keeps the share', async ({
-    page,
-  }) => {
+  test('Protect my account says it is set up once 21.gifts keeps the share', async ({ page }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
-    await page.goto('/settings');
-    const row = page.locator('#social-recovery');
+    await page.goto('/security');
+    const row = page.getByRole('region', { name: 'Protect my account' });
     await expect(row.getByText('Set up for this wallet.')).toBeVisible();
     await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
-    await expect(row.getByRole('link', { name: 'Shares I keep for others' })).toBeVisible();
   });
 
   test('Function: PreviousWalletsRow — every previous wallet shows its balance and one transfer link, never a remove', async ({
@@ -1080,7 +1077,7 @@ test.describe('social recovery in the settings', () => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
     await fulfillSpot(page);
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
-    await page.goto('/settings');
+    await page.goto('/security');
     const row = page.locator('#previous-wallets');
     await expect(row.getByText('Previous wallets', { exact: true })).toBeVisible();
     const items = row.getByRole('listitem');
@@ -1110,7 +1107,7 @@ test.describe('social recovery in the settings', () => {
       { status: 503, body: { error: 'Wallet data is unavailable' } },
       { status: 200, body: { wallets: [PREVIOUS_WALLETS[1]] } },
     ]);
-    await page.goto('/settings');
+    await page.goto('/security');
     const row = page.locator('#previous-wallets');
     await expect(row.getByRole('alert')).toHaveText('Previous wallets could not be loaded.');
     await row.getByRole('button', { name: 'Try again' }).click();
@@ -1119,7 +1116,7 @@ test.describe('social recovery in the settings', () => {
     expect(reads()).toBe(2);
   });
 
-  test('/settings#previous-wallets scrolls to the previous wallets once they loaded', async ({
+  test('/security#previous-wallets scrolls to the previous wallets once they loaded', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 640 });
@@ -1137,22 +1134,17 @@ test.describe('social recovery in the settings', () => {
         body: JSON.stringify({ wallets: PREVIOUS_WALLETS }),
       });
     });
-    await page.goto('/settings#previous-wallets');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await page.goto('/security#previous-wallets');
+    await expect(page.getByRole('heading', { level: 1, name: 'Account security' })).toBeVisible();
     await expect(page.locator('#previous-wallets')).toHaveCount(0);
     release();
     const row = page.locator('#previous-wallets');
     await expect(row.getByRole('listitem')).toHaveCount(3);
+    // The page ends under the list, so the scroll stops before the row reaches the top.
     await expect
-      .poll(async () => {
-        const box = await row.boundingBox();
-        const port = await page.locator('main [data-scrollport]').boundingBox();
-        return box !== null && port !== null ? Math.round(box.y - port.y) : null;
-      })
-      .toBeLessThan(40);
-    expect(
-      await page.locator('main [data-scrollport]').evaluate((node) => node.scrollTop),
-    ).toBeGreaterThan(0);
+      .poll(() => page.locator('main [data-scrollport]').evaluate((node) => node.scrollTop))
+      .toBeGreaterThan(0);
+    await expect(row).toBeInViewport();
   });
 });
 
@@ -1484,19 +1476,22 @@ test.describe('Secure my account', () => {
     await expect(page.getByRole('img')).toHaveCount(0);
   });
 
-  test('Function: SocialRecoveryScreen — Secure my account opens from the settings, and the arrow returns there', async ({
+  test('Function: SocialRecoveryScreen — Secure my account opens from Account security, and the arrow returns there', async ({
     page,
   }) => {
     await signInOwner(page, { ...VERIFIED, socialRecoverySetUp: true });
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: [] } }]);
-    await page.goto('/settings');
-    await page.locator('#social-recovery').getByRole('link', { name: 'Secure my account' }).click();
+    await page.goto('/security');
+    await page
+      .getByRole('region', { name: 'Protect my account' })
+      .getByRole('link', { name: 'Secure my account' })
+      .click();
     await expect(page).toHaveURL(/\/settings\/social-recovery$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Secure my account' })).toBeVisible();
     await expect(page.getByText(/^A new setup does not cancel the parts/)).toBeVisible();
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.locator('#social-recovery')).toBeVisible();
+    await expect(page).toHaveURL(/\/security$/);
+    await expect(page.getByRole('region', { name: 'Protect my account' })).toBeVisible();
   });
 
   test('Function: useSocialRecoverySetup — Continue without an open wallet says so, and Try again checks again', async ({
@@ -1523,7 +1518,7 @@ test.describe('Secure my account', () => {
     const first = await openPinnedShare(page, 'sr-share-1');
     await expect(
       page.getByText(
-        'Ask person 1 to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
+        'Ask person 1 to open 21.gifts, open Account security in the menu, choose “Shares I keep for others”, tap “Keep a share” and scan this code.',
       ),
     ).toBeVisible();
     const firstCode = await first.innerHTML();
@@ -1575,9 +1570,9 @@ test.describe('Secure my account', () => {
     expect(words).toHaveLength(20);
     expect(words.slice(2, 4)).toEqual(['academic', 'always']);
     await page.getByRole('button', { name: 'Done' }).click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/security$/);
     await expect(
-      page.locator('#social-recovery').getByText('Set up for this wallet.'),
+      page.getByRole('region', { name: 'Protect my account' }).getByText('Set up for this wallet.'),
     ).toBeVisible();
   });
 
@@ -1882,7 +1877,7 @@ test.describe('Recover account via Social Recovery', () => {
     });
   }
 
-  test('Function: RecoverPage — a login problem offers the Social Recovery entry, which opens /recover', async ({
+  test('Function: RecoverPage — the login card and a login problem offer the Social Recovery entry, which opens /recover', async ({
     page,
   }) => {
     await answerUnknownPasskey(page);
@@ -1890,7 +1885,7 @@ test.describe('Recover account via Social Recovery', () => {
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Recover account via Social Recovery' }),
-    ).toHaveCount(0);
+    ).toHaveAttribute('href', '/recover');
     await page.getByRole('button', { name: 'Log in' }).click();
     await expect(
       page.getByRole('heading', { name: 'This passkey is not an account' }),
@@ -1926,20 +1921,24 @@ test.describe('Recover account via Social Recovery', () => {
     expect(wasm()).toBe(0);
   });
 
-  test('after the first code the camera stays off until Scan code 2 of 2, so the code still in view is not read twice', async ({
+  test('after the first code the camera stays off until Scan the second code, so the code still in view is not read twice', async ({
     page,
   }) => {
     await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
     await openRecover(page);
     await page.getByRole('button', { name: 'Scan two codes' }).click();
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect(page.getByText('Now ask the second person to show you their code.')).toBeVisible();
     await expect.poll(async () => (await cameraStats(page)).live).toBe(0);
     await page.waitForTimeout(1_500);
     expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
     await expect(page.locator('p[role="alert"]')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
+    await expect(page.getByText('Now ask the second person to show you their code.')).toHaveCount(
+      0,
+    );
     await expect.poll(async () => (await cameraStats(page)).requests).toBe(2);
   });
 
@@ -1947,7 +1946,7 @@ test.describe('Recover account via Social Recovery', () => {
     await stubCamera(page, { kind: 'qr', text: ADA_CODES[0] });
     await openRecover(page);
     await page.getByRole('button', { name: 'Scan two codes' }).click();
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -2177,24 +2176,67 @@ test.describe('Recover account via Social Recovery', () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test('the pinned done step links to the new 12 words and to the setup', async ({ page }) => {
+  test('the pinned done step with a balance left notes it and keeps the old share', async ({
+    page,
+  }) => {
     await openRecover(page, 'recover-complete-missing');
     await expect(
       page.getByRole('heading', { level: 2, name: 'Your account is back' }),
     ).toBeVisible();
     await expect(
       page.getByText(
-        'Some balance stayed in the previous wallet. You can move it later in the settings.',
+        'Some balance stayed in the previous wallet. You can move it later under Account security in the menu.',
       ),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Show new 12 words' })).toHaveAttribute(
-      'href',
-      '/wallet/phrase',
-    );
+    await expect(page.getByText(/delete your old share/)).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Show new 12 words' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Secure my account' })).toHaveAttribute(
       'href',
       '/settings/social-recovery',
     );
+  });
+
+  test('the pinned done step with nothing left says the old share can be deleted', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-complete');
+    await expect(page.getByText(/^Your two people can now delete your old share\./)).toBeVisible();
+    await expect(page.getByText(/Some balance stayed/)).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Secure my account' })).toHaveAttribute(
+      'href',
+      '/settings/social-recovery',
+    );
+  });
+
+  test('the arrow steps from the Not now warning back to the done step, on the same page', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-complete');
+    await page.getByRole('button', { name: 'Not now' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Continue without protection?' }),
+    ).toBeVisible();
+    await page.getByRole('link', { name: /^Back/ }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is back' }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/recover/);
+  });
+
+  test('Not now warns first, and Secure my account and Continue anyway are its exits', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-complete');
+    await page.getByRole('button', { name: 'Not now' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Continue without protection?' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Secure my account' })).toHaveAttribute(
+      'href',
+      '/settings/social-recovery',
+    );
+    await page.getByRole('link', { name: 'Continue anyway' }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 
   test('an outdated build shows the new-version notice without Reload', async ({ page }) => {
@@ -2223,13 +2265,13 @@ test.describe('Transfer remaining balance', () => {
     await expect(page).toHaveURL(/\/welcome$/);
   });
 
-  test('Function: RemainingBalanceScreen — the settings link opens the previous wallet, which asks for its words', async ({
+  test('Function: RemainingBalanceScreen — the Account security link opens the previous wallet, which asks for its words', async ({
     page,
   }) => {
     await signInOwner(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
     await fulfillSpot(page);
     await answerPreviousWallets(page, [{ status: 200, body: { wallets: PREVIOUS_WALLETS } }]);
-    await page.goto('/settings');
+    await page.goto('/security');
     await page
       .locator('#previous-wallets')
       .getByRole('link', { name: 'Transfer remaining balance' })
@@ -2243,7 +2285,7 @@ test.describe('Transfer remaining balance', () => {
       page.getByText('Scan the two codes of this wallet or type its 12 words.'),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/security$/);
   });
 
   test('Function: useRemainingBalance — a list that cannot be read offers Try again', async ({
@@ -2395,7 +2437,7 @@ test.describe('Transfer remaining balance', () => {
       deleted.push(route.request().method());
       await route.fulfill({ status: 204, body: '' });
     });
-    await page.goto('/settings');
+    await page.goto('/security');
     await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-empty`);
     await expect(
       page.getByText('This wallet is empty. You can remove it from your account.'),
@@ -2408,7 +2450,7 @@ test.describe('Transfer remaining balance', () => {
     await expect(confirm).toHaveCount(0);
     await page.getByRole('button', { name: 'Remove previous wallet' }).click();
     await confirm.getByRole('button', { name: 'Remove' }).click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/security$/);
     expect(deleted).toEqual(['DELETE']);
     await expect(page.locator('#previous-wallets')).toHaveCount(0);
   });
@@ -2453,7 +2495,7 @@ test.describe('Transfer remaining balance', () => {
         body: JSON.stringify({ error: status === 502 ? 'Bad gateway' : 'Not found' }),
       });
     });
-    await page.goto('/settings');
+    await page.goto('/security');
     await page.goto(`/settings/previous-wallets/${PREVIOUS_KEY}?visual=prev-done`);
     await page.getByRole('button', { name: 'Remove previous wallet' }).click();
     const confirm = page.getByRole('group', {
@@ -2464,7 +2506,7 @@ test.describe('Transfer remaining balance', () => {
       'The wallet could not be removed. Try again.',
     );
     await confirm.getByRole('button', { name: 'Remove' }).click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page).toHaveURL(/\/security$/);
     expect(answers).toEqual([502, 404]);
   });
 });

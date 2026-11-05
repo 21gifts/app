@@ -2615,7 +2615,7 @@ test.describe('screen baselines', () => {
     await faq.getByText('What if I lose my device?').click();
     await expect(
       faq.getByText(
-        'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
+        'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery under Account security in the menu.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-device-open', true, page.locator('#shop-places-map'));
@@ -2735,6 +2735,9 @@ test.describe('screen baselines', () => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open a new account' })).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: 'Recover account via Social Recovery' }),
+    ).toBeVisible();
     await shotScreen(page, 'screen-login');
   });
 
@@ -3570,33 +3573,8 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/settings');
     await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Recovery phrase', exact: true })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Wallet' })).toBeVisible();
     await shotScreen(page, 'screen-settings');
-  });
-
-  test('settings activate', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.goto('/settings');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
-    await shotScreen(page, 'state-settings-activate');
   });
 
   test('settings menu-header-account-loading', async ({ page }) => {
@@ -43188,32 +43166,59 @@ test.describe('settings states', () => {
     });
   }
 
-  test('settings social-recovery-off', async ({ page }) => {
+  /**
+   * Opens `/security` and waits for its title.
+   *
+   * @param page - Page under test.
+   */
+  async function openSecurity(page: Page): Promise<void> {
+    await page.goto('/security');
+    await expect(page.getByRole('heading', { level: 1, name: 'Account security' })).toBeVisible();
+  }
+
+  test('screen /security', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await openSecurity(page);
+    const row = page.getByRole('region', { name: 'Protect my account' });
+    await expect(row.getByText('Available once your wallet is connected.')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Secure my account' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Recovery phrase', exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-security');
+  });
+
+  test('security no-phrase', async ({ page }) => {
+    await seedSettingsAccount(page, { passkeyCredentialId: null });
+    await openSecurity(page);
+    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'state-security-no-phrase');
+  });
+
+  test('security social-recovery-off', async ({ page }) => {
     await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
     await fulfillPreviousWallets(page, 200, { wallets: [] });
-    await openSettings(page);
-    const row = page.locator('#social-recovery');
+    await openSecurity(page);
+    const row = page.getByRole('region', { name: 'Protect my account' });
     await expect(
       row.getByText('Not set up yet. Two people you trust can help you get your account back.'),
     ).toBeVisible();
     await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
-    await expect(row.getByRole('link', { name: 'Shares I keep for others' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Shares I keep for others' })).toBeVisible();
     await expect(page.locator('#previous-wallets')).toHaveCount(0);
-    await shotScreen(page, 'state-settings-social-recovery-off');
+    await shotScreen(page, 'state-security-social-recovery-off');
   });
 
-  test('settings social-recovery-on', async ({ page }) => {
+  test('security social-recovery-on', async ({ page }) => {
     await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: true });
     await fulfillPreviousWallets(page, 200, { wallets: [] });
-    await openSettings(page);
-    const row = page.locator('#social-recovery');
+    await openSecurity(page);
+    const row = page.getByRole('region', { name: 'Protect my account' });
     await expect(row.getByText('Set up for this wallet.')).toBeVisible();
     await expect(row.getByRole('link', { name: 'Secure my account' })).toBeVisible();
     await expect(page.locator('#previous-wallets')).toHaveCount(0);
-    await shotScreen(page, 'state-settings-social-recovery-on');
+    await shotScreen(page, 'state-security-social-recovery-on');
   });
 
-  test('settings previous-wallets', async ({ page }) => {
+  test('security previous-wallets', async ({ page }) => {
     await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
     await fulfillSpot(page);
     await fulfillPreviousWallets(page, 200, {
@@ -43238,7 +43243,7 @@ test.describe('settings states', () => {
         },
       ],
     });
-    await page.goto('/settings#previous-wallets');
+    await page.goto('/security#previous-wallets');
     const row = page.locator('#previous-wallets');
     await expect(row.getByText("₿21'000 · $21.00")).toBeVisible();
     await expect(row.getByText('Empty')).toBeVisible();
@@ -43246,18 +43251,18 @@ test.describe('settings states', () => {
     await expect(row.getByRole('link', { name: 'Transfer remaining balance' })).toHaveCount(3);
     await expect(row.getByRole('button')).toHaveCount(0);
     await expect(row).toBeInViewport();
-    await shotScreen(page, 'state-settings-previous-wallets');
+    await shotScreen(page, 'state-security-previous-wallets');
   });
 
-  test('settings previous-wallets-error', async ({ page }) => {
+  test('security previous-wallets-error', async ({ page }) => {
     await seedSettingsAccount(page, { sparkWalletVerified: true, socialRecoverySetUp: false });
     await fulfillPreviousWallets(page, 503, { error: 'Wallet data is unavailable' });
-    await page.goto('/settings#previous-wallets');
+    await page.goto('/security#previous-wallets');
     const row = page.locator('#previous-wallets');
     await expect(row.getByRole('alert')).toHaveText('Previous wallets could not be loaded.');
     await expect(row.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(row).toBeInViewport();
-    await shotScreen(page, 'state-settings-previous-wallets-error');
+    await shotScreen(page, 'state-security-previous-wallets-error');
   });
 });
 
@@ -43875,14 +43880,15 @@ test.describe('recover states', () => {
   test('recover scan-second', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
-    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByText('Now ask the second person to show you their code.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Scan the second code' })).toBeVisible();
     await expect(page.locator('video')).toHaveCount(0);
     await shotScreen(page, 'state-recover-scan-second');
   });
 
   test('recover scan-second-camera', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
     await cameraPlaying(page);
@@ -43898,7 +43904,7 @@ test.describe('recover states', () => {
 
   test('recover code-same', async ({ page }) => {
     await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -43907,7 +43913,7 @@ test.describe('recover states', () => {
 
   test('recover code-other-set', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'These two codes do not belong together.',
     );
@@ -44056,12 +44062,12 @@ test.describe('recover states', () => {
     [
       'recover-complete',
       'state-recover-done',
-      'Set up Social Recovery again for the new words. Old shares now only open the previous wallet.',
+      'One more step: choose two people again, so they can help you get back in if you ever lose access.',
     ],
     [
       'recover-complete-missing',
       'state-recover-done-balance-missing',
-      'Some balance stayed in the previous wallet. You can move it later in the settings.',
+      'Some balance stayed in the previous wallet. You can move it later under Account security in the menu.',
     ],
   ];
 
@@ -44222,6 +44228,17 @@ test.describe('recover states', () => {
     await expect(page.getByText(pinned[23]![2])).toBeVisible();
     await shotScreen(page, 'state-recover-done-balance-missing');
   });
+
+  test('recover done-warning', async ({ page }) => {
+    await openRecover(page, pinned[22]![0]);
+    await page.getByRole('button', { name: 'Not now' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Continue without protection?' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Secure my account' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Continue anyway' })).toBeVisible();
+    await shotScreen(page, 'state-recover-done-warning');
+  });
 });
 
 test.describe('previous wallet states', () => {
@@ -44371,14 +44388,15 @@ test.describe('previous wallet states', () => {
   test('previous wallet scan-second', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
-    await expect(page.getByRole('button', { name: 'Scan code 2 of 2' })).toBeVisible();
+    await expect(page.getByText('Now ask the second person to show you their code.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Scan the second code' })).toBeVisible();
     await expect(page.locator('video')).toHaveCount(0);
     await shotScreen(page, 'state-previous-wallet-scan-second');
   });
 
   test('previous wallet scan-second-camera', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0]] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.getByRole('region', { name: 'Scan code 2 of 2' })).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('Code 1 of 2 scanned (@ada).');
     await cameraPlaying(page);
@@ -44393,7 +44411,7 @@ test.describe('previous wallet states', () => {
 
   test('previous wallet code-same', async ({ page }) => {
     await openCamera(page, { kind: 'qr', text: RECOVER_CODES[0] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       "That was the same code twice. Scan the other person's code.",
     );
@@ -44402,7 +44420,7 @@ test.describe('previous wallet states', () => {
 
   test('previous wallet code-other-set', async ({ page }) => {
     await openCamera(page, { kind: 'qrs', texts: [RECOVER_CODES[0], RECOVER_OTHER_SET] });
-    await page.getByRole('button', { name: 'Scan code 2 of 2' }).click();
+    await page.getByRole('button', { name: 'Scan the second code' }).click();
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'These two codes do not belong together.',
     );

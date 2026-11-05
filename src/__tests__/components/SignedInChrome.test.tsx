@@ -383,14 +383,15 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Balance' }).getAttribute('href')).toBe('/wallet');
     expect(screen.queryByRole('link', { name: 'Wallet' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+    const security = screen.getByRole('link', { name: 'Account security' });
+    expect(security.getAttribute('href')).toBe('/security');
+    expect(screen.getByRole('link', { name: 'Grants' }).nextElementSibling).toBe(security);
+    expect(security.nextElementSibling).toBe(screen.getByRole('link', { name: 'Settings' }));
     expect(screen.getByRole('link', { name: 'Home' }).nextElementSibling).toBe(
       screen.getByRole('link', { name: 'Balance' }),
     );
     expect(screen.getByRole('link', { name: 'Balance' }).nextElementSibling).toBe(
       screen.getByRole('link', { name: 'Shops' }),
-    );
-    expect(screen.getByRole('link', { name: 'Grants' }).nextElementSibling).toBe(
-      screen.getByRole('link', { name: 'Settings' }),
     );
     expect(
       follows(
@@ -793,6 +794,14 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Grants' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Account security is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Account security' }));
     expectMenuClosed();
   });
 

@@ -40,7 +40,7 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * `/wallet` home shows the large balance and, while the wallet is ready, the
  * member's loan card followed by the payment list, with Receive and Send side by side in the shell footer
  * (`WalletFooterActions`, Receive on the left). Recovery-phrase access lives
- * on `/settings`. The views and their Back steps come from `useWalletPanel`,
+ * on `/security`. The views and their Back steps come from `useWalletPanel`,
  * shared with `/welcome`: Send opens the send flow and Receive the address,
  * QR, and Set an amount, both also while the wallet is still opening (only a
  * step that needs the open wallet waits for it). The Send view stays while a send is in flight, its
@@ -49,7 +49,7 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * is in flight), then returns from Send or Receive to home. The 12 words and
  * recovery errors render only on `/wallet/phrase`. While the account has no
  * recovery phrase yet (no `passkeyCredentialId`), home adds a small **Back up
- * your wallet** link to the recovery entry of `/settings` (`#recovery`).
+ * your wallet** link to **Account security** (`/security`).
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -197,7 +197,7 @@ export function WalletScreenView({
           </div>
         )}
         {needsBackup ? (
-          <Link href="/settings#recovery" className="text-center text-sm text-app-muted underline">
+          <Link href="/security" className="text-center text-sm text-app-muted underline">
             {t('wallet.backupLink')}
           </Link>
         ) : null}

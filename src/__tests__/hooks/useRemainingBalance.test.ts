@@ -106,7 +106,7 @@ describe('useRemainingBalance', () => {
     expect(result.current.removable).toBe(false);
   });
 
-  it('Done returns to the settings', async () => {
+  it('Done returns to Account security', async () => {
     vi.mocked(openPreviousWallet).mockResolvedValueOnce({ balanceSats: 0 });
     const { result } = await rendered();
     await act(async () => {
@@ -115,7 +115,7 @@ describe('useRemainingBalance', () => {
     act(() => {
       result.current.leave();
     });
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a list that cannot be read offers Try again', async () => {
@@ -316,7 +316,7 @@ describe('useRemainingBalance', () => {
     expect(result.current.step).toBe('sending');
   });
 
-  it('an empty wallet can be removed after a confirm, which returns to the settings', async () => {
+  it('an empty wallet can be removed after a confirm, which returns to Account security', async () => {
     vi.mocked(openPreviousWallet).mockResolvedValueOnce({ balanceSats: 0 });
     const { result } = await rendered();
     await act(async () => {
@@ -354,7 +354,7 @@ describe('useRemainingBalance', () => {
       removed();
     });
     expect(closePreviousWallet).toHaveBeenCalled();
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a removal that fails keeps the confirm with its error', async () => {
@@ -374,7 +374,7 @@ describe('useRemainingBalance', () => {
     expect(returnToView).not.toHaveBeenCalled();
   });
 
-  it('Try again after a failed removal removes the wallet and returns to the settings', async () => {
+  it('Try again after a failed removal removes the wallet and returns to Account security', async () => {
     vi.mocked(openPreviousWallet).mockResolvedValueOnce({ balanceSats: 0 });
     vi.mocked(deletePreviousWallet).mockRejectedValueOnce(new Error('502'));
     const { result } = await rendered();
@@ -398,7 +398,7 @@ describe('useRemainingBalance', () => {
     });
     expect(deletePreviousWallet).toHaveBeenCalledTimes(2);
     expect(closePreviousWallet).toHaveBeenCalled();
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a removal that ends after the page closed changes nothing', async () => {

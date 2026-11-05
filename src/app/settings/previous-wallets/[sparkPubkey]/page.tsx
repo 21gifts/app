@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/settings/previous-wallets/[sparkPubkey]` — **Transfer remaining balance**:
  * the owner moves what is left in a wallet the account used before a social
  * recovery to the current wallet, and can then remove it. Opened from the
- * previous wallets on `/settings`.
+ * previous wallets on `/security`.
  *
  * Requires name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`, like `/settings`.

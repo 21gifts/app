@@ -59,9 +59,9 @@ async function scan(text: string): Promise<void> {
   });
 }
 
-/** Presses **Scan code 2 of 2**, which starts the camera for the second code. */
+/** Presses **Scan the second code**, which starts the camera for the second code. */
 function askSecond(): void {
-  fireEvent.click(screen.getByRole('button', { name: 'Scan code 2 of 2' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Scan the second code' }));
 }
 
 beforeEach(() => {
@@ -95,12 +95,17 @@ describe('OldWordsInput', () => {
       expect(screen.queryByText('Camera stub')).toBeNull();
       expect(scanner.mounts).toBe(1);
       expect(screen.queryByRole('alert')).toBeNull();
-      const button = screen.getByRole('button', { name: 'Scan code 2 of 2' });
-      expect(button.className).toContain('min-h-12');
+      expect(screen.getByText('Now ask the second person to show you their code.')).toBeTruthy();
+      const button = screen.getByRole('button', { name: 'Scan the second code' });
+      // The white pill for a dark layer, not the see-through overlay.
+      expect(button.className).toContain('bg-paper');
+      expect(button.className).not.toContain('backdrop-blur');
+      expect(screen.getAllByRole('status')).toHaveLength(1);
       askSecond();
       expect(scanner.mounts).toBe(2);
       expect(scanner.props?.copy?.hintVars).toEqual({ n: 2 });
-      expect(screen.queryByRole('button', { name: 'Scan code 2 of 2' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Scan the second code' })).toBeNull();
+      expect(screen.queryByText('Now ask the second person to show you their code.')).toBeNull();
       expect(screen.getByRole('status').textContent).toBe('Code 1 of 2 scanned (@ada).');
       await scan(code(SHARES[1]));
       await waitFor(() => {
