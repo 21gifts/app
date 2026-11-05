@@ -148,8 +148,9 @@ const MAP_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js'
 /** Nonce of a script already on this page, or empty when none is set. */
 function pageScriptNonce(): string {
   for (const node of document.scripts) {
-    if (node.nonce !== '') {
-      return node.nonce;
+    const nonce = node.nonce;
+    if (nonce !== undefined && nonce !== '') {
+      return nonce;
     }
   }
   return '';
