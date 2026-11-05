@@ -570,9 +570,14 @@ update stuff
 
 - **Tailwind CSS only.** No CSS files beyond `src/app/globals.css`, no CSS
   modules, no styled-components, no inline `style` attributes. The only
-  exception is a `style` attribute that sets viewport-measured `top`,
-  `bottom`, `left`, and `width` on a `fixed` overlay. Those four numbers
-  are the clamped box; `top-full` and `bottom-full` do not compute them.
+  exception is a `style` attribute on a `fixed` overlay that sets
+  viewport-measured edges and no other property. A clamped box sets
+  `top`, `bottom`, `left`, and `width`. A content-sized card whose
+  horizontal place is already in classes sets only the measured `top` or
+  only the measured `bottom` (`WalletTour`). A menu or panel sets `left`
+  and `width` plus the measured `top` or `bottom` (`SignedInChrome`,
+  `ShopAccountControl`, `ForumModeSelect`). `top-full` and `bottom-full`
+  do not compute those numbers.
   Script that measures an element may also write that measured `height` on
   it (`element.style`, never a JSX `style` attribute): `fitTextarea`
   (`src/lib/scroll-surface.ts`) fits a textarea to its text, and
