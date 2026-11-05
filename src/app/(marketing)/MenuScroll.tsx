@@ -2,10 +2,10 @@ import type { ReactElement, ReactNode } from 'react';
 import { Scrollport } from '@/components/ui/Scrollport';
 
 /**
- * Scrolls the open list only when the pinned box is shorter than the options.
+ * Scrolls filter list or help panel content when its pinned box is too short.
  *
- * @param props - Whether the list scrolls, and the option rows.
- * @returns The rows, or those rows inside the active scrollport.
+ * @param props - Whether the content scrolls, and the content.
+ * @returns The content directly, or inside the active scrollport.
  */
 export function MenuScroll({
   scrolling,

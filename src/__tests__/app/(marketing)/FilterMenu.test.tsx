@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterMenu, type MenuOption } from '@/app/(marketing)/FilterMenu';
 
@@ -68,6 +68,33 @@ describe('FilterMenu', () => {
     fireEvent.click(button);
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('closes without moving focus when focus leaves the menu', () => {
+    renderMenu('');
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const button = trigger();
+    act(() => button.focus());
+    fireEvent.click(button);
+    act(() => outside.focus());
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
+  });
+
+  it('keeps the list open when focus moves inside it or leaves the page', () => {
+    renderMenu('');
+    const button = trigger();
+    act(() => button.focus());
+    fireEvent.click(button);
+    const option = screen.getByRole('option', { name: 'Bitcoin' });
+    act(() => option.focus());
+    expect(document.activeElement).toBe(option);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    fireEvent.blur(option, { relatedTarget: null });
+    expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
   it('opens from ArrowDown on the selected option', () => {
@@ -318,7 +345,7 @@ describe('FilterMenu', () => {
     expect(screen.getByRole('listbox').querySelector('.border-t')).toBeTruthy();
   });
 
-  it('keeps one column up to 8 options and adds columns that fit the window', () => {
+  it('uses the expected grid column classes for the tested option counts', () => {
     function labels(count: number): MenuOption[] {
       const rows: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
       for (let index = 1; index < count; index += 1) {

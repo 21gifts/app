@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { FilterMenu, type MenuOption } from './FilterMenu';
+import { MenuScroll } from './MenuScroll';
 
 type HomeShopsCopy = {
   lead: string;
@@ -190,7 +191,7 @@ type MapSession = {
 
 type PinRecord = { element: HTMLButtonElement; row: ShopRow; position: LngLat };
 
-type HelpBox = { top: number; bottom: number; left: number; width: number };
+type HelpBox = { top: number; bottom: number; left: number; width: number; scrolls: boolean };
 
 function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   const margin = 16;
@@ -210,8 +211,8 @@ function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
   // bottom is the space under the content. A panel that does not fit uses
   // the 16px inset. A full-page capture clears that bottom edge itself.
   const bottom = window.innerHeight - top - panelHeight;
-  if (bottom < margin) return { top, bottom: margin, left, width };
-  return { top, bottom, left, width };
+  if (bottom < margin) return { top, bottom: margin, left, width, scrolls: true };
+  return { top, bottom, left, width, scrolls: false };
 }
 
 declare global {
@@ -1402,7 +1403,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const sessionRef = useRef<MapSession | null>(null);
   const markersRef = useRef<MarkerHandle[]>([]);
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
-  const clusterPinsRef = useRef(new Map<Element, PinRecord>());
+  const clusterPinsRef = useRef(new Map<Element | null, PinRecord>());
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
   const clusterFocus = useRef<{ pin: PinRecord; button: HTMLElement } | null>(null);
@@ -1474,7 +1475,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       const focusedElement = document.activeElement;
       const activePin =
         focusPin ??
-        (focusedElement === null ? undefined : clusterPinsRef.current.get(focusedElement));
+        clusterPinsRef.current.get(focusedElement) ??
+        pinsRef.current.find((pin): boolean => pin.element === focusedElement);
       clearClusters();
       if (session === null || awaitingRef.current || failedRef.current) return;
       const rect = clusterBox(session.map);
@@ -1953,7 +1955,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           current.top === next.top &&
           current.bottom === next.bottom &&
           current.left === next.left &&
-          current.width === next.width
+          current.width === next.width &&
+          current.scrolls === next.scrolls
         ) {
           return current;
         }
@@ -2244,7 +2247,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           data-shops-help-panel=""
           role="dialog"
           aria-label={copy.helpLabel}
-          className="fixed z-40 rounded-xl border border-ink/10 bg-paper p-4 shadow-lg"
+          className="fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg"
           style={{
             top: helpBox.top,
             bottom: helpBox.bottom,
@@ -2252,18 +2255,20 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             width: helpBox.width,
           }}
         >
-          <dl className="grid gap-3">
-            {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (
-              <div key={labelKey}>
-                <dt className="flex items-center gap-2 text-sm font-semibold">
-                  <span className={swatch} aria-hidden="true" />
-                  {copy[labelKey]}
-                </dt>
-                <dd className="mt-1 text-sm text-ink/60">{copy[helpKey]}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-3 border-t border-ink/10 pt-3 text-sm text-ink/60">{copy.hierarchy}</p>
+          <MenuScroll scrolling={helpBox.scrolls}>
+            <dl className="grid gap-3">
+              {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (
+                <div key={labelKey}>
+                  <dt className="flex items-center gap-2 text-sm font-semibold">
+                    <span className={swatch} aria-hidden="true" />
+                    {copy[labelKey]}
+                  </dt>
+                  <dd className="mt-1 text-sm text-ink/60">{copy[helpKey]}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 border-t border-ink/10 pt-3 text-sm text-ink/60">{copy.hierarchy}</p>
+          </MenuScroll>
         </div>
       ) : null}
     </section>

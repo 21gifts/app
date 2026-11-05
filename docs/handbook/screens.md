@@ -117,7 +117,7 @@ The Country list is open. The option Philippines is visible. Kenya is listed. Sw
 
 ### Variant: shops-name-open
 
-The Name list is open. The option others is visible, as the raw shop-name token. SPAR is listed. Map stays selected. Map tiles are hidden.
+The Name list is open. The option shows the localized others label (`homeShops.otherShops`). SPAR is listed. Map stays selected. Map tiles are hidden.
 
 ![21.gifts home shops name open](images/root-shops-name-open.png)
 

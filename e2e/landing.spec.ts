@@ -521,7 +521,7 @@ test('Function: HomeShops clusters overlapping pins and opens them', async ({ pa
   await expect(cluster).toHaveCount(0);
 });
 
-test('Function: HomeShops popup shows a photo and a category only when they differ', async ({
+test('Function: HomeShops popup shows a photo when present and categories when they differ', async ({
   page,
 }) => {
   await stubPublicMap(page);

@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within, fireEvent, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomeShops } from '@/app/(marketing)/HomeShops';
+import { Scrollport } from '@/components/ui/Scrollport';
 import { getCatalog } from '@/lib/messages';
 
 const messages = getCatalog('en');
@@ -1517,7 +1518,7 @@ describe('HomeShops', () => {
     fireEvent.click(help);
     const panel = screen.getByRole('dialog', { name: copy.helpLabel });
     expect(panel.className).toBe(
-      'fixed z-40 rounded-xl border border-ink/10 bg-paper p-4 shadow-lg',
+      'fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg',
     );
     expect(panel.style.top).toBe('16px');
     expect(panel.style.left).toBe('16px');
@@ -3401,6 +3402,67 @@ describe('HomeShops', () => {
     expect(document.activeElement).toBe(pinByName('Ann'));
   });
 
+  it.each([
+    { name: 'Cara', tone: 'is-weekly' },
+    { name: 'Dean', tone: 'is-monthly' },
+  ])(
+    'focuses the containing cluster when the focused $name pin joins it',
+    async ({ name, tone }): Promise<void> => {
+      const { handlers, map } = await setupClusterFocus();
+      map.transform.zoom = 18;
+      await act(async (): Promise<void> => {
+        handlers['zoom']?.();
+      });
+      const pin = pinByName(name);
+      expect(pin.classList.contains('is-clustered')).toBe(false);
+      expect(pin.classList.contains('is-offscreen')).toBe(false);
+      pin.focus();
+      expect(document.activeElement).toBe(pin);
+
+      map.transform.zoom = 10;
+      await act(async (): Promise<void> => {
+        handlers['zoom']?.();
+      });
+
+      expect(pin.classList.contains('is-clustered')).toBe(true);
+      expect(document.activeElement).toBe(clusterButton(tone));
+    },
+  );
+
+  it('keeps focus on a pin that stays separate after zoom', async (): Promise<void> => {
+    const { handlers, map } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async (): Promise<void> => {
+      handlers['zoom']?.();
+    });
+    const pin = pinByName('Cara');
+    pin.focus();
+    expect(document.activeElement).toBe(pin);
+
+    map.transform.zoom = 19;
+    await act(async (): Promise<void> => {
+      handlers['zoom']?.();
+    });
+
+    expect(pin.classList.contains('is-clustered')).toBe(false);
+    expect(document.activeElement).toBe(pin);
+  });
+
+  it('does not move focus from the body when clusters repaint', async (): Promise<void> => {
+    const { handlers } = await setupClusterFocus();
+    expect(document.activeElement).toBe(document.body);
+    const previous = clusterButton('is-weekly');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    await act(async (): Promise<void> => {
+      handlers['move']?.();
+    });
+
+    expect(clusterButton('is-weekly')).not.toBe(previous);
+    expect(document.activeElement).toBe(document.body);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
   it('keeps focus on another cluster during a keyboard-initiated movement', async () => {
     const { handlers } = await setupClusterFocus();
     const daily = clusterButton('is-daily');
@@ -3547,12 +3609,13 @@ describe('HomeShops', () => {
       handlers['move']?.();
     });
     const currentCluster = clusterButton('is-daily');
+    expect(document.activeElement).toBe(currentCluster);
     fireEvent.click(currentCluster, { detail: 1 });
     await act(async () => {
       handlers['move']?.();
     });
     handlers['moveend']?.();
-    expect(document.activeElement).toBe(pinByName('Ann'));
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
 
     state.unproject = 'throw';
     await act(async () => {
@@ -4256,6 +4319,79 @@ describe('HomeShops', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.querySelector('.shop-legend')).toBeNull();
     fireEvent(window, new Event('resize'));
+  });
+
+  it('scrolls help only while its content exceeds the pinned box', async (): Promise<void> => {
+    vi.stubGlobal('innerWidth', 640);
+    vi.stubGlobal('innerHeight', 320);
+    const { container } = render(
+      <Scrollport>
+        <HomeShops copy={copy} locale="en" />
+      </Scrollport>,
+    );
+    const pagePort = container.querySelector('[data-scrollport]');
+    if (!(pagePort instanceof HTMLElement)) throw new Error('missing page scrollport');
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    const anchor = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
+    if (!(anchor instanceof HTMLElement)) throw new Error('missing help anchor');
+    setRect(anchor, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    let contentHeight = 289;
+    vi.spyOn(dialog, 'getBoundingClientRect').mockImplementation((): DOMRect => {
+      const pinned = dialog.style.bottom !== '' && dialog.style.bottom !== 'auto';
+      const height = pinned ? window.innerHeight - 32 : contentHeight;
+      return new DOMRect(40, 16, 320, height);
+    });
+
+    fireEvent(window, new Event('resize'));
+
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.getBoundingClientRect().height).toBe(288);
+    expect(dialog.classList.contains('flex')).toBe(true);
+    expect(dialog.classList.contains('flex-col')).toBe(true);
+    const helpPort = dialog.querySelector('[data-scrollport]');
+    if (!(helpPort instanceof HTMLElement)) throw new Error('missing help scrollport');
+    expect(document.querySelectorAll('[data-scroll-active]')).toHaveLength(1);
+    expect(helpPort.hasAttribute('data-scroll-active')).toBe(true);
+    expect(pagePort.hasAttribute('data-scroll-locked')).toBe(true);
+    for (const text of [
+      copy.dailyHelp,
+      copy.weeklyHelp,
+      copy.monthlyHelp,
+      copy.idleHelp,
+      copy.noneHelp,
+      copy.hierarchy,
+    ]) {
+      expect(within(helpPort).getByText(text)).toBeTruthy();
+    }
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scrollport]')).toBe(helpPort);
+
+    contentHeight = 288;
+    fireEvent(window, new Event('resize'));
+
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(within(dialog).getByText(copy.hierarchy)).toBeTruthy();
+    expect(document.querySelectorAll('[data-scroll-active]')).toHaveLength(1);
+    expect(pagePort.hasAttribute('data-scroll-active')).toBe(true);
+    expect(pagePort.hasAttribute('data-scroll-locked')).toBe(false);
+
+    contentHeight = 287;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.bottom).toBe('17px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+
+    contentHeight = 289;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scroll-active]')).not.toBeNull();
+    vi.stubGlobal('innerHeight', 600);
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(pagePort.hasAttribute('data-scroll-active')).toBe(true);
   });
 
   it('keeps the bottom inset when a tall help panel is stretched to the window', async () => {

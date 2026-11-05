@@ -162,7 +162,7 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * outside the window; an unpinned list is not measured again. A pinned list
  * that is taller than the window scrolls its options on the active scrollport.
  * Opening reveals the selected option, and Arrow, Home, and End reveal the
- * active option there.
+ * active option there. Focus moving outside the menu closes it without moving focus.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -427,7 +427,13 @@ export function FilterMenu({
   if (menuScrolls) placed = 'fixed min-h-0';
 
   return (
-    <div data-shops-menu={menuId} className="relative w-full min-w-0 sm:w-auto">
+    <div
+      data-shops-menu={menuId}
+      className="relative w-full min-w-0 sm:w-auto"
+      onBlur={(event) => {
+        if (event.relatedTarget !== null && !inMenu(event.relatedTarget, menuId)) setOpen(false);
+      }}
+    >
       <button
         ref={triggerRef}
         type="button"

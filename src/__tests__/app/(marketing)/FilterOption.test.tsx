@@ -82,7 +82,7 @@ describe('FilterOption', () => {
     expect(option.className).not.toContain('font-semibold');
   });
 
-  it('allows a long label to wrap while keeping a minimum row height', () => {
+  it('carries the wrap and minimum-height classes for a long label', () => {
     render(
       <FilterOption
         option={{ value: 'country', label: 'A very long country name', swatch: null }}
