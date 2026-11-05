@@ -47,11 +47,11 @@ type VersionBlock = {
  * held start view adds **Open a new account** under **New to 21.gifts?**: it
  * is registration, and a new account replaces the held session as well.
  *
- * **Recover account via Social Recovery**, a link to `/recover`, is always
- * on offer unless `showRecover` is false (inside {@link WalletLoginCard}, which
- * stands in for a member session): a quiet text link under **Log in** on the
- * idle and held start views, and a secondary control on the account question
- * and the unknown-passkey view. A passkey of a social recovery that is not
+ * **Recover account via Social Recovery**, a link to `/recover`, is on offer
+ * unless `showRecover` is false (inside {@link WalletLoginCard}, which stands
+ * in for a member session): a quiet text link under **Log in** on the idle and
+ * held start views, and a secondary control on the account question and the
+ * unknown-passkey view. Other errors do not offer it. A passkey of a social recovery that is not
  * finished yet (it belongs to that recovery, not to a held session) shows
  * `login.recoveryPending` with the secondary control under the button wherever
  * it answered, also inside {@link WalletLoginCard}: on the error view under
@@ -265,34 +265,29 @@ interface StartViewProps {
 }
 
 /**
- * **Recover account via Social Recovery**: a secondary link to `/recover`.
+ * **Recover account via Social Recovery**: a link to `/recover`, as a secondary
+ * control or, on a start view, as quiet text that does not compete with
+ * **Log in**.
  *
+ * @param props - `quiet`: the text form (default `false`).
  * @returns The link.
  */
-function RecoverLink(): ReactElement {
+function RecoverLink({ quiet = false }: { quiet?: boolean }): ReactElement {
   const { t } = useTranslations();
+  if (quiet) {
+    return (
+      <Link
+        href="/recover"
+        className="inline-flex min-h-11 items-center justify-center text-center text-sm text-app-muted underline"
+      >
+        {t('recover.entry')}
+      </Link>
+    );
+  }
   return (
     <ButtonLink href="/recover" variant="secondary">
       {t('recover.entry')}
     </ButtonLink>
-  );
-}
-
-/**
- * **Recover account via Social Recovery** as a quiet text link, so it does not
- * compete with **Log in** on a start view.
- *
- * @returns The link.
- */
-function QuietRecoverLink(): ReactElement {
-  const { t } = useTranslations();
-  return (
-    <Link
-      href="/recover"
-      className="inline-flex min-h-11 items-center justify-center text-center text-sm text-app-muted underline"
-    >
-      {t('recover.entry')}
-    </Link>
   );
 }
 
@@ -340,7 +335,7 @@ function StartView({
         {t('login.submit')}
       </Button>
       {recover === 'button' ? <RecoverLink /> : null}
-      {recover === 'link' ? <QuietRecoverLink /> : null}
+      {recover === 'link' ? <RecoverLink quiet /> : null}
       {onRegister === null ? null : (
         <>
           <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
