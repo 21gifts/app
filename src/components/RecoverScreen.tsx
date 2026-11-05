@@ -2,7 +2,7 @@
 
 import { Check, Fingerprint, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { BusyLine } from '@/components/BusyLine';
 import { HomeWordmark } from '@/components/HomeWordmark';
@@ -53,6 +53,56 @@ const STEP_HEADING = 'text-center text-xl font-semibold tracking-tight text-app-
 const ALERT = 'text-center text-sm text-app-danger';
 
 /**
+ * The end of a recovery: the account is back, why two people must be chosen
+ * again, either the note about a balance that stayed or, once nothing is left
+ * in the old wallet, that the two people may delete the old share (moving a
+ * remaining balance can still need it), **Secure my account**, and
+ * **Not now**, which first warns that the old codes no longer help and then
+ * offers **Secure my account** again or **Continue anyway** to `/welcome`.
+ *
+ * @param props - `balanceMissing`: some balance stayed in the previous wallet.
+ * @returns The step.
+ */
+function DoneStep({ balanceMissing }: { balanceMissing: boolean }): ReactElement {
+  const { t } = useTranslations();
+  const [warning, setWarning] = useState(false);
+  if (warning) {
+    return (
+      <>
+        <h2 className={STEP_HEADING}>{t('recover.laterTitle')}</h2>
+        <p className={BODY}>{t('recover.laterBody')}</p>
+        <ButtonLink href="/settings/social-recovery">{t('socialRecovery.secure')}</ButtonLink>
+        <ButtonLink href="/welcome" variant="secondary">
+          {t('recover.laterContinue')}
+        </ButtonLink>
+      </>
+    );
+  }
+  return (
+    <>
+      <h2 className={STEP_HEADING}>{t('recover.doneTitle')}</h2>
+      <p className={BODY}>{t('recover.doneBody')}</p>
+      <p className="text-center text-sm font-medium text-app-fg">{t('recover.doneShares')}</p>
+      {balanceMissing ? (
+        <p className={BODY}>{t('recover.balanceMissing')}</p>
+      ) : (
+        <p className={BODY}>{t('recover.doneDeleteOld')}</p>
+      )}
+      <ButtonLink href="/settings/social-recovery">{t('socialRecovery.secure')}</ButtonLink>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => {
+          setWarning(true);
+        }}
+      >
+        {t('recover.later')}
+      </Button>
+    </>
+  );
+}
+
+/**
  * `/recover`: the signed-out social recovery of an account whose passkey is
  * lost ({@link useRecoveryFlow}), in the `/login` card's place and chrome.
  * Every view keeps the title **Recover your account**.
@@ -75,9 +125,7 @@ const ALERT = 'text-center text-sm text-app-danger';
  *   balance) with a check for each part done, the waiting note, the error,
  *   and **Transfer**; after a `generic` error **Start over**, after a
  *   `balance` error **Move the balance later**.
- * - **Done:** the account is back, its new words, that Social Recovery must be
- *   set up again, the note about a balance that stayed, **Show new 12 words**,
- *   and **Secure my account**.
+ * - **Done:** see {@link DoneStep}.
  *
  * The one top-left arrow steps from the camera or the words field back to the
  * start; otherwise it returns to the previous in-app view, and the recovery
@@ -271,18 +319,7 @@ export function RecoverScreen(): ReactElement {
       );
       break;
     case 'done':
-      body = (
-        <>
-          <h2 className={STEP_HEADING}>{t('recover.doneTitle')}</h2>
-          <p className={BODY}>{t('recover.doneBody')}</p>
-          <p className="text-center text-sm font-medium text-app-fg">{t('recover.doneShares')}</p>
-          {view.balanceMissing ? <p className={BODY}>{t('recover.balanceMissing')}</p> : null}
-          <ButtonLink href="/wallet/phrase">{t('recover.showWords')}</ButtonLink>
-          <ButtonLink href="/settings/social-recovery" variant="secondary">
-            {t('socialRecovery.secure')}
-          </ButtonLink>
-        </>
-      );
+      body = <DoneStep balanceMissing={view.balanceMissing} />;
       break;
   }
 

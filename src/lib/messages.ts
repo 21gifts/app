@@ -87,6 +87,11 @@ const en = {
   'nav.moderateUnread': 'Moderation, {count} unread',
   'nav.grants': 'Grants',
   'nav.contact': 'Contact',
+  'nav.security': 'Account security',
+  'security.protect': 'Protect my account',
+  'security.help': 'Help someone else',
+  'security.helpBody': 'If someone chose you to help restore their account, keep their share here.',
+  'security.more': 'More options',
   'nav.settings': 'Settings',
   'nav.openProfile': 'Open your profile',
   'settings.recoveryPhrase': 'Recovery phrase',
@@ -181,7 +186,7 @@ const en = {
     'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Once you set up Social Recovery, 21.gifts keeps one encrypted part of your 12 words, which alone opens nothing. Never share recovery words with anyone.',
   'home.faq4Q': 'What if I lose my device?',
   'home.faq4A':
-    'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery in the settings.',
+    'You can restore your account with your 12 words, or with Social Recovery if you set it up. Set up Social Recovery under Account security in the menu.',
   'home.faq5Q': 'Who receives the Bitcoin?',
   'home.faq5A':
     "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
@@ -686,7 +691,6 @@ const en = {
     'Write a short post in the forum so people know who you are. Gifts are only sent to members who have introduced themselves.',
   'introduce.cta': 'Write an introduction',
   'introduce.close': 'Close',
-  'socialRecovery.heading': 'Social Recovery',
   'socialRecovery.statusOn': 'Set up for this wallet.',
   'socialRecovery.statusOff':
     'Not set up yet. Two people you trust can help you get your account back.',
@@ -709,7 +713,7 @@ const en = {
   'secure.walletMismatch': 'These 12 words do not open the wallet of this account. Setup stopped.',
   'secure.shareHeading': 'Person {n}',
   'secure.shareBody':
-    'Ask person {n} to open 21.gifts, choose “Shares I keep for others” in the settings, tap “Keep a share” and scan this code.',
+    'Ask person {n} to open 21.gifts, open Account security in the menu, choose “Shares I keep for others”, tap “Keep a share” and scan this code.',
   'secure.shareDifferent': 'Person 2 must be someone other than person 1.',
   'secure.shareQr': 'Code for person {n}',
   'secure.scanned': 'Person {n} has scanned it',
@@ -778,6 +782,8 @@ const en = {
   'recover.type': 'Type my 12 words',
   'recover.scanHint': 'Scan code {n} of 2',
   'recover.scanFirstDone': 'Code 1 of 2 scanned (@{username}).',
+  'recover.scanNextPerson': 'Now ask the second person to show you their code.',
+  'recover.scanSecond': 'Scan the second code',
   'recover.cameraDenied': 'Camera access is off. Allow the camera, or type your 12 words.',
   'recover.cameraUnavailable': 'No camera found. Type your 12 words instead.',
   'recover.wordsLabel': 'Your 12 words',
@@ -807,13 +813,18 @@ const en = {
   'recover.balanceError': 'The balance could not be moved yet.',
   'recover.balanceLater': 'Move the balance later',
   'recover.doneTitle': 'Your account is back',
-  'recover.doneBody':
-    'Your account now has a new passkey with new 12 words. Words you wrote down before now only open your previous wallet.',
+  'recover.doneBody': 'You can use your account on this phone again.',
   'recover.doneShares':
-    'Set up Social Recovery again for the new words. Old shares now only open the previous wallet.',
+    'One more step: choose two people again, so they can help you get back in if you ever lose access.',
+  'recover.doneDeleteOld':
+    'Your two people can now delete your old share. They find it in Account security in the menu, under “Shares I keep for others”.',
+  'recover.later': 'Not now',
+  'recover.laterTitle': 'Continue without protection?',
+  'recover.laterBody':
+    "The codes your two people keep no longer work for this account. Until you choose two people again, they can't help you get back in if you lose access.",
+  'recover.laterContinue': 'Continue anyway',
   'recover.balanceMissing':
-    'Some balance stayed in the previous wallet. You can move it later in the settings.',
-  'recover.showWords': 'Show new 12 words',
+    'Some balance stayed in the previous wallet. You can move it later under Account security in the menu.',
   'previousWallets.remove': 'Remove previous wallet',
   'previousWallets.removeConfirm': 'Remove this previous wallet from your account?',
   'previousWallets.removeYes': 'Remove',
@@ -1826,6 +1837,12 @@ const de = {
   'nav.moderateUnread': 'Moderation, {count} ungelesen',
   'nav.grants': 'Förderprogramm',
   'nav.contact': 'Kontakt',
+  'nav.security': 'Kontosicherheit',
+  'security.protect': 'Mein Konto schützen',
+  'security.help': 'Jemand anderem helfen',
+  'security.helpBody':
+    'Wenn dich jemand gewählt hat, um beim Wiederherstellen seines Kontos zu helfen, bewahre den Anteil hier auf.',
+  'security.more': 'Weitere Optionen',
   'nav.settings': 'Einstellungen',
   'nav.openProfile': 'Dein Profil öffnen',
   'settings.recoveryPhrase': 'Wiederherstellungssatz',
@@ -1921,7 +1938,7 @@ const de = {
     'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Sobald du Social Recovery eingerichtet hast, bewahrt 21.gifts einen gesicherten Teil deiner 12 Wörter auf, der allein nichts öffnet. Gib Wiederherstellungswörter nie weiter.',
   'home.faq4Q': 'Was passiert, wenn ich mein Gerät verliere?',
   'home.faq4A':
-    'Du kannst dein Konto mit deinen 12 Wörtern wiederherstellen oder mit Social Recovery, falls du es eingerichtet hast. Richte Social Recovery in den Einstellungen ein.',
+    'Du kannst dein Konto mit deinen 12 Wörtern wiederherstellen oder mit Social Recovery, falls du es eingerichtet hast. Richte Social Recovery im Menü unter Kontosicherheit ein.',
   'home.faq5Q': 'Wer bekommt den Bitcoin?',
   'home.faq5A':
     'Die Person, die den Beitrag geschrieben hat. Schreib eine Reaktion darunter und gib einen Betrag an. Dein Bitcoin geht an ihre Wallet-Adresse.',
@@ -2439,7 +2456,6 @@ const de = {
     'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
   'introduce.cta': 'Vorstellung schreiben',
   'introduce.close': 'Schließen',
-  'socialRecovery.heading': 'Social Recovery',
   'socialRecovery.statusOn': 'Für diese Wallet eingerichtet.',
   'socialRecovery.statusOff':
     'Noch nicht eingerichtet. Zwei Menschen, denen du vertraust, können dir helfen, dein Konto zurückzubekommen.',
@@ -2463,7 +2479,7 @@ const de = {
     'Diese 12 Wörter öffnen nicht die Wallet dieses Kontos. Die Einrichtung wurde abgebrochen.',
   'secure.shareHeading': 'Person {n}',
   'secure.shareBody':
-    'Bitte Person {n}, 21.gifts zu öffnen, in den Einstellungen „Anteile, die ich für andere aufbewahre“ zu wählen, auf „Anteil aufbewahren“ zu tippen und diesen Code zu scannen.',
+    'Bitte Person {n}, 21.gifts zu öffnen, im Menü Kontosicherheit zu öffnen, „Anteile, die ich für andere aufbewahre“ zu wählen, auf „Anteil aufbewahren“ zu tippen und diesen Code zu scannen.',
   'secure.shareDifferent': 'Person 2 muss eine andere Person als Person 1 sein.',
   'secure.shareQr': 'Code für Person {n}',
   'secure.scanned': 'Person {n} hat gescannt',
@@ -2540,6 +2556,8 @@ const de = {
   'recover.type': 'Meine 12 Wörter eingeben',
   'recover.scanHint': 'Code {n} von 2 scannen',
   'recover.scanFirstDone': 'Code 1 von 2 gescannt (@{username}).',
+  'recover.scanNextPerson': 'Bitte jetzt die zweite Person, dir ihren Code zu zeigen.',
+  'recover.scanSecond': 'Zweiten Code scannen',
   'recover.cameraDenied':
     'Der Kamerazugriff ist aus. Erlaube die Kamera oder gib deine 12 Wörter ein.',
   'recover.cameraUnavailable': 'Keine Kamera gefunden. Gib stattdessen deine 12 Wörter ein.',
@@ -2575,13 +2593,18 @@ const de = {
   'recover.balanceError': 'Das Guthaben konnte noch nicht übertragen werden.',
   'recover.balanceLater': 'Guthaben später übertragen',
   'recover.doneTitle': 'Dein Konto ist wiederhergestellt',
-  'recover.doneBody':
-    'Dein Konto hat jetzt einen neuen Passkey mit neuen 12 Wörtern. Wörter, die du früher aufgeschrieben hast, öffnen nur noch deine frühere Wallet.',
+  'recover.doneBody': 'Du kannst dein Konto auf diesem Telefon wieder nutzen.',
   'recover.doneShares':
-    'Richte Social Recovery für die neuen Wörter neu ein. Alte Anteile öffnen nur noch die frühere Wallet.',
+    'Noch ein Schritt: Wähle wieder zwei Personen, damit sie dir helfen können, falls du einmal keinen Zugang mehr hast.',
+  'recover.doneDeleteOld':
+    'Deine zwei Personen können deinen alten Anteil jetzt löschen. Sie finden ihn im Menü unter Kontosicherheit, bei „Anteile, die ich für andere aufbewahre“.',
+  'recover.later': 'Jetzt nicht',
+  'recover.laterTitle': 'Ohne Schutz weitermachen?',
+  'recover.laterBody':
+    'Die Codes deiner zwei Personen funktionieren für dieses Konto nicht mehr. Solange du nicht wieder zwei Personen wählst, können sie dir nicht helfen, falls du keinen Zugang mehr hast.',
+  'recover.laterContinue': 'Trotzdem weitermachen',
   'recover.balanceMissing':
-    'Ein Teil des Guthabens blieb in der früheren Wallet. Du kannst ihn später in den Einstellungen übertragen.',
-  'recover.showWords': 'Neue 12 Wörter anzeigen',
+    'Ein Teil des Guthabens blieb in der früheren Wallet. Du kannst ihn später im Menü unter Kontosicherheit übertragen.',
   'previousWallets.remove': 'Frühere Wallet entfernen',
   'previousWallets.removeConfirm': 'Diese frühere Wallet aus deinem Konto entfernen?',
   'previousWallets.removeYes': 'Entfernen',
@@ -3635,6 +3658,12 @@ const es = {
   'nav.moderateUnread': 'Moderación, {count} sin leer',
   'nav.grants': 'Beca',
   'nav.contact': 'Contacto',
+  'nav.security': 'Seguridad de la cuenta',
+  'security.protect': 'Proteger mi cuenta',
+  'security.help': 'Ayudar a otra persona',
+  'security.helpBody':
+    'Si alguien te eligió para ayudar a recuperar su cuenta, guarda aquí su parte.',
+  'security.more': 'Más opciones',
   'nav.settings': 'Ajustes',
   'nav.openProfile': 'Abrir tu perfil',
   'settings.recoveryPhrase': 'Frase de recuperación',
@@ -3729,7 +3758,7 @@ const es = {
     'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Cuando configuras Social Recovery, 21.gifts guarda una parte cifrada de tus 12 palabras, que por sí sola no abre nada. Nunca compartas tus palabras de recuperación.',
   'home.faq4Q': '¿Y si pierdo mi dispositivo?',
   'home.faq4A':
-    'Puedes recuperar tu cuenta con tus 12 palabras, o con Social Recovery si lo configuraste. Configura Social Recovery en los ajustes.',
+    'Puedes recuperar tu cuenta con tus 12 palabras, o con Social Recovery si lo configuraste. Configura Social Recovery en Seguridad de la cuenta, en el menú.',
   'home.faq5Q': '¿Quién recibe el Bitcoin?',
   'home.faq5A':
     'Quien escribió la publicación. Escribe una reacción debajo e indica un importe. El Bitcoin va a la dirección de cartera de esa persona.',
@@ -4237,7 +4266,6 @@ const es = {
     'Escribe una nota breve en el foro para que la gente sepa quién eres. Los regalos solo se envían a los miembros que se han presentado.',
   'introduce.cta': 'Escribe una presentación',
   'introduce.close': 'Cerrar',
-  'socialRecovery.heading': 'Social Recovery',
   'socialRecovery.statusOn': 'Configurada para esta wallet.',
   'socialRecovery.statusOff':
     'Aún no está configurada. Dos personas de tu confianza pueden ayudarte a recuperar tu cuenta.',
@@ -4261,7 +4289,7 @@ const es = {
     'Estas 12 palabras no abren la wallet de esta cuenta. La configuración se detuvo.',
   'secure.shareHeading': 'Persona {n}',
   'secure.shareBody':
-    'Pide a la persona {n} que abra 21.gifts, elija «Partes que guardo para otros» en los ajustes, toque «Guardar una parte» y escanee este código.',
+    'Pide a la persona {n} que abra 21.gifts, abra Seguridad de la cuenta en el menú, elija «Partes que guardo para otros», toque «Guardar una parte» y escanee este código.',
   'secure.shareDifferent': 'La persona 2 debe ser alguien distinto de la persona 1.',
   'secure.shareQr': 'Código para la persona {n}',
   'secure.scanned': 'La persona {n} lo escaneó',
@@ -4335,6 +4363,8 @@ const es = {
   'recover.type': 'Escribir mis 12 palabras',
   'recover.scanHint': 'Escanea el código {n} de 2',
   'recover.scanFirstDone': 'Código 1 de 2 escaneado (@{username}).',
+  'recover.scanNextPerson': 'Ahora pide a la segunda persona que te muestre su código.',
+  'recover.scanSecond': 'Escanear el segundo código',
   'recover.cameraDenied':
     'El acceso a la cámara está desactivado. Permite la cámara o escribe tus 12 palabras.',
   'recover.cameraUnavailable':
@@ -4370,13 +4400,18 @@ const es = {
   'recover.balanceError': 'Todavía no se pudo transferir el saldo.',
   'recover.balanceLater': 'Transferir el saldo más tarde',
   'recover.doneTitle': 'Tu cuenta ha vuelto',
-  'recover.doneBody':
-    'Tu cuenta tiene ahora un nuevo passkey con 12 palabras nuevas. Las palabras que anotaste antes ahora solo abren tu wallet anterior.',
+  'recover.doneBody': 'Ya puedes usar tu cuenta otra vez en este teléfono.',
   'recover.doneShares':
-    'Vuelve a configurar Social Recovery para las palabras nuevas. Las partes antiguas ahora solo abren la wallet anterior.',
+    'Un paso más: vuelve a elegir a dos personas para que puedan ayudarte si alguna vez pierdes el acceso.',
+  'recover.doneDeleteOld':
+    'Tus dos personas ya pueden borrar tu parte antigua. La encuentran en Seguridad de la cuenta, en el menú, en «Partes que guardo para otros».',
+  'recover.later': 'Ahora no',
+  'recover.laterTitle': '¿Continuar sin protección?',
+  'recover.laterBody':
+    'Los códigos que guardan tus dos personas ya no sirven para esta cuenta. Hasta que vuelvas a elegir a dos personas, no podrán ayudarte si pierdes el acceso.',
+  'recover.laterContinue': 'Continuar de todos modos',
   'recover.balanceMissing':
-    'Parte del saldo se quedó en la wallet anterior. Puedes transferirlo más tarde en los ajustes.',
-  'recover.showWords': 'Mostrar las 12 palabras nuevas',
+    'Parte del saldo se quedó en la wallet anterior. Puedes transferirlo más tarde en Seguridad de la cuenta, en el menú.',
   'previousWallets.remove': 'Quitar la wallet anterior',
   'previousWallets.removeConfirm': '¿Quitar esta wallet anterior de tu cuenta?',
   'previousWallets.removeYes': 'Quitar',
@@ -5403,6 +5438,12 @@ const fil = {
   'nav.moderateUnread': 'Moderasyon, {count} hindi pa nababasa',
   'nav.grants': 'Grant',
   'nav.contact': 'Contact',
+  'nav.security': 'Seguridad ng account',
+  'security.protect': 'Protektahan ang account ko',
+  'security.help': 'Tumulong sa iba',
+  'security.helpBody':
+    'Kung pinili ka ng isang tao para tumulong na maibalik ang account niya, itabi rito ang bahagi niya.',
+  'security.more': 'Iba pang opsyon',
   'nav.settings': 'Mga setting',
   'nav.openProfile': 'Buksan ang iyong profile',
   'settings.recoveryPhrase': 'Recovery phrase',
@@ -5497,7 +5538,7 @@ const fil = {
     'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Kapag na-set up mo na ang Social Recovery, nagtatago ang 21.gifts ng isang naka-encrypt na bahagi ng 12 salita mo na walang nabubuksan nang mag-isa. Huwag kailanman ibahagi ang iyong mga recovery word.',
   'home.faq4Q': 'Paano kung mawala ang device ko?',
   'home.faq4A':
-    'Maibabalik mo ang account mo gamit ang iyong 12 salita, o gamit ang Social Recovery kung na-set up mo ito. I-set up ang Social Recovery sa mga setting.',
+    'Maibabalik mo ang account mo gamit ang iyong 12 salita, o gamit ang Social Recovery kung na-set up mo ito. I-set up ang Social Recovery sa Seguridad ng account sa menu.',
   'home.faq5Q': 'Sino ang tatanggap ng Bitcoin?',
   'home.faq5A':
     'Ang sumulat ng post. Sumulat ng reaksyon sa ilalim nito at maglagay ng halaga. Sa wallet address niya mapupunta ang Bitcoin.',
@@ -6010,7 +6051,6 @@ const fil = {
     'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
   'introduce.cta': 'Sumulat ng pagpapakilala',
   'introduce.close': 'Isara',
-  'socialRecovery.heading': 'Social Recovery',
   'socialRecovery.statusOn': 'Naka-set up para sa wallet na ito.',
   'socialRecovery.statusOff':
     'Hindi pa naka-set up. Dalawang taong pinagkakatiwalaan mo ang makakatulong na mabawi mo ang account mo.',
@@ -6034,7 +6074,7 @@ const fil = {
     'Hindi binubuksan ng 12 salitang ito ang wallet ng account na ito. Itinigil ang setup.',
   'secure.shareHeading': 'Tao {n}',
   'secure.shareBody':
-    'Hilingin sa tao {n} na buksan ang 21.gifts, piliin ang “Mga bahaging itinatabi ko para sa iba” sa mga setting, i-tap ang “Magtabi ng bahagi”, at i-scan ang code na ito.',
+    'Hilingin sa tao {n} na buksan ang 21.gifts, buksan ang Seguridad ng account sa menu, piliin ang “Mga bahaging itinatabi ko para sa iba”, i-tap ang “Magtabi ng bahagi”, at i-scan ang code na ito.',
   'secure.shareDifferent': 'Dapat ibang tao ang tao 2 kaysa sa tao 1.',
   'secure.shareQr': 'Code para sa tao {n}',
   'secure.scanned': 'Na-scan na ito ng tao {n}',
@@ -6109,6 +6149,8 @@ const fil = {
   'recover.type': 'I-type ang 12 salita ko',
   'recover.scanHint': 'I-scan ang code {n} ng 2',
   'recover.scanFirstDone': 'Na-scan ang code 1 ng 2 (@{username}).',
+  'recover.scanNextPerson': 'Hilingin ngayon sa pangalawang tao na ipakita ang code nila.',
+  'recover.scanSecond': 'I-scan ang pangalawang code',
   'recover.cameraDenied':
     'Naka-off ang access sa camera. Payagan ang camera, o i-type ang 12 salita mo.',
   'recover.cameraUnavailable': 'Walang nakitang camera. I-type na lang ang 12 salita mo.',
@@ -6142,13 +6184,18 @@ const fil = {
   'recover.balanceError': 'Hindi pa mailipat ang balanse.',
   'recover.balanceLater': 'Ilipat ang balanse mamaya',
   'recover.doneTitle': 'Bumalik na ang account mo',
-  'recover.doneBody':
-    'May bagong passkey na ngayon ang account mo na may bagong 12 salita. Ang mga salitang isinulat mo dati ay nagbubukas na lang ng dati mong wallet.',
+  'recover.doneBody': 'Magagamit mo na ulit ang account mo sa teleponong ito.',
   'recover.doneShares':
-    'I-set up ulit ang Social Recovery para sa mga bagong salita. Ang mga lumang bahagi ay nagbubukas na lang ng dating wallet.',
+    'Isa pang hakbang: pumili ulit ng dalawang tao para matulungan ka nila kung sakaling mawalan ka ng access.',
+  'recover.doneDeleteOld':
+    'Puwede nang burahin ng dalawang tao mo ang luma mong bahagi. Makikita nila ito sa Seguridad ng account sa menu, sa “Mga bahaging itinatabi ko para sa iba”.',
+  'recover.later': 'Hindi muna',
+  'recover.laterTitle': 'Magpatuloy nang walang proteksyon?',
+  'recover.laterBody':
+    "Hindi na gumagana para sa account na ito ang mga code ng dalawang tao mo. Hangga't hindi ka ulit pumipili ng dalawang tao, hindi ka nila matutulungan kung mawalan ka ng access.",
+  'recover.laterContinue': 'Magpatuloy pa rin',
   'recover.balanceMissing':
-    'May bahagi ng balanse na naiwan sa dating wallet. Puwede mo itong ilipat mamaya sa mga setting.',
-  'recover.showWords': 'Ipakita ang bagong 12 salita',
+    'May bahagi ng balanse na naiwan sa dating wallet. Puwede mo itong ilipat mamaya sa Seguridad ng account sa menu.',
   'previousWallets.remove': 'Alisin ang dating wallet',
   'previousWallets.removeConfirm': 'Alisin ang dating wallet na ito sa account mo?',
   'previousWallets.removeYes': 'Alisin',

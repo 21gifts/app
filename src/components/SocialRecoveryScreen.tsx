@@ -43,7 +43,7 @@ const STEP_HEADING = 'text-center text-xl font-semibold tracking-tight text-app-
  * code as a QR without a logo, a button saying that this person has scanned
  * it, and **Start again with new codes** for an app that refused the code;
  * person 2's step adds that it must be someone else. Then **Saving the
- * 21.gifts backup…**, and the done step whose **Done** returns to `/settings`
+ * 21.gifts backup…**, and the done step whose **Done** returns to `/security`
  * without a second copy of it in the history ({@link returnToView}). An error
  * replaces the step with its alert and **Try again**, except a wallet that is
  * not the account's, where only the arrow leaves. The one top-left arrow
@@ -112,7 +112,7 @@ export function SocialRecoveryScreen(): ReactElement | null {
           type="button"
           size="lg"
           onClick={() => {
-            returnToView('/settings', router);
+            returnToView('/security', router);
           }}
         >
           {t('secure.done')}

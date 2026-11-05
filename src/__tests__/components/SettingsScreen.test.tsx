@@ -101,76 +101,31 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('region', { name: 'Notifications' }).id).toBe('notifications');
   });
 
-  it('links Recovery phrase to /wallet/phrase in the Wallet section when the account has a phrase', () => {
-    useAuthStore.setState({ account: { ...account, passkeyCredentialId: 'cred-seed' } });
-    renderWithLocale(<SettingsScreen />);
-    const section = screen.getByRole('region', { name: 'Wallet' });
-    const link = screen.getByRole('link', { name: 'Recovery phrase' });
-    expect(section.contains(link)).toBe(true);
-    expect(link.getAttribute('href')).toBe('/wallet/phrase');
-    expect(link.closest('#recovery')).not.toBeNull();
-    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
-    expect(screen.queryByText(ADD_HINT)).toBeNull();
-  });
-
-  it.each([
-    ['missing', undefined],
-    ['empty', ''],
-    ['null', null],
-  ])(
-    'offers the add hint and Add recovery phrase when passkeyCredentialId is %s',
-    (_label, credentialId) => {
-      useAuthStore.setState({
-        account: { ...account, passkeyCredentialId: credentialId } as Account,
-      });
-      renderWithLocale(<SettingsScreen />);
-      const section = screen.getByRole('region', { name: 'Wallet' });
-      const link = screen.getByRole('link', { name: 'Add recovery phrase' });
-      expect(section.contains(link)).toBe(true);
-      expect(link.getAttribute('href')).toBe('/wallet/phrase');
-      expect(screen.getByText(ADD_HINT)).toBeTruthy();
-      expect(screen.queryByRole('link', { name: 'Recovery phrase' })).toBeNull();
-    },
-  );
-
-  it('puts Social Recovery and the previous wallets between the recovery entry and the address', async () => {
+  it('leaves securing the account to /security: the Wallet section holds the address and the default amount', () => {
     useAuthStore.setState({
       account: { ...account, passkeyCredentialId: 'cred-seed', sparkWalletVerified: true },
     });
-    vi.mocked(fetchPreviousWallets).mockResolvedValue([
-      {
-        sparkPubkey: `02${'a'.repeat(64)}`,
-        sparkAddress: 'spark1old',
-        replacedAt: 1_767_268_800_000,
-        balanceSats: 0,
-      },
-    ]);
     renderWithLocale(<SettingsScreen />);
-    const previous = await screen.findByRole('link', { name: 'Transfer remaining balance' });
     const section = screen.getByRole('region', { name: 'Wallet' });
-    const rows = Array.from(section.children).map((node) => node.id);
-    expect(rows).toEqual([
+    expect(Array.from(section.children).map((node) => node.id)).toEqual([
       'wallet-heading',
-      'recovery',
-      'social-recovery',
-      'previous-wallets',
       'address',
       '',
     ]);
-    expect(section.querySelector('#previous-wallets')?.contains(previous)).toBe(true);
-    expect(
-      within(section.querySelector('#social-recovery') as HTMLElement).getByRole('link', {
-        name: 'Secure my account',
-      }),
-    ).toBeTruthy();
-    expect(fetchPreviousWallets).toHaveBeenCalledWith('sess');
-  });
-
-  it('shows the Social Recovery row without previous wallets for an account without a verified wallet', () => {
-    renderWithLocale(<SettingsScreen />);
-    expect(screen.getByText('Available once your wallet is connected.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Shares I keep for others' })).toBeTruthy();
-    expect(document.getElementById('previous-wallets')).toBeNull();
+    for (const name of [
+      'Recovery phrase',
+      'Add recovery phrase',
+      'Secure my account',
+      'Shares I keep for others',
+      'Transfer remaining balance',
+    ]) {
+      expect(screen.queryByRole('link', { name })).toBeNull();
+    }
+    expect(screen.queryByText(ADD_HINT)).toBeNull();
+    expect(screen.queryByText('Available once your wallet is connected.')).toBeNull();
+    for (const id of ['recovery', 'social-recovery', 'previous-wallets']) {
+      expect(document.getElementById(id)).toBeNull();
+    }
     expect(fetchPreviousWallets).not.toHaveBeenCalled();
   });
 
@@ -300,13 +255,13 @@ describe('SettingsScreen', () => {
     );
   });
 
-  it('scrolls to the Social Recovery row named by the address hash', () => {
+  it('scrolls to the address row named by the address hash', () => {
     const scrollIntoView = vi.fn();
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
-    window.history.replaceState(null, '', '/settings#social-recovery');
+    window.history.replaceState(null, '', '/settings#address');
     renderWithLocale(<SettingsScreen />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('social-recovery'));
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('address'));
   });
 
   it('scrolls nothing without a hash, for an unknown one, or for a malformed one', () => {

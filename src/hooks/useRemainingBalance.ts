@@ -85,7 +85,7 @@ export interface UseRemainingBalanceResult extends RemainingBalanceState {
   cancelRemove: () => void;
   /** Confirms the removal. */
   confirmRemove: () => void;
-  /** **Done** after a synced read of 0: returns to `/settings`. */
+  /** **Done** after a synced read of 0: returns to `/security`. */
   leave: () => void;
   /** The top-left arrow: from the camera or the words field back to the start; `false` lets it leave. */
   back: () => boolean;
@@ -127,7 +127,7 @@ const PREVIOUS_WALLET_VISUAL_PINS: ReadonlyMap<string, RemainingBalanceState> = 
  * `error`. Only with a synced read of 0 (`balance` at 0, or `done`)
  * can the wallet be removed from the account ({@link deletePreviousWallet},
  * behind a confirm; a wallet that an earlier press already removed counts as
- * removed), which closes it and returns to `/settings`. **Done** (after a
+ * removed), which closes it and returns to `/security`. **Done** (after a
  * synced read of 0) returns there too. The words stay in component memory until the wallet
  * opened or the page closes; leaving the page closes the wallet
  * ({@link closePreviousWallet}). Words entered here also move the shares the
@@ -248,7 +248,7 @@ export function useRemainingBalance(sparkPubkey: string): UseRemainingBalanceRes
   const removable = (state.step === 'balance' && state.balanceSats === 0) || state.step === 'done';
 
   const leave = useCallback((): void => {
-    returnToView('/settings', router);
+    returnToView('/security', router);
   }, [router]);
 
   const confirmRemove = (): void => {

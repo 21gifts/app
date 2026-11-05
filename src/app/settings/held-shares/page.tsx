@@ -8,7 +8,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/settings/held-shares` — the shares the signed-in member keeps for other
  * members' social recovery, opened from **Shares I keep for others** on
- * `/settings`.
+ * `/security`.
  *
  * Requires name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`, like `/settings`.

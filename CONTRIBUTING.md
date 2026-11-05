@@ -190,6 +190,8 @@ app/
 │   │   │   ├── page.tsx         # GET /wallet — home (balance, payments list while ready, Receive/Send), Send view with camera, Receive view
 │   │   │   ├── payment/page.tsx # GET /wallet/payment?id= — one payment's details
 │   │   │   └── phrase/page.tsx  # GET /wallet/phrase — add or show the recovery phrase
+│   │   ├── security/
+│   │   │   └── page.tsx         # GET /security — Account security: Protect my account, Help someone else, More options
 │   │   ├── settings/
 │   │   │   ├── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
 │   │   │   ├── social-recovery/page.tsx  # GET /settings/social-recovery — Secure my account (two share QRs, 21.gifts keeps the third)
@@ -257,13 +259,13 @@ app/
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
 │   │   ├── LoginBlockedNotice.tsx # Login card / profile claim / /recover body when the api refuses a session (logins closed, new version + Reload; no Reload on /recover)
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
-│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, Social Recovery, previous wallets, address, default amount; Display; Notifications; Account; About & legal)
-│   │   ├── SocialRecoveryRow.tsx # /settings Social Recovery status, Secure my account, Shares I keep for others
+│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: address, default amount; Display; Notifications; Account; About & legal)
+│   │   ├── SecurityScreen.tsx   # Signed-in /security (Protect my account, Help someone else, More options: recovery phrase, previous wallets)
 │   │   ├── PreviousWalletsRow.tsx # /settings previous wallets: replaced date, explorer balance (information only), Transfer remaining balance
 │   │   ├── SocialRecoveryScreen.tsx # /settings/social-recovery intro, person 1 and 2 share QRs, save, done
 │   │   ├── HeldSharesScreen.tsx # /settings/held-shares unlock, list, Keep a share camera, share QR, delete confirms
 │   │   ├── SocialRecoveryPromptOverlay.tsx # /welcome grant dialog: Social Recovery for your grant → Secure my account
-│   │   ├── RecoverScreen.tsx    # /recover views: start, scan/type, opening, blocked, refused, found, Transfer, done
+│   │   ├── RecoverScreen.tsx    # /recover views: start, scan/type, opening, blocked, refused, found, Transfer, done (Secure my account, Not now and its warning)
 │   │   ├── OldWordsInput.tsx    # Old 12 words from two scanned share codes or typed (/recover, previous wallet page)
 │   │   ├── RemainingBalanceScreen.tsx # /settings/previous-wallets/:key open, balance, Transfer, remove after a synced 0
 │   │   ├── BusyLine.tsx         # role=status line with a spinner (recovery, setup, remaining balance)
@@ -490,7 +492,7 @@ app/
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Background setup, inline notes, payments list, username freeze, address proxies
-│   ├── social-recovery.spec.ts  # Social Recovery settings, setup, kept shares, /recover, previous wallets, recovery proxies
+│   ├── social-recovery.spec.ts  # Social Recovery on /security, setup, kept shares, /recover, previous wallets, recovery proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next

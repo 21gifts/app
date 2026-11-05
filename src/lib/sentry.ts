@@ -871,6 +871,7 @@ const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
   'push',
   'recover',
   'rules',
+  'security',
   'settings',
   'setup',
   'shops',

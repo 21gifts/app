@@ -273,7 +273,7 @@ describe('WalletScreenView', () => {
       });
       renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
       expect(screen.getByRole('link', { name: 'Back up your wallet' }).getAttribute('href')).toBe(
-        '/settings#recovery',
+        '/security',
       );
     },
   );

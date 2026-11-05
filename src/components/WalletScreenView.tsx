@@ -49,7 +49,7 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * is in flight), then returns from Send or Receive to home. The 12 words and
  * recovery errors render only on `/wallet/phrase`. While the account has no
  * recovery phrase yet (no `passkeyCredentialId`), home adds a small **Back up
- * your wallet** link to the recovery entry of `/settings` (`#recovery`).
+ * your wallet** link to **Account security** (`/security`).
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -197,7 +197,7 @@ export function WalletScreenView({
           </div>
         )}
         {needsBackup ? (
-          <Link href="/settings#recovery" className="text-center text-sm text-app-muted underline">
+          <Link href="/security" className="text-center text-sm text-app-muted underline">
             {t('wallet.backupLink')}
           </Link>
         ) : null}

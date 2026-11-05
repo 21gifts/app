@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { LoginBlockedNotice } from '@/components/LoginBlockedNotice';
@@ -46,15 +47,17 @@ type VersionBlock = {
  * held start view adds **Open a new account** under **New to 21.gifts?**: it
  * is registration, and a new account replaces the held session as well.
  *
- * **Recover account via Social Recovery**, a link to `/recover`, only comes
- * with a login problem, like **Open a new account**: the account question and
- * the unknown-passkey view offer it unless `showRecover` is false (inside
- * {@link WalletLoginCard}, which stands in for a member session). The idle
- * start view and the held start view do not offer it. A passkey of a social
- * recovery that is not finished yet (it belongs to that recovery, not to a
- * held session) shows `login.recoveryPending` with that link under the button
- * wherever it answered: on the error view under **Try again**, and on the held
- * start view under **Log in**, in place of `login.error`.
+ * **Recover account via Social Recovery**, a link to `/recover`, is always
+ * on offer unless `showRecover` is false (inside {@link WalletLoginCard}, which
+ * stands in for a member session): a quiet text link under **Log in** on the
+ * idle and held start views, and a secondary control on the account question
+ * and the unknown-passkey view. A passkey of a social recovery that is not
+ * finished yet (it belongs to that recovery, not to a held session) shows
+ * `login.recoveryPending` with the secondary control under the button wherever
+ * it answered, also inside {@link WalletLoginCard}: on the error view under
+ * **Try again**, and on the held start view under **Log in**, in place of
+ * `login.error` and of the quiet link. A held session reaches this card through
+ * {@link WalletLoginCard} today, so its members do not see the quiet link.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
@@ -63,9 +66,9 @@ type VersionBlock = {
  * @param props - `heldProblem`: why the last wallet open of the held-back
  *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
  *   `login.error`), shown on the held start view until its next **Log in**.
- *   `showRecover`: whether the problem views (account question, unknown
- *   passkey) offer the Social Recovery entry (default `true`); an unfinished
- *   recovery always offers it.
+ *   `showRecover`: whether the start views and the problem views (account
+ *   question, unknown passkey) offer the Social Recovery entry (default
+ *   `true`); an unfinished recovery always offers it.
  * @returns The card.
  */
 export function LoginCard({
@@ -130,7 +133,9 @@ export function LoginCard({
     body = (
       <StartView
         held
-        showRecover={!wrongAccountHint && passkey.recoveryPending}
+        recover={
+          !wrongAccountHint && passkey.recoveryPending ? 'button' : showRecover ? 'link' : null
+        }
         greeting={lockedName}
         alert={
           wrongAccountHint
@@ -206,7 +211,13 @@ export function LoginCard({
       />
     );
   } else {
-    body = <StartView onLogin={passkey.login} versionBlock={versionBlock} />;
+    body = (
+      <StartView
+        onLogin={passkey.login}
+        versionBlock={versionBlock}
+        recover={showRecover ? 'link' : null}
+      />
+    );
   }
 
   return <Card surface={false}>{body}</Card>;
@@ -246,11 +257,11 @@ interface StartViewProps {
   alert?:
     'login.error' | 'login.wrongAccount' | 'login.recoveryPending' | 'wallet.prfUnsupported' | null;
   /**
-   * Whether **Recover account via Social Recovery** follows **Log in**: only a
-   * held view with an unfinished recovery passes true; the idle view never
-   * offers the entry.
+   * How **Recover account via Social Recovery** follows **Log in**: the quiet
+   * `link`, the `button` of a held view with an unfinished recovery, or `null`
+   * inside {@link WalletLoginCard}.
    */
-  showRecover?: boolean;
+  recover: 'link' | 'button' | null;
 }
 
 /**
@@ -268,11 +279,29 @@ function RecoverLink(): ReactElement {
 }
 
 /**
- * The initial logged-out state: **Log in**.
+ * **Recover account via Social Recovery** as a quiet text link, so it does not
+ * compete with **Log in** on a start view.
+ *
+ * @returns The link.
+ */
+function QuietRecoverLink(): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <Link
+      href="/recover"
+      className="inline-flex min-h-11 items-center justify-center text-center text-sm text-app-muted underline"
+    >
+      {t('recover.entry')}
+    </Link>
+  );
+}
+
+/**
+ * The initial logged-out state: **Log in**, then the entry to a social recovery
+ * as `recover` says.
  * For a held-back session, a greeting above the heading, an alert,
- * **Confirm to open your wallet** above **Log in**, **Open a new account**
- * under a short line, and **Recover account via Social Recovery** only while
- * that alert says a recovery is not finished yet (`showRecover`).
+ * **Confirm to open your wallet** above **Log in**, and **Open a new account**
+ * under a short line.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
@@ -284,7 +313,7 @@ function StartView({
   greeting = null,
   held = false,
   alert = null,
-  showRecover = false,
+  recover,
 }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
@@ -310,7 +339,8 @@ function StartView({
       >
         {t('login.submit')}
       </Button>
-      {showRecover ? <RecoverLink /> : null}
+      {recover === 'button' ? <RecoverLink /> : null}
+      {recover === 'link' ? <QuietRecoverLink /> : null}
       {onRegister === null ? null : (
         <>
           <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>

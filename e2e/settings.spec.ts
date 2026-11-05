@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Signed-in member; `passkeyCredentialId` decides which recovery control `/settings` shows.
+ * Signed-in member; `passkeyCredentialId` decides which recovery control `/security` shows.
  * `extra` overrides account fields (for example a missing username).
  */
 async function signIn(
@@ -51,28 +51,46 @@ test('Function: SettingsPage — /settings shows the Settings heading and a Wall
   await expect(page.getByRole('region', { name: 'Wallet' })).toBeVisible();
 });
 
-test('Function: SettingsScreen — Recovery phrase opens /wallet/phrase and Back returns to /settings', async ({
+test('Function: SecurityPage — /security shows the Account security heading and its three sections', async ({
   page,
 }) => {
   await signIn(page, 'cred-seed');
-  await page.goto('/settings');
-  const section = page.getByRole('region', { name: 'Wallet' });
+  await page.goto('/security');
+  await expect(page.getByRole('heading', { level: 1, name: 'Account security' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText([
+    'Protect my account',
+    'Help someone else',
+    'More options',
+  ]);
+});
+
+test('security sends a signed-out visitor to log in', async ({ page }) => {
+  await page.goto('/security');
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test('Function: SecurityScreen — Recovery phrase opens /wallet/phrase and Back returns to /security', async ({
+  page,
+}) => {
+  await signIn(page, 'cred-seed');
+  await page.goto('/security');
+  const section = page.getByRole('region', { name: 'More options' });
   await expect(section.getByRole('link', { name: 'Recovery phrase', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
   await section.getByRole('link', { name: 'Recovery phrase', exact: true }).click();
   await expect(page).toHaveURL(/\/wallet\/phrase$/);
   await expect(page.getByRole('button', { name: 'Show recovery phrase' })).toBeVisible();
   await page.getByRole('link', { name: 'Back', exact: true }).click();
-  await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  await expect(page).toHaveURL(/\/security$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Account security' })).toBeVisible();
 });
 
-test('settings offers the add hint and Add recovery phrase without a recovery passkey', async ({
+test('security offers the add hint and Add recovery phrase without a recovery passkey', async ({
   page,
 }) => {
   await signIn(page, null);
-  await page.goto('/settings');
-  const section = page.getByRole('region', { name: 'Wallet' });
+  await page.goto('/security');
+  const section = page.getByRole('region', { name: 'More options' });
   await expect(
     section.getByText(
       'This creates a recovery phrase on this device. Your existing login passkey stays.',
@@ -84,7 +102,18 @@ test('settings offers the add hint and Add recovery phrase without a recovery pa
   await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
 });
 
-test('the signed-in Menu lists Home and Balance first and opens /settings from Settings, right after Grants', async ({
+test('Function: SettingsScreen — no longer holds the recovery phrase, Social Recovery, or the previous wallets', async ({
+  page,
+}) => {
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings');
+  await expect(page.getByRole('region', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Recovery phrase', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Shares I keep for others' })).toHaveCount(0);
+  await expect(page.locator('#recovery, #social-recovery, #previous-wallets')).toHaveCount(0);
+});
+
+test('the signed-in Menu lists Home and Balance first, then Grants, Account security, and Settings', async ({
   page,
 }) => {
   await signIn(page, 'cred-seed');
@@ -96,7 +125,12 @@ test('the signed-in Menu lists Home and Balance first and opens /settings from S
   expect(names.slice(0, 2)).toEqual(['Home', 'Balance']);
   const grants = names.indexOf('Grants');
   expect(grants).toBeGreaterThanOrEqual(0);
-  expect(names[grants + 1]).toBe('Settings');
+  expect(names[grants + 1]).toBe('Account security');
+  expect(names[grants + 2]).toBe('Settings');
+  await page.getByRole('link', { name: 'Account security', exact: true }).click();
+  await expect(page).toHaveURL(/\/security$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Account security' })).toBeVisible();
+  await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
@@ -263,14 +297,14 @@ test('the notifications page links to the Settings notifications section', async
   await expect(page.getByRole('region', { name: 'Notifications' })).toBeInViewport();
 });
 
-test('the wallet links Back up your wallet to the Settings recovery entry without a phrase', async ({
+test('the wallet links Back up your wallet to Account security without a phrase', async ({
   page,
 }) => {
   await signIn(page, null);
   await page.goto('/wallet');
   await page.getByRole('link', { name: 'Back up your wallet' }).click();
-  await expect(page).toHaveURL(/\/settings#recovery$/);
-  await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeInViewport();
+  await expect(page).toHaveURL(/\/security$/);
+  await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
 });
 
 test('the wallet shows no Back up your wallet link once the account has a phrase', async ({

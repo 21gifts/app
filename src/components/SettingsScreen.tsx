@@ -9,12 +9,10 @@ import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitc
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
-import { PreviousWalletsRow } from '@/components/PreviousWalletsRow';
 import { PushToggle } from '@/components/PushToggle';
-import { SocialRecoveryRow } from '@/components/SocialRecoveryRow';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
-import { ButtonLink, Card, IconButton, SegmentedControl } from '@/components/ui';
+import { Card, IconButton, SegmentedControl } from '@/components/ui';
 import { useCopied } from '@/hooks/useCopied';
 import { saveAmountUnit } from '@/lib/amount-unit';
 import type { AmountUnit } from '@/lib/api-types';
@@ -151,20 +149,14 @@ function DefaultAmountRow(): ReactElement {
 
 /**
  * Signed-in settings page: the member's preferences and account actions, in
- * five sections. **Wallet**: the recovery phrase on `/wallet/phrase`
- * (**Recovery phrase** when the account has a `passkeyCredentialId`,
- * otherwise the add hint and **Add recovery phrase**), the Social Recovery
- * row ({@link SocialRecoveryRow}: its status, **Secure my account**, and
- * **Shares I keep for others**), the previous wallets after a social recovery
- * ({@link PreviousWalletsRow}, only when there are some or their read failed),
+ * five sections. **Wallet**:
  * the 21.gifts address with Copy (or the username form while no username is
  * set), and the default amount unit. **Display**: language, theme, fiat
  * currency, and number format. **Notifications**: {@link PushToggle}.
  * **Account**: {@link LogoutButton}. **About & legal**: the handbook, legal,
  * terms, rules, and contact links and the app version. Each section and the
- * recovery, Social Recovery, and address rows carry an id; a `#id` in the
- * address scrolls that part into view once it renders. The previous wallets
- * row loads later and scrolls itself into view for `#previous-wallets`.
+ * address row carry an id; a `#id` in the address scrolls that part into view
+ * once it renders. Securing the account lives on `/security`.
  * Renders nothing without a session or before the account has loaded.
  *
  * @returns The settings card, or `null` without a session or account.
@@ -190,30 +182,12 @@ export function SettingsScreen(): ReactElement | null {
   if (!ready) {
     return null;
   }
-  const credentialId = account.passkeyCredentialId;
-  const hasPhrase = typeof credentialId === 'string' && credentialId !== '';
   return (
     <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('settings.heading')}
       </h1>
       <SettingsSection id="wallet" heading={t('wallet.title')}>
-        <div id="recovery" className="flex w-full scroll-mt-4 flex-col items-center gap-3">
-          {hasPhrase ? (
-            <ButtonLink href="/wallet/phrase" variant="secondary" size="lg">
-              {t('settings.recoveryPhrase')}
-            </ButtonLink>
-          ) : (
-            <>
-              <p className="text-center text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
-              <ButtonLink href="/wallet/phrase" size="lg">
-                {t('wallet.addPhrase')}
-              </ButtonLink>
-            </>
-          )}
-        </div>
-        <SocialRecoveryRow />
-        <PreviousWalletsRow />
         <AddressRow />
         <DefaultAmountRow />
       </SettingsSection>

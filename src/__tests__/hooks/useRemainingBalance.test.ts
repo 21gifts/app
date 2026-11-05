@@ -115,7 +115,7 @@ describe('useRemainingBalance', () => {
     act(() => {
       result.current.leave();
     });
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a list that cannot be read offers Try again', async () => {
@@ -354,7 +354,7 @@ describe('useRemainingBalance', () => {
       removed();
     });
     expect(closePreviousWallet).toHaveBeenCalled();
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a removal that fails keeps the confirm with its error', async () => {
@@ -398,7 +398,7 @@ describe('useRemainingBalance', () => {
     });
     expect(deletePreviousWallet).toHaveBeenCalledTimes(2);
     expect(closePreviousWallet).toHaveBeenCalled();
-    expect(returnToView).toHaveBeenCalledWith('/settings', router);
+    expect(returnToView).toHaveBeenCalledWith('/security', router);
   });
 
   it('a removal that ends after the page closed changes nothing', async () => {

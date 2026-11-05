@@ -13,6 +13,7 @@ import {
   Settings,
   Share2,
   Shield,
+  ShieldCheck,
   Store,
   Banknote,
   User,
@@ -62,7 +63,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * stored session is still being checked, so the header holds its place), and a
  * divider, then icon+label rows (Home first, which clears this tab's view
  * stack on a plain click so the next screen's back arrow returns to the forum
- * home, then Balance (`/wallet`), Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Settings (`/settings`, lucide `Settings`), living-room rules,
+ * home, then Balance (`/wallet`), Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Account security (`/security`, lucide `ShieldCheck`), Settings (`/settings`, lucide `Settings`), living-room rules,
  * Habit-Tracker (`/habit-tracker`), Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
@@ -551,6 +552,16 @@ function SignedInMenu(): ReactElement {
                 >
                   <HandCoins aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                   {t('nav.grants')}
+                </Link>
+                <Link
+                  href="/security"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.security')}
                 </Link>
                 <Link
                   href="/settings"
