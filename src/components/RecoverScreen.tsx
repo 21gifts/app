@@ -58,14 +58,24 @@ const ALERT = 'text-center text-sm text-app-danger';
  * in the old wallet, that the two people may delete the old share (moving a
  * remaining balance can still need it), **Secure my account**, and
  * **Not now**, which first warns that the old codes no longer help and then
- * offers **Secure my account** again or **Continue anyway** to `/welcome`.
+ * offers **Secure my account** again or **Continue anyway** to `/welcome`. The
+ * warning is an in-page step, so {@link RecoverScreen} holds it for the
+ * top-left arrow.
  *
  * @param props - `balanceMissing`: some balance stayed in the previous wallet.
+ *   `warning`: the warning shows. `onWarn`: called by **Not now**.
  * @returns The step.
  */
-function DoneStep({ balanceMissing }: { balanceMissing: boolean }): ReactElement {
+function DoneStep({
+  balanceMissing,
+  warning,
+  onWarn,
+}: {
+  balanceMissing: boolean;
+  warning: boolean;
+  onWarn: () => void;
+}): ReactElement {
   const { t } = useTranslations();
-  const [warning, setWarning] = useState(false);
   if (warning) {
     return (
       <>
@@ -89,13 +99,7 @@ function DoneStep({ balanceMissing }: { balanceMissing: boolean }): ReactElement
         <p className={BODY}>{t('recover.doneDeleteOld')}</p>
       )}
       <ButtonLink href="/settings/social-recovery">{t('socialRecovery.secure')}</ButtonLink>
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={() => {
-          setWarning(true);
-        }}
-      >
+      <Button type="button" variant="secondary" onClick={onWarn}>
         {t('recover.later')}
       </Button>
     </>
@@ -128,7 +132,7 @@ function DoneStep({ balanceMissing }: { balanceMissing: boolean }): ReactElement
  * - **Done:** see {@link DoneStep}.
  *
  * The one top-left arrow steps from the camera or the words field back to the
- * start; otherwise it returns to the previous in-app view, and the recovery
+ * start, and from the warning of the done step back to that step; otherwise it returns to the previous in-app view, and the recovery
  * stays in memory, so coming back resumes it.
  *
  * @returns The recovery screen.
@@ -138,9 +142,19 @@ export function RecoverScreen(): ReactElement {
   const router = useRouter();
   const recovery = useRecoveryFlow();
   const { view } = recovery;
+  const [warning, setWarning] = useState(false);
   const chrome = (
     <AppShellTopLeft>
-      <ProfileChromeLeft wordmark={<HomeWordmark />} onBackClick={recovery.back} />
+      <ProfileChromeLeft
+        wordmark={<HomeWordmark />}
+        onBackClick={() => {
+          if (warning) {
+            setWarning(false);
+            return true;
+          }
+          return recovery.back();
+        }}
+      />
     </AppShellTopLeft>
   );
   const title = (
@@ -319,7 +333,15 @@ export function RecoverScreen(): ReactElement {
       );
       break;
     case 'done':
-      body = <DoneStep balanceMissing={view.balanceMissing} />;
+      body = (
+        <DoneStep
+          balanceMissing={view.balanceMissing}
+          warning={warning}
+          onWarn={() => {
+            setWarning(true);
+          }}
+        />
+      );
       break;
   }
 

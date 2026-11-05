@@ -2208,6 +2208,21 @@ test.describe('Recover account via Social Recovery', () => {
     );
   });
 
+  test('the arrow steps from the Not now warning back to the done step, on the same page', async ({
+    page,
+  }) => {
+    await openRecover(page, 'recover-complete');
+    await page.getByRole('button', { name: 'Not now' }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Continue without protection?' }),
+    ).toBeVisible();
+    await page.getByRole('link', { name: /^Back/ }).click();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Your account is back' }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/recover/);
+  });
+
   test('Not now warns first, and Secure my account and Continue anyway are its exits', async ({
     page,
   }) => {

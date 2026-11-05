@@ -330,4 +330,20 @@ describe('RecoverScreen', () => {
       );
     },
   );
+
+  it('the arrow steps from the warning back to the done step, and only then leaves', () => {
+    show({ step: 'done', balanceMissing: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    const flow = vi.mocked(useRecoveryFlow).mock.results.at(-1)?.value as UseRecoveryFlowResult;
+    vi.mocked(flow.back).mockReturnValue(false);
+    backResults.list.length = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(backResults.list).toEqual([true]);
+    expect(flow.back).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 2, name: 'Your account is back' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Continue without protection?' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(flow.back).toHaveBeenCalledTimes(1);
+    expect(backResults.list).toEqual([true, false]);
+  });
 });
