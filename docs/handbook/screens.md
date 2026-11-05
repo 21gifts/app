@@ -2401,7 +2401,7 @@ A shop payment that is still waiting but has no window time to show: its window 
 
 ### Variant: shop-typed-fiat
 
-**Continue** opened a shop payment for an amount the payer typed in fiat (for example 12.50 USD). The shop sticker, time left, the sat amount, and under it the fiat amount exactly as the payer typed it (**$12.50**: every typed digit, padded to two decimals, never rounded and never derived from the sats or the spot), **Waiting for payment…**, the Bitcoin invoice QR on a desktop, and **Pay**. Under **Pay**, the stablecoin lines, the quote's time left, and the scan hint. No amount field. Only this typed figure is the fiat on this frame. An amount typed in bitcoin shows no fiat line. A till's payment shows the figure stored on the charge, or the current spot when none was stored.
+**Continue** opened a shop payment for an amount the payer typed in fiat (for example 12.50 USD). The shop sticker, time left, the sat amount, and under it the fiat amount exactly as the payer typed it (**$12.50**: every typed digit, padded to two decimals, never rounded and never derived from the sats or the spot), **Waiting for payment…**, the Bitcoin invoice QR on a desktop, and **Pay**. Under **Pay**, the stablecoin lines, the quote's time left, and the scan hint. No amount field. Only this typed figure is the fiat on this frame. An amount typed in bitcoin on a shop payment shows no fiat line. The minted fallback still shows the current spot beside the bitcoin. A till's payment shows the figure stored on the charge, or the current spot when none was stored.
 
 ![21.gifts pay link shop typed fiat](images/pl-shop-typed-fiat.png)
 
