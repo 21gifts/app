@@ -769,11 +769,11 @@ export function Wordmark(props: {
 
 **Variants (app tone).**
 
-| Variant     | Default                                                   | Hover              | Disabled   | Use                                                               |
-| ----------- | --------------------------------------------------------- | ------------------ | ---------- | ----------------------------------------------------------------- |
+| Variant     | Default                                                   | Hover              | Disabled   | Use                                                                         |
+| ----------- | --------------------------------------------------------- | ------------------ | ---------- | --------------------------------------------------------------------------- |
 | `primary`   | `bg-app-btn text-app-btn-fg`                              | `bg-app-btn-hover` | opacity 50 | Log in, Continue, Try again, I agree, Activate, pay-sheet **Send {amount}** |
-| `secondary` | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover`     | opacity 50 | Retry on forum, inbox, notifications                              |
-| `accent`    | `bg-app-accent text-app-accent-fg`                        | `opacity-90`       | opacity 50 | App donate **Open the forum**; gift-intent fills                  |
+| `secondary` | `border border-app-border-strong bg-app-card text-app-fg` | `bg-app-hover`     | opacity 50 | Retry on forum, inbox, notifications                                        |
+| `accent`    | `bg-app-accent text-app-accent-fg`                        | `opacity-90`       | opacity 50 | App donate **Open the forum**; gift-intent fills                            |
 
 **Dark tone.** Secondary `border border-paper/20 text-paper hover:bg-paper/10`; primary `bg-paper text-ink`; accent `bg-accent text-ink`. Used by `PwaInstall` header/hero (and iOS sheet Close) on marketing ink.
 
