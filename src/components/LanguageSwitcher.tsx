@@ -14,11 +14,7 @@ import { setAccountLocale } from '@/lib/api';
 import { LOCALES, type Locale } from '@/lib/locale';
 import { writeLocaleCookie } from '@/lib/locale-cookie';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
-import {
-  localizedPublicPath,
-  publicPathFromUrl,
-  type LocalizedPublicPath,
-} from '@/lib/public-locale-path';
+import { localizedPublicPath, publicPathFromUrl } from '@/lib/public-locale-path';
 import { loadSession } from '@/lib/session-storage';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { isWalletOpen } from '@/lib/wallet/wallet-open';
@@ -74,40 +70,6 @@ function localeAt(index: number): Locale {
 }
 
 /**
- * True for a loopback host.
- *
- * A language URL on that host was permanently redirected to the public site,
- * and the browser keeps the redirect.
- *
- * @param hostname - `location.hostname`.
- * @returns Whether the open page must reload in place.
- */
-function isLoopbackHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '::1' ||
-    hostname === '0.0.0.0'
-  );
-}
-
-/**
- * Reloads the open local page so the locale cookie applies.
- *
- * @param publicPath - Public page that stays open.
- * @returns void
- */
-function reloadLoopbackPreview(publicPath: LocalizedPublicPath): void {
-  const hash = publicPath === '/' ? globalThis.location.hash : '';
-  const stay = `${publicPath}${hash}`;
-  if (`${globalThis.location.pathname}${globalThis.location.hash}` === stay) {
-    globalThis.location.reload();
-    return;
-  }
-  globalThis.location.replace(stay);
-}
-
-/**
  * Writes the locale cookie, then loads a public language URL or refreshes app pages.
  * Also saves it on the account for a stored session, unless that session is
  * held back until its wallet is open or a login is still opening its wallet.
@@ -156,11 +118,7 @@ async function persistLocale(
   writeLocaleCookie(next);
   if (target !== null) {
     document.documentElement.lang = next;
-    if (isLoopbackHost(globalThis.location.hostname)) {
-      reloadLoopbackPreview(publicPath as LocalizedPublicPath);
-    } else {
-      navigate(`${target}${publicPath === '/' ? globalThis.location.hash : ''}`);
-    }
+    navigate(`${target}${publicPath === '/' ? globalThis.location.hash : ''}`);
   } else {
     refresh();
   }

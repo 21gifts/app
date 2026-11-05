@@ -135,19 +135,6 @@ describe('LocaleRouteSync', () => {
     }
   });
 
-  it('marks the path after the page language has been applied', () => {
-    window.history.replaceState({}, '', '/en');
-    const jar = installCookieJar(`${LOCALE_COOKIE}=en`);
-    try {
-      renderWithLocale(<LocaleRouteSync />);
-      expect(document.documentElement.dataset['localeApplied']).toBe('/en');
-      expect(localeWrites(jar.set)).toEqual([]);
-    } finally {
-      delete document.documentElement.dataset['localeApplied'];
-      jar.restore();
-    }
-  });
-
   it('writes a differing URL language without refreshing when the layout already matches', () => {
     window.history.replaceState({}, '', '/de');
     const jar = installCookieJar(`${LOCALE_COOKIE}=es`);

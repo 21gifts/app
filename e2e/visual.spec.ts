@@ -1288,7 +1288,7 @@ async function waitForShopPhoto(page: Page): Promise<void> {
 }
 
 /**
- * Whole pixels above the open pin. The eased pan stops a fraction apart
+ * Whole pixels for the open card. The eased pan stops a fraction apart
  * between two captures, and rounding that fraction moves the card by a pixel.
  */
 async function snapShopPopup(page: Page): Promise<void> {
@@ -1298,25 +1298,10 @@ async function snapShopPopup(page: Page): Promise<void> {
     if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return;
     popup.style.pointerEvents = 'none';
     popup.style.translate = '0px 0px';
-    const pin = map.querySelector('.shop-place-marker:not(.is-clustered)');
     const popupBox = popup.getBoundingClientRect();
-    if (!(pin instanceof HTMLElement)) {
-      const dx = Math.floor(popupBox.left) - popupBox.left;
-      const dy = Math.floor(popupBox.top) - popupBox.top;
-      popup.style.translate = `${dx}px ${dy}px`;
-      return;
-    }
-    const pinBox = pin.getBoundingClientRect();
-    const mapBox = map.getBoundingClientRect();
-    const width = Math.round(popupBox.width);
-    const height = Math.round(popupBox.height);
-    const minLeft = Math.round(mapBox.left) + 8;
-    const maxLeft = Math.round(mapBox.right) - width - 8;
-    const minTop = Math.round(mapBox.top) + 8;
-    const maxTop = Math.round(mapBox.bottom) - height - 8;
-    const left = Math.min(maxLeft, Math.max(minLeft, Math.round(pinBox.left)));
-    const top = Math.min(maxTop, Math.max(minTop, Math.round(pinBox.top) - height - 8));
-    popup.style.translate = `${left - popupBox.left}px ${top - popupBox.top}px`;
+    const dx = Math.floor(popupBox.left) - popupBox.left;
+    const dy = Math.floor(popupBox.top) - popupBox.top;
+    popup.style.translate = `${dx}px ${dy}px`;
   });
 }
 

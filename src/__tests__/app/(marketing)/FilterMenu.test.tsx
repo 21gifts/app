@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FilterMenu, type MenuOption } from '@/app/(marketing)/FilterMenu';
 
 const optionClass =
-  'flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
+  'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
 
 const options: readonly MenuOption[] = [
   { value: '', label: 'All', swatch: null },
@@ -43,8 +43,19 @@ describe('FilterMenu', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.hasAttribute('aria-activedescendant')).toBe(false);
     expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
-    expect(button.className.split(/\s+/)).toContain('gap-6');
-    expect(within(button).getByText('Blockchain').className).toContain('text-ink/60');
+    for (const token of ['gap-2', 'pl-3.5', 'pr-3', 'sm:gap-6', 'sm:pl-4', 'sm:pr-4']) {
+      expect(button.className.split(/\s+/)).toContain(token);
+    }
+    const label = within(button).getByText('Blockchain');
+    for (const token of ['w-[4.6rem]', 'shrink-0', 'text-left', 'sm:w-auto']) {
+      expect(label.className.split(/\s+/)).toContain(token);
+    }
+    expect(label.className).toContain('text-ink/60');
+    const value = button.querySelector('[data-shop-value]');
+    expect(value?.className.split(/\s+/)).toContain('truncate');
+    for (const token of ['gap-1.5', 'sm:gap-2']) {
+      expect(value?.parentElement?.className.split(/\s+/)).toContain(token);
+    }
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 

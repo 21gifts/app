@@ -154,7 +154,7 @@ type MarkerHandle = {
 
 type PopupHandle = {
   setDOMContent: (content: HTMLElement) => PopupHandle;
-  on: (event: 'open', handler: () => void) => void;
+  on: (event: 'open' | 'close', handler: () => void) => void;
   remove: () => void;
 };
 
@@ -257,11 +257,7 @@ const HELP_ROWS: readonly (readonly [keyof HomeShopsCopy, keyof HomeShopsCopy, s
 ];
 
 function placesEndpoint(hostname: string): string {
-  // The local preview is opened on 127.0.0.1. That host reads the production
-  // map so shop photos are present; every other non-production host stays on dev.
-  if (hostname === GIFTS || hostname === `www.${GIFTS}` || hostname === '127.0.0.1') {
-    return PROD_PLACES;
-  }
+  if (hostname === GIFTS || hostname === `www.${GIFTS}`) return PROD_PLACES;
   return DEV_PLACES;
 }
 
@@ -962,7 +958,7 @@ function popupContent(
   onClose: () => void,
 ): HTMLElement {
   const content = document.createElement('div');
-  content.className = 'shop-popup-card border border-app-border shadow-lg';
+  content.className = 'shop-popup-card';
   const host = document.createElement('div');
   content.appendChild(host);
   const root = createRoot(host);
@@ -1149,7 +1145,32 @@ function fitPopup(map: MapHandle, duration = 250): void {
   else if (popupBox.bottom > mapBox.bottom - pad) dy = popupBox.bottom - (mapBox.bottom - pad);
   if (popupBox.left < mapBox.left + pad) dx = popupBox.left - (mapBox.left + pad);
   else if (popupBox.right > mapBox.right - pad) dx = popupBox.right - (mapBox.right - pad);
-  if (dx !== 0 || dy !== 0) map.panBy([dx, dy], { duration });
+  const obstacles = [
+    container.parentElement?.querySelector('.shop-legend'),
+    container.querySelector('.maplibregl-ctrl-attrib'),
+    container.querySelector('.maplibregl-ctrl-top-right'),
+  ].filter((node): node is Element => node instanceof HTMLElement);
+  for (const obstacle of obstacles) {
+    const box = obstacle.getBoundingClientRect();
+    const left = popupBox.left - dx;
+    const right = popupBox.right - dx;
+    const top = popupBox.top - dy;
+    const bottom = popupBox.bottom - dy;
+    if (left >= box.right || right <= box.left || top >= box.bottom || bottom <= box.top) continue;
+    const up = bottom - box.top;
+    if (top - up >= Math.min(mapBox.top + pad, top)) {
+      dy += up;
+    } else if (right + (box.right - left) <= Math.max(mapBox.right - pad, right)) {
+      dx -= box.right - left;
+    } else if (left - (right - box.left) >= Math.min(mapBox.left + pad, left)) {
+      dx += right - box.left;
+    }
+  }
+  if (dx !== 0 || dy !== 0) {
+    map.panBy([dx, dy], {
+      duration: typeof map.loaded === 'function' && map.loaded() === false ? 0 : duration,
+    });
+  }
 }
 
 function mapRect(map: MapHandle): DOMRect | null {
@@ -1377,6 +1398,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
+  const popupFrame = useRef(0);
   const sizeObserverRef = useRef<ResizeObserver | null>(null);
   const awaitingRef = useRef(false);
   const rowsRef = useRef<ShopRow[]>([]);
@@ -1513,6 +1535,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const paintMarkers = useCallback((): void => {
     const session = sessionRef.current;
     if (session === null) return;
+    cancelAnimationFrame(popupFrame.current);
+    popupFrame.current = 0;
     unmountPopupCloses();
     clearClusters();
     for (const marker of markersRef.current) marker.remove();
@@ -1550,15 +1574,16 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             const close = content.querySelector('.shop-popup-close');
             if (close instanceof HTMLButtonElement) close.focus();
           }
-          fitPopup(session.map);
-          // The open event can run before the popup box has its final rect.
-          // Measure again after layout and jump, so a capture does not record
-          // a 250ms pan that is still in flight.
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              fitPopup(session.map, 0);
-            });
+          if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+          popupFrame.current = requestAnimationFrame(() => {
+            popupFrame.current = 0;
+            fitPopup(session.map);
           });
+        });
+        popup.on('close', () => {
+          delete element.dataset['keyboardOpen'];
+          if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+          popupFrame.current = 0;
         });
         const marker = new session.lib.Marker({ element });
         marker.setLngLat(row.position);
@@ -1821,6 +1846,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       styleController.abort();
       if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
       clusterFrame.current = 0;
+      if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+      popupFrame.current = 0;
       sizeObserverRef.current?.disconnect();
       sizeObserverRef.current = null;
       const session = sessionRef.current;

@@ -1,4 +1,3 @@
-import http from 'node:http';
 import { expect, test } from '@playwright/test';
 
 test('unknown path shows the 404 screen', async ({ page }) => {
@@ -35,40 +34,14 @@ test('homepage sends HSTS', async ({ request }) => {
   );
 });
 
-function probe(
-  port: string,
-  headers: Record<string, string>,
-): Promise<{ status: number; location: string | undefined }> {
-  return new Promise((resolve, reject) => {
-    const req = http.request(
-      { hostname: '127.0.0.1', port, path: '/', method: 'GET', headers },
-      (res) => {
-        res.resume();
-        const location = res.headers.location;
-        resolve({
-          status: res.statusCode ?? 0,
-          location: Array.isArray(location) ? location[0] : location,
-        });
-      },
-    );
-    req.on('error', reject);
-    req.end();
+test('http x-forwarded-proto upgrades to https://21.gifts/', async ({ request }) => {
+  const res = await request.get('/', {
+    headers: { 'x-forwarded-proto': 'http' },
+    maxRedirects: 0,
   });
-}
 
-test('http x-forwarded-proto upgrades to https://21.gifts/', async () => {
-  const base = new URL(test.info().project.use.baseURL ?? 'http://127.0.0.1:3000');
-  const port = base.port || '80';
-  const upgraded = await probe(port, { host: '21.gifts', 'x-forwarded-proto': 'http' });
-  expect(upgraded.status).toBe(308);
-  expect(upgraded.location).toBe('https://21.gifts/');
-
-  const loopback = await probe(port, { host: '127.0.0.1', 'x-forwarded-proto': 'http' });
-  expect(loopback.status).toBe(200);
-  const localName = await probe(port, { host: 'localhost', 'x-forwarded-proto': 'http' });
-  expect(localName.status).toBe(200);
-  const v6 = await probe(port, { host: `[::1]:${port}`, 'x-forwarded-proto': 'http' });
-  expect(v6.status).toBe(200);
+  expect(res.status()).toBe(308);
+  expect(res.headers()['location']).toBe('https://21.gifts/');
 });
 
 test('favicon.ico is served as an image', async ({ request }) => {

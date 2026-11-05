@@ -539,6 +539,7 @@ button.shop-cluster.is-none {
   box-shadow: none;
 }
 .shop-popup-card {
+  @apply border border-ink/10 shadow-lg;
   position: relative;
   width: 288px;
   max-width: 100%;

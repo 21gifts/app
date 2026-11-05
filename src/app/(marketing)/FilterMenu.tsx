@@ -34,7 +34,7 @@ const COLUMN_CLASS = [
 ] as const;
 
 const ROW_CLASS =
-  'flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
+  'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
 
 const VIEWPORT_INSET = 8;
 const COLUMN_MIN_PX = 96;
@@ -54,7 +54,7 @@ type MenuPin = { left: number; top: number; bottom: number; width: number; scrol
 function columnCount(total: number, viewportWidth: number, viewportHeight: number): number {
   if (total <= 8) return 1;
   const rest = total - 1;
-  const row = 40;
+  const row = 44;
   const chrome = 56;
   const availableHeight = Math.max(row, viewportHeight - VIEWPORT_INSET * 2 - chrome);
   const rowsThatFit = Math.max(1, Math.floor(availableHeight / row));
@@ -422,7 +422,7 @@ export function FilterMenu({
         type="button"
         role="combobox"
         data-value={value}
-        className={`flex h-10 w-full min-w-0 items-center gap-6 rounded-full border py-0 pr-4 pl-4 ${triggerTone}`}
+        className={`flex h-11 w-full min-w-0 items-center gap-2 rounded-full border py-0 pr-3 pl-3.5 sm:gap-6 sm:pr-4 sm:pl-4 ${triggerTone}`}
         aria-controls={listboxId}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -431,10 +431,13 @@ export function FilterMenu({
         onClick={toggle}
         onKeyDown={onTriggerKeyDown}
       >
-        <span id={labelId} className={`shrink-0 text-sm ${labelTone}`}>
+        <span
+          id={labelId}
+          className={`w-[4.6rem] shrink-0 text-left text-sm sm:w-auto ${labelTone}`}
+        >
           {label}
         </span>
-        <span className="ml-auto flex min-w-0 items-center gap-2">
+        <span className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
           <span data-shop-value="" className="truncate text-sm font-semibold">
             {chosen}
           </span>

@@ -39,45 +39,39 @@ function syncRouteLocale(
   refresh: () => void,
   refreshedKey: RefreshKey,
 ): void {
-  try {
-    const localized = parseLocalizedPublicPath(path);
-    const accountLocale = useAuthStore.getState().account?.locale;
-    const saved = typeof accountLocale === 'string' ? accountLocale : null;
+  const localized = parseLocalizedPublicPath(path);
+  const accountLocale = useAuthStore.getState().account?.locale;
+  const saved = typeof accountLocale === 'string' ? accountLocale : null;
 
-    if (localized === null && saved !== null && readLocaleCookie() !== saved) {
-      writeLocaleCookie(saved);
-    }
-
-    if (localized !== null && saved === null && readLocaleCookie() !== localized.locale) {
-      writeLocaleCookie(localized.locale);
-    }
-
-    let expected: Locale | null;
-    if (localized !== null) {
-      expected = localized.locale;
-    } else if (saved !== null) {
-      expected = saved;
-    } else {
-      expected = readLocaleCookie();
-    }
-    if (expected === null) {
-      return;
-    }
-    if (expected === rendered) {
-      refreshedKey.current = null;
-      return;
-    }
-    const key = `${path}\0${expected}`;
-    if (refreshedKey.current === key) {
-      return;
-    }
-    refreshedKey.current = key;
-    refresh();
-  } finally {
-    // The page has applied its language. A stored language for the next page
-    // waits for this mark, so this page does not replace it.
-    document.documentElement.dataset['localeApplied'] = path;
+  if (localized === null && saved !== null && readLocaleCookie() !== saved) {
+    writeLocaleCookie(saved);
   }
+
+  if (localized !== null && saved === null && readLocaleCookie() !== localized.locale) {
+    writeLocaleCookie(localized.locale);
+  }
+
+  let expected: Locale | null;
+  if (localized !== null) {
+    expected = localized.locale;
+  } else if (saved !== null) {
+    expected = saved;
+  } else {
+    expected = readLocaleCookie();
+  }
+  if (expected === null) {
+    return;
+  }
+  if (expected === rendered) {
+    refreshedKey.current = null;
+    return;
+  }
+  const key = `${path}\0${expected}`;
+  if (refreshedKey.current === key) {
+    return;
+  }
+  refreshedKey.current = key;
+  refresh();
 }
 
 /**

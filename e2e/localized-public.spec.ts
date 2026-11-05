@@ -64,7 +64,7 @@ test('Function: publicPathFromUrl — switching language keeps the current page'
   await page.goto('/de/about');
   await page.getByLabel('Sprache').click();
   await page.getByRole('option', { name: 'Español' }).click();
-  await expect(page).toHaveURL(/:\/\/[^/]+\/about$/);
+  await expect(page).toHaveURL(/\/es\/about$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.getByRole('heading', { name: 'Lo que representa 21.gifts' })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toContainText('Mateo 10:8');
@@ -112,7 +112,7 @@ test('language switching updates the preview, navigation, and footer in every la
       await expect(option).toBeVisible({ timeout: 1000 });
     }).toPass({ timeout: 10000 });
     await option.click();
-    await expect(page).toHaveURL(/:\/\/[^/]+\/$/);
+    await expect(page).toHaveURL(new RegExp(`/${choice.locale}$`));
     await expect(page.locator('html')).toHaveAttribute('lang', choice.locale);
     await expect(page.getByRole('heading', { name: choice.preview })).toBeVisible();
     await expect(page.getByRole('navigation').first()).toContainText(choice.navigation);
@@ -281,9 +281,6 @@ test('Function: readLocaleCookie — a stored language follows client navigation
       documents += 1;
     }
   });
-  // The router is ready before this page applies its language. Wait for that
-  // application, then store a language for the next page.
-  await expect(page.locator('html')).toHaveAttribute('data-locale-applied', '/en');
   await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
   await page.getByRole('link', { name: 'Ask for help' }).first().click();
   await expect(page).toHaveURL(/\/login$/);

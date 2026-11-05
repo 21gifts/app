@@ -706,15 +706,6 @@ describe('HomeShops', () => {
     expect(latestPlaces().url).toBe(PROD_PLACES);
   });
 
-  it('uses the production map on the local preview host', async () => {
-    setHostname('127.0.0.1');
-    renderShops();
-    expect(latestFilters().url).toBe(PROD_FILTERS);
-    await act(async () => latestFilters().resolve(jsonResponse(basicFilters({}), 200)));
-    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
-    expect(latestPlaces().url).toBe(PROD_PLACES);
-  });
-
   it('shows the error text when the response is not usable and hides empty', async () => {
     renderShops();
     await resolveRaw(jsonResponse({ countries: [] }, 500), jsonResponse({ places: [] }, 200));
@@ -950,7 +941,7 @@ describe('HomeShops', () => {
 
     fireEvent.click(button);
     const all = within(screen.getByRole('listbox')).getByRole('option', { name: copy.all });
-    expect(all.className).toContain('h-10');
+    expect(all.className).toContain('h-11');
     expect(all.querySelector('.shop-place-marker')).toBeNull();
     onParent.mockClear();
     const before = pending.length;
@@ -1129,7 +1120,7 @@ describe('HomeShops', () => {
     await resolveLatest(basicFilters({}), chainSplitRows());
     openMenu(copy.blockchain);
     const base =
-      'flex h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
+      'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
     const options = within(screen.getByRole('listbox')).getAllByRole('option');
     const highlighted = options.filter((option) => option.className.includes('is-active'));
     expect(highlighted).toHaveLength(1);
@@ -3439,6 +3430,10 @@ describe('HomeShops', () => {
 
     const hank = pinByName('Hank');
     const hankPopup = popupOf(lib, hank);
+    vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+      callback(0);
+      return 0;
+    });
     map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
     hankPopup.emit('open');
     expect(map.panBy).not.toHaveBeenCalled();
@@ -3563,17 +3558,216 @@ describe('HomeShops', () => {
     if (popup.content === null) throw new Error('missing popup content');
     shell.appendChild(popup.content);
     popup.emit('open');
-    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
     expect(connectedAtFocus).toBe(true);
-    map.panBy.mockClear();
     await act(async () => {
       await new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve());
-        });
+        requestAnimationFrame(() => resolve());
       });
     });
-    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 0 });
+    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
+  });
+
+  it('clears keyboard focus intent when an open popup closes', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    document.body.appendChild(content);
+    const focus = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+    let open = false;
+    pin.addEventListener('click', () => {
+      open = !open;
+      popup.emit(open ? 'open' : 'close');
+    });
+    fireEvent.click(pin);
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    fireEvent.click(pin);
+    expect(focus).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBe(close);
+  });
+
+  it('measures the popup next frame, avoids obstacles, and skips animation while unloaded', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const attrib = document.createElement('div');
+    attrib.className = 'maplibregl-ctrl-attrib';
+    mapNode.appendChild(attrib);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(attrib, { top: 370, left: 300, bottom: 390, right: 390, width: 90, height: 20 });
+    const frames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      nextFrame += 1;
+      frames.set(nextFrame, callback);
+      return nextFrame;
+    });
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      frames.delete(id);
+    });
+    const flush = (): void => {
+      const pending = [...frames.values()];
+      frames.clear();
+      pending.forEach((callback) => callback(0));
+    };
+    setRect(shell, { top: 240, left: 30, bottom: 360, right: 170, width: 140, height: 120 });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 250 });
+    map.panBy.mockClear();
+    map.loaded = () => false;
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 0 });
+    map.panBy.mockClear();
+    map.loaded = () => true;
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(shell, { top: 50, left: 40, bottom: 150, right: 180, width: 140, height: 100 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    setRect(shell, { top: 270, left: 290, bottom: 380, right: 380, width: 90, height: 110 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 10], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 60, left: 20, bottom: 100, right: 180, width: 160, height: 40 });
+    setRect(shell, { top: 30, left: 30, bottom: 90, right: 130, width: 100, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([-150, 0], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 16, left: 16, bottom: 384, right: 384, width: 368, height: 368 });
+    setRect(shell, { top: 30, left: 30, bottom: 90, right: 130, width: 100, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(shell, { top: -20, left: 40, bottom: 80, right: 180, width: 140, height: 100 });
+    popup.emit('open');
+    setRect(shell, { top: 50, left: 40, bottom: 150, right: 180, width: 140, height: 100 });
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    popup.emit('open');
+    popup.emit('open');
+    expect(cancel).toHaveBeenCalled();
+    popup.emit('close');
+    expect(frames.size).toBe(0);
+    popup.emit('open');
+    cleanup();
+    expect(frames.size).toBe(0);
+  });
+
+  it('moves the popup left of attribution when up and right are blocked', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const attrib = document.createElement('div');
+    attrib.className = 'maplibregl-ctrl-attrib';
+    mapNode.appendChild(attrib);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(attrib, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    frames.forEach((callback) => callback(0));
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
+  });
+
+  it('moves the popup left of the top-right navigation control', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const navigation = document.createElement('div');
+    navigation.className = 'maplibregl-ctrl-top-right';
+    mapNode.appendChild(navigation);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(navigation, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    frames.forEach((callback) => callback(0));
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
   });
 
   it('places a cluster marker on a whole pixel', async () => {
