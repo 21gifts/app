@@ -178,9 +178,14 @@ app/
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
 │   │   │   ├── apply/page.tsx   # GET /grants/apply — grant application walk
-│   │   │   └── applications/
-│   │   │       ├── page.tsx     # GET /grants/applications — grant queue
-│   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
+│   │   │   ├── applications/
+│   │   │   │   ├── page.tsx     # GET /grants/applications — grant queue
+│   │   │   │   └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
+│   │   │   └── payments/
+│   │   │       ├── amounts/page.tsx # GET /grants/payments/amounts — daily payout roster in USD
+│   │   │       └── moderators/page.tsx # GET /grants/payments/moderators — moderator stipend roster
+│   │   ├── loans/
+│   │   │   └── repay/page.tsx   # GET /loans/repay — one repayment screen for every current loan
 │   │   ├── wallet/
 │   │   │   ├── page.tsx         # GET /wallet — home (balance, payments list while ready, Receive/Send), Send view with camera, Receive view
 │   │   │   ├── payment/page.tsx # GET /wallet/payment?id= — one payment's details
@@ -226,6 +231,8 @@ app/
 │   │   ├── monitoring/
 │   │   │   ├── route.ts         # POST /monitoring — same-origin error and transaction tunnel (404 without a DSN)
 │   │   │   └── csp/route.ts     # POST /monitoring/csp — Content-Security-Policy reports → Sentry security endpoint (404 without a DSN)
+│   │   ├── fx/
+│   │   │   └── spot/route.ts    # GET /fx/spot — current spot rate
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
@@ -734,7 +741,7 @@ Every control where a person types an amount uses `AmountEntry`: the gift `Segme
 
 ### Shown amounts (hard requirement)
 
-Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet.
+Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet. A repayment due box whose payable loans were all defined in one fiat currency shows that currency alone. **Send** on that box still shows the currency together with the bitcoin being paid.
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
@@ -905,9 +912,9 @@ A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
 switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
-for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, the login card's
-wallet gate, `sendHeartTip`, `useHeartTip`, and `useHeartContext`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
-`PasskeyRenewNotice` check it themselves. Inline scripts that run before
+for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useRecoveryFlow`, `useSocialRecoverySetup`, `useRemainingBalance`, `useIncomingPayment`, `useLoanRepay`, the login card's
+wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `PosScreen`, `MoveFundsSheet`, `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
+`PasskeyRenewNotice` check `getE2eNow()` themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a
 unit test proves that for each new pin. A pin honoured in a deployed build is
