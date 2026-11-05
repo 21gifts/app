@@ -117,11 +117,13 @@ test('Function: createCspNonce — every page script carries the nonce of its re
   const response = await page.goto('/');
   const nonce = /'nonce-([^']+)'/.exec(response?.headers()[ENFORCED] ?? '')?.[1];
   expect(nonce).toMatch(/^[A-Za-z0-9+/]{22}==$/);
-  const scripts = await page.evaluate(() =>
-    [...document.querySelectorAll('script:not([type="application/ld+json"])')].map(
-      (script) => (script as HTMLScriptElement).nonce,
-    ),
-  );
+  // The server's HTML, not the live page: a nonce'd script may add scripts of its
+  // own later (the homepage map library), which 'strict-dynamic' trusts without one.
+  const html = (await response?.text()) ?? '';
+  const scripts = [...html.matchAll(/<script\b([^>]*)>/g)]
+    .map((match) => match[1] ?? '')
+    .filter((attributes) => !attributes.includes('application/ld+json'))
+    .map((attributes) => /\bnonce="([^"]*)"/.exec(attributes)?.[1] ?? '');
   expect(scripts.length).toBeGreaterThan(3);
   expect(new Set(scripts)).toEqual(new Set([nonce]));
   const again = await page.goto('/');
