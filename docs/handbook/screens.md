@@ -2329,13 +2329,13 @@ After **Continue**, the same active payment as an open till: the shop sticker, f
 
 ### Variant: rate-loading
 
-PHP is pressed and the amount is 100. **Continue** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The form stays. No **Pay**.
+PHP is pressed and the amount is 100. **Continue** while the spot rate (`GET /fx/spot`) has not returned. Alert **The PHP exchange rate is still loading.** The form stays. No **Pay**.
 
 ![21.gifts pay link rate loading](images/pl-rate-loading.png)
 
 ### Variant: no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Continue** is already off. The form stays. No **Pay**.
+PHP is pressed and the amount is 100. The spot rate (`GET /fx/spot`) has settled and cannot price PHP. **No PHP exchange rate yet.** sits under the amount, and **Continue** does not mint. The form stays. No **Pay**.
 
 ![21.gifts pay link no rate](images/pl-no-rate.png)
 
@@ -7782,14 +7782,14 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 ### Variant: fiat
 
 Signed-in Ada with CHF and fiat entry. `GET /fx/spot` prices 1 BTC at CHF 80'000. **CHF** is pressed and the keypad shows a decimal key. `68` shows **₿85'000** under the amount: the sats **Create payment** will charge at the current spot rate.
-PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** **Create payment** stays disabled. The keypad stays. No QR.
+PHP is pressed and the amount is 100. **Create payment** while the spot rate (`GET /fx/spot`) has not returned. Alert **The PHP exchange rate is still loading.** **Create payment** stays disabled. The keypad stays. No QR.
 
 ![21.gifts point of sale amount in CHF](images/pos-amount-fiat.png)
 
 ### Variant: fiat-no-rate
 
 Signed-in Ada with CHF and fiat entry, but `GET /fx/spot` has no CHF price. **CHF** is shown disabled and **₿** is pressed, so there is no decimal key. `68` shows **No exchange rate yet** under the amount. **Create payment** charges ₿68. A fiat amount cannot be typed, so it never reaches **Enter a whole number.**
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **No PHP exchange rate yet.** sits under the amount, and **Create payment** is already off. The keypad stays. No QR.
+PHP is pressed and the amount is 100. The spot rate (`GET /fx/spot`) has settled and cannot price PHP. **No PHP exchange rate yet.** sits under the amount, and **Create payment** does not open a charge. The keypad stays. No QR.
 
 ![21.gifts point of sale amount without a CHF rate](images/pos-amount-fiat-no-rate.png)
 

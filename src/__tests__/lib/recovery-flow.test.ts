@@ -1479,6 +1479,28 @@ describe('transfer', () => {
       expect(view()).toEqual({ step: 'done', balanceMissing: false });
     });
 
+    it('a balance read that throws after a send keeps the key for the next press', async () => {
+      old = connectionOf([21_000, 21_000, 21_000, 0]);
+      await toTransfer();
+      let reads = 0;
+      old.getInfo.mockImplementation(async () => {
+        reads += 1;
+        if (reads === 2) {
+          throw new Error('sync');
+        }
+        return { balanceSats: reads < 4 ? 21_000 : 0, identityPubkey: OLD_KEY };
+      });
+      await transfer();
+      expect(view()).toMatchObject({ step: 'transfer', error: 'balance' });
+      expect(old.sendToSparkAddress).toHaveBeenCalledTimes(1);
+      await transfer();
+      expect(old.sendToSparkAddress.mock.calls.map((call) => call[2])).toEqual([
+        '00000000-0000-4000-8000-000000000001',
+        '00000000-0000-4000-8000-000000000001',
+      ]);
+      expect(view()).toEqual({ step: 'done', balanceMissing: false });
+    });
+
     it('funds that arrived during a send get a second send with a new key', async () => {
       old = connectionOf([21_000, 21_000, 500, 0]);
       await toTransfer();

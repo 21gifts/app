@@ -119,9 +119,10 @@ export async function openPreviousWallet(
  * instead of paying twice. A send that throws is also reported as a payment
  * that did not go out ({@link reportPaymentFailure}: stage `send`, method
  * `spark`, flow `previous_wallet`, the reason from {@link sdkFailureReason}).
- * After a send that went out the balance is read again; funds that arrived
- * meanwhile get a send with a new key, up to {@link RECOVERY_SEND_TRIES} sends
- * per call.
+ * After a send that went out the balance is read again. The key changes only
+ * after that read returns; a read that throws keeps the key, so **Try again**
+ * repeats that send. Funds that arrived meanwhile get a send with a new key,
+ * up to {@link RECOVERY_SEND_TRIES} sends per call.
  *
  * @param session - Session the move runs under, for the failure report.
  * @returns `sent` once a synced read gives 0, otherwise `error` (also without
@@ -164,8 +165,9 @@ export async function transferRemainingBalance(session: string | null): Promise<
         return 'error';
       }
       sends += 1;
-      wallet.key = wallet.deps.randomUUID();
+      // The key changes only after this read returns. A throw keeps it.
       balance = (await wallet.connection.getInfo({ ensureSynced: true })).balanceSats;
+      wallet.key = wallet.deps.randomUUID();
     }
     return 'sent';
   } catch {

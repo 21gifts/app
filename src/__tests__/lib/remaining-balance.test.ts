@@ -220,6 +220,24 @@ describe('transferRemainingBalance', () => {
     expect(wallet.sendToSparkAddress.mock.calls.map((call) => call[2])).toEqual(['key-1', 'key-1']);
   });
 
+  it('a balance read that throws after a send keeps the key', async () => {
+    await openPreviousWallet(WORDS, KEY, deps);
+    let n = 0;
+    wallet.getInfo.mockImplementation(async () => {
+      n += 1;
+      if (n === 2) {
+        throw new Error('sync');
+      }
+      if (n === 4) {
+        return { balanceSats: 0, identityPubkey: KEY };
+      }
+      return { balanceSats: 21_000, identityPubkey: KEY };
+    });
+    expect(await transferRemainingBalance(SESSION)).toBe('error');
+    expect(await transferRemainingBalance(SESSION)).toBe('sent');
+    expect(wallet.sendToSparkAddress.mock.calls.map((c) => c[2])).toEqual(['key-1', 'key-1']);
+  });
+
   it('funds that arrived during a send get a second send with a new key', async () => {
     wallet = walletOf([21_000, 21_000, 700, 0]);
     await openPreviousWallet(WORDS, KEY, deps);

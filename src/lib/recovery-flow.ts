@@ -924,8 +924,10 @@ async function finish(f: Flow, old: OldWallet, balanceMissing: boolean): Promise
  * it to the new wallet's Spark address. A send whose outcome is unknown (it
  * threw) keeps its idempotency key, so the next press repeats that send, and
  * the SDK answers it instead of paying twice. After a send that went out the
- * balance is read again; funds that arrived meanwhile get a send with a new
- * key, up to {@link RECOVERY_SEND_TRIES} sends per press. Only a synced read
+ * balance is read again. The key is cleared only after that read returns; a
+ * read that throws keeps it, so the next press repeats that send. Funds that
+ * arrived meanwhile get a send with a new key, up to {@link RECOVERY_SEND_TRIES}
+ * sends per press. Only a synced read
  * of 0 ends the recovery; any failure is the `balance` error. A send that
  * throws is also reported as a payment that did not go out
  * ({@link reportPaymentFailure}: stage `send`, method `spark`, flow
@@ -972,8 +974,9 @@ async function moveBalance(f: Flow, old: OldWallet, a: Attempt): Promise<void> {
         throw error;
       }
       sends += 1;
-      a.idempotencyKey = null;
+      // The key is cleared only after this read returns. A throw keeps it.
       balance = (await old.connection.getInfo({ ensureSynced: true })).balanceSats;
+      a.idempotencyKey = null;
     }
   } catch {
     stop(f, a, 'balance');
