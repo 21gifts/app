@@ -122,6 +122,10 @@ type MapHandle = {
   setCenter: (center: LngLat) => void;
   setZoom: (zoom: number) => void;
   easeTo: (options: { center: LngLat; zoom: number; duration?: number; animate?: boolean }) => void;
+  cameraForBounds?: (
+    bounds: LngLatBoundsHandle,
+    options: { padding: number | FramePadding; maxZoom: number },
+  ) => { zoom?: number } | undefined;
   fitBounds: (
     bounds: LngLatBoundsHandle,
     options: {
@@ -836,10 +840,17 @@ function sortShopRows(
   const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
   const sorted = [...rows];
   sorted.sort((left, right) => {
-    const primary =
-      column === 'activity'
-        ? activityRank(left.activityToken) - activityRank(right.activityToken)
-        : collator.compare(sortText(left, column, locale), sortText(right, column, locale));
+    let primary: number;
+    if (column === 'activity') {
+      const leftRank = activityRank(left.activityToken);
+      const rightRank = activityRank(right.activityToken);
+      primary =
+        leftRank === ACTIVITY_ORDER.length && rightRank === ACTIVITY_ORDER.length
+          ? collator.compare(left.activity, right.activity)
+          : leftRank - rightRank;
+    } else {
+      primary = collator.compare(sortText(left, column, locale), sortText(right, column, locale));
+    }
     if (primary !== 0) return dir === 'desc' ? -primary : primary;
     return collator.compare(left.name, right.name);
   });
@@ -1213,6 +1224,8 @@ function fitPopup(map: MapHandle, duration = 250): void {
       dx -= box.right - left;
     } else if (left - (right - box.left) >= Math.min(mapBox.left + pad, left)) {
       dx += right - box.left;
+    } else if (bottom + (box.bottom - top) <= mapBox.bottom - pad) {
+      dy -= box.bottom - top;
     }
   }
   if (dx !== 0 || dy !== 0) {
@@ -1570,11 +1583,27 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             userMovedMaps.add(session.map);
             const bounds = new session.lib.LngLatBounds();
             for (const pin of group) bounds.extend(pin.position);
-            session.map.fitBounds(bounds, {
-              padding: FRAME_PADDING,
-              maxZoom: CLUSTER_MAX_ZOOM,
-              ...clusterMotion(session.map),
-            });
+            const currentZoom = readZoom.call(session.map);
+            const camera =
+              typeof session.map.cameraForBounds === 'function'
+                ? session.map.cameraForBounds(bounds, {
+                    padding: FRAME_PADDING,
+                    maxZoom: CLUSTER_MAX_ZOOM,
+                  })
+                : undefined;
+            if (typeof camera?.zoom === 'number' && camera.zoom >= currentZoom + 1) {
+              session.map.fitBounds(bounds, {
+                padding: FRAME_PADDING,
+                maxZoom: CLUSTER_MAX_ZOOM,
+                ...clusterMotion(session.map),
+              });
+            } else {
+              session.map.easeTo({
+                center: position,
+                zoom: Math.min(currentZoom + 2, CLUSTER_MAX_ZOOM),
+                ...clusterMotion(session.map),
+              });
+            }
           });
           let position = clusterPosition(session.map, group);
           const center = projectPoint(session.map, position);

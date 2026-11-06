@@ -86,6 +86,7 @@ type MapDouble = {
   setCenter: ReturnType<typeof vi.fn>;
   setZoom: ReturnType<typeof vi.fn>;
   easeTo: ReturnType<typeof vi.fn>;
+  cameraForBounds?: ReturnType<typeof vi.fn>;
   fitBounds: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
   getZoom?: ReturnType<typeof vi.fn>;
@@ -475,6 +476,7 @@ function installMapLibre(): LibDouble {
       setCenter: vi.fn(mapZoom),
       setZoom: vi.fn(mapZoom),
       easeTo: vi.fn(mapZoom),
+      cameraForBounds: vi.fn(() => ({ zoom: 17.5 })),
       fitBounds: vi.fn(mapZoom),
       remove: vi.fn(mapZoom),
       getZoom: vi.fn(mapZoom),
@@ -1932,6 +1934,88 @@ describe('HomeShops', () => {
       maxZoom: 17.5,
       duration: 600,
     });
+    expect(map.cameraForBounds).toHaveBeenLastCalledWith(animated, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+    });
+    expect(map.easeTo).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: 'unchanged zoom', camera: { zoom: 10 }, zoom: 10, target: 12, loaded: true },
+    { label: 'zooming out', camera: { zoom: 9 }, zoom: 10, target: 12, loaded: true },
+    { label: 'less than one level', camera: { zoom: 10.99 }, zoom: 10, target: 12, loaded: true },
+    { label: 'no camera', camera: undefined, zoom: 10, target: 12, loaded: true },
+    { label: 'no zoom', camera: {}, zoom: 10, target: 12, loaded: true },
+    { label: 'missing method', camera: null, zoom: 10, target: 12, loaded: true },
+    { label: 'zoom cap', camera: { zoom: 16 }, zoom: 16, target: 17.5, loaded: true },
+    { label: 'unloaded map', camera: { zoom: 10 }, zoom: 10, target: 12, loaded: false },
+  ])('zooms into a map-wide cluster around its marker with $label', async (testCase) => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      map.loaded = () => testCase.loaded;
+      Object.assign(map, {
+        project: (position: [number, number]) => ({ x: position[0] * 10, y: position[1] * 10 }),
+        unproject: (point: [number, number]) => ({ lng: point[0] / 10, lat: point[1] / 10 }),
+        getContainer: () => document.getElementById('shop-places-map'),
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody(
+        Array.from({ length: 20 }, (_, index) =>
+          giftsPlace(`Shop ${index}`, { lat: 20, lon: 1 + index * 4 }),
+        ),
+      ),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    map.transform.zoom = testCase.zoom;
+    if (testCase.camera === null) delete map.cameraForBounds;
+    else map.cameraForBounds?.mockReturnValue(testCase.camera);
+    map.fitBounds.mockClear();
+    map.easeTo.mockClear();
+    const cluster = screen.getByRole('button', { name: '20 shops' });
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([39, 20]);
+    fireEvent.click(cluster);
+    expect(map.easeTo).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [39, 20],
+      zoom: testCase.target,
+      ...(testCase.loaded ? { duration: 600 } : { duration: 0, animate: false }),
+    });
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+
+  it('frames a compact cluster when the estimate gains exactly one zoom level', async () => {
+    const { map } = await setupClusterFocus();
+    map.cameraForBounds?.mockReturnValue({ zoom: 11 });
+    map.fitBounds.mockClear();
+    map.easeTo.mockClear();
+    fireEvent.click(clusterButton('is-daily'));
+    expect(map.cameraForBounds).toHaveBeenCalledTimes(1);
+    const bounds = map.cameraForBounds?.mock.calls[0]?.[0] as BoundsDouble | undefined;
+    if (bounds === undefined) throw new Error('missing camera bounds');
+    expect(bounds.extend.mock.calls).toEqual([[[121, 14.6]], [[121.2, 14.6]], [[121.1, 14.6]]]);
+    expect(map.cameraForBounds).toHaveBeenCalledWith(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+    });
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    expect(map.fitBounds).toHaveBeenCalledWith(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+      duration: 600,
+    });
+    expect(map.easeTo).not.toHaveBeenCalled();
   });
 
   it('frames again when the map receives its real size, and stops after a cluster click', async () => {
@@ -4238,6 +4322,56 @@ describe('HomeShops', () => {
     expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
   });
 
+  it('moves a wide popup below navigation only when it fits inside the bottom inset', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    if (!(mapNode instanceof HTMLElement)) throw new Error('missing map');
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const navigation = document.createElement('div');
+    navigation.className = 'maplibregl-ctrl-top-right';
+    mapNode.appendChild(navigation);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 300, width: 300, height: 400 });
+    setRect(shell, { top: 30, left: 16, bottom: 230, right: 284, width: 268, height: 200 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    for (const bottom of [100, 184, 185]) {
+      setRect(navigation, {
+        top: 20,
+        left: 250,
+        bottom,
+        right: 284,
+        width: 34,
+        height: bottom - 20,
+      });
+      map.panBy.mockClear();
+      popup.emit('open');
+      expect(map.panBy).not.toHaveBeenCalled();
+      frames.splice(0).forEach((callback) => callback(0));
+      if (bottom === 185) {
+        expect(map.panBy).not.toHaveBeenCalled();
+      } else {
+        expect(map.panBy).toHaveBeenCalledTimes(1);
+        expect(map.panBy).toHaveBeenCalledWith([0, 30 - bottom], { duration: 250 });
+      }
+    }
+  });
+
   it('places a cluster marker on a whole pixel', async () => {
     const lib = installMapLibre();
     const seen: [number, number][] = [];
@@ -4360,6 +4494,27 @@ describe('HomeShops', () => {
     changeMenu(copy.country, 'PH');
     expect(bodyNames()).toEqual(['Ann', 'Eve', 'Cal']);
     expect(columnHeader(copy.colLocation).getAttribute('aria-sort')).toBe('descending');
+  });
+
+  it.each([
+    { dir: 'ascending', clicks: 1, names: ['Daily', 'None', 'Bea', 'Ann', 'Cal'] },
+    { dir: 'descending', clicks: 2, names: ['Ann', 'Cal', 'Bea', 'None', 'Daily'] },
+  ])('sorts unknown activity labels $dir and equal labels by name', async ({ clicks, names }) => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { activity: 'zeta' }),
+        giftsPlace('Cal', { activity: 'zeta' }),
+        giftsPlace('Bea', { activity: 'alpha' }),
+        giftsPlace('None', { activity: 'none' }),
+        giftsPlace('Daily', { activity: 'daily' }),
+      ]),
+    );
+    for (let click = 0; click < clicks; click += 1) {
+      fireEvent.click(headerButton(copy.colActivity));
+    }
+    expect(bodyNames()).toEqual(names);
   });
 
   it('hides filters and the category chip when the shops do not differ', async () => {
