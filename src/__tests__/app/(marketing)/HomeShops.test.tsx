@@ -4,6 +4,12 @@ import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { Scrollport } from '@/components/ui/Scrollport';
 import { getCatalog } from '@/lib/messages';
 
+const routerPush = vi.hoisted(() => vi.fn());
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof routerPush } => ({ push: routerPush }),
+}));
+
 const messages = getCatalog('en');
 
 const copy = {
@@ -584,6 +590,7 @@ function expectNoSecretWords(): void {
 
 describe('HomeShops', () => {
   beforeEach(() => {
+    routerPush.mockReset();
     pending.length = 0;
     setHostname('localhost');
     installFetch();
@@ -612,7 +619,7 @@ describe('HomeShops', () => {
     expect(section.querySelector('style')).toBeNull();
     expect(section.getAttribute('aria-labelledby')).toBe(heading.id);
     expect(section.className).toBe(
-      'scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light sm:py-20',
+      'scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:py-20',
     );
     expect(heading.className).toBe(
       'text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl',
@@ -2259,18 +2266,40 @@ describe('HomeShops', () => {
         giftsPlace('Linked', {
           id: npub('p'),
           category: 'Cafe',
-          coverPhoto: { url: 'https://images.example/cover.jpg' },
+          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/cover.jpg' },
         }),
         giftsPlace('Plain', {
           id: 'https://opencryptopay.io/plain',
           coverPhoto: { url: 'http://images.example/insecure.jpg' },
         }),
+        giftsPlace('Other', { coverPhoto: { url: 'https://images.example/other.jpg' } }),
+        giftsPlace('Dev', {
+          coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/dev.jpg' },
+        }),
+        giftsPlace('Malformed', { coverPhoto: { url: 'not a url' } }),
+        giftsPlace('NonString', { coverPhoto: { url: 42 } }),
       ]),
     );
     await fireScript('load');
-    expect(lib.popups).toHaveLength(2);
-    const linked = lib.popups[0];
-    const plain = lib.popups[1];
+    expect(lib.popups).toHaveLength(6);
+    const linked = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
+    );
+    const plain = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Plain',
+    );
+    const other = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Other',
+    );
+    const dev = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Dev',
+    );
+    const malformed = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Malformed',
+    );
+    const nonString = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'NonString',
+    );
     if (
       linked === undefined ||
       linked.content === null ||
@@ -2297,7 +2326,7 @@ describe('HomeShops', () => {
     expect(linked.content.querySelector('.shop-popup-chip')?.textContent).toContain(copy.daily);
     expect(linked.content.querySelector('p')).toBeNull();
     const image = linked.content.querySelector('img');
-    expect(image?.getAttribute('src')).toBe('https://images.example/cover.jpg');
+    expect(image?.getAttribute('src')).toBe('https://api.opencryptopay.io/map/photos/cover.jpg');
     expect(image?.getAttribute('alt')).toBe('');
     expect(image?.getAttribute('loading')).toBe('lazy');
     expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
@@ -2308,6 +2337,56 @@ describe('HomeShops', () => {
     expect(plain.content.querySelector('img')).toBeNull();
     expect(plain.content.querySelector('.shop-popup-category')).toBeNull();
     expect(plain.content.innerHTML).not.toContain('opencryptopay.io');
+    expect(other?.content?.querySelector('img')).toBeNull();
+    expect(dev?.content?.querySelector('img')?.getAttribute('src')).toBe(
+      'https://dev-api.opencryptopay.io/map/photos/dev.jpg',
+    );
+    expect(malformed?.content?.querySelector('img')).toBeNull();
+    expect(nonString?.content?.querySelector('img')).toBeNull();
+  });
+
+  it('navigates plain popup clicks client-side and preserves browser click behavior', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Linked', { id: npub('p') })]));
+    await fireScript('load');
+    const popup = lib.popups.find(
+      (item) => item.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
+    );
+    const link = popup?.content?.querySelector('.shop-popup-name');
+    if (!(link instanceof HTMLAnchorElement)) throw new Error('missing shop link');
+    expect(link.getAttribute('href')).toBe(`/${npub('p')}`);
+    const prevented = vi.fn();
+    link.addEventListener('click', (event) => {
+      // Observe the app's decision first, then stop jsdom from following an allowed link.
+      prevented(event.defaultPrevented);
+      event.preventDefault();
+    });
+
+    fireEvent.click(link, { button: 0 });
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith(`/${npub('p')}`);
+    expect(prevented).toHaveBeenLastCalledWith(true);
+    routerPush.mockClear();
+
+    for (const init of [
+      { metaKey: true },
+      { ctrlKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+      { button: 2 },
+    ]) {
+      fireEvent.click(link, init);
+      expect(routerPush).not.toHaveBeenCalled();
+      expect(prevented).toHaveBeenLastCalledWith(false);
+    }
+
+    const blocked = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
+    blocked.preventDefault();
+    fireEvent(link, blocked);
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(prevented).toHaveBeenLastCalledWith(true);
   });
 
   it('downloads quoted CSV rows and does nothing for an empty table', async () => {
@@ -3333,6 +3412,73 @@ describe('HomeShops', () => {
     expect(pinByName('Bea').classList.contains('is-offscreen')).toBe(false);
   });
 
+  it('places an edge cluster using visible members and hides it when all are off-screen', async () => {
+    let second = 1;
+    let edge: 'left' | 'right' | 'bottom' = 'left';
+    const handlers: Record<string, () => void> = {};
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        project: (point: [number, number]) => {
+          const x = point[0] === 1 ? second : point[0];
+          if (edge === 'right') return { x: 800 - x, y: point[1] };
+          if (edge === 'bottom') return { x: point[1], y: 600 - x };
+          return { x, y: point[1] };
+        },
+        unproject: (point: [number, number]) => {
+          if (edge === 'right') return { lng: 800 - point[0], lat: point[1] };
+          if (edge === 'bottom') return { lng: 600 - point[1], lat: point[0] };
+          return { lng: point[0], lat: point[1] };
+        },
+        getContainer: () => document.getElementById('shop-places-map'),
+        on: (event: string, handler: () => void) => {
+          handlers[event] = handler;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 10, lon: -40, activity: 'daily' }),
+        giftsPlace('Bea', { lat: 10, lon: 1, activity: 'daily' }),
+      ]),
+    );
+    await fireScript('load');
+    firstMap(lib).transform.zoom = 10;
+    await act(async () => {
+      handlers['zoom']?.();
+    });
+    const marker = clusterMarker(lib, 'is-daily');
+    expect(marker.setLngLat).toHaveBeenLastCalledWith([1, 10]);
+    expect(marker.element.classList.contains('is-offscreen')).toBe(false);
+    second = -13;
+    await act(async () => {
+      handlers['zoom']?.();
+    });
+    const offscreen = clusterMarker(lib, 'is-daily');
+    expect(offscreen.setLngLat).toHaveBeenLastCalledWith([-26, 10]);
+    expect(offscreen.element.classList.contains('is-offscreen')).toBe(true);
+    second = 1;
+    for (const boundary of ['right', 'bottom'] as const) {
+      edge = boundary;
+      await act(async () => {
+        handlers['zoom']?.();
+      });
+      // The full cluster centers at x=820 or y=620; Bea is inside at 799 or 599.
+      const visible = clusterMarker(lib, 'is-daily');
+      expect(visible.setLngLat).toHaveBeenLastCalledWith([1, 10]);
+      expect(visible.element.classList.contains('is-offscreen')).toBe(false);
+    }
+  });
+
   it('keeps focus on another button when a keyboard cluster movement ends', async () => {
     const { handlers } = await setupClusterFocus();
     const cluster = clusterButton('is-daily');
@@ -3400,6 +3546,28 @@ describe('HomeShops', () => {
 
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
     expect(document.activeElement).toBe(pinByName('Ann'));
+  });
+
+  it('restores the focused second pin after keyboard activation splits its cluster', async () => {
+    const { handlers, map } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async () => {
+      handlers['zoom']?.();
+    });
+    const pin = pinByName('Bea');
+    pin.focus();
+    map.transform.zoom = 10;
+    await act(async () => {
+      handlers['zoom']?.();
+    });
+    const cluster = clusterButton('is-daily');
+    expect(document.activeElement).toBe(cluster);
+    fireEvent.click(cluster, { detail: 0 });
+    map.transform.zoom = 18;
+    await act(async () => {
+      handlers['moveend']?.();
+    });
+    expect(document.activeElement).toBe(pin);
   });
 
   it.each([
@@ -4197,7 +4365,7 @@ describe('HomeShops', () => {
         giftsPlace('Ann', {
           shopName: null,
           category: 'shopping',
-          coverPhoto: { url: 'https://images.example/ann.jpg' },
+          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
           street: 'One',
         }),
         giftsPlace('Bea', {
@@ -4223,7 +4391,7 @@ describe('HomeShops', () => {
       throw new Error('missing popup');
     }
     expect(ann.content.querySelector('.shop-popup-photo')?.getAttribute('src')).toBe(
-      'https://images.example/ann.jpg',
+      'https://api.opencryptopay.io/map/photos/ann.jpg',
     );
     expect(ann.content.querySelector('.shop-popup-category')).toBeNull();
     expect(bea.content.querySelector('.shop-popup-photo')).toBeNull();

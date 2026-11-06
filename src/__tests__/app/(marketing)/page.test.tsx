@@ -13,6 +13,10 @@ vi.mock('next/headers', () => ({
   headers: vi.fn(async () => ({ get: headerGet })),
 }));
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: ReturnType<typeof vi.fn> } => ({ push: vi.fn() }),
+}));
+
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>

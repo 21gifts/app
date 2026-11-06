@@ -1,6 +1,27 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { getCatalog } from '../src/lib/messages';
 
+/**
+ * Marks this document so a document load can be detected.
+ *
+ * @param page - Page whose current document is marked.
+ */
+async function markDocument(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (window as unknown as { e2eDocument?: string }).e2eDocument = 'same';
+  });
+}
+
+/**
+ * Reads the document mark after navigation.
+ *
+ * @param page - Page whose current document is inspected.
+ * @returns The mark, or null after a document load.
+ */
+async function sameDocument(page: Page): Promise<string | null> {
+  return page.evaluate(() => (window as unknown as { e2eDocument?: string }).e2eDocument ?? null);
+}
+
 test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
@@ -140,7 +161,7 @@ function shopPlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://images.example/sample.jpg' },
+        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/sample.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -207,7 +228,7 @@ function identicalShopPlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://images.example/ann.jpg' },
+        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -241,10 +262,29 @@ async function fulfillShopKind(route: Route, kind: 'varied' | 'identical'): Prom
   });
 }
 
+/**
+ * Serves the public map and a decodable cover photo.
+ *
+ * @param page - Page whose requests are stubbed.
+ */
 async function stubPublicMap(page: Page): Promise<void> {
   await page.route(
     (url) => isPublicMapApi(url),
     (route) => fulfillShopKind(route, 'varied'),
+  );
+  await page.route(
+    (url) =>
+      url.origin === 'https://api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAAH0lEQVR4AWP8+unNfwY8gImBAGBiIACYGAgAJgYCAABwvQPcvej1igAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+      });
+    },
   );
 }
 
@@ -530,6 +570,14 @@ test('Function: HomeShops popup shows a photo when present and categories when t
   await expect(lone).toHaveCount(1, { timeout: 20_000 });
   await page.getByRole('button', { name: 'Sample, Daily' }).click();
   await expect(page.locator('.shop-popup-photo')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.locator('.shop-popup-photo').evaluate((node) => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }),
+    )
+    .toBe(true);
   await expect(page.locator('.shop-popup-category')).toHaveText('shopping');
   await page.getByRole('button', { name: 'Close popup' }).click();
   await expect(page.locator('.shop-popup-card')).toHaveCount(0);
@@ -538,6 +586,23 @@ test('Function: HomeShops popup shows a photo when present and categories when t
   await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
   await expect(page.locator('.shop-popup-category')).toHaveText('cafe');
   await expect(page.locator('.shop-popup-name')).toHaveText('North');
+});
+
+test('Function: HomeShops popup name link opens the shop without a document load', async ({
+  page,
+}) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const sample = page.getByRole('button', { name: 'Sample, Daily' });
+  await expect(sample).toBeVisible({ timeout: 20_000 });
+  await sample.click();
+  const link = page.locator('.shop-popup-name');
+  const shopPath = `/npub1${'q'.repeat(58)}`;
+  await expect(link).toHaveAttribute('href', shopPath);
+  await markDocument(page);
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`${shopPath}$`));
+  expect(await sameDocument(page)).toBe('same');
 });
 
 test('Function: HomeShops hides the category chip when every shop shares it', async ({ page }) => {

@@ -5,6 +5,8 @@ import type { ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
 import { CircleHelp, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { countryDisplayName } from '@/lib/countries';
 import type { Locale } from '@/lib/locale';
@@ -503,12 +505,26 @@ function markerAriaLabel(name: string, title: string): string {
   return title;
 }
 
+/**
+ * Returns a photo URL only when its origin is allowed by the image policy.
+ *
+ * @param place - Place returned by the public map API.
+ * @returns The allowed URL, or null when absent or disallowed.
+ */
 function coverPhotoUrl(place: Record<string, unknown>): string | null {
   const coverPhoto = place['coverPhoto'];
   if (!isRecord(coverPhoto)) return null;
   const url = coverPhoto['url'];
-  if (typeof url !== 'string' || !url.startsWith('https://')) return null;
-  return url;
+  if (typeof url !== 'string') return null;
+  try {
+    const origin = new URL(url).origin;
+    return origin === 'https://api.opencryptopay.io' ||
+      origin === 'https://dev-api.opencryptopay.io'
+      ? url
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function entryMatches(entry: unknown, blockchain: string, asset: string): boolean {
@@ -958,11 +974,22 @@ function unmountPopupCloses(): void {
   });
 }
 
+/**
+ * Builds the shop popup with a client-side shop link and its own close button.
+ *
+ * @param row - Shop details and the optional in-app path.
+ * @param showCategory - Whether categories differ across the displayed shops.
+ * @param closeLabel - Localized accessible name of the close button.
+ * @param onClose - Closes this popup.
+ * @param navigate - Opens an in-app path without loading a new document.
+ * @returns The popup content node.
+ */
 function popupContent(
   row: ShopRow,
   showCategory: boolean,
   closeLabel: string,
   onClose: () => void,
+  navigate: (href: string) => void,
 ): HTMLElement {
   const content = document.createElement('div');
   content.className = 'shop-popup-card';
@@ -1008,11 +1035,26 @@ function popupContent(
     name.textContent = row.name;
     title.appendChild(name);
   } else {
+    const href = row.href;
     const name = document.createElement('a');
-    name.href = row.href;
+    name.href = href;
     name.className = 'shop-popup-name';
     name.appendChild(document.createTextNode(row.name));
     name.appendChild(svgIcon('M5 12h14M12 5l7 7-7 7', 'shop-popup-arrow'));
+    name.addEventListener('click', (event: MouseEvent): void => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+      event.preventDefault();
+      navigate(href);
+    });
     title.appendChild(name);
   }
   content.appendChild(title);
@@ -1375,11 +1417,15 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  *
  * Filters, columns, and the popup category come from the loaded 21.gifts rows.
  * A control is shown only when its values actually differ.
+ * Popup shop links open client-side on plain primary clicks.
  *
  * @param props - Localized copy and the page locale.
  * @returns The shop section.
  */
 export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Locale }): ReactElement {
+  const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const [country, setCountry] = useState('');
   const [shopName, setShopName] = useState('');
   const [blockchain, setBlockchain] = useState('');
@@ -1514,10 +1560,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           const shell = document.createElement('div');
           shell.className = 'shop-cluster-marker';
           shell.appendChild(button);
-          if (activePin !== undefined && group.includes(activePin)) focusTarget = button;
-          clusterPinsRef.current.set(button, firstPin);
+          const targetPin =
+            activePin !== undefined && group.includes(activePin) ? activePin : firstPin;
+          if (targetPin === activePin) focusTarget = button;
+          clusterPinsRef.current.set(button, targetPin);
           button.addEventListener('click', (event: MouseEvent) => {
-            clusterFocus.current = event.detail === 0 ? { pin: firstPin, button } : null;
+            clusterFocus.current = event.detail === 0 ? { pin: targetPin, button } : null;
             userMovedMaps.add(session.map);
             const bounds = new session.lib.LngLatBounds();
             for (const pin of group) bounds.extend(pin.position);
@@ -1527,7 +1575,24 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
               ...clusterMotion(session.map),
             });
           });
-          const position = clusterPosition(session.map, group);
+          let position = clusterPosition(session.map, group);
+          const center = projectPoint(session.map, position);
+          if (
+            center !== null &&
+            (center.x < 0 || center.x >= rect.width || center.y < 0 || center.y >= rect.height)
+          ) {
+            const visible = group.filter((pin) => {
+              const point = points.get(pin);
+              /* v8 ignore next -- clusterGroups only passes pins in the point map */
+              if (point === undefined) return false;
+              const size = markerSize(pin.element);
+              return (
+                !axisMisses(point.x - size.width / 2, size.width, rect.width) &&
+                !axisMisses(point.y - size.height / 2, size.height, rect.height)
+              );
+            });
+            if (visible.length > 0) position = clusterPosition(session.map, visible);
+          }
           const marker = new session.lib.Marker({ element: shell });
           marker.setLngLat(position);
           marker.addTo(session.map);
@@ -1590,9 +1655,15 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           removePopup();
           if (restoreFocus && element.isConnected) element.focus();
         };
-        const content = popupContent(row, showCategoryRef.current, closeLabelRef.current, () => {
-          popup.remove();
-        });
+        const content = popupContent(
+          row,
+          showCategoryRef.current,
+          closeLabelRef.current,
+          () => {
+            popup.remove();
+          },
+          (href) => routerRef.current.push(href),
+        );
         element.addEventListener('keydown', (event: KeyboardEvent) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
@@ -2055,7 +2126,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     <section
       id="shops"
       aria-labelledby={headingId}
-      className="scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light sm:py-20"
+      className="scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:py-20"
     >
       <div className="mx-auto max-w-[1100px]">
         <h2
@@ -2220,9 +2291,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                     {tableColumns.map((column) => (
                       <td key={column.key} className="min-w-0 break-words px-4 py-3 align-top">
                         {column.key === 'name' && row.href !== null ? (
-                          <a href={row.href} className="font-medium underline underline-offset-2">
+                          <Link
+                            href={row.href}
+                            className="font-medium underline underline-offset-2"
+                          >
                             {row.name}
-                          </a>
+                          </Link>
                         ) : (
                           cellText(row, column.key, locale)
                         )}

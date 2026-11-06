@@ -1263,7 +1263,8 @@ const SHOP_PHOTO_PNG = Buffer.from(
 /** The browser's broken-image icon moves between captures. Serve one flat picture. */
 async function stubShopPhoto(page: Page): Promise<void> {
   await page.route(
-    (url) => url.hostname === 'images.example',
+    (url) =>
+      url.origin === 'https://api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -2433,7 +2434,7 @@ function variedHomePlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://images.example/sample.jpg' },
+        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/sample.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -2500,7 +2501,7 @@ function identicalHomePlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://images.example/ann.jpg' },
+        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {

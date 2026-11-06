@@ -620,9 +620,6 @@ a.shop-popup-name:hover .shop-popup-arrow {
   z-index: 1;
   color: var(--color-ink);
 }
-.shop-popup-close:focus {
-  outline: none;
-}
 .shop-popup-close:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
