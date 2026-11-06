@@ -1681,7 +1681,7 @@ test.describe('the Social Recovery prompt on the forum home', () => {
     await expect(dialog).toBeVisible();
     await expect(
       dialog.getByText(
-        'Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.',
+        'Set up Social Recovery. From 1 January 2027, grant payouts require it. Choose two people who can help you restore your account if you lose your passkey.',
       ),
     ).toBeVisible();
     await dialog.getByRole('button', { name: 'Close' }).click();

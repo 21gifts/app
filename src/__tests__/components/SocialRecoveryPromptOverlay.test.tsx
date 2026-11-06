@@ -26,7 +26,7 @@ describe('SocialRecoveryPromptOverlay', () => {
     );
     expect(
       screen.getByText(
-        'Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.',
+        'Set up Social Recovery. From 1 January 2027, grant payouts require it. Choose two people who can help you restore your account if you lose your passkey.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Secure my account' })).toBeTruthy();
