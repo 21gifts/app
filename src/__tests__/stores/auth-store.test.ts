@@ -120,14 +120,23 @@ describe('useAuthStore', () => {
     useAuthStore.getState().setLockedSession('stored', account);
     useAuthStore.getState().noteLockedPasskeyMissed();
     expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(true);
+    useAuthStore.getState().dismissLockedPasskeyNotice();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    useAuthStore.getState().noteLockedPasskeyMissed();
     useAuthStore.getState().setLockedSession('stored', account);
     expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
     useAuthStore.getState().setAuth('tok', account);
     expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
     useAuthStore.getState().lockSession();
     useAuthStore.getState().noteLockedPasskeyMissed();
     useAuthStore.getState().clearAuth();
     expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
   });
 
   it('leaves state unchanged when there is no active session to lock', () => {

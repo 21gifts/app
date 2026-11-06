@@ -60,6 +60,12 @@ interface AuthState {
    */
   lockedPasskeyMissed: string | null;
   /**
+   * True from a missed wallet passkey until the next login run starts, so a
+   * login card that mounts again in between still says the passkey did not
+   * answer, and does not say it after a later attempt.
+   */
+  lockedPasskeyNotice: boolean;
+  /**
    * True after a wrong-account 403 until the visitor retries login.
    * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
    */
@@ -99,6 +105,8 @@ interface AuthState {
   lockSession(): void;
   /** Records that the wallet passkey of the held-back session did not answer. */
   noteLockedPasskeyMissed(): void;
+  /** Ends {@link AuthState.lockedPasskeyNotice} when the next login run starts. */
+  dismissLockedPasskeyNotice(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
   /**
@@ -126,6 +134,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   lockedName: null,
   lockedCredentialId: null,
   lockedPasskeyMissed: null,
+  lockedPasskeyNotice: false,
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
@@ -136,6 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       lockedName: null,
       lockedCredentialId: null,
       lockedPasskeyMissed: null,
+      lockedPasskeyNotice: false,
       wrongAccount: false,
     });
   },
@@ -169,7 +179,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
   noteLockedPasskeyMissed: () => {
-    set((state) => ({ lockedPasskeyMissed: state.lockedSession }));
+    set((state) => ({
+      lockedPasskeyMissed: state.lockedSession,
+      lockedPasskeyNotice: state.lockedSession !== null,
+    }));
+  },
+  dismissLockedPasskeyNotice: () => {
+    set({ lockedPasskeyNotice: false });
   },
   clearAuth: () => {
     clearSessionPhrase();
@@ -183,6 +199,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       lockedName: null,
       lockedCredentialId: null,
       lockedPasskeyMissed: null,
+      lockedPasskeyNotice: false,
     });
   },
   setWrongAccount: (value) => {

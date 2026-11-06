@@ -575,8 +575,8 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const [lastError, setLastError] = useState<string | null>(null);
   const [recoveryPending, setRecoveryPending] = useState(false);
   const [walletPasskeyMissed, setWalletPasskeyMissed] = useState(() => {
-    const { lockedSession, lockedPasskeyMissed } = useAuthStore.getState();
-    return lockedSession !== null && lockedPasskeyMissed === lockedSession;
+    const { lockedSession, lockedPasskeyMissed, lockedPasskeyNotice } = useAuthStore.getState();
+    return lockedPasskeyNotice && lockedSession !== null && lockedPasskeyMissed === lockedSession;
   });
   const [nameError, setNameError] = useState<'invalid' | 'taken' | null>(null);
   const runIdRef = useRef(0);
@@ -627,6 +627,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       setLastError(null);
       setRecoveryPending(false);
       setWalletPasskeyMissed(false);
+      useAuthStore.getState().dismissLockedPasskeyNotice();
       setStatus('starting');
       return { runId, controller };
     },

@@ -1447,6 +1447,7 @@ describe('usePasskeyLogin', () => {
         lockedName: 'Ada',
         lockedCredentialId: credentialId,
         lockedPasskeyMissed: null,
+        lockedPasskeyNotice: false,
       });
     }
 
@@ -1456,6 +1457,7 @@ describe('usePasskeyLogin', () => {
         lockedName: null,
         lockedCredentialId: null,
         lockedPasskeyMissed: null,
+        lockedPasskeyNotice: false,
       });
       vi.unstubAllGlobals();
     });
@@ -1544,6 +1546,27 @@ describe('usePasskeyLogin', () => {
       await act(async () => {
         second.result.current.authenticateHeld();
       });
+      expect(askedCredentials()).toEqual([LIMITED, undefined]);
+    });
+
+    it('drops the alert of a missed wallet passkey once a later Log in failed and the card mounts again', async () => {
+      const get = vi
+        .fn()
+        .mockRejectedValueOnce(new DOMException('No answer', 'NotAllowedError'))
+        .mockResolvedValueOnce(null);
+      hold(get);
+      const first = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        first.result.current.authenticateHeld();
+      });
+      await act(async () => {
+        first.result.current.authenticateHeld();
+      });
+      expect(first.result.current.status).toBe('error');
+      expect(first.result.current.walletPasskeyMissed).toBe(false);
+      first.unmount();
+      const second = renderHook(() => usePasskeyLogin());
+      expect(second.result.current.walletPasskeyMissed).toBe(false);
       expect(askedCredentials()).toEqual([LIMITED, undefined]);
     });
 
