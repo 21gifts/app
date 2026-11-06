@@ -1525,7 +1525,7 @@ describe('HomeShops', () => {
     fireEvent.click(help);
     const panel = screen.getByRole('dialog', { name: copy.helpLabel });
     expect(panel.className).toBe(
-      'fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg',
+      'fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg outline-none',
     );
     expect(panel.style.top).toBe('16px');
     expect(panel.style.left).toBe('16px');
@@ -2079,11 +2079,17 @@ describe('HomeShops', () => {
     const observe = observers.at(-1);
     if (observe === undefined) throw new Error('missing observer');
     const before = map.fitBounds.mock.calls.length;
-    handlers['zoomstart']?.({});
+    const zoomStart = handlers['zoomstart'];
+    expect(zoomStart).toBeDefined();
+    if (zoomStart === undefined) throw new Error('missing zoomstart handler');
+    zoomStart({});
     width = 320;
     observe([], {} as ResizeObserver);
     expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
-    handlers['dragstart']?.({ originalEvent: new Event('mousedown') });
+    const dragStart = handlers['dragstart'];
+    expect(dragStart).toBeDefined();
+    if (dragStart === undefined) throw new Error('missing dragstart handler');
+    dragStart({ originalEvent: new Event('mousedown') });
     width = 340;
     observe([], {} as ResizeObserver);
     expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
@@ -3373,7 +3379,7 @@ describe('HomeShops', () => {
     const map = firstMap(lib);
     map.transform.zoom = 10;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(true);
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(true);
@@ -3385,7 +3391,7 @@ describe('HomeShops', () => {
 
     map.transform.zoom = 17;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster-marker')).toBeNull();
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
@@ -3395,7 +3401,7 @@ describe('HomeShops', () => {
     Object.defineProperty(pinByName('Ann'), 'offsetHeight', { configurable: true, value: 0 });
     spot = 'back';
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(false);
     expect(pinByName('Ned').classList.contains('is-offscreen')).toBe(false);
@@ -3404,7 +3410,7 @@ describe('HomeShops', () => {
 
     spot = 'edge';
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(true);
     expect(pinByName('Ned').classList.contains('is-offscreen')).toBe(true);
@@ -3454,14 +3460,14 @@ describe('HomeShops', () => {
     await fireScript('load');
     firstMap(lib).transform.zoom = 10;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     const marker = clusterMarker(lib, 'is-daily');
     expect(marker.setLngLat).toHaveBeenLastCalledWith([1, 10]);
     expect(marker.element.classList.contains('is-offscreen')).toBe(false);
     second = -13;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     const offscreen = clusterMarker(lib, 'is-daily');
     expect(offscreen.setLngLat).toHaveBeenLastCalledWith([-26, 10]);
@@ -3470,7 +3476,7 @@ describe('HomeShops', () => {
     for (const boundary of ['right', 'bottom'] as const) {
       edge = boundary;
       await act(async () => {
-        handlers['zoom']?.();
+        mapHandler(handlers, 'zoom')();
       });
       // The full cluster centers at x=820 or y=620; Bea is inside at 799 or 599.
       const visible = clusterMarker(lib, 'is-daily');
@@ -3489,7 +3495,7 @@ describe('HomeShops', () => {
     elsewhere.focus();
     expect(document.activeElement).toBe(elsewhere);
 
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
 
     expect(document.activeElement).toBe(elsewhere);
     elsewhere.remove();
@@ -3503,7 +3509,7 @@ describe('HomeShops', () => {
     fireEvent.click(cluster, { detail: 0 });
     expect(document.activeElement).toBe(cluster);
 
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
 
     const replacement = clusterButton('is-daily');
     expect(replacement).not.toBe(cluster);
@@ -3512,9 +3518,9 @@ describe('HomeShops', () => {
 
     fireEvent.click(replacement, { detail: 0 });
     vi.mocked(window.requestAnimationFrame).mockImplementation(() => 77);
-    handlers['move']?.();
+    mapHandler(handlers, 'move')();
     expect(document.activeElement).toBe(replacement);
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
 
     expect(cancel).toHaveBeenCalledTimes(1);
     expect(cancel).toHaveBeenCalledWith(77);
@@ -3527,7 +3533,7 @@ describe('HomeShops', () => {
     cluster.focus();
 
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
 
     const replacement = clusterButton('is-daily');
@@ -3541,7 +3547,7 @@ describe('HomeShops', () => {
     map.transform.zoom = 18;
 
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
 
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
@@ -3552,20 +3558,20 @@ describe('HomeShops', () => {
     const { handlers, map } = await setupClusterFocus();
     map.transform.zoom = 18;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     const pin = pinByName('Bea');
     pin.focus();
     map.transform.zoom = 10;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     const cluster = clusterButton('is-daily');
     expect(document.activeElement).toBe(cluster);
     fireEvent.click(cluster, { detail: 0 });
     map.transform.zoom = 18;
     await act(async () => {
-      handlers['moveend']?.();
+      mapHandler(handlers, 'moveend')();
     });
     expect(document.activeElement).toBe(pin);
   });
@@ -3579,7 +3585,7 @@ describe('HomeShops', () => {
       const { handlers, map } = await setupClusterFocus();
       map.transform.zoom = 18;
       await act(async (): Promise<void> => {
-        handlers['zoom']?.();
+        mapHandler(handlers, 'zoom')();
       });
       const pin = pinByName(name);
       expect(pin.classList.contains('is-clustered')).toBe(false);
@@ -3589,7 +3595,7 @@ describe('HomeShops', () => {
 
       map.transform.zoom = 10;
       await act(async (): Promise<void> => {
-        handlers['zoom']?.();
+        mapHandler(handlers, 'zoom')();
       });
 
       expect(pin.classList.contains('is-clustered')).toBe(true);
@@ -3601,7 +3607,7 @@ describe('HomeShops', () => {
     const { handlers, map } = await setupClusterFocus();
     map.transform.zoom = 18;
     await act(async (): Promise<void> => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     const pin = pinByName('Cara');
     pin.focus();
@@ -3609,7 +3615,7 @@ describe('HomeShops', () => {
 
     map.transform.zoom = 19;
     await act(async (): Promise<void> => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
 
     expect(pin.classList.contains('is-clustered')).toBe(false);
@@ -3623,7 +3629,7 @@ describe('HomeShops', () => {
     const focus = vi.spyOn(HTMLElement.prototype, 'focus');
 
     await act(async (): Promise<void> => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
 
     expect(clusterButton('is-weekly')).not.toBe(previous);
@@ -3640,9 +3646,9 @@ describe('HomeShops', () => {
     weekly.focus();
 
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
 
     expect(clusterButton('is-weekly')).not.toBe(weekly);
     expect(document.activeElement).toBe(clusterButton('is-weekly'));
@@ -3656,7 +3662,7 @@ describe('HomeShops', () => {
     expect(document.activeElement).toBe(elsewhere);
 
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
 
     expect(clusterButton('is-daily')).not.toBe(cluster);
@@ -3726,7 +3732,7 @@ describe('HomeShops', () => {
     };
     map.transform.zoom = 10;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelectorAll('.shop-cluster')).toHaveLength(6);
     const daily = clusterButton('is-daily');
@@ -3760,34 +3766,34 @@ describe('HomeShops', () => {
     daily.focus();
     fireEvent.click(daily, { detail: 0 });
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
     expect(document.activeElement).toBe(clusterButton('is-daily'));
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
     expect(document.activeElement).toBe(clusterButton('is-daily'));
     fireEvent.click(clusterButton('is-daily'), { detail: 0 });
     map.transform.zoom = 18;
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
     expect(document.activeElement).toBe(pinByName('Ann'));
     map.transform.zoom = 10;
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
     const currentCluster = clusterButton('is-daily');
     expect(document.activeElement).toBe(currentCluster);
     fireEvent.click(currentCluster, { detail: 1 });
     await act(async () => {
-      handlers['move']?.();
+      mapHandler(handlers, 'move')();
     });
-    handlers['moveend']?.();
+    mapHandler(handlers, 'moveend')();
     expect(document.activeElement).toBe(clusterButton('is-daily'));
 
     state.unproject = 'throw';
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([
       (121 + 121.2) / 2,
@@ -3795,7 +3801,7 @@ describe('HomeShops', () => {
     ]);
     state.unproject = 'nan';
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([
       (121 + 121.2) / 2,
@@ -3803,45 +3809,45 @@ describe('HomeShops', () => {
     ]);
     delete map.unproject;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(clusterMarker(lib, 'is-weekly').setLngLat).toHaveBeenCalledWith([(10 + 10.2) / 2, 14.6]);
 
     map.transform.zoom = 17;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster')).toBeNull();
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
 
     map.transform.zoom = undefined;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster')).toBeNull();
     const getZoom = map.getZoom;
     delete map.getZoom;
     map.transform.zoom = 10;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster')).toBeNull();
     if (getZoom !== undefined) map.getZoom = getZoom;
 
     map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster')).toBeNull();
     map.getContainer = () => mapNode;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(clusterButton('is-daily')).toBeTruthy();
 
     delete (map as { getContainer?: unknown }).getContainer;
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(clusterButton('is-daily')).toBeTruthy();
     map.getContainer = () => mapNode;
@@ -3904,7 +3910,7 @@ describe('HomeShops', () => {
     await resolvePlaces(clusterRows());
     changeMenu(copy.country, '');
     await act(async () => {
-      handlers['zoom']?.();
+      mapHandler(handlers, 'zoom')();
     });
     expect(document.querySelector('.shop-cluster')).toBeNull();
     await resolvePlaces(clusterRows());
@@ -3917,8 +3923,8 @@ describe('HomeShops', () => {
       return 9;
     });
     const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
-    handlers['zoom']?.();
-    handlers['move']?.();
+    mapHandler(handlers, 'zoom')();
+    mapHandler(handlers, 'move')();
     expect(queued).toHaveLength(1);
     const project = map.project;
     delete map.project;
@@ -3927,7 +3933,7 @@ describe('HomeShops', () => {
     blocked(0);
     expect(document.querySelector('.shop-cluster')).toBeNull();
     if (project !== undefined) map.project = project;
-    handlers['zoom']?.();
+    mapHandler(handlers, 'zoom')();
     expect(queued).toHaveLength(2);
     cleanup();
     expect(cancel).toHaveBeenCalledWith(9);
@@ -4398,6 +4404,93 @@ describe('HomeShops', () => {
     expect(bea.content.querySelector('.shop-popup-category')).toBeNull();
   });
 
+  it('focuses help only on opening, with preventScroll and outline-none', async () => {
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+    const help = screen.getByRole('button', { name: copy.helpLabel });
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    fireEvent.mouseDown(help);
+    fireEvent.click(help, { detail: 1 });
+
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    expect(document.activeElement).toBe(dialog);
+    expect(dialog.tabIndex).toBe(-1);
+    expect(dialog.classList.contains('outline-none')).toBe(true);
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+
+    const elsewhere = screen.getByRole('button', { name: copy.table });
+    elsewhere.focus();
+    focus.mockClear();
+    const anchor = help.parentElement;
+    if (anchor === null) throw new Error('missing help anchor');
+    setRect(anchor, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    fireEvent(window, new Event('resize'));
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
+    fireEvent.keyDown(elsewhere, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { close: 'Escape', focused: 'panel' },
+    { close: 'Escape', focused: 'explanation' },
+    { close: 'help button', focused: 'panel' },
+    { close: 'outside press', focused: 'panel' },
+  ])(
+    'returns help focus with preventScroll after $close from the $focused',
+    async ({ close, focused }) => {
+      renderShops();
+      await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      fireEvent.click(help);
+      const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+      expect(document.activeElement).toBe(dialog);
+      if (focused === 'explanation') {
+        const explanation = within(dialog).getByText(copy.dailyHelp);
+        explanation.tabIndex = -1;
+        explanation.focus();
+        expect(document.activeElement).toBe(explanation);
+      }
+      const focus = vi.spyOn(help, 'focus');
+
+      if (close === 'Escape') {
+        fireEvent.keyDown(document.activeElement ?? document, { key: 'Escape' });
+      } else if (close === 'help button') fireEvent.click(help);
+      else fireEvent.mouseDown(screen.getByRole('heading', { name: copy.lead }));
+
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(document.activeElement).toBe(help);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
+  it.each(['before', 'after'])(
+    'keeps focus on another button focused %s the outside press',
+    async (order) => {
+      renderShops();
+      await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+      fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+      expect(document.activeElement).toBe(screen.getByRole('dialog', { name: copy.helpLabel }));
+      const elsewhere = screen.getByRole('button', { name: copy.table });
+      if (order === 'before') elsewhere.focus();
+
+      fireEvent.mouseDown(elsewhere);
+      // fireEvent does not perform the browser's default mousedown focus action.
+      if (order === 'after') elsewhere.focus();
+      fireEvent.mouseUp(elsewhere);
+      fireEvent.click(elsewhere);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(document.activeElement).toBe(elsewhere);
+    },
+  );
+
   it('anchors the help panel inside the window and closes it from outside', async () => {
     renderShops();
     await resolveLatest(
@@ -4745,6 +4838,13 @@ function setWindowSize(width: number, height: number): void {
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
 }
 
+function mapHandler(handlers: Record<string, () => void>, event: string): () => void {
+  const handler = handlers[event];
+  expect(handler).toBeDefined();
+  if (handler === undefined) throw new Error(`missing ${event} handler`);
+  return handler;
+}
+
 async function setupClusterFocus(): Promise<{
   handlers: Record<string, () => void>;
   map: MapDouble;
@@ -4777,7 +4877,7 @@ async function setupClusterFocus(): Promise<{
   await fireScript('load');
   firstMap(lib).transform.zoom = 10;
   await act(async () => {
-    handlers['zoom']?.();
+    mapHandler(handlers, 'zoom')();
   });
   return { handlers, map: firstMap(lib) };
 }

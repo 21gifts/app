@@ -1498,6 +1498,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const showShop = differs(censusRows, (row) => row.shop);
   const showCategory = differs(censusRows, (row) => row.category);
   const showHelp = census === null || census.length > 0;
+  const helpVisible = helpOpen && helpBox !== null && showHelp;
   const showLegend = view === 'map' && census !== null && census.length > 0;
   rowsRef.current = rows;
   showCategoryRef.current = showCategory;
@@ -2043,21 +2044,32 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     };
   }, [helpOpen, helpBox]);
 
+  useLayoutEffect(() => {
+    helpPanelRef.current?.focus({ preventScroll: true });
+  }, [helpVisible]);
+
+  const closeHelp = useCallback((): void => {
+    if (helpPanelRef.current?.contains(document.activeElement)) {
+      helpRef.current?.querySelector('button')?.focus({ preventScroll: true });
+    }
+    setHelpOpen(false);
+  }, []);
+
   useEffect(() => {
     if (!helpOpen) return undefined;
     function onPointerDown(event: MouseEvent): void {
       const target = event.target;
       if (!(target instanceof Element)) {
-        setHelpOpen(false);
+        closeHelp();
         return;
       }
       if (helpRef.current !== null && helpRef.current.contains(target)) return;
       if (target.closest('[data-shops-help-panel]') !== null) return;
-      setHelpOpen(false);
+      closeHelp();
     }
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key !== 'Escape') return;
-      setHelpOpen(false);
+      closeHelp();
     }
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
@@ -2065,7 +2077,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [helpOpen]);
+  }, [closeHelp, helpOpen]);
 
   function retryFilters(): void {
     setAttempt((current) => current + 1);
@@ -2215,7 +2227,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                     size="md"
                     className="border border-ink/12"
                     onClick={() => {
-                      setHelpOpen((open) => !open);
+                      if (helpOpen) closeHelp();
+                      else setHelpOpen(true);
                     }}
                   >
                     <CircleHelp aria-hidden="true" className="h-4 w-4" />
@@ -2314,14 +2327,15 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           </div>
         </div>
       </div>
-      {helpOpen && helpBox !== null && showHelp ? (
+      {helpVisible ? (
         <div
           ref={helpPanelRef}
           id={helpPanelId}
           data-shops-help-panel=""
           role="dialog"
           aria-label={copy.helpLabel}
-          className="fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg"
+          tabIndex={-1}
+          className="fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg outline-none"
           style={{
             top: helpBox.top,
             bottom: helpBox.bottom,
