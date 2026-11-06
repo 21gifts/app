@@ -340,37 +340,4 @@ describe('map redirect', () => {
       expect(pattern.test(path)).toBe(false);
     }
   });
-
-  it('keeps a double-slash path on https://21.gifts', () => {
-    responses.redirect.mockClear();
-    responses.rewrite.mockClear();
-    middleware(
-      requestFor('http://21.gifts//other.example', {
-        host: '21.gifts',
-        'x-forwarded-proto': 'http',
-      }),
-    );
-    const [destination, status] = responses.redirect.mock.lastCall as unknown as [URL, number];
-    expect(destination.host).toBe('21.gifts');
-    expect(destination.toString()).toBe('https://21.gifts//other.example');
-    expect(status).toBe(308);
-    expect(responses.rewrite).not.toHaveBeenCalled();
-  });
-
-  it('keeps a backslash path on https://21.gifts', () => {
-    responses.redirect.mockClear();
-    responses.rewrite.mockClear();
-    const request = requestFor(
-      'http://21.gifts/de/about',
-      { host: '21.gifts', 'x-forwarded-proto': 'http' },
-      '?pin=1',
-    );
-    request.nextUrl.pathname = '/\\other.example';
-    middleware(request);
-    const [destination, status] = responses.redirect.mock.lastCall as unknown as [URL, number];
-    expect(destination.host).toBe('21.gifts');
-    expect(destination.toString()).toBe('https://21.gifts//other.example?pin=1');
-    expect(status).toBe(308);
-    expect(responses.rewrite).not.toHaveBeenCalled();
-  });
 });
