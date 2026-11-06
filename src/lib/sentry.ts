@@ -1,5 +1,6 @@
 import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
 import { capturePageLoad, type PageLoad } from '@/lib/page-load';
+import { isStandaloneDisplay } from '@/lib/push';
 import {
   getAppVersion,
   getSentryDsn,
@@ -164,15 +165,19 @@ export type WalletSpanAttributes = {
   route?: 'spark' | 'lightning' | 'onchain';
   /** Which passkey prompt opened the wallet, or made the passkey of a social recovery. */
   prompt?: 'login' | 'unlock' | 'recovery';
+  /** Whether a held-back session was waiting when the login prompt opened. */
+  held?: boolean;
 };
 
 /**
  * The attributes a wallet span is sent with: its own fixed words plus how
  * this document was loaded (`load`: `navigate`, `reload`, `back_forward`,
  * `prerender`, or `unknown`) and who started that load (`load_trigger`:
- * `app` for App Router's fallback to a full page load, otherwise `other`).
+ * `app` for App Router's fallback to a full page load, otherwise `other`), and
+ * how the app is displayed (`display`: `standalone` or `browser`).
  */
-export type WalletSpanSentAttributes = WalletSpanAttributes & PageLoad;
+export type WalletSpanSentAttributes = WalletSpanAttributes &
+  PageLoad & { display: 'standalone' | 'browser' };
 
 /** A transaction event, as `beforeSendTransaction` receives it. */
 type TransactionEvent = Event & { type: 'transaction' };
@@ -607,8 +612,9 @@ export function sentryOptions(runtime: 'browser' | 'server'): SentryInitOptions 
  * Time one wallet step as its own trace span (its own transaction, in the
  * page's trace), so a slow step on a phone shows up without stretching the
  * page load around it. The name and attributes are fixed words only; every
- * span also carries why this document was loaded (`capturePageLoad`), so a
- * passkey prompt can be counted per page load and cause. Without
+ * span also carries why this document was loaded (`capturePageLoad`) and how
+ * the app is displayed, so a passkey prompt can be counted per page load,
+ * cause, and display. Without
  * error reporting, or when the trace is not sampled, it only runs `work`. A
  * rejection marks the span as failed and is passed on unchanged.
  *
@@ -623,7 +629,11 @@ export function traceWallet<T>(
   work: () => Promise<T>,
   attributes: WalletSpanAttributes = {},
 ): Promise<T> {
-  const sent: WalletSpanSentAttributes = { ...capturePageLoad(), ...attributes };
+  const sent: WalletSpanSentAttributes = {
+    ...capturePageLoad(),
+    display: isStandaloneDisplay() ? 'standalone' : 'browser',
+    ...attributes,
+  };
   return startSpan({ name, op: 'wallet', attributes: sent, parentSpan: null }, work);
 }
 

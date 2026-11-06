@@ -61,10 +61,12 @@ function mockPasskey(status: PasskeyStatus = 'idle', error: string | null = null
     register: registerSpy,
     submitName: vi.fn(),
     authenticate: authenticateSpy,
+    authenticateHeld: vi.fn(),
     retry: retrySpy,
     cancel: cancelSpy,
     error: status === 'error' ? error : null,
     recoveryPending: false,
+    walletPasskeyMissed: false,
     clearNameError: vi.fn(),
     nameError: null,
   });

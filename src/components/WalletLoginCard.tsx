@@ -32,17 +32,18 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
 /**
  * The login shown in place of a signed-in screen while the wallet is not open
  * in this tab, so the member stays on the same path. It is the `/login` card:
- * **Log in** is one passkey prompt that refreshes the session and derives the
- * recovery phrase into tab memory. Once a session is there, the wallet opens
+ * **Log in** is one passkey prompt, limited to the account's wallet passkey,
+ * that refreshes the session and derives the recovery phrase into tab memory. Once a session is there, the wallet opens
  * while the card shows its starting line (a second prompt only when another
  * passkey signed in), and `OnboardingGate` then shows the screen; the one-time
  * wallet setup runs in the background, without a dialog. When the wallet
  * cannot be opened the session is held back again: a passkey without PRF
  * output shows `wallet.prfUnsupported`, any other failure or a dismissed
- * prompt `login.error`, above **Log in** on `LoginCard`'s held start view.
+ * wallet-opening prompt `login.error`, above **Log in** on `LoginCard`'s held start view.
  * That view is the ordinary login (**Log in**, **Open a new account**) with
- * no **Log out**: whichever passkey logs in decides the account, and a
- * different account replaces the held session. It offers the Social Recovery
+ * no **Log out**. When the wallet passkey did not answer, it says so and its
+ * next **Log in** offers every passkey: whichever passkey logs in decides the
+ * account, and a different account replaces the held session. It offers the Social Recovery
  * entry only when the passkey that answered belongs to a social recovery that
  * is not finished yet (`login.recoveryPending`): that passkey is not the held
  * member's, and the alert names the entry. A card that mounts later for

@@ -173,10 +173,12 @@ beforeEach(() => {
     register: vi.fn(),
     submitName: vi.fn(),
     authenticate: vi.fn(),
+    authenticateHeld: vi.fn(),
     retry: vi.fn(),
     cancel,
     error: null,
     recoveryPending: false,
+    walletPasskeyMissed: false,
     clearNameError: vi.fn(),
     nameError: null,
   });

@@ -101,6 +101,44 @@ describe('useAuthStore', () => {
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 
+  it('keeps the wallet passkey id of a held-back session until a login or log out', () => {
+    const seeded = { ...account, passkeyCredentialId: 'cred-seed' };
+    useAuthStore.getState().setLockedSession('stored', seeded);
+    expect(useAuthStore.getState().lockedCredentialId).toBe('cred-seed');
+    useAuthStore.getState().setAuth('tok', seeded);
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.getState().lockSession();
+    expect(useAuthStore.getState().lockedCredentialId).toBe('cred-seed');
+    useAuthStore.getState().clearAuth();
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.getState().setLockedSession('stored', { ...account, passkeyCredentialId: null });
+    expect(useAuthStore.getState().lockedCredentialId).toBeNull();
+    useAuthStore.setState({ lockedSession: null, lockedName: null });
+  });
+
+  it('keeps the missed wallet passkey for its held-back session until a login or log out', () => {
+    useAuthStore.getState().setLockedSession('stored', account);
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(true);
+    useAuthStore.getState().dismissLockedPasskeyNotice();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    useAuthStore.getState().setLockedSession('stored', account);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBe('stored');
+    useAuthStore.getState().setAuth('tok', account);
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+    useAuthStore.getState().lockSession();
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    useAuthStore.getState().clearAuth();
+    expect(useAuthStore.getState().lockedPasskeyMissed).toBeNull();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+    useAuthStore.getState().noteLockedPasskeyMissed();
+    expect(useAuthStore.getState().lockedPasskeyNotice).toBe(false);
+  });
+
   it('leaves state unchanged when there is no active session to lock', () => {
     useAuthStore.getState().setLockedSession('stored', account);
     const before = useAuthStore.getState();

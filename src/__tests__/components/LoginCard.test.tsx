@@ -20,6 +20,7 @@ const loginSpy = vi.fn();
 const registerSpy = vi.fn();
 const submitNameSpy = vi.fn();
 const authenticateSpy = vi.fn();
+const authenticateHeldSpy = vi.fn();
 const retrySpy = vi.fn();
 const cancelPasskeySpy = vi.fn();
 const clearNameErrorSpy = vi.fn();
@@ -51,11 +52,13 @@ function mockPasskey(
     register: registerSpy,
     submitName: submitNameSpy,
     authenticate: authenticateSpy,
+    authenticateHeld: authenticateHeldSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
     clearNameError: clearNameErrorSpy,
     error: status === 'error' ? error : null,
     recoveryPending: status === 'error' && recoveryPending,
+    walletPasskeyMissed: false,
     nameError: status === 'name' ? nameError : null,
   });
 }
@@ -100,6 +103,31 @@ describe('LoginCard', () => {
       useAuthStore.setState({ lockedSession: null, lockedName: null });
     });
 
+    it('says the wallet passkey did not answer and keeps Log in and Open a new account', () => {
+      vi.mocked(usePasskeyLogin).mockReturnValue({
+        ...usePasskeyLogin(),
+        walletPasskeyMissed: true,
+      });
+      renderWithLocale(<LoginCard heldProblem="failed" />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
+      );
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+    });
+
+    it('lets the passkey of an unfinished recovery win over the wallet passkey alert', () => {
+      mockPasskey('error', 'recovery', null, true);
+      vi.mocked(usePasskeyLogin).mockReturnValue({
+        ...usePasskeyLogin(),
+        walletPasskeyMissed: true,
+      });
+      renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(screen.queryByText(/did not answer/)).toBeNull();
+      expect(screen.getByRole('alert').textContent).toContain('recovery is not finished');
+    });
+
     it('is the ordinary login with a greeting, Open a new account, and no Log out', () => {
       renderWithLocale(<LoginCard />);
       expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
@@ -142,7 +170,7 @@ describe('LoginCard', () => {
     it('logs in with one authenticate prompt, never the account question', () => {
       renderWithLocale(<LoginCard />);
       fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
-      expect(authenticateSpy).toHaveBeenCalledTimes(1);
+      expect(authenticateHeldSpy).toHaveBeenCalledTimes(1);
       expect(loginSpy).not.toHaveBeenCalled();
     });
 
@@ -200,7 +228,7 @@ describe('LoginCard', () => {
       });
       fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
       expect(useAuthStore.getState().wrongAccount).toBe(false);
-      expect(authenticateSpy).toHaveBeenCalledTimes(2);
+      expect(authenticateHeldSpy).toHaveBeenCalledTimes(2);
     });
 
     it('shows the failed wallet open as the retry message', () => {
@@ -826,11 +854,13 @@ describe('LoginCard', () => {
         },
         submitName: submitNameSpy,
         authenticate: authenticateSpy,
+        authenticateHeld: authenticateHeldSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         clearNameError: clearNameErrorSpy,
         error: null,
         recoveryPending: false,
+        walletPasskeyMissed: false,
         nameError: null,
       });
       return <LoginCard />;
@@ -852,11 +882,13 @@ describe('LoginCard', () => {
         },
         submitName: submitNameSpy,
         authenticate: authenticateSpy,
+        authenticateHeld: authenticateHeldSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         clearNameError: clearNameErrorSpy,
         error: null,
         recoveryPending: false,
+        walletPasskeyMissed: false,
         nameError: null,
       });
       return <LoginCard />;

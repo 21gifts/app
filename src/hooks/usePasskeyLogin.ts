@@ -108,6 +108,13 @@ export interface UsePasskeyLogin {
   /** Sign in with an existing passkey. */
   authenticate: () => void;
   /**
+   * **Log in** of a held-back session: asks only for that account's wallet
+   * passkey, so one prompt also opens the wallet. Once that prompt ended
+   * without an answer, or for an account without a wallet passkey, it offers
+   * every passkey.
+   */
+  authenticateHeld: () => void;
+  /**
    * After an error, a named create returns to the name form and does not
    * start create. `register(viewKey)` sends the same key. `authenticate`
    * repeats authenticate. The single login button repeats login.
@@ -122,6 +129,12 @@ export interface UsePasskeyLogin {
    * recovery that is not finished yet (`RecoveryPendingError`).
    */
   recoveryPending: boolean;
+  /**
+   * True when the prompt that asked only for the wallet passkey ended without
+   * an answer: dismissed, or that passkey is not on this device (the browser
+   * does not tell these apart).
+   */
+  walletPasskeyMissed: boolean;
   /** Username problem while `status === 'name'`, otherwise `null`. */
   nameError: 'invalid' | 'taken' | null;
   /** Drops a taken or invalid name so a changed draft can be submitted. */
@@ -555,12 +568,16 @@ async function readLoginPrfFirst(
  * with `recoveryPending` set, and the authenticator is never told that the
  * passkey is unknown, because that passkey may become the account's only one.
  *
- * @returns Status plus login, register, submitName, authenticate, retry, cancel, error, and recoveryPending.
+ * @returns Status plus login, register, submitName, authenticate, authenticateHeld, retry, cancel, error, recoveryPending, and walletPasskeyMissed.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const [lastError, setLastError] = useState<string | null>(null);
   const [recoveryPending, setRecoveryPending] = useState(false);
+  const [walletPasskeyMissed, setWalletPasskeyMissed] = useState(() => {
+    const { lockedSession, lockedPasskeyMissed, lockedPasskeyNotice } = useAuthStore.getState();
+    return lockedPasskeyNotice && lockedSession !== null && lockedPasskeyMissed === lockedSession;
+  });
   const [nameError, setNameError] = useState<'invalid' | 'taken' | null>(null);
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
@@ -590,6 +607,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     setNameError(null);
     setLastError(null);
     setRecoveryPending(false);
+    setWalletPasskeyMissed(false);
     setStatus('idle');
   }, []);
 
@@ -608,6 +626,8 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       setNameError(null);
       setLastError(null);
       setRecoveryPending(false);
+      setWalletPasskeyMissed(false);
+      useAuthStore.getState().dismissLockedPasskeyNotice();
       setStatus('starting');
       return { runId, controller };
     },
@@ -786,7 +806,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   );
 
   const completeAuthentication = useCallback(
-    async (runId: number, controller: AbortController): Promise<void> => {
+    async (
+      runId: number,
+      controller: AbortController,
+      walletCredentialId: string | null = null,
+    ): Promise<void> => {
       guard(runId);
       let begin: Awaited<ReturnType<typeof startPasskeyAuthentication>>;
       try {
@@ -807,17 +831,32 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         challengeId: begin.challengeId,
       });
       const request: CredentialRequestOptions = {
-        publicKey: requestOptionsFromJSON(begin.options),
+        publicKey: requestOptionsFromJSON(
+          walletCredentialId === null
+            ? begin.options
+            : {
+                ...begin.options,
+                allowCredentials: [{ type: 'public-key', id: walletCredentialId }],
+              },
+        ),
       };
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
+      const noteWalletPasskeyMissed = (): void => {
+        if (walletCredentialId !== null && runId === runIdRef.current) {
+          useAuthStore.getState().noteLockedPasskeyMissed();
+          setWalletPasskeyMissed(true);
+        }
+      };
       let credential: Credential | null;
       try {
         credential = await traceWallet('wallet.passkey', () => navigator.credentials.get(request), {
           prompt: 'login',
+          held: useAuthStore.getState().lockedSession !== null,
         });
       } catch (error: unknown) {
+        noteWalletPasskeyMissed();
         reportFailedAttempt(
           'client.passkey.login.fail',
           entryKindRef.current === 'login' ? 'login' : 'authenticate',
@@ -828,6 +867,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
+        noteWalletPasskeyMissed();
         const error = new Error('Passkey assertion returned no credential');
         reportFailedAttempt(
           'client.passkey.login.fail',
@@ -1015,19 +1055,35 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     [beginRun, completeRegistration, finishWithError],
   );
 
+  const startAuthentication = useCallback(
+    (walletCredentialId: string | null): void => {
+      clearSessionPhrase();
+      if (isInAppBrowser()) {
+        reportFailedAttempt(
+          'client.passkey.login.fail',
+          'authenticate',
+          new Error('in-app browser'),
+        );
+        setStatus('unsupported');
+        return;
+      }
+      entryKindRef.current = 'authenticate';
+      const { runId, controller } = beginRun('authenticate');
+      void completeAuthentication(runId, controller, walletCredentialId).catch((error: unknown) => {
+        finishWithError(runId, error);
+      });
+    },
+    [beginRun, completeAuthentication, finishWithError],
+  );
+
   const authenticate = useCallback((): void => {
-    clearSessionPhrase();
-    if (isInAppBrowser()) {
-      reportFailedAttempt('client.passkey.login.fail', 'authenticate', new Error('in-app browser'));
-      setStatus('unsupported');
-      return;
-    }
-    entryKindRef.current = 'authenticate';
-    const { runId, controller } = beginRun('authenticate');
-    void completeAuthentication(runId, controller).catch((error: unknown) => {
-      finishWithError(runId, error);
-    });
-  }, [beginRun, completeAuthentication, finishWithError]);
+    startAuthentication(null);
+  }, [startAuthentication]);
+
+  const authenticateHeld = useCallback((): void => {
+    const { lockedSession, lockedCredentialId, lockedPasskeyMissed } = useAuthStore.getState();
+    startAuthentication(lockedPasskeyMissed === lockedSession ? null : lockedCredentialId);
+  }, [startAuthentication]);
 
   const login = useCallback((): void => {
     clearSessionPhrase();
@@ -1102,7 +1158,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     clearNameError,
     cancel,
     error: status === 'error' ? lastError : null,
+    authenticateHeld,
     recoveryPending: status === 'error' && recoveryPending,
+    walletPasskeyMissed,
     nameError: status === 'name' ? nameError : null,
   };
 }

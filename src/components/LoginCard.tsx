@@ -38,10 +38,13 @@ type VersionBlock = {
  * the same, with **Welcome back, {name}** above the heading when the account
  * has a name or username, and **Confirm to open your wallet** directly above
  * **Log in**. **Log in** is then one passkey prompt
- * (authenticate only): whichever passkey answers decides the account, so a
- * different account replaces the held session. A dismissed prompt, an
- * unknown passkey, or any other failure of that prompt stays on this start
- * view with **Something went wrong. Please try again.** (`login.error`)
+ * (authenticate only) that asks for the account's wallet passkey, so the same
+ * prompt opens the wallet. When that prompt ends without an answer, the view
+ * says so (`login.heldPasskeyMissed`) and the next **Log in** offers every
+ * passkey: whichever passkey answers that prompt decides the account, so a
+ * different account replaces the held session. An unknown passkey or any
+ * other failure stays on this start view with
+ * **Something went wrong. Please try again.** (`login.error`)
  * above **Log in**; a refused account (the wrong-account 403) shows
  * `login.wrongAccount` there instead and keeps the held session. Only this
  * held start view adds **Open a new account** under **New to 21.gifts?**: it
@@ -142,16 +145,18 @@ export function LoginCard({
             ? 'login.wrongAccount'
             : passkey.recoveryPending
               ? 'login.recoveryPending'
-              : heldTried || heldProblem === 'failed'
-                ? 'login.error'
-                : heldProblem === 'noPrf'
-                  ? 'wallet.prfUnsupported'
-                  : null
+              : passkey.walletPasskeyMissed
+                ? 'login.heldPasskeyMissed'
+                : heldTried || heldProblem === 'failed'
+                  ? 'login.error'
+                  : heldProblem === 'noPrf'
+                    ? 'wallet.prfUnsupported'
+                    : null
         }
         onLogin={() => {
           clearWrongAccount();
           setHeldTried(true);
-          passkey.authenticate();
+          passkey.authenticateHeld();
         }}
         onRegister={() => {
           setHeldTried(false);
@@ -255,7 +260,12 @@ interface StartViewProps {
   held?: boolean;
   /** Alert above **Log in**, or null. */
   alert?:
-    'login.error' | 'login.wrongAccount' | 'login.recoveryPending' | 'wallet.prfUnsupported' | null;
+    | 'login.error'
+    | 'login.wrongAccount'
+    | 'login.recoveryPending'
+    | 'login.heldPasskeyMissed'
+    | 'wallet.prfUnsupported'
+    | null;
   /**
    * How **Recover account via Social Recovery** follows **Log in**: the quiet
    * `link`, the `button` of a held view with an unfinished recovery, or `null`

@@ -15,6 +15,16 @@ function lockedNameOf(account: Account | null): string | null {
 }
 
 /**
+ * Passkey a held-back session's login card asks for.
+ *
+ * @param account - The account behind the held-back session, or `null`.
+ * @returns The account's wallet passkey id, or `null` when it has none.
+ */
+function lockedCredentialOf(account: Account | null): string | null {
+  return account?.passkeyCredentialId ?? null;
+}
+
+/**
  * Shape of the authentication store.
  */
 interface AuthState {
@@ -36,6 +46,25 @@ interface AuthState {
    * `null` when it has neither or no session is held back.
    */
   lockedName: string | null;
+  /**
+   * Wallet passkey id of the account behind {@link AuthState.lockedSession},
+   * so the login card can ask for that passkey only; `null` when it has none
+   * or no session is held back.
+   */
+  lockedCredentialId: string | null;
+  /**
+   * The held-back session whose wallet passkey did not answer a prompt limited
+   * to it, so its next **Log in** offers every passkey, also after the login
+   * card mounted again; `null` until then. A later held-back session has
+   * another token, so it asks for its wallet passkey again.
+   */
+  lockedPasskeyMissed: string | null;
+  /**
+   * True from a missed wallet passkey until the next login run starts, so a
+   * login card that mounts again in between still says the passkey did not
+   * answer, and does not say it after a later attempt.
+   */
+  lockedPasskeyNotice: boolean;
   /**
    * True after a wrong-account 403 until the visitor retries login.
    * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
@@ -64,16 +93,20 @@ interface AuthState {
    * the home-screen badge, as for a signed-out visitor.
    *
    * @param session - The stored session token.
-   * @param account - The account the token belongs to (its display name is kept).
+   * @param account - The account the token belongs to (its display name and wallet passkey id are kept).
    */
   setLockedSession(session: string, account: Account): void;
   /**
    * Moves the current session to {@link AuthState.lockedSession}: a login
    * whose wallet could not be opened does not count as signed in. Keeps the
-   * account's display name for the login card and clears the home-screen
-   * badge; does nothing without a current session.
+   * account's display name and wallet passkey id for the login card and clears
+   * the home-screen badge; does nothing without a current session.
    */
   lockSession(): void;
+  /** Records that the wallet passkey of the held-back session did not answer. */
+  noteLockedPasskeyMissed(): void;
+  /** Ends {@link AuthState.lockedPasskeyNotice} when the next login run starts. */
+  dismissLockedPasskeyNotice(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
   /**
@@ -99,10 +132,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   account: null,
   lockedSession: null,
   lockedName: null,
+  lockedCredentialId: null,
+  lockedPasskeyMissed: null,
+  lockedPasskeyNotice: false,
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
-    set({ session, account, lockedSession: null, lockedName: null, wrongAccount: false });
+    set({
+      session,
+      account,
+      lockedSession: null,
+      lockedName: null,
+      lockedCredentialId: null,
+      lockedPasskeyMissed: null,
+      lockedPasskeyNotice: false,
+      wrongAccount: false,
+    });
   },
   setAccount: (account) => {
     set({ account });
@@ -115,6 +160,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       account: null,
       lockedSession: session,
       lockedName: lockedNameOf(account),
+      lockedCredentialId: lockedCredentialOf(account),
     });
   },
   lockSession: () => {
@@ -129,14 +175,32 @@ export const useAuthStore = create<AuthState>((set) => ({
       account: null,
       lockedSession: session,
       lockedName: lockedNameOf(account),
+      lockedCredentialId: lockedCredentialOf(account),
     });
+  },
+  noteLockedPasskeyMissed: () => {
+    set((state) => ({
+      lockedPasskeyMissed: state.lockedSession,
+      lockedPasskeyNotice: state.lockedSession !== null,
+    }));
+  },
+  dismissLockedPasskeyNotice: () => {
+    set({ lockedPasskeyNotice: false });
   },
   clearAuth: () => {
     clearSessionPhrase();
     clearSession();
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
-    set({ session: null, account: null, lockedSession: null, lockedName: null });
+    set({
+      session: null,
+      account: null,
+      lockedSession: null,
+      lockedName: null,
+      lockedCredentialId: null,
+      lockedPasskeyMissed: null,
+      lockedPasskeyNotice: false,
+    });
   },
   setWrongAccount: (value) => {
     set({ wrongAccount: value });

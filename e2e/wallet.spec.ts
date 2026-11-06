@@ -70,7 +70,7 @@ async function signInWalletEligible(page: Page): Promise<void> {
         missing: [],
         walletRequired: true,
         walletBackupSeenAt: 1,
-        passkeyCredentialId: 'cred-seed',
+        passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
       }),
     });
   });

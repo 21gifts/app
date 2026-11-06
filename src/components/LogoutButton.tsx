@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Quiet log-out control used inside the signed-in Menu dropdown and in the
  * Account section of `/settings`, not as a free top-right action. The login card of a held-back session has none:
- * logging in there with any passkey decides the account. The session first
+ * its next **Log in** after a missed wallet passkey offers every passkey, and that passkey decides the account. The session first
  * switches push off and sends the interaction log with its `logout` event
  * (together at most 5 s), then ends.
  *

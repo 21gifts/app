@@ -417,6 +417,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'held-session-passkey-missed',
+    image: 'login-held-session-passkey-missed.png',
+    visual: 'state-login-held-session-passkey-missed',
+    needle: "shotScreen(page, 'state-login-held-session-passkey-missed')",
+  },
+  {
+    route: '/login',
     id: 'recovery-pending',
     image: 'login-recovery-pending.png',
     visual: 'state-login-recovery-pending',
@@ -610,6 +617,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-balance-locked-outdated.png',
     visual: 'state-wallet-balance-locked-outdated',
     needle: "shotScreen(page, 'state-wallet-balance-locked-outdated')",
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-passkey-missed',
+    image: 'wallet-balance-locked-passkey-missed.png',
+    visual: 'state-wallet-balance-locked-passkey-missed',
+    needle: "shotScreen(page, 'state-wallet-balance-locked-passkey-missed')",
   },
   {
     route: '/wallet',
@@ -1396,6 +1410,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-payment-locked-error.png',
     visual: 'state-wallet-payment-locked-error',
     needle: "shotScreen(page, 'state-wallet-payment-locked-error')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'locked-passkey-missed',
+    image: 'wallet-payment-locked-passkey-missed.png',
+    visual: 'state-wallet-payment-locked-passkey-missed',
+    needle: "shotScreen(page, 'state-wallet-payment-locked-passkey-missed')",
   },
   {
     route: '/wallet/payment',
@@ -2846,6 +2867,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-held-session-recovery-pending.png',
     visual: 'state-welcome-held-session-recovery-pending',
     needle: "shotScreen(page, 'state-welcome-held-session-recovery-pending')",
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-passkey-missed',
+    image: 'welcome-held-session-passkey-missed.png',
+    visual: 'state-welcome-held-session-passkey-missed',
+    needle: "shotScreen(page, 'state-welcome-held-session-passkey-missed')",
   },
   {
     route: '/welcome',

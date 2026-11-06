@@ -36,6 +36,8 @@ function memberAccount(id: string, name: string, username: string): Record<strin
 
 const ADA = memberAccount('acc_e2e', 'Ada', 'ada');
 const BOB = memberAccount('acc_bob', 'Bob', 'bob');
+const WALLET_PASSKEY_MISSED =
+  "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.";
 
 /** Stores Ada's session before the page loads, as a reload finds it. */
 async function storeHeldSession(page: Page): Promise<void> {
@@ -54,55 +56,73 @@ async function storeHeldSession(page: Page): Promise<void> {
 
 /**
  * Stubs the passkey prompt (counted in `sessionStorage` as
- * `e2e.credentialGets`) and the login that answers with `token` for `account`.
- * With `dismiss`, the prompt is dismissed instead.
+ * `e2e.credentialGets`, the credential ids each prompt asked for as
+ * `e2e.credentialAsked`) and the login that answers with `token` for `account`.
+ * With `dismiss`, the prompt is dismissed instead. A device without the wallet
+ * passkey (`deviceHasWalletPasskey: false`) leaves a prompt limited to it
+ * unanswered, as a browser does.
  */
 async function stubLogin(
   page: Page,
   answer: { token: string; account: Record<string, unknown> } | 'dismiss',
+  { deviceHasWalletPasskey = true }: { deviceHasWalletPasskey?: boolean } = {},
 ): Promise<void> {
-  await page.addInitScript((dismiss: boolean) => {
-    if (sessionStorage.getItem('e2e.credentialGets') === null) {
-      sessionStorage.setItem('e2e.credentialGets', '0');
-    }
-    const pk = globalThis.PublicKeyCredential as unknown as {
-      parseRequestOptionsFromJSON?: unknown;
-    };
-    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
-      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
-        value: undefined,
+  await page.addInitScript(
+    ({ dismiss, hasWalletPasskey }: { dismiss: boolean; hasWalletPasskey: boolean }) => {
+      if (sessionStorage.getItem('e2e.credentialGets') === null) {
+        sessionStorage.setItem('e2e.credentialGets', '0');
+      }
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseRequestOptionsFromJSON?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+      }
+      const assertion = {
+        id: 'AQIDBAUGBwgJCgsMDQ4PEA',
+        rawId: Uint8Array.from({ length: 16 }, (_, i) => i + 1).buffer,
+        type: 'public-key',
+        getClientExtensionResults: () => ({}),
+        response: {
+          clientDataJSON: new Uint8Array([123]).buffer,
+          authenticatorData: new Uint8Array([3]).buffer,
+          signature: new Uint8Array([4]).buffer,
+          userHandle: null,
+        },
+      };
+      Object.defineProperty(navigator, 'credentials', {
         configurable: true,
+        value: {
+          create: async () => {
+            throw new DOMException('Not used here', 'NotAllowedError');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const count = Number(sessionStorage.getItem('e2e.credentialGets') ?? '0') + 1;
+            sessionStorage.setItem('e2e.credentialGets', String(count));
+            const limited = options?.publicKey?.allowCredentials ?? [];
+            const asked = JSON.parse(sessionStorage.getItem('e2e.credentialAsked') ?? '[]');
+            asked.push(
+              limited.map((cred) =>
+                btoa(String.fromCharCode(...new Uint8Array(cred.id as ArrayBuffer)))
+                  .replace(/\+/g, '-')
+                  .replace(/\//g, '_')
+                  .replace(/=+$/, ''),
+              ),
+            );
+            sessionStorage.setItem('e2e.credentialAsked', JSON.stringify(asked));
+            if (dismiss || (limited.length > 0 && !hasWalletPasskey)) {
+              throw new DOMException('The prompt was dismissed', 'NotAllowedError');
+            }
+            return assertion;
+          },
+        },
       });
-    }
-    const assertion = {
-      id: 'AQIDBAUGBwgJCgsMDQ4PEA',
-      rawId: Uint8Array.from({ length: 16 }, (_, i) => i + 1).buffer,
-      type: 'public-key',
-      getClientExtensionResults: () => ({}),
-      response: {
-        clientDataJSON: new Uint8Array([123]).buffer,
-        authenticatorData: new Uint8Array([3]).buffer,
-        signature: new Uint8Array([4]).buffer,
-        userHandle: null,
-      },
-    };
-    Object.defineProperty(navigator, 'credentials', {
-      configurable: true,
-      value: {
-        create: async () => {
-          throw new DOMException('Not used here', 'NotAllowedError');
-        },
-        get: async () => {
-          const count = Number(sessionStorage.getItem('e2e.credentialGets') ?? '0') + 1;
-          sessionStorage.setItem('e2e.credentialGets', String(count));
-          if (dismiss) {
-            throw new DOMException('The prompt was dismissed', 'NotAllowedError');
-          }
-          return assertion;
-        },
-      },
-    });
-  }, answer === 'dismiss');
+    },
+    { dismiss: answer === 'dismiss', hasWalletPasskey: deviceHasWalletPasskey },
+  );
   await page.route('**/auth/passkey/authenticate/begin', async (route) => {
     await route.fulfill({
       status: 200,
@@ -122,6 +142,11 @@ async function stubLogin(
       });
     });
   }
+}
+
+/** The credential ids each passkey prompt asked for (see {@link stubLogin}). */
+async function credentialAsked(page: Page): Promise<string[][]> {
+  return page.evaluate(() => JSON.parse(sessionStorage.getItem('e2e.credentialAsked') ?? '[]'));
 }
 
 /** Number of passkey prompts so far (see {@link stubLogin}). */
@@ -161,21 +186,28 @@ test('Function: hydratesLocked — held-back session: one passkey prompt brings 
   await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(/\/welcome\?visual=held-session$/);
   expect(await credentialGets(page)).toBe(1);
+  expect(await credentialAsked(page)).toEqual([[ADA['passkeyCredentialId']]]);
 });
 
-test("held-back session: another account's passkey replaces the held session", async ({ page }) => {
+test("held-back session: another account's passkey answers the second Log in and replaces the held session", async ({
+  page,
+}) => {
   await storeHeldSession(page);
-  await stubLogin(page, { token: 'sess-bob', account: BOB });
+  await stubLogin(page, { token: 'sess-bob', account: BOB }, { deviceHasWalletPasskey: false });
   await page.goto('/welcome?visual=held-session');
   await expect(page.getByText('Welcome back, Ada')).toBeVisible();
-  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  const login = page.getByRole('button', { name: 'Log in', exact: true });
+  await login.click();
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(WALLET_PASSKEY_MISSED);
+  expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBe('sess-e2e');
+  await login.click();
   await expect(page.getByRole('heading', { name: 'Welcome, Bob' })).toBeVisible();
   await expect(page.getByText('Welcome back, Ada')).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBe('sess-bob');
-  expect(await credentialGets(page)).toBe(1);
+  expect(await credentialAsked(page)).toEqual([[ADA['passkeyCredentialId']], []]);
 });
 
-test('held-back session: a dismissed prompt stays on the card with the retry message', async ({
+test('held-back session: a dismissed prompt says the wallet passkey did not answer, and the next prompt offers every passkey', async ({
   page,
 }) => {
   await storeHeldSession(page);
@@ -184,14 +216,17 @@ test('held-back session: a dismissed prompt stays on the card with the retry mes
   const login = page.getByRole('button', { name: 'Log in', exact: true });
   await login.click();
   // The Next route announcer is an empty alert too.
-  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
-    'Something went wrong. Please try again.',
-  );
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(WALLET_PASSKEY_MISSED);
   await expect(page.getByText('Welcome back, Ada')).toBeVisible();
   await expect(login).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toHaveCount(
     0,
   );
+  await login.click();
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+    'Something went wrong. Please try again.',
+  );
+  expect(await credentialAsked(page)).toEqual([[ADA['passkeyCredentialId']], []]);
   expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBe('sess-e2e');
 });
 
