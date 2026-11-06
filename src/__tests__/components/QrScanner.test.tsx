@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import jsQR from 'jsqr';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QrScanner } from '@/components/QrScanner';
@@ -248,6 +248,54 @@ describe('QrScanner', () => {
     );
   });
 
+  it('reports a blocked camera to the caller', async () => {
+    const onPicture = vi.fn();
+    setCamera(() => Promise.reject(new DOMException('blocked', 'NotAllowedError')));
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    expect(onPicture).toHaveBeenCalledWith('denied');
+  });
+
+  it('reports when the preview starts playing', async () => {
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const onPicture = vi.fn();
+    const view = renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    fireEvent.playing(video());
+    expect(onPicture).toHaveBeenCalledWith('showing');
+    view.rerender(<QrScanner onResult={vi.fn()} />);
+    fireEvent.playing(video());
+    fireEvent.pause(video());
+    fireEvent.ended(video());
+    expect(onPicture).toHaveBeenCalledOnce();
+  });
+
+  it('reports paused and ended previews and reports showing when playback resumes', async () => {
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const onPicture = vi.fn();
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    fireEvent.playing(video());
+    fireEvent.pause(video());
+    fireEvent.playing(video());
+    fireEvent.ended(video());
+    fireEvent.playing(video());
+    expect(onPicture.mock.calls).toEqual([
+      ['showing'],
+      ['paused'],
+      ['showing'],
+      ['paused'],
+      ['showing'],
+    ]);
+  });
+
+  it('reports a missing camera to the caller', async () => {
+    const onPicture = vi.fn();
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    expect(onPicture).toHaveBeenCalledWith('unavailable');
+  });
+
   it.each(['NotAllowedError', 'SecurityError'])(
     'says the camera was blocked on %s',
     async (name) => {
@@ -315,6 +363,51 @@ describe('QrScanner', () => {
     renderWithLocale(<QrScanner onResult={onResult} />);
     await flush();
     expect(onResult).toHaveBeenCalledWith('lnbc1');
+  });
+
+  it('reports a paused preview without an alert and keeps the detector running', async () => {
+    play.mockRejectedValue(new DOMException('no', 'NotAllowedError'));
+    const { Detector } = nativeDetector(Promise.resolve(['qr_code']), [
+      [],
+      [{ rawValue: 'lnbc1' }],
+    ]);
+    setDetector(Detector);
+    const { stream, stop } = fakeStream();
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    const onResult = vi.fn();
+    renderWithLocale(<QrScanner onResult={onResult} onPicture={onPicture} />);
+    await flush();
+    expect(onPicture).toHaveBeenCalledOnce();
+    expect(onPicture).toHaveBeenCalledWith('paused');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(stop).not.toHaveBeenCalled();
+    expect(onResult).not.toHaveBeenCalled();
+    await flush(120);
+    expect(onResult).toHaveBeenCalledWith('lnbc1');
+  });
+
+  it('does not report a preview rejection after unmount', async () => {
+    let reject: (reason: unknown) => void = () => undefined;
+    play.mockImplementation(
+      () =>
+        new Promise<void>((_resolve, fail) => {
+          reject = fail;
+        }),
+    );
+    const { stream, stop } = fakeStream();
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    const onResult = vi.fn();
+    const view = renderWithLocale(<QrScanner onResult={onResult} onPicture={onPicture} />);
+    await flush();
+    expect(play).toHaveBeenCalledOnce();
+    view.unmount();
+    reject(new DOMException('no', 'NotAllowedError'));
+    await flush();
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(onPicture).not.toHaveBeenCalled();
+    expect(onResult).not.toHaveBeenCalled();
   });
 
   it('reads frames with the native detector until the first QR text, then stops the camera', async () => {

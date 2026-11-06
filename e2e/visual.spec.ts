@@ -4694,6 +4694,9 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
     await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toHaveCount(
@@ -4778,6 +4781,9 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(
       page.getByText('Pasting was not allowed. Use Enter manually instead.'),
@@ -4794,6 +4800,9 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(page.getByText('The clipboard is empty.')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-paste-empty');
@@ -4819,6 +4828,29 @@ test.describe('screen baselines', () => {
       page.getByText('No camera found. Paste the payment request instead.'),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-send-camera-unavailable');
+  });
+
+  test('wallet send-camera-paused', async ({ page }) => {
+    await seedWalletSend(page, 'btc', { kind: 'paused' });
+    await page.goto('/wallet?visual=send-input');
+    await openWalletSend(page);
+    await expect(page.getByText('Point the camera at a Bitcoin QR code')).toBeVisible();
+    await expect(page.locator('video')).toHaveAttribute('data-play-blocked', 'true');
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(true);
+    await expect(
+      page
+        .getByRole('region', { name: 'Point the camera at a Bitcoin QR code' })
+        .getByRole('alert'),
+    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/border-paper\/20/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(
+      /border-paper\/20/,
+    );
+    await shotScreen(page, 'state-wallet-send-camera-paused');
   });
 
   test('wallet receive', async ({ page }) => {
@@ -5448,6 +5480,9 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(
       page.getByText('Pasting was not allowed. Use Enter manually instead.'),
@@ -5464,6 +5499,9 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(page.getByText('The clipboard is empty.')).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-send-paste-empty');
@@ -8264,6 +8302,9 @@ test.describe('onboarding screens', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(false);
     await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-send-camera');
@@ -8279,6 +8320,28 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-send-camera-denied');
+  });
+
+  test('welcome wallet-send-camera-paused', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'paused' });
+    await page.goto('/welcome?visual=send-input');
+    await expect(page.getByText('Point the camera at a Bitcoin QR code')).toBeVisible();
+    await expect(page.locator('video')).toHaveAttribute('data-play-blocked', 'true');
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
+      .toBe(true);
+    await expect(
+      page
+        .getByRole('region', { name: 'Point the camera at a Bitcoin QR code' })
+        .getByRole('alert'),
+    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/border-paper\/20/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(
+      /border-paper\/20/,
+    );
+    await shotScreen(page, 'state-welcome-wallet-send-camera-paused');
   });
 
   test('welcome wallet-send-manual', async ({ page }) => {

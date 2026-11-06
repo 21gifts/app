@@ -20,6 +20,13 @@ export interface QrScannerCopy {
 export interface QrScannerProps {
   /** Called once with the first decoded QR text, after the camera has stopped. */
   onResult: (text: string) => void;
+  /**
+   * Called with `showing` when the preview plays, `denied` or `unavailable` when an alert
+   * replaces it, or `paused` when the stream runs but the preview did not start or stopped
+   * (paused or ended). No alert is shown in that case.
+   * The latest callback is used.
+   */
+  onPicture?: (picture: 'showing' | 'denied' | 'unavailable' | 'paused') => void;
   /** Hint and alert wording. Default: the wallet Send payment wording. */
   copy?: QrScannerCopy;
 }
@@ -96,18 +103,32 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * catalog keys, as for a scan that is not a payment; `copy.hintVars` fills
  * the hint's placeholders.
  *
- * @param props - Result callback and optional wording.
+ * `onPicture` reports `showing` when the preview plays, `denied` or `unavailable`
+ * when that alert replaces the preview, or `paused` when the stream runs but
+ * the preview did not start or stopped (paused or ended). No alert is shown in
+ * that case. The latest callback is used.
+ *
+ * @param props - Result callback, optional picture report, and optional wording.
  * @returns The scanner region.
  */
-export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): ReactElement {
+export function QrScanner({
+  onResult,
+  onPicture,
+  copy = PAYMENT_COPY,
+}: QrScannerProps): ReactElement {
   const { t } = useTranslations();
   const videoRef = useRef<HTMLVideoElement>(null);
   const onResultRef = useRef(onResult);
+  const onPictureRef = useRef(onPicture);
   const [error, setError] = useState<'denied' | 'unavailable' | null>(null);
 
   useEffect(() => {
     onResultRef.current = onResult;
   }, [onResult]);
+
+  useEffect(() => {
+    onPictureRef.current = onPicture;
+  }, [onPicture]);
 
   useEffect(() => {
     let stopped = false;
@@ -122,8 +143,12 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
       stream = null;
     };
     const start = async (): Promise<void> => {
+      const fail = (next: 'denied' | 'unavailable'): void => {
+        setError(next);
+        onPictureRef.current?.(next);
+      };
       if (!window.isSecureContext || !('mediaDevices' in navigator)) {
-        setError('unavailable');
+        fail('unavailable');
         return;
       }
       let media: MediaStream;
@@ -137,7 +162,7 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
           const denied =
             caught instanceof DOMException &&
             (caught.name === 'NotAllowedError' || caught.name === 'SecurityError');
-          setError(denied ? 'denied' : 'unavailable');
+          fail(denied ? 'denied' : 'unavailable');
         }
         return;
       }
@@ -153,14 +178,18 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
         return;
       }
       video.srcObject = media;
-      await video.play().catch(() => undefined);
+      await video.play().catch(() => {
+        if (!stopped) {
+          onPictureRef.current?.('paused');
+        }
+      });
       let decode: FrameDecoder;
       try {
         decode = await frameDecoder();
       } catch {
         if (!stopped) {
           stop();
-          setError('unavailable');
+          fail('unavailable');
         }
         return;
       }
@@ -205,6 +234,15 @@ export function QrScanner({ onResult, copy = PAYMENT_COPY }: QrScannerProps): Re
             playsInline
             muted
             autoPlay
+            onPlaying={() => {
+              onPictureRef.current?.('showing');
+            }}
+            onPause={() => {
+              onPictureRef.current?.('paused');
+            }}
+            onEnded={() => {
+              onPictureRef.current?.('paused');
+            }}
             className="absolute inset-0 h-full w-full bg-black object-cover"
           />
           <div
