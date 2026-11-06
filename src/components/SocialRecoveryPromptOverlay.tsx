@@ -14,10 +14,10 @@ export interface SocialRecoveryPromptOverlayProps {
 
 /**
  * Modal on the forum home (`/welcome`) that tells a grant member (admitted, or
- * on today's trial) whose account has no Social Recovery yet that grant
- * payouts need it. Same anatomy as the introduce dialog: title, an icon-only
- * Close, the body, and **Secure my account**, which closes it and opens
- * `/settings/social-recovery` client-side. Close dismisses this mount, so it
+ * on today's trial) whose account has no Social Recovery yet to set it up,
+ * and names the day from which grant payouts require it. Same anatomy as the
+ * introduce dialog: title, an icon-only Close, the body, and **Secure my
+ * account**, which closes it and opens `/settings/social-recovery` client-side. Close dismisses this mount, so it
  * shows again on the next visit while Social Recovery is still missing.
  *
  * @param props - See {@link SocialRecoveryPromptOverlayProps}.

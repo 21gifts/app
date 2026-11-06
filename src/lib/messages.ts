@@ -728,7 +728,7 @@ const en = {
   'secure.done': 'Done',
   'socialRecoveryPrompt.title': 'Social Recovery for your grant',
   'socialRecoveryPrompt.body':
-    'Grant payouts need Social Recovery. Choose two people who can help you restore your account if you lose your passkey.',
+    'Set up Social Recovery. From 1 January 2027, grant payouts require it. Choose two people who can help you restore your account if you lose your passkey.',
   'socialRecoveryPrompt.close': 'Close',
   'previousWallets.heading': 'Previous wallets',
   'previousWallets.replaced': 'Replaced on {date}',
@@ -2494,7 +2494,7 @@ const de = {
   'secure.done': 'Fertig',
   'socialRecoveryPrompt.title': 'Social Recovery für dein Förderprogramm',
   'socialRecoveryPrompt.body':
-    'Auszahlungen aus dem Förderprogramm brauchen Social Recovery. Wähle zwei Menschen, die dir helfen können, dein Konto wiederherzustellen, wenn du deinen Passkey verlierst.',
+    'Richte Social Recovery ein. Ab dem 1. Januar 2027 brauchen Auszahlungen aus dem Förderprogramm Social Recovery. Wähle zwei Menschen, die dir helfen können, dein Konto wiederherzustellen, wenn du deinen Passkey verlierst.',
   'socialRecoveryPrompt.close': 'Schließen',
   'previousWallets.heading': 'Frühere Wallets',
   'previousWallets.replaced': 'Ersetzt am {date}',
@@ -4304,7 +4304,7 @@ const es = {
   'secure.done': 'Listo',
   'socialRecoveryPrompt.title': 'Social Recovery para tu beca',
   'socialRecoveryPrompt.body':
-    'Los pagos de la beca requieren Social Recovery. Elige a dos personas que puedan ayudarte a restaurar tu cuenta si pierdes tu passkey.',
+    'Configura Social Recovery. A partir del 1 de enero de 2027, los pagos de la beca requieren Social Recovery. Elige a dos personas que puedan ayudarte a restaurar tu cuenta si pierdes tu passkey.',
   'socialRecoveryPrompt.close': 'Cerrar',
   'previousWallets.heading': 'Wallets anteriores',
   'previousWallets.replaced': 'Sustituida el {date}',
@@ -6089,7 +6089,7 @@ const fil = {
   'secure.done': 'Tapos na',
   'socialRecoveryPrompt.title': 'Social Recovery para sa grant mo',
   'socialRecoveryPrompt.body':
-    'Kailangan ng Social Recovery para sa mga payout ng grant. Pumili ng dalawang taong makakatulong na maibalik ang account mo kapag nawala ang passkey mo.',
+    'I-set up ang Social Recovery. Simula Enero 1, 2027, kailangan ng Social Recovery para sa mga payout ng grant. Pumili ng dalawang taong makakatulong na maibalik ang account mo kapag nawala ang passkey mo.',
   'socialRecoveryPrompt.close': 'Isara',
   'previousWallets.heading': 'Mga dating wallet',
   'previousWallets.replaced': 'Pinalitan noong {date}',
