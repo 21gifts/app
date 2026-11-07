@@ -317,9 +317,12 @@ test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, a
 const IPHONE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
+const walletHrefsByPage = new WeakMap<Page, string[]>();
+
 /**
- * Makes the page a smartphone and keeps every `lightning:` href it sets in
- * `window.__walletHrefs` instead of leaving the page.
+ * Makes the page a smartphone and records every `lightning:` navigation it
+ * asks for (Chromium reports it through CDP and does not leave the page for
+ * an unknown scheme).
  */
 async function phoneRecordingWalletHrefs(page: Page): Promise<void> {
   await page.addInitScript((userAgent) => {
@@ -327,29 +330,20 @@ async function phoneRecordingWalletHrefs(page: Page): Promise<void> {
       configurable: true,
       get: () => userAgent,
     });
-    const hrefs: string[] = [];
-    (window as unknown as { __walletHrefs: string[] }).__walletHrefs = hrefs;
-    const loc = window.location;
-    const desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(loc), 'href')!;
-    Object.defineProperty(loc, 'href', {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return desc.get!.call(loc);
-      },
-      set(value: string) {
-        if (String(value).startsWith('lightning:')) {
-          hrefs.push(String(value));
-          return;
-        }
-        desc.set!.call(loc, value);
-      },
-    });
   }, IPHONE_UA);
+  const hrefs: string[] = [];
+  walletHrefsByPage.set(page, hrefs);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.enable');
+  cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
+    if (event.url?.startsWith('lightning:') === true) {
+      hrefs.push(event.url);
+    }
+  });
 }
 
-function walletHrefs(page: Page): Promise<string[]> {
-  return page.evaluate(() => (window as unknown as { __walletHrefs: string[] }).__walletHrefs);
+function walletHrefs(page: Page): string[] {
+  return walletHrefsByPage.get(page) ?? [];
 }
 
 test('Function: MoveFundsSheet — on a phone, Open my other wallet hands a lightning: invoice to the wallet app and waits', async ({
@@ -362,10 +356,10 @@ test('Function: MoveFundsSheet — on a phone, Open my other wallet hands a ligh
   const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
   await expect(sheet.getByRole('button', { name: 'Copy my address' })).toBeVisible();
   await expect(sheet.getByRole('img', { name: /QR/i })).toHaveCount(0);
-  expect(await walletHrefs(page)).toEqual([]);
+  expect(walletHrefs(page)).toEqual([]);
   await sheet.getByRole('button', { name: 'Open my other wallet' }).click();
   await expect(page.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeVisible();
-  expect(await walletHrefs(page)).toEqual(['lightning:lnbc1pmovefundsvisual']);
+  await expect.poll(() => walletHrefs(page)).toEqual(['lightning:lnbc1pmovefundsvisual']);
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(
     page.getByRole('dialog', { name: 'Send to your 21.gifts address' }).getByRole('button', {
@@ -399,7 +393,7 @@ test('Function: receiveWalletInvoice — a phone without an open wallet says the
   await sheet.getByRole('button', { name: 'Try again' }).click();
   await expect(sheet.getByRole('alert')).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'I sent it' })).toBeVisible();
-  expect(await walletHrefs(page)).toEqual([]);
+  expect(walletHrefs(page)).toEqual([]);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
 
