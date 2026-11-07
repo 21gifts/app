@@ -1194,6 +1194,37 @@ async function sortHomeShops(
   );
 }
 
+/**
+ * Sorts a desktop-only column, then restores the phone layout before capture.
+ *
+ * @param page - Page under test.
+ * @param column - Column whose sort button is hidden below sm.
+ * @param direction - Sort direction to capture.
+ */
+async function sortHomeShopsDesktopColumn(
+  page: Page,
+  column: 'Country' | 'Shop',
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  const viewport = page.viewportSize();
+  if (viewport === null || viewport.width >= 640) {
+    await sortHomeShops(page, column, direction);
+    return;
+  }
+  await page.setViewportSize({ width: 1280, height: viewport.height });
+  try {
+    await sortHomeShops(page, column, direction);
+  } finally {
+    await page.setViewportSize(viewport);
+  }
+  const table = page.locator('#shops table');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('columnheader')).toHaveCount(3);
+  const header = table.locator('th').filter({ hasText: column });
+  await expect(header).toBeHidden();
+  await expect(header).toHaveAttribute('aria-sort', direction);
+}
+
 async function waitForShopPopupInsideMap(page: Page): Promise<void> {
   await page.waitForFunction(() => {
     const map = document.querySelector('#shop-places-map');
@@ -2597,8 +2628,16 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+    const table = page.locator('#shops table');
+    await expect(table.getByRole('link', { name: 'Sample', exact: true })).toBeVisible();
+    const viewport = page.viewportSize();
+    if (viewport !== null && viewport.width < 640) {
+      const country = table.locator('th').filter({ hasText: 'Country' });
+      await expect(country).toHaveCount(1);
+      await expect(country).toBeHidden();
+    } else {
+      await expect(table.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+    }
     await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
     await shotScreen(page, 'state-root-shops-table');
   });
@@ -2767,28 +2806,28 @@ test.describe('screen baselines', () => {
   test('state / shops-sorted-country-asc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await sortHomeShops(page, 'Country', 'ascending');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'ascending');
     await shotScreen(page, 'state-root-shops-sorted-country-asc');
   });
 
   test('state / shops-sorted-country-desc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await sortHomeShops(page, 'Country', 'descending');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'descending');
     await shotScreen(page, 'state-root-shops-sorted-country-desc');
   });
 
   test('state / shops-sorted-shop-asc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await sortHomeShops(page, 'Shop', 'ascending');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'ascending');
     await shotScreen(page, 'state-root-shops-sorted-shop-asc');
   });
 
   test('state / shops-sorted-shop-desc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await sortHomeShops(page, 'Shop', 'descending');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'descending');
     await shotScreen(page, 'state-root-shops-sorted-shop-desc');
   });
 

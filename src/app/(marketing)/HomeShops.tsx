@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { countryDisplayName } from '@/lib/countries';
+import { CSP_SOURCES } from '@/lib/csp';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
@@ -510,7 +511,7 @@ function markerAriaLabel(name: string, title: string): string {
 }
 
 /**
- * Returns a photo URL only when its origin is allowed by the image policy.
+ * Returns a photo URL whose HTTPS origin matches an exact or wildcard image CSP source.
  *
  * @param place - Place returned by the public map API.
  * @returns The allowed URL, or null when absent or disallowed.
@@ -521,11 +522,20 @@ function coverPhotoUrl(place: Record<string, unknown>): string | null {
   const url = coverPhoto['url'];
   if (typeof url !== 'string') return null;
   try {
-    const origin = new URL(url).origin;
-    return origin === 'https://api.opencryptopay.io' ||
-      origin === 'https://dev-api.opencryptopay.io'
-      ? url
-      : null;
+    const photo = new URL(url);
+    if (photo.protocol !== 'https:') return null;
+    const allowed = Object.entries(CSP_SOURCES).some(
+      ([directive, sources]) =>
+        directive === 'img-src' &&
+        sources.some((source) => {
+          if (!source.startsWith('https://')) return false;
+          if (source.startsWith('https://*.')) {
+            return photo.origin.endsWith(source.slice('https://*'.length));
+          }
+          return photo.origin === source;
+        }),
+    );
+    return allowed ? url : null;
   } catch {
     return null;
   }
@@ -1427,6 +1437,9 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  * Filters, columns, and the popup category come from the loaded 21.gifts rows.
  * A control is shown only when its values actually differ.
  * Popup shop links open client-side on plain primary clicks.
+ * Closing a popup with focus inside returns focus to the pin's current cluster or pin.
+ * Below sm, the table puts shop and country below the name instead of in columns.
+ * Help measures its inner content plus padding and borders while keeping its pin.
  * If an empty response removes open help, focus inside it moves without
  * scrolling to the selected Map/Table button before the panel is removed.
  *
@@ -1458,10 +1471,12 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const viewControlRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLSpanElement>(null);
   const helpPanelRef = useRef<HTMLDivElement>(null);
+  const helpContentRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<MapSession | null>(null);
   const markersRef = useRef<MarkerHandle[]>([]);
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
   const clusterPinsRef = useRef(new Map<Element | null, PinRecord>());
+  const pinClustersRef = useRef(new Map<HTMLElement, HTMLButtonElement>());
   const pinsRef = useRef<PinRecord[]>([]);
   const clusterFrame = useRef(0);
   const clusterFocus = useRef<{ pin: PinRecord; button: HTMLElement } | null>(null);
@@ -1526,6 +1541,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     for (const marker of clusterMarkersRef.current) marker.remove();
     clusterMarkersRef.current = [];
     clusterPinsRef.current.clear();
+    pinClustersRef.current.clear();
     for (const pin of pinsRef.current) pin.element.classList.remove('is-clustered');
   }, []);
 
@@ -1578,6 +1594,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             activePin !== undefined && group.includes(activePin) ? activePin : firstPin;
           if (targetPin === activePin) focusTarget = button;
           clusterPinsRef.current.set(button, targetPin);
+          for (const pin of group) pinClustersRef.current.set(pin.element, button);
           button.addEventListener('click', (event: MouseEvent) => {
             clusterFocus.current = event.detail === 0 ? { pin: targetPin, button } : null;
             userMovedMaps.add(session.map);
@@ -1683,7 +1700,9 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         popup.remove = (): void => {
           const restoreFocus = content.contains(document.activeElement);
           removePopup();
-          if (restoreFocus && element.isConnected) element.focus();
+          if (restoreFocus && element.isConnected) {
+            (pinClustersRef.current.get(element) ?? element).focus();
+          }
         };
         const content = popupContent(
           row,
@@ -2041,14 +2060,18 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       /* v8 ignore next -- trigger removal closes help and cleans up listeners before paint */
       if (node === null) return;
       const panel = helpPanelRef.current;
-      // A top-and-bottom pin stretches the border box to the window. Reading
-      // that box reports a height that fits, drops the pin, and loops.
+      const content = helpContentRef.current;
+      // Read the natural content height even when the pinned panel scrolls.
       let panelHeight = 0;
-      if (panel !== null) {
-        const pinnedBottom = panel.style.bottom;
-        panel.style.bottom = 'auto';
-        panelHeight = panel.getBoundingClientRect().height;
-        panel.style.bottom = pinnedBottom;
+      if (panel !== null && content !== null) {
+        const style = getComputedStyle(panel);
+        const chrome = [
+          style.paddingTop,
+          style.paddingBottom,
+          style.borderTopWidth,
+          style.borderBottomWidth,
+        ].reduce((height, value) => height + (Number.parseFloat(value) || 0), 0);
+        panelHeight = content.scrollHeight + chrome;
       }
       const next = helpPanelBox(node.getBoundingClientRect(), panelHeight);
       setHelpBox((current) => {
@@ -2320,15 +2343,19 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                         : 'descending'
                       : 'none';
                     return (
-                      <th key={column.key} aria-sort={ariaSort} className="p-0 text-left align-top">
+                      <th
+                        key={column.key}
+                        aria-sort={ariaSort}
+                        className={`p-0 text-left align-top ${column.key === 'country' || column.key === 'shop' ? 'hidden sm:table-cell' : ''}`}
+                      >
                         <button
                           type="button"
-                          className="inline-flex min-h-11 w-full items-center gap-1 px-4 py-3 text-left font-semibold"
+                          className="inline-flex min-h-11 w-full items-center gap-1 px-2 py-3 text-left font-semibold sm:px-4"
                           onClick={() => {
                             chooseSort(column.key);
                           }}
                         >
-                          <span className="min-w-0 break-words">{column.label}</span>
+                          <span className="min-w-0 whitespace-nowrap">{column.label}</span>
                           <span
                             aria-hidden="true"
                             className={`inline-block h-0 w-0 shrink-0 border-x-4 border-b-[5px] border-x-transparent border-b-current ${
@@ -2345,14 +2372,35 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                 {rows.map((row) => (
                   <tr key={row.key} className="border-t border-ink/10 bg-paper text-sm">
                     {tableColumns.map((column) => (
-                      <td key={column.key} className="min-w-0 break-words px-4 py-3 align-top">
-                        {column.key === 'name' && row.href !== null ? (
-                          <Link
-                            href={row.href}
-                            className="font-medium underline underline-offset-2"
-                          >
-                            {row.name}
-                          </Link>
+                      <td
+                        key={column.key}
+                        className={`min-w-0 break-words px-2 py-3 align-top sm:px-4 ${column.key === 'country' || column.key === 'shop' ? 'hidden sm:table-cell' : ''}`}
+                      >
+                        {column.key === 'name' ? (
+                          <>
+                            <span>
+                              {row.href === null ? (
+                                row.name
+                              ) : (
+                                <Link
+                                  href={row.href}
+                                  className="font-medium underline underline-offset-2"
+                                >
+                                  {row.name}
+                                </Link>
+                              )}
+                            </span>
+                            {showShop ? (
+                              <span className="block text-xs text-ink/60 sm:hidden">
+                                {row.shop}
+                              </span>
+                            ) : null}
+                            {showCountry ? (
+                              <span className="block text-xs text-ink/60 sm:hidden">
+                                {countryDisplayName(row.country, locale)}
+                              </span>
+                            ) : null}
+                          </>
                         ) : (
                           cellText(row, column.key, locale)
                         )}
@@ -2387,18 +2435,22 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
           }}
         >
           <MenuScroll scrolling={helpBox.scrolls}>
-            <dl className="grid gap-3">
-              {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (
-                <div key={labelKey}>
-                  <dt className="flex items-center gap-2 text-sm font-semibold">
-                    <span className={swatch} aria-hidden="true" />
-                    {copy[labelKey]}
-                  </dt>
-                  <dd className="mt-1 text-sm text-ink/60">{copy[helpKey]}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-3 border-t border-ink/10 pt-3 text-sm text-ink/60">{copy.hierarchy}</p>
+            <div ref={helpContentRef} data-shops-help-content="" className="flow-root shrink-0">
+              <dl className="grid gap-3">
+                {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (
+                  <div key={labelKey}>
+                    <dt className="flex items-center gap-2 text-sm font-semibold">
+                      <span className={swatch} aria-hidden="true" />
+                      {copy[labelKey]}
+                    </dt>
+                    <dd className="mt-1 text-sm text-ink/60">{copy[helpKey]}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 border-t border-ink/10 pt-3 text-sm text-ink/60">
+                {copy.hierarchy}
+              </p>
+            </div>
           </MenuScroll>
         </div>
       ) : null}

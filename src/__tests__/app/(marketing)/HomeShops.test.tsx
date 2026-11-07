@@ -387,8 +387,7 @@ function bodyNames(): string[] {
   for (const row of within(table).getAllByRole('row', { hidden: true })) {
     const cell = within(row).queryAllByRole('cell', { hidden: true })[0];
     if (cell === undefined) continue;
-    const text = cell.textContent;
-    if (text === null) throw new Error('cell');
+    const text = cell.firstChild?.textContent ?? '';
     names.push(text);
   }
   return names;
@@ -398,7 +397,7 @@ function rowByName(name: string): HTMLElement {
   const table = screen.getByRole('table', { hidden: true });
   for (const row of within(table).getAllByRole('row', { hidden: true })) {
     const cell = within(row).queryAllByRole('cell', { hidden: true })[0];
-    if (cell !== undefined && cell.textContent === name) return row;
+    if (cell !== undefined && (cell.firstChild?.textContent ?? '') === name) return row;
   }
   throw new Error(`missing row ${name}`);
 }
@@ -406,7 +405,8 @@ function rowByName(name: string): HTMLElement {
 function cellTexts(name: string): string[] {
   return within(rowByName(name))
     .getAllByRole('cell', { hidden: true })
-    .map((cell) => {
+    .map((cell, index) => {
+      if (index === 0) return cell.firstChild?.textContent ?? '';
       const text = cell.textContent;
       if (text === null) throw new Error('cell');
       return text;
@@ -2134,6 +2134,8 @@ describe('HomeShops', () => {
     vi.stubGlobal('ResizeObserver', RecordingObserver);
     const handlers: Record<string, (event: { originalEvent?: Event }) => void> = {};
     const off = vi.fn();
+    const jumpTo = vi.fn();
+    const flyTo = vi.fn();
     const lib = installMapLibre();
     let width = 300;
     wrapMap((map) => {
@@ -2142,6 +2144,8 @@ describe('HomeShops', () => {
           handlers[event] = handler;
         },
         off,
+        jumpTo,
+        flyTo,
         getContainer: (): HTMLElement => {
           const node = document.getElementById('shop-places-map');
           if (node === null) throw new Error('missing map');
@@ -2170,6 +2174,8 @@ describe('HomeShops', () => {
     width = 320;
     observe([], {} as ResizeObserver);
     expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    const cameraMoves = [map.easeTo, jumpTo, flyTo, map.setCenter, map.setZoom];
+    for (const move of cameraMoves) move.mockClear();
     const dragStart = handlers['dragstart'];
     expect(dragStart).toBeDefined();
     if (dragStart === undefined) throw new Error('missing dragstart handler');
@@ -2177,6 +2183,7 @@ describe('HomeShops', () => {
     width = 340;
     observe([], {} as ResizeObserver);
     expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    for (const move of cameraMoves) expect(move).not.toHaveBeenCalled();
     cleanup();
     expect(off).toHaveBeenCalledWith('dragstart', handlers['dragstart']);
     expect(off).toHaveBeenCalledWith('zoomstart', handlers['zoomstart']);
@@ -2442,6 +2449,45 @@ describe('HomeShops', () => {
     });
     expect(linked.content.querySelector('.shop-popup-close')).toBeNull();
     expect(popupLink?.querySelector('.shop-popup-arrow')).toBeNull();
+  });
+
+  it('renders only HTTPS photos matching exact or subdomain image CSP sources', async () => {
+    const photos = [
+      { url: 'https://api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
+      { url: 'https://dev-api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
+      { url: 'https://lh3.ggpht.com/shop.jpg', allowed: true },
+      { url: 'https://a.b.ggpht.com/shop.jpg', allowed: true },
+      { url: 'https://maps.googleapis.com/shop.jpg', allowed: true },
+      { url: 'https://maps.gstatic.com/shop.jpg', allowed: true },
+      { url: 'https://ggpht.com/shop.jpg', allowed: false },
+      { url: 'https://notggpht.com/shop.jpg', allowed: false },
+      { url: 'https://lh3.ggpht.com.images.example/shop.jpg', allowed: false },
+      { url: 'https://lh3.ggpht.com:8443/shop.jpg', allowed: false },
+      { url: 'https://api.opencryptopay.io.images.example/shop.jpg', allowed: false },
+      { url: 'https://images.example/shop.jpg', allowed: false },
+      { url: 'http://lh3.ggpht.com/shop.jpg', allowed: false },
+      { url: 'blob:https://api.opencryptopay.io/shop', allowed: false },
+      { url: 'not a url', allowed: false },
+      { url: 42, allowed: false },
+    ];
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody(
+        photos.map(({ url }, index) => giftsPlace(`Photo ${index}`, { coverPhoto: { url } })),
+      ),
+    );
+    await fireScript('load');
+    for (const [index, photo] of photos.entries()) {
+      const popup = lib.popups.find(
+        (item) => item.content?.querySelector('.shop-popup-name')?.textContent === `Photo ${index}`,
+      );
+      if (popup === undefined || popup.content === null) throw new Error('missing photo popup');
+      expect(popup.content.querySelector('img')?.getAttribute('src') ?? null).toBe(
+        photo.allowed ? photo.url : null,
+      );
+    }
   });
 
   it('navigates plain popup clicks client-side and preserves browser click behavior', async () => {
@@ -3696,6 +3742,55 @@ describe('HomeShops', () => {
     },
   );
 
+  it('returns popup focus to the current cluster, or the pin after splitting', async () => {
+    const { handlers, map, lib } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const pin = pinByName('Dean');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    pin.addEventListener('click', () => {
+      document.body.appendChild(content);
+      popup.emit('open');
+    });
+    popup.originalRemove.mockImplementation(() => {
+      content.remove();
+      popup.emit('close');
+    });
+    pin.focus();
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    expect(document.activeElement).toBe(close);
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(pin.classList.contains('is-clustered')).toBe(true);
+    const oldCluster = clusterButton('is-monthly');
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    const currentCluster = clusterButton('is-monthly');
+    expect(currentCluster).not.toBe(oldCluster);
+    expect(document.activeElement).toBe(close);
+    fireEvent.click(close);
+    expect(document.activeElement).toBe(currentCluster);
+
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    pin.focus();
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    expect(document.activeElement).toBe(close);
+    fireEvent.click(close);
+    expect(document.activeElement).toBe(pin);
+  });
+
   it('keeps focus on a pin that stays separate after zoom', async (): Promise<void> => {
     const { handlers, map } = await setupClusterFocus();
     map.transform.zoom = 18;
@@ -4448,6 +4543,66 @@ describe('HomeShops', () => {
     expect(pinByName('Cara').classList.contains('is-clustered')).toBe(false);
   });
 
+  it('sets phone table column classes and stacks shop and country under the name', async () => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        ...sortRows().places,
+        giftsPlace('Plain', { id: 'no-link', country: 'KE', shopName: 'SPAR' }),
+      ]),
+    );
+    for (const label of [copy.colName, copy.colLocation, copy.colActivity]) {
+      const header = columnHeader(label);
+      expect(header.classList.contains('hidden')).toBe(false);
+      const text = within(header).getByText(label);
+      expect(text.classList.contains('whitespace-nowrap')).toBe(true);
+      expect(text.classList.contains('break-words')).toBe(false);
+      expect(headerButton(label).className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['px-2', 'sm:px-4']),
+      );
+    }
+    for (const label of [copy.colCountry, copy.colShop]) {
+      expect(columnHeader(label).className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['hidden', 'sm:table-cell']),
+      );
+      expect(columnHeader(label).getAttribute('aria-sort')).toBe('none');
+      expect(headerButton(label).tagName).toBe('BUTTON');
+    }
+    const ann = rowByName('Ann');
+    const cells = within(ann).getAllByRole('cell', { hidden: true });
+    for (const index of [2, 3]) {
+      expect(cells[index]?.className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['hidden', 'sm:table-cell']),
+      );
+    }
+    const name = cells[0];
+    if (name === undefined) throw new Error('missing name cell');
+    expect(name.firstElementChild?.textContent).toBe('Ann');
+    expect(within(name).getByRole('link', { hidden: true }).getAttribute('href')).toBe(
+      `/${npub('q')}`,
+    );
+    const details = Array.from(name.children).slice(1);
+    expect(details.map((line) => line.textContent)).toEqual(['SPAR', 'Philippines']);
+    for (const line of details) {
+      expect(line.className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['block', 'text-xs', 'text-ink/60', 'sm:hidden']),
+      );
+    }
+    const bea = rowByName('Bea').querySelector('td');
+    if (bea === null) throw new Error('missing Bea name cell');
+    expect(within(bea).getByText('Germany').classList.contains('sm:hidden')).toBe(true);
+    const plain = rowByName('Plain').querySelector('td');
+    if (plain === null) throw new Error('missing plain name cell');
+    expect(plain.firstElementChild?.textContent).toBe('Plain');
+    expect(within(plain).queryByRole('link', { hidden: true })).toBeNull();
+    expect(
+      Array.from(plain.children)
+        .slice(1)
+        .map((line) => line.textContent),
+    ).toEqual(['SPAR', 'Kenya']);
+  });
+
   it('sorts every column and orders equal values by ascending name', async (): Promise<void> => {
     renderShops();
     await resolveLatest(basicFilters({}), sortRows());
@@ -4455,7 +4610,9 @@ describe('HomeShops', () => {
     expect(columnHeader(copy.colName).getAttribute('aria-sort')).toBe('ascending');
     expect(columnHeader(copy.colName).className).toContain('p-0');
     expect(headerButton(copy.colName).className).toContain('min-h-11');
-    expect(headerButton(copy.colName).className).toContain('px-4');
+    expect(headerButton(copy.colName).className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['px-2', 'sm:px-4']),
+    );
     expect(headerButton(copy.colName).className).toContain('py-3');
     expect(columnHeader(copy.colName).textContent).toBe(copy.colName);
     expect(triangleClass(copy.colLocation)).toContain('opacity-30');
@@ -4554,6 +4711,10 @@ describe('HomeShops', () => {
       .getAllByRole('columnheader', { hidden: true })
       .map((header) => header.textContent);
     expect(headers).toEqual([copy.colName, copy.colLocation, copy.colActivity]);
+    const nameCell = rowByName('Ann').querySelector('td');
+    expect(nameCell?.children).toHaveLength(1);
+    expect(nameCell?.firstElementChild?.tagName).toBe('SPAN');
+    expect(nameCell?.querySelector('.sm\\:hidden')).toBeNull();
     await fireScript('load');
     const ann = lib.popups[0];
     const bea = lib.popups[1];
@@ -4699,6 +4860,8 @@ describe('HomeShops', () => {
   );
 
   it('anchors the help panel inside the window and closes it from outside', async () => {
+    let contentHeight = 0;
+    mockHelpContentHeight(() => contentHeight);
     renderShops();
     await resolveLatest(
       basicFilters({}),
@@ -4731,7 +4894,7 @@ describe('HomeShops', () => {
     expect(dialog.style.top).toBe('16px');
 
     setRect(span, { top: 500, left: 40, bottom: 544, right: 84, width: 44, height: 44 });
-    setRect(dialog, { top: 0, left: 40, bottom: 220, right: 360, width: 320, height: 220 });
+    contentHeight = 220;
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('272px');
     expect(dialog.style.left).toBe('40px');
@@ -4739,12 +4902,12 @@ describe('HomeShops', () => {
     expect(Number.parseFloat(dialog.style.top) + 220).toBeLessThanOrEqual(768 - 16);
 
     setRect(span, { top: 770, left: 40, bottom: 814, right: 84, width: 44, height: 44 });
-    setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
+    contentHeight = 100;
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('652px');
     expect(Number.parseFloat(dialog.style.top) + 100).toBeLessThanOrEqual(768 - 16);
     setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
-    setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
+    contentHeight = 100;
     fireEvent(window, new Event('scroll'));
     expect(dialog.style.top).toBe('172px');
     expect(dialog.style.left).toBe('40px');
@@ -4752,12 +4915,12 @@ describe('HomeShops', () => {
 
     setWindowSize(1024, 768);
     setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
-    setRect(dialog, { top: 0, left: 40, bottom: 800, right: 360, width: 320, height: 800 });
+    contentHeight = 800;
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('16px');
     expect(dialog.style.bottom).toBe('16px');
     setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
-    setRect(dialog, { top: 0, left: 40, bottom: 100, right: 360, width: 320, height: 100 });
+    contentHeight = 100;
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('172px');
     expect(dialog.style.bottom).toBe('496px');
@@ -4806,11 +4969,10 @@ describe('HomeShops', () => {
     if (!(anchor instanceof HTMLElement)) throw new Error('missing help anchor');
     setRect(anchor, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
     let contentHeight = 289;
-    vi.spyOn(dialog, 'getBoundingClientRect').mockImplementation((): DOMRect => {
-      const pinned = dialog.style.bottom !== '' && dialog.style.bottom !== 'auto';
-      const height = pinned ? window.innerHeight - 32 : contentHeight;
-      return new DOMRect(40, 16, 320, height);
-    });
+    mockHelpContentHeight(() => contentHeight);
+    vi.spyOn(dialog, 'getBoundingClientRect').mockImplementation(
+      (): DOMRect => new DOMRect(40, 16, 320, window.innerHeight - 32),
+    );
 
     fireEvent(window, new Event('resize'));
 
@@ -4862,7 +5024,7 @@ describe('HomeShops', () => {
     expect(pagePort.hasAttribute('data-scroll-active')).toBe(true);
   });
 
-  it('keeps the bottom inset when a tall help panel is stretched to the window', async () => {
+  it('measures help content plus padding and borders without clearing its bottom pin', async () => {
     renderShops();
     await resolveLatest(
       basicFilters({}),
@@ -4874,31 +5036,48 @@ describe('HomeShops', () => {
     const span = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
     if (!(span instanceof HTMLElement)) throw new Error('missing help anchor');
     setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
-    const contentHeight = 800;
-    dialog.getBoundingClientRect = () => {
-      const pinned = dialog.style.bottom !== '' && dialog.style.bottom !== 'auto';
-      const height = pinned ? 736 : contentHeight;
-      return {
-        x: 40,
-        y: 0,
-        top: 0,
-        left: 40,
-        bottom: height,
-        right: 360,
-        width: 320,
-        height,
-        toJSON() {
-          return {};
-        },
-      } as DOMRect;
-    };
+    let contentHeight = 766;
+    mockHelpContentHeight(() => contentHeight);
+    const readStyle = window.getComputedStyle;
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((node, pseudo) => {
+      const style = readStyle(node, pseudo);
+      if (node === dialog) {
+        Object.assign(style, {
+          paddingTop: '16px',
+          paddingBottom: '16px',
+          borderTopWidth: '1px',
+          borderBottomWidth: '1px',
+        });
+      }
+      return style;
+    });
+    const borderBox = vi
+      .spyOn(dialog, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(40, 16, 320, 736));
+    const bottom = vi.spyOn(dialog.style, 'bottom', 'set');
     fireEvent(window, new Event('resize'));
     expect(dialog.style.top).toBe('16px');
     expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.querySelector('[data-scrollport]')).not.toBeNull();
     fireEvent(window, new Event('resize'));
     expect(dialog.style.bottom).toBe('16px');
+    contentHeight = 66;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('92px');
+    expect(dialog.style.bottom).toBe('576px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(borderBox).not.toHaveBeenCalled();
+    expect(bottom).not.toHaveBeenCalledWith('auto');
   });
 });
+
+function mockHelpContentHeight(readHeight: () => number): void {
+  vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (
+    this: HTMLElement,
+  ): number {
+    return this.hasAttribute('data-shops-help-content') ? readHeight() : 0;
+  });
+}
 
 function omitAddress(): Place {
   return {
@@ -5055,6 +5234,7 @@ function mapHandler(handlers: Record<string, () => void>, event: string): () => 
 async function setupClusterFocus(): Promise<{
   handlers: Record<string, () => void>;
   map: MapDouble;
+  lib: LibDouble;
 }> {
   const handlers: Record<string, () => void> = {};
   const lib = installMapLibre();
@@ -5086,7 +5266,7 @@ async function setupClusterFocus(): Promise<{
   await act(async () => {
     mapHandler(handlers, 'zoom')();
   });
-  return { handlers, map: firstMap(lib) };
+  return { handlers, map: firstMap(lib), lib };
 }
 
 async function paintProjected(places: readonly Place[]): Promise<void> {

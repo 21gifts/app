@@ -296,8 +296,46 @@ async function stubIdenticalMap(page: Page): Promise<void> {
 }
 
 async function expectFirstCells(page: Page, names: readonly string[]): Promise<void> {
-  await expect(page.locator('#shops tbody tr td:first-child')).toHaveText([...names]);
+  await expect(page.locator('#shops tbody tr td:first-child > span:first-child')).toHaveText([
+    ...names,
+  ]);
 }
+
+test('Function: HomeShops table fits a 320px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await stubPublicMap(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Table', exact: true }).click();
+  const table = page.locator('#shops table');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('columnheader')).toHaveCount(3);
+  await page.evaluate(() => document.fonts.ready);
+  for (const name of ['Name', 'Location', 'Activity']) {
+    const label = table
+      .getByRole('columnheader', { name, exact: true })
+      .locator('button > span')
+      .first();
+    await expect(label).toBeVisible();
+    await expect
+      .poll(() => label.evaluate((node) => node.scrollWidth - node.clientWidth))
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() =>
+        label.evaluate((node) =>
+          Math.abs(
+            node.getBoundingClientRect().height -
+              Number.parseFloat(getComputedStyle(node).lineHeight),
+          ),
+        ),
+      )
+      .toBeLessThanOrEqual(1);
+  }
+  for (const name of ['Country', 'Shop']) {
+    const header = table.locator('th').filter({ hasText: name });
+    await expect(header).toHaveCount(1);
+    await expect(header).toBeHidden();
+  }
+});
 
 test('Function: HomeShops lists a published shop and hides other providers', async ({ page }) => {
   await stubPublicMap(page);

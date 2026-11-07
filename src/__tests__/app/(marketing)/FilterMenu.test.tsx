@@ -834,80 +834,52 @@ describe('FilterMenu', () => {
     }
   });
 
-  it('keeps a fitting panel on the pill when a later scroll moves the pill offscreen', () => {
-    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
-    let pillOffscreen = false;
-    rect.mockImplementation(() => {
-      const top = pillOffscreen ? -61 : 20;
-      const bottom = pillOffscreen ? -1 : 80;
-      return {
-        x: 20,
-        y: top,
-        top,
-        left: 20,
-        right: 220,
-        bottom,
-        width: 200,
-        height: 60,
-        toJSON() {
-          return {};
-        },
-      };
-    });
-    try {
-      renderMenu('');
-      fireEvent.click(trigger());
-      const listbox = screen.getByRole('listbox');
-      expect(listbox.className).toContain('absolute');
-      expect(listbox.className).not.toContain('fixed');
-      pillOffscreen = true;
-      fireEvent(window, new Event('scroll'));
-      fireEvent(window, new Event('resize'));
-      expect(screen.getByRole('listbox')).toBe(listbox);
-      expect(listbox.className).toContain('absolute');
-      expect(listbox.className).not.toContain('fixed');
-      expect(listbox.style.left).toBe('');
-      expect(listbox.style.top).toBe('');
-    } finally {
-      rect.mockRestore();
-    }
-  });
-
-  it('keeps a fitting panel on the pill when a later scroll moves the pill below the window', () => {
-    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
-    let pillBelow = false;
-    rect.mockImplementation(() => {
-      const top = pillBelow ? window.innerHeight : 20;
-      const bottom = pillBelow ? window.innerHeight + 60 : 80;
-      return {
-        x: 20,
-        y: top,
-        top,
-        left: 20,
-        right: 220,
-        bottom,
-        width: 200,
-        height: 60,
-        toJSON() {
-          return {};
-        },
-      };
-    });
-    try {
-      renderMenu('');
-      fireEvent.click(trigger());
-      const listbox = screen.getByRole('listbox');
-      expect(listbox.className).toContain('absolute');
-      pillBelow = true;
-      fireEvent(window, new Event('scroll'));
-      fireEvent(window, new Event('resize'));
-      expect(listbox.className).toContain('absolute');
-      expect(listbox.className).not.toContain('fixed');
-      expect(listbox.style.top).toBe('');
-    } finally {
-      rect.mockRestore();
-    }
-  });
+  it.each([
+    { event: 'scroll', edge: 'above' },
+    { event: 'scroll', edge: 'below' },
+    { event: 'resize', edge: 'above' },
+    { event: 'resize', edge: 'below' },
+  ])(
+    'keeps a fitting panel on the pill when $event moves the pill $edge the window',
+    ({ event, edge }) => {
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+      let pillOffscreen = false;
+      rect.mockImplementation(() => {
+        const top = pillOffscreen ? (edge === 'above' ? -61 : window.innerHeight) : 20;
+        return {
+          x: 20,
+          y: top,
+          top,
+          left: 20,
+          right: 220,
+          bottom: top + 60,
+          width: 200,
+          height: 60,
+          toJSON() {
+            return {};
+          },
+        };
+      });
+      try {
+        renderMenu('');
+        fireEvent.click(trigger());
+        const listbox = screen.getByRole('listbox');
+        expect(listbox.className).toContain('absolute');
+        expect(listbox.className).not.toContain('fixed');
+        pillOffscreen = true;
+        rect.mockClear();
+        fireEvent(event === 'scroll' ? document : window, new Event(event));
+        expect(rect.mock.contexts).toEqual([trigger()]);
+        expect(screen.getByRole('listbox')).toBe(listbox);
+        expect(listbox.className).toContain('absolute');
+        expect(listbox.className).not.toContain('fixed');
+        expect(listbox.style.left).toBe('');
+        expect(listbox.style.top).toBe('');
+      } finally {
+        rect.mockRestore();
+      }
+    },
+  );
 
   it.each(['scroll', 'resize'])(
     'closes a pinned panel on %s when the pill is below the window',
