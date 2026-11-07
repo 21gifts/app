@@ -631,6 +631,13 @@ describe('FilterMenu', () => {
           panel &&
           this.style.width === '184px' &&
           !this.classList.contains('min-w-[max(100%,14.5rem)]');
+        if (narrowed) {
+          expect(this.classList.contains('fixed')).toBe(true);
+          expect(this.classList.contains('absolute')).toBe(false);
+          expect(this.style.left).toBe('8px');
+          expect(this.style.top).toBe('40px');
+          expect(this.style.bottom).toBe('');
+        }
         const width = panel ? (narrowed ? 184 : 320) : 100;
         const measuredHeight = panel ? (narrowed ? height : 120) : 44;
         return {

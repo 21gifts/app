@@ -1440,8 +1440,8 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  * Closing a popup with focus inside returns focus to the pin's current cluster or pin.
  * Below sm, the table puts shop and country below the name instead of in columns.
  * Help measures its inner content plus padding and borders while keeping its pin.
- * If an empty response removes open help, focus inside it moves without
- * scrolling to the selected Map/Table button before the panel is removed.
+ * If an empty response removes help, focus on its button or inside its panel
+ * moves without scrolling to the selected Map/Table button.
  *
  * @param props - Localized copy and the page locale.
  * @returns The shop section.
@@ -1472,6 +1472,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const helpRef = useRef<HTMLSpanElement>(null);
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const helpContentRef = useRef<HTMLDivElement>(null);
+  const restoreHelpFocusRef = useRef(false);
   const sessionRef = useRef<MapSession | null>(null);
   const markersRef = useRef<MarkerHandle[]>([]);
   const clusterMarkersRef = useRef<MarkerHandle[]>([]);
@@ -1819,7 +1820,14 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         if (nextPlaces === null) throw new Error('load failed');
         if (!active) return;
         setReady({ filters: loadedFilters, places: nextPlaces, query: requestedQuery });
-        if (requestedQuery === '') setCensus(giftsPlaces(nextPlaces));
+        if (requestedQuery === '') {
+          const nextCensus = giftsPlaces(nextPlaces);
+          restoreHelpFocusRef.current =
+            nextCensus.length === 0 &&
+            (helpRef.current?.contains(document.activeElement) === true ||
+              helpPanelRef.current?.contains(document.activeElement) === true);
+          setCensus(nextCensus);
+        }
         setLoadFailed(false);
       } catch (error: unknown) {
         if (!active || isAbortError(error)) return;
@@ -2098,12 +2106,13 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   }, [helpOpen, helpBox]);
 
   useLayoutEffect(() => {
-    if (showHelp || !helpOpen) return;
-    if (helpPanelRef.current?.contains(document.activeElement)) {
+    if (showHelp) return;
+    if (restoreHelpFocusRef.current || helpPanelRef.current?.contains(document.activeElement)) {
       viewControlRef.current
         ?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')
         ?.focus({ preventScroll: true });
     }
+    restoreHelpFocusRef.current = false;
     setHelpOpen(false);
   }, [showHelp, helpOpen]);
 

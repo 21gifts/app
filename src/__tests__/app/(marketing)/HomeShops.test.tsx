@@ -4773,6 +4773,34 @@ describe('HomeShops', () => {
   });
 
   it.each([copy.map, copy.table])(
+    'moves focus from the pending help button to the selected %s button on an empty response',
+    async (viewLabel) => {
+      renderShops();
+      await act(async () => {
+        latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+      });
+      await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+      const viewControl = screen.getByRole('group', { name: copy.view });
+      const viewButton = within(viewControl).getByRole('button', { name: viewLabel });
+      fireEvent.click(viewButton);
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      help.focus();
+      expect(document.activeElement).toBe(help);
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      const focus = vi.spyOn(viewButton, 'focus');
+
+      await resolvePlaces(placesBody([]));
+
+      expect(screen.getByText(copy.empty)).toBeTruthy();
+      expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+      expect(viewButton.getAttribute('aria-pressed')).toBe('true');
+      expect(document.activeElement).toBe(viewButton);
+      expect(focus).toHaveBeenCalledTimes(1);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
+  it.each([copy.map, copy.table])(
     'moves focus from pending help to the selected %s button when no 21.gifts shop is returned',
     async (viewLabel) => {
       renderShops();

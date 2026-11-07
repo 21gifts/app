@@ -171,25 +171,25 @@ The table is sorted by Location, ascending. The Location column header has aria-
 
 ### Variant: shops-sorted-country-asc
 
-The table is sorted by Country, ascending. The Country column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+The table is sorted by Country, ascending. From `sm`, the Country column header has aria-sort ascending, and its triangle points up. On phones the Country column is hidden; the rows remain in ascending country order, shown by the country lines under each name. Name is not the active sort column.
 
 ![21.gifts home shops sorted by country ascending](images/root-shops-sorted-country-asc.png)
 
 ### Variant: shops-sorted-country-desc
 
-The table is sorted by Country, descending. The Country column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+The table is sorted by Country, descending. From `sm`, the Country column header has aria-sort descending, and its triangle points down. On phones the Country column is hidden; the rows remain in descending country order, shown by the country lines under each name. Name is not the active sort column.
 
 ![21.gifts home shops sorted by country descending](images/root-shops-sorted-country-desc.png)
 
 ### Variant: shops-sorted-shop-asc
 
-The table is sorted by Shop, ascending. The Shop column header has aria-sort ascending, and its triangle points up. Name is not the active sort column.
+The table is sorted by Shop, ascending. From `sm`, the Shop column header has aria-sort ascending, and its triangle points up. On phones the Shop column is hidden; the rows remain in ascending shop order, shown by the shop lines under each name. Name is not the active sort column.
 
 ![21.gifts home shops sorted by shop ascending](images/root-shops-sorted-shop-asc.png)
 
 ### Variant: shops-sorted-shop-desc
 
-The table is sorted by Shop, descending. The Shop column header has aria-sort descending, and its triangle points down. Name is not the active sort column.
+The table is sorted by Shop, descending. From `sm`, the Shop column header has aria-sort descending, and its triangle points down. On phones the Shop column is hidden; the rows remain in descending shop order, shown by the shop lines under each name. Name is not the active sort column.
 
 ![21.gifts home shops sorted by shop descending](images/root-shops-sorted-shop-desc.png)
 

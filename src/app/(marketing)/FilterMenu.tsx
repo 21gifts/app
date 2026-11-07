@@ -270,7 +270,19 @@ export function FilterMenu({
       const flipped = panel.getBoundingClientRect();
       let nextPin = pinFor(flipped);
       if (nextPin !== null && nextPin.width < flipped.width) {
-        panel.classList.remove('min-w-[max(100%,14.5rem)]');
+        panel.classList.remove(
+          'absolute',
+          'right-0',
+          'left-0',
+          'bottom-full',
+          'top-full',
+          'mb-1.5',
+          'mt-1.5',
+          'min-w-[max(100%,14.5rem)]',
+        );
+        panel.classList.add('fixed');
+        panel.style.left = `${nextPin.left}px`;
+        panel.style.top = `${nextPin.top}px`;
         panel.style.width = `${nextPin.width}px`;
         const height = panel.getBoundingClientRect().height;
         const bottom = window.innerHeight - nextPin.top - height;

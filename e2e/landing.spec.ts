@@ -308,8 +308,15 @@ test('Function: HomeShops table fits a 320px phone', async ({ page }) => {
   await page.getByRole('button', { name: 'Table', exact: true }).click();
   const table = page.locator('#shops table');
   await expect(table).toBeVisible();
+  await expect(table.getByRole('link', { name: 'Sample', exact: true })).toBeVisible();
   await expect(table.getByRole('columnheader')).toHaveCount(3);
   await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() => table.evaluate((node) => node.getBoundingClientRect().right - window.innerWidth))
+    .toBeLessThanOrEqual(0);
+  await expect
+    .poll(() => table.locator('..').evaluate((node) => node.scrollWidth - node.clientWidth))
+    .toBeLessThanOrEqual(1);
   for (const name of ['Name', 'Location', 'Activity']) {
     const label = table
       .getByRole('columnheader', { name, exact: true })
