@@ -44,6 +44,12 @@ const INVOICE_VISUAL_PIN = 'move-invoice';
 /** The invoice the `?visual=move-invoice` pin hands to the other wallet. */
 const INVOICE_VISUAL = 'lnbc1pmovefundsvisual';
 
+/**
+ * Screenshot pin under which **Open my other wallet** keeps minting and never
+ * answers, so the minting state stays on screen (Playwright builds only).
+ */
+const MINTING_VISUAL_PIN = 'move-minting';
+
 /** Where **Open my other wallet** stands: ready, minting the invoice, or failed. */
 type OpenWalletState = 'idle' | 'minting' | 'failed';
 
@@ -114,7 +120,8 @@ export interface MoveFundsSheetProps {
  * wallet app with a `lightning:` link; no wallet app is named. Under the
  * Playwright-only `?visual=move-arrived` pin it opens on step 4 with ₿500;
  * under `?visual=move-invoice` **Open my other wallet** hands over a fixture
- * invoice instead of minting one.
+ * invoice instead of minting one, and under `?visual=move-minting` it keeps
+ * minting.
  *
  * Member events (`logInteraction`), once per occurrence: `wallet_move_opened`
  * (`source` `receive` | `link`), `wallet_move_step` (`step` `go` | `waiting`
@@ -282,10 +289,15 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     mintRun.current += 1;
     const run = mintRun.current;
     setOpenWallet('minting');
-    const minted =
-      visualPin() === INVOICE_VISUAL_PIN
-        ? Promise.resolve(INVOICE_VISUAL)
-        : receiveWalletInvoice(t('moveFunds.invoiceNote'));
+    const pin = visualPin();
+    let minted: Promise<string>;
+    if (pin === INVOICE_VISUAL_PIN) {
+      minted = Promise.resolve(INVOICE_VISUAL);
+    } else if (pin === MINTING_VISUAL_PIN) {
+      minted = new Promise<string>(() => undefined);
+    } else {
+      minted = receiveWalletInvoice(t('moveFunds.invoiceNote'));
+    }
     minted.then(
       (invoice) => {
         if (run !== mintRun.current || stepRef.current !== 'go') {

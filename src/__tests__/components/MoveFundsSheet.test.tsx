@@ -751,6 +751,38 @@ describe('MoveFundsSheet', () => {
     expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps minting under the move-minting pin in a Playwright build only', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=move-minting');
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      await Promise.resolve();
+    });
+    const minting = screen.getByRole('button', { name: 'Open my other wallet' });
+    expect((minting as HTMLButtonElement).disabled).toBe(true);
+    expect(minting.querySelector('svg')).not.toBeNull();
+    expect(receiveWalletInvoice).not.toHaveBeenCalled();
+    cleanup();
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const { restore } = recordHrefs();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        await Promise.resolve();
+      });
+    } finally {
+      restore();
+    }
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
+  });
+
   it('opens on the arrived step under the move-arrived pin in a Playwright build only', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=move-arrived');

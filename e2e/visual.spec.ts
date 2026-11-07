@@ -4964,6 +4964,24 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-move-address-copied');
   });
 
+  test('wallet move-address-minting', async ({ page }) => {
+    // The button is smartphone-only; every combo shoots it on a phone UA.
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=move-minting');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    await sheet.getByRole('button', { name: 'Open my other wallet' }).click();
+    await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toBeDisabled();
+    await shotScreen(page, 'state-wallet-move-address-minting');
+  });
+
   test('wallet move-address-error', async ({ page }) => {
     // The button and its error are smartphone-only; every combo shoots them on a phone UA.
     await page.addInitScript(() => {
