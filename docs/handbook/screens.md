@@ -859,7 +859,7 @@ The same first step, opened with **Move Bitcoin from another wallet** in the Rec
 
 ### Variant: move-address
 
-After **Start**: two dots filled, **Send to your 21.gifts address**, the member's own address. On a desktop also **Open your other wallet on your phone, tap Send and scan this code** above the same address QR as Receive; a phone shows no QR. Then **Copy my address** and **I sent it**. No other wallet app is named or opened. The top-left arrow goes back to the first step.
+After **Start**: two dots filled, **Send to your 21.gifts address**, the member's own address. On a desktop also **Open your other wallet on your phone, tap Send and scan this code** above the same address QR as Receive. A phone shows no QR but **Open my other wallet**: its tap makes a fresh payment request with no amount in the member's own wallet, with the note **Transfer to your 21.gifts account**, and opens the phone's Bitcoin wallet app with it, where the member enters the amount; the sheet then waits for the payment. Then **Copy my address** (also on a phone, as the fallback) and **I sent it**. No other wallet app is named. The top-left arrow goes back to the first step.
 
 ![21.gifts move Bitcoin, address step](images/wallet-move-address.png)
 
@@ -868,6 +868,12 @@ After **Start**: two dots filled, **Send to your 21.gifts address**, the member'
 The address step right after **Copy my address**: the button shows a check mark and **Copied**. After two seconds it says **Copy my address** again.
 
 ![21.gifts move Bitcoin, address copied](images/wallet-move-address-copied.png)
+
+### Variant: move-address-error
+
+The address step on a phone after **Open my other wallet** when the member's wallet could not make the payment request (the wallet could not be opened, or the request failed): in the button's place **Your 21.gifts wallet could not create a payment request. Try again, or copy your address.** and **Try again**, which asks again. **Copy my address** and **I sent it** stay, so the address can still be copied by hand.
+
+![21.gifts move Bitcoin, payment request failed](images/wallet-move-address-error.png)
 
 ### Variant: move-waiting
 

@@ -904,6 +904,10 @@ const en = {
   'moveFunds.start': 'Start',
   'moveFunds.addressTitle': 'Send to your 21.gifts address',
   'moveFunds.copy': 'Copy my address',
+  'moveFunds.openWallet': 'Open my other wallet',
+  'moveFunds.invoiceNote': 'Transfer to your 21.gifts account',
+  'moveFunds.openWalletFailed':
+    'Your 21.gifts wallet could not create a payment request. Try again, or copy your address.',
   'moveFunds.scanHint': 'Open your other wallet on your phone, tap Send and scan this code',
   'moveFunds.sent': 'I sent it',
   'moveFunds.waitingTitle': 'Waiting for your Bitcoin…',
@@ -2688,6 +2692,10 @@ const de = {
   'moveFunds.start': 'Los geht’s',
   'moveFunds.addressTitle': 'An deine 21.gifts-Adresse senden',
   'moveFunds.copy': 'Meine Adresse kopieren',
+  'moveFunds.openWallet': 'Mein anderes Wallet öffnen',
+  'moveFunds.invoiceNote': 'Übertrag auf dein 21.gifts-Konto',
+  'moveFunds.openWalletFailed':
+    'Dein 21.gifts-Wallet konnte keine Zahlungsanforderung erstellen. Versuche es erneut oder kopiere deine Adresse.',
   'moveFunds.scanHint':
     'Öffne dein anderes Wallet auf dem Handy, tippe auf Senden und scanne diesen Code',
   'moveFunds.sent': 'Ich habe gesendet',
@@ -4498,6 +4506,10 @@ const es = {
   'moveFunds.start': 'Empezar',
   'moveFunds.addressTitle': 'Envía a tu dirección de 21.gifts',
   'moveFunds.copy': 'Copiar mi dirección',
+  'moveFunds.openWallet': 'Abrir mi otra billetera',
+  'moveFunds.invoiceNote': 'Transferencia a tu cuenta de 21.gifts',
+  'moveFunds.openWalletFailed':
+    'Tu billetera de 21.gifts no pudo crear la solicitud de pago. Inténtalo de nuevo o copia tu dirección.',
   'moveFunds.scanHint': 'Abre tu otra billetera en el teléfono, toca Enviar y escanea este código',
   'moveFunds.sent': 'Ya lo envié',
   'moveFunds.waitingTitle': 'Esperando tus Bitcoin…',
@@ -6283,6 +6295,10 @@ const fil = {
   'moveFunds.start': 'Simulan',
   'moveFunds.addressTitle': 'Ipadala sa iyong 21.gifts address',
   'moveFunds.copy': 'Kopyahin ang address ko',
+  'moveFunds.openWallet': 'Buksan ang aking ibang wallet',
+  'moveFunds.invoiceNote': 'Paglipat sa iyong 21.gifts account',
+  'moveFunds.openWalletFailed':
+    'Hindi nakagawa ng payment request ang iyong 21.gifts wallet. Subukan ulit, o kopyahin ang iyong address.',
   'moveFunds.scanHint':
     'Buksan ang iyong ibang wallet sa phone, i-tap ang Ipadala at i-scan ang code na ito',
   'moveFunds.sent': 'Naipadala ko na',

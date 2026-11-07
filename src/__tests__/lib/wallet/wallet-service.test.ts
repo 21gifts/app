@@ -14,6 +14,7 @@ import {
   onPaymentReceived,
   parseWalletInput,
   payFromWallet,
+  receiveWalletInvoice,
   receiveWalletSparkAddress,
   refreshWallet,
   registerWalletAddress,
@@ -50,6 +51,7 @@ const MNEMONIC =
 const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
 const SPARK_ADDRESS = 'spark1qexampleaddress';
+const INVOICE = 'lnbc1pexampleinvoice';
 
 const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
@@ -92,6 +94,7 @@ function createFakeSdk(overrides?: {
     getPayment: ReturnType<typeof vi.fn>;
     listReportPayments: ReturnType<typeof vi.fn>;
     receiveSparkAddress: ReturnType<typeof vi.fn>;
+    receiveLightningInvoice: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -118,6 +121,7 @@ function createFakeSdk(overrides?: {
     getPayment: vi.fn(),
     listReportPayments: vi.fn(async () => []),
     receiveSparkAddress: vi.fn(async () => SPARK_ADDRESS),
+    receiveLightningInvoice: vi.fn(async () => INVOICE),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -1742,6 +1746,52 @@ describe('receiveWalletSparkAddress', () => {
   });
 });
 
+describe('receiveWalletInvoice', () => {
+  it('opens the wallet from the tab phrase and mints an invoice with the note and no amount', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect, connection } = createFakeSdk();
+    await expect(receiveWalletInvoice('Transfer to your 21.gifts account', loadSdk)).resolves.toBe(
+      INVOICE,
+    );
+    expect(connect).toHaveBeenCalledWith(MNEMONIC, API_KEY, window.location.host);
+    expect(connection.receiveLightningInvoice).toHaveBeenCalledWith(
+      'Transfer to your 21.gifts account',
+    );
+  });
+
+  it('reuses the open wallet', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(receiveWalletInvoice('note')).resolves.toBe(INVOICE);
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when the wallet cannot be opened', async () => {
+    const { loadSdk, connect } = createFakeSdk();
+    await expect(receiveWalletInvoice('note', loadSdk)).rejects.toThrow('wallet-connect');
+    expect(connect).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the wallet closes before the invoice is minted', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    const pending = receiveWalletInvoice('note', loadSdk);
+    await Promise.resolve();
+    void disconnectWallet();
+    await expect(pending).rejects.toThrow('wallet-connect');
+    expect(connection.receiveLightningInvoice).not.toHaveBeenCalled();
+  });
+
+  it('passes an SDK error on', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    connection.receiveLightningInvoice.mockRejectedValueOnce(new Error('sdk failed'));
+    await expect(receiveWalletInvoice('note', loadSdk)).rejects.toThrow('sdk failed');
+  });
+});
+
 describe('registerWalletAddress', () => {
   it('rejects without a connection', async () => {
     await expect(registerWalletAddress('ada')).rejects.toThrow('wallet-connect');
@@ -2766,6 +2816,21 @@ describe('onIncomingPayment', () => {
     emit({ type: 'paymentSucceeded', payment: payment('later') });
     await settle();
     expect(seen).toEqual(['new']);
+  });
+
+  it('announces a payment to an invoice minted by receiveWalletInvoice', async () => {
+    const { emit } = await connected();
+    const seen: number[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.amountSats);
+    });
+    await expect(receiveWalletInvoice('note')).resolves.toBe(INVOICE);
+    emit({
+      type: 'paymentSucceeded',
+      payment: payment('to-invoice', { amountSats: 12_000, info: { invoice: INVOICE } }),
+    });
+    await vi.waitFor(() => expect(seen).toEqual([12_000]));
+    unsubscribe();
   });
 
   it('tells the listeners only once the balance was read again, and not when the wallet closed meanwhile', async () => {

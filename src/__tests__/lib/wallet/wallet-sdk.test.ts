@@ -902,6 +902,17 @@ describe('social recovery', () => {
     });
   });
 
+  it('receiveLightningInvoice asks for a BOLT11 invoice with the note and no amount', async () => {
+    sdkRecovery.receivePayment.mockResolvedValue({ paymentRequest: 'lnbc1pxyz', fee: 0n });
+    const conn = await connection();
+    await expect(conn.receiveLightningInvoice('Transfer to your 21.gifts account')).resolves.toBe(
+      'lnbc1pxyz',
+    );
+    expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
+      paymentMethod: { type: 'bolt11Invoice', description: 'Transfer to your 21.gifts account' },
+    });
+  });
+
   it('sendToSparkAddress sends exactly the amount with the idempotency key', async () => {
     const prepared = {
       amount: 21_000n,

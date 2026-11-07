@@ -583,6 +583,15 @@ export interface WalletConnection {
    */
   receiveSparkAddress(): Promise<string>;
   /**
+   * A Lightning invoice (BOLT11) to this wallet with no amount, so the paying
+   * wallet asks how much to send (the SDK's `receivePayment` for a BOLT11
+   * invoice without `amountSats`).
+   *
+   * @param description - The note the paying wallet shows with the request.
+   * @returns The invoice.
+   */
+  receiveLightningInvoice(description: string): Promise<string>;
+  /**
    * Sends exactly `amountSats` to a Spark address. Any other payment method is
    * refused before anything is sent. A send repeated with the same key is not
    * paid twice: the SDK answers the first payment.
@@ -1170,6 +1179,12 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
         },
         async receiveSparkAddress(): Promise<string> {
           const response = await handle.receivePayment({ paymentMethod: { type: 'sparkAddress' } });
+          return response.paymentRequest;
+        },
+        async receiveLightningInvoice(description: string): Promise<string> {
+          const response = await handle.receivePayment({
+            paymentMethod: { type: 'bolt11Invoice', description },
+          });
           return response.paymentRequest;
         },
         async sendToSparkAddress(

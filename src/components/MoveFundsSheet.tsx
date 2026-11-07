@@ -16,11 +16,11 @@ import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest } from '@/lib/move-funds';
 import { LOGOUT_EVENT, logInteraction } from '@/lib/interaction-log';
 import { nextOnboardingPath } from '@/lib/onboarding';
-import { isSmartphoneUserAgent } from '@/lib/payment-link';
+import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { visualPin } from '@/lib/visual-pin';
-import { onIncomingPayment } from '@/lib/wallet/wallet-service';
+import { onIncomingPayment, receiveWalletInvoice } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** The four steps, in order. */
@@ -34,6 +34,18 @@ const ARRIVED_VISUAL_PIN = 'move-arrived';
 
 /** The amount the `?visual=move-arrived` pin shows as arrived. */
 const ARRIVED_VISUAL_SATS = 500;
+
+/**
+ * Screenshot pin under which **Open my other wallet** hands over
+ * {@link INVOICE_VISUAL} instead of minting one (Playwright builds only).
+ */
+const INVOICE_VISUAL_PIN = 'move-invoice';
+
+/** The invoice the `?visual=move-invoice` pin hands to the other wallet. */
+const INVOICE_VISUAL = 'lnbc1pmovefundsvisual';
+
+/** Where **Open my other wallet** stands: ready, minting the invoice, or failed. */
+type OpenWalletState = 'idle' | 'minting' | 'failed';
 
 /** Where the open flow stands: its step and, once it arrived, the amount. */
 type MoveState = { step: MoveStep; arrivedSats: number } | null;
@@ -78,7 +90,18 @@ export interface MoveFundsSheetProps {
  *    helper as Receive) and **Copy my address** (**Copied** for two seconds);
  *    on a desktop (not `isSmartphoneUserAgent`) also the same address QR as
  *    Receive with **Open your other wallet on your phone, tap Send and scan
- *    this code**; then **I sent it**.
+ *    this code**; on a smartphone instead **Open my other wallet** above the
+ *    copy button. Its tap (not the step, so the invoice is fresh) mints a
+ *    Lightning invoice with no amount to the member's own wallet
+ *    (`receiveWalletInvoice`, opening the wallet first when it is not open)
+ *    with the note **Transfer to your 21.gifts account**, which the other
+ *    wallet shows while the member enters the amount there. The sheet hands
+ *    it over with a generic `lightning:` link
+ *    (`location.href = lightningHref(invoice)`, as the public pay link does)
+ *    and moves to step 3. While it mints the button is disabled; when the wallet cannot be
+ *    opened or the mint fails, **Your 21.gifts wallet could not create a
+ *    payment request. Try again, or copy your address.** shows in its place
+ *    with **Try again**, and the copy button stays. Then **I sent it**.
  * 3. A spinner, **Waiting for your Bitcoin…**, and **Finish sending in your
  *    other wallet. This screen updates by itself.**
  * 4. A check, **₿X arrived** with its fiat, and **Your wallet now holds ₿Y ·
@@ -87,8 +110,11 @@ export interface MoveFundsSheetProps {
  * Steps 2 and 3 move to step 4 by themselves when a received payment completes
  * (`onIncomingPayment`, the detection of the received-money banner). The
  * top-left arrow goes from 3 to 2 and from 2 to 1, and closes the flow on 1
- * and 4. No other wallet app is named or opened: copy and QR only. Under the
- * Playwright-only `?visual=move-arrived` pin it opens on step 4 with ₿500.
+ * and 4. This sheet is the one place a member hands a request to another
+ * wallet app with a `lightning:` link; no wallet app is named. Under the
+ * Playwright-only `?visual=move-arrived` pin it opens on step 4 with ₿500;
+ * under `?visual=move-invoice` **Open my other wallet** hands over a fixture
+ * invoice instead of minting one.
  *
  * Member events (`logInteraction`), once per occurrence: `wallet_move_opened`
  * (`source` `receive` | `link`), `wallet_move_step` (`step` `go` | `waiting`
@@ -117,6 +143,10 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
   const [state, setState] = useState<MoveState>(null);
   const [smartphone, setSmartphone] = useState(true);
   const { copied, copy } = useCopied();
+  const [openWallet, setOpenWallet] = useState<OpenWalletState>('idle');
+  /** Bumped on each step change, so a mint that answers after the member left step 2 does nothing. */
+  const mintRun = useRef(0);
+  const stepRef = useRef<MoveStep | null>(null);
   const rateDay = useSpotRate(state !== null);
   /** True while this sheet saw a member signed in, so only a sign-out drops a waiting request. */
   const wasSignedIn = useRef(false);
@@ -168,6 +198,9 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
   }, [signedIn, onboarded]);
 
   const step = state?.step ?? null;
+  useEffect(() => {
+    stepRef.current = step;
+  });
   const listening = signedIn && (step === 'go' || step === 'waiting');
   const shown = signedIn && step !== null;
 
@@ -236,10 +269,36 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     setState(null);
   };
   const goTo = (next: MoveStep): void => {
+    mintRun.current += 1;
+    setOpenWallet('idle');
     setState({ ...state, step: next });
     if (next !== 'intro') {
       logInteraction('wallet_move_step', { step: next });
     }
+  };
+  const openOtherWallet = (): void => {
+    mintRun.current += 1;
+    const run = mintRun.current;
+    setOpenWallet('minting');
+    const minted =
+      visualPin() === INVOICE_VISUAL_PIN
+        ? Promise.resolve(INVOICE_VISUAL)
+        : receiveWalletInvoice(t('moveFunds.invoiceNote'));
+    minted.then(
+      (invoice) => {
+        if (run !== mintRun.current || stepRef.current !== 'go') {
+          return;
+        }
+        window.location.href = lightningHref(invoice);
+        goTo('waiting');
+      },
+      () => {
+        if (run !== mintRun.current || stepRef.current !== 'go') {
+          return;
+        }
+        setOpenWallet('failed');
+      },
+    );
   };
   const back = (): void => {
     const previous = previousStep(state.step);
@@ -293,6 +352,32 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
             <p className="w-full min-w-0 truncate text-center font-mono text-sm text-app-fg">
               {address}
             </p>
+            {smartphone ? (
+              openWallet === 'failed' ? (
+                <>
+                  <p role="alert" className="text-center text-sm text-app-danger">
+                    {t('moveFunds.openWalletFailed')}
+                  </p>
+                  <Button type="button" size="lg" onClick={openOtherWallet}>
+                    {t('wallet.payRetry')}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={openWallet === 'minting'}
+                  icon={
+                    openWallet === 'minting' ? (
+                      <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                    ) : undefined
+                  }
+                  onClick={openOtherWallet}
+                >
+                  {t('moveFunds.openWallet')}
+                </Button>
+              )
+            ) : null}
             {smartphone || qr === null ? null : (
               <>
                 <p className="text-center text-sm text-app-muted">{t('moveFunds.scanHint')}</p>
