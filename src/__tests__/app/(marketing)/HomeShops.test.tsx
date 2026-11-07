@@ -2349,7 +2349,7 @@ describe('HomeShops', () => {
 
   it('builds marker popups with safe photos, local links, and categories', async () => {
     const lib = installMapLibre();
-    renderShops();
+    const view = renderShops();
     await resolveLatest(
       basicFilters({}),
       placesBody([
@@ -2402,7 +2402,9 @@ describe('HomeShops', () => {
     const popupLink = linked.content.querySelector('a');
     expect(popupLink?.getAttribute('href')).toBe(`/${npub('p')}`);
     expect(popupLink?.getAttribute('class')).toBe('shop-popup-name');
-    expect(popupLink?.querySelector('.shop-popup-arrow')).toBeTruthy();
+    const arrow = popupLink?.querySelector('svg.shop-popup-arrow');
+    expect(arrow?.classList.contains('lucide-arrow-right')).toBe(true);
+    expect(arrow?.getAttribute('aria-hidden')).toBe('true');
     const close = linked.content.querySelector('.shop-popup-close');
     expect(close?.getAttribute('aria-label')).toBe(copy.closePopup);
     if (!(close instanceof HTMLButtonElement)) throw new Error('missing close');
@@ -2422,6 +2424,7 @@ describe('HomeShops', () => {
     expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
     expect(image?.getAttribute('class')).toBe('shop-popup-photo');
     expect(plain.content.querySelector('a')).toBeNull();
+    expect(plain.content.querySelector('.shop-popup-arrow')).toBeNull();
     expect(plain.content.querySelector('strong')?.textContent).toBe('Plain');
     expect(plain.content.querySelector('strong')?.className).toBe('shop-popup-name');
     expect(plain.content.querySelector('img')).toBeNull();
@@ -2433,6 +2436,12 @@ describe('HomeShops', () => {
     );
     expect(malformed?.content?.querySelector('img')).toBeNull();
     expect(nonString?.content?.querySelector('img')).toBeNull();
+    view.unmount();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(linked.content.querySelector('.shop-popup-close')).toBeNull();
+    expect(popupLink?.querySelector('.shop-popup-arrow')).toBeNull();
   });
 
   it('navigates plain popup clicks client-side and preserves browser click behavior', async () => {
@@ -2763,7 +2772,7 @@ describe('HomeShops', () => {
     expect(lib.maps).toHaveLength(0);
   });
 
-  it('removes a script that fails after unmount and shows the table when the next load fails', async () => {
+  it('removes a script loaded without the library after unmount and shows the table on the next script error', async () => {
     const first = renderShops();
     const script = mapScript();
     expect(script.getAttribute('data-shops-map')).toBe('loading');
@@ -3194,7 +3203,7 @@ describe('HomeShops', () => {
     expect(openValues(copy.asset)).toEqual(['', 'BTC', 'ZZZ']);
   });
 
-  it('restyles positron and reveals the compact attribution', async () => {
+  it('restyles positron and removes the attribution expanded class and open attribute', async () => {
     const onceHandlers: Array<() => void> = [];
     const lib = installMapLibre();
     wrapMap((map) => {
@@ -4561,7 +4570,10 @@ describe('HomeShops', () => {
 
   it('focuses help only on opening, with preventScroll and outline-none', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
     const help = screen.getByRole('button', { name: copy.helpLabel });
     const focus = vi.spyOn(HTMLElement.prototype, 'focus');
 
@@ -4587,7 +4599,47 @@ describe('HomeShops', () => {
     expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
     expect(document.activeElement).toBe(elsewhere);
     expect(focus).not.toHaveBeenCalled();
+
+    fireEvent.click(help);
+    expect(document.activeElement).toBe(screen.getByRole('dialog', { name: copy.helpLabel }));
+    elsewhere.focus();
+    focus.mockClear();
+    await resolvePlaces(placesBody([]));
+    expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+    expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
   });
+
+  it.each([copy.map, copy.table])(
+    'moves focus from pending help to the selected %s button when no 21.gifts shop is returned',
+    async (viewLabel) => {
+      renderShops();
+      await act(async () => {
+        latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+      });
+      await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+      const viewControl = screen.getByRole('group', { name: copy.view });
+      const viewButton = within(viewControl).getByRole('button', { name: viewLabel });
+      fireEvent.click(viewButton);
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      help.focus();
+      fireEvent.click(help, { detail: 0 });
+      const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+      expect(document.activeElement).toBe(dialog);
+      const focus = vi.spyOn(viewButton, 'focus');
+
+      await resolvePlaces(placesBody([giftsPlace('Other provider', { techProvider: 'Other' })]));
+
+      expect(screen.getByText(copy.empty)).toBeTruthy();
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+      expect(viewButton.getAttribute('aria-pressed')).toBe('true');
+      expect(document.activeElement).toBe(viewButton);
+      expect(focus).toHaveBeenCalledTimes(1);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
 
   it.each([
     { close: 'Escape', focused: 'panel' },

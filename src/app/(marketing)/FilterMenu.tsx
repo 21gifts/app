@@ -63,6 +63,7 @@ function columnCount(total: number, viewportWidth: number, viewportHeight: numbe
 
 /**
  * Box that keeps a still-overflowing panel inside the 8px window inset.
+ * The caller remeasures height if this box narrows the panel.
  *
  * @param rect - Panel rect after the candidate alignment is applied.
  * @returns The pinned box, or null when the rect already fits.
@@ -156,7 +157,9 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * sits directly before the chevron. An open list floats under the pill, flips
  * inward when it would leave the window, and wraps into columns. If the flipped
  * panel still crosses an 8px inset, its top, bottom, left, and width are pinned inside
- * the window. The list is measured when it opens, when the window resizes, and
+ * the window. Narrowing the pinned width remeasures the wrapped content height
+ * before deciding the bottom edge and whether the list needs scrolling.
+ * The list is measured when it opens, when the window resizes, and
  * when the page scrolls while the pill is still in the window, so a pinned list
  * stays on the pill. A scroll or resize closes a pinned list when the pill is
  * outside the window; an unpinned list is not measured again. A pinned list
@@ -264,7 +267,18 @@ export function FilterMenu({
         nextVertical === 'above' ? 'mb-1.5' : 'mt-1.5',
       );
       const flipped = panel.getBoundingClientRect();
-      const nextPin = pinFor(flipped);
+      let nextPin = pinFor(flipped);
+      if (nextPin !== null && nextPin.width < flipped.width) {
+        panel.classList.remove('min-w-[max(100%,14.5rem)]');
+        panel.style.width = `${nextPin.width}px`;
+        const height = panel.getBoundingClientRect().height;
+        const bottom = window.innerHeight - nextPin.top - height;
+        nextPin = {
+          ...nextPin,
+          bottom: Math.max(VIEWPORT_INSET, bottom),
+          scrolls: bottom < VIEWPORT_INSET,
+        };
+      }
       panel.className = previous;
       if (previousStyle === null) panel.removeAttribute('style');
       else panel.setAttribute('style', previousStyle);

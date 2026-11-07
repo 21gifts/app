@@ -551,6 +551,70 @@ describe('FilterMenu', () => {
     }
   });
 
+  it.each([
+    { height: 240, bottom: '120px', scrolling: false },
+    { height: 440, bottom: '8px', scrolling: true },
+  ])(
+    'uses the wrapped height $height after narrowing the panel to decide its bottom and scrollport',
+    ({ height, bottom, scrolling }) => {
+      const previousWidth = window.innerWidth;
+      const previousHeight = window.innerHeight;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 200 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 400 });
+      const measuredWidths: string[] = [];
+      const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+      rect.mockImplementation(function (this: HTMLElement): DOMRect {
+        const panel = this.getAttribute('role') === 'listbox';
+        if (panel) measuredWidths.push(this.style.width);
+        const narrowed =
+          panel &&
+          this.style.width === '184px' &&
+          !this.classList.contains('min-w-[max(100%,14.5rem)]');
+        const width = panel ? (narrowed ? 184 : 320) : 100;
+        const measuredHeight = panel ? (narrowed ? height : 120) : 44;
+        return {
+          x: 8,
+          y: 40,
+          top: 40,
+          left: 8,
+          right: 8 + width,
+          bottom: 40 + measuredHeight,
+          width,
+          height: measuredHeight,
+          toJSON() {
+            return {};
+          },
+        };
+      });
+      try {
+        render(
+          <FilterMenu
+            label="Name"
+            value=""
+            allLabel="All"
+            options={[
+              { value: '', label: 'All', swatch: null },
+              { value: 'one', label: 'A shop with a long name that wraps', swatch: null },
+              { value: 'two', label: 'Another shop with a long name that wraps', swatch: null },
+            ]}
+            onChange={vi.fn()}
+          />,
+        );
+        fireEvent.click(screen.getByRole('combobox', { name: 'Name' }));
+        const listbox = screen.getByRole('listbox');
+        expect(listbox.style.width).toBe('184px');
+        expect(listbox.style.top).toBe('40px');
+        expect(listbox.style.bottom).toBe(bottom);
+        expect(listbox.querySelector('[data-scrollport]') !== null).toBe(scrolling);
+        expect(measuredWidths).toEqual(['', '', '184px']);
+      } finally {
+        rect.mockRestore();
+        Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
+        Object.defineProperty(window, 'innerHeight', { configurable: true, value: previousHeight });
+      }
+    },
+  );
+
   it('reveals options above and below the pinned scrollport on keyboard movement', () => {
     const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
     rect.mockImplementation(function (this: HTMLElement): DOMRect {

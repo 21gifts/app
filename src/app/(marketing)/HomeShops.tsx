@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { flushSync } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { createRoot, type Root } from 'react-dom/client';
-import { CircleHelp, X } from 'lucide-react';
+import { ArrowRight, CircleHelp, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
@@ -950,22 +950,6 @@ function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
   return positions;
 }
 
-function svgIcon(path: string, className: string): SVGSVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', className);
-  const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  shape.setAttribute('d', path);
-  svg.appendChild(shape);
-  return svg;
-}
-
 type PopupClose = { root: Root; host: HTMLElement };
 
 const popupCloses = new Set<PopupClose>();
@@ -987,6 +971,7 @@ function unmountPopupCloses(): void {
 
 /**
  * Builds the shop popup with a client-side shop link and its own close button.
+ * The close button and the link's lucide arrow share one React root.
  *
  * @param row - Shop details and the optional in-app path.
  * @param showCategory - Whether categories differ across the displayed shops.
@@ -1004,28 +989,37 @@ function popupContent(
 ): HTMLElement {
   const content = document.createElement('div');
   content.className = 'shop-popup-card';
+  let arrowHost: HTMLSpanElement | null = null;
   const host = document.createElement('div');
   content.appendChild(host);
   const root = createRoot(host);
   const entry: PopupClose = { root, host };
   popupCloses.add(entry);
   // paintMarkers runs inside a React effect. Flushing here warns and can
-  // unmount a root mid-render, so the button commits on the next microtask.
+  // unmount a root mid-render, so the button and arrow commit on the next microtask.
   queueMicrotask(() => {
     flushSync(() => {
       root.render(
-        <IconButton
-          aria-label={closeLabel}
-          variant="ghost"
-          size="md"
-          className="shop-popup-close border border-ink/12 bg-paper"
-          onClick={(event) => {
-            event.stopPropagation();
-            onClose();
-          }}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>,
+        <>
+          <IconButton
+            aria-label={closeLabel}
+            variant="ghost"
+            size="md"
+            className="shop-popup-close border border-ink/12 bg-paper"
+            onClick={(event) => {
+              event.stopPropagation();
+              onClose();
+            }}
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+          {arrowHost === null
+            ? null
+            : createPortal(
+                <ArrowRight aria-hidden="true" className="shop-popup-arrow" />,
+                arrowHost,
+              )}
+        </>,
       );
     });
   });
@@ -1051,7 +1045,9 @@ function popupContent(
     name.href = href;
     name.className = 'shop-popup-name';
     name.appendChild(document.createTextNode(row.name));
-    name.appendChild(svgIcon('M5 12h14M12 5l7 7-7 7', 'shop-popup-arrow'));
+    arrowHost = document.createElement('span');
+    arrowHost.className = 'contents';
+    name.appendChild(arrowHost);
     name.addEventListener('click', (event: MouseEvent): void => {
       if (
         event.defaultPrevented ||
@@ -1431,6 +1427,8 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  * Filters, columns, and the popup category come from the loaded 21.gifts rows.
  * A control is shown only when its values actually differ.
  * Popup shop links open client-side on plain primary clicks.
+ * If an empty response removes open help, focus inside it moves without
+ * scrolling to the selected Map/Table button before the panel is removed.
  *
  * @param props - Localized copy and the page locale.
  * @returns The shop section.
@@ -1457,6 +1455,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const [helpBox, setHelpBox] = useState<HelpBox | null>(null);
   const headingId = useId();
   const helpPanelId = useId();
+  const viewControlRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLSpanElement>(null);
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<MapSession | null>(null);
@@ -1511,7 +1510,8 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
   const showShop = differs(censusRows, (row) => row.shop);
   const showCategory = differs(censusRows, (row) => row.category);
   const showHelp = census === null || census.length > 0;
-  const helpVisible = helpOpen && helpBox !== null && showHelp;
+  // Keep open help mounted until the layout effect transfers its focus.
+  const helpVisible = helpOpen && helpBox !== null;
   const showLegend = view === 'map' && census !== null && census.length > 0;
   rowsRef.current = rows;
   showCategoryRef.current = showCategory;
@@ -2038,6 +2038,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     if (!helpOpen) return undefined;
     function place(): void {
       const node = helpRef.current;
+      /* v8 ignore next -- trigger removal closes help and cleans up listeners before paint */
       if (node === null) return;
       const panel = helpPanelRef.current;
       // A top-and-bottom pin stretches the border box to the window. Reading
@@ -2072,6 +2073,16 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       window.removeEventListener('scroll', place, true);
     };
   }, [helpOpen, helpBox]);
+
+  useLayoutEffect(() => {
+    if (showHelp || !helpOpen) return;
+    if (helpPanelRef.current?.contains(document.activeElement)) {
+      viewControlRef.current
+        ?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')
+        ?.focus({ preventScroll: true });
+    }
+    setHelpOpen(false);
+  }, [showHelp, helpOpen]);
 
   useLayoutEffect(() => {
     helpPanelRef.current?.focus({ preventScroll: true });
@@ -2233,7 +2244,10 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
                 />
               </div>
             ) : null}
-            <div className="order-1 col-span-2 flex items-center gap-2 sm:contents">
+            <div
+              ref={viewControlRef}
+              className="order-1 col-span-2 flex items-center gap-2 sm:contents"
+            >
               <SegmentedControl
                 tone="neutral"
                 ariaLabel={copy.view}
