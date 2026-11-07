@@ -788,10 +788,13 @@ mount it.
 
 The move-funds sheet (`MoveFundsSheet`) is the one exception on a member
 screen, by owner decision: on a smartphone its address step offers **Open my
-other wallet**, which mints on tap a Lightning invoice with no amount to the
-member's own in-app wallet (`receiveWalletInvoice`) with the localized note
-**Transfer to your 21.gifts account**, and hands it to the device's Bitcoin
-wallet app with the same generic `lightning:` link (`lightningHref`). It
+other wallet**. Each time that step opens, the sheet mints ahead a Lightning
+invoice with no amount to the member's own in-app wallet
+(`receiveWalletInvoice`) with the localized note **Transfer to your 21.gifts
+account**; the button loads until it is in. A tap hands it to the device's
+Bitcoin wallet app at once, with no await before the navigation, through the
+same generic `lightning:` link (`lightningHref`). An invoice close to expiry
+is not handed over: the tap mints a fresh one, and the member taps again. It
 names no wallet app, keeps **Copy my address** as the fallback, and on a
 desktop shows the address QR and copy only. No other member screen gets a
 `lightning:` link or a button to another wallet app.

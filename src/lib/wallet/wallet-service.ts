@@ -8,6 +8,7 @@ import {
   loadWalletSdk,
   type OnchainSpeed,
   type WalletConnection,
+  type WalletInvoice,
   type WalletPayment,
   type WalletPaymentPage,
   type WalletPayRequest,
@@ -950,24 +951,41 @@ export async function receiveWalletSparkAddress(
  * wallet, opening the wallet from the tab phrase first when it is not open
  * yet. The paying wallet asks for the amount and shows `description`. A
  * payment to it is a received, completed payment like any other, so the
- * {@link onIncomingPayment} listeners hear it.
+ * {@link onIncomingPayment} and {@link onPaymentReceived} listeners hear it.
+ * Opening the wallet (also downloading the wallet code) and minting share
+ * the {@link WALLET_CONNECT_TIMEOUT_MS} deadline; a download that is still
+ * running then carries on for the next call.
  *
  * @param description - The note the paying wallet shows with the request.
  * @param loadSdk - SDK loader forwarded to {@link ensureWalletConnected}.
- * @returns The invoice.
+ * @returns The invoice and when it expires.
  * @throws Error `wallet-connect` when the wallet could not be opened or closed
- *   meanwhile; otherwise the SDK's error.
+ *   meanwhile; Error `wallet-timeout` at the deadline; otherwise the SDK's
+ *   error.
  */
 export async function receiveWalletInvoice(
   description: string,
   loadSdk: WalletSdkLoader = loadWalletSdk,
-): Promise<string> {
-  await ensureWalletConnected(loadSdk);
-  const conn = connection;
-  if (conn === null) {
-    throw new Error('wallet-connect');
+): Promise<WalletInvoice> {
+  let timer!: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error('wallet-timeout'));
+    }, WALLET_CONNECT_TIMEOUT_MS);
+  });
+  const mint = async (): Promise<WalletInvoice> => {
+    await ensureWalletConnected(loadSdk);
+    const conn = connection;
+    if (conn === null) {
+      throw new Error('wallet-connect');
+    }
+    return conn.receiveLightningInvoice(description);
+  };
+  try {
+    return await Promise.race([mint(), deadline]);
+  } finally {
+    clearTimeout(timer);
   }
-  return conn.receiveLightningInvoice(description);
 }
 
 /**

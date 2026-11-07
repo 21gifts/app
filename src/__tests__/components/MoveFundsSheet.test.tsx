@@ -9,8 +9,12 @@ import type { Account } from '@/lib/api-types';
 import { logInteraction } from '@/lib/interaction-log';
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest, type MoveFundsSource } from '@/lib/move-funds';
 import type { FiatRateDay } from '@/lib/stats-money';
-import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
-import { onIncomingPayment, receiveWalletInvoice } from '@/lib/wallet/wallet-service';
+import type { WalletInvoice, WalletPayment } from '@/lib/wallet/wallet-sdk';
+import {
+  onIncomingPayment,
+  onPaymentReceived,
+  receiveWalletInvoice,
+} from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -22,6 +26,7 @@ vi.mock('@/lib/move-funds', () => ({
 }));
 vi.mock('@/lib/wallet/wallet-service', () => ({
   onIncomingPayment: vi.fn(),
+  onPaymentReceived: vi.fn(),
   receiveWalletInvoice: vi.fn(),
 }));
 vi.mock('@/components/ViewHistoryRoot', () => ({ useChromeBack: vi.fn() }));
@@ -47,7 +52,14 @@ const originalHref = window.location.href;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 let override: ChromeBackOverride | null = null;
 let emit: (payment: WalletPayment) => void = () => undefined;
+let told: (payment: WalletPayment) => void = () => undefined;
 const unsubscribe = vi.fn();
+const receivedUnsubscribe = vi.fn();
+
+/** An invoice that is valid for an hour from now. */
+function minted(invoice: string): WalletInvoice {
+  return { invoice, expiresAtMs: Date.now() + 3_600_000 };
+}
 
 function wallet(status: UseWalletResult['status'], balanceSats: number | null): void {
   vi.mocked(useWallet).mockReturnValue({
@@ -90,8 +102,18 @@ beforeEach(() => {
   vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
   vi.mocked(takeMoveFundsRequest).mockReset().mockReturnValue(null);
   vi.mocked(logInteraction).mockReset();
-  vi.mocked(receiveWalletInvoice).mockReset().mockResolvedValue('lnbc1pmove');
+  // Step 2 on a phone mints ahead; a test that needs the invoice says what it answers.
+  vi.mocked(receiveWalletInvoice)
+    .mockReset()
+    .mockReturnValue(new Promise<WalletInvoice>(() => undefined));
   unsubscribe.mockReset();
+  receivedUnsubscribe.mockReset();
+  vi.mocked(onPaymentReceived)
+    .mockReset()
+    .mockImplementation((listener) => {
+      told = listener;
+      return receivedUnsubscribe;
+    });
   vi.mocked(onIncomingPayment)
     .mockReset()
     .mockImplementation((listener) => {
@@ -554,180 +576,313 @@ describe('MoveFundsSheet', () => {
     expect(events()).toEqual([['wallet_move_opened', { source: 'link' }]]);
   });
 
-  it('opens the other wallet on a phone with a fresh invoice on tap, then waits for the payment', async () => {
+  it('mints ahead when step 2 opens on a phone, loads until it is in, and a tap hands it over at once', async () => {
+    const mint = deferred<WalletInvoice>();
+    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(mint.promise);
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     expect(receiveWalletInvoice).not.toHaveBeenCalled();
-    const mint = deferred<string>();
-    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(mint.promise);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(receiveWalletInvoice).toHaveBeenCalledWith('Transfer to your 21.gifts account');
+    const loading = screen.getByRole('button', { name: 'Open my other wallet' });
+    expect((loading as HTMLButtonElement).disabled).toBe(true);
+    expect(loading.querySelector('svg')).not.toBeNull();
+    await act(async () => {
+      mint.resolve(minted('lnbc1pmove'));
+      await mint.promise;
+    });
+    const ready = screen.getByRole('button', { name: 'Open my other wallet' });
+    expect((ready as HTMLButtonElement).disabled).toBe(false);
+    expect(ready.querySelector('svg')).toBeNull();
     const { hrefs, restore } = recordHrefs();
     try {
-      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-      expect(receiveWalletInvoice).toHaveBeenCalledWith('Transfer to your 21.gifts account');
-      const opening = screen.getByRole('button', { name: 'Open my other wallet' });
-      expect((opening as HTMLButtonElement).disabled).toBe(true);
-      expect(opening.querySelector('svg')).not.toBeNull();
-      await act(async () => {
-        mint.resolve('lnbc1pmove');
-        await mint.promise;
-      });
+      fireEvent.click(ready);
+      // Set inside the tap, before anything is awaited.
+      expect(hrefs).toEqual(['lightning:lnbc1pmove']);
     } finally {
       restore();
     }
-    expect(hrefs).toEqual(['lightning:lnbc1pmove']);
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
     expect(events().slice(-1)).toEqual([['wallet_move_step', { step: 'waiting' }]]);
     act(() => {
       emit(received(12_000));
     });
     expect(screen.getByRole('dialog', { name: "₿12'000 arrived" })).toBeTruthy();
+  });
+
+  it('mints a fresh invoice each time step 2 opens again', async () => {
+    vi.mocked(receiveWalletInvoice).mockResolvedValue(minted('lnbc1pmove'));
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      await Promise.resolve();
+    });
     act(() => {
       override?.onClick();
     });
-    openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const again = screen.getByRole('button', { name: 'Open my other wallet' });
-    expect((again as HTMLButtonElement).disabled).toBe(false);
-    expect(again.querySelector('svg')).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'I sent it' }));
+    await act(async () => {
+      override?.onClick();
+      await Promise.resolve();
+    });
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(3);
+    expect(
+      (screen.getByRole('button', { name: 'Open my other wallet' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
   });
 
-  it('says so with Try again when the wallet cannot make the invoice, and keeps the copy fallback', async () => {
+  it('mints a fresh invoice instead of handing over one close to expiry, and hands over only on the next tap', async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+    const fresh = deferred<WalletInvoice>();
+    vi.mocked(receiveWalletInvoice)
+      .mockResolvedValueOnce({ invoice: 'lnbc1pold', expiresAtMs: now + 600_000 })
+      .mockReturnValueOnce(fresh.promise);
+    try {
+      renderWithLocale(<MoveFundsSheet />);
+      openByRequest();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+        await Promise.resolve();
+      });
+      // Five minutes of its ten are left: not enough to enter an amount and pay.
+      clock.mockReturnValue(now + 300_000);
+      const { hrefs, restore } = recordHrefs();
+      try {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        expect(hrefs).toEqual([]);
+        expect(receiveWalletInvoice).toHaveBeenCalledTimes(2);
+        expect(
+          (screen.getByRole('button', { name: 'Open my other wallet' }) as HTMLButtonElement)
+            .disabled,
+        ).toBe(true);
+        await act(async () => {
+          fresh.resolve({ invoice: 'lnbc1pnew', expiresAtMs: now + 900_000 });
+          await fresh.promise;
+        });
+        // The fresh invoice is not handed over late.
+        expect(hrefs).toEqual([]);
+        expect(screen.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        expect(hrefs).toEqual(['lightning:lnbc1pnew']);
+      } finally {
+        restore();
+      }
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('keeps a short-lived invoice usable for half its lifetime', async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+    vi.mocked(receiveWalletInvoice).mockResolvedValueOnce({
+      invoice: 'lnbc1pshort',
+      expiresAtMs: now + 120_000,
+    });
+    try {
+      renderWithLocale(<MoveFundsSheet />);
+      openByRequest();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+        await Promise.resolve();
+      });
+      clock.mockReturnValue(now + 50_000);
+      const { hrefs, restore } = recordHrefs();
+      try {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      } finally {
+        restore();
+      }
+      expect(hrefs).toEqual(['lightning:lnbc1pshort']);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('says so with Try again when the wallet cannot make the invoice, keeps copy, and Try again mints again', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    vi.mocked(receiveWalletInvoice).mockRejectedValueOnce(new Error('wallet-connect'));
-    renderWithLocale(<MoveFundsSheet />);
-    openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vi.mocked(receiveWalletInvoice)
+      .mockRejectedValueOnce(new Error('wallet-timeout'))
+      .mockResolvedValueOnce(minted('lnbc1pmove'));
     const { hrefs, restore } = recordHrefs();
     try {
+      renderWithLocale(<MoveFundsSheet />);
+      openByRequest();
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Start' }));
         await Promise.resolve();
       });
       expect(screen.getByRole('alert').textContent).toBe(
         'Your 21.gifts wallet could not create a payment request. Try again, or copy your address.',
       );
       expect(screen.queryByRole('button', { name: 'Open my other wallet' })).toBeNull();
-      expect(screen.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeTruthy();
       await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Copy my address' }));
         await Promise.resolve();
       });
       expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
-      expect(hrefs).toEqual([]);
       await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
         await Promise.resolve();
       });
+      expect(receiveWalletInvoice).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alert')).toBeNull();
+      // Try again only mints; the member taps to hand it over.
+      expect(hrefs).toEqual([]);
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      expect(hrefs).toEqual(['lightning:lnbc1pmove']);
     } finally {
       restore();
       Reflect.deleteProperty(navigator, 'clipboard');
     }
-    expect(receiveWalletInvoice).toHaveBeenCalledTimes(2);
-    expect(hrefs).toEqual(['lightning:lnbc1pmove']);
-    expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
+  });
+
+  it('ignores an invoice or a failure that answers after step 2 was left or the sheet closed', async () => {
+    const late = deferred<WalletInvoice>();
+    const lateFailure = deferred<WalletInvoice>();
+    vi.mocked(receiveWalletInvoice)
+      .mockReturnValueOnce(late.promise)
+      .mockReturnValueOnce(lateFailure.promise)
+      .mockReturnValueOnce(new Promise<WalletInvoice>(() => undefined));
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     act(() => {
       override?.onClick();
     });
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await act(async () => {
+      late.resolve(minted('lnbc1plate'));
+      lateFailure.reject(new Error('late'));
+      await Promise.allSettled([late.promise, lateFailure.promise]);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(
+      (screen.getByRole('button', { name: 'Open my other wallet' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Open my other wallet' })).toBeTruthy();
   });
 
-  it('ignores an invoice or a failure that answers after the member left the step', async () => {
-    const late = deferred<string>();
-    const lateFailure = deferred<string>();
+  it('ignores an invoice that answers in the same tick as a sign-out, before the sheet renders again', async () => {
+    const late = deferred<WalletInvoice>();
     vi.mocked(receiveWalletInvoice)
       .mockReturnValueOnce(late.promise)
-      .mockReturnValueOnce(lateFailure.promise);
+      .mockReturnValueOnce(new Promise<WalletInvoice>(() => undefined));
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const { hrefs, restore } = recordHrefs();
-    try {
-      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-      act(() => {
-        override?.onClick();
-      });
+    await act(async () => {
+      useAuthStore.setState({ session: null });
+      late.resolve(minted('lnbc1pstale'));
+      await late.promise;
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => {
+      useAuthStore.setState({ session: 'tok2' });
+    });
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    // A payment to the stale invoice is not taken as this move.
+    act(() => {
+      told({ ...received(500), timestamp: 0, info: { invoice: 'lnbc1pstale' } });
+    });
+    expect(screen.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeTruthy();
+  });
+
+  it('ignores an invoice that answers in the same tick as a Log out', async () => {
+    const late = deferred<WalletInvoice>();
+    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(late.promise);
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await act(async () => {
+      window.dispatchEvent(new Event('21gifts:logout'));
+      late.resolve(minted('lnbc1plate'));
+      await late.promise;
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(events().filter(([name]) => name === 'wallet_move_step')).toEqual([
+      ['wallet_move_step', { step: 'go' }],
+    ]);
+  });
+
+  it('hears a payment to the minted invoice at once from step 2 through step 3, once', async () => {
+    vi.mocked(receiveWalletInvoice).mockResolvedValueOnce(minted('lnbc1pmove'));
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-      // Back on step 2 with a new run: the first answer is stale.
+      await Promise.resolve();
+    });
+    const { restore } = recordHrefs();
+    try {
       fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-      await act(async () => {
-        late.resolve('lnbc1plate');
-        lateFailure.reject(new Error('late'));
-        await Promise.allSettled([late.promise, lateFailure.promise]);
-      });
     } finally {
       restore();
     }
-    expect(hrefs).toEqual([]);
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(events().filter(([name]) => name === 'wallet_move_step')).toEqual([
-      ['wallet_move_step', { step: 'go' }],
-      ['wallet_move_step', { step: 'go' }],
+    // The same subscription is kept from step 2 to step 3.
+    expect(onPaymentReceived).toHaveBeenCalledTimes(1);
+    expect(onIncomingPayment).toHaveBeenCalledTimes(1);
+    vi.mocked(logInteraction).mockClear();
+    const payment = { ...received(7_000), timestamp: 0, info: { invoice: 'lnbc1pmove' } };
+    act(() => {
+      told(payment);
+      emit(payment);
+    });
+    expect(screen.getByRole('dialog', { name: "₿7'000 arrived" })).toBeTruthy();
+    expect(events()).toEqual([
+      ['wallet_move_step', { step: 'done' }],
+      ['wallet_move_done', { amountSats: 7_000 }],
     ]);
+    expect(receivedUnsubscribe).toHaveBeenCalled();
   });
 
-  it('ignores an answer that arrives once the payment already moved the flow on', async () => {
-    const late = deferred<string>();
-    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(late.promise);
-    renderWithLocale(<MoveFundsSheet />);
-    openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const { hrefs, restore } = recordHrefs();
+  it('takes a received payment from since step 2 opened, not an older one, also on a desktop', () => {
+    userAgent(DESKTOP);
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
     try {
-      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      renderWithLocale(<MoveFundsSheet />);
+      openByRequest();
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      expect(receiveWalletInvoice).not.toHaveBeenCalled();
       act(() => {
-        emit(received(500));
+        told({ ...received(100), timestamp: now - 1 });
+        told({ ...received(100), timestamp: now - 1, info: { invoice: 'lnbc1pother' } });
       });
-      await act(async () => {
-        late.resolve('lnbc1plate');
-        await late.promise;
+      expect(screen.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeTruthy();
+      act(() => {
+        told({ ...received(900), timestamp: now });
       });
+      expect(screen.getByRole('dialog', { name: '₿900 arrived' })).toBeTruthy();
     } finally {
-      restore();
+      clock.mockRestore();
     }
-    expect(hrefs).toEqual([]);
-    expect(screen.getByRole('dialog', { name: '₿500 arrived' })).toBeTruthy();
   });
 
-  it('ignores an invoice that answers in the same tick as a Log out, before the sheet renders again', async () => {
-    const late = deferred<string>();
-    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(late.promise);
-    renderWithLocale(<MoveFundsSheet />);
-    openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const { hrefs, restore } = recordHrefs();
-    try {
-      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-      await act(async () => {
-        window.dispatchEvent(new Event('21gifts:logout'));
-        late.resolve('lnbc1plate');
-        await late.promise;
-      });
-    } finally {
-      restore();
-    }
-    expect(hrefs).toEqual([]);
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(events().filter(([name]) => name === 'wallet_move_step')).toEqual([
-      ['wallet_move_step', { step: 'go' }],
-    ]);
-  });
-
-  it('hands over the fixture invoice under the move-invoice pin in a Playwright build only', async () => {
+  it('gets the fixture invoice under the move-invoice pin in a Playwright build only', async () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=move-invoice');
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      await Promise.resolve();
+    });
     let recorded = recordHrefs();
     try {
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-        await Promise.resolve();
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
     } finally {
       recorded.restore();
     }
@@ -735,15 +890,16 @@ describe('MoveFundsSheet', () => {
     expect(receiveWalletInvoice).not.toHaveBeenCalled();
     cleanup();
     delete process.env.NEXT_PUBLIC_E2E_NOW;
+    vi.mocked(receiveWalletInvoice).mockResolvedValueOnce(minted('lnbc1pmove'));
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      await Promise.resolve();
+    });
     recorded = recordHrefs();
     try {
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-        await Promise.resolve();
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
     } finally {
       recorded.restore();
     }
@@ -751,36 +907,27 @@ describe('MoveFundsSheet', () => {
     expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps minting under the move-minting pin in a Playwright build only', async () => {
+  it('keeps loading under the move-minting pin in a Playwright build only', async () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=move-minting');
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
-    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
       await Promise.resolve();
     });
-    const minting = screen.getByRole('button', { name: 'Open my other wallet' });
-    expect((minting as HTMLButtonElement).disabled).toBe(true);
-    expect(minting.querySelector('svg')).not.toBeNull();
+    const loading = screen.getByRole('button', { name: 'Open my other wallet' });
+    expect((loading as HTMLButtonElement).disabled).toBe(true);
+    expect(loading.querySelector('svg')).not.toBeNull();
     expect(receiveWalletInvoice).not.toHaveBeenCalled();
+    // A tap while it loads does nothing.
+    fireEvent.click(loading);
     cleanup();
     delete process.env.NEXT_PUBLIC_E2E_NOW;
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-    const { restore } = recordHrefs();
-    try {
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
-        await Promise.resolve();
-      });
-    } finally {
-      restore();
-    }
     expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
   });
 
   it('opens on the arrived step under the move-arrived pin in a Playwright build only', () => {

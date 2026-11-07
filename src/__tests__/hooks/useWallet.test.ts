@@ -76,6 +76,7 @@ const PINS = [
   ['wallet-received', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['move-arrived', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['move-minting', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['move-invoice', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['wallet-pay-insufficient', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['balance-error', 'error', null],
   ['balance-setup-failed', 'error', null],

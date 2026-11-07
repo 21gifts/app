@@ -20,7 +20,12 @@ import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { visualPin } from '@/lib/visual-pin';
-import { onIncomingPayment, receiveWalletInvoice } from '@/lib/wallet/wallet-service';
+import type { WalletInvoice, WalletPayment } from '@/lib/wallet/wallet-sdk';
+import {
+  onIncomingPayment,
+  onPaymentReceived,
+  receiveWalletInvoice,
+} from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** The four steps, in order. */
@@ -36,22 +41,42 @@ const ARRIVED_VISUAL_PIN = 'move-arrived';
 const ARRIVED_VISUAL_SATS = 500;
 
 /**
- * Screenshot pin under which **Open my other wallet** hands over
- * {@link INVOICE_VISUAL} instead of minting one (Playwright builds only).
+ * Screenshot pin under which step 2 gets {@link INVOICE_VISUAL} instead of
+ * minting an invoice (Playwright builds only).
  */
 const INVOICE_VISUAL_PIN = 'move-invoice';
 
 /** The invoice the `?visual=move-invoice` pin hands to the other wallet. */
 const INVOICE_VISUAL = 'lnbc1pmovefundsvisual';
 
+/** How long the `?visual=move-invoice` invoice stays valid. */
+const INVOICE_VISUAL_LIFETIME_MS = 3_600_000;
+
 /**
- * Screenshot pin under which **Open my other wallet** keeps minting and never
- * answers, so the minting state stays on screen (Playwright builds only).
+ * Screenshot pin under which the invoice of step 2 keeps minting and never
+ * answers, so the loading button stays on screen (Playwright builds only).
  */
 const MINTING_VISUAL_PIN = 'move-minting';
 
-/** Where **Open my other wallet** stands: ready, minting the invoice, or failed. */
-type OpenWalletState = 'idle' | 'minting' | 'failed';
+/**
+ * Time an invoice must still have left when **Open my other wallet** is
+ * tapped, so the member can enter the amount and pay before it expires; at
+ * most half of the invoice's lifetime.
+ */
+const INVOICE_EXPIRY_MARGIN_MS = 300_000;
+
+/** A minted invoice and when it was minted (epoch milliseconds). */
+interface MintedInvoice extends WalletInvoice {
+  /** When the sheet received it. */
+  mintedAtMs: number;
+}
+
+/**
+ * Where the invoice for **Open my other wallet** stands: minting (the button
+ * loads), ready to hand over, or failed.
+ */
+type OpenWalletState =
+  { status: 'minting' } | { status: 'ready'; invoice: MintedInvoice } | { status: 'failed' };
 
 /** Where the open flow stands: its step and, once it arrived, the amount. */
 type MoveState = { step: MoveStep; arrivedSats: number } | null;
@@ -97,31 +122,40 @@ export interface MoveFundsSheetProps {
  *    on a desktop (not `isSmartphoneUserAgent`) also the same address QR as
  *    Receive with **Open your other wallet on your phone, tap Send and scan
  *    this code**; on a smartphone instead **Open my other wallet** above the
- *    copy button. Its tap (not the step, so the invoice is fresh) mints a
- *    Lightning invoice with no amount to the member's own wallet
- *    (`receiveWalletInvoice`, opening the wallet first when it is not open)
- *    with the note **Transfer to your 21.gifts account**, which the other
- *    wallet shows while the member enters the amount there. The sheet hands
- *    it over with a generic `lightning:` link
- *    (`location.href = lightningHref(invoice)`, as the public pay link does)
- *    and moves to step 3. While it mints the button is disabled; when the wallet cannot be
- *    opened or the mint fails, **Your 21.gifts wallet could not create a
- *    payment request. Try again, or copy your address.** shows in its place
- *    with **Try again**, and the copy button stays. Then **I sent it**.
+ *    copy button. Each time step 2 opens on a smartphone, the sheet mints
+ *    ahead a Lightning invoice with no amount to the member's own wallet
+ *    (`receiveWalletInvoice`, which opens the wallet first and gives up at
+ *    its deadline) with the note **Transfer to your 21.gifts account**, which
+ *    the other wallet shows while the member enters the amount there. Until
+ *    the invoice is in, the button is disabled with a spinner. A tap hands
+ *    the invoice over at once, with no await before it, through a generic
+ *    `lightning:` link (`location.href = lightningHref(invoice)`, as the
+ *    public pay link does), and moves to step 3. An invoice with less than
+ *    five minutes left (at most half its lifetime, from the SDK's expiry) is
+ *    not handed over: the tap mints a fresh one and the button loads again.
+ *    When the wallet cannot be opened in time or the mint fails, **Your
+ *    21.gifts wallet could not create a payment request. Try again, or copy
+ *    your address.** shows in its place with **Try again** (mints again), and
+ *    the copy button stays. An invoice or a failure that answers after step 2
+ *    was left, the sheet closed, or the member signed out is ignored. Then
+ *    **I sent it**.
  * 3. A spinner, **Waiting for your Bitcoin…**, and **Finish sending in your
  *    other wallet. This screen updates by itself.**
  * 4. A check, **₿X arrived** with its fiat, and **Your wallet now holds ₿Y ·
  *    fiat. …**, then **Done**.
  *
- * Steps 2 and 3 move to step 4 by themselves when a received payment completes
- * (`onIncomingPayment`, the detection of the received-money banner). The
+ * Steps 2 and 3 move to step 4 by themselves when a received payment completes,
+ * through one subscription kept from step 2 to step 3: `onIncomingPayment`
+ * (the detection of the received-money banner) and `onPaymentReceived`,
+ * which tells a payment at once, also before a freshly opened wallet has
+ * read the payments it holds; from that feed only a payment to an invoice
+ * minted here or one received since step 2 was entered from step 1 counts. The
  * top-left arrow goes from 3 to 2 and from 2 to 1, and closes the flow on 1
  * and 4. This sheet is the one place a member hands a request to another
  * wallet app with a `lightning:` link; no wallet app is named. Under the
  * Playwright-only `?visual=move-arrived` pin it opens on step 4 with ₿500;
- * under `?visual=move-invoice` **Open my other wallet** hands over a fixture
- * invoice instead of minting one, and under `?visual=move-minting` it keeps
- * minting.
+ * under `?visual=move-invoice` step 2 gets a fixture invoice instead of
+ * minting one, and under `?visual=move-minting` the mint never answers.
  *
  * Member events (`logInteraction`), once per occurrence: `wallet_move_opened`
  * (`source` `receive` | `link`), `wallet_move_step` (`step` `go` | `waiting`
@@ -150,9 +184,13 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
   const [state, setStateValue] = useState<MoveState>(null);
   const [smartphone, setSmartphone] = useState(true);
   const { copied, copy } = useCopied();
-  const [openWallet, setOpenWallet] = useState<OpenWalletState>('idle');
-  /** Bumped on each step change, so a mint that answers after the member left step 2 does nothing. */
+  const [openWallet, setOpenWallet] = useState<OpenWalletState>({ status: 'minting' });
+  /** Bumped on each mint and when step 2 is left, so only the latest mint on step 2 counts. */
   const mintRun = useRef(0);
+  /** Invoices minted since step 2 was entered from step 1: a payment to one of them is the move. */
+  const mintedInvoices = useRef(new Set<string>());
+  /** When step 2 was entered from step 1 (epoch ms): a payment received since then is the move. */
+  const goSince = useRef(0);
   /** The step as of the last change, set with it, so a mint that answers before the next render sees it. */
   const stepRef = useRef<MoveStep | null>(null);
   const setState = useCallback((next: MoveState): void => {
@@ -243,12 +281,79 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     if (!listening) {
       return;
     }
-    return onIncomingPayment((payment) => {
+    // One subscription from step 2 through step 3. A payment counts once, from whichever feed tells
+    // it first: the received feed reports it at once, also before a fresh connection has read the
+    // payments it already holds.
+    const arrive = (payment: WalletPayment): void => {
+      if (stepRef.current !== 'go' && stepRef.current !== 'waiting') {
+        return;
+      }
       setState({ step: 'done', arrivedSats: payment.amountSats });
       logInteraction('wallet_move_step', { step: 'done' });
       logInteraction('wallet_move_done', { amountSats: payment.amountSats });
+    };
+    const stopIncoming = onIncomingPayment(arrive);
+    const stopReceived = onPaymentReceived((payment) => {
+      const toMinted =
+        payment.info.invoice !== undefined && mintedInvoices.current.has(payment.info.invoice);
+      if (toMinted || payment.timestamp >= goSince.current) {
+        arrive(payment);
+      }
     });
+    return () => {
+      stopIncoming();
+      stopReceived();
+    };
   }, [listening, setState]);
+
+  const mint = useCallback((): void => {
+    mintRun.current += 1;
+    const run = mintRun.current;
+    setOpenWallet({ status: 'minting' });
+    const pin = visualPin();
+    let minted: Promise<WalletInvoice>;
+    if (pin === INVOICE_VISUAL_PIN) {
+      minted = Promise.resolve({
+        invoice: INVOICE_VISUAL,
+        expiresAtMs: Date.now() + INVOICE_VISUAL_LIFETIME_MS,
+      });
+    } else if (pin === MINTING_VISUAL_PIN) {
+      minted = new Promise<WalletInvoice>(() => undefined);
+    } else {
+      minted = receiveWalletInvoice(t('moveFunds.invoiceNote'));
+    }
+    // An answer counts only for the latest mint, while step 2 is open and a member is signed in.
+    const current = (): boolean =>
+      run === mintRun.current &&
+      stepRef.current === 'go' &&
+      useAuthStore.getState().session !== null;
+    minted.then(
+      (invoice) => {
+        if (!current()) {
+          return;
+        }
+        mintedInvoices.current.add(invoice.invoice);
+        setOpenWallet({ status: 'ready', invoice: { ...invoice, mintedAtMs: Date.now() } });
+      },
+      () => {
+        if (!current()) {
+          return;
+        }
+        setOpenWallet({ status: 'failed' });
+      },
+    );
+  }, [t]);
+
+  useEffect(() => {
+    if (step !== 'go' || !smartphone || !signedIn) {
+      return;
+    }
+    // The invoice is minted ahead, each time step 2 opens, so a tap hands it over at once.
+    mint();
+    return () => {
+      mintRun.current += 1;
+    };
+  }, [step, smartphone, signedIn, mint]);
 
   useEffect(() => {
     if (step === null) {
@@ -279,40 +384,28 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
   };
   const goTo = (next: MoveStep): void => {
     mintRun.current += 1;
-    setOpenWallet('idle');
+    if (next === 'go') {
+      setOpenWallet({ status: 'minting' });
+      if (state.step === 'intro') {
+        goSince.current = Date.now();
+        mintedInvoices.current = new Set();
+      }
+    }
     setState({ ...state, step: next });
     if (next !== 'intro') {
       logInteraction('wallet_move_step', { step: next });
     }
   };
-  const openOtherWallet = (): void => {
-    mintRun.current += 1;
-    const run = mintRun.current;
-    setOpenWallet('minting');
-    const pin = visualPin();
-    let minted: Promise<string>;
-    if (pin === INVOICE_VISUAL_PIN) {
-      minted = Promise.resolve(INVOICE_VISUAL);
-    } else if (pin === MINTING_VISUAL_PIN) {
-      minted = new Promise<string>(() => undefined);
-    } else {
-      minted = receiveWalletInvoice(t('moveFunds.invoiceNote'));
+  const openOtherWallet = ({ invoice, expiresAtMs, mintedAtMs }: MintedInvoice): void => {
+    const margin = Math.min(INVOICE_EXPIRY_MARGIN_MS, (expiresAtMs - mintedAtMs) / 2);
+    if (expiresAtMs - Date.now() <= margin) {
+      // Too close to expiry: mint a fresh one. The member taps again once it is in.
+      mint();
+      return;
     }
-    minted.then(
-      (invoice) => {
-        if (run !== mintRun.current || stepRef.current !== 'go') {
-          return;
-        }
-        window.location.href = lightningHref(invoice);
-        goTo('waiting');
-      },
-      () => {
-        if (run !== mintRun.current || stepRef.current !== 'go') {
-          return;
-        }
-        setOpenWallet('failed');
-      },
-    );
+    // No await before this: the browser hands the link over only while the tap still counts.
+    window.location.href = lightningHref(invoice);
+    goTo('waiting');
   };
   const back = (): void => {
     const previous = previousStep(state.step);
@@ -322,6 +415,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
       goTo(previous);
     }
   };
+  const ready = openWallet.status === 'ready' ? openWallet.invoice : null;
   /* v8 ignore next -- this client sheet always runs in a browser */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(username, host);
@@ -367,12 +461,12 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
               {address}
             </p>
             {smartphone ? (
-              openWallet === 'failed' ? (
+              openWallet.status === 'failed' ? (
                 <>
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('moveFunds.openWalletFailed')}
                   </p>
-                  <Button type="button" size="lg" onClick={openOtherWallet}>
+                  <Button type="button" size="lg" onClick={mint}>
                     {t('wallet.payRetry')}
                   </Button>
                 </>
@@ -380,13 +474,13 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
                 <Button
                   type="button"
                   size="lg"
-                  disabled={openWallet === 'minting'}
+                  disabled={openWallet.status === 'minting'}
                   icon={
-                    openWallet === 'minting' ? (
+                    openWallet.status === 'minting' ? (
                       <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
                     ) : undefined
                   }
-                  onClick={openOtherWallet}
+                  onClick={ready === null ? undefined : () => openOtherWallet(ready)}
                 >
                   {t('moveFunds.openWallet')}
                 </Button>

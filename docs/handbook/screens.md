@@ -859,7 +859,7 @@ The same first step, opened with **Move Bitcoin from another wallet** in the Rec
 
 ### Variant: move-address
 
-After **Start**: two dots filled, **Send to your 21.gifts address**, the member's own address. On a desktop also **Open your other wallet on your phone, tap Send and scan this code** above the same address QR as Receive. A phone shows no QR but **Open my other wallet**: its tap makes a fresh payment request with no amount in the member's own wallet, with the note **Transfer to your 21.gifts account**, and opens the phone's Bitcoin wallet app with it, where the member enters the amount; the sheet then waits for the payment. Then **Copy my address** (also on a phone, as the fallback) and **I sent it**. No other wallet app is named. The top-left arrow goes back to the first step.
+After **Start**: two dots filled, **Send to your 21.gifts address**, the member's own address. On a desktop also **Open your other wallet on your phone, tap Send and scan this code** above the same address QR as Receive. A phone shows no QR but **Open my other wallet**: as the step opens, the member's own wallet makes a fresh payment request with no amount, with the note **Transfer to your 21.gifts account**, and once it is in, a tap opens the phone's Bitcoin wallet app with it at once, where the member enters the amount; the sheet then waits for the payment. A request close to expiry is renewed first, and the member taps again. Then **Copy my address** (also on a phone, as the fallback) and **I sent it**. No other wallet app is named. The top-left arrow goes back to the first step.
 
 ![21.gifts move Bitcoin, address step](images/wallet-move-address.png)
 
@@ -871,13 +871,13 @@ The address step right after **Copy my address**: the button shows a check mark 
 
 ### Variant: move-address-minting
 
-Pinned fixture (`?visual=move-minting`, Playwright builds only): the address step on a phone right after **Open my other wallet**, while the member's own wallet makes the payment request. The button is disabled and shows a spinner in front of **Open my other wallet**; **Copy my address** and **I sent it** stay. Once the request is made the phone's Bitcoin wallet app opens and the sheet waits for the payment.
+Pinned fixture (`?visual=move-minting`, Playwright builds only): the address step on a phone as it opens, while the member's own wallet makes the payment request. The button is disabled and shows a spinner in front of **Open my other wallet**; **Copy my address** and **I sent it** stay. Once the request is in, the button can be tapped and opens the phone's Bitcoin wallet app at once.
 
 ![21.gifts move Bitcoin, making the payment request](images/wallet-move-address-minting.png)
 
 ### Variant: move-address-error
 
-The address step on a phone after **Open my other wallet** when the member's wallet could not make the payment request (the wallet could not be opened, or the request failed): in the button's place **Your 21.gifts wallet could not create a payment request. Try again, or copy your address.** and **Try again**, which asks again. **Copy my address** and **I sent it** stay, so the address can still be copied by hand.
+The address step on a phone when the member's wallet could not make the payment request (the wallet could not be opened in time, or the request failed): in the button's place **Your 21.gifts wallet could not create a payment request. Try again, or copy your address.** and **Try again**, which asks again. **Copy my address** and **I sent it** stay, so the address can still be copied by hand.
 
 ![21.gifts move Bitcoin, payment request failed](images/wallet-move-address-error.png)
 

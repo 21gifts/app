@@ -368,7 +368,7 @@ test('Function: MoveFundsSheet — on a phone, Open my other wallet hands a ligh
   ).toBeEnabled();
 });
 
-test('Function: receiveWalletInvoice — a phone without an open wallet says the request failed, keeps Copy, and Try again asks again', async ({
+test('Function: receiveWalletInvoice — on a phone without an open wallet the step says the request failed, keeps Copy, and Try again asks again', async ({
   page,
   context,
 }) => {
@@ -382,7 +382,7 @@ test('Function: receiveWalletInvoice — a phone without an open wallet says the
   await page.goto('/wallet?move=1&visual=balance-ready');
   await page.getByRole('button', { name: 'Start' }).click();
   const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
-  await sheet.getByRole('button', { name: 'Open my other wallet' }).click();
+  // The invoice is minted as the step opens; without a wallet that fails at once.
   await expect(sheet.getByRole('alert')).toHaveText(
     'Your 21.gifts wallet could not create a payment request. Try again, or copy your address.',
   );

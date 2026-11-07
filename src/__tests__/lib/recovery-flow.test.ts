@@ -144,7 +144,7 @@ function connectionOf(balances: number[] = [0]): FakeConnection {
     authorizeAddressTransfer: vi.fn(async () => ({ authorization: 'auth' })),
     claimAddressTransfer: vi.fn(async () => undefined),
     receiveSparkAddress: vi.fn(async () => NEW_ADDRESS),
-    receiveLightningInvoice: vi.fn(async () => 'lnbc1new'),
+    receiveLightningInvoice: vi.fn(async () => ({ invoice: 'lnbc1new', expiresAtMs: 1 })),
     sendToSparkAddress: vi.fn(async () => undefined),
     disconnect: vi.fn(async () => undefined),
   };

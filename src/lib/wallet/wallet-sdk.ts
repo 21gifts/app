@@ -585,12 +585,15 @@ export interface WalletConnection {
   /**
    * A Lightning invoice (BOLT11) to this wallet with no amount, so the paying
    * wallet asks how much to send (the SDK's `receivePayment` for a BOLT11
-   * invoice without `amountSats`).
+   * invoice without `amountSats`), and when it expires (the SDK's `parse` of
+   * that invoice: its `timestamp` plus its `expiry`).
    *
    * @param description - The note the paying wallet shows with the request.
-   * @returns The invoice.
+   * @returns The invoice and its expiry.
+   * @throws Error `Not a Lightning invoice` when the SDK does not read back a
+   *   BOLT11 invoice; otherwise the SDK's error.
    */
-  receiveLightningInvoice(description: string): Promise<string>;
+  receiveLightningInvoice(description: string): Promise<WalletInvoice>;
   /**
    * Sends exactly `amountSats` to a Spark address. Any other payment method is
    * refused before anything is sent. A send repeated with the same key is not
@@ -609,6 +612,14 @@ export interface WalletConnection {
    * @returns Resolves when the SDK has disconnected.
    */
   disconnect(): Promise<void>;
+}
+
+/** A Lightning invoice this wallet issued, and when it expires. */
+export interface WalletInvoice {
+  /** The BOLT11 invoice. */
+  invoice: string;
+  /** When the invoice expires, in epoch milliseconds. */
+  expiresAtMs: number;
 }
 
 /**
@@ -734,6 +745,10 @@ type ParsedInput =
       type: 'bolt11Invoice';
       amountMsat?: number;
       invoice: { bolt11: string };
+      /** Creation time, epoch seconds. */
+      timestamp: number;
+      /** Lifetime after `timestamp`, seconds. */
+      expiry: number;
     }
   | {
       type: 'sparkInvoice';
@@ -1181,11 +1196,19 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
           const response = await handle.receivePayment({ paymentMethod: { type: 'sparkAddress' } });
           return response.paymentRequest;
         },
-        async receiveLightningInvoice(description: string): Promise<string> {
+        async receiveLightningInvoice(description: string): Promise<WalletInvoice> {
           const response = await handle.receivePayment({
             paymentMethod: { type: 'bolt11Invoice', description },
           });
-          return response.paymentRequest;
+          const parsed = (await handle.parse(response.paymentRequest)) as ParsedInput;
+          if (parsed.type !== 'bolt11Invoice') {
+            throw new Error('Not a Lightning invoice');
+          }
+          const bolt11 = parsed as Extract<ParsedInput, { type: 'bolt11Invoice' }>;
+          return {
+            invoice: response.paymentRequest,
+            expiresAtMs: (bolt11.timestamp + bolt11.expiry) * 1000,
+          };
         },
         async sendToSparkAddress(
           address: string,

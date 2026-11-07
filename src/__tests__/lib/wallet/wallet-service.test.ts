@@ -52,6 +52,7 @@ const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
 const SPARK_ADDRESS = 'spark1qexampleaddress';
 const INVOICE = 'lnbc1pexampleinvoice';
+const MINTED = { invoice: INVOICE, expiresAtMs: 1_800_003_600_000 };
 
 const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
@@ -121,7 +122,7 @@ function createFakeSdk(overrides?: {
     getPayment: vi.fn(),
     listReportPayments: vi.fn(async () => []),
     receiveSparkAddress: vi.fn(async () => SPARK_ADDRESS),
-    receiveLightningInvoice: vi.fn(async () => INVOICE),
+    receiveLightningInvoice: vi.fn(async () => MINTED),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -1750,9 +1751,9 @@ describe('receiveWalletInvoice', () => {
   it('opens the wallet from the tab phrase and mints an invoice with the note and no amount', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connect, connection } = createFakeSdk();
-    await expect(receiveWalletInvoice('Transfer to your 21.gifts account', loadSdk)).resolves.toBe(
-      INVOICE,
-    );
+    await expect(
+      receiveWalletInvoice('Transfer to your 21.gifts account', loadSdk),
+    ).resolves.toEqual(MINTED);
     expect(connect).toHaveBeenCalledWith(MNEMONIC, API_KEY, window.location.host);
     expect(connection.receiveLightningInvoice).toHaveBeenCalledWith(
       'Transfer to your 21.gifts account',
@@ -1763,7 +1764,7 @@ describe('receiveWalletInvoice', () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connect } = createFakeSdk();
     await connectWallet(loadSdk);
-    await expect(receiveWalletInvoice('note')).resolves.toBe(INVOICE);
+    await expect(receiveWalletInvoice('note')).resolves.toEqual(MINTED);
     expect(connect).toHaveBeenCalledTimes(1);
   });
 
@@ -1789,6 +1790,31 @@ describe('receiveWalletInvoice', () => {
     const { loadSdk, connection } = createFakeSdk();
     connection.receiveLightningInvoice.mockRejectedValueOnce(new Error('sdk failed'));
     await expect(receiveWalletInvoice('note', loadSdk)).rejects.toThrow('sdk failed');
+  });
+
+  it('gives up at the deadline while the wallet code still loads, and the load carries on', async () => {
+    vi.useFakeTimers();
+    try {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk: fastLoad } = createFakeSdk();
+      let finishLoad!: () => void;
+      const loadSdk = vi.fn(
+        () =>
+          new Promise<WalletSdk>((resolve) => {
+            finishLoad = () => {
+              void fastLoad().then(resolve);
+            };
+          }),
+      );
+      const pending = receiveWalletInvoice('note', loadSdk);
+      const settled = expect(pending).rejects.toThrow('wallet-timeout');
+      await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+      await settled;
+      expect(loadSdk).toHaveBeenCalledTimes(1);
+      finishLoad();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -2824,7 +2850,7 @@ describe('onIncomingPayment', () => {
     const unsubscribe = onIncomingPayment((p) => {
       seen.push(p.amountSats);
     });
-    await expect(receiveWalletInvoice('note')).resolves.toBe(INVOICE);
+    await expect(receiveWalletInvoice('note')).resolves.toEqual(MINTED);
     emit({
       type: 'paymentSucceeded',
       payment: payment('to-invoice', { amountSats: 12_000, info: { invoice: INVOICE } }),
