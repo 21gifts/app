@@ -423,6 +423,28 @@ test('Function: FilterMenu opens the blockchain list', async ({ page }) => {
   await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
 });
 
+test('Function: FilterMenu shows the chosen value on a 320px phone', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await stubPublicMap(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Table', exact: true }).click();
+  const country = page.getByRole('combobox', { name: 'Country', exact: true });
+  await country.click();
+  await page.getByRole('option', { name: 'Philippines', exact: true }).click();
+  await expect(country).toHaveAttribute('aria-expanded', 'false');
+  await expect(country).toHaveAttribute('data-value', 'PH');
+  const value = country.locator('[data-shop-value]');
+  await expect(value).toHaveText('Philippines');
+  await expect(value).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() => value.evaluate((node) => node.getBoundingClientRect().width))
+    .toBeGreaterThanOrEqual(60);
+  await expect
+    .poll(() => value.evaluate((node) => node.scrollWidth - node.clientWidth))
+    .toBeLessThanOrEqual(1);
+});
+
 test('Function: MenuScroll shows the blockchain rows', async ({ page }) => {
   await stubPublicMap(page);
   await page.goto('/');

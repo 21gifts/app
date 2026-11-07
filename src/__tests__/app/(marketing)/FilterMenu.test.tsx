@@ -43,21 +43,82 @@ describe('FilterMenu', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.hasAttribute('aria-activedescendant')).toBe(false);
     expect(button.querySelector('[data-shop-value]')?.textContent).toBe('All');
-    for (const token of ['gap-2', 'pl-3.5', 'pr-3', 'sm:gap-6', 'sm:pl-4', 'sm:pr-4']) {
-      expect(button.className.split(/\s+/)).toContain(token);
-    }
     const label = within(button).getByText('Blockchain');
-    for (const token of ['w-[4.6rem]', 'shrink-0', 'text-left', 'sm:w-auto']) {
-      expect(label.className.split(/\s+/)).toContain(token);
-    }
     expect(label.className).toContain('text-ink/60');
     const value = button.querySelector('[data-shop-value]');
     expect(value?.className.split(/\s+/)).toContain('truncate');
-    for (const token of ['gap-1.5', 'sm:gap-2']) {
-      expect(value?.parentElement?.className.split(/\s+/)).toContain(token);
-    }
     expect(screen.queryByRole('listbox')).toBeNull();
   });
+
+  it.each(['', 'Bitcoin'])(
+    'uses a two-row phone and one-row sm class contract for value "%s"',
+    (selected) => {
+      renderMenu(selected);
+      const button = trigger();
+      const label = within(button).getByText('Blockchain');
+      const value = button.querySelector('[data-shop-value]');
+      const chevron = button.querySelector('svg');
+      expect(button.className.split(/\s+/)).toEqual(
+        expect.arrayContaining([
+          'grid',
+          'grid-cols-[minmax(0,1fr)_auto]',
+          'items-center',
+          'min-h-11',
+          'gap-x-1',
+          'rounded-2xl',
+          'px-3',
+          'py-1.5',
+          'sm:flex',
+          'sm:h-11',
+          'sm:gap-6',
+          'sm:rounded-full',
+          'sm:py-0',
+          'sm:pl-4',
+          'sm:pr-4',
+        ]),
+      );
+      expect(label.className.split(/\s+/)).toEqual(
+        expect.arrayContaining([
+          'col-start-1',
+          'row-start-1',
+          'shrink-0',
+          'text-left',
+          'text-xs',
+          'sm:text-sm',
+        ]),
+      );
+      expect(value?.className.split(/\s+/)).toEqual(
+        expect.arrayContaining([
+          'col-start-1',
+          'row-start-2',
+          'truncate',
+          'text-left',
+          'text-sm',
+          'font-semibold',
+        ]),
+      );
+      expect(value?.parentElement?.className.split(/\s+/)).toEqual(
+        expect.arrayContaining([
+          'contents',
+          'min-w-0',
+          'items-center',
+          'sm:ml-auto',
+          'sm:flex',
+          'sm:gap-2',
+        ]),
+      );
+      expect(chevron?.getAttribute('class')?.split(/\s+/)).toEqual(
+        expect.arrayContaining([
+          'col-start-2',
+          'row-span-2',
+          'row-start-1',
+          'h-3.5',
+          'w-3.5',
+          'shrink-0',
+        ]),
+      );
+    },
+  );
 
   it('opens on click and closes on the second click', () => {
     renderMenu('');

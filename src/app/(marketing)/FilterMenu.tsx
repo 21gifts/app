@@ -153,8 +153,9 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
 /**
  * Custom listbox for one homepage shop filter.
  *
- * The closed control is a pill: the label sits on the left and the chosen value
- * sits directly before the chevron. An open list floats under the pill, flips
+ * Below sm, the closed pill puts the label above the chosen value, with the
+ * chevron centered on the right. From sm, the label and value share one line,
+ * with the value directly before the chevron. An open list floats under the pill, flips
  * inward when it would leave the window, and wraps into columns. If the flipped
  * panel still crosses an 8px inset, its top, bottom, left, and width are pinned inside
  * the window. Narrowing the pinned width remeasures the wrapped content height
@@ -453,7 +454,7 @@ export function FilterMenu({
         type="button"
         role="combobox"
         data-value={value}
-        className={`flex h-11 w-full min-w-0 items-center gap-2 rounded-full border py-0 pr-3 pl-3.5 sm:gap-6 sm:pr-4 sm:pl-4 ${triggerTone}`}
+        className={`grid min-h-11 w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1 rounded-2xl border px-3 py-1.5 sm:flex sm:h-11 sm:gap-6 sm:rounded-full sm:py-0 sm:pr-4 sm:pl-4 ${triggerTone}`}
         aria-controls={listboxId}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -464,17 +465,20 @@ export function FilterMenu({
       >
         <span
           id={labelId}
-          className={`w-[4.6rem] shrink-0 text-left text-sm sm:w-auto ${labelTone}`}
+          className={`col-start-1 row-start-1 shrink-0 text-left text-xs sm:text-sm ${labelTone}`}
         >
           {label}
         </span>
-        <span className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-          <span data-shop-value="" className="truncate text-sm font-semibold">
+        <span className="contents min-w-0 items-center sm:ml-auto sm:flex sm:gap-2">
+          <span
+            data-shop-value=""
+            className="col-start-1 row-start-2 truncate text-left text-sm font-semibold"
+          >
             {chosen}
           </span>
           <ChevronDown
             aria-hidden="true"
-            className={`h-3.5 w-3.5 shrink-0 ${chevronTone} ${open ? 'rotate-180' : ''}`}
+            className={`col-start-2 row-span-2 row-start-1 h-3.5 w-3.5 shrink-0 ${chevronTone} ${open ? 'rotate-180' : ''}`}
           />
         </span>
       </button>
