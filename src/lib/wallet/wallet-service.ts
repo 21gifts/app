@@ -946,6 +946,31 @@ export async function receiveWalletSparkAddress(
 }
 
 /**
+ * Mints a Lightning invoice (BOLT11) with no amount to the signed-in member's
+ * wallet, opening the wallet from the tab phrase first when it is not open
+ * yet. The paying wallet asks for the amount and shows `description`. A
+ * payment to it is a received, completed payment like any other, so the
+ * {@link onIncomingPayment} listeners hear it.
+ *
+ * @param description - The note the paying wallet shows with the request.
+ * @param loadSdk - SDK loader forwarded to {@link ensureWalletConnected}.
+ * @returns The invoice.
+ * @throws Error `wallet-connect` when the wallet could not be opened or closed
+ *   meanwhile; otherwise the SDK's error.
+ */
+export async function receiveWalletInvoice(
+  description: string,
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<string> {
+  await ensureWalletConnected(loadSdk);
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.receiveLightningInvoice(description);
+}
+
+/**
  * Registers the account's username as the address of the connected wallet.
  * Never asks whether a name is free: only the account's own username is sent.
  *

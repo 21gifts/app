@@ -84,7 +84,11 @@ view, or point of sale QR is hidden on a smartphone. Detection is
 `isSmartphoneUserAgent`, not viewport width. The member's own address QR
 shown when the balance is too low, and the one in the `/wallet` Receive view,
 follow the profile rule. That is not a
-reason to reject. Reject a screen or string that names another wallet or
+reason to reject. The move-funds sheet's **Open my other wallet** (smartphone
+only: a fresh invoice with no amount from the member's own wallet, handed over
+with a generic `lightning:` link, with **Copy my address** kept as the
+fallback) is the one owner-approved exception and is not a reason to reject;
+the same on any other member screen is. Reject a screen or string that names another wallet or
 lets a member link an external address.
 See CONTRIBUTING.md “Payment QR vs wallet links”.
 

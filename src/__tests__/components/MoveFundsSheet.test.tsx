@@ -10,7 +10,7 @@ import { logInteraction } from '@/lib/interaction-log';
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest, type MoveFundsSource } from '@/lib/move-funds';
 import type { FiatRateDay } from '@/lib/stats-money';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
-import { onIncomingPayment } from '@/lib/wallet/wallet-service';
+import { onIncomingPayment, receiveWalletInvoice } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -20,7 +20,10 @@ vi.mock('@/lib/move-funds', () => ({
   MOVE_FUNDS_EVENT: '21gifts:move-funds',
   takeMoveFundsRequest: vi.fn(),
 }));
-vi.mock('@/lib/wallet/wallet-service', () => ({ onIncomingPayment: vi.fn() }));
+vi.mock('@/lib/wallet/wallet-service', () => ({
+  onIncomingPayment: vi.fn(),
+  receiveWalletInvoice: vi.fn(),
+}));
 vi.mock('@/components/ViewHistoryRoot', () => ({ useChromeBack: vi.fn() }));
 vi.mock('@/lib/interaction-log', () => ({
   LOGOUT_EVENT: '21gifts:logout',
@@ -87,6 +90,7 @@ beforeEach(() => {
   vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
   vi.mocked(takeMoveFundsRequest).mockReset().mockReturnValue(null);
   vi.mocked(logInteraction).mockReset();
+  vi.mocked(receiveWalletInvoice).mockReset().mockResolvedValue('lnbc1pmove');
   unsubscribe.mockReset();
   vi.mocked(onIncomingPayment)
     .mockReset()
@@ -109,6 +113,52 @@ afterEach(() => {
   else process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
   useAuthStore.setState({ session: null, account: null });
 });
+
+/** A promise the test settles by hand. */
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason: unknown) => void;
+} {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+
+/**
+ * Records every `location.href` the sheet sets until the returned restore runs.
+ *
+ * @returns The recorded hrefs and a restore function.
+ */
+function recordHrefs(): { hrefs: string[]; restore: () => void } {
+  const hrefs: string[] = [];
+  const previous = window.location;
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: {
+      hostname: previous.hostname,
+      search: previous.search,
+      pathname: previous.pathname,
+      hash: previous.hash,
+      get href(): string {
+        return previous.href;
+      },
+      set href(value: string) {
+        hrefs.push(value);
+      },
+    },
+  });
+  return {
+    hrefs,
+    restore: () => {
+      Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    },
+  };
+}
 
 function events(): unknown[][] {
   return vi.mocked(logInteraction).mock.calls;
@@ -155,6 +205,8 @@ describe('MoveFundsSheet', () => {
     expect(screen.getByText('ada@21.gifts')).toBeTruthy();
     expect(screen.queryByRole('img', { name: /QR/i })).toBeNull();
     expect(screen.queryByText(/scan this code/)).toBeNull();
+    const buttons = screen.getAllByRole('button').map((button) => button.textContent);
+    expect(buttons.slice(-3)).toEqual(['Open my other wallet', 'Copy my address', 'I sent it']);
     fireEvent.click(screen.getByRole('button', { name: 'I sent it' }));
     expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /back/i })).toBeNull();
@@ -206,6 +258,7 @@ describe('MoveFundsSheet', () => {
     });
     expect(events()).toEqual([]);
     expect(document.querySelector('a[href^="lightning:"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open my other wallet' })).toBeNull();
     Reflect.deleteProperty(navigator, 'clipboard');
   });
 
@@ -499,6 +552,179 @@ describe('MoveFundsSheet', () => {
     );
     expect(screen.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeTruthy();
     expect(events()).toEqual([['wallet_move_opened', { source: 'link' }]]);
+  });
+
+  it('opens the other wallet on a phone with a fresh invoice on tap, then waits for the payment', async () => {
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(receiveWalletInvoice).not.toHaveBeenCalled();
+    const mint = deferred<string>();
+    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(mint.promise);
+    const { hrefs, restore } = recordHrefs();
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      expect(receiveWalletInvoice).toHaveBeenCalledWith('Transfer to your 21.gifts account');
+      const opening = screen.getByRole('button', { name: 'Open my other wallet' });
+      expect((opening as HTMLButtonElement).disabled).toBe(true);
+      expect(opening.querySelector('svg')).not.toBeNull();
+      await act(async () => {
+        mint.resolve('lnbc1pmove');
+        await mint.promise;
+      });
+    } finally {
+      restore();
+    }
+    expect(hrefs).toEqual(['lightning:lnbc1pmove']);
+    expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
+    expect(events().slice(-1)).toEqual([['wallet_move_step', { step: 'waiting' }]]);
+    act(() => {
+      emit(received(12_000));
+    });
+    expect(screen.getByRole('dialog', { name: "₿12'000 arrived" })).toBeTruthy();
+    act(() => {
+      override?.onClick();
+    });
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const again = screen.getByRole('button', { name: 'Open my other wallet' });
+    expect((again as HTMLButtonElement).disabled).toBe(false);
+    expect(again.querySelector('svg')).toBeNull();
+  });
+
+  it('says so with Try again when the wallet cannot make the invoice, and keeps the copy fallback', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    vi.mocked(receiveWalletInvoice).mockRejectedValueOnce(new Error('wallet-connect'));
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const { hrefs, restore } = recordHrefs();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Your 21.gifts wallet could not create a payment request. Try again, or copy your address.',
+      );
+      expect(screen.queryByRole('button', { name: 'Open my other wallet' })).toBeNull();
+      expect(screen.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeTruthy();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy my address' }));
+        await Promise.resolve();
+      });
+      expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
+      expect(hrefs).toEqual([]);
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+        await Promise.resolve();
+      });
+    } finally {
+      restore();
+      Reflect.deleteProperty(navigator, 'clipboard');
+    }
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(2);
+    expect(hrefs).toEqual(['lightning:lnbc1pmove']);
+    expect(screen.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeTruthy();
+    act(() => {
+      override?.onClick();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open my other wallet' })).toBeTruthy();
+  });
+
+  it('ignores an invoice or a failure that answers after the member left the step', async () => {
+    const late = deferred<string>();
+    const lateFailure = deferred<string>();
+    vi.mocked(receiveWalletInvoice)
+      .mockReturnValueOnce(late.promise)
+      .mockReturnValueOnce(lateFailure.promise);
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const { hrefs, restore } = recordHrefs();
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      act(() => {
+        override?.onClick();
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      // Back on step 2 with a new run: the first answer is stale.
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      await act(async () => {
+        late.resolve('lnbc1plate');
+        lateFailure.reject(new Error('late'));
+        await Promise.allSettled([late.promise, lateFailure.promise]);
+      });
+    } finally {
+      restore();
+    }
+    expect(hrefs).toEqual([]);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(events().filter(([name]) => name === 'wallet_move_step')).toEqual([
+      ['wallet_move_step', { step: 'go' }],
+      ['wallet_move_step', { step: 'go' }],
+    ]);
+  });
+
+  it('ignores an answer that arrives once the payment already moved the flow on', async () => {
+    const late = deferred<string>();
+    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(late.promise);
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const { hrefs, restore } = recordHrefs();
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      act(() => {
+        emit(received(500));
+      });
+      await act(async () => {
+        late.resolve('lnbc1plate');
+        await late.promise;
+      });
+    } finally {
+      restore();
+    }
+    expect(hrefs).toEqual([]);
+    expect(screen.getByRole('dialog', { name: '₿500 arrived' })).toBeTruthy();
+  });
+
+  it('hands over the fixture invoice under the move-invoice pin in a Playwright build only', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=move-invoice');
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    let recorded = recordHrefs();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        await Promise.resolve();
+      });
+    } finally {
+      recorded.restore();
+    }
+    expect(recorded.hrefs).toEqual(['lightning:lnbc1pmovefundsvisual']);
+    expect(receiveWalletInvoice).not.toHaveBeenCalled();
+    cleanup();
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    recorded = recordHrefs();
+    try {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+        await Promise.resolve();
+      });
+    } finally {
+      recorded.restore();
+    }
+    expect(recorded.hrefs).toEqual(['lightning:lnbc1pmove']);
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
   });
 
   it('opens on the arrived step under the move-arrived pin in a Playwright build only', () => {
