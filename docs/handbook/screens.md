@@ -587,6 +587,12 @@ The Send view on a device without a camera: **No camera found. Paste the payment
 
 ![21.gifts wallet send camera unavailable](images/wallet-send-camera-unavailable.png)
 
+### Variant: send-camera-paused
+
+The Send view when the camera stream is running but the preview did not start: the hint sits over the black camera area with no alert, and **Paste** and **Enter manually** are bordered buttons at the bottom.
+
+![21.gifts wallet send camera paused](images/wallet-send-camera-paused.png)
+
 ### Variant: send-amount
 
 Pinned fixture (`?visual=send-amount`, Playwright builds only). A receiver that asks for an amount: **To bob@example.com**, the amount field with the ₿ / fiat switch, **Between ₿1 · $0.00 and ₿1'000'000 · $1'000.00** (each bound with the default fiat), **Message (optional)**, **Continue**, and the step Close (`X`, **Cancel**).
@@ -2906,6 +2912,12 @@ The `/wallet` variant `send-paste-empty` in the Send view a `?visual=send-input`
 The `/wallet` variant `send-camera-unavailable` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
 
 ![21.gifts welcome wallet send camera unavailable](images/welcome-wallet-send-camera-unavailable.png)
+
+### Variant: wallet-send-camera-paused
+
+The `/wallet` variant `send-camera-paused` over the forum home: the hint sits over the black camera area with no alert, and **Paste** and **Enter manually** are bordered buttons at the bottom.
+
+![21.gifts welcome wallet send camera paused](images/welcome-wallet-send-camera-paused.png)
 
 ### Variant: wallet-send-amount
 

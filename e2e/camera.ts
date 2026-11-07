@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
  * What the stubbed camera does when the page asks for it.
  *
  * - `blank`: a live stream of a plain black frame (no QR code in view).
+ * - `paused`: the same black stream, with the preview's play request rejected.
  * - `qr`: a live stream that shows one QR code holding `text`.
  * - `qrs`: one QR code per camera request: request n shows `texts[n]`, and
  *   every request after the last a plain black frame (a scanner that starts
@@ -14,6 +15,7 @@ import QRCode from 'qrcode';
  */
 export type CameraStub =
   | { kind: 'blank' }
+  | { kind: 'paused' }
   | { kind: 'qr'; text: string }
   | { kind: 'qrs'; texts: readonly string[] }
   | { kind: 'denied' }
@@ -43,6 +45,14 @@ export async function stubCamera(page: Page, stub: CameraStub): Promise<void> {
   );
   await page.addInitScript(
     ({ kind, images }) => {
+      if (kind === 'paused') {
+        HTMLMediaElement.prototype.play = function (this: HTMLMediaElement): Promise<void> {
+          // Prevent the native autoplay path from starting the preview independently of play().
+          this.autoplay = false;
+          this.dataset['playBlocked'] = 'true';
+          return Promise.reject(new DOMException('play() was blocked', 'NotAllowedError'));
+        };
+      }
       const stats = { requests: 0, live: 0 };
       Object.defineProperty(window, '__cameraStub', { value: stats });
       const draw = async (canvas: HTMLCanvasElement): Promise<void> => {

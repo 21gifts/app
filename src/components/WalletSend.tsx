@@ -48,7 +48,7 @@ export interface WalletSendProps {
   onManualEntry: (open: boolean) => void;
 }
 
-/** Floating camera control: an `overlay` pill of at least 48px with a 20px icon. */
+/** Floating camera control, at least 48px, with a 20px icon: `overlay` while the picture shows, filled or bordered dark-tone when it does not. */
 const FLOAT_CLASS = 'min-h-12 text-base';
 
 /** How long a clipboard alert stays over the camera. */
@@ -123,15 +123,18 @@ function StepBox({
  * The input step is a full-size camera: the region itself becomes a layer
  * marked `data-port-fill` that fills the visible page port edge to edge (the AppShell scrollport becomes
  * its containing block, see `globals.css`), with the hint over the top of the
- * picture. **Paste** and **Enter manually** float as `overlay` pills over its
- * lower part. A decoded QR text, or the text Paste reads from the clipboard,
+ * picture. **Paste** and **Enter manually** float over its lower part as
+ * `overlay` pills while that picture shows, and as bordered dark-tone
+ * secondary pills until the preview plays and whenever the picture is not
+ * showing. A decoded QR text, or the text Paste reads from the clipboard,
  * goes into the field as if typed and is submitted once; a clipboard that is
  * refused or empty shows a short alert over the camera, which keeps running.
  * Enter manually opens a bottom sheet over the camera with the field and
  * Continue; its Close (`X`) or Back returns to the camera, and Enter manually
  * takes the focus again. A text that cannot
- * be read always ends in one alert: over the camera with **Try again**, which
- * clears it and starts the camera again, or in the open sheet under the field.
+ * be read always ends in one alert: over the black well with a filled
+ * **Try again** (`variant="primary"` `tone="dark"`), which clears it and
+ * starts the camera again, or in the open sheet under the field.
  * The camera runs only while the input step is idle, shows no alert, and the
  * sheet is closed, so a code that was just refused is not read again at once.
  * After a scan or paste the camera stays off until the submit moves on (busy,
@@ -142,7 +145,8 @@ function StepBox({
  * `quote` step shows amount and recipient with that line where the fee goes
  * until the payment is prepared. When the wallet could not be opened, both
  * show **Your wallet could not be opened. Please try again.** with
- * **Try again** instead, and continue on their own once it is open.
+ * **Try again** instead (filled on the input camera, secondary on the quote
+ * step), and continue on their own once it is open.
  *
  * @param props - Send flow and the manual-entry sheet.
  * @returns The send region.
@@ -158,6 +162,8 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   const [scanned, setScanned] = useState<string | null>(null);
   const scanSubmitted = useRef(false);
   const [clipboardError, setClipboardError] = useState<'denied' | 'empty' | null>(null);
+  /** The mounted scanner most recently reported that the picture is showing. */
+  const [pictureShowing, setPictureShowing] = useState(false);
   /** Enter manually, which takes the focus back when the sheet closes. */
   const manualButton = useRef<HTMLButtonElement>(null);
   const sheetWasOpen = useRef(manualEntry);
@@ -178,6 +184,13 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
   /** The input alert, or `'step'` once the flow has left the input step. */
   const inputError = send.state.step === 'input' ? send.state.error : 'step';
   const { state, busy, text, submitInput } = send;
+  const scannerMounted =
+    state.step === 'input' && state.error === null && !manualEntry && !busy && scanned === null;
+  useEffect(() => {
+    if (!scannerMounted) {
+      setPictureShowing(false);
+    }
+  }, [scannerMounted]);
   useEffect(() => {
     if (manualEntry || inputError !== null) {
       pasteRun.current += 1;
@@ -372,16 +385,28 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
       setAmountDraft('');
       send.submitInput();
     };
-    const cameraOn = !manualEntry && !busy && scanned === null && state.error === null;
+    const cameraOn = scannerMounted;
     body = (
       <>
-        {cameraOn ? <QrScanner onResult={takeText} /> : null}
+        {cameraOn ? (
+          <QrScanner
+            onResult={takeText}
+            onPicture={(picture) => {
+              setPictureShowing(picture === 'showing');
+            }}
+          />
+        ) : null}
         {busy && !manualEntry && send.walletWait === 'error' ? (
           <div className="absolute inset-x-0 top-1/3 flex -translate-y-1/2 flex-col items-center gap-4 px-8">
             <p role="alert" className="text-center text-lg font-medium text-white">
               {t('wallet.balanceError')}
             </p>
-            <Button variant="overlay" className={FLOAT_CLASS} onClick={send.retryWallet}>
+            <Button
+              variant="primary"
+              tone="dark"
+              className={FLOAT_CLASS}
+              onClick={send.retryWallet}
+            >
               {t('login.retry')}
             </Button>
           </div>
@@ -444,7 +469,8 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
                   {t(ERROR_KEYS[state.error])}
                 </p>
                 <Button
-                  variant="overlay"
+                  variant="primary"
+                  tone="dark"
                   className={FLOAT_CLASS}
                   onClick={() => {
                     send.setText('');
@@ -465,7 +491,8 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
               )}
               <div className="flex flex-wrap justify-center gap-3">
                 <Button
-                  variant="overlay"
+                  variant={cameraOn && pictureShowing ? 'overlay' : 'secondary'}
+                  tone="dark"
                   className={FLOAT_CLASS}
                   disabled={busy}
                   icon={<ClipboardPaste aria-hidden="true" className="h-5 w-5" />}
@@ -477,7 +504,8 @@ export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps
                 </Button>
                 <Button
                   ref={manualButton}
-                  variant="overlay"
+                  variant={cameraOn && pictureShowing ? 'overlay' : 'secondary'}
+                  tone="dark"
                   className={FLOAT_CLASS}
                   disabled={busy}
                   icon={<Keyboard aria-hidden="true" className="h-5 w-5" />}
