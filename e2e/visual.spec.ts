@@ -4694,9 +4694,8 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
     await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toHaveCount(
@@ -4781,9 +4780,8 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(
       page.getByText('Pasting was not allowed. Use Enter manually instead.'),
@@ -4800,9 +4798,8 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(page.getByText('The clipboard is empty.')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-paste-empty');
@@ -5480,9 +5477,8 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(
       page.getByText('Pasting was not allowed. Use Enter manually instead.'),
@@ -5499,9 +5495,8 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await page.getByRole('button', { name: 'Paste' }).click();
     await expect(page.getByText('The clipboard is empty.')).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-send-paste-empty');
@@ -8302,9 +8297,8 @@ test.describe('onboarding screens', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
-    await expect
-      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.paused))
-      .toBe(false);
+    await expect(page.getByRole('button', { name: 'Paste' })).toHaveClass(/bg-black\/55/);
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toHaveClass(/bg-black\/55/);
     await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-send-camera');
