@@ -72,6 +72,12 @@ describe('createCspNonce', () => {
 });
 
 describe('buildCsp', () => {
+  it('allows both OpenCryptoPay photo origins', () => {
+    const images = directives(buildCsp('n')).get('img-src');
+    expect(images).toContain('https://api.opencryptopay.io');
+    expect(images).toContain('https://dev-api.opencryptopay.io');
+  });
+
   it('puts the nonce first on script-src and nowhere else', () => {
     const policy = buildCsp('abc123==');
     const parsed = directives(policy);

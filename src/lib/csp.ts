@@ -38,7 +38,7 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
   // Style attributes, the map's own style elements, its font stylesheet,
   // and the MapLibre stylesheet the homepage map inserts from unpkg.
   'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
-  // QR codes and avatars (data:), photo previews (blob:), map tiles and icons.
+  // QR codes and avatars (data:), photo previews (blob:), map tiles, icons, and shop photos.
   'img-src': [
     "'self'",
     'data:',
@@ -46,6 +46,8 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
     'https://*.googleapis.com',
     'https://*.gstatic.com',
     'https://*.ggpht.com',
+    'https://api.opencryptopay.io',
+    'https://dev-api.opencryptopay.io',
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   // Video previews before upload.

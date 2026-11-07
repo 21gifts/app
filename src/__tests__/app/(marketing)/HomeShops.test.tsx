@@ -1,12 +1,18 @@
 import { cleanup, render, screen, within, fireEvent, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomeShops } from '@/app/(marketing)/HomeShops';
+import { Scrollport } from '@/components/ui/Scrollport';
 import { getCatalog } from '@/lib/messages';
+
+const routerPush = vi.hoisted(() => vi.fn());
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof routerPush } => ({ push: routerPush }),
+}));
 
 const messages = getCatalog('en');
 
 const copy = {
-  title: messages['homeShops.title'],
   lead: messages['homeShops.lead'],
   view: messages['homeShops.view'],
   map: messages['homeShops.map'],
@@ -17,6 +23,7 @@ const copy = {
   asset: messages['homeShops.asset'],
   activity: messages['homeShops.activity'],
   all: messages['homeShops.all'],
+  otherShops: messages['homeShops.otherShops'],
   empty: messages['homeShops.empty'],
   error: messages['map.error'],
   retry: messages['forum.retry'],
@@ -55,7 +62,8 @@ const PROD_FILTERS = 'https://api.opencryptopay.io/map/filters';
 const DEV_FILTERS = 'https://dev-api.opencryptopay.io/map/filters';
 const MAP_SCRIPT = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
 const MAP_CSS = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
-const TILE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const TILE_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+const FRAME_PADDING = { top: 56, bottom: 72, left: 56, right: 88 };
 const HOME_CENTER: [number, number] = [8.23, 46.8];
 
 const originalLocation = window.location;
@@ -71,12 +79,18 @@ type PendingCall = {
 };
 
 type MapDouble = {
+  zoom: number | undefined;
+  transform: { zoom: number | undefined };
   addControl: ReturnType<typeof vi.fn>;
   resize: ReturnType<typeof vi.fn>;
   setCenter: ReturnType<typeof vi.fn>;
   setZoom: ReturnType<typeof vi.fn>;
+  easeTo: ReturnType<typeof vi.fn>;
+  cameraForBounds?: ReturnType<typeof vi.fn>;
   fitBounds: ReturnType<typeof vi.fn>;
   remove: ReturnType<typeof vi.fn>;
+  getZoom?: ReturnType<typeof vi.fn>;
+  loaded?: () => boolean;
 };
 
 type MarkerDouble = {
@@ -92,15 +106,22 @@ type PopupDouble = {
   offset: number;
   content: HTMLElement | null;
   setDOMContent: ReturnType<typeof vi.fn>;
+  remove: ReturnType<typeof vi.fn>;
+  originalRemove: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
+  emit: (event: string) => void;
 };
 
 type BoundsDouble = { extend: ReturnType<typeof vi.fn> };
 
 type MapOptions = {
   container: HTMLElement;
-  style: string;
+  style: string | Record<string, unknown>;
   center: [number, number];
   zoom: number;
+  renderWorldCopies?: boolean;
+  trackResize?: boolean;
+  attributionControl?: { compact: boolean; customAttribution: string };
   locale?: Record<string, string>;
 };
 
@@ -267,23 +288,25 @@ function placesBody(rows: readonly unknown[]): { places: readonly unknown[] } {
 }
 
 function renderShops(): ReturnType<typeof render> {
-  return render(<HomeShops copy={copy} />);
+  return render(<HomeShops copy={copy} locale="en" />);
 }
 
-function countrySelect(): HTMLSelectElement {
-  const element = screen.getByRole('combobox', { name: copy.country });
-  if (!(element instanceof HTMLSelectElement)) throw new Error('country select');
-  return element;
+function menuValue(label: string): string {
+  const node = menuButton(label).querySelector('[data-shop-value]');
+  if (node === null || node.textContent === null) throw new Error('missing value');
+  return node.textContent;
 }
 
-function nameSelect(): HTMLSelectElement {
-  const element = screen.getByRole('combobox', { name: copy.name });
-  if (!(element instanceof HTMLSelectElement)) throw new Error('name select');
-  return element;
+function changeMenu(label: string, value: string): void {
+  openMenu(label);
+  const option = listboxOptions().find((item) => item.getAttribute('data-value') === value);
+  if (option === undefined) throw new Error(`missing option ${value}`);
+  fireEvent.click(option);
 }
 
-function changeSelect(element: HTMLSelectElement, value: string): void {
-  fireEvent.change(element, { target: { value } });
+function openValues(label: string): string[] {
+  openMenu(label);
+  return listboxOptions().map((option) => option.getAttribute('data-value') ?? '');
 }
 
 function menuButton(label: string): HTMLElement {
@@ -314,7 +337,9 @@ function listboxOptions(): HTMLElement[] {
 }
 
 function chooseOption(label: string): void {
-  const option = listboxOptions().find((item) => item.textContent?.trim() === label);
+  const option = listboxOptions().find(
+    (item) => item.getAttribute('data-value') === label || item.textContent?.trim() === label,
+  );
   if (option === undefined) throw new Error(`missing option ${label}`);
   fireEvent.click(option);
 }
@@ -362,8 +387,7 @@ function bodyNames(): string[] {
   for (const row of within(table).getAllByRole('row', { hidden: true })) {
     const cell = within(row).queryAllByRole('cell', { hidden: true })[0];
     if (cell === undefined) continue;
-    const text = cell.textContent;
-    if (text === null) throw new Error('cell');
+    const text = cell.firstChild?.textContent ?? '';
     names.push(text);
   }
   return names;
@@ -373,7 +397,7 @@ function rowByName(name: string): HTMLElement {
   const table = screen.getByRole('table', { hidden: true });
   for (const row of within(table).getAllByRole('row', { hidden: true })) {
     const cell = within(row).queryAllByRole('cell', { hidden: true })[0];
-    if (cell !== undefined && cell.textContent === name) return row;
+    if (cell !== undefined && (cell.firstChild?.textContent ?? '') === name) return row;
   }
   throw new Error(`missing row ${name}`);
 }
@@ -381,23 +405,19 @@ function rowByName(name: string): HTMLElement {
 function cellTexts(name: string): string[] {
   return within(rowByName(name))
     .getAllByRole('cell', { hidden: true })
-    .map((cell) => {
+    .map((cell, index) => {
+      if (index === 0) return cell.firstChild?.textContent ?? '';
       const text = cell.textContent;
       if (text === null) throw new Error('cell');
       return text;
     });
 }
 
-function selectValues(element: HTMLSelectElement): string[] {
-  return [...element.options].map((option) => option.value);
-}
-
-function popoverTarget(button: HTMLElement): string {
-  const lower = button.getAttribute('popovertarget');
-  if (lower !== null && lower !== '') return lower;
-  const upper = button.getAttribute('popoverTarget');
-  if (upper !== null && upper !== '') return upper;
-  throw new Error('missing popover target');
+function chainSplitRows(): { places: readonly unknown[] } {
+  return placesBody([
+    giftsPlace('Sample', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+    giftsPlace('Other', { supports: ['bad'] }),
+  ]);
 }
 
 function addDecoys(): void {
@@ -444,13 +464,22 @@ function installMapLibre(): LibDouble {
 
   function Map(_options: MapOptions): MapDouble {
     options.push(_options);
+    const transform: { zoom: number | undefined } = { zoom: _options.zoom };
+    function mapZoom(this: { transform: { zoom: number | undefined } }): number | undefined {
+      return this.transform.zoom;
+    }
     const map: MapDouble = {
-      addControl: vi.fn(),
-      resize: vi.fn(),
-      setCenter: vi.fn(),
-      setZoom: vi.fn(),
-      fitBounds: vi.fn(),
-      remove: vi.fn(),
+      zoom: transform.zoom,
+      transform,
+      addControl: vi.fn(mapZoom),
+      resize: vi.fn(mapZoom),
+      setCenter: vi.fn(mapZoom),
+      setZoom: vi.fn(mapZoom),
+      easeTo: vi.fn(mapZoom),
+      cameraForBounds: vi.fn(() => ({ zoom: 17.5 })),
+      fitBounds: vi.fn(mapZoom),
+      remove: vi.fn(mapZoom),
+      getZoom: vi.fn(mapZoom),
     };
     maps.push(map);
     return map;
@@ -474,6 +503,8 @@ function installMapLibre(): LibDouble {
   }
 
   function Popup(input: { offset: number }): PopupDouble {
+    const handlers: Record<string, (() => void)[]> = {};
+    const originalRemove = vi.fn();
     const popup: PopupDouble = {
       offset: input.offset,
       content: null,
@@ -481,6 +512,16 @@ function installMapLibre(): LibDouble {
         popup.content = content;
         return popup;
       }),
+      remove: originalRemove,
+      originalRemove,
+      on: vi.fn((event: string, handler: () => void) => {
+        const list = handlers[event] ?? [];
+        list.push(handler);
+        handlers[event] = list;
+      }),
+      emit(event: string): void {
+        for (const handler of handlers[event] ?? []) handler();
+      },
     };
     popups.push(popup);
     return popup;
@@ -515,11 +556,23 @@ function firstOptions(lib: LibDouble): MapOptions {
   return options;
 }
 
-async function fireScript(type: 'load' | 'error'): Promise<void> {
+async function settleStyle(): Promise<void> {
+  const call = callsTo('openfreemap').at(-1);
+  if (call === undefined) return;
+  await act(async () => {
+    call.resolve(jsonResponse({ layers: [] }, 200));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
+
+async function fireScript(type: 'load' | 'error', settle = true): Promise<void> {
   const script = mapScript();
   await act(async () => {
     script.dispatchEvent(new Event(type));
   });
+  if (settle && type === 'load') await settleStyle();
 }
 
 function expectOmit(call: PendingCall): void {
@@ -539,6 +592,7 @@ function expectNoSecretWords(): void {
 
 describe('HomeShops', () => {
   beforeEach(() => {
+    routerPush.mockReset();
     pending.length = 0;
     setHostname('localhost');
     installFetch();
@@ -550,6 +604,7 @@ describe('HomeShops', () => {
     pending.length = 0;
     restoreHostname();
     clearMapDom();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -557,59 +612,55 @@ describe('HomeShops', () => {
     renderShops();
     expectNoSecretWords();
     expect(document.getElementById('shops')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: copy.title })).toBeTruthy();
-    expect(screen.getByText(copy.lead)).toBeTruthy();
+    const heading = screen.getByRole('heading', { name: copy.lead });
+    expect(heading).toBeTruthy();
+    expect(screen.getAllByRole('heading', { name: copy.lead })).toHaveLength(1);
     const section = document.getElementById('shops');
     if (section === null) throw new Error('missing shops');
     expect(section.getAttribute('style')).toBeNull();
     expect(section.querySelector('style')).toBeNull();
+    expect(section.getAttribute('aria-labelledby')).toBe(heading.id);
     expect(section.className).toBe(
-      'bg-[#fff] text-[#272b38] [--color-app-danger:#b91c1c] [--color-app-focus:#171717] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040]',
+      'scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:py-20',
     );
-    expect(screen.getByRole('heading', { name: copy.title }).className).toBe(
-      'text-2xl font-semibold',
+    expect(heading.className).toBe(
+      'text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl',
     );
     const mapNode = document.getElementById('shop-places-map');
     if (mapNode === null) throw new Error('missing map');
     expect(mapNode.getAttribute('style')).toBeNull();
-    expect(mapNode.className).toBe('h-[28rem] min-h-[28rem] w-full');
+    expect(mapNode.className).toBe('h-[26rem] w-full sm:h-[30rem]');
     expect(mapNode.hasAttribute('hidden')).toBe(false);
     expect(tableShell().hasAttribute('hidden')).toBe(true);
-    expect(countrySelect().className).toBe(
-      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
-    );
-    expect(nameSelect().className).toBe(
-      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
-    );
-    expect(menuButton(copy.blockchain).className).toBe(
-      'min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3',
-    );
+    expect(screen.queryByRole('combobox')).toBeNull();
     const csv = screen.getByRole('button', { name: copy.csv, hidden: true });
     expect(csv.className).toContain('min-h-11');
+    expect(csv.className).toContain('rounded-full');
+    expect(csv.className).toContain('border');
     expect(csv.getAttribute('type')).toBe('button');
     const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
-    const helpPopover = help.getAttribute('popovertarget') ?? help.getAttribute('popoverTarget');
-    expect(helpPopover).not.toBeNull();
+    expect(help.hasAttribute('popovertarget')).toBe(false);
+    expect(help.hasAttribute('popover')).toBe(false);
     expect(help.className).toContain('h-11');
     expect(help.className).toContain('w-11');
-    expect(help.className).toContain('bg-app-btn');
+    expect(help.className).toContain('border-ink/12');
+    expect(help.className).not.toContain('bg-app-btn');
     expect(help.textContent).not.toContain('?');
     expect(screen.queryByText(copy.helpLabel)).toBeNull();
     const viewGroup = screen.getByRole('group', { name: copy.view });
     expect(viewGroup.getAttribute('style')).toBeNull();
-    expect(viewGroup.className).toBe(
-      'inline-flex min-h-11 items-center rounded-full border border-[#ced1da] bg-[#fff] px-1',
-    );
+    expect(viewGroup.className).toContain('rounded-full');
+    expect(viewGroup.className).toContain('bg-app-card-muted');
+    expect(viewGroup.className).toContain('sm:ml-auto');
     const mapButton = screen.getByRole('button', { name: copy.map });
     const tableButton = screen.getByRole('button', { name: copy.table });
     expect(mapButton.getAttribute('style')).toBeNull();
     expect(tableButton.getAttribute('style')).toBeNull();
-    expect(mapButton.className).toBe(
-      'min-h-11 rounded-full border-0 bg-[#272b38] px-3.5 text-white',
-    );
-    expect(tableButton.className).toBe(
-      'min-h-11 rounded-full border-0 bg-transparent px-3.5 text-[#272b38]',
-    );
+    expect(mapButton.getAttribute('aria-pressed')).toBe('true');
+    expect(mapButton.className).toContain('bg-app-btn');
+    expect(mapButton.className).toContain('text-app-btn-fg');
+    expect(tableButton.getAttribute('aria-pressed')).toBe('false');
+    expect(tableButton.className).toContain('text-app-muted');
     expect(screen.queryByText(copy.error)).toBeNull();
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(callsTo('/map/places')).toHaveLength(0);
@@ -797,9 +848,12 @@ describe('HomeShops', () => {
     renderShops();
     await resolveLatest(
       basicFilters({ countries: ['PH', 'DE'] }),
-      placesBody([giftsPlace('Retained', {})]),
+      placesBody([
+        giftsPlace('Retained', { country: 'PH' }),
+        giftsPlace('Berlin', { country: 'DE' }),
+      ]),
     );
-    changeSelect(countrySelect(), 'PH');
+    changeMenu(copy.country, 'PH');
     await act(async () => {
       latestPlaces().reject(new DOMException('aborted', 'AbortError'));
     });
@@ -830,24 +884,39 @@ describe('HomeShops', () => {
 
   it('aborts the previous signal when the query changes and drops a stale payload', async () => {
     renderShops();
-    await act(async () => latestFilters().resolve(jsonResponse(basicFilters({}), 200)));
-    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Manila', { country: 'PH' }),
+        giftsPlace('Berlin', { country: 'DE' }),
+      ]),
+    );
     const first = latestPlaces();
-    changeSelect(countrySelect(), 'PH');
+    changeMenu(copy.country, 'PH');
     expect(first.signal.aborted).toBe(true);
     expect(callsTo('/map/filters')).toHaveLength(1);
-    await act(async () => {
-      first.resolve(jsonResponse(placesBody([giftsPlace('Sample', {})]), 200));
-    });
-    expect(screen.queryByText('Sample')).toBeNull();
     await waitFor(() => expect(callsTo('/map/places')).toHaveLength(2));
-    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH`);
+    const second = latestPlaces();
+    expect(second.url).toBe(`${DEV_PLACES}?country=PH`);
+    changeMenu(copy.country, 'DE');
+    expect(second.signal.aborted).toBe(true);
     await act(async () => {
-      latestPlaces().resolve(jsonResponse(placesBody([giftsPlace('Sample', {})]), 200));
+      second.resolve(jsonResponse(placesBody([giftsPlace('Stale', { country: 'DE' })]), 200));
+    });
+    expect(screen.queryByText('Stale')).toBeNull();
+    expect(screen.queryByText('Manila')).toBeNull();
+    expect(screen.getByText('Berlin')).toBeTruthy();
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(3));
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=DE`);
+    await act(async () => {
+      latestPlaces().resolve(
+        jsonResponse(placesBody([giftsPlace('Later', { country: 'DE' })]), 200),
+      );
     });
     await waitFor(() => {
-      expect(screen.getByText('Sample')).toBeTruthy();
+      expect(screen.getByText('Later')).toBeTruthy();
     });
+    expect(screen.queryByText('Stale')).toBeNull();
   });
 
   it('shows empty only when the list is ready and has no rows', async () => {
@@ -857,17 +926,22 @@ describe('HomeShops', () => {
       expect(screen.getByText(copy.empty)).toBeTruthy();
     });
     expect(screen.queryByText(copy.error)).toBeNull();
-    expect(screen.getByRole('heading', { name: copy.title })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: copy.lead })).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+    expect(document.querySelector('.shop-legend')).toBeNull();
   });
 
   it('opens, closes, and chooses listbox options without bubbling', async () => {
     const onParent = vi.fn();
     render(
       <div onClick={onParent}>
-        <HomeShops copy={copy} />
+        <HomeShops copy={copy} locale="en" />
       </div>,
     );
-    for (const label of [copy.blockchain, copy.asset, copy.activity]) {
+    await resolveLatest(basicFilters({}), chainSplitRows());
+    expect(screen.queryByRole('combobox', { name: copy.activity })).toBeNull();
+    for (const label of [copy.blockchain, copy.asset]) {
       expect(menuButton(label).getAttribute('aria-haspopup')).toBe('listbox');
     }
     const button = menuButton(copy.blockchain);
@@ -880,7 +954,7 @@ describe('HomeShops', () => {
 
     fireEvent.click(button);
     const all = within(screen.getByRole('listbox')).getByRole('option', { name: copy.all });
-    expect(all.className).toContain('min-h-11');
+    expect(all.className).toContain('h-11');
     expect(all.querySelector('.shop-place-marker')).toBeNull();
     onParent.mockClear();
     const before = pending.length;
@@ -910,8 +984,9 @@ describe('HomeShops', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('opens a closed menu from ArrowDown on the current option', () => {
+  it('opens a closed menu from ArrowDown on the current option', async () => {
     renderShops();
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     expect(button.getAttribute('role')).toBe('combobox');
     expect(button.getAttribute('aria-expanded')).toBe('false');
@@ -927,7 +1002,7 @@ describe('HomeShops', () => {
 
   it('moves ArrowDown one option and stops on the last option', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     const first = button.getAttribute('aria-activedescendant');
@@ -944,7 +1019,7 @@ describe('HomeShops', () => {
 
   it('keeps ArrowUp on the first option and opens a closed menu upward', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     const first = button.getAttribute('aria-activedescendant');
@@ -962,7 +1037,7 @@ describe('HomeShops', () => {
 
   it('ignores Home and End while closed and jumps to the ends while open', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     fireEvent.keyDown(button, { key: 'Home' });
     fireEvent.keyDown(button, { key: 'End' });
@@ -983,7 +1058,7 @@ describe('HomeShops', () => {
 
   it('opens with Enter and commits the highlighted blockchain without activity', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     const before = callsTo('/map/places').length;
     fireEvent.keyDown(button, { key: 'Enter' });
@@ -999,13 +1074,13 @@ describe('HomeShops', () => {
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?blockchain=Bitcoin`);
     expect(latestPlaces().url).not.toContain('activity');
     expect(latestPlaces().url).not.toContain('techProvider');
-    expect(button.textContent).toBe('Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
     expect(document.activeElement).toBe(button);
   });
 
   it('opens with Space and commits the highlighted blockchain', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     const before = callsTo('/map/places').length;
     fireEvent.keyDown(button, { key: ' ' });
@@ -1021,12 +1096,13 @@ describe('HomeShops', () => {
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?blockchain=Bitcoin`);
     expect(latestPlaces().url).not.toContain('activity');
     expect(latestPlaces().url).not.toContain('techProvider');
-    expect(button.textContent).toBe('Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
     expect(document.activeElement).toBe(button);
   });
 
-  it('leaves the listbox open when the trigger receives a letter', () => {
+  it('leaves the listbox open when the trigger receives a letter', async () => {
     renderShops();
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     const active = button.getAttribute('aria-activedescendant');
@@ -1036,8 +1112,9 @@ describe('HomeShops', () => {
     expect(button.getAttribute('aria-activedescendant')).toBe(active);
   });
 
-  it('closes from Escape on document and returns focus from Escape on the trigger', () => {
+  it('closes from Escape on document and returns focus from Escape on the trigger', async () => {
     renderShops();
+    await resolveLatest(basicFilters({}), chainSplitRows());
     const button = menuButton(copy.blockchain);
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -1053,9 +1130,10 @@ describe('HomeShops', () => {
 
   it('keeps the option classes and marks only the highlighted option', async () => {
     renderShops();
-    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Sample', {})]));
+    await resolveLatest(basicFilters({}), chainSplitRows());
     openMenu(copy.blockchain);
-    const base = 'min-h-11 min-w-11 border-0 bg-transparent p-0 text-left font-inherit';
+    const base =
+      'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-inherit';
     const options = within(screen.getByRole('listbox')).getAllByRole('option');
     const highlighted = options.filter((option) => option.className.includes('is-active'));
     expect(highlighted).toHaveLength(1);
@@ -1075,27 +1153,43 @@ describe('HomeShops', () => {
       techProviders: [
         provider({
           assets: ['BTC', 'ZZZ'],
-          pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+          pairs: [
+            { blockchain: 'Bitcoin', asset: 'BTC' },
+            { blockchain: 'Side', asset: 'ZZZ' },
+          ],
         }),
       ],
     });
-    const rows = placesBody([giftsPlace('Sample', {})]);
+    const rows = placesBody([
+      giftsPlace('Ann', {
+        country: 'PH',
+        shopName: 'SPAR',
+        activity: 'daily',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      }),
+      giftsPlace('Bea', {
+        country: 'DE',
+        shopName: 'Mini',
+        activity: 'within7Days',
+        supports: [{ blockchain: 'Side', asset: 'ZZZ' }],
+      }),
+    ]);
     renderShops();
     await resolveLatest(filters, rows);
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'PH', hidden: true })).toBeTruthy();
+      expect(bodyNames()).toEqual(['Ann', 'Bea']);
     });
 
     const beforeCountry = pending.length;
-    changeSelect(countrySelect(), 'PH');
-    changeSelect(countrySelect(), 'PH');
+    changeMenu(copy.country, 'PH');
+    changeMenu(copy.country, 'PH');
     expect(pending.length).toBe(beforeCountry + 1);
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH`);
     await resolvePlaces(rows);
 
     const beforeName = pending.length;
-    changeSelect(nameSelect(), 'SPAR');
-    changeSelect(nameSelect(), 'SPAR');
+    changeMenu(copy.name, 'SPAR');
+    changeMenu(copy.name, 'SPAR');
     expect(pending.length).toBe(beforeName + 1);
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH&shopName=SPAR`);
     await resolvePlaces(rows);
@@ -1104,7 +1198,7 @@ describe('HomeShops', () => {
     openMenu(copy.asset);
     chooseOption('BTC');
     expect(pending.length).toBe(beforeAsset + 1);
-    expect(menuButton(copy.asset).textContent).toBe('BTC');
+    expect(menuValue(copy.asset)).toBe('BTC');
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH&shopName=SPAR&asset=BTC`);
     await resolvePlaces(rows);
 
@@ -1120,7 +1214,7 @@ describe('HomeShops', () => {
     chooseOption('Bitcoin');
     expect(pending.length).toBe(beforeChain + 1);
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH&shopName=SPAR&blockchain=Bitcoin`);
-    expect(menuButton(copy.asset).textContent).toBe(copy.all);
+    expect(menuValue(copy.asset)).toBe(copy.all);
     await resolvePlaces(rows);
 
     openMenu(copy.asset);
@@ -1146,7 +1240,10 @@ describe('HomeShops', () => {
     const firstFilters = basicFilters({
       techProviders: [provider({ blockchains: ['Bitcoin'] })],
     });
-    const rows = placesBody([giftsPlace('Sample', {})]);
+    const rows = placesBody([
+      giftsPlace('Sample', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+      giftsPlace('Other', { supports: [{ blockchain: 'Liquid', asset: 'L-BTC' }] }),
+    ]);
     renderShops();
     await resolveLatest(firstFilters, rows);
     openMenu(copy.blockchain);
@@ -1154,7 +1251,7 @@ describe('HomeShops', () => {
     expect(latestPlaces().url).toContain('blockchain=Bitcoin');
     await resolvePlaces(rows);
     expect(callsTo('/map/filters')).toHaveLength(1);
-    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
   });
 
   it('lists cleaned country and name choices and filters rows on the client', async () => {
@@ -1174,23 +1271,22 @@ describe('HomeShops', () => {
     await waitFor(() => {
       expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
     });
-    expect(selectValues(countrySelect())).toEqual(['', 'PH', 'DE']);
-    expect(selectValues(nameSelect())).toEqual(['', 'SPAR', 'others', 'Mini']);
+    expect(openValues(copy.country)).toEqual(['', 'DE', 'PH']);
+    expect(openValues(copy.name)).toEqual(['', 'SPAR', 'others']);
 
-    changeSelect(countrySelect(), 'PH');
-    expect(bodyNames()).toEqual(['Ann', 'Dee', 'Eve']);
-    changeSelect(countrySelect(), 'DE');
+    changeMenu(copy.country, 'PH');
+    expect(bodyNames()).toEqual(['Ann', 'Cia', 'Dee', 'Eve']);
+    changeMenu(copy.country, 'DE');
     expect(bodyNames()).toEqual(['Bea']);
-    changeSelect(countrySelect(), '');
+    changeMenu(copy.country, '');
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
 
-    changeSelect(nameSelect(), 'SPAR');
-    expect(bodyNames()).toEqual(['Ann', 'Cia']);
-    changeSelect(nameSelect(), 'others');
-    expect(bodyNames()).toEqual(['Bea', 'Dee', 'Eve']);
-    changeSelect(nameSelect(), 'Mini');
-    expect(bodyNames()).toEqual(['Bea']);
-    changeSelect(nameSelect(), '');
+    expect(cellTexts('Dee')).toContain('SPAR');
+    changeMenu(copy.name, 'SPAR');
+    expect(bodyNames()).toEqual(['Ann', 'Cia', 'Dee']);
+    changeMenu(copy.name, 'others');
+    expect(bodyNames()).toEqual(['Bea', 'Eve']);
+    changeMenu(copy.name, '');
     expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve']);
   });
 
@@ -1206,33 +1302,28 @@ describe('HomeShops', () => {
     ]);
     renderShops();
     await resolveLatest(filters, rows);
-    const beforeMini = callsTo('/map/places').length;
-    changeSelect(nameSelect(), 'Mini');
-    expect(callsTo('/map/places').length).toBe(beforeMini);
-    expect(bodyNames()).toEqual(['Bea']);
-    for (const call of callsTo('/map/places')) {
-      expect(call.url).not.toContain('shopName=Mini');
-    }
+    expect(openValues(copy.name)).toEqual(['', 'SPAR', 'others']);
+    expect(screen.queryByRole('combobox', { name: copy.country })).toBeNull();
 
-    changeSelect(nameSelect(), 'SPAR');
+    changeMenu(copy.name, 'SPAR');
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
+    expect(bodyNames()).toEqual(['Ann']);
     await resolvePlaces(rows);
+    expect(bodyNames()).toEqual(['Ann']);
 
-    changeSelect(nameSelect(), 'others');
+    changeMenu(copy.name, 'others');
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=others`);
+    expect(bodyNames()).toEqual([]);
+    expect(screen.queryByText(copy.empty)).toBeNull();
     await resolvePlaces(rows);
+    expect(bodyNames()).toEqual(['Bea', 'Cara', 'Mia']);
 
-    changeSelect(nameSelect(), 'SPAR');
-    expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
-    await resolvePlaces(rows);
-
-    const beforeSwitch = callsTo('/map/places').length;
-    changeSelect(nameSelect(), 'Mini');
-    expect(callsTo('/map/places').length).toBe(beforeSwitch + 1);
+    changeMenu(copy.name, '');
     expect(latestPlaces().url).toBe(DEV_PLACES);
     expect(latestPlaces().url).not.toContain('shopName');
+    expect(bodyNames()).toEqual([]);
     await resolvePlaces(rows);
-    expect(bodyNames()).toEqual(['Bea']);
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cara', 'Mia']);
     for (const call of callsTo('/map/places')) {
       expect(call.url).not.toContain('shopName=Mini');
     }
@@ -1268,9 +1359,9 @@ describe('HomeShops', () => {
     await waitFor(() => {
       expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cia', 'Dee', 'Eve', 'Fay', 'Gus', 'Hal']);
     });
-    expect(cellTexts('Fay')[5]).toBe('weird');
-    expect(cellTexts('Gus')[5]).toBe('');
-    expect(cellTexts('Hal')[5]).toBe('');
+    expect(cellTexts('Fay')[2]).toBe('weird');
+    expect(cellTexts('Gus')[2]).toBe('');
+    expect(cellTexts('Hal')[2]).toBe('');
     openMenu(copy.activity);
     expect(optionLabels()).toEqual([
       copy.all,
@@ -1292,7 +1383,7 @@ describe('HomeShops', () => {
     expect(
       within(menu).getByRole('option', { name: 'weird' }).querySelector('.shop-place-marker'),
     ).toBe(null);
-    const legend = document.querySelectorAll('[popover] .shop-place-marker');
+    const legend = document.querySelectorAll('.shop-legend .shop-place-marker');
     expect(legend).toHaveLength(5);
     for (const swatch of legend) {
       expect(swatch.getAttribute('aria-hidden')).toBe('true');
@@ -1317,23 +1408,34 @@ describe('HomeShops', () => {
     expect(screen.queryByText(copy.error)).toBeNull();
   });
 
-  it('keeps the activity menu at All when activities are missing or not a list', async () => {
+  it('hides the activity menu when no shop is loaded and still lists shop tokens', async () => {
     const withoutActivities = basicFilters({});
     delete withoutActivities['activities'];
     renderShops();
     await resolveLatest(withoutActivities, placesBody([]));
-    openMenu(copy.activity);
-    expect(optionLabels()).toEqual([copy.all]);
+    expect(screen.queryByRole('combobox', { name: copy.activity })).toBeNull();
     cleanup();
     pending.length = 0;
 
     renderShops();
     await resolveLatest(basicFilters({ activities: 'daily' }), placesBody([]));
+    expect(screen.queryByRole('combobox', { name: copy.activity })).toBeNull();
+    cleanup();
+    pending.length = 0;
+
+    renderShops();
+    await resolveLatest(
+      withoutActivities,
+      placesBody([
+        giftsPlace('Ann', { activity: 'daily' }),
+        giftsPlace('Bea', { activity: 'within7Days' }),
+      ]),
+    );
     openMenu(copy.activity);
-    expect(optionLabels()).toEqual([copy.all]);
+    expect(optionLabels()).toEqual([copy.all, copy.daily, copy.weekly]);
   });
 
-  it('renders location, links, provider, and sorted names in the table', async () => {
+  it('renders location, links, and sorted names in the table', async () => {
     const rows = placesBody([
       null,
       ['skip'],
@@ -1382,9 +1484,8 @@ describe('HomeShops', () => {
     expect(cellTexts('Zed')).toEqual([
       'Zed',
       'Rizal 1, 1000 Manila',
-      'PH',
+      'Philippines',
       'SPAR',
-      '21.gifts',
       copy.daily,
     ]);
     const zedLink = within(rowByName('Zed')).getByRole('link', { hidden: true });
@@ -1392,6 +1493,7 @@ describe('HomeShops', () => {
     expect(zedLink.className).toBe('font-medium underline underline-offset-2');
     expect(zedLink.className).not.toContain('text-accent');
     expect(cellTexts('Ann')[1]).toBe('OnlyStreet');
+    expect(cellTexts('Ann')[2]).toBe('Germany');
     expect(cellTexts('Ann')[3]).toBe('');
     expect(within(rowByName('Ann')).getByRole('link', { hidden: true }).getAttribute('href')).toBe(
       `/${npub('p')}`,
@@ -1411,25 +1513,32 @@ describe('HomeShops', () => {
     expect(textOf(headers[1])).toBe(copy.colLocation);
     expect(textOf(headers[2])).toBe(copy.colCountry);
     expect(textOf(headers[3])).toBe(copy.colShop);
-    expect(textOf(headers[4])).toBe(copy.colProvider);
-    expect(textOf(headers[5])).toContain(copy.colActivity);
+    expect(textOf(headers[4])).toBe(copy.colActivity);
+    expect(headers[5]).toBeUndefined();
+    const header = headers[0];
+    if (header === undefined) throw new Error('missing header');
+    const headerRow = header.closest('tr');
+    if (headerRow === null) throw new Error('missing header row');
+    expect(headerRow.className).toContain('text-ink/60');
 
     const help = screen.getByRole('button', { name: copy.helpLabel, hidden: true });
     expect(help.textContent).not.toContain('?');
     expect(screen.queryByText(copy.helpLabel)).toBeNull();
-    const popover = document.getElementById(popoverTarget(help));
-    if (popover === null) throw new Error('missing popover');
-    expect(popover.getAttribute('popover')).toBe('auto');
-    expect(popover.className).toBe(
-      'border border-[#ced1da] bg-[#fff] text-[#272b38] [color-scheme:light]',
+    fireEvent.click(help);
+    const panel = screen.getByRole('dialog', { name: copy.helpLabel });
+    expect(panel.className).toBe(
+      'fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg outline-none',
     );
-    expect(popover.textContent).toContain(copy.dailyHelp);
-    expect(popover.textContent).toContain(copy.weeklyHelp);
-    expect(popover.textContent).toContain(copy.monthlyHelp);
-    expect(popover.textContent).toContain(copy.idleHelp);
-    expect(popover.textContent).toContain(copy.noneHelp);
-    expect(popover.textContent).toContain(copy.hierarchy);
-    expect(popover.querySelectorAll('dt .shop-place-marker')).toHaveLength(5);
+    expect(panel.style.top).toBe('16px');
+    expect(panel.style.left).toBe('16px');
+    expect(panel.style.width).toBe('320px');
+    expect(panel.textContent).toContain(copy.dailyHelp);
+    expect(panel.textContent).toContain(copy.weeklyHelp);
+    expect(panel.textContent).toContain(copy.monthlyHelp);
+    expect(panel.textContent).toContain(copy.idleHelp);
+    expect(panel.textContent).toContain(copy.noneHelp);
+    expect(panel.textContent).toContain(copy.hierarchy);
+    expect(panel.querySelectorAll('dt .shop-place-marker')).toHaveLength(5);
   });
 
   it('builds chain menus only from 21.gifts and matches supports or pairs', async () => {
@@ -1471,16 +1580,16 @@ describe('HomeShops', () => {
       expect(bodyNames()).toHaveLength(9);
     });
     openMenu(copy.blockchain);
-    expect(optionLabels()).toEqual([copy.all, 'Bitcoin', 'Side', 'NoneChain']);
+    expect(optionLabels()).toEqual([copy.all, 'Bitcoin', 'NoneChain', 'Other', 'Side']);
     expect(screen.queryByRole('option', { name: 'Liquid' })).toBeNull();
     openMenu(copy.asset);
-    expect(optionLabels()).toEqual([copy.all, 'BTC', 'ABC']);
+    expect(optionLabels()).toEqual([copy.all, 'ABC', 'BTC', 'NO', 'SSS', 'X', 'ZZZ']);
     expect(screen.queryByRole('option', { name: 'L-BTC' })).toBeNull();
 
     openMenu(copy.blockchain);
     chooseOption('Bitcoin');
     openMenu(copy.asset);
-    expect(optionLabels()).toEqual([copy.all, 'ABC', 'BTC', 'SSS']);
+    expect(optionLabels()).toEqual([copy.all, 'ABC', 'BTC', 'NO', 'SSS']);
     chooseOption('BTC');
     expect(bodyNames()).toEqual(['EmptySup', 'Match', 'Missing', 'NullSup']);
 
@@ -1502,7 +1611,7 @@ describe('HomeShops', () => {
     chooseOption('NoneChain');
     expect(bodyNames()).toEqual(['Own']);
     openMenu(copy.asset);
-    expect(optionLabels()).toEqual([copy.all]);
+    expect(optionLabels()).toEqual([copy.all, 'X']);
   });
 
   it('drops a place without supports when the provider pairs are not a list', async () => {
@@ -1522,16 +1631,14 @@ describe('HomeShops', () => {
     expect(optionLabels()).toEqual([copy.all, 'BTC']);
   });
 
-  it('offers only All for chain menus when 21.gifts is missing', async () => {
+  it('offers no chain menu when one shop has no chain split', async () => {
     renderShops();
     await resolveLatest(
       basicFilters({ techProviders: [null, dfxProvider()] }),
       placesBody([giftsPlace('Sample', {})]),
     );
-    openMenu(copy.blockchain);
-    expect(optionLabels()).toEqual([copy.all]);
-    openMenu(copy.asset);
-    expect(optionLabels()).toEqual([copy.all]);
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(bodyNames()).toEqual(['Sample']);
     cleanup();
     pending.length = 0;
 
@@ -1540,8 +1647,7 @@ describe('HomeShops', () => {
       basicFilters({ techProviders: { name: '21.gifts' } }),
       placesBody([giftsPlace('Kept', {})]),
     );
-    openMenu(copy.blockchain);
-    expect(optionLabels()).toEqual([copy.all]);
+    expect(screen.queryByRole('combobox')).toBeNull();
     expect(bodyNames()).toEqual(['Kept']);
   });
 
@@ -1571,7 +1677,7 @@ describe('HomeShops', () => {
     const map = firstMap(lib);
     const options = firstOptions(lib);
     expect(options.container).toBe(document.getElementById('shop-places-map'));
-    expect(options.style).toBe(TILE_STYLE);
+    expect(options.style).toEqual({ layers: [] });
     expect(options.center).toEqual(HOME_CENTER);
     expect(options.locale).toEqual({
       'NavigationControl.ZoomIn': copy.zoomIn,
@@ -1583,6 +1689,12 @@ describe('HomeShops', () => {
       'Map.Title': copy.mapTitle,
     });
     expect(options.zoom).toBe(7);
+    expect(options.renderWorldCopies).toBe(false);
+    expect(options.trackResize).toBe(false);
+    expect(options.attributionControl).toEqual({
+      compact: true,
+      customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
+    });
     expect(lib.navigationCalls.count).toBe(1);
     expect(map.addControl).toHaveBeenCalledWith({}, 'top-right');
     expect(lib.markers).toHaveLength(1);
@@ -1597,8 +1709,14 @@ describe('HomeShops', () => {
     expect(marker.setLngLat).toHaveBeenCalledWith([121, 14.6]);
     expect(marker.setPopup).toHaveBeenCalledWith(lib.popups[0]);
     expect(marker.addTo).toHaveBeenCalledWith(map);
-    expect(map.setCenter).toHaveBeenCalledWith([121, 14.6]);
-    expect(map.setZoom).toHaveBeenCalledWith(12);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(map.resize).not.toHaveBeenCalled();
 
@@ -1606,7 +1724,11 @@ describe('HomeShops', () => {
     expect(map.resize).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(map.resize).toHaveBeenCalledTimes(1);
-    expect(map.setZoom).toHaveBeenCalledTimes(2);
+    expect(map.easeTo).toHaveBeenNthCalledWith(2, {
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 800,
+    });
 
     expect(document.body.contains(marker.element)).toBe(true);
     const pinClick = vi.spyOn(marker.element, 'click');
@@ -1636,8 +1758,15 @@ describe('HomeShops', () => {
     await resolveLatest(basicFilters({}), rows);
     await fireScript('load');
     const map = firstMap(lib);
-    expect(map.fitBounds).toHaveBeenCalledWith(lib.bounds[0], { padding: 48, maxZoom: 12 });
+    expect(map.fitBounds).toHaveBeenCalledWith(lib.bounds[0], {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     const box = lib.bounds[0];
     if (box === undefined) throw new Error('bounds');
     expect(box.extend).toHaveBeenCalledWith([-180, -90]);
@@ -1670,9 +1799,540 @@ describe('HomeShops', () => {
       (popup) => popup.content?.querySelector('a')?.textContent === 'Gus',
     );
     if (gus === undefined || gus.content === null) throw new Error('missing Gus popup');
-    const paragraphs = [...gus.content.querySelectorAll('p')];
-    expect(paragraphs.some((paragraph) => paragraph.textContent === copy.none)).toBe(false);
-    expect(paragraphs.some((paragraph) => paragraph.textContent === '')).toBe(false);
+    expect(gus.content.querySelectorAll('p')).toHaveLength(0);
+    expect(gus.content.querySelector('.shop-popup-chip')).toBeNull();
+  });
+
+  it('jumps the first frame and an unloaded map, then animates a later frame', async () => {
+    const lib = installMapLibre();
+    const Original = window.maplibregl?.Map;
+    if (window.maplibregl === undefined || Original === undefined) throw new Error('missing map');
+    let mapLoaded = true;
+    function MapWithLoaded(options: MapOptions): MapDouble {
+      const map = new (Original as new (options: MapOptions) => MapDouble)(options);
+      map.loaded = () => mapLoaded;
+      return map;
+    }
+    window.maplibregl.Map = MapWithLoaded as unknown as MapLibreLib['Map'];
+    const rows = placesBody([
+      giftsPlace('Ann', { lat: 14.6204, lon: 120.9581 }),
+      giftsPlace('Bea', { lat: -1.29, lon: 36.82 }),
+    ]);
+    renderShops();
+    await resolveLatest(basicFilters({}), rows);
+    await fireScript('load');
+    const map = firstMap(lib);
+    const still = { padding: FRAME_PADDING, maxZoom: 12, duration: 0, animate: false };
+    expect(map.loaded?.()).toBe(true);
+    expect(map.fitBounds).toHaveBeenNthCalledWith(1, lib.bounds[0], still);
+    fireEvent.click(screen.getByRole('button', { name: copy.table }));
+    fireEvent.click(screen.getByRole('button', { name: copy.map }));
+    expect(map.fitBounds).toHaveBeenNthCalledWith(2, lib.bounds[1], {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 800,
+    });
+    mapLoaded = false;
+    expect(map.loaded?.()).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: copy.table }));
+    fireEvent.click(screen.getByRole('button', { name: copy.map }));
+    expect(map.fitBounds).toHaveBeenNthCalledWith(3, lib.bounds[2], still);
+  });
+
+  it('eases to one pin and to none after a two-pin frame', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({ countries: ['PH', 'DE'] }),
+      placesBody([
+        giftsPlace('Manila', { country: 'PH', lat: 14.6, lon: 121 }),
+        giftsPlace('Berlin', { country: 'DE', lat: 52.5, lon: 13.4 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).not.toHaveBeenCalled();
+    changeMenu(copy.country, 'PH');
+    await resolvePlaces(placesBody([giftsPlace('Manila', { country: 'PH', lat: 14.6, lon: 121 })]));
+    expect(map.easeTo).toHaveBeenLastCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 800,
+    });
+    changeMenu(copy.country, 'DE');
+    await resolvePlaces(placesBody([]));
+    expect(map.easeTo).toHaveBeenLastCalledWith({
+      center: HOME_CENTER,
+      zoom: 7,
+      duration: 800,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
+  });
+
+  it('jumps a cluster click on an unloaded map, then animates the next click', async () => {
+    const lib = installMapLibre();
+    let mapLoaded = false;
+    wrapMap((map) => {
+      map.loaded = () => mapLoaded;
+      Object.assign(map, {
+        project(this: { transform: object }) {
+          void this.transform;
+          return { x: 10, y: 10 };
+        },
+        unproject(this: { transform: object }) {
+          void this.transform;
+          return { lng: 121, lat: 14.6 };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const map = firstMap(lib);
+    expect(map.loaded?.()).toBe(false);
+    const cluster = screen.getByRole('button', { name: '2 shops' });
+    fireEvent.click(cluster);
+    const jumped = lib.bounds.at(-1);
+    if (jumped === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(jumped, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+      duration: 0,
+      animate: false,
+    });
+    mapLoaded = true;
+    expect(map.loaded?.()).toBe(true);
+    fireEvent.click(cluster);
+    const animated = lib.bounds.at(-1);
+    if (animated === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(animated, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+      duration: 600,
+    });
+    expect(map.cameraForBounds).toHaveBeenLastCalledWith(animated, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+    });
+    expect(map.easeTo).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: 'unchanged zoom', camera: { zoom: 10 }, zoom: 10, target: 12, loaded: true },
+    { label: 'zooming out', camera: { zoom: 9 }, zoom: 10, target: 12, loaded: true },
+    { label: 'less than one level', camera: { zoom: 10.99 }, zoom: 10, target: 12, loaded: true },
+    { label: 'no camera', camera: undefined, zoom: 10, target: 12, loaded: true },
+    { label: 'no zoom', camera: {}, zoom: 10, target: 12, loaded: true },
+    { label: 'missing method', camera: null, zoom: 10, target: 12, loaded: true },
+    { label: 'zoom cap', camera: { zoom: 16 }, zoom: 16, target: 17.5, loaded: true },
+    { label: 'unloaded map', camera: { zoom: 10 }, zoom: 10, target: 12, loaded: false },
+  ])('zooms into a map-wide cluster around its marker with $label', async (testCase) => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      map.loaded = () => testCase.loaded;
+      Object.assign(map, {
+        project: (position: [number, number]) => ({ x: position[0] * 10, y: position[1] * 10 }),
+        unproject: (point: [number, number]) => ({ lng: point[0] / 10, lat: point[1] / 10 }),
+        getContainer: () => document.getElementById('shop-places-map'),
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody(
+        Array.from({ length: 20 }, (_, index) =>
+          giftsPlace(`Shop ${index}`, { lat: 20, lon: 1 + index * 4 }),
+        ),
+      ),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    map.transform.zoom = testCase.zoom;
+    if (testCase.camera === null) delete map.cameraForBounds;
+    else map.cameraForBounds?.mockReturnValue(testCase.camera);
+    map.fitBounds.mockClear();
+    map.easeTo.mockClear();
+    const cluster = screen.getByRole('button', { name: '20 shops' });
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([39, 20]);
+    fireEvent.click(cluster);
+    expect(map.easeTo).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [39, 20],
+      zoom: testCase.target,
+      ...(testCase.loaded ? { duration: 600 } : { duration: 0, animate: false }),
+    });
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+
+  it('frames a compact cluster when the estimate gains exactly one zoom level', async () => {
+    const { map } = await setupClusterFocus();
+    map.cameraForBounds?.mockReturnValue({ zoom: 11 });
+    map.fitBounds.mockClear();
+    map.easeTo.mockClear();
+    fireEvent.click(clusterButton('is-daily'));
+    expect(map.cameraForBounds).toHaveBeenCalledTimes(1);
+    const bounds = map.cameraForBounds?.mock.calls[0]?.[0] as BoundsDouble | undefined;
+    if (bounds === undefined) throw new Error('missing camera bounds');
+    expect(bounds.extend.mock.calls).toEqual([[[121, 14.6]], [[121.2, 14.6]], [[121.1, 14.6]]]);
+    expect(map.cameraForBounds).toHaveBeenCalledWith(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+    });
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    expect(map.fitBounds).toHaveBeenCalledWith(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+      duration: 600,
+    });
+    expect(map.easeTo).not.toHaveBeenCalled();
+  });
+
+  it('frames again when the map receives its real size, and stops after a cluster click', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    let width = 0;
+    let height = 0;
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }) {
+          void this.transform;
+          return { x: 10, y: 10 };
+        },
+        unproject(this: { transform: object }) {
+          void this.transform;
+          return { lng: 121, lat: 14.6 };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => height });
+    setRect(mapNode, { top: 0, left: 0, bottom: 416, right: 334, width: 334, height: 416 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(map.resize).not.toHaveBeenCalled();
+
+    width = 334;
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    height = 416;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.resize).toHaveBeenCalledTimes(1);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+
+    width = 400;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.resize).toHaveBeenCalledTimes(2);
+    expect(map.fitBounds).toHaveBeenCalledTimes(2);
+    const snapped = lib.bounds.at(-1);
+    if (snapped === undefined) throw new Error('missing snapped bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(snapped, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '2 shops' }));
+    const afterClick = map.fitBounds.mock.calls.length;
+    width = 360;
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(afterClick);
+    expect(map.resize).toHaveBeenCalledTimes(3);
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(afterClick);
+    expect(map.resize).toHaveBeenCalledTimes(3);
+
+    cleanup();
+    expect(observer.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves a user-moved view on resize but still frames after programmatic movement', async () => {
+    const observers: ResizeObserverCallback[] = [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push(callback);
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const handlers: Record<string, (event: { originalEvent?: Event }) => void> = {};
+    const off = vi.fn();
+    const jumpTo = vi.fn();
+    const flyTo = vi.fn();
+    const lib = installMapLibre();
+    let width = 300;
+    wrapMap((map) => {
+      Object.assign(map, {
+        on: (event: string, handler: (event: { originalEvent?: Event }) => void): void => {
+          handlers[event] = handler;
+        },
+        off,
+        jumpTo,
+        flyTo,
+        getContainer: (): HTMLElement => {
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, value: 400 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', {}), giftsPlace('Bea', { lon: 122 })]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    const observe = observers.at(-1);
+    if (observe === undefined) throw new Error('missing observer');
+    const before = map.fitBounds.mock.calls.length;
+    const zoomStart = handlers['zoomstart'];
+    expect(zoomStart).toBeDefined();
+    if (zoomStart === undefined) throw new Error('missing zoomstart handler');
+    zoomStart({});
+    width = 320;
+    observe([], {} as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    const cameraMoves = [map.easeTo, jumpTo, flyTo, map.setCenter, map.setZoom];
+    for (const move of cameraMoves) move.mockClear();
+    const dragStart = handlers['dragstart'];
+    expect(dragStart).toBeDefined();
+    if (dragStart === undefined) throw new Error('missing dragstart handler');
+    dragStart({ originalEvent: new Event('mousedown') });
+    width = 340;
+    observe([], {} as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(before + 1);
+    for (const move of cameraMoves) expect(move).not.toHaveBeenCalled();
+    cleanup();
+    expect(off).toHaveBeenCalledWith('dragstart', handlers['dragstart']);
+    expect(off).toHaveBeenCalledWith('zoomstart', handlers['zoomstart']);
+    expect(off).toHaveBeenCalledWith('rotatestart', handlers['rotatestart']);
+    expect(off).toHaveBeenCalledWith('pitchstart', handlers['pitchstart']);
+  });
+
+  it('does not frame the empty map while shops are still loading', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => 1000 });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => 480 });
+    await fireScript('load');
+    const map = firstMap(lib);
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
+
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+  });
+
+  it('does not fit the map while the canvas is still the stand-in', async () => {
+    const observers: { callback: ResizeObserverCallback; disconnect: ReturnType<typeof vi.fn> }[] =
+      [];
+    class RecordingObserver {
+      disconnect = vi.fn();
+      observe = vi.fn();
+      unobserve = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        observers.push({ callback, disconnect: this.disconnect });
+      }
+    }
+    vi.stubGlobal('ResizeObserver', RecordingObserver);
+    const lib = installMapLibre();
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '400px';
+    canvas.style.height = '480px';
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        getCanvas(this: { transform: object }) {
+          void this.transform;
+          return canvas;
+        },
+      });
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    Object.defineProperty(mapNode, 'clientWidth', { configurable: true, get: () => 1000 });
+    Object.defineProperty(mapNode, 'clientHeight', { configurable: true, get: () => 480 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    const observer = observers.at(-1);
+    if (observer === undefined) throw new Error('missing observer');
+    canvas.style.width = '1000px';
+    canvas.style.height = '300px';
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+
+    canvas.style.height = '480px';
+    observer.callback([], observer as unknown as ResizeObserver);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    const fitted = lib.bounds.at(-1);
+    if (fitted === undefined) throw new Error('missing bounds');
+    expect(map.fitBounds).toHaveBeenLastCalledWith(fitted, {
+      padding: FRAME_PADDING,
+      maxZoom: 12,
+      duration: 0,
+      animate: false,
+    });
+  });
+
+  it('frames the map without resizing when the container is not an element', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          return document.createTextNode('x');
+        },
+      });
+    });
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.61, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    const map = firstMap(lib);
+    expect(map.resize).not.toHaveBeenCalled();
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
   });
 
   it('labels a nameless pin with its activity title or an empty label', async () => {
@@ -1696,25 +2356,47 @@ describe('HomeShops', () => {
 
   it('builds marker popups with safe photos, local links, and categories', async () => {
     const lib = installMapLibre();
-    renderShops();
+    const view = renderShops();
     await resolveLatest(
       basicFilters({}),
       placesBody([
         giftsPlace('Linked', {
           id: npub('p'),
           category: 'Cafe',
-          coverPhoto: { url: 'https://images.example/cover.jpg' },
+          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/cover.jpg' },
         }),
         giftsPlace('Plain', {
           id: 'https://opencryptopay.io/plain',
           coverPhoto: { url: 'http://images.example/insecure.jpg' },
         }),
+        giftsPlace('Other', { coverPhoto: { url: 'https://images.example/other.jpg' } }),
+        giftsPlace('Dev', {
+          coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/dev.jpg' },
+        }),
+        giftsPlace('Malformed', { coverPhoto: { url: 'not a url' } }),
+        giftsPlace('NonString', { coverPhoto: { url: 42 } }),
       ]),
     );
     await fireScript('load');
-    expect(lib.popups).toHaveLength(2);
-    const linked = lib.popups[0];
-    const plain = lib.popups[1];
+    expect(lib.popups).toHaveLength(6);
+    const linked = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
+    );
+    const plain = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Plain',
+    );
+    const other = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Other',
+    );
+    const dev = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Dev',
+    );
+    const malformed = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Malformed',
+    );
+    const nonString = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'NonString',
+    );
     if (
       linked === undefined ||
       linked.content === null ||
@@ -1726,22 +2408,130 @@ describe('HomeShops', () => {
     expect(linked.offset).toBe(16);
     const popupLink = linked.content.querySelector('a');
     expect(popupLink?.getAttribute('href')).toBe(`/${npub('p')}`);
-    expect(popupLink?.getAttribute('class')).toBe('font-medium underline underline-offset-2');
-    expect(popupLink?.getAttribute('class')).not.toContain('text-accent');
-    expect(linked.content.textContent).toContain('Cafe');
-    expect(linked.content.textContent).toContain(copy.daily);
+    expect(popupLink?.getAttribute('class')).toBe('shop-popup-name');
+    const arrow = popupLink?.querySelector('svg.shop-popup-arrow');
+    expect(arrow?.classList.contains('lucide-arrow-right')).toBe(true);
+    expect(arrow?.getAttribute('aria-hidden')).toBe('true');
+    const close = linked.content.querySelector('.shop-popup-close');
+    expect(close?.getAttribute('aria-label')).toBe(copy.closePopup);
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing close');
+    close.click();
+    expect(linked.originalRemove).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+    expect(linked.content.querySelector('.shop-popup-close')).toBe(close);
+    expect(linked.content.querySelector('.shop-popup-category')?.textContent).toBe('Cafe');
+    expect(linked.content.querySelector('.shop-popup-chip')?.textContent).toContain(copy.daily);
+    expect(linked.content.querySelector('p')).toBeNull();
     const image = linked.content.querySelector('img');
-    expect(image?.getAttribute('src')).toBe('https://images.example/cover.jpg');
+    expect(image?.getAttribute('src')).toBe('https://api.opencryptopay.io/map/photos/cover.jpg');
     expect(image?.getAttribute('alt')).toBe('');
     expect(image?.getAttribute('loading')).toBe('lazy');
     expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
-    expect(image?.getAttribute('class')).toBe(
-      'block h-auto max-h-80 w-full max-w-full object-contain',
-    );
+    expect(image?.getAttribute('class')).toBe('shop-popup-photo');
     expect(plain.content.querySelector('a')).toBeNull();
+    expect(plain.content.querySelector('.shop-popup-arrow')).toBeNull();
     expect(plain.content.querySelector('strong')?.textContent).toBe('Plain');
+    expect(plain.content.querySelector('strong')?.className).toBe('shop-popup-name');
     expect(plain.content.querySelector('img')).toBeNull();
+    expect(plain.content.querySelector('.shop-popup-category')).toBeNull();
     expect(plain.content.innerHTML).not.toContain('opencryptopay.io');
+    expect(other?.content?.querySelector('img')).toBeNull();
+    expect(dev?.content?.querySelector('img')?.getAttribute('src')).toBe(
+      'https://dev-api.opencryptopay.io/map/photos/dev.jpg',
+    );
+    expect(malformed?.content?.querySelector('img')).toBeNull();
+    expect(nonString?.content?.querySelector('img')).toBeNull();
+    view.unmount();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(linked.content.querySelector('.shop-popup-close')).toBeNull();
+    expect(popupLink?.querySelector('.shop-popup-arrow')).toBeNull();
+  });
+
+  it('renders only HTTPS photos matching exact or subdomain image CSP sources', async () => {
+    const photos = [
+      { url: 'https://api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
+      { url: 'https://dev-api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
+      { url: 'https://lh3.ggpht.com/shop.jpg', allowed: true },
+      { url: 'https://a.b.ggpht.com/shop.jpg', allowed: true },
+      { url: 'https://maps.googleapis.com/shop.jpg', allowed: true },
+      { url: 'https://maps.gstatic.com/shop.jpg', allowed: true },
+      { url: 'https://ggpht.com/shop.jpg', allowed: false },
+      { url: 'https://notggpht.com/shop.jpg', allowed: false },
+      { url: 'https://lh3.ggpht.com.images.example/shop.jpg', allowed: false },
+      { url: 'https://lh3.ggpht.com:8443/shop.jpg', allowed: false },
+      { url: 'https://api.opencryptopay.io.images.example/shop.jpg', allowed: false },
+      { url: 'https://images.example/shop.jpg', allowed: false },
+      { url: 'http://lh3.ggpht.com/shop.jpg', allowed: false },
+      { url: 'blob:https://api.opencryptopay.io/shop', allowed: false },
+      { url: 'not a url', allowed: false },
+      { url: 42, allowed: false },
+    ];
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody(
+        photos.map(({ url }, index) => giftsPlace(`Photo ${index}`, { coverPhoto: { url } })),
+      ),
+    );
+    await fireScript('load');
+    for (const [index, photo] of photos.entries()) {
+      const popup = lib.popups.find(
+        (item) => item.content?.querySelector('.shop-popup-name')?.textContent === `Photo ${index}`,
+      );
+      if (popup === undefined || popup.content === null) throw new Error('missing photo popup');
+      expect(popup.content.querySelector('img')?.getAttribute('src') ?? null).toBe(
+        photo.allowed ? photo.url : null,
+      );
+    }
+  });
+
+  it('navigates plain popup clicks client-side and preserves browser click behavior', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Linked', { id: npub('p') })]));
+    await fireScript('load');
+    const popup = lib.popups.find(
+      (item) => item.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
+    );
+    const link = popup?.content?.querySelector('.shop-popup-name');
+    if (!(link instanceof HTMLAnchorElement)) throw new Error('missing shop link');
+    expect(link.getAttribute('href')).toBe(`/${npub('p')}`);
+    const prevented = vi.fn();
+    link.addEventListener('click', (event) => {
+      // Observe the app's decision first, then stop jsdom from following an allowed link.
+      prevented(event.defaultPrevented);
+      event.preventDefault();
+    });
+
+    fireEvent.click(link, { button: 0 });
+    expect(routerPush).toHaveBeenCalledTimes(1);
+    expect(routerPush).toHaveBeenCalledWith(`/${npub('p')}`);
+    expect(prevented).toHaveBeenLastCalledWith(true);
+    routerPush.mockClear();
+
+    for (const init of [
+      { metaKey: true },
+      { ctrlKey: true },
+      { shiftKey: true },
+      { altKey: true },
+      { button: 1 },
+      { button: 2 },
+    ]) {
+      fireEvent.click(link, init);
+      expect(routerPush).not.toHaveBeenCalled();
+      expect(prevented).toHaveBeenLastCalledWith(false);
+    }
+
+    const blocked = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
+    blocked.preventDefault();
+    fireEvent(link, blocked);
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(prevented).toHaveBeenLastCalledWith(true);
   });
 
   it('downloads quoted CSV rows and does nothing for an empty table', async () => {
@@ -1797,7 +2587,7 @@ describe('HomeShops', () => {
       copy.colUrl,
     ].join(',');
     expect(text).toBe(
-      `${header}\r\n"'=Shop, ""One""","Line\nBreak",'+PH,'@Store,21.gifts,'\todd,https://localhost/${npub('q')}\r\nPlain,,PH,SPAR,21.gifts,${copy.daily},`,
+      `${header}\r\n"'=Shop, ""One""","Line\nBreak",'+PH,'@Store,21.gifts,'\todd,https://localhost/${npub('q')}\r\nPlain,,Philippines,SPAR,21.gifts,${copy.daily},`,
     );
 
     cleanup();
@@ -1823,8 +2613,14 @@ describe('HomeShops', () => {
     await resolveLatest(basicFilters({}), placesBody([]));
     await fireScript('load');
     const map = firstMap(lib);
-    expect(map.setCenter).toHaveBeenCalledWith(HOME_CENTER);
-    expect(map.setZoom).toHaveBeenCalledWith(7);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: HOME_CENTER,
+      zoom: 7,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(lib.markers).toHaveLength(0);
     expect(map.resize).not.toHaveBeenCalled();
@@ -1841,6 +2637,7 @@ describe('HomeShops', () => {
     const map = firstMap(lib);
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     await resolvePlaces({ places: [] }, 500);
     await waitFor(() => {
@@ -1848,6 +2645,7 @@ describe('HomeShops', () => {
     });
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
   });
 
@@ -1871,8 +2669,15 @@ describe('HomeShops', () => {
     if (marker === undefined) throw new Error('missing marker');
     expect(document.body.contains(marker.element)).toBe(false);
     expect(tableShell().hasAttribute('hidden')).toBe(false);
-    expect(map.setCenter).toHaveBeenCalledTimes(1);
-    expect(map.setZoom).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledTimes(1);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
   });
 
   it('opens the table and shows an error when the library or the map node is missing', async () => {
@@ -1923,13 +2728,20 @@ describe('HomeShops', () => {
     fireEvent.click(screen.getByRole('button', { name: copy.table }));
     await fireScript('load');
     const map = firstMap(lib);
+    expect(map.easeTo).not.toHaveBeenCalled();
     expect(map.setCenter).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
     expect(map.fitBounds).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
     expect(map.resize).toHaveBeenCalledTimes(1);
-    expect(map.setCenter).toHaveBeenCalledWith([121, 14.6]);
-    expect(map.setZoom).toHaveBeenCalledWith(12);
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [121, 14.6],
+      zoom: 12,
+      duration: 0,
+      animate: false,
+    });
+    expect(map.setCenter).not.toHaveBeenCalled();
+    expect(map.setZoom).not.toHaveBeenCalled();
   });
 
   it('uses an existing script and does not add a second stylesheet', async () => {
@@ -1961,6 +2773,7 @@ describe('HomeShops', () => {
     const lib = installMapLibre();
     renderShops();
     expect(document.querySelectorAll(`script[src="${MAP_SCRIPT}"]`)).toHaveLength(1);
+    await settleStyle();
     expect(lib.maps).toHaveLength(1);
     cleanup();
     pending.length = 0;
@@ -1987,6 +2800,7 @@ describe('HomeShops', () => {
     await act(async () => {
       loading.dispatchEvent(new Event('load'));
     });
+    await settleStyle();
     expect(revived.maps).toHaveLength(1);
     expect(loading.isConnected).toBe(true);
   });
@@ -2004,7 +2818,7 @@ describe('HomeShops', () => {
     expect(lib.maps).toHaveLength(0);
   });
 
-  it('removes a script that fails after unmount and shows the table when the next load fails', async () => {
+  it('removes a script loaded without the library after unmount and shows the table on the next script error', async () => {
     const first = renderShops();
     const script = mapScript();
     expect(script.getAttribute('data-shops-map')).toBe('loading');
@@ -2081,42 +2895,44 @@ describe('HomeShops', () => {
 
   it('hides a loaded country while the next country response is still missing', async () => {
     const lib = installMapLibre();
+    const rows = placesBody([
+      giftsPlace('Manila', { country: 'PH', lat: 14.6, lon: 121 }),
+      giftsPlace('Berlin', { country: 'DE', lat: 52.5, lon: 13.4 }),
+    ]);
     renderShops();
-    await act(async () => {
-      latestFilters().resolve(jsonResponse(basicFilters({ countries: ['PH', 'DE'] }), 200));
-    });
-    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
-    changeSelect(countrySelect(), 'PH');
-    expect(callsTo('/map/places')).toHaveLength(2);
-    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH`);
-    await resolvePlaces(placesBody([giftsPlace('Manila', { country: 'PH' })]));
-    await waitFor(() => {
-      expect(screen.getByText('Manila')).toBeTruthy();
-    });
+    await resolveLatest(basicFilters({ countries: ['PH', 'DE'] }), rows);
     await fireScript('load');
+    changeMenu(copy.country, 'PH');
+    expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=PH`);
+    await resolvePlaces(rows);
     const map = firstMap(lib);
-    const marker = lib.markers[0];
-    if (marker === undefined) throw new Error('missing marker');
-    expect(marker.remove).not.toHaveBeenCalled();
     const centerCalls = map.setCenter.mock.calls.length;
     const zoomCalls = map.setZoom.mock.calls.length;
+    const easeCalls = map.easeTo.mock.calls.length;
     const boundsCalls = map.fitBounds.mock.calls.length;
+    const markerCount = lib.markers.length;
+    const latest = lib.markers[lib.markers.length - 1];
+    if (latest === undefined) throw new Error('missing marker');
+    expect(latest.remove).not.toHaveBeenCalled();
 
-    changeSelect(countrySelect(), 'DE');
+    changeMenu(copy.country, 'DE');
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?country=DE`);
     expect(screen.queryByText('Manila')).toBeNull();
     expect(bodyNames()).toEqual([]);
     expect(screen.queryByText(copy.empty)).toBeNull();
     expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
     expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.easeTo).toHaveBeenCalledTimes(easeCalls);
     expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
-    expect(marker.remove).toHaveBeenCalledTimes(1);
-    expect(lib.markers).toHaveLength(1);
+    expect(latest.remove).toHaveBeenCalledTimes(1);
+    expect(lib.markers).toHaveLength(markerCount);
 
     fireEvent.click(screen.getByRole('button', { name: copy.table }));
     fireEvent.click(screen.getByRole('button', { name: copy.map }));
+    expect(map.resize).toHaveBeenCalled();
     expect(map.setCenter).toHaveBeenCalledTimes(centerCalls);
     expect(map.setZoom).toHaveBeenCalledTimes(zoomCalls);
+    expect(map.easeTo).toHaveBeenCalledTimes(easeCalls);
     expect(map.fitBounds).toHaveBeenCalledTimes(boundsCalls);
   });
 
@@ -2136,10 +2952,11 @@ describe('HomeShops', () => {
     await fireScript('load');
     expect(lib.markers).toHaveLength(2);
     const previous = lib.markers.slice();
-    changeSelect(nameSelect(), 'SPAR');
+    changeMenu(copy.name, 'SPAR');
     expect(callsTo('/map/places')).toHaveLength(2);
     expect(latestPlaces().url).toBe(`${DEV_PLACES}?shopName=SPAR`);
     expect(screen.getByText('Ann')).toBeTruthy();
+    expect(screen.queryByText('Bea')).toBeNull();
     expect(screen.queryByText(copy.empty)).toBeNull();
     for (const marker of previous) {
       expect(marker.remove).toHaveBeenCalledTimes(1);
@@ -2150,7 +2967,7 @@ describe('HomeShops', () => {
     expect(redrawn.remove).not.toHaveBeenCalled();
   });
 
-  it('drops country, shop name, and activity when a reloaded filter list omits them', async () => {
+  it('keeps a selection the shops still have when a reloaded filter list omits it', async () => {
     const kept = basicFilters({
       countries: ['PH', 'DE'],
       shopNames: ['SPAR', 'others'],
@@ -2163,8 +2980,9 @@ describe('HomeShops', () => {
     ]);
     renderShops();
     await resolveLatest(kept, rows);
-    changeSelect(countrySelect(), 'PH');
-    changeSelect(nameSelect(), 'SPAR');
+    changeMenu(copy.country, 'PH');
+    await resolvePlaces(rows);
+    changeMenu(copy.name, 'SPAR');
     const placesUrl = latestPlaces().url;
     openMenu(copy.activity);
     chooseOption('weird');
@@ -2183,15 +3001,16 @@ describe('HomeShops', () => {
       latestFilters().resolve(jsonResponse(kept, 200));
     });
     await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
-    expect(countrySelect().value).toBe('PH');
-    expect(nameSelect().value).toBe('SPAR');
+    expect(menuValue(copy.country)).toBe('Philippines');
+    expect(menuValue(copy.name)).toBe('SPAR');
+    expect(menuValue(copy.activity)).toBe('weird');
     expect(latestPlaces().url).toContain('country=PH');
     expect(latestPlaces().url).toContain('shopName=SPAR');
     expect(latestPlaces().url).not.toContain('activity');
     await resolvePlaces(rows);
     expect(bodyNames()).toEqual(['Fay']);
 
-    const placesBeforeDrop = callsTo('/map/places').length;
+    const placesBeforeKeep = callsTo('/map/places').length;
     fireEvent.click(screen.getByRole('button', { name: copy.retry }));
     await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 2));
     await act(async () => {
@@ -2206,33 +3025,53 @@ describe('HomeShops', () => {
         ),
       );
     });
-    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeDrop + 1));
-    expect(countrySelect().value).toBe('');
-    expect(nameSelect().value).toBe('');
-    expect(menuButton(copy.activity).textContent).toBe(copy.all);
-    expect(latestPlaces().url).not.toContain('country=PH');
-    expect(latestPlaces().url).not.toContain('shopName=SPAR');
-    expect(latestPlaces().url).not.toContain('shopName=others');
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeKeep + 1));
+    expect(menuValue(copy.country)).toBe('Philippines');
+    expect(menuValue(copy.name)).toBe('SPAR');
+    expect(menuValue(copy.activity)).toBe('weird');
     await resolvePlaces(rows);
-    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Fay']);
+    expect(bodyNames()).toEqual(['Fay']);
 
-    changeSelect(countrySelect(), 'DE');
+    changeMenu(copy.country, 'DE');
     const filtersBeforeFailure = callsTo('/map/filters').length;
     fireEvent.click(screen.getByRole('button', { name: copy.retry }));
     await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBeforeFailure + 1));
     await act(async () => {
       latestFilters().resolve(jsonResponse({ countries: ['DE'] }, 500));
     });
-    await waitFor(() => expect(countrySelect().value).toBe(''));
+    await waitFor(() => expect(menuValue(copy.country)).toBe('Germany'));
+
+    changeMenu(copy.country, '');
+    changeMenu(copy.name, '');
+    changeMenu(copy.activity, '');
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBeforeFailure + 2));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({ countries: ['DE'] }), 200));
+    });
+    await waitFor(() => expect(latestPlaces().url).toBe(DEV_PLACES));
+    await resolvePlaces(
+      placesBody([giftsPlace('Bea', { activity: 'daily', country: 'DE', shopName: 'others' })]),
+    );
+    expect(screen.queryByRole('combobox', { name: copy.country })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: copy.name })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: copy.activity })).toBeNull();
+    expect(bodyNames()).toEqual(['Bea']);
   });
 
-  it('drops a blockchain when a reloaded filter list omits it', async () => {
-    const rows = placesBody([giftsPlace('Ann', {})]);
+  it('keeps a blockchain the shops still have when a reloaded filter list omits it', async () => {
+    const split = placesBody([
+      giftsPlace('Ann', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+      giftsPlace('Bea', { supports: [{ blockchain: 'Liquid', asset: 'L-BTC' }] }),
+    ]);
+    const liquidOnly = placesBody([
+      giftsPlace('Ann', { supports: [{ blockchain: 'Liquid', asset: 'L-BTC' }] }),
+      giftsPlace('Bea', { supports: [{ blockchain: 'Liquid', asset: 'L-BTC' }] }),
+    ]);
     renderShops();
-    await resolveLatest(basicFilters({}), rows);
-    openMenu(copy.blockchain);
-    chooseOption('Bitcoin');
-    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    await resolveLatest(basicFilters({}), split);
+    changeMenu(copy.blockchain, 'Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
     expect(latestPlaces().url).toContain('blockchain=Bitcoin');
 
     const filtersBefore = callsTo('/map/filters').length;
@@ -2244,16 +3083,28 @@ describe('HomeShops', () => {
       latestFilters().resolve(
         jsonResponse(
           basicFilters({
-            techProviders: [provider({ blockchains: ['Liquid'] })],
+            techProviders: [
+              provider({
+                blockchains: ['Liquid'],
+                assets: ['L-BTC'],
+                pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+              }),
+            ],
           }),
           200,
         ),
       );
     });
     await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
-    expect(menuButton(copy.blockchain).textContent).toBe(copy.all);
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
+    expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+    await resolvePlaces(split);
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
+
+    changeMenu(copy.blockchain, '');
     expect(latestPlaces().url).not.toContain('blockchain=');
-    await resolvePlaces(rows);
+    await resolvePlaces(liquidOnly);
+    expect(screen.queryByRole('combobox', { name: copy.blockchain })).toBeNull();
 
     const placesBeforeReturn = callsTo('/map/places').length;
     fireEvent.click(screen.getByRole('button', { name: copy.retry }));
@@ -2262,13 +3113,12 @@ describe('HomeShops', () => {
       latestFilters().resolve(jsonResponse(basicFilters({}), 200));
     });
     await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeReturn + 1));
-    expect(menuButton(copy.blockchain).textContent).toBe(copy.all);
     expect(latestPlaces().url).not.toContain('blockchain=');
-    await resolvePlaces(rows);
+    await resolvePlaces(split);
+    expect(menuValue(copy.blockchain)).toBe(copy.all);
 
-    openMenu(copy.blockchain);
-    chooseOption('Bitcoin');
-    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    changeMenu(copy.blockchain, 'Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
     expect(latestPlaces().url).toContain('blockchain=Bitcoin');
 
     const placesBeforeKeep = callsTo('/map/places').length;
@@ -2278,10 +3128,1984 @@ describe('HomeShops', () => {
       latestFilters().resolve(jsonResponse(basicFilters({}), 200));
     });
     await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeKeep + 1));
-    expect(menuButton(copy.blockchain).textContent).toBe('Bitcoin');
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
     expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+    await resolvePlaces(split);
+    expect(menuValue(copy.blockchain)).toBe('Bitcoin');
+  });
+
+  it('resets an activity to All when reloaded shops no longer offer it', async () => {
+    const first = placesBody([
+      giftsPlace('Ann', { activity: 'daily' }),
+      giftsPlace('Bea', { activity: 'within7Days' }),
+    ]);
+    renderShops();
+    await resolveLatest(basicFilters({}), first);
+    openMenu(copy.activity);
+    chooseOption(copy.daily);
+    expect(menuValue(copy.activity)).toBe(copy.daily);
+    expect(bodyNames()).toEqual(['Ann']);
+
+    const filtersBefore = callsTo('/map/filters').length;
+    const placesBefore = callsTo('/map/places').length;
+    await fireScript('error');
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 1));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
+    expect(latestPlaces().url).toBe(DEV_PLACES);
+    await resolvePlaces(
+      placesBody([
+        giftsPlace('Bea', { activity: 'within7Days' }),
+        giftsPlace('Cia', { activity: 'within30Days' }),
+      ]),
+    );
+    expect(menuValue(copy.activity)).toBe(copy.all);
+    expect(bodyNames()).toEqual(['Bea', 'Cia']);
+
+    const placesBeforeReturn = callsTo('/map/places').length;
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 2));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBeforeReturn + 1));
+    await resolvePlaces(first);
+    expect(menuValue(copy.activity)).toBe(copy.all);
+    expect(bodyNames()).toEqual(['Ann', 'Bea']);
+    expect(openValues(copy.activity)).toContain('daily');
+  });
+
+  it('resets a blockchain to All when the provider no longer offers it', async () => {
+    const both = [
+      { blockchain: 'Bitcoin', asset: 'BTC' },
+      { blockchain: 'Liquid', asset: 'L-BTC' },
+    ];
+    const bitcoinOnly = [{ blockchain: 'Bitcoin', asset: 'BTC' }];
+    function chainFilters(pairs: readonly { blockchain: string; asset: string }[]): Place {
+      return basicFilters({
+        techProviders: [
+          provider({
+            blockchains: pairs.map((pair) => pair.blockchain),
+            assets: pairs.map((pair) => pair.asset),
+            pairs: [...pairs],
+          }),
+        ],
+      });
+    }
+    const offered = placesBody([
+      giftsPlace('Ann', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+      giftsPlace('Bea', {}),
+    ]);
+    renderShops();
+    await resolveLatest(chainFilters(both), offered);
+    changeMenu(copy.blockchain, 'Liquid');
+    expect(menuValue(copy.blockchain)).toBe('Liquid');
+    expect(latestPlaces().url).toContain('blockchain=Liquid');
+    await resolvePlaces(offered);
+
+    const filtersBefore = callsTo('/map/filters').length;
+    const placesBefore = callsTo('/map/places').length;
+    await fireScript('error');
+    fireEvent.click(screen.getByRole('button', { name: copy.retry }));
+    await waitFor(() => expect(callsTo('/map/filters').length).toBe(filtersBefore + 1));
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(chainFilters(bitcoinOnly), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places').length).toBe(placesBefore + 1));
+    expect(latestPlaces().url).not.toContain('blockchain=');
+    await resolvePlaces(
+      placesBody([
+        giftsPlace('Ann', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+        giftsPlace('Bea', { supports: [{ blockchain: 'Liquid', asset: 'L-BTC' }] }),
+      ]),
+    );
+    expect(menuValue(copy.blockchain)).toBe(copy.all);
+    expect(openValues(copy.blockchain)).toEqual(['', 'Bitcoin', 'Liquid']);
+  });
+
+  it('resets an asset to All when its chain no longer offers it', async () => {
+    const rows = placesBody([
+      giftsPlace('Ann', { supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }] }),
+      giftsPlace('Bea', { supports: [{ blockchain: 'Side', asset: 'ZZZ' }] }),
+    ]);
+    renderShops();
+    await resolveLatest(basicFilters({}), rows);
+    openMenu(copy.asset);
+    chooseOption('ZZZ');
+    expect(latestPlaces().url).toContain('asset=ZZZ');
+    await resolvePlaces(rows);
+    expect(menuValue(copy.asset)).toBe('ZZZ');
+    changeMenu(copy.blockchain, 'Bitcoin');
+    expect(menuValue(copy.asset)).toBe(copy.all);
+    expect(latestPlaces().url).toContain('blockchain=Bitcoin');
+    expect(latestPlaces().url).not.toContain('asset=');
+    await resolvePlaces(rows);
+    changeMenu(copy.blockchain, '');
+    expect(latestPlaces().url).not.toContain('blockchain=');
+    expect(menuValue(copy.asset)).toBe(copy.all);
+    expect(openValues(copy.asset)).toEqual(['', 'BTC', 'ZZZ']);
+  });
+
+  it('restyles positron and removes the attribution expanded class and open attribute', async () => {
+    const onceHandlers: Array<() => void> = [];
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        on: vi.fn(function (this: { transform: object }) {
+          void this.transform;
+        }),
+        once(this: { transform: object }, _event: string, handler: () => void) {
+          void this.transform;
+          onceHandlers.push(handler);
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    render(<HomeShops copy={copy} locale="de" />);
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', {}), giftsPlace('Bea', { country: 'DE' })]),
+    );
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    await fireScript('load', false);
+    const style = positronStyle().style;
+    const call = latestStyle();
+    expectOmit(call);
+    await act(async () => {
+      call.resolve(jsonResponse(style, 200));
+    });
+    await waitFor(() => {
+      expect(onceHandlers).toHaveLength(1);
+    });
+    const reveal = onceHandlers[0];
+    if (reveal === undefined) throw new Error('missing attribution reveal');
+    const stray = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    stray.setAttribute('class', 'maplibregl-ctrl-attrib');
+    mapNode.appendChild(stray);
+    reveal();
+    expect(stray.isConnected).toBe(true);
+    stray.remove();
+    reveal();
+    const attrib = document.createElement('div');
+    attrib.className = 'maplibregl-ctrl-attrib maplibregl-compact-show';
+    attrib.setAttribute('open', '');
+    mapNode.appendChild(attrib);
+    reveal();
+    expect(attrib.classList.contains('maplibregl-compact-show')).toBe(false);
+    expect(attrib.hasAttribute('open')).toBe(false);
+    const map = firstMap(lib) as MapDouble & { getContainer: () => HTMLElement };
+    map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
+    reveal();
+
+    const passed = firstOptions(lib).style;
+    if (typeof passed === 'string') throw new Error('missing restyle');
+    const layers = passed['layers'];
+    if (!Array.isArray(layers)) throw new Error('missing restyle');
+    const painted = layers;
+    expect(screen.queryByText(copy.error)).toBeNull();
+    expect(layerField(painted[1], 'id')).toBe(9);
+    expect(paintOf(painted[0])).toEqual({ 'background-color': '#ffffff' });
+    expect(paintOf(painted[1])).toEqual({ 'background-color': '#ffffff' });
+    expect(paintOf(painted[2])).toEqual({ 'fill-color': '#f5f2ec' });
+    expect(paintOf(painted[3])).toEqual({ 'line-width': 2, 'line-color': '#f5f2ec' });
+    expect(paintOf(painted[4])).toEqual({ 'line-color': '#f5f2ec' });
+    expect(paintOf(painted[5])).toEqual({ 'fill-color': '#00ff00', 'fill-opacity': 0 });
+    expect(paintOf(painted[6])).toEqual({ 'fill-opacity': 0 });
+    expect(paintOf(painted[7])).toEqual({ 'fill-opacity': 0 });
+    expect(paintOf(painted[8])).toEqual({ 'line-width': 1, 'line-color': 'rgba(10,9,12,0.16)' });
+    expect(paintOf(painted[9])).toEqual({ 'line-color': 'rgba(10,9,12,0.16)' });
+    expect(layerField(painted[10], 'paint')).toBeUndefined();
+    expect(lineColor(painted[11])).toBe('#d3cdc2');
+    expect(lineColor(painted[12])).toBe('#efe9df');
+    expect(lineColor(painted[13])).toBe('#efe9df');
+    expect(lineColor(painted[14])).toBe('#ffffff');
+    expect(lineColor(painted[15])).toBe('#ffffff');
+    expect(lineColor(painted[16])).toBe('rgba(211,205,194,0.6)');
+    expect(lineColor(painted[17])).toBe('#e3ded5');
+    expect(lineColor(painted[18])).toBe('#ebe7e0');
+    expect(lineColor(painted[19])).toBe('#ebe7e0');
+    expect(lineColor(painted[20])).toBe('#dcd7ce');
+    expect(lineColor(painted[21])).toBe('#e3ded5');
+    expect(lineColor(painted[22])).toBe('#e3ded5');
+    expect(paintOf(painted[23])).toEqual({ 'fill-color': '#eeebe5' });
+    expect(layerField(painted[24], 'paint')).toEqual({
+      'text-opacity': 1,
+      'text-color': 'rgba(10,9,12,0.32)',
+      'text-halo-color': '#f5f2ec',
+    });
+    expect(layerField(painted[24], 'layout')).toEqual({
+      'text-size': 12,
+      'text-field': ['coalesce', ['get', 'name:de'], ['get', 'name:latin'], ['get', 'name']],
+    });
+    expect(layerField(painted[25], 'paint')).toEqual({
+      'text-color': 'rgba(10,9,12,0.58)',
+      'text-halo-color': '#ffffff',
+    });
+    expect(layerField(painted[25], 'layout')).toEqual({
+      'text-field': ['coalesce', ['get', 'name:de'], ['get', 'name:latin'], ['get', 'name']],
+    });
+    expect(layerField(painted[26], 'layout')).toEqual({});
+    expect(layerField(painted[27], 'layout')).toBeUndefined();
+    expect(painted[28]).toBeNull();
+    expect(layerField(painted[29], 'layout')).toEqual({
+      'text-field': '{ref}',
+      'icon-image': 'road_1',
+      visibility: 'none',
+    });
+    expect(paintOf(painted[29])).toEqual({});
+    expect(layerField(painted[30], 'layout')).toEqual({ visibility: 'none' });
+  });
+
+  it('keeps the map when the positron style cannot be applied', async () => {
+    const plain = await loadStyleMap();
+    await act(async () => {
+      latestStyle().resolve(jsonResponse({ layers: [] }, 200));
+    });
+    await waitFor(() => expect(plain.maps).toHaveLength(1));
+    expect(styleSeen(plain)).toEqual([{ layers: [] }]);
+    expect(screen.queryByText(copy.error)).toBeNull();
+    expect(firstMap(plain).remove).not.toHaveBeenCalled();
+
+    const refused = await loadStyleMap();
+    await act(async () => {
+      latestStyle().resolve(jsonResponse({}, 500));
+    });
+    await waitFor(() => expect(styleSeen(refused)).toEqual([TILE_STYLE]));
+    expect(screen.queryByText(copy.error)).toBeNull();
+
+    const arrayStyle = await loadStyleMap();
+    await act(async () => {
+      latestStyle().resolve(rawJsonResponse([]));
+    });
+    await waitFor(() => expect(styleSeen(arrayStyle)).toEqual([TILE_STYLE]));
+
+    const bareStyle = await loadStyleMap();
+    const bare = { layers: { id: 'bg' } };
+    await act(async () => {
+      latestStyle().resolve(jsonResponse(bare, 200));
+    });
+    await waitFor(() => expect(styleSeen(bareStyle)).toEqual([bare]));
+    expect(screen.queryByText(copy.error)).toBeNull();
+
+    const badJson = await loadStyleMap();
+    const badResponse = new Response('null', { status: 200 });
+    Object.defineProperty(badResponse, 'json', {
+      value: () => Promise.reject(new Error('bad json')),
+    });
+    await act(async () => {
+      latestStyle().resolve(badResponse);
+    });
+    await waitFor(() => expect(styleSeen(badJson)).toEqual([TILE_STYLE]));
+
+    const network = await loadStyleMap();
+    await act(async () => {
+      latestStyle().reject(new Error('network'));
+    });
+    await waitFor(() => expect(styleSeen(network)).toEqual([TILE_STYLE]));
+    expect(screen.queryByText(copy.error)).toBeNull();
+
+    const aborted = await loadStyleMap();
+    await act(async () => {
+      latestStyle().reject(new DOMException('aborted', 'AbortError'));
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(styleSeen(aborted)).toEqual([]);
+    expect(screen.queryByText(copy.error)).toBeNull();
+
+    const late = await loadStyleMap();
+    const lateCall = latestStyle();
+    cleanup();
+    await act(async () => {
+      lateCall.resolve(jsonResponse({ layers: [] }, 200));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(styleSeen(late)).toEqual([]);
+
+    const lateError = await loadStyleMap();
+    const lateErrorCall = latestStyle();
+    cleanup();
+    await act(async () => {
+      lateErrorCall.reject(new Error('late'));
+      await Promise.resolve();
+    });
+    expect(styleSeen(lateError)).toEqual([]);
+
+    let finishJson: ((value: unknown) => void) | null = null;
+    const deferred = await loadStyleMap();
+    const deferredResponse = new Response('null', { status: 200 });
+    Object.defineProperty(deferredResponse, 'json', {
+      value: () =>
+        new Promise((resolve) => {
+          finishJson = resolve;
+        }),
+    });
+    await act(async () => {
+      latestStyle().resolve(deferredResponse);
+      await Promise.resolve();
+    });
+    if (finishJson === null) throw new Error('missing json');
+    cleanup();
+    await act(async () => {
+      finishJson?.({ layers: [] });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(styleSeen(deferred)).toEqual([]);
+  });
+
+  it('hides an off-screen pin and cluster, then shows the pin back in view', async () => {
+    let spot: 'far' | 'back' | 'edge' = 'far';
+    const handlers: Record<string, () => void> = {};
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }, position: [number, number]) {
+          void this.transform;
+          if (spot === 'edge' && position[0] === 36.82) return { x: 820, y: 200 };
+          if (spot === 'edge' && position[0] === 36.9) return { x: -20, y: 200 };
+          if (spot === 'edge' && position[0] === 10) return { x: 200, y: 620 };
+          if (position[0] === 10) return { x: 200, y: -400 };
+          if (position[0] < 40) return spot === 'back' ? { x: -19, y: 200 } : { x: -400, y: 200 };
+          return { x: 200, y: 200 };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        on(this: { transform: object }, event: string, handler: () => void) {
+          void this.transform;
+          handlers[event] = handler;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: -1.29, lon: 36.82 }),
+        giftsPlace('Ned', { lat: -1.29, lon: 36.9 }),
+        giftsPlace('Bea', { lat: 14.6, lon: 121 }),
+        giftsPlace('Cara', { lat: 14.6, lon: 10 }),
+      ]),
+    );
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    for (const name of ['Ann', 'Ned', 'Bea', 'Cara']) {
+      const pin = pinByName(name);
+      Object.defineProperty(pin, 'offsetWidth', { configurable: true, value: 40 });
+      Object.defineProperty(pin, 'offsetHeight', { configurable: true, value: 40 });
+    }
+    const map = firstMap(lib);
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(true);
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(true);
+    expect(pinByName('Bea').classList.contains('is-offscreen')).toBe(false);
+    expect(pinByName('Cara').classList.contains('is-offscreen')).toBe(true);
+    const shell = document.querySelector('.shop-cluster-marker');
+    if (!(shell instanceof HTMLElement)) throw new Error('missing cluster');
+    expect(shell.classList.contains('is-offscreen')).toBe(true);
+
+    map.transform.zoom = 17;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster-marker')).toBeNull();
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
+    expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(true);
+
+    Object.defineProperty(pinByName('Ann'), 'offsetWidth', { configurable: true, value: 0 });
+    Object.defineProperty(pinByName('Ann'), 'offsetHeight', { configurable: true, value: 0 });
+    spot = 'back';
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(false);
+    expect(pinByName('Ned').classList.contains('is-offscreen')).toBe(false);
+    expect(pinByName('Bea').classList.contains('is-offscreen')).toBe(false);
+    expect(pinByName('Cara').classList.contains('is-offscreen')).toBe(true);
+
+    spot = 'edge';
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(pinByName('Ann').classList.contains('is-offscreen')).toBe(true);
+    expect(pinByName('Ned').classList.contains('is-offscreen')).toBe(true);
+    expect(pinByName('Cara').classList.contains('is-offscreen')).toBe(true);
+    expect(pinByName('Bea').classList.contains('is-offscreen')).toBe(false);
+  });
+
+  it('places an edge cluster using visible members and hides it when all are off-screen', async () => {
+    let second = 1;
+    let edge: 'left' | 'right' | 'bottom' = 'left';
+    const handlers: Record<string, () => void> = {};
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        project: (point: [number, number]) => {
+          const x = point[0] === 1 ? second : point[0];
+          if (edge === 'right') return { x: 800 - x, y: point[1] };
+          if (edge === 'bottom') return { x: point[1], y: 600 - x };
+          return { x, y: point[1] };
+        },
+        unproject: (point: [number, number]) => {
+          if (edge === 'right') return { lng: 800 - point[0], lat: point[1] };
+          if (edge === 'bottom') return { lng: 600 - point[1], lat: point[0] };
+          return { lng: point[0], lat: point[1] };
+        },
+        getContainer: () => document.getElementById('shop-places-map'),
+        on: (event: string, handler: () => void) => {
+          handlers[event] = handler;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 10, lon: -40, activity: 'daily' }),
+        giftsPlace('Bea', { lat: 10, lon: 1, activity: 'daily' }),
+      ]),
+    );
+    await fireScript('load');
+    firstMap(lib).transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const marker = clusterMarker(lib, 'is-daily');
+    expect(marker.setLngLat).toHaveBeenLastCalledWith([1, 10]);
+    expect(marker.element.classList.contains('is-offscreen')).toBe(false);
+    second = -13;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const offscreen = clusterMarker(lib, 'is-daily');
+    expect(offscreen.setLngLat).toHaveBeenLastCalledWith([-26, 10]);
+    expect(offscreen.element.classList.contains('is-offscreen')).toBe(true);
+    second = 1;
+    for (const boundary of ['right', 'bottom'] as const) {
+      edge = boundary;
+      await act(async () => {
+        mapHandler(handlers, 'zoom')();
+      });
+      // The full cluster centers at x=820 or y=620; Bea is inside at 799 or 599.
+      const visible = clusterMarker(lib, 'is-daily');
+      expect(visible.setLngLat).toHaveBeenLastCalledWith([1, 10]);
+      expect(visible.element.classList.contains('is-offscreen')).toBe(false);
+    }
+  });
+
+  it('keeps focus on another button when a keyboard cluster movement ends', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+    fireEvent.click(cluster, { detail: 0 });
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    elsewhere.focus();
+    expect(document.activeElement).toBe(elsewhere);
+
+    mapHandler(handlers, 'moveend')();
+
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
+  });
+
+  it('restores cluster focus and cancels only a pending frame on movement end', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+    fireEvent.click(cluster, { detail: 0 });
+    expect(document.activeElement).toBe(cluster);
+
+    mapHandler(handlers, 'moveend')();
+
+    const replacement = clusterButton('is-daily');
+    expect(replacement).not.toBe(cluster);
+    expect(document.activeElement).toBe(replacement);
+    expect(cancel).not.toHaveBeenCalled();
+
+    fireEvent.click(replacement, { detail: 0 });
+    vi.mocked(window.requestAnimationFrame).mockImplementation(() => 77);
+    mapHandler(handlers, 'move')();
+    expect(document.activeElement).toBe(replacement);
+    mapHandler(handlers, 'moveend')();
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledWith(77);
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+  });
+
+  it('focuses the replacement cluster after a move repaint', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    cluster.focus();
+
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+
+    const replacement = clusterButton('is-daily');
+    expect(replacement).not.toBe(cluster);
+    expect(document.activeElement).toBe(replacement);
+  });
+
+  it('focuses the first pin when a focused cluster splits on zoom', async () => {
+    const { handlers, map } = await setupClusterFocus();
+    clusterButton('is-daily').focus();
+    map.transform.zoom = 18;
+
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
+    expect(document.activeElement).toBe(pinByName('Ann'));
+  });
+
+  it('restores the focused second pin after keyboard activation splits its cluster', async () => {
+    const { handlers, map } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const pin = pinByName('Bea');
+    pin.focus();
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const cluster = clusterButton('is-daily');
+    expect(document.activeElement).toBe(cluster);
+    fireEvent.click(cluster, { detail: 0 });
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'moveend')();
+    });
+    expect(document.activeElement).toBe(pin);
+  });
+
+  it.each([
+    { name: 'Cara', tone: 'is-weekly' },
+    { name: 'Dean', tone: 'is-monthly' },
+  ])(
+    'focuses the containing cluster when the focused $name pin joins it',
+    async ({ name, tone }): Promise<void> => {
+      const { handlers, map } = await setupClusterFocus();
+      map.transform.zoom = 18;
+      await act(async (): Promise<void> => {
+        mapHandler(handlers, 'zoom')();
+      });
+      const pin = pinByName(name);
+      expect(pin.classList.contains('is-clustered')).toBe(false);
+      expect(pin.classList.contains('is-offscreen')).toBe(false);
+      pin.focus();
+      expect(document.activeElement).toBe(pin);
+
+      map.transform.zoom = 10;
+      await act(async (): Promise<void> => {
+        mapHandler(handlers, 'zoom')();
+      });
+
+      expect(pin.classList.contains('is-clustered')).toBe(true);
+      expect(document.activeElement).toBe(clusterButton(tone));
+    },
+  );
+
+  it('returns popup focus to the current cluster, or the pin after splitting', async () => {
+    const { handlers, map, lib } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const pin = pinByName('Dean');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    pin.addEventListener('click', () => {
+      document.body.appendChild(content);
+      popup.emit('open');
+    });
+    popup.originalRemove.mockImplementation(() => {
+      content.remove();
+      popup.emit('close');
+    });
+    pin.focus();
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    expect(document.activeElement).toBe(close);
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(pin.classList.contains('is-clustered')).toBe(true);
+    const oldCluster = clusterButton('is-monthly');
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    const currentCluster = clusterButton('is-monthly');
+    expect(currentCluster).not.toBe(oldCluster);
+    expect(document.activeElement).toBe(close);
+    fireEvent.click(close);
+    expect(document.activeElement).toBe(currentCluster);
+
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    pin.focus();
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    expect(document.activeElement).toBe(close);
+    fireEvent.click(close);
+    expect(document.activeElement).toBe(pin);
+  });
+
+  it('keeps focus on a pin that stays separate after zoom', async (): Promise<void> => {
+    const { handlers, map } = await setupClusterFocus();
+    map.transform.zoom = 18;
+    await act(async (): Promise<void> => {
+      mapHandler(handlers, 'zoom')();
+    });
+    const pin = pinByName('Cara');
+    pin.focus();
+    expect(document.activeElement).toBe(pin);
+
+    map.transform.zoom = 19;
+    await act(async (): Promise<void> => {
+      mapHandler(handlers, 'zoom')();
+    });
+
+    expect(pin.classList.contains('is-clustered')).toBe(false);
+    expect(document.activeElement).toBe(pin);
+  });
+
+  it('does not move focus from the body when clusters repaint', async (): Promise<void> => {
+    const { handlers } = await setupClusterFocus();
+    expect(document.activeElement).toBe(document.body);
+    const previous = clusterButton('is-weekly');
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    await act(async (): Promise<void> => {
+      mapHandler(handlers, 'move')();
+    });
+
+    expect(clusterButton('is-weekly')).not.toBe(previous);
+    expect(document.activeElement).toBe(document.body);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('keeps focus on another cluster during a keyboard-initiated movement', async () => {
+    const { handlers } = await setupClusterFocus();
+    const daily = clusterButton('is-daily');
+    daily.focus();
+    fireEvent.click(daily, { detail: 0 });
+    const weekly = clusterButton('is-weekly');
+    weekly.focus();
+
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    mapHandler(handlers, 'moveend')();
+
+    expect(clusterButton('is-weekly')).not.toBe(weekly);
+    expect(document.activeElement).toBe(clusterButton('is-weekly'));
+  });
+
+  it('keeps focus elsewhere when a cluster is repainted', async () => {
+    const { handlers } = await setupClusterFocus();
+    const cluster = clusterButton('is-daily');
+    const elsewhere = screen.getByRole('button', { name: copy.helpLabel });
+    elsewhere.focus();
+    expect(document.activeElement).toBe(elsewhere);
+
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+
+    expect(clusterButton('is-daily')).not.toBe(cluster);
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it('clusters nearby pins, pans a popup into view, and drops a failed frame', async () => {
+    const state = {
+      unproject: 'point' as 'point' | 'throw' | 'nan',
+    };
+    const handlers: Record<string, () => void> = {};
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }, position: [number, number]) {
+          void this.transform;
+          if (position[0] === 121.1) throw new Error('project');
+          if (position[0] === 10.1) return { x: Number.NaN, y: 0 };
+          return { x: position[0] * 10, y: position[1] * 10 };
+        },
+        getZoom(this: { transform: { zoom: number | undefined } }) {
+          return this.transform.zoom;
+        },
+        unproject(this: { transform: object }) {
+          void this.transform;
+          if (state.unproject === 'throw') throw new Error('unproject');
+          if (state.unproject === 'nan') return { lng: Number.NaN, lat: 1 };
+          return { lng: 50, lat: 60 };
+        },
+        on(this: { transform: object }, event: string, handler: () => void) {
+          void this.transform;
+          handlers[event] = handler;
+        },
+        off: vi.fn(function (this: { transform: object }) {
+          void this.transform;
+        }),
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        panBy: vi.fn(function (this: { transform: object }) {
+          void this.transform;
+        }),
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), clusterRows());
+    await fireScript('load');
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    const map = firstMap(lib) as MapDouble & {
+      panBy: ReturnType<typeof vi.fn>;
+      off: ReturnType<typeof vi.fn>;
+      getContainer: () => HTMLElement;
+      getZoom?: () => number | undefined;
+      project?: (position: [number, number]) => { x: number; y: number };
+      unproject?: () => { lng: number; lat: number };
+    };
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelectorAll('.shop-cluster')).toHaveLength(6);
+    const daily = clusterButton('is-daily');
+    expect(daily.textContent).toBe('2');
+    expect(daily.getAttribute('aria-label')).toBe('2 shops');
+    expect(daily.getAttribute('type')).toBe('button');
+    expect(clusterButton('is-weekly').textContent).toBe('2');
+    expect(clusterButton('is-monthly').textContent).toBe('2');
+    expect(clusterButton('is-idle').textContent).toBe('2');
+    expect(document.querySelectorAll('.shop-cluster.is-none')).toHaveLength(2);
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(true);
+    expect(pinByName('Bea').classList.contains('is-clustered')).toBe(true);
+    expect(pinByName('Hank').classList.contains('is-clustered')).toBe(false);
+    expect(pinByName('Jade').classList.contains('is-clustered')).toBe(false);
+    expect(pinByName('Kirk').classList.contains('is-clustered')).toBe(false);
+    expect(pinByName('Iris').classList.contains('is-clustered')).toBe(false);
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([50, 60]);
+
+    fireEvent.click(daily);
+    const bounds = lib.bounds.at(-1);
+    if (bounds === undefined) throw new Error('missing bounds');
+    expect(bounds.extend).toHaveBeenCalledTimes(2);
+    expect(bounds.extend).toHaveBeenCalledWith([121, 14.6]);
+    expect(bounds.extend).toHaveBeenCalledWith([121.2, 14.6]);
+    expect(map.fitBounds).toHaveBeenLastCalledWith(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: 17.5,
+      duration: 600,
+    });
+
+    daily.focus();
+    fireEvent.click(daily, { detail: 0 });
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+    mapHandler(handlers, 'moveend')();
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+    fireEvent.click(clusterButton('is-daily'), { detail: 0 });
+    map.transform.zoom = 18;
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    mapHandler(handlers, 'moveend')();
+    expect(document.activeElement).toBe(pinByName('Ann'));
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    const currentCluster = clusterButton('is-daily');
+    expect(document.activeElement).toBe(currentCluster);
+    fireEvent.click(currentCluster, { detail: 1 });
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    mapHandler(handlers, 'moveend')();
+    expect(document.activeElement).toBe(clusterButton('is-daily'));
+
+    state.unproject = 'throw';
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([
+      (121 + 121.2) / 2,
+      14.6,
+    ]);
+    state.unproject = 'nan';
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([
+      (121 + 121.2) / 2,
+      14.6,
+    ]);
+    delete map.unproject;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(clusterMarker(lib, 'is-weekly').setLngLat).toHaveBeenCalledWith([(10 + 10.2) / 2, 14.6]);
+
+    map.transform.zoom = 17;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
+
+    map.transform.zoom = undefined;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    const getZoom = map.getZoom;
+    delete map.getZoom;
+    map.transform.zoom = 10;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    if (getZoom !== undefined) map.getZoom = getZoom;
+
+    map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    map.getContainer = () => mapNode;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(clusterButton('is-daily')).toBeTruthy();
+
+    delete (map as { getContainer?: unknown }).getContainer;
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(clusterButton('is-daily')).toBeTruthy();
+    map.getContainer = () => mapNode;
+
+    const hank = pinByName('Hank');
+    const hankPopup = popupOf(lib, hank);
+    vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+      callback(0);
+      return 0;
+    });
+    map.getContainer = () => document.createTextNode('x') as unknown as HTMLElement;
+    hankPopup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    map.getContainer = () => mapNode;
+
+    hankPopup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    const svgPopup = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgPopup.setAttribute('class', 'maplibregl-popup');
+    mapNode.appendChild(svgPopup);
+    hankPopup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    svgPopup.remove();
+    const popup = document.createElement('div');
+    popup.className = 'maplibregl-popup';
+    mapNode.appendChild(popup);
+    hankPopup.emit('open');
+    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
+
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(popup, { top: 40, left: 40, bottom: 100, right: 100, width: 60, height: 60 });
+    map.panBy.mockClear();
+    hankPopup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    setRect(popup, { top: 100, left: 40, bottom: 390, right: 100, width: 60, height: 290 });
+    hankPopup.emit('open');
+    expect(map.panBy).toHaveBeenCalledWith([0, 6], { duration: 250 });
+    setRect(popup, { top: 40, left: 20, bottom: 100, right: 390, width: 370, height: 60 });
+    hankPopup.emit('open');
+    expect(map.panBy).toHaveBeenCalledWith([6, 0], { duration: 250 });
+    const focus = vi
+      .spyOn(HTMLButtonElement.prototype, 'focus')
+      .mockImplementation(() => undefined);
+    hankPopup.emit('open');
+    expect(focus).not.toHaveBeenCalled();
+    fireEvent.keyDown(hank, { key: 'Enter' });
+    hankPopup.emit('open');
+    expect(focus).toHaveBeenCalledTimes(1);
+    hankPopup.content?.querySelector('.shop-popup-close')?.remove();
+    focus.mockClear();
+    fireEvent.keyDown(hank, { key: 'Enter' });
+    hankPopup.emit('open');
+    expect(focus).not.toHaveBeenCalled();
+    const panBy = map.panBy;
+    delete (map as { panBy?: unknown }).panBy;
+    hankPopup.emit('open');
+    map.panBy = panBy;
+
+    changeMenu(copy.country, 'DE');
+    await resolvePlaces(clusterRows());
+    changeMenu(copy.country, '');
+    await act(async () => {
+      mapHandler(handlers, 'zoom')();
+    });
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    await resolvePlaces(clusterRows());
+    await fireScript('error');
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+
+    const queued: FrameRequestCallback[] = [];
+    vi.mocked(window.requestAnimationFrame).mockImplementation((callback) => {
+      queued.push(callback);
+      return 9;
+    });
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined);
+    mapHandler(handlers, 'zoom')();
+    mapHandler(handlers, 'move')();
+    expect(queued).toHaveLength(1);
+    const project = map.project;
+    delete map.project;
+    const blocked = queued[0];
+    if (blocked === undefined) throw new Error('missing frame');
+    blocked(0);
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+    if (project !== undefined) map.project = project;
+    mapHandler(handlers, 'zoom')();
+    expect(queued).toHaveLength(2);
+    cleanup();
+    expect(cancel).toHaveBeenCalledWith(9);
+    expect(map.off).toHaveBeenCalledWith('move', handlers['move']);
+    expect(map.off).toHaveBeenCalledWith('zoom', handlers['zoom']);
+    const pendingFrame = queued[1];
+    if (pendingFrame === undefined) throw new Error('missing pending frame');
+    pendingFrame(0);
+    expect(document.querySelector('.shop-cluster')).toBeNull();
+  });
+
+  it('pans and focuses the connected close button when the popup opens', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+        panBy: vi.fn(function (this: { transform: object }) {
+          void this.transform;
+        }),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    let connectedAtFocus: boolean | undefined;
+    vi.spyOn(HTMLButtonElement.prototype, 'focus').mockImplementation(function (
+      this: HTMLButtonElement,
+    ) {
+      if (!this.classList.contains('shop-popup-close')) return;
+      connectedAtFocus = this.isConnected;
+    });
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    if (popup.content === null) throw new Error('missing popup content');
+    shell.appendChild(popup.content);
+    popup.emit('open');
+    expect(connectedAtFocus).toBe(true);
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+    expect(map.panBy).toHaveBeenCalledWith([-16, -16], { duration: 250 });
+  });
+
+  it('clears keyboard focus intent when an open popup closes', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    document.body.appendChild(content);
+    const focus = vi.spyOn(HTMLButtonElement.prototype, 'focus');
+    let open = false;
+    pin.addEventListener('click', () => {
+      open = !open;
+      popup.emit(open ? 'open' : 'close');
+    });
+    fireEvent.click(pin);
+    fireEvent.keyDown(pin, { key: 'Enter' });
+    fireEvent.click(pin);
+    expect(focus).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBe(close);
+  });
+
+  it('restores focus only from the popup to a connected pin', async (): Promise<void> => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const pin = pinByName('Pin');
+    const popup = popupOf(lib, pin);
+    const content = popup.content;
+    if (content === null) throw new Error('missing popup content');
+    const close = content.querySelector('.shop-popup-close');
+    if (!(close instanceof HTMLButtonElement)) throw new Error('missing popup close button');
+    document.body.appendChild(content);
+    popup.originalRemove.mockImplementation((): void => {
+      content.remove();
+      popup.emit('close');
+    });
+    const focusPin = vi.spyOn(pin, 'focus');
+    close.focus();
+    fireEvent.click(close);
+    expect(focusPin).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(pin);
+
+    focusPin.mockClear();
+    document.body.appendChild(content);
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    elsewhere.focus();
+    popup.remove();
+    expect(focusPin).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(elsewhere);
+    elsewhere.remove();
+
+    document.body.appendChild(content);
+    close.focus();
+    expect(document.activeElement).toBe(close);
+    pin.remove();
+    expect(pin.isConnected).toBe(false);
+    fireEvent.click(close);
+    expect(popup.originalRemove).toHaveBeenCalledTimes(3);
+    expect(content.isConnected).toBe(false);
+    expect(focusPin).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('measures the popup next frame, avoids obstacles, and skips animation while unloaded', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const attrib = document.createElement('div');
+    attrib.className = 'maplibregl-ctrl-attrib';
+    mapNode.appendChild(attrib);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(attrib, { top: 370, left: 300, bottom: 390, right: 390, width: 90, height: 20 });
+    const frames = new Map<number, FrameRequestCallback>();
+    let nextFrame = 0;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      nextFrame += 1;
+      frames.set(nextFrame, callback);
+      return nextFrame;
+    });
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      frames.delete(id);
+    });
+    const flush = (): void => {
+      const pending = [...frames.values()];
+      frames.clear();
+      pending.forEach((callback) => callback(0));
+    };
+    setRect(shell, { top: 240, left: 30, bottom: 360, right: 170, width: 140, height: 120 });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 250 });
+    map.panBy.mockClear();
+    map.loaded = () => false;
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 0 });
+    map.panBy.mockClear();
+    map.loaded = () => true;
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 20], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(shell, { top: 50, left: 40, bottom: 150, right: 180, width: 140, height: 100 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    setRect(shell, { top: 270, left: 290, bottom: 380, right: 380, width: 90, height: 110 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([0, 10], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 60, left: 20, bottom: 100, right: 180, width: 160, height: 40 });
+    setRect(shell, { top: 30, left: 30, bottom: 90, right: 130, width: 100, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([-150, 0], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
+    map.panBy.mockClear();
+    setRect(legend, { top: 16, left: 16, bottom: 384, right: 384, width: 368, height: 368 });
+    setRect(shell, { top: 30, left: 30, bottom: 90, right: 130, width: 100, height: 60 });
+    popup.emit('open');
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(shell, { top: -20, left: 40, bottom: 80, right: 180, width: 140, height: 100 });
+    popup.emit('open');
+    setRect(shell, { top: 50, left: 40, bottom: 150, right: 180, width: 140, height: 100 });
+    flush();
+    expect(map.panBy).not.toHaveBeenCalled();
+    popup.emit('open');
+    popup.emit('open');
+    expect(cancel).toHaveBeenCalled();
+    popup.emit('close');
+    expect(frames.size).toBe(0);
+    popup.emit('open');
+    cleanup();
+    expect(frames.size).toBe(0);
+  });
+
+  it('moves the popup left of attribution when up and right are blocked', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const attrib = document.createElement('div');
+    attrib.className = 'maplibregl-ctrl-attrib';
+    mapNode.appendChild(attrib);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(attrib, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    frames.forEach((callback) => callback(0));
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
+  });
+
+  it('moves the popup left of the top-right navigation control', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    const legend = document.querySelector('.shop-legend');
+    if (!(mapNode instanceof HTMLElement) || !(legend instanceof HTMLElement)) {
+      throw new Error('missing map or legend');
+    }
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const navigation = document.createElement('div');
+    navigation.className = 'maplibregl-ctrl-top-right';
+    mapNode.appendChild(navigation);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 400, width: 400, height: 400 });
+    setRect(legend, { top: 340, left: 20, bottom: 380, right: 180, width: 160, height: 40 });
+    setRect(navigation, { top: 60, left: 300, bottom: 100, right: 380, width: 80, height: 40 });
+    setRect(shell, { top: 30, left: 280, bottom: 90, right: 370, width: 90, height: 60 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    popup.emit('open');
+    expect(map.panBy).not.toHaveBeenCalled();
+    frames.forEach((callback) => callback(0));
+    expect(map.panBy).toHaveBeenCalledWith([70, 0], { duration: 250 });
+  });
+
+  it('moves a wide popup below navigation only when it fits inside the bottom inset', async () => {
+    const lib = installMapLibre();
+    wrapMap((map) => {
+      Object.assign(map, {
+        getContainer: () => document.getElementById('shop-places-map'),
+        panBy: vi.fn(),
+      });
+    });
+    renderShops();
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Pin', {})]));
+    await fireScript('load');
+    const mapNode = document.getElementById('shop-places-map');
+    if (!(mapNode instanceof HTMLElement)) throw new Error('missing map');
+    const map = firstMap(lib) as MapDouble & { panBy: ReturnType<typeof vi.fn> };
+    const popup = popupOf(lib, pinByName('Pin'));
+    const shell = document.createElement('div');
+    shell.className = 'maplibregl-popup';
+    mapNode.appendChild(shell);
+    const navigation = document.createElement('div');
+    navigation.className = 'maplibregl-ctrl-top-right';
+    mapNode.appendChild(navigation);
+    setRect(mapNode, { top: 0, left: 0, bottom: 400, right: 300, width: 300, height: 400 });
+    setRect(shell, { top: 30, left: 16, bottom: 230, right: 284, width: 268, height: 200 });
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    for (const bottom of [100, 184, 185]) {
+      setRect(navigation, {
+        top: 20,
+        left: 250,
+        bottom,
+        right: 284,
+        width: 34,
+        height: bottom - 20,
+      });
+      map.panBy.mockClear();
+      popup.emit('open');
+      expect(map.panBy).not.toHaveBeenCalled();
+      frames.splice(0).forEach((callback) => callback(0));
+      if (bottom === 185) {
+        expect(map.panBy).not.toHaveBeenCalled();
+      } else {
+        expect(map.panBy).toHaveBeenCalledTimes(1);
+        expect(map.panBy).toHaveBeenCalledWith([0, 30 - bottom], { duration: 250 });
+      }
+    }
+  });
+
+  it('places a cluster marker on a whole pixel', async () => {
+    const lib = installMapLibre();
+    const seen: [number, number][] = [];
+    wrapMap((map) => {
+      Object.assign(map, {
+        project(this: { transform: object }, position: [number, number]) {
+          void this.transform;
+          if (position[0] === 121) return { x: 10.25, y: 20.25 };
+          return { x: 11.25, y: 21.25 };
+        },
+        unproject(this: { transform: object }, point: [number, number]) {
+          void this.transform;
+          seen.push(point);
+          return { lng: point[0], lat: point[1] };
+        },
+        getContainer(this: { transform: object }) {
+          void this.transform;
+          const node = document.getElementById('shop-places-map');
+          if (node === null) throw new Error('missing map');
+          return node;
+        },
+      });
+    });
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queueMicrotask(() => callback(0));
+      return 0;
+    });
+    renderShops();
+    const mapNode = document.getElementById('shop-places-map');
+    if (mapNode === null) throw new Error('missing map');
+    setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { lat: 14.6, lon: 121 }),
+        giftsPlace('Bea', { lat: 14.6, lon: 121.01 }),
+      ]),
+    );
+    await fireScript('load');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(seen.at(-1)).toEqual([11, 21]);
+    expect(clusterMarker(lib, 'is-daily').setLngLat).toHaveBeenCalledWith([11, 21]);
+  });
+
+  it('joins a chain of pins when any pair is closer than 44px', async () => {
+    await paintProjected([
+      giftsPlace('Ann', { lat: 0, lon: 0 }),
+      giftsPlace('Bea', { lat: 0, lon: 4 }),
+      giftsPlace('Cara', { lat: 0, lon: 8 }),
+    ]);
+    expect(document.querySelectorAll('.shop-cluster.is-daily')).toHaveLength(1);
+    expect(clusterButton('is-daily').textContent).toBe('3');
+  });
+
+  it('does not pull a farther pin into a cluster through the centroid', async () => {
+    await paintProjected([
+      giftsPlace('Ann', { lat: 0, lon: 0 }),
+      giftsPlace('Bea', { lat: 4.3, lon: 0 }),
+      giftsPlace('Cara', { lat: 2.15, lon: 4.3 }),
+    ]);
+    expect(document.querySelectorAll('.shop-cluster')).toHaveLength(1);
+    expect(clusterButton('is-daily').textContent).toBe('2');
+    expect(pinByName('Cara').classList.contains('is-clustered')).toBe(false);
+  });
+
+  it('sets phone table column classes and stacks shop and country under the name', async () => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        ...sortRows().places,
+        giftsPlace('Plain', { id: 'no-link', country: 'KE', shopName: 'SPAR' }),
+      ]),
+    );
+    for (const label of [copy.colName, copy.colLocation, copy.colActivity]) {
+      const header = columnHeader(label);
+      expect(header.classList.contains('hidden')).toBe(false);
+      const text = within(header).getByText(label);
+      expect(text.classList.contains('whitespace-nowrap')).toBe(true);
+      expect(text.classList.contains('break-words')).toBe(false);
+      expect(headerButton(label).className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['px-2', 'sm:px-4']),
+      );
+    }
+    for (const label of [copy.colCountry, copy.colShop]) {
+      expect(columnHeader(label).className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['hidden', 'sm:table-cell']),
+      );
+      expect(columnHeader(label).getAttribute('aria-sort')).toBe('none');
+      expect(headerButton(label).tagName).toBe('BUTTON');
+    }
+    const ann = rowByName('Ann');
+    const cells = within(ann).getAllByRole('cell', { hidden: true });
+    for (const index of [2, 3]) {
+      expect(cells[index]?.className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['hidden', 'sm:table-cell']),
+      );
+    }
+    const name = cells[0];
+    if (name === undefined) throw new Error('missing name cell');
+    expect(name.firstElementChild?.textContent).toBe('Ann');
+    expect(within(name).getByRole('link', { hidden: true }).getAttribute('href')).toBe(
+      `/${npub('q')}`,
+    );
+    const details = Array.from(name.children).slice(1);
+    expect(details.map((line) => line.textContent)).toEqual(['SPAR', 'Philippines']);
+    for (const line of details) {
+      expect(line.className.split(/\s+/)).toEqual(
+        expect.arrayContaining(['block', 'text-xs', 'text-ink/60', 'sm:hidden']),
+      );
+    }
+    const bea = rowByName('Bea').querySelector('td');
+    if (bea === null) throw new Error('missing Bea name cell');
+    expect(within(bea).getByText('Germany').classList.contains('sm:hidden')).toBe(true);
+    const plain = rowByName('Plain').querySelector('td');
+    if (plain === null) throw new Error('missing plain name cell');
+    expect(plain.firstElementChild?.textContent).toBe('Plain');
+    expect(within(plain).queryByRole('link', { hidden: true })).toBeNull();
+    expect(
+      Array.from(plain.children)
+        .slice(1)
+        .map((line) => line.textContent),
+    ).toEqual(['SPAR', 'Kenya']);
+  });
+
+  it('sorts every column and orders equal values by ascending name', async (): Promise<void> => {
+    renderShops();
+    await resolveLatest(basicFilters({}), sortRows());
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cal', 'Dee', 'Eve']);
+    expect(columnHeader(copy.colName).getAttribute('aria-sort')).toBe('ascending');
+    expect(columnHeader(copy.colName).className).toContain('p-0');
+    expect(headerButton(copy.colName).className).toContain('min-h-11');
+    expect(headerButton(copy.colName).className.split(/\s+/)).toEqual(
+      expect.arrayContaining(['px-2', 'sm:px-4']),
+    );
+    expect(headerButton(copy.colName).className).toContain('py-3');
+    expect(columnHeader(copy.colName).textContent).toBe(copy.colName);
+    expect(triangleClass(copy.colLocation)).toContain('opacity-30');
+    const placesBefore = callsTo('/map/places').length;
+
+    fireEvent.click(headerButton(copy.colLocation));
+    expect(bodyNames()).toEqual(['Dee', 'Cal', 'Eve', 'Ann', 'Bea']);
+    expect(columnHeader(copy.colLocation).getAttribute('aria-sort')).toBe('ascending');
+    fireEvent.click(headerButton(copy.colLocation));
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Eve', 'Cal', 'Dee']);
+    expect(columnHeader(copy.colLocation).getAttribute('aria-sort')).toBe('descending');
+    expect(triangleClass(copy.colLocation)).toContain('rotate-180');
+    expect(triangleClass(copy.colLocation)).not.toContain('opacity-30');
+    expect(columnHeader(copy.colName).getAttribute('aria-sort')).toBe('none');
+    expect(triangleClass(copy.colName)).toContain('opacity-30');
+    fireEvent.click(headerButton(copy.colLocation));
+    expect(bodyNames()).toEqual(['Dee', 'Cal', 'Eve', 'Ann', 'Bea']);
+    expect(columnHeader(copy.colLocation).getAttribute('aria-sort')).toBe('ascending');
+    expect(triangleClass(copy.colLocation)).not.toContain('rotate-180');
+
+    fireEvent.click(headerButton(copy.colActivity));
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cal', 'Dee', 'Eve']);
+    fireEvent.click(headerButton(copy.colActivity));
+    expect(bodyNames()).toEqual(['Eve', 'Dee', 'Cal', 'Ann', 'Bea']);
+    expect(columnHeader(copy.colActivity).getAttribute('aria-sort')).toBe('descending');
+
+    fireEvent.click(headerButton(copy.colCountry));
+    expect(bodyNames()).toEqual(['Bea', 'Dee', 'Ann', 'Cal', 'Eve']);
+    fireEvent.click(headerButton(copy.colCountry));
+    expect(bodyNames()).toEqual(['Ann', 'Cal', 'Eve', 'Dee', 'Bea']);
+
+    fireEvent.click(headerButton(copy.colShop));
+    expect(bodyNames()).toEqual(['Bea', 'Ann', 'Cal', 'Dee', 'Eve']);
+    fireEvent.click(headerButton(copy.colShop));
+    expect(bodyNames()).toEqual(['Ann', 'Cal', 'Dee', 'Eve', 'Bea']);
+
+    fireEvent.click(headerButton(copy.colName));
+    expect(bodyNames()).toEqual(['Ann', 'Bea', 'Cal', 'Dee', 'Eve']);
+    fireEvent.click(headerButton(copy.colName));
+    expect(bodyNames()).toEqual(['Eve', 'Dee', 'Cal', 'Bea', 'Ann']);
+    expect(callsTo('/map/places')).toHaveLength(placesBefore);
+
+    fireEvent.click(headerButton(copy.colLocation));
+    fireEvent.click(headerButton(copy.colLocation));
+    changeMenu(copy.country, 'PH');
+    expect(bodyNames()).toEqual(['Ann', 'Eve', 'Cal']);
+    expect(columnHeader(copy.colLocation).getAttribute('aria-sort')).toBe('descending');
+  });
+
+  it.each([
+    { dir: 'ascending', clicks: 1, names: ['Daily', 'None', 'Bea', 'Ann', 'Cal'] },
+    { dir: 'descending', clicks: 2, names: ['Ann', 'Cal', 'Bea', 'None', 'Daily'] },
+  ])('sorts unknown activity labels $dir and equal labels by name', async ({ clicks, names }) => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', { activity: 'zeta' }),
+        giftsPlace('Cal', { activity: 'zeta' }),
+        giftsPlace('Bea', { activity: 'alpha' }),
+        giftsPlace('None', { activity: 'none' }),
+        giftsPlace('Daily', { activity: 'daily' }),
+      ]),
+    );
+    for (let click = 0; click < clicks; click += 1) {
+      fireEvent.click(headerButton(copy.colActivity));
+    }
+    expect(bodyNames()).toEqual(names);
+  });
+
+  it('hides filters and the category chip when the shops do not differ', async () => {
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Ann', {
+          shopName: null,
+          category: 'shopping',
+          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
+          street: 'One',
+        }),
+        giftsPlace('Bea', {
+          shopName: null,
+          category: 'shopping',
+          street: 'Two',
+          lat: 1,
+          lon: 2,
+        }),
+      ]),
+    );
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByRole('button', { name: copy.helpLabel })).toBeTruthy();
+    expect(document.querySelectorAll('.shop-legend .shop-place-marker')).toHaveLength(5);
+    const headers = within(screen.getByRole('table', { hidden: true }))
+      .getAllByRole('columnheader', { hidden: true })
+      .map((header) => header.textContent);
+    expect(headers).toEqual([copy.colName, copy.colLocation, copy.colActivity]);
+    const nameCell = rowByName('Ann').querySelector('td');
+    expect(nameCell?.children).toHaveLength(1);
+    expect(nameCell?.firstElementChild?.tagName).toBe('SPAN');
+    expect(nameCell?.querySelector('.sm\\:hidden')).toBeNull();
+    await fireScript('load');
+    const ann = lib.popups[0];
+    const bea = lib.popups[1];
+    if (ann === undefined || ann.content === null || bea === undefined || bea.content === null) {
+      throw new Error('missing popup');
+    }
+    expect(ann.content.querySelector('.shop-popup-photo')?.getAttribute('src')).toBe(
+      'https://api.opencryptopay.io/map/photos/ann.jpg',
+    );
+    expect(ann.content.querySelector('.shop-popup-category')).toBeNull();
+    expect(bea.content.querySelector('.shop-popup-photo')).toBeNull();
+    expect(bea.content.querySelector('.shop-popup-category')).toBeNull();
+  });
+
+  it('focuses help only on opening, with preventScroll and outline-none', async () => {
+    renderShops();
+    await act(async () => {
+      latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+    });
+    await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+    const help = screen.getByRole('button', { name: copy.helpLabel });
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+    fireEvent.mouseDown(help);
+    fireEvent.click(help, { detail: 1 });
+
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    expect(document.activeElement).toBe(dialog);
+    expect(dialog.tabIndex).toBe(-1);
+    expect(dialog.classList.contains('outline-none')).toBe(true);
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+
+    const elsewhere = screen.getByRole('button', { name: copy.table });
+    elsewhere.focus();
+    focus.mockClear();
+    const anchor = help.parentElement;
+    if (anchor === null) throw new Error('missing help anchor');
+    setRect(anchor, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    fireEvent(window, new Event('resize'));
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
+    fireEvent.keyDown(elsewhere, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
+
+    fireEvent.click(help);
+    expect(document.activeElement).toBe(screen.getByRole('dialog', { name: copy.helpLabel }));
+    elsewhere.focus();
+    focus.mockClear();
+    await resolvePlaces(placesBody([]));
+    expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+    expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it.each([copy.map, copy.table])(
+    'moves focus from the pending help button to the selected %s button on an empty response',
+    async (viewLabel) => {
+      renderShops();
+      await act(async () => {
+        latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+      });
+      await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+      const viewControl = screen.getByRole('group', { name: copy.view });
+      const viewButton = within(viewControl).getByRole('button', { name: viewLabel });
+      fireEvent.click(viewButton);
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      help.focus();
+      expect(document.activeElement).toBe(help);
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      const focus = vi.spyOn(viewButton, 'focus');
+
+      await resolvePlaces(placesBody([]));
+
+      expect(screen.getByText(copy.empty)).toBeTruthy();
+      expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+      expect(viewButton.getAttribute('aria-pressed')).toBe('true');
+      expect(document.activeElement).toBe(viewButton);
+      expect(focus).toHaveBeenCalledTimes(1);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
+  it.each([copy.map, copy.table])(
+    'moves focus from pending help to the selected %s button when no 21.gifts shop is returned',
+    async (viewLabel) => {
+      renderShops();
+      await act(async () => {
+        latestFilters().resolve(jsonResponse(basicFilters({}), 200));
+      });
+      await waitFor(() => expect(callsTo('/map/places')).toHaveLength(1));
+      const viewControl = screen.getByRole('group', { name: copy.view });
+      const viewButton = within(viewControl).getByRole('button', { name: viewLabel });
+      fireEvent.click(viewButton);
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      help.focus();
+      fireEvent.click(help, { detail: 0 });
+      const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+      expect(document.activeElement).toBe(dialog);
+      const focus = vi.spyOn(viewButton, 'focus');
+
+      await resolvePlaces(placesBody([giftsPlace('Other provider', { techProvider: 'Other' })]));
+
+      expect(screen.getByText(copy.empty)).toBeTruthy();
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+      expect(viewButton.getAttribute('aria-pressed')).toBe('true');
+      expect(document.activeElement).toBe(viewButton);
+      expect(focus).toHaveBeenCalledTimes(1);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
+  it.each([
+    { close: 'Escape', focused: 'panel' },
+    { close: 'Escape', focused: 'explanation' },
+    { close: 'help button', focused: 'panel' },
+    { close: 'outside press', focused: 'panel' },
+  ])(
+    'returns help focus with preventScroll after $close from the $focused',
+    async ({ close, focused }) => {
+      renderShops();
+      await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+      const help = screen.getByRole('button', { name: copy.helpLabel });
+      fireEvent.click(help);
+      const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+      expect(document.activeElement).toBe(dialog);
+      if (focused === 'explanation') {
+        const explanation = within(dialog).getByText(copy.dailyHelp);
+        explanation.tabIndex = -1;
+        explanation.focus();
+        expect(document.activeElement).toBe(explanation);
+      }
+      const focus = vi.spyOn(help, 'focus');
+
+      if (close === 'Escape') {
+        fireEvent.keyDown(document.activeElement ?? document, { key: 'Escape' });
+      } else if (close === 'help button') fireEvent.click(help);
+      else fireEvent.mouseDown(screen.getByRole('heading', { name: copy.lead }));
+
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(document.activeElement).toBe(help);
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
+  it.each(['before', 'after'])(
+    'keeps focus on another button focused %s the outside press',
+    async (order) => {
+      renderShops();
+      await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+      fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+      expect(document.activeElement).toBe(screen.getByRole('dialog', { name: copy.helpLabel }));
+      const elsewhere = screen.getByRole('button', { name: copy.table });
+      if (order === 'before') elsewhere.focus();
+
+      fireEvent.mouseDown(elsewhere);
+      // fireEvent does not perform the browser's default mousedown focus action.
+      if (order === 'after') elsewhere.focus();
+      fireEvent.mouseUp(elsewhere);
+      fireEvent.click(elsewhere);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByRole('dialog', { name: copy.helpLabel })).toBeNull();
+      expect(document.activeElement).toBe(elsewhere);
+    },
+  );
+
+  it('anchors the help panel inside the window and closes it from outside', async () => {
+    let contentHeight = 0;
+    mockHelpContentHeight(() => contentHeight);
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', { country: 'PH' }), giftsPlace('Bea', { country: 'DE' })]),
+    );
+    expect(document.querySelector('.shop-legend')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    const width = Math.min(320, window.innerWidth - 32);
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.left).toBe('16px');
+    expect(dialog.style.width).toBe(`${width}px`);
+    expect(dialog.className).toContain('fixed');
+    expect(dialog.className).toContain('shadow-lg');
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.left).toBe('16px');
+
+    const span = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
+    if (!(span instanceof HTMLElement)) throw new Error('missing help anchor');
+    setWindowSize(1024, 768);
+    setRect(span, { top: 700, left: 900, bottom: 800, right: 940, width: 40, height: 100 });
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.left).toBe('688px');
+    expect(dialog.style.top).toBe('692px');
+    expect(dialog.style.width).toBe('320px');
+    setRect(span, { top: 0, left: 100, bottom: 900, right: 140, width: 40, height: 900 });
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.left).toBe('100px');
+    expect(dialog.style.top).toBe('16px');
+
+    setRect(span, { top: 500, left: 40, bottom: 544, right: 84, width: 44, height: 44 });
+    contentHeight = 220;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('272px');
+    expect(dialog.style.left).toBe('40px');
+    expect(dialog.style.width).toBe('320px');
+    expect(Number.parseFloat(dialog.style.top) + 220).toBeLessThanOrEqual(768 - 16);
+
+    setRect(span, { top: 770, left: 40, bottom: 814, right: 84, width: 44, height: 44 });
+    contentHeight = 100;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('652px');
+    expect(Number.parseFloat(dialog.style.top) + 100).toBeLessThanOrEqual(768 - 16);
+    setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
+    contentHeight = 100;
+    fireEvent(window, new Event('scroll'));
+    expect(dialog.style.top).toBe('172px');
+    expect(dialog.style.left).toBe('40px');
+    expect(dialog.style.bottom).toBe('496px');
+
+    setWindowSize(1024, 768);
+    setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    contentHeight = 800;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    setRect(span, { top: 120, left: 40, bottom: 164, right: 84, width: 44, height: 44 });
+    contentHeight = 100;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('172px');
+    expect(dialog.style.bottom).toBe('496px');
+
+    fireEvent.mouseDown(dialog);
+    expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);
+    fireEvent.mouseDown(span);
+    expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);
+    fireEvent.keyDown(document, { key: 'a' });
+    expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBe(dialog);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    fireEvent.mouseDown(document);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    fireEvent.mouseDown(screen.getByRole('heading', { name: copy.lead }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    changeMenu(copy.country, 'PH');
+    changeMenu(copy.country, '');
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    expect(screen.getByRole('dialog', { name: copy.helpLabel })).toBeTruthy();
+    await resolvePlaces(placesBody([]));
+    expect(screen.queryByRole('button', { name: copy.helpLabel })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('.shop-legend')).toBeNull();
+    fireEvent(window, new Event('resize'));
+  });
+
+  it('scrolls help only while its content exceeds the pinned box', async (): Promise<void> => {
+    vi.stubGlobal('innerWidth', 640);
+    vi.stubGlobal('innerHeight', 320);
+    const { container } = render(
+      <Scrollport>
+        <HomeShops copy={copy} locale="en" />
+      </Scrollport>,
+    );
+    const pagePort = container.querySelector('[data-scrollport]');
+    if (!(pagePort instanceof HTMLElement)) throw new Error('missing page scrollport');
+    await resolveLatest(basicFilters({}), placesBody([giftsPlace('Ann', {})]));
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    const anchor = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
+    if (!(anchor instanceof HTMLElement)) throw new Error('missing help anchor');
+    setRect(anchor, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    let contentHeight = 289;
+    mockHelpContentHeight(() => contentHeight);
+    vi.spyOn(dialog, 'getBoundingClientRect').mockImplementation(
+      (): DOMRect => new DOMRect(40, 16, 320, window.innerHeight - 32),
+    );
+
+    fireEvent(window, new Event('resize'));
+
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.getBoundingClientRect().height).toBe(288);
+    expect(dialog.classList.contains('flex')).toBe(true);
+    expect(dialog.classList.contains('flex-col')).toBe(true);
+    const helpPort = dialog.querySelector('[data-scrollport]');
+    if (!(helpPort instanceof HTMLElement)) throw new Error('missing help scrollport');
+    expect(document.querySelectorAll('[data-scroll-active]')).toHaveLength(1);
+    expect(helpPort.hasAttribute('data-scroll-active')).toBe(true);
+    expect(pagePort.hasAttribute('data-scroll-locked')).toBe(true);
+    for (const text of [
+      copy.dailyHelp,
+      copy.weeklyHelp,
+      copy.monthlyHelp,
+      copy.idleHelp,
+      copy.noneHelp,
+      copy.hierarchy,
+    ]) {
+      expect(within(helpPort).getByText(text)).toBeTruthy();
+    }
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scrollport]')).toBe(helpPort);
+
+    contentHeight = 288;
+    fireEvent(window, new Event('resize'));
+
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(within(dialog).getByText(copy.hierarchy)).toBeTruthy();
+    expect(document.querySelectorAll('[data-scroll-active]')).toHaveLength(1);
+    expect(pagePort.hasAttribute('data-scroll-active')).toBe(true);
+    expect(pagePort.hasAttribute('data-scroll-locked')).toBe(false);
+
+    contentHeight = 287;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.bottom).toBe('17px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+
+    contentHeight = 289;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scroll-active]')).not.toBeNull();
+    vi.stubGlobal('innerHeight', 600);
+    fireEvent(window, new Event('resize'));
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(pagePort.hasAttribute('data-scroll-active')).toBe(true);
+  });
+
+  it('measures help content plus padding and borders without clearing its bottom pin', async () => {
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([giftsPlace('Ann', { country: 'PH' }), giftsPlace('Bea', { country: 'DE' })]),
+    );
+    setWindowSize(1024, 768);
+    fireEvent.click(screen.getByRole('button', { name: copy.helpLabel }));
+    const dialog = screen.getByRole('dialog', { name: copy.helpLabel });
+    const span = screen.getByRole('button', { name: copy.helpLabel }).parentElement;
+    if (!(span instanceof HTMLElement)) throw new Error('missing help anchor');
+    setRect(span, { top: 40, left: 40, bottom: 84, right: 84, width: 44, height: 44 });
+    let contentHeight = 766;
+    mockHelpContentHeight(() => contentHeight);
+    const readStyle = window.getComputedStyle;
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((node, pseudo) => {
+      const style = readStyle(node, pseudo);
+      if (node === dialog) {
+        Object.assign(style, {
+          paddingTop: '16px',
+          paddingBottom: '16px',
+          borderTopWidth: '1px',
+          borderBottomWidth: '1px',
+        });
+      }
+      return style;
+    });
+    const borderBox = vi
+      .spyOn(dialog, 'getBoundingClientRect')
+      .mockReturnValue(new DOMRect(40, 16, 320, 736));
+    const bottom = vi.spyOn(dialog.style, 'bottom', 'set');
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('16px');
+    expect(dialog.style.bottom).toBe('16px');
+    expect(dialog.querySelector('[data-scrollport]')).not.toBeNull();
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.bottom).toBe('16px');
+    contentHeight = 66;
+    fireEvent(window, new Event('resize'));
+    expect(dialog.style.top).toBe('92px');
+    expect(dialog.style.bottom).toBe('576px');
+    expect(dialog.querySelector('[data-scrollport]')).toBeNull();
+    expect(borderBox).not.toHaveBeenCalled();
+    expect(bottom).not.toHaveBeenCalledWith('auto');
   });
 });
+
+function mockHelpContentHeight(readHeight: () => number): void {
+  vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (
+    this: HTMLElement,
+  ): number {
+    return this.hasAttribute('data-shops-help-content') ? readHeight() : 0;
+  });
+}
 
 function omitAddress(): Place {
   return {
@@ -2297,4 +5121,284 @@ function textOf(node: HTMLElement | undefined): string {
   const text = node.textContent;
   if (text === null) throw new Error('missing text');
   return text;
+}
+
+function wrapMap(augment: (map: MapDouble) => void): void {
+  const lib = window.maplibregl;
+  if (lib === undefined) throw new Error('missing map library');
+  const Original = lib.Map;
+  lib.Map = function Map(options: MapOptions): MapDouble {
+    const map = new Original(
+      options as unknown as ConstructorParameters<typeof Original>[0],
+    ) as MapDouble;
+    augment(map);
+    return map;
+  } as unknown as typeof lib.Map;
+}
+
+function latestStyle(): PendingCall {
+  const call = callsTo('openfreemap').at(-1);
+  if (call === undefined) throw new Error('missing style');
+  return call;
+}
+
+async function loadStyleMap(): Promise<LibDouble> {
+  cleanup();
+  pending.length = 0;
+  clearMapDom();
+  const lib = installMapLibre();
+  renderShops();
+  await resolveLatest(
+    basicFilters({}),
+    placesBody([giftsPlace('Ann', {}), giftsPlace('Bea', { country: 'DE' })]),
+  );
+  await fireScript('load', false);
+  return lib;
+}
+
+function styleSeen(lib: LibDouble): unknown[] {
+  return lib.options.map((item) => item.style);
+}
+
+function mapLayer(id: unknown, type: string, extra: Place = {}): Place {
+  return { id, type, ...extra };
+}
+
+function positronStyle(): { style: Place; layers: (Place | null)[] } {
+  const layers: (Place | null)[] = [
+    mapLayer('background', 'background'),
+    mapLayer(9, 'background'),
+    mapLayer('water', 'fill'),
+    mapLayer('water-line', 'line', { paint: { 'line-width': 2 } }),
+    mapLayer('waterway', 'line'),
+    mapLayer('landcover', 'fill', { paint: { 'fill-color': '#00ff00' } }),
+    mapLayer('landuse', 'fill'),
+    mapLayer('park', 'fill'),
+    mapLayer('boundary', 'line', { paint: { 'line-width': 1 } }),
+    mapLayer('boundary-dash', 'line'),
+    mapLayer('road-dashline', 'line'),
+    mapLayer('road-casing', 'line'),
+    mapLayer('road-motorway_inner', 'line'),
+    mapLayer('road-motorway_bridge_inner', 'line'),
+    mapLayer('road_inner', 'line'),
+    mapLayer('aeroway-runway', 'line'),
+    mapLayer('road_subtle', 'line'),
+    mapLayer('road_minor', 'line'),
+    mapLayer('road-path', 'line'),
+    mapLayer('road-pier', 'line'),
+    mapLayer('rail', 'line'),
+    mapLayer('road', 'line'),
+    mapLayer('highway', 'line'),
+    mapLayer('building', 'fill'),
+    mapLayer('water-label', 'symbol', {
+      paint: { 'text-opacity': 1 },
+      layout: { 'text-size': 12, 'text-field': '{name}' },
+    }),
+    mapLayer('place-label', 'symbol', { layout: { 'text-field': '{name}' } }),
+    mapLayer('poi', 'symbol', { layout: {} }),
+    mapLayer('road-label', 'symbol'),
+    null,
+    mapLayer('highway-shield-non-us', 'symbol', {
+      layout: { 'text-field': '{ref}', 'icon-image': 'road_1' },
+    }),
+    mapLayer('road_shield_us', 'symbol'),
+  ];
+  return { style: { layers }, layers };
+}
+
+function layerRecord(layer: unknown): Place | null {
+  if (typeof layer !== 'object' || layer === null || Array.isArray(layer)) return null;
+  return layer as Place;
+}
+
+function layerField(layer: unknown, key: string): unknown {
+  const record = layerRecord(layer);
+  if (record === null) return undefined;
+  return record[key];
+}
+
+function paintOf(layer: unknown): Place {
+  const paint = layerField(layer, 'paint');
+  if (typeof paint !== 'object' || paint === null || Array.isArray(paint)) return {};
+  return paint as Place;
+}
+
+function lineColor(layer: unknown): unknown {
+  return paintOf(layer)['line-color'];
+}
+
+function setRect(
+  node: HTMLElement,
+  rect: { top: number; left: number; bottom: number; right: number; width: number; height: number },
+): void {
+  node.getBoundingClientRect = () =>
+    ({
+      x: rect.left,
+      y: rect.top,
+      top: rect.top,
+      left: rect.left,
+      bottom: rect.bottom,
+      right: rect.right,
+      width: rect.width,
+      height: rect.height,
+      toJSON() {
+        return {};
+      },
+    }) as DOMRect;
+}
+
+function setWindowSize(width: number, height: number): void {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+}
+
+function mapHandler(handlers: Record<string, () => void>, event: string): () => void {
+  const handler = handlers[event];
+  expect(handler).toBeDefined();
+  if (handler === undefined) throw new Error(`missing ${event} handler`);
+  return handler;
+}
+
+async function setupClusterFocus(): Promise<{
+  handlers: Record<string, () => void>;
+  map: MapDouble;
+  lib: LibDouble;
+}> {
+  const handlers: Record<string, () => void> = {};
+  const lib = installMapLibre();
+  wrapMap((map) => {
+    Object.assign(map, {
+      project: (position: [number, number]) => ({ x: position[0] * 10, y: position[1] * 10 }),
+      unproject: (point: [number, number]) => ({ lng: point[0], lat: point[1] }),
+      on: (event: string, handler: () => void) => {
+        handlers[event] = handler;
+      },
+      getContainer: () => {
+        const node = document.getElementById('shop-places-map');
+        if (node === null) throw new Error('missing map');
+        return node;
+      },
+    });
+  });
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    queueMicrotask(() => callback(0));
+    return 0;
+  });
+  renderShops();
+  const mapNode = document.getElementById('shop-places-map');
+  if (mapNode === null) throw new Error('missing map');
+  setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+  await resolveLatest(basicFilters({}), clusterRows());
+  await fireScript('load');
+  firstMap(lib).transform.zoom = 10;
+  await act(async () => {
+    mapHandler(handlers, 'zoom')();
+  });
+  return { handlers, map: firstMap(lib), lib };
+}
+
+async function paintProjected(places: readonly Place[]): Promise<void> {
+  installMapLibre();
+  wrapMap((map) => {
+    Object.assign(map, {
+      project(this: { transform: object }, position: [number, number]) {
+        void this.transform;
+        return { x: position[0] * 10, y: position[1] * 10 };
+      },
+      unproject(this: { transform: object }, point: [number, number]) {
+        void this.transform;
+        return { lng: point[0], lat: point[1] };
+      },
+      getContainer(this: { transform: object }) {
+        void this.transform;
+        const node = document.getElementById('shop-places-map');
+        if (node === null) throw new Error('missing map');
+        return node;
+      },
+    });
+  });
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    queueMicrotask(() => callback(0));
+    return 0;
+  });
+  renderShops();
+  const mapNode = document.getElementById('shop-places-map');
+  if (mapNode === null) throw new Error('missing map');
+  setRect(mapNode, { top: 0, left: 0, bottom: 600, right: 800, width: 800, height: 600 });
+  await resolveLatest(basicFilters({}), placesBody(places));
+  await fireScript('load');
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
+
+function clusterRows(): { places: readonly unknown[] } {
+  return placesBody([
+    giftsPlace('Ann', { activity: 'daily', lat: 14.6, lon: 121 }),
+    giftsPlace('Bea', { activity: 'daily', lat: 14.6, lon: 121.2 }),
+    giftsPlace('Cara', { activity: 'within7Days', lat: 14.6, lon: 10 }),
+    giftsPlace('Cole', { activity: 'within7Days', lat: 14.6, lon: 10.2 }),
+    giftsPlace('Dana', { activity: 'within30Days', lat: 14.6, lon: 30 }),
+    giftsPlace('Dean', { activity: 'within30Days', lat: 14.6, lon: 30.2 }),
+    giftsPlace('Earl', { activity: 'olderThan30Days', lat: 14.6, lon: 50 }),
+    giftsPlace('Eden', { activity: 'olderThan30Days', lat: 14.6, lon: 50.2 }),
+    giftsPlace('Faye', { activity: 'none', lat: 14.6, lon: 70 }),
+    giftsPlace('Fern', { activity: 'none', lat: 14.6, lon: 70.2 }),
+    giftsPlace('Gail', { activity: 'zeta', lat: 14.6, lon: 90 }),
+    giftsPlace('Gus', { activity: 'zeta', lat: 14.6, lon: 90.2 }),
+    giftsPlace('Hank', { activity: 'within7Days', lat: 14.6, lon: 160 }),
+    giftsPlace('Iris', { activity: 'daily', country: 'DE', lat: 52, lon: 180 }),
+    giftsPlace('Jade', { activity: 'daily', lat: 14.6, lon: 121.1 }),
+    giftsPlace('Kirk', { activity: 'within7Days', lat: 14.6, lon: 10.1 }),
+  ]);
+}
+
+function sortRows(): { places: readonly unknown[] } {
+  return placesBody([
+    giftsPlace('Bea', { street: 'Same', country: 'DE', activity: 'daily', shopName: null }),
+    giftsPlace('Ann', { street: 'Same', country: 'PH', activity: 'daily', shopName: 'SPAR' }),
+    giftsPlace('Cal', { street: 'Late', country: 'PH', activity: 'within7Days', shopName: 'SPAR' }),
+    giftsPlace('Dee', { street: 'Early', country: 'KE', activity: 'none', shopName: 'SPAR' }),
+    giftsPlace('Eve', { street: 'Mid', country: 'PH', activity: 'zeta', shopName: 'SPAR' }),
+  ]);
+}
+
+function popupOf(lib: LibDouble, pin: HTMLElement): PopupDouble {
+  const marker = lib.markers.find((item) => item.element === pin);
+  const popup = marker?.setPopup.mock.calls[0]?.[0] as PopupDouble | undefined;
+  if (popup === undefined) throw new Error('missing popup');
+  return popup;
+}
+
+function pinByName(name: string): HTMLElement {
+  const node = document.querySelector(`button[aria-label^="${name},"]`);
+  if (!(node instanceof HTMLElement)) throw new Error(`missing pin ${name}`);
+  return node;
+}
+
+function clusterButton(className: string): HTMLElement {
+  const node = document.querySelector(`.shop-cluster.${className}`);
+  if (!(node instanceof HTMLElement)) throw new Error(`missing ${className}`);
+  return node;
+}
+
+function clusterMarker(lib: LibDouble, className: string): MarkerDouble {
+  const button = clusterButton(className);
+  const marker = [...lib.markers].reverse().find((item) => item.element.contains(button));
+  if (marker === undefined) throw new Error(`missing marker ${className}`);
+  return marker;
+}
+
+function headerButton(label: string): HTMLElement {
+  return screen.getByRole('button', { name: label, hidden: true });
+}
+
+function columnHeader(label: string): HTMLElement {
+  return screen.getByRole('columnheader', { name: label, hidden: true });
+}
+
+function triangleClass(label: string): string {
+  const mark = headerButton(label).querySelector('[aria-hidden="true"]');
+  if (mark === null) throw new Error('missing triangle');
+  return mark.className;
 }

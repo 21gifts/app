@@ -1703,8 +1703,7 @@ const en = {
   'home.discoverTrustTitle': 'Who receives it?',
   'home.discoverTrustBody':
     "To the person who wrote the post you reacted to. Here's how the payment works.",
-  'homeShops.title': 'Shops',
-  'homeShops.lead': 'These shops accept Bitcoin through 21.gifts.',
+  'homeShops.lead': 'These shops accept Bitcoin through 21.gifts',
   'homeShops.view': 'View',
   'homeShops.map': 'Map',
   'homeShops.table': 'Table',
@@ -1743,6 +1742,8 @@ const en = {
   'homeShops.mapFeedback': 'Map feedback',
   'homeShops.closePopup': 'Close popup',
   'homeShops.mapTitle': 'Map',
+  'homeShops.clusterCount': '{count, plural, one {# shop} other {# shops}}',
+  'homeShops.otherShops': 'others',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -3534,8 +3535,7 @@ const de = {
   'home.discoverTrustTitle': 'Bei wem kommt es an?',
   'home.discoverTrustBody':
     'Bei der Person, auf deren Beitrag du reagierst. So funktioniert die Zahlung.',
-  'homeShops.title': 'Läden',
-  'homeShops.lead': 'Diese Läden nehmen Bitcoin über 21.gifts an.',
+  'homeShops.lead': 'Diese Läden nehmen Bitcoin über 21.gifts an',
   'homeShops.view': 'Ansicht',
   'homeShops.map': 'Karte',
   'homeShops.table': 'Tabelle',
@@ -3574,6 +3574,8 @@ const de = {
   'homeShops.mapFeedback': 'Karten-Feedback',
   'homeShops.closePopup': 'Popup schließen',
   'homeShops.mapTitle': 'Karte',
+  'homeShops.clusterCount': '{count, plural, one {# Laden} other {# Läden}}',
+  'homeShops.otherShops': 'Andere',
 } satisfies Messages;
 
 const es = {
@@ -5316,8 +5318,7 @@ const es = {
   'home.discoverTrustTitle': '¿Quién lo recibe?',
   'home.discoverTrustBody':
     'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
-  'homeShops.title': 'Tiendas',
-  'homeShops.lead': 'Estas tiendas aceptan Bitcoin a través de 21.gifts.',
+  'homeShops.lead': 'Estas tiendas aceptan Bitcoin a través de 21.gifts',
   'homeShops.view': 'Vista',
   'homeShops.map': 'Mapa',
   'homeShops.table': 'Tabla',
@@ -5356,6 +5357,8 @@ const es = {
   'homeShops.mapFeedback': 'Comentarios del mapa',
   'homeShops.closePopup': 'Cerrar el popup',
   'homeShops.mapTitle': 'Mapa',
+  'homeShops.clusterCount': '{count, plural, one {# tienda} other {# tiendas}}',
+  'homeShops.otherShops': 'Otros',
 } satisfies Messages;
 
 const fil = {
@@ -7107,8 +7110,7 @@ const fil = {
   'home.discoverTrustTitle': 'Sino ang tumatanggap nito?',
   'home.discoverTrustBody':
     'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
-  'homeShops.title': 'Mga tindahan',
-  'homeShops.lead': 'Tumatanggap ang mga tindahang ito ng Bitcoin sa pamamagitan ng 21.gifts.',
+  'homeShops.lead': 'Tumatanggap ang mga tindahang ito ng Bitcoin sa pamamagitan ng 21.gifts',
   'homeShops.view': 'Tingin',
   'homeShops.map': 'Mapa',
   'homeShops.table': 'Talaan',
@@ -7147,6 +7149,8 @@ const fil = {
   'homeShops.mapFeedback': 'Feedback sa mapa',
   'homeShops.closePopup': 'Isara ang popup',
   'homeShops.mapTitle': 'Mapa',
+  'homeShops.clusterCount': '{count, plural, one {# tindahan} other {# mga tindahan}}',
+  'homeShops.otherShops': 'Iba pa',
 } satisfies Messages;
 
 /**
