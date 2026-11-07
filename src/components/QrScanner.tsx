@@ -120,6 +120,7 @@ export function QrScanner({
 }: QrScannerProps): ReactElement {
   const { t } = useTranslations();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const playingRef = useRef(false);
   const onResultRef = useRef(onResult);
   const onPictureRef = useRef(onPicture);
   const [error, setError] = useState<'denied' | 'unavailable' | null>(null);
@@ -192,7 +193,7 @@ export function QrScanner({
         track.addEventListener(
           'unmute',
           () => {
-            if (!stopped && !video.paused && !video.ended) {
+            if (!stopped && playingRef.current) {
               onPictureRef.current?.('showing');
             }
           },
@@ -257,6 +258,7 @@ export function QrScanner({
             muted
             autoPlay
             onPlaying={(event) => {
+              playingRef.current = true;
               const source = event.currentTarget.srcObject;
               if (
                 typeof MediaStream === 'undefined' ||
@@ -269,9 +271,11 @@ export function QrScanner({
               }
             }}
             onPause={() => {
+              playingRef.current = false;
               onPictureRef.current?.('paused');
             }}
             onEnded={() => {
+              playingRef.current = false;
               onPictureRef.current?.('paused');
             }}
             className="absolute inset-0 h-full w-full bg-black object-cover"

@@ -320,6 +320,24 @@ describe('QrScanner', () => {
     expect(onPicture).toHaveBeenCalledOnce();
   });
 
+  it('waits for playing when the track unmutes after play is requested', async () => {
+    const { stream, track } = fakeStream();
+    track.muted = true;
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    expect(play).toHaveBeenCalledOnce();
+    Object.defineProperty(video(), 'paused', { configurable: true, value: false });
+    track.muted = false;
+    act(() => {
+      track.dispatchEvent(new Event('unmute'));
+    });
+    expect(onPicture).not.toHaveBeenCalled();
+    fireEvent.playing(video());
+    expect(onPicture.mock.calls).toEqual([['showing']]);
+  });
+
   it('reports playing when the preview source is not a MediaStream', async () => {
     setCamera(() => Promise.resolve(fakeStream().stream));
     const onPicture = vi.fn();
@@ -368,19 +386,23 @@ describe('QrScanner', () => {
     const onPicture = vi.fn();
     const view = renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
     await flush();
+    fireEvent.playing(video());
+    fireEvent.pause(video());
+    onPicture.mockClear();
     act(() => {
       track.dispatchEvent(new Event('unmute'));
     });
     expect(onPicture).not.toHaveBeenCalled();
-    Object.defineProperty(video(), 'paused', { configurable: true, value: false });
-    Object.defineProperty(video(), 'ended', { configurable: true, value: true });
+    fireEvent.playing(video());
+    fireEvent.ended(video());
+    onPicture.mockClear();
     act(() => {
       track.dispatchEvent(new Event('unmute'));
       track.dispatchEvent(new Event('ended'));
     });
     expect(onPicture.mock.calls).toEqual([['paused']]);
     view.rerender(<QrScanner onResult={vi.fn()} />);
-    Object.defineProperty(video(), 'ended', { configurable: true, value: false });
+    fireEvent.playing(video());
     act(() => {
       track.dispatchEvent(new Event('mute'));
       track.dispatchEvent(new Event('unmute'));
