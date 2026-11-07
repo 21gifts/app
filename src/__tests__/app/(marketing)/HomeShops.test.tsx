@@ -638,6 +638,18 @@ describe('HomeShops', () => {
     expect(tableShell().hasAttribute('hidden')).toBe(true);
   });
 
+  it('copies the page nonce onto the map script', () => {
+    const carrier = document.createElement('script');
+    carrier.nonce = 'qCnoncevaluehere==';
+    document.head.appendChild(carrier);
+    try {
+      renderShops();
+      expect(mapScript().nonce).toBe('qCnoncevaluehere==');
+    } finally {
+      carrier.remove();
+    }
+  });
+
   it('uses the production host for 21.gifts and www.21.gifts', async () => {
     setHostname('21.gifts');
     const first = renderShops();

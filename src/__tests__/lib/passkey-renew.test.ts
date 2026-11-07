@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchMe, finishPasskeySeed, postPasskeyRenewReport, startPasskeySeed } from '@/lib/api';
-import { renewPasskey } from '@/lib/passkey-renew';
+import { mergePrfExtension, renewPasskey } from '@/lib/passkey-renew';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { clearSessionPhrase, peekSessionPhrase } from '@/lib/tab-phrase';
+import { credentialToJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Account } from '@/lib/api-types';
+
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 vi.mock('@/lib/api', () => ({
   startPasskeySeed: vi.fn(),
@@ -47,6 +51,8 @@ const account = {
 } as Account;
 
 beforeEach(() => {
+  clearSessionPhrase();
+  delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
   useAuthStore.setState({ session: 'tok', account });
   vi.mocked(startPasskeySeed)
     .mockReset()
@@ -77,8 +83,39 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  clearSessionPhrase();
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  }
   vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
+});
+
+describe('mergePrfExtension', () => {
+  const challenge = new Uint8Array([1, 2]).buffer;
+
+  it('asks for PRF output with the salt and keeps the other options and extensions', async () => {
+    const options = {
+      challenge,
+      rp: { name: '21.gifts' },
+      user: { id: new Uint8Array([3]).buffer, name: 'u', displayName: 'u' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      extensions: { credProps: true },
+    } as PublicKeyCredentialCreationOptions;
+    const merged = await mergePrfExtension(options);
+    expect(merged).toEqual({
+      ...options,
+      extensions: { credProps: true, prf: { eval: { first: new Uint8Array(32).fill(1) } } },
+    });
+    expect(options.extensions).toEqual({ credProps: true });
+  });
+
+  it('adds the PRF request to options without extensions', async () => {
+    const merged = await mergePrfExtension({ challenge } as PublicKeyCredentialCreationOptions);
+    expect(merged.extensions).toEqual({ prf: { eval: { first: new Uint8Array(32).fill(1) } } });
+  });
 });
 
 describe('renewPasskey', () => {
@@ -161,6 +198,15 @@ describe('renewPasskey', () => {
       'tok',
       expect.objectContaining({ clientCapabilities: 'hybridTransport,prf' }),
     );
+  });
+
+  it('confirms the new passkey under the rp.id of the seed options', async () => {
+    vi.mocked(startPasskeySeed).mockResolvedValueOnce({
+      challengeId: 'ch',
+      options: { challenge: 'aa', rp: { id: 'app.test', name: '21.gifts' } },
+    });
+    expect((await renewPasskey('tok')).outcome).toBe('ok');
+    expect(obtainPrfFirst).toHaveBeenCalledWith({ id: 'cred', type: 'public-key' }, 'app.test');
   });
 
   it('reports a missing PRF as prfUnsupported', async () => {
@@ -349,5 +395,61 @@ describe('renewPasskey', () => {
     });
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
     expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+
+  it('remembers the phrase when the key is set and credential ids match', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const prfFirst = new Uint8Array(32).fill(7);
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(prfFirst);
+    vi.mocked(finishPasskeySeed).mockResolvedValueOnce({
+      ...account,
+      walletRequired: true,
+      passkeyCredentialId: 'cred',
+    });
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({
+      outcome: 'ok',
+      account: { passkeyCredentialId: 'cred' },
+    });
+    if (result.outcome === 'ok') {
+      expect(result.prfFirst).toEqual(prfFirst);
+    }
+    await vi.waitFor(() => {
+      expect(peekSessionPhrase()).not.toBeNull();
+    });
+    expect(finishPasskeySeed).toHaveBeenCalledWith('tok', 'ch', { id: 'cred' });
+    expect(credentialToJSON).toHaveBeenCalled();
+  });
+
+  it('remembers nothing when the key is unset', async () => {
+    const prfFirst = new Uint8Array(32).fill(7);
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(prfFirst);
+    vi.mocked(finishPasskeySeed).mockResolvedValueOnce({
+      ...account,
+      walletRequired: true,
+      passkeyCredentialId: 'cred',
+    });
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({ outcome: 'ok', account: { passkeyCredentialId: 'cred' } });
+    expect(peekSessionPhrase()).toBeNull();
+    expect(finishPasskeySeed).toHaveBeenCalledWith('tok', 'ch', { id: 'cred' });
+  });
+
+  it('remembers nothing when the ceremony is cancelled', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const denied = Object.assign(new Error('nope'), { name: 'NotAllowedError' });
+    vi.mocked(navigator.credentials.create).mockRejectedValueOnce(denied);
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('remembers nothing when the ceremony fails', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    await expect(renewPasskey('tok')).resolves.toMatchObject({
+      outcome: 'failed',
+      kind: 'prfUnsupported',
+    });
+    expect(peekSessionPhrase()).toBeNull();
   });
 });

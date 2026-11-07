@@ -97,6 +97,19 @@ describe('NameForm', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
+  it('keeps the public marks beside the field while the name is unset', () => {
+    renderWithLocale(
+      <NameForm
+        variant="profile"
+        besideName={<span>Verified</span>}
+        belowName={<span>People see this name.</span>}
+      />,
+    );
+    expect(screen.getByText('Verified')).toBeTruthy();
+    expect(screen.getByText('People see this name.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save name' })).toBeTruthy();
+  });
+
   it('shows the prompt for a whitespace-only name instead of display/edit', () => {
     useAuthStore.setState({
       session: 'sess',
@@ -248,7 +261,7 @@ describe('NameForm', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
   });
 
-  it('keeps a concurrently saved address when the name response is stale', async () => {
+  it('keeps a concurrently saved location when the name response is stale', async () => {
     let resolve!: (value: Account) => void;
     const pending = new Promise<Account>((r) => {
       resolve = r;
@@ -262,18 +275,18 @@ describe('NameForm', () => {
     act(() => {
       useAuthStore.setState({
         session: 'sess',
-        account: { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' },
+        account: { ...baseAccount, location: 'Zürich' },
       });
     });
 
     await act(async () => {
-      resolve({ ...baseAccount, name: 'Ada', lightningAddress: null });
+      resolve({ ...baseAccount, name: 'Ada', location: null });
     });
 
     expect(useAuthStore.getState().account).toEqual({
       ...baseAccount,
       name: 'Ada',
-      lightningAddress: 'me@walletofsatoshi.com',
+      location: 'Zürich',
     });
   });
 

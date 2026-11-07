@@ -16,6 +16,8 @@ import { writeLocaleCookie } from '@/lib/locale-cookie';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
 import { localizedPublicPath, publicPathFromUrl } from '@/lib/public-locale-path';
 import { loadSession } from '@/lib/session-storage';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { isWalletOpen } from '@/lib/wallet/wallet-open';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -69,6 +71,8 @@ function localeAt(index: number): Locale {
 
 /**
  * Writes the locale cookie, then loads a public language URL or refreshes app pages.
+ * Also saves it on the account for a stored session, unless that session is
+ * held back until its wallet is open or a login is still opening its wallet.
  *
  * @param next - Locale the visitor chose.
  * @param current - Locale currently active in the tree.
@@ -86,28 +90,30 @@ async function persistLocale(
   if (next === current && (target === null || target === globalThis.location.pathname)) {
     return;
   }
-  if (next !== current) {
-    const session = loadSession();
-    if (session !== null) {
-      const generation = bumpLocaleGeneration();
-      try {
-        const updated = await setAccountLocale(session, next, false);
-        if (localeGeneration() !== generation) {
-          return;
-        }
-        const account = useAuthStore.getState().account;
-        if (account !== null && account.id !== updated.id) {
-          return;
-        }
-        if (account !== null) {
-          useAuthStore.getState().setAccount({ ...account, locale: updated.locale });
-        }
-      } catch {
+  // A session held back until its wallet is open, or a login whose wallet is
+  // still opening, counts as signed out: only the cookie changes.
+  const { lockedSession, account } = useAuthStore.getState();
+  const opening = account !== null && !isWalletOpen(account, peekSessionPhrase() !== null);
+  const session = lockedSession === null && !opening ? loadSession() : null;
+  if (next !== current && session !== null) {
+    const generation = bumpLocaleGeneration();
+    try {
+      const updated = await setAccountLocale(session, next, false);
+      if (localeGeneration() !== generation) {
         return;
       }
-      publicPath = publicPathFromUrl(globalThis.location.pathname);
-      target = publicPath === null ? null : localizedPublicPath(next, publicPath);
+      const liveAccount = useAuthStore.getState().account;
+      if (liveAccount !== null && liveAccount.id !== updated.id) {
+        return;
+      }
+      if (liveAccount !== null) {
+        useAuthStore.getState().setAccount({ ...liveAccount, locale: updated.locale });
+      }
+    } catch {
+      return;
     }
+    publicPath = publicPathFromUrl(globalThis.location.pathname);
+    target = publicPath === null ? null : localizedPublicPath(next, publicPath);
   }
   writeLocaleCookie(next);
   if (target !== null) {
@@ -123,7 +129,7 @@ async function persistLocale(
  * navigates to the matching public URL, or refreshes other unsigned app screens.
  *
  * Public / unsigned chrome only: Globe pill trigger + absolute popover listbox.
- * Signed-in language lives on Profile (`LanguagePreferenceSwitcher`).
+ * Signed-in language lives on Settings (`LanguagePreferenceSwitcher`).
  *
  * Marketing passes `tone="dark"` (hardcoded). Unsigned app pages pass
  * `tone="light"` so chrome follows semantic theme tokens.

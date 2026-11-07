@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isLocalSunday, SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 
 const SATURDAY_UTC = Date.parse('2026-09-26T12:00:00.000Z');
@@ -41,5 +41,43 @@ describe('SUNDAY_BOOTSTRAP_SCRIPT', () => {
     expect(css).toContain('.sunday-write-field');
     expect(css).toContain('display: contents');
     expect(css).toContain('.sunday-write-notice');
+  });
+
+  describe('pinned instant', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      document.head.innerHTML = '';
+      delete document.documentElement.dataset['localSunday'];
+      Reflect.deleteProperty(window, 'sessionStorage');
+    });
+
+    function runAt(pinned: string | null, meta: string | null): string | undefined {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 8, 26, 12));
+      if (meta !== null) {
+        const tag = document.createElement('meta');
+        tag.name = 'e2e-now';
+        tag.content = meta;
+        document.head.appendChild(tag);
+      }
+      Object.defineProperty(window, 'sessionStorage', {
+        configurable: true,
+        value: { getItem: (key: string) => (key === 'e2e-now' ? pinned : null) },
+      });
+      new Function(SUNDAY_BOOTSTRAP_SCRIPT)();
+      return document.documentElement.dataset['localSunday'];
+    }
+
+    it('ignores sessionStorage e2e-now in a production build (no e2e-now meta)', () => {
+      expect(runAt('2026-09-27T12:00:00', null)).toBe('0');
+    });
+
+    it('uses sessionStorage e2e-now in a Playwright build', () => {
+      expect(runAt('2026-09-27T12:00:00', '2026-09-26T12:00:00')).toBe('1');
+    });
+
+    it('falls back to the e2e-now meta in a Playwright build', () => {
+      expect(runAt(null, '2026-09-27T12:00:00')).toBe('1');
+    });
   });
 });

@@ -144,6 +144,17 @@ const PROD_PLACES = 'https://api.opencryptopay.io/map/places';
 const DEV_PLACES = 'https://dev-api.opencryptopay.io/map/places';
 const MAP_STYLE_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
 const MAP_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
+
+/** Nonce of a script already on this page, or empty when none is set. */
+function pageScriptNonce(): string {
+  for (const node of document.scripts) {
+    const nonce = node.nonce;
+    if (nonce !== undefined && nonce !== '') {
+      return nonce;
+    }
+  }
+  return '';
+}
 const TILE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const HOME_CENTER: LngLat = [8.23, 46.8];
 const HOME_ZOOM = 7;
@@ -873,6 +884,10 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       script.src = MAP_SCRIPT_URL;
       script.async = true;
       script.setAttribute('data-shops-map', 'loading');
+      const nonce = pageScriptNonce();
+      if (nonce !== '') {
+        script.nonce = nonce;
+      }
       listen(script);
       document.head.appendChild(script);
     }

@@ -8,7 +8,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/grants` — signed-in 21 gifts grant status.
  *
- * Requires name + address + living-room rules agreement via {@link OnboardingGate}
+ * Requires name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`.
  *
  * @returns The grants screen.

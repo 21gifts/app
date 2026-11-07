@@ -1092,6 +1092,39 @@ describe('PlaceField', () => {
     }
   });
 
+  it('renders no preview when previewSlot is null', () => {
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        previewSlot={null}
+      />,
+    );
+    expect(screen.queryByText('Happyland')).toBeNull();
+  });
+
+  it('renders nothing in the preview slot on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+          previewSlot={slot}
+        />,
+      );
+      expect(slot.textContent).toBe('');
+      expect(screen.queryByText('Happyland')).toBeNull();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+      slot.remove();
+    }
+  });
+
   function fillShopAddress(name = "Kiki's Bakery"): void {
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: name } });
     fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });

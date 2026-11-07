@@ -7,9 +7,11 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type KeyboardEvent,
   type ReactElement,
 } from 'react';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import {
@@ -143,8 +145,8 @@ export interface ShopAddWizardProps {
   cancelDisabled?: boolean;
   /**
    * When true, Next and the chrome Back stay usable while `posting` is true.
-   * Fields and Save stay locked. The edit screen sets this while a photo is
-   * still being prepared, so the reason stays on screen and Save stays off.
+   * Fields and Save stay locked. The edit screen passes this while a photo
+   * is still being prepared, so Next and Cancel can leave that pick behind.
    */
   allowStepsWhilePosting?: boolean;
   /** Visible shop text. The shop tag is added on send. */
@@ -488,6 +490,13 @@ export function ShopAddWizard({
   }
 
   const title = t(STEP_KEY[step]);
+  const pickFiles = (event: ChangeEvent<HTMLInputElement>): void => {
+    const list = event.target.files;
+    if (list !== null && list.length > 0) {
+      onPickFiles(Array.from(list));
+    }
+    event.target.value = '';
+  };
   const cancelEdit = mode === 'edit' ? onCancel : undefined;
   const placeComplete = shopPlaceComplete(place);
   const descriptionProblem = shopDescriptionProblem(draft, place?.label ?? null);
@@ -643,30 +652,32 @@ export function ShopAddWizard({
             }
             className="hidden"
             disabled={posting}
+            onChange={pickFiles}
             aria-invalid={photoError === null && !photoRejected ? undefined : true}
             aria-describedby={photoFeedbackId}
-            onChange={(event) => {
-              const list = event.target.files;
-              if (list !== null && list.length > 0) {
-                onPickFiles(Array.from(list));
-              }
-              event.target.value = '';
-            }}
           />
-          <IconButton
-            id={photoAddButtonId}
-            type="button"
-            size="lg"
-            variant="secondary"
-            aria-label={t('forum.attach')}
-            aria-describedby={photoFeedbackId}
-            disabled={posting}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-          >
-            <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-          </IconButton>
+          <div className="flex items-center gap-2">
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={pickFiles}
+            />
+            <IconButton
+              id={photoAddButtonId}
+              type="button"
+              size="lg"
+              variant="secondary"
+              aria-label={t('forum.attach')}
+              aria-describedby={photoFeedbackId}
+              disabled={posting}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+            >
+              <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+            </IconButton>
+          </div>
           <div id={photoFeedbackId} className="flex flex-col gap-1">
             <p className="text-sm text-app-muted">
               {t('shops.photoCount', {

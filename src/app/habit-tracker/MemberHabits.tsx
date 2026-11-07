@@ -8,7 +8,8 @@ import type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet'
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRateState } from '@/hooks/useSpotRate';
+import { CannotReceiveError } from '@/lib/api';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import {
   HABIT_COMMENT_API_MESSAGE,
@@ -22,12 +23,14 @@ import {
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
 import {
+  attachTypedFigure,
+  draftUnit,
   payDraftProblem,
   paySatsFromDraft,
   shownDraftPayError,
   shownPaySheetError,
 } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
+import { isSmartphoneUserAgent } from '@/lib/payment-link';
 import type { MessageKey } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -137,6 +140,7 @@ export function MemberHabits(): ReactElement {
   const [payCommentId, setPayCommentId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
+  const payUnit = draftUnit(payShownUnit, account?.amountUnit, payDraft);
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [addNameTouched, setAddNameTouched] = useState(false);
@@ -148,7 +152,6 @@ export function MemberHabits(): ReactElement {
     field: HabitFieldKind;
   } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const payGeneration = useRef(0);
   const listGeneration = useRef(0);
   const listSettled = useRef(false);
@@ -175,8 +178,9 @@ export function MemberHabits(): ReactElement {
   };
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
-  const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
-
+  const { rateDay, loading: rateLoading } = useSpotRateState(signedIn);
+  const rateSettled = !rateLoading;
+  const [showPaymentQr, setShowPaymentQr] = useState(false);
   useEffect(() => {
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
@@ -252,6 +256,26 @@ export function MemberHabits(): ReactElement {
       }
     };
   }, [session, attempt]);
+
+  // A reload that says the open gift's author cannot receive yet closes the gift, so a late
+  // invoice is discarded (payGeneration) and does not come back on a later flip.
+  const payTargetBlocked =
+    payCommentId !== null &&
+    data !== null &&
+    data.habits.some((habit) =>
+      habit.comments.some((comment) => comment.id === payCommentId && comment.canReceive === false),
+    );
+  useEffect(() => {
+    if (!payTargetBlocked) {
+      return;
+    }
+    payGeneration.current += 1;
+    setPayCommentId(null);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
+  }, [payTargetBlocked]);
 
   // Cleared in this render, so the previous account is not painted.
   if (draftSession !== session) {
@@ -512,7 +536,7 @@ export function MemberHabits(): ReactElement {
     if (payError === 'loading' && !rateSettled) {
       return;
     }
-    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+    const payProblem = payDraftProblem(payUnit, payDraft, rateDay, fiat, rateSettled);
     if (payProblem === 'quiet') {
       setPayError('loading');
       return;
@@ -521,7 +545,7 @@ export function MemberHabits(): ReactElement {
       setPayError('noRate');
       return;
     }
-    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    const sats = paySatsFromDraft(payDraft, payUnit, rateDay, fiat);
     if (sats === 'invalid' || sats > FORUM_GOAL_SATS_MAX) {
       setPayError('habitAmount');
       return;
@@ -545,11 +569,18 @@ export function MemberHabits(): ReactElement {
         if (generation !== payGeneration.current) {
           return;
         }
-        setPayInvoice({
-          messageId: commentId,
-          pr: lightningInvoicePr(body, sats),
-          amountSats: sats,
-        });
+        setPayInvoice(
+          attachTypedFigure(
+            {
+              messageId: commentId,
+              pr: lightningInvoicePr(body, sats),
+              amountSats: sats,
+            },
+            payUnit,
+            payDraft,
+            fiat,
+          ),
+        );
       })
       .catch((caught: unknown) => {
         if (useAuthStore.getState().session !== actor) {
@@ -571,7 +602,7 @@ export function MemberHabits(): ReactElement {
           setPayError('rateLimit');
           return;
         }
-        if (/author's wallet cannot receive this Bitcoin payment/i.test(caught.message)) {
+        if (caught instanceof CannotReceiveError) {
           setPayError('authorWallet');
           return;
         }
@@ -588,8 +619,8 @@ export function MemberHabits(): ReactElement {
       });
   }
 
-  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
-  const livePaySats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+  const livePayProblem = payDraftProblem(payUnit, payDraft, rateDay, fiat, rateSettled);
+  const livePaySats = paySatsFromDraft(payDraft, payUnit, rateDay, fiat);
   const habitPayProblem =
     livePayProblem === 'invalid' ||
     (typeof livePaySats === 'number' && livePaySats > FORUM_GOAL_SATS_MAX)
@@ -930,6 +961,7 @@ export function MemberHabits(): ReactElement {
                     payError={shownHabitPayError}
                     payInvoice={payInvoice}
                     rateDay={rateDay}
+                    ratePending={false}
                     showPaymentQr={showPaymentQr}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {

@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/grants/payments/amounts` — the daily payout switch and recipient amounts.
  *
  * The chrome back returns to the previous in-app view (the card has no back
- * control). Requires name + address + living-room rules agreement via
+ * control). Requires name, username, and living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`. There is no `route.ts` beside
  * this page (Next.js forbids that); roster HTTP lives under
  * `/funding/daily-roster`. The comment is a separate page.

@@ -10,7 +10,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/messages` — signed-in private-message inbox.
  *
- * Requires name + address + living-room rules agreement via
+ * Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/contact`. Public
  * forum notes stay at `/messages/[id]`. There is no `route.ts` beside this
  * page (Next.js forbids that); conversation HTTP lives under

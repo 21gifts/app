@@ -67,6 +67,7 @@ function renderComments(
       payError={null}
       payInvoice={null}
       rateDay={null}
+      ratePending={false}
       showPaymentQr={false}
       onPayOpen={vi.fn()}
       onPayDraftChange={vi.fn()}
@@ -143,5 +144,31 @@ describe('HabitComments', () => {
     expect(cont.disabled).toBe(true);
     fireEvent.submit(cont.closest('form')!);
     expect(onPaySubmit).not.toHaveBeenCalled();
+  });
+
+  it('gates the label and the disabled gift like a live gift on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderComments({ habit: habit([{ ...otherComment, canReceive: false }]) });
+      expect(screen.getByText('Zapping is paused on Sunday.')).toBeTruthy();
+      expect(screen.getByText("Can't receive yet").closest('.sunday-write-field')).toBeTruthy();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('shows the label and a disabled gift without the sheet when the author cannot receive', () => {
+    const onPayOpen = vi.fn();
+    renderComments({
+      onPayOpen,
+      payCommentId: 'c-other',
+      habit: habit([{ ...otherComment, canReceive: false }]),
+    });
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    const gift = screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement;
+    expect(gift.disabled).toBe(true);
+    fireEvent.click(gift);
+    expect(onPayOpen).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 });

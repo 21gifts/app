@@ -1,0 +1,237 @@
+/**
+ * Shares a member keeps for other members' social recovery, as encrypted
+ * boxes on the api under the keeping member's own login (`/me/held-shares`).
+ * Each box holds one share code, encrypted in this browser with a key derived
+ * from the keeping member's 12 words ({@link heldShareBoxKey}); the api never
+ * learns whose share a box holds. A box that does not open with the current
+ * words, or holds no share code, is counted, never deleted on its own, and
+ * {@link relockHeldShares} moves boxes from previous words to the current
+ * ones after the keeping member's own recovery.
+ */
+import { deleteHeldShareBox, fetchHeldShareBoxes, putHeldShareBox } from '@/lib/api';
+import {
+  heldShareBoxKey,
+  newHeldShareBoxId,
+  openHeldShare,
+  sealHeldShare,
+} from '@/lib/held-share-box';
+import { encodeShareCode, parseShareCode } from '@/lib/recovery-share-code';
+
+/** One share kept for another member, read from its box. */
+export interface HeldShare {
+  /** Id of the box it is stored in. */
+  boxId: string;
+  /** The full share payload. */
+  code: string;
+  /** Account the share belongs to. */
+  ownerAccountId: string;
+  /** That account's username. */
+  ownerUsername: string;
+  /** SLIP-39 identifier of the share's set. */
+  identifier: number;
+  /** 0 for person 1, 1 for person 2, 2 for the 21.gifts share. */
+  memberIndex: number;
+}
+
+/** The keeping member's boxes, read with their current words. */
+export interface HeldShares {
+  /** The shares that opened, by owner username. */
+  shares: HeldShare[];
+  /** Ids of the boxes that do not open with the current words or hold no share code. */
+  lockedIds: string[];
+}
+
+/**
+ * Outcome of {@link keepHeldShare}: the kept share, or why it was refused
+ * (`invalid` payload, the member's `own` share, a `duplicate` of another
+ * share of the same set among the member's boxes, or `save`: boxes the api
+ * did not read, a new box that could not be sealed, or one the api did not
+ * store).
+ */
+export type KeepShareResult =
+  { ok: true; share: HeldShare } | { ok: false; reason: 'invalid' | 'own' | 'duplicate' | 'save' };
+
+/**
+ * Reads every box of the signed-in member with the given key.
+ *
+ * @param sessionToken - Bearer session.
+ * @param holderAccountId - The signed-in member.
+ * @param key - The box key of the member's current words.
+ * @returns The shares that opened (by owner username, then box order) and
+ *   the ids of the boxes that did not open or hold no share code.
+ * @throws Error from {@link fetchHeldShareBoxes} when the boxes cannot be read.
+ */
+export async function loadHeldShares(
+  sessionToken: string,
+  holderAccountId: string,
+  key: CryptoKey,
+): Promise<HeldShares> {
+  const boxes = await fetchHeldShareBoxes(sessionToken);
+  const shares: HeldShare[] = [];
+  const lockedIds: string[] = [];
+  for (const box of boxes) {
+    const code = await openHeldShare(key, holderAccountId, box.id, box.ciphertext);
+    const parsed = code === null ? null : parseShareCode(code);
+    if (code === null || parsed === null) {
+      lockedIds.push(box.id);
+      continue;
+    }
+    shares.push({
+      boxId: box.id,
+      code,
+      ownerAccountId: parsed.ownerAccountId,
+      ownerUsername: parsed.ownerUsername,
+      identifier: parsed.identifier,
+      memberIndex: parsed.memberIndex,
+    });
+  }
+  shares.sort((a, b) => a.ownerUsername.localeCompare(b.ownerUsername));
+  return { shares, lockedIds };
+}
+
+/**
+ * Keeps a scanned share for another member. Refuses a share of the member's
+ * own account. The member's boxes are read again first
+ * ({@link loadHeldShares}): a box that already holds this share code is the
+ * kept share, so a scan repeated after a lost answer never makes a second
+ * box; another share whose owner and set identifier are among the opened
+ * boxes is refused, so one member never keeps two shares of one set.
+ * Otherwise the share goes into a new box. Two devices that keep the same
+ * share at the same moment can each write a box: both read the boxes before
+ * either write, and the api cannot refuse the second because it never learns
+ * whose share a box holds.
+ *
+ * @param sessionToken - Bearer session.
+ * @param holderAccountId - The signed-in member who keeps it.
+ * @param key - The box key of the member's current words.
+ * @param text - The scanned payload.
+ * @returns The kept share (in its existing or a new box), or why it was refused.
+ */
+export async function keepHeldShare(
+  sessionToken: string,
+  holderAccountId: string,
+  key: CryptoKey,
+  text: string,
+): Promise<KeepShareResult> {
+  const parsed = parseShareCode(text);
+  if (parsed === null) {
+    return { ok: false, reason: 'invalid' };
+  }
+  if (parsed.ownerAccountId === holderAccountId) {
+    return { ok: false, reason: 'own' };
+  }
+  const code = encodeShareCode(parsed.ownerAccountId, parsed.ownerUsername, parsed.share);
+  let kept: HeldShare[];
+  try {
+    kept = (await loadHeldShares(sessionToken, holderAccountId, key)).shares;
+  } catch {
+    return { ok: false, reason: 'save' };
+  }
+  const existing = kept.find((share) => share.code === code);
+  if (existing !== undefined) {
+    return { ok: true, share: existing };
+  }
+  if (
+    kept.some(
+      (share) =>
+        share.ownerAccountId === parsed.ownerAccountId && share.identifier === parsed.identifier,
+    )
+  ) {
+    return { ok: false, reason: 'duplicate' };
+  }
+  const boxId = newHeldShareBoxId();
+  try {
+    const ciphertext = await sealHeldShare(key, holderAccountId, boxId, code);
+    await putHeldShareBox(sessionToken, boxId, ciphertext);
+  } catch {
+    return { ok: false, reason: 'save' };
+  }
+  return {
+    ok: true,
+    share: {
+      boxId,
+      code,
+      ownerAccountId: parsed.ownerAccountId,
+      ownerUsername: parsed.ownerUsername,
+      identifier: parsed.identifier,
+      memberIndex: parsed.memberIndex,
+    },
+  };
+}
+
+/**
+ * Moves the member's boxes from their previous words to their current ones,
+ * after the member's own social recovery: every box that opens with the
+ * previous words is encrypted again with the current words and written back
+ * under the same id. A box that does not open with the previous words is left
+ * as it is. A box deleted while this runs is not brought back: when the api
+ * answers a write with `created`, the box was gone, so it is deleted again
+ * (once; a failed delete leaves it under the current words) and not counted.
+ * A write whose answer is lost is not known to have created the box, so a
+ * box deleted between the read and such a write can come back.
+ * The boxes are read first, so a member who keeps none derives no key. Best
+ * effort: it never throws, a box whose write fails is not counted, and the
+ * next call moves it whenever the api did not store it (the boxes already
+ * moved no longer open with the previous words). Same words, or no current
+ * words in this tab, move nothing.
+ *
+ * @param sessionToken - Bearer session of the recovered member.
+ * @param holderAccountId - The member's account.
+ * @param oldWords - The member's previous 12 words.
+ * @param newWords - The member's current 12 words, or `null` while the tab
+ *   holds none (the next call moves the boxes).
+ * @returns How many boxes were moved.
+ */
+export async function relockHeldShares(
+  sessionToken: string,
+  holderAccountId: string,
+  oldWords: string,
+  newWords: string | null,
+): Promise<number> {
+  try {
+    const boxes = await fetchHeldShareBoxes(sessionToken);
+    if (boxes.length === 0 || newWords === null || sameWords(oldWords, newWords)) {
+      return 0;
+    }
+    const [oldKey, newKey] = await Promise.all([
+      heldShareBoxKey(oldWords),
+      heldShareBoxKey(newWords),
+    ]);
+    let moved = 0;
+    for (const box of boxes) {
+      const code = await openHeldShare(oldKey, holderAccountId, box.id, box.ciphertext);
+      if (code === null) {
+        continue;
+      }
+      let stored: 'created' | 'replaced';
+      try {
+        const ciphertext = await sealHeldShare(newKey, holderAccountId, box.id, code);
+        stored = await putHeldShareBox(sessionToken, box.id, ciphertext);
+      } catch {
+        // Not sealed, not stored, or the answer was lost: the box is under the
+        // previous words (the next call moves it) or already under the current ones.
+        continue;
+      }
+      if (stored === 'created') {
+        await deleteHeldShareBox(sessionToken, box.id).catch(() => undefined);
+        continue;
+      }
+      moved += 1;
+    }
+    return moved;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Whether two phrases are the same words, ignoring spacing and case.
+ *
+ * @param a - One phrase.
+ * @param b - The other.
+ * @returns `true` for the same words.
+ */
+function sameWords(a: string, b: string): boolean {
+  const normal = (words: string): string => words.trim().toLowerCase().split(/\s+/).join(' ');
+  return normal(a) === normal(b);
+}

@@ -8,10 +8,11 @@ import {
   formatFiatTick,
   formatUsdDisplay,
   formatUsdTick,
+  draftUnit,
   fiatDraftForSats,
   fiatToSats,
-  latestRateDay,
-  latestRateDayFor,
+  addDecimalStrings,
+  attachTypedFigure,
   parseAmountDraft,
   payDraftProblem,
   paySatsFromDraft,
@@ -21,6 +22,8 @@ import {
   shownPaySheetError,
   satsToFiatAmount,
   shownFiatForSats,
+  spotRateDay,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -126,31 +129,22 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-describe('latestRateDay', () => {
-  it('returns the last day with gifts', () => {
-    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }, RATE_DAY])).toEqual(RATE_DAY);
+describe('spotRateDay', () => {
+  it('prices 100,000,000 sats at each code the api priced', () => {
+    expect(spotRateDay({ USD: '100000', CHF: '80000.5' })).toEqual({
+      sats: 100_000_000,
+      usd: '100000',
+      chf: '80000.5',
+      eur: null,
+      php: null,
+    });
+    expect(satsToFiatAmount(1_000, spotRateDay({ CHF: '80000' }), 'CHF')).toBe('0.80');
+    expect(satsToFiatAmount(1_000, spotRateDay({ CHF: '80000' }), 'USD')).toBeNull();
   });
 
-  it('returns null when every day is empty', () => {
-    expect(latestRateDay([{ ...RATE_DAY, sats: 0 }])).toBeNull();
-    expect(latestRateDay([])).toBeNull();
-  });
-});
-
-describe('latestRateDayFor', () => {
-  const poisoned = { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null };
-
-  it('skips a newer day that cannot convert the currency', () => {
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'PHP')).toEqual(RATE_DAY);
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'USD')).toEqual(poisoned);
-  });
-
-  it('returns null when no day can convert that currency', () => {
-    expect(latestRateDayFor([poisoned], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, sats: 0, php: '1.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: '0.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: 'nope' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([], 'CHF')).toBeNull();
+  it('returns null when no code has a usable price', () => {
+    expect(spotRateDay({})).toBeNull();
+    expect(spotRateDay({ USD: '0', EUR: '0.00' })).toBeNull();
   });
 });
 
@@ -168,6 +162,31 @@ describe('shownFiatForSats', () => {
       amountEur: null,
       amountPhp: null,
     });
+    expect(shownFiatForSats(21, RATE_DAY, null)).toEqual(shownFiatForSats(21, RATE_DAY));
+  });
+
+  it('stores a typed figure in that currency and leaves the other three at the spot', () => {
+    const spot = shownFiatForSats(12_000, RATE_DAY);
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12' })).toEqual({
+      ...spot,
+      amountUsd: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'CHF', amount: '11.5' })).toEqual({
+      ...spot,
+      amountChf: '11.50',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'EUR', amount: '12.00' })).toEqual({
+      ...spot,
+      amountEur: '12.00',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'PHP', amount: '12.125' })).toEqual({
+      ...spot,
+      amountPhp: '12.13',
+    });
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: '12.124' }).amountUsd).toBe(
+      '12.12',
+    );
+    expect(shownFiatForSats(12_000, RATE_DAY, { code: 'USD', amount: 'nope' })).toEqual(spot);
   });
 });
 
@@ -274,6 +293,43 @@ describe('parseAmountDraft', () => {
   });
 });
 
+describe('typedFiatFigure', () => {
+  it('keeps a typed fiat decimal and drops a trailing separator', () => {
+    expect(typedFiatFigure('btc', '12', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', 'nope', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '1.123456789', 'USD')).toBeNull();
+    expect(typedFiatFigure('fiat', '12', 'USD')).toEqual({ code: 'USD', amount: '12' });
+    expect(typedFiatFigure('fiat', '12.', 'USD')).toEqual({ code: 'USD', amount: '12' });
+    expect(typedFiatFigure('fiat', '1,50', 'CHF')).toEqual({ code: 'CHF', amount: '1.50' });
+  });
+});
+
+describe('attachTypedFigure', () => {
+  it('returns the same value for bitcoin and adds the figure for fiat', () => {
+    const value = { pr: 'lnbc', amountSats: 21 };
+    expect(attachTypedFigure(value, 'btc', '12', 'USD')).toBe(value);
+    expect(attachTypedFigure(value, 'fiat', 'nope', 'USD')).toBe(value);
+    expect(attachTypedFigure(value, 'fiat', '12', 'USD')).toEqual({
+      pr: 'lnbc',
+      amountSats: 21,
+      figure: { code: 'USD', amount: '12' },
+    });
+  });
+});
+
+describe('addDecimalStrings', () => {
+  it('adds a whole stored figure to a two-decimal spot and refuses a non-decimal', () => {
+    expect(addDecimalStrings('12', '1.00')).toBe('13.00');
+    expect(addDecimalStrings('1.50', '1.25')).toBe('2.75');
+    expect(addDecimalStrings('2', '3')).toBe('5.0');
+    expect(addDecimalStrings('0', '0')).toBe('0.0');
+    expect(addDecimalStrings('0.50', '0.25')).toBe('0.75');
+    expect(addDecimalStrings('', '1.00')).toBeNull();
+    expect(addDecimalStrings('1.00', 'nope')).toBeNull();
+  });
+});
+
 describe('replySatsFromDraft and paySatsFromDraft', () => {
   it('keeps an empty reply empty and bills 0 as 1', () => {
     expect(replySatsFromDraft('', 'btc', RATE_DAY, 'USD')).toBe('empty');
@@ -289,6 +345,20 @@ describe('replySatsFromDraft and paySatsFromDraft', () => {
     expect(paySatsFromDraft('0', 'fiat', null, 'USD')).toBe('invalid');
     expect(paySatsFromDraft('1.00', 'fiat', RATE_DAY, 'USD')).toBe(1000);
     expect(paySatsFromDraft('1.00', 'fiat', null, 'USD')).toBe('invalid');
+  });
+});
+
+describe('draftUnit', () => {
+  it('keeps a non-bitcoin fiat draft in fiat while the field reports bitcoin', () => {
+    expect(draftUnit('fiat', 'fiat', '1.00')).toBe('fiat');
+    expect(draftUnit('fiat', 'btc', '21')).toBe('fiat');
+    expect(draftUnit('btc', 'btc', '1.00')).toBe('btc');
+    expect(draftUnit('btc', null, '1.00')).toBe('btc');
+    expect(draftUnit('btc', undefined, '1.00')).toBe('btc');
+    expect(draftUnit('btc', 'fiat', '1.00')).toBe('fiat');
+    expect(draftUnit('btc', 'fiat', '')).toBe('fiat');
+    expect(draftUnit('btc', 'fiat', ' 21 ')).toBe('btc');
+    expect(draftUnit('btc', 'fiat', '0')).toBe('btc');
   });
 });
 

@@ -248,8 +248,25 @@ test('Function: readLocaleCookie — a stored language follows client navigation
   page,
   context,
 }) => {
+  // On /en, LocaleRouteSync writes `en` into the cookie once it has run, and it can run after
+  // the router is ready. With the document's own cookie dropped (the fetch stores it in the
+  // context), that write is the only one, so waiting for it means a cookie stored afterwards
+  // is not overwritten.
+  await page.route(/\/en$/, async (route) => {
+    const response = await route.fetch();
+    await context.clearCookies({ name: 'locale' });
+    const headers = { ...response.headers() };
+    delete headers['set-cookie'];
+    await route.fulfill({ status: response.status(), headers, body: await response.body() });
+  });
   await page.goto('/en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect
+    .poll(async () => {
+      const localeCookies = (await context.cookies()).filter((cookie) => cookie.name === 'locale');
+      return localeCookies.map((cookie) => cookie.value);
+    })
+    .toEqual(['en']);
   await expect
     .poll(() =>
       page.evaluate(() => {

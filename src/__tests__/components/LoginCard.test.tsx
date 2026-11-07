@@ -7,6 +7,7 @@ import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { Account } from '@/lib/api-types';
 
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 
@@ -19,6 +20,7 @@ const loginSpy = vi.fn();
 const registerSpy = vi.fn();
 const submitNameSpy = vi.fn();
 const authenticateSpy = vi.fn();
+const authenticateHeldSpy = vi.fn();
 const retrySpy = vi.fn();
 const cancelPasskeySpy = vi.fn();
 const clearNameErrorSpy = vi.fn();
@@ -42,6 +44,7 @@ function mockPasskey(
   status: PasskeyStatus = 'idle',
   error: string | null = null,
   nameError: 'invalid' | 'taken' | null = null,
+  recoveryPending = false,
 ): void {
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status,
@@ -49,10 +52,13 @@ function mockPasskey(
     register: registerSpy,
     submitName: submitNameSpy,
     authenticate: authenticateSpy,
+    authenticateHeld: authenticateHeldSpy,
     retry: retrySpy,
     cancel: cancelPasskeySpy,
     clearNameError: clearNameErrorSpy,
     error: status === 'error' ? error : null,
+    recoveryPending: status === 'error' && recoveryPending,
+    walletPasskeyMissed: false,
     nameError: status === 'name' ? nameError : null,
   });
 }
@@ -82,6 +88,193 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows no wallet confirm line on the ordinary login', () => {
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    expect(screen.queryByText('Confirm to open your wallet')).toBeNull();
+  });
+
+  describe('held-back session', () => {
+    beforeEach(() => {
+      useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+    });
+
+    afterEach(() => {
+      useAuthStore.setState({ lockedSession: null, lockedName: null });
+    });
+
+    it('says the wallet passkey did not answer and keeps Log in and Open a new account', () => {
+      vi.mocked(usePasskeyLogin).mockReturnValue({
+        ...usePasskeyLogin(),
+        walletPasskeyMissed: true,
+      });
+      renderWithLocale(<LoginCard heldProblem="failed" />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        "Your wallet's passkey did not answer. If it is on another device, press Log in again to choose that device or another passkey.",
+      );
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+    });
+
+    it('lets the passkey of an unfinished recovery win over the wallet passkey alert', () => {
+      mockPasskey('error', 'recovery', null, true);
+      vi.mocked(usePasskeyLogin).mockReturnValue({
+        ...usePasskeyLogin(),
+        walletPasskeyMissed: true,
+      });
+      renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(screen.queryByText(/did not answer/)).toBeNull();
+      expect(screen.getByRole('alert').textContent).toContain('recovery is not finished');
+    });
+
+    it('is the ordinary login with a greeting, Open a new account, and no Log out', () => {
+      renderWithLocale(<LoginCard />);
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Log in with your device' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+      expect(screen.getByText('New to 21.gifts?')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+      const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+      expect(entry.getAttribute('href')).toBe('/recover');
+      expect(entry.className).toContain('underline');
+      expect(
+        screen.getByRole('button', { name: 'Log in' }).compareDocumentPosition(entry) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+
+    it('hides the quiet Social Recovery link inside the wallet login card', () => {
+      renderWithLocale(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+      expect(
+        screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
+      ).toBeNull();
+    });
+
+    it('asks to confirm the wallet open directly above Log in', () => {
+      renderWithLocale(<LoginCard />);
+      const line = screen.getByText('Confirm to open your wallet');
+      expect(line.nextElementSibling).toBe(screen.getByRole('button', { name: 'Log in' }));
+    });
+
+    it('greets nobody when the held account has no name', () => {
+      useAuthStore.setState({ lockedName: null });
+      renderWithLocale(<LoginCard />);
+      expect(screen.queryByText(/Welcome back/)).toBeNull();
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    });
+
+    it('logs in with one authenticate prompt, never the account question', () => {
+      renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      expect(authenticateHeldSpy).toHaveBeenCalledTimes(1);
+      expect(loginSpy).not.toHaveBeenCalled();
+    });
+
+    it.each<PasskeyStatus>(['idle', 'error', 'unknown'])(
+      'stays on the held view with the retry message after a %s prompt',
+      (after) => {
+        const view = renderWithLocale(<LoginCard />);
+        fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+        mockPasskey(after, 'Failed');
+        view.rerender(<LoginCard />);
+        expect(screen.getByRole('alert').textContent).toBe(
+          'Something went wrong. Please try again.',
+        );
+        expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+        expect(screen.queryByText('This passkey is not an account')).toBeNull();
+      },
+    );
+
+    it('says that a recovery is not finished yet and links to it, also under the held view, even without the entry elsewhere', () => {
+      const view = renderWithLocale(<LoginCard showRecover={false} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('error', 'recovery_pending', null, true);
+      view.rerender(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+      );
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      const login = screen.getByRole('button', { name: 'Log in' });
+      const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+      expect(entry.getAttribute('href')).toBe('/recover');
+      expect(login.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      useAuthStore.setState({ wrongAccount: true });
+      view.rerender(<LoginCard showRecover={false} />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'You signed in with a different account. Try again with the right one.',
+      );
+      expect(
+        screen.queryByRole('link', { name: 'Recover account via Social Recovery' }),
+      ).toBeNull();
+      useAuthStore.setState({ wrongAccount: false });
+    });
+
+    it('shows a refused account on the held view and clears it on the next Log in', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('error', WRONG_ACCOUNT_ERROR);
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'You signed in with a different account. Try again with the right one.',
+      );
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ wrongAccount: true });
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      expect(useAuthStore.getState().wrongAccount).toBe(false);
+      expect(authenticateHeldSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the failed wallet open as the retry message', () => {
+      renderWithLocale(<LoginCard heldProblem="failed" />);
+      expect(screen.getByRole('alert').textContent).toBe('Something went wrong. Please try again.');
+    });
+
+    it('shows a passkey without PRF as the one no-wallet sentence', () => {
+      renderWithLocale(<LoginCard heldProblem="noPrf" />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      );
+    });
+
+    it('opens the name form for a new account and clears the retry message', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('idle');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('alert')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+      expect(registerSpy).toHaveBeenCalledTimes(1);
+      mockPasskey('name');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('heading', { name: 'Choose your name' })).toBeTruthy();
+      mockPasskey('error', 'Failed to start passkey registration: 503');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+      expect(screen.queryByText('Welcome back, Ada')).toBeNull();
+    });
+
+    it('forgets a dismissed try once a login signs in', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      act(() => {
+        useAuthStore.setState({ account: { id: 'a' } as Account });
+      });
+      expect(cancelPasskeySpy).toHaveBeenCalled();
+      act(() => {
+        useAuthStore.setState({ account: null });
+      });
+      view.rerender(<LoginCard />);
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+  });
+
   it('shows the installed iOS version when the phone is below iOS 18', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -104,6 +297,26 @@ describe('LoginCard', () => {
       await Promise.resolve();
     });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('says this phone or browser cannot hold a wallet when the new passkey has no PRF', async () => {
+    mockPasskey('error', 'wallet.prfUnsupported');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('keeps the generic error for a failure that is not about PRF', async () => {
+    mockPasskey('error', 'Failed to start passkey registration: 503');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Something went wrong. Please try again.',
+    );
   });
 
   it('shows the iOS version as the error when registration could not finish', async () => {
@@ -150,11 +363,22 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows a single Log in button when logged out and idle', () => {
+  it('shows Log in and the Social Recovery entry as a quiet link when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual(['Log in']);
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    expect(entry.className).toContain('text-app-muted');
+    expect(entry.className).toContain('underline');
+    expect(entry.className).toContain('min-h-11');
+    expect(
+      buttons[0]!.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByText('New to 21.gifts?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(registerSpy).not.toHaveBeenCalled();
   });
 
   it('shows the account choice with existing and new-account buttons', () => {
@@ -167,9 +391,73 @@ describe('LoginCard', () => {
     expect(registerSpy).toHaveBeenCalledTimes(1);
     expect(registerSpy).toHaveBeenCalledWith();
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+    expect(
+      screen
+        .getByRole('link', { name: 'Recover account via Social Recovery' })
+        .getAttribute('href'),
+    ).toBe('/recover');
   });
 
-  it('shows the unknown-passkey heading and create button', () => {
+  it('offers no Social Recovery entry when a member session stands behind the card', () => {
+    const idle = renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    idle.unmount();
+    mockPasskey('choice');
+    const choice = renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    choice.unmount();
+    mockPasskey('unknown');
+    renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+  });
+
+  it('says that a recovery is not finished yet, links to it under Try again, and Try again logs in again', () => {
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    expect(retry.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(retry);
+    expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('links an unfinished recovery under Try again also when the card offers no entry otherwise', () => {
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard showRecover={false} />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your account recovery is not finished yet. Open “Recover account via Social Recovery” to finish it.',
+    );
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(
+      screen
+        .getByRole('link', { name: 'Recover account via Social Recovery' })
+        .getAttribute('href'),
+    ).toBe('/recover');
+  });
+
+  it('offers no Social Recovery entry on other errors, and the wrong-account copy wins over an unfinished recovery', () => {
+    mockPasskey('error', 'network');
+    const generic = renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe('Something went wrong. Please try again.');
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+    generic.unmount();
+    useAuthStore.setState({ wrongAccount: true });
+    mockPasskey('error', 'recovery_pending', null, true);
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'You signed in with a different account. Try again with the right one.',
+    );
+    expect(screen.queryByRole('link', { name: 'Recover account via Social Recovery' })).toBeNull();
+  });
+
+  it('shows the unknown-passkey heading, Try again first, create button, and Social Recovery entry', () => {
     mockPasskey('unknown');
     renderWithLocale(<LoginCard />);
     expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
@@ -185,6 +473,12 @@ describe('LoginCard', () => {
     expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getAllByRole('button')).toHaveLength(2);
+    const entry = screen.getByRole('link', { name: 'Recover account via Social Recovery' });
+    expect(entry.getAttribute('href')).toBe('/recover');
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    const create = screen.getByRole('button', { name: 'Open a new account' });
+    expect(retry.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(retry.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('shows a loading state while a passkey ceremony starts', () => {
@@ -259,6 +553,43 @@ describe('LoginCard', () => {
     expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(retrySpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
+  it('shows the calm logins-closed line with nothing to press', () => {
+    mockPasskey('closed');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('status').textContent).toBe(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(loginSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the new-version line and reloads the page on Reload', () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+    mockPasskey('outdated');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('status').textContent).toBe('A new version is ready');
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the refusal over a held-back session instead of its start view', () => {
+    useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+    try {
+      mockPasskey('closed');
+      renderWithLocale(<LoginCard />);
+      expect(
+        screen.getByText('21.gifts is updating. Please try again a little later.'),
+      ).toBeTruthy();
+      expect(screen.queryByText('Welcome back, Ada')).toBeNull();
+      expect(useAuthStore.getState().lockedSession).toBe('held');
+    } finally {
+      useAuthStore.setState({ lockedSession: null, lockedName: null });
+    }
   });
 
   it('shows the in-app escape card when isInAppBrowser is true', async () => {
@@ -523,10 +854,13 @@ describe('LoginCard', () => {
         },
         submitName: submitNameSpy,
         authenticate: authenticateSpy,
+        authenticateHeld: authenticateHeldSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         clearNameError: clearNameErrorSpy,
         error: null,
+        recoveryPending: false,
+        walletPasskeyMissed: false,
         nameError: null,
       });
       return <LoginCard />;
@@ -548,10 +882,13 @@ describe('LoginCard', () => {
         },
         submitName: submitNameSpy,
         authenticate: authenticateSpy,
+        authenticateHeld: authenticateHeldSpy,
         retry: retrySpy,
         cancel: cancelPasskeySpy,
         clearNameError: clearNameErrorSpy,
         error: null,
+        recoveryPending: false,
+        walletPasskeyMissed: false,
         nameError: null,
       });
       return <LoginCard />;

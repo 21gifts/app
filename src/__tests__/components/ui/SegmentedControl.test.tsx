@@ -93,6 +93,28 @@ describe('SegmentedControl', () => {
     expect(screen.getByRole('button', { name: 'All' }).className).toContain('bg-app-btn');
   });
 
+  it('disables an option so pressing it does nothing', () => {
+    for (const tone of ['gift', 'neutral'] as const) {
+      cleanup();
+      const onChange = vi.fn();
+      renderWithLocale(
+        <SegmentedControl
+          value="sat"
+          options={[GIFT_OPTIONS[0]!, { ...GIFT_OPTIONS[1]!, disabled: true }]}
+          onChange={onChange}
+          ariaLabel="Chart scale"
+          tone={tone}
+        />,
+      );
+      const usd = screen.getByRole('button', { name: 'USD' });
+      expect(usd).toHaveProperty('disabled', true);
+      expect(usd.className).toContain('disabled:opacity-50');
+      expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('disabled', false);
+      fireEvent.click(usd);
+      expect(onChange).not.toHaveBeenCalled();
+    }
+  });
+
   it('calls onChange with the pressed option value', () => {
     const onChange = vi.fn();
     renderWithLocale(

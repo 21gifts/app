@@ -99,7 +99,7 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
   const title = note.name;
   const description = ogDescriptionText(note.text, note.name);
   const photoAlt = note.text.trim() || note.name;
-  const photoImage = { url: `/messages/${id}/photo`, alt: photoAlt };
+  const photoImage = { url: `/messages/${id}/photo.jpg`, alt: photoAlt };
   return {
     title,
     description,
