@@ -21,9 +21,10 @@ export interface QrScannerProps {
   /** Called once with the first decoded QR text, after the camera has stopped. */
   onResult: (text: string) => void;
   /**
-   * Called with `showing` when the preview plays, `denied` or `unavailable` when an alert
-   * replaces it, or `paused` when the stream runs but the preview did not start or stopped
-   * (paused or ended). No alert is shown in that case.
+   * Called with `showing` when the preview plays while the camera delivers pictures, or the
+   * picture comes back, `denied` or `unavailable` when an alert replaces it, or `paused` when
+   * the preview did not start or stopped (paused or ended), or the camera track is muted or
+   * ended. No alert is shown then.
    * The latest callback is used.
    */
   onPicture?: (picture: 'showing' | 'denied' | 'unavailable' | 'paused') => void;
@@ -103,9 +104,10 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * catalog keys, as for a scan that is not a payment; `copy.hintVars` fills
  * the hint's placeholders.
  *
- * `onPicture` reports `showing` when the preview plays, `denied` or `unavailable`
- * when that alert replaces the preview, or `paused` when the stream runs but
- * the preview did not start or stopped (paused or ended). No alert is shown in
+ * `onPicture` reports `showing` when the preview plays while the camera delivers
+ * pictures, or the picture comes back, `denied` or `unavailable` when that alert
+ * replaces the preview, or `paused` when the preview did not start or stopped
+ * (paused or ended), or the camera track is muted or ended. No alert is shown in
  * that case. The latest callback is used.
  *
  * @param props - Result callback, optional picture report, and optional wording.
@@ -134,8 +136,10 @@ export function QrScanner({
     let stopped = false;
     let stream: MediaStream | null = null;
     let timer: number | undefined;
+    const trackListeners = new AbortController();
     const stop = (): void => {
       stopped = true;
+      trackListeners.abort();
       window.clearTimeout(timer);
       stream?.getTracks().forEach((track) => {
         track.stop();
@@ -177,6 +181,24 @@ export function QrScanner({
         stop();
         return;
       }
+      media.getVideoTracks().forEach((track) => {
+        const reportPaused = (): void => {
+          if (!stopped) {
+            onPictureRef.current?.('paused');
+          }
+        };
+        track.addEventListener('mute', reportPaused, { signal: trackListeners.signal });
+        track.addEventListener('ended', reportPaused, { signal: trackListeners.signal });
+        track.addEventListener(
+          'unmute',
+          () => {
+            if (!stopped && !video.paused && !video.ended) {
+              onPictureRef.current?.('showing');
+            }
+          },
+          { signal: trackListeners.signal },
+        );
+      });
       video.srcObject = media;
       await video.play().catch(() => {
         if (!stopped) {
@@ -234,8 +256,17 @@ export function QrScanner({
             playsInline
             muted
             autoPlay
-            onPlaying={() => {
-              onPictureRef.current?.('showing');
+            onPlaying={(event) => {
+              const source = event.currentTarget.srcObject;
+              if (
+                typeof MediaStream === 'undefined' ||
+                !(source instanceof MediaStream) ||
+                !source
+                  .getVideoTracks()
+                  .some((track) => track.muted || track.readyState === 'ended')
+              ) {
+                onPictureRef.current?.('showing');
+              }
             }}
             onPause={() => {
               onPictureRef.current?.('paused');

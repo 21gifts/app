@@ -9,17 +9,26 @@ vi.mock('jsqr', () => ({ default: vi.fn() }));
 interface FakeStream {
   stream: MediaStream;
   stop: ReturnType<typeof vi.fn>;
+  track: EventTarget & { muted: boolean; readyState: MediaStreamTrackState };
 }
 
 /**
  * A stream with one track whose `stop` is observable.
  *
- * @returns The stream and its track's `stop` mock.
+ * @returns The stream, its track, and the track's `stop` mock.
  */
 function fakeStream(): FakeStream {
   const stop = vi.fn();
-  const stream = { getTracks: () => [{ stop }] } as unknown as MediaStream;
-  return { stream, stop };
+  const track = Object.assign(new EventTarget(), {
+    stop,
+    muted: false,
+    readyState: 'live' as MediaStreamTrackState,
+  });
+  const stream = Object.assign(new MediaStream(), {
+    getTracks: () => [track],
+    getVideoTracks: () => [track],
+  });
+  return { stream, stop, track };
 }
 
 /**
@@ -108,6 +117,7 @@ const play = vi.fn(() => Promise.resolve());
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.stubGlobal('MediaStream', class {});
   Object.defineProperty(window, 'isSecureContext', { configurable: true, value: true });
   Object.defineProperty(HTMLMediaElement.prototype, 'play', {
     configurable: true,
@@ -123,6 +133,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   Reflect.deleteProperty(navigator, 'mediaDevices');
   Reflect.deleteProperty(window, 'BarcodeDetector');
 });
@@ -287,6 +298,127 @@ describe('QrScanner', () => {
       ['paused'],
       ['showing'],
     ]);
+  });
+
+  it('waits for an unmuted live track before reporting a playing picture', async () => {
+    const { stream, track } = fakeStream();
+    track.muted = true;
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    Object.defineProperty(video(), 'paused', { configurable: true, value: false });
+    fireEvent.playing(video());
+    expect(onPicture).not.toHaveBeenCalled();
+    track.muted = false;
+    act(() => {
+      track.dispatchEvent(new Event('unmute'));
+    });
+    expect(onPicture.mock.calls).toEqual([['showing']]);
+    track.readyState = 'ended';
+    fireEvent.playing(video());
+    expect(onPicture).toHaveBeenCalledOnce();
+  });
+
+  it('reports playing when the preview source is not a MediaStream', async () => {
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const onPicture = vi.fn();
+    renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    video().srcObject = null;
+    fireEvent.playing(video());
+    video().srcObject = {} as MediaStream;
+    fireEvent.playing(video());
+    vi.stubGlobal('MediaStream', undefined);
+    fireEvent.playing(video());
+    expect(onPicture.mock.calls).toEqual([['showing'], ['showing'], ['showing']]);
+  });
+
+  it('reports an interrupted track and its return while continuing to scan', async () => {
+    const { stream, track, stop } = fakeStream();
+    const { Detector } = nativeDetector(Promise.resolve(['qr_code']), [
+      [],
+      [{ rawValue: 'lnbc1' }],
+    ]);
+    setDetector(Detector);
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    const onResult = vi.fn();
+    renderWithLocale(<QrScanner onResult={onResult} onPicture={onPicture} />);
+    await flush();
+    Object.defineProperty(video(), 'paused', { configurable: true, value: false });
+    fireEvent.playing(video());
+    act(() => {
+      track.dispatchEvent(new Event('mute'));
+    });
+    expect(onPicture.mock.calls).toEqual([['showing'], ['paused']]);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(stop).not.toHaveBeenCalled();
+    act(() => {
+      track.dispatchEvent(new Event('unmute'));
+    });
+    expect(onPicture.mock.calls).toEqual([['showing'], ['paused'], ['showing']]);
+    await flush(120);
+    expect(onResult).toHaveBeenCalledWith('lnbc1');
+  });
+
+  it('ignores unmute on a paused or ended preview and reports an ended track', async () => {
+    const { stream, track } = fakeStream();
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    const view = renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    act(() => {
+      track.dispatchEvent(new Event('unmute'));
+    });
+    expect(onPicture).not.toHaveBeenCalled();
+    Object.defineProperty(video(), 'paused', { configurable: true, value: false });
+    Object.defineProperty(video(), 'ended', { configurable: true, value: true });
+    act(() => {
+      track.dispatchEvent(new Event('unmute'));
+      track.dispatchEvent(new Event('ended'));
+    });
+    expect(onPicture.mock.calls).toEqual([['paused']]);
+    view.rerender(<QrScanner onResult={vi.fn()} />);
+    Object.defineProperty(video(), 'ended', { configurable: true, value: false });
+    act(() => {
+      track.dispatchEvent(new Event('mute'));
+      track.dispatchEvent(new Event('unmute'));
+    });
+    expect(onPicture).toHaveBeenCalledOnce();
+  });
+
+  it('removes track listeners on unmount and ignores callbacks already queued', async () => {
+    const { stream, track } = fakeStream();
+    const addListener = vi.spyOn(track, 'addEventListener');
+    setCamera(() => Promise.resolve(stream));
+    const onPicture = vi.fn();
+    const view = renderWithLocale(<QrScanner onResult={vi.fn()} onPicture={onPicture} />);
+    await flush();
+    expect(addListener).toHaveBeenCalledTimes(3);
+    const listeners = addListener.mock.calls;
+    for (const [, , options] of listeners) {
+      expect(options).toEqual(
+        expect.objectContaining({ signal: expect.objectContaining({ aborted: false }) }),
+      );
+    }
+    view.unmount();
+    for (const [, , options] of listeners) {
+      expect(options).toEqual(
+        expect.objectContaining({ signal: expect.objectContaining({ aborted: true }) }),
+      );
+    }
+    act(() => {
+      for (const event of ['mute', 'unmute', 'ended']) {
+        track.dispatchEvent(new Event(event));
+      }
+      for (const [event, listener] of listeners) {
+        if (typeof listener === 'function') {
+          listener.call(track, new Event(event));
+        }
+      }
+    });
+    expect(onPicture).not.toHaveBeenCalled();
   });
 
   it('reports a missing camera to the caller', async () => {

@@ -178,6 +178,24 @@ describe('WalletSend input', () => {
     }
   });
 
+  it('returns the camera pills to overlay when the picture comes back', () => {
+    renderSend(sendWith({ step: 'input', error: null }));
+    for (const [picture, expected, absent] of [
+      ['showing', 'bg-black/55', 'border-paper/20'],
+      ['paused', 'border-paper/20', 'bg-black/55'],
+      ['showing', 'bg-black/55', 'border-paper/20'],
+    ] as const) {
+      act(() => {
+        scanner.onPicture?.(picture);
+      });
+      for (const name of ['Paste', 'Enter manually']) {
+        const button = screen.getByRole('button', { name });
+        expect(button.className).toContain(expected);
+        expect(button.className).not.toContain(absent);
+      }
+    }
+  });
+
   it('opens the manual sheet with the field and a disabled Continue while blank, and its Close returns to the camera', () => {
     const send = sendWith({ step: 'input', error: null });
     renderSend(send);
