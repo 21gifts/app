@@ -12,13 +12,15 @@ import { PageChrome } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 function WelcomeTopLeft(): ReactElement {
-  return <ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />;
+  return <ProfileChromeLeft hideHistoryArrow wordmark={<ForumHomeWordmark />} />;
 }
 
 function WelcomeTopRight(): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
-  if (session !== null) {
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  // A held-back session gets the login card in the page, not a Log in link.
+  if (session !== null || lockedSession !== null) {
     return <SignedInChrome />;
   }
   return (
@@ -29,7 +31,7 @@ function WelcomeTopRight(): ReactElement {
 }
 
 /**
- * `/welcome` — shown when name, address, and living-room rules agreement are saved.
+ * `/welcome` — shown when name, username, and living-room rules agreement are saved.
  *
  * @returns The welcome screen.
  */

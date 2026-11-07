@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, type ReactElement } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -11,16 +12,20 @@ import { ButtonLink } from '@/components/ui';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav including Happyland, optional
- * PWA install control, language switcher, login CTA, and a mobile menu
- * toggle.
+ * Sticky dark header for marketing pages: the top-left back arrow and wordmark, section nav
+ * including Happyland, optional PWA install control, language switcher, login CTA, and a mobile
+ * menu toggle. The root info page `/` shows no back arrow, whatever this tab's view stack holds.
  *
  * @returns The header element.
  */
 export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const { locale, t } = useTranslations();
-  const home = localizedPublicPath(locale, '/');
+  const localizedHome = localizedPublicPath(locale, '/');
+  // The unprefixed root keeps its wordmark on `/`. Section links always use the language URL.
+  const home = pathname === '/' ? '/' : localizedHome;
+  const isRoot = pathname === '/' || pathname === localizedHome;
 
   const closeMenu = (): void => {
     setOpen(false);
@@ -29,23 +34,28 @@ export function MarketingHeader(): ReactElement {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
       <div className="flex items-center">
-        <ProfileChromeLeft tone="dark" wordmark={<HomeWordmark tone="dark" publicHref={home} />} />
+        <ProfileChromeLeft
+          tone="dark"
+          wordmark={<HomeWordmark tone="dark" publicHref={home} />}
+          hideHistoryArrow={isRoot}
+          hideOverride={isRoot}
+        />
       </div>
       <div className="flex items-center gap-4">
         <nav
           aria-label={t('aria.primary')}
           className={`items-center gap-6 text-sm text-paper/80 ${open ? 'absolute top-full right-0 left-0 flex flex-col border-b border-paper/10 bg-ink px-5 py-4' : 'hidden lg:flex'}`}
         >
-          <Link href={`${home}#how`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#how`} onClick={closeMenu}>
             {t('nav.how')}
           </Link>
-          <Link href={`${home}#happyland`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#happyland`} onClick={closeMenu}>
             {t('nav.happyland')}
           </Link>
-          <Link href={`${home}#why`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#why`} onClick={closeMenu}>
             {t('nav.why')}
           </Link>
-          <Link href={`${home}#faq`} onClick={closeMenu}>
+          <Link href={`${localizedHome}#faq`} onClick={closeMenu}>
             {t('nav.faq')}
           </Link>
           <Link href={localizedPublicPath(locale, '/about')} onClick={closeMenu}>

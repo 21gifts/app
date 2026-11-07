@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { deviceTimeZoneHeader } from '@/lib/api';
+import { CANNOT_RECEIVE_CODE, CannotReceiveError, deviceTimeZoneHeader } from '@/lib/api';
 
 const LOAD_ERROR = 'Could not load the habit tracker. Please try again.';
 const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
@@ -14,6 +14,8 @@ const memberHabitCommentSchema = z.object({
   text: z.string(),
   week: z.string(),
   createdAt: z.number(),
+  /** False when the comment author cannot receive yet; absent on an older api body. */
+  canReceive: z.boolean().optional(),
 });
 
 const memberHabitPeriodSchema = z.object({
@@ -92,7 +94,9 @@ export async function fetchMemberHabits(sessionToken: string | null): Promise<Me
  * @param body - JSON action payload.
  * @param timeZone - Whether to send the device `Time-Zone` header.
  * @returns The JSON body when the response is OK.
- * @throws Error with the api `error` string when present, otherwise
+ * @throws {@link CannotReceiveError} when the body carries `code`
+ *   `cannot_receive` (the comment author cannot receive yet; the api answers
+ *   409). Otherwise Error with the api `error` string when present, otherwise
  *   `'Could not save the habit tracker. Please try again.'`.
  */
 export async function postMemberHabit(
@@ -124,6 +128,14 @@ export async function postMemberHabit(
     parsed = await response.json();
   } catch {
     throw new Error(SAVE_ERROR);
+  }
+  if (
+    parsed !== null &&
+    typeof parsed === 'object' &&
+    'code' in parsed &&
+    parsed.code === CANNOT_RECEIVE_CODE
+  ) {
+    throw new CannotReceiveError();
   }
   if (
     parsed !== null &&

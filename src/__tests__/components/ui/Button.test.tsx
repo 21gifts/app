@@ -24,6 +24,23 @@ describe('Button', () => {
     expect(button.className).toContain('extra');
   });
 
+  it('applies the overlay pill for controls over a camera picture, on either tone', () => {
+    renderWithLocale(
+      <>
+        <Button variant="overlay">Paste</Button>
+        <Button variant="overlay" tone="dark">
+          Paste dark
+        </Button>
+      </>,
+    );
+    for (const name of ['Paste', 'Paste dark']) {
+      const button = screen.getByRole('button', { name });
+      expect(button.className).toContain('bg-black/55');
+      expect(button.className).toContain('text-white');
+      expect(button.className).toContain('backdrop-blur-md');
+    }
+  });
+
   it('applies accent fill and lg full width', () => {
     renderWithLocale(
       <Button variant="accent" size="lg">

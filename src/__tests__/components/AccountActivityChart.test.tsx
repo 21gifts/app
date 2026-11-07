@@ -1,25 +1,12 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatFiatTick, formatUsdTick } from '@/lib/stats-money';
-import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-
-let hydrateReady = true;
-
-vi.mock('@/hooks/useHydrateSession', () => ({
-  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
-}));
-
-beforeEach(() => {
-  hydrateReady = true;
-  useAuthStore.setState({ session: null, account: null });
-});
 
 afterEach(() => {
   cleanup();
-  useAuthStore.setState({ session: null, account: null });
 });
 
 type SpendPoint = AccountActivity['receivedOverTime'][number];
@@ -72,7 +59,7 @@ describe('AccountActivityChart', () => {
   it('renders empty copy instead of an axis when there is no data', () => {
     renderWithLocale(<AccountActivityChart received={[]} />);
     expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
-    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Given and received' })).toBeNull();
@@ -141,20 +128,16 @@ describe('AccountActivityChart', () => {
     expect(screen.getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('defaults the empty German chart to empty copy with a picker', () => {
+  it('defaults the empty German chart to empty copy and no fiat switcher', () => {
     renderWithLocale(<AccountActivityChart received={[]} />, 'de');
-    expect(screen.getByRole('group', { name: 'Fiatwährung' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiatwährung' })).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('Noch keine Gaben.');
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('writes preferred fiat when the chart picker is pressed', () => {
-    renderWithLocale(<AccountActivityChart received={MULTI_DAY} />);
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Fiat currency' })).getByRole('button', {
-        name: 'EUR',
-      }),
-    );
+  it('uses the preferred fiat on the chart scale without a currency switcher', () => {
+    renderWithLocale(<AccountActivityChart received={MULTI_DAY} />, 'en', 'ch', 'EUR');
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     clickChartScale('EUR');
     expect(screen.getByRole('img', { name: 'Given and received in EUR' })).toBeTruthy();
   });
@@ -166,23 +149,7 @@ describe('AccountActivityChart', () => {
     expect(screen.getByText(formatFiatTick(1.2, 'CHF'))).toBeTruthy();
   });
 
-  it('hides the fiat switcher when a session is set and still shows empty copy', () => {
-    useAuthStore.setState({ session: 'tok', account: null });
-    renderWithLocale(<AccountActivityChart received={[]} />);
-    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
-    expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
-  });
-
-  it('hides the fiat switcher while hydration is not ready and still shows empty copy', () => {
-    hydrateReady = false;
-    renderWithLocale(<AccountActivityChart received={[]} />);
-    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('No gifts yet.');
-  });
-
-  it('hides the fiat switcher on a populated signed-in chart and keeps Chart scale', () => {
-    useAuthStore.setState({ session: 'tok', account: null });
+  it('keeps Chart scale and no fiat switcher on a populated chart', () => {
     renderWithLocale(<AccountActivityChart received={MULTI_DAY} />, 'en', 'ch', 'CHF');
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(

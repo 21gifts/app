@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   aboutMeTextProblem,
   displayNameProblem,
-  lightningAddressProblem,
   locationProblem,
   usernameProblem,
 } from '@/lib/profile-fields';
@@ -58,22 +57,6 @@ describe('locationProblem', () => {
     expect(locationProblem(`${'a'.repeat(81)}\u0001`)).toBe('long');
     expect(locationProblem('Zug\u0001')).toBe('controls');
     expect(locationProblem('Zug\u007f')).toBe('controls');
-  });
-});
-
-describe('lightningAddressProblem', () => {
-  it('returns empty, then long, then format', () => {
-    expect(lightningAddressProblem('')).toBe('empty');
-    expect(lightningAddressProblem('   ')).toBe('empty');
-    expect(lightningAddressProblem('a'.repeat(256))).toBe('long');
-    expect(lightningAddressProblem(`${'a'.repeat(251)}@b.co`)).toBe('long');
-    expect(lightningAddressProblem(`${'a'.repeat(250)}@b.co`)).toBeNull();
-    expect(lightningAddressProblem('a'.repeat(255))).toBe('format');
-    expect(lightningAddressProblem('bad@example')).toBe('format');
-    expect(lightningAddressProblem('a@b.c')).toBe('format');
-    expect(lightningAddressProblem('@walletofsatoshi.com')).toBe('format');
-    expect(lightningAddressProblem('me@walletofsatoshi.com')).toBeNull();
-    expect(lightningAddressProblem('  a.b+c@d-e.co  ')).toBeNull();
   });
 });
 

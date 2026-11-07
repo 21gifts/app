@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { Account } from '@/lib/api-types';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -16,6 +17,9 @@ import {
 } from '@/lib/note-translate';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 
 vi.mock('@/lib/api', () => ({
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -117,6 +121,25 @@ describe('NoteTranslate', () => {
     await act(async () => {
       resolveTranslation?.(translated);
     });
+  });
+
+  it('marks nothing read and sends no token while a login is still opening its wallet', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { id: 'acc' } as Account,
+      wrongAccount: false,
+    });
+    walletOpen.value = false;
+    vi.mocked(translateNote).mockResolvedValue(translated);
+    try {
+      renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+      await waitFor(() => expect(translateNote).toHaveBeenCalled());
+      expect(markNotificationsReadForMessage).not.toHaveBeenCalled();
+      expect(vi.mocked(translateNote).mock.calls[0]).not.toContain('tok');
+    } finally {
+      walletOpen.value = true;
+    }
   });
 
   it('marks the note read before translation starts when signed in', async () => {

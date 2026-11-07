@@ -261,10 +261,27 @@ describe('ForumAskWizard', () => {
     );
     expect(screen.queryByText('Add a photo or video')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
     fireEvent.change(input, { target: { files: [] } });
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo or video' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenLastCalledWith([shot]);
     rerender(
       <ForumAskWizard
         step={2}
@@ -564,7 +581,7 @@ describe('ForumAskWizard', () => {
     fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.queryByText(/Interest 0%/)).toBeNull();
-    expect(screen.getByText(/November 11/)).toBeTruthy();
+    expect(screen.getByText(/November 17/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
@@ -598,7 +615,7 @@ describe('ForumAskWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByText(/Amount owed: \$1'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/Amount owed: \$1'000\.00 · ₿1'000'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in US dollars/)).toBeTruthy();
     expect(screen.getByText(/price falls/)).toBeTruthy();
     expect(screen.queryByText(/rising bitcoin price/)).toBeNull();
@@ -641,6 +658,42 @@ describe('ForumAskWizard', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Loan' })).toBeTruthy();
+  });
+
+  it('keeps an even fiat plan when only the bitcoin split has a remainder', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="4"
+        askDraftUnit="fiat"
+        askObligation="credit"
+        rateDay={{ sats: 100025000, usd: '100000.00', chf: null, eur: null, php: null }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Custom' }));
+    fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByText(/\$1\.00 · ₿1'000 per day for 4 days/)).toBeTruthy();
+    expect(screen.queryByText(/last day/)).toBeNull();
+  });
+
+  it('keeps a typed fiat credit in fiat while the rate is not loaded', () => {
+    renderWithLocale(
+      <ForumAskWizard
+        step={1}
+        onStepChange={() => undefined}
+        {...idle}
+        askDraft="1000"
+        askDraftUnit="fiat"
+        askObligation="credit"
+      />,
+    );
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
   });
 
   it('asks for ask text after blur or Continue and shows a too-long preview', () => {

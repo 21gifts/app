@@ -48,6 +48,9 @@ function usernameFailure(caught: unknown): UsernameServer {
  * @param props - `onboarding` shows the field at the top and **Continue** in
  *   `AppShellFooter`; `overlay` keeps **Continue** in the form. There is no Skip.
  *   Defaults to `onboarding`. Optional `onSaved` after a successful POST.
+ *   Once the account's wallet is verified (`sparkWalletVerified`), the field
+ *   shows the current username, field and **Continue** are disabled, and a
+ *   line says why.
  * @returns The username field and Continue control.
  */
 export function UsernameForm({
@@ -57,12 +60,17 @@ export function UsernameForm({
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
+  const frozenUsername = useAuthStore((state) =>
+    state.account?.sparkWalletVerified === true ? (state.account.username ?? '') : null,
+  );
+  const frozen = frozenUsername !== null;
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [touched, setTouched] = useState(false);
   const [server, setServer] = useState<UsernameServer | null>(null);
   const formId = useId();
   const fieldId = useId();
+  const frozenId = useId();
   const errorId = `${fieldId}-error`;
   const problem = usernameProblem(draft);
   const clientVisible = touched && problem !== null;
@@ -86,10 +94,7 @@ export function UsernameForm({
   const onSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     setTouched(true);
-    if (usernameProblem(draft) !== null) {
-      return;
-    }
-    if (session === null) {
+    if (frozen || usernameProblem(draft) !== null || session === null) {
       return;
     }
     const value = draft.trim().toLowerCase();
@@ -119,7 +124,7 @@ export function UsernameForm({
       type="submit"
       form={variant === 'onboarding' ? formId : undefined}
       size="lg"
-      disabled={busy || clientVisible || serverBlocks}
+      disabled={busy || frozen || clientVisible || serverBlocks}
       icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
     >
       {t('setup.continue')}
@@ -137,7 +142,7 @@ export function UsernameForm({
         autoComplete="username"
         autoCorrect="off"
         spellCheck={false}
-        value={draft}
+        value={frozenUsername ?? draft}
         onChange={(event) => {
           setDraft(event.target.value);
           setTouched(true);
@@ -146,12 +151,19 @@ export function UsernameForm({
         onBlur={() => {
           setTouched(true);
         }}
-        disabled={busy}
-        {...(messageKey !== null
-          ? { 'aria-invalid': true as const, 'aria-describedby': errorId }
-          : {})}
+        disabled={busy || frozen}
+        {...(frozen
+          ? { 'aria-describedby': frozenId }
+          : messageKey !== null
+            ? { 'aria-invalid': true as const, 'aria-describedby': errorId }
+            : {})}
         className="w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 font-mono text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
       />
+      {frozen ? (
+        <p id={frozenId} className="text-center text-sm text-app-muted">
+          {t('setup.usernameFrozen')}
+        </p>
+      ) : null}
       {messageKey !== null ? (
         <p id={errorId} role="alert" className="text-center text-sm text-app-danger">
           {t(messageKey)}

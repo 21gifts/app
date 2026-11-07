@@ -71,7 +71,7 @@ const STAFF_ACCOUNT: Account = {
   role: 'moderator',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,

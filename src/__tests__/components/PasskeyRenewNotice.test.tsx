@@ -36,11 +36,18 @@ const account = {
   passkeyRenewFailed: false,
 } as Account;
 
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
 afterEach(() => {
   cleanup();
   useAuthStore.setState({ session: null, account: null });
   vi.clearAllMocks();
   window.history.replaceState({}, '', '/');
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('PasskeyRenewNotice', () => {
@@ -184,13 +191,17 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
-  it('says a missing recovery key cannot be retried with the same passkey', () => {
+  it('says this phone or browser cannot hold a wallet after a renew without PRF', () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, passkeyRenewFailed: true, passkeyRenewPrfUnsupported: true },
     });
     renderWithLocale(<PasskeyRenewNotice />);
-    expect(screen.getByText(/another password manager/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByText(/try again later/i)).toBeNull();
     expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();
   });
@@ -249,7 +260,8 @@ describe('PasskeyRenewNotice', () => {
     expect(renewPasskey).not.toHaveBeenCalled();
   });
 
-  it('shows the screenshot steps from the visual query', () => {
+  it('shows the screenshot steps from the visual query in a Playwright build', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/welcome?visual=renew-passkey');
     useAuthStore.setState({ session: 'tok', account });
     const passkey = renderWithLocale(<PasskeyRenewNotice />);
@@ -260,5 +272,28 @@ describe('PasskeyRenewNotice', () => {
     window.history.replaceState({}, '', '/welcome?visual=renew-ok');
     renderWithLocale(<PasskeyRenewNotice />);
     expect(screen.getByRole('heading', { name: 'It worked' })).toBeTruthy();
+  });
+
+  it('starts at the explanation in a Playwright build without a renew pin', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/welcome?visual=balance-ready');
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<PasskeyRenewNotice />);
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('ignores the screenshot steps in a production build', () => {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    useAuthStore.setState({ session: 'tok', account });
+    for (const visual of ['renew-passkey', 'renew-ok']) {
+      window.history.replaceState({}, '', `/welcome?visual=${visual}`);
+      const view = renderWithLocale(<PasskeyRenewNotice />);
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+      expect(screen.queryByRole('heading', { name: 'It worked' })).toBeNull();
+      expect(
+        screen.queryByText('Your device is showing the passkey prompt.', { exact: false }),
+      ).toBeNull();
+      view.unmount();
+    }
   });
 });

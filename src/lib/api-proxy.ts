@@ -9,6 +9,12 @@ const FORWARDED_HEADERS = [
   'origin',
   'user-agent',
   'range',
+  // Build id of the browser's bundle (passkey begin and finish). Passed through
+  // as sent, never set here: the server's own build would hide an outdated tab.
+  'x-app-build',
+  // Signature headers the in-app wallet sends with its address calls.
+  'x-breez-signature',
+  'x-breez-timestamp',
 ] as const;
 
 /** Upstream response headers copied onto the client response when present. */
@@ -34,10 +40,16 @@ const BODY_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
  *
  * @param request - Incoming request (query string and body are forwarded).
  * @param apiPath - Path on the api beginning with `/` (e.g. `/me`).
+ * @param options - `forwardAbort` passes the incoming request's abort signal to
+ * the upstream fetch, so the api sees a client that disconnected; off by default.
  * @returns The upstream response (status, selected headers, body), or 502 JSON
  * when the api URL is missing or fetch fails.
  */
-export async function proxyApiRequest(request: Request, apiPath: string): Promise<Response> {
+export async function proxyApiRequest(
+  request: Request,
+  apiPath: string,
+  options: { forwardAbort?: boolean } = {},
+): Promise<Response> {
   try {
     const incoming = new URL(request.url);
     const destination = new URL(apiPath, `${getApiUrl()}/`);
@@ -55,6 +67,9 @@ export async function proxyApiRequest(request: Request, apiPath: string): Promis
       method: request.method,
       headers,
     };
+    if (options.forwardAbort === true) {
+      init.signal = request.signal;
+    }
     if (
       BODY_METHODS.has(request.method) &&
       request.body !== null &&

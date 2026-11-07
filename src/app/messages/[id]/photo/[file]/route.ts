@@ -12,7 +12,7 @@ export async function GET(
   context: { params: Promise<{ id: string; file: string }> },
 ): Promise<Response> {
   const { id, file } = await context.params;
-  const match = /^([1-9])\.(jpg|jpeg|png|webp)$/i.exec(file);
+  const match = /^([1-9])\.jpg$/i.exec(file);
   if (match === null) {
     return new Response(null, { status: 404 });
   }

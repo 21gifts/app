@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/shops` is the signed-in shop list. The default view lists shop pages.
  * Post at `#post` remains the `#21GiftsShop` forum notes.
  *
- * Requires name + address + living-room rules agreement via
+ * Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/welcome`. There is
  * no `route.ts` beside this page (Next.js forbids that).
  *

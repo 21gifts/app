@@ -17,7 +17,8 @@ let skipIntroduceOverlayOnce = false;
 let pendingForumCompose = false;
 
 /**
- * Ask the welcome composer to take focus and skip the introduce overlay once.
+ * Ask the welcome composer to take focus (on the forum home its writer opens
+ * first) and skip the introduce overlay once.
  *
  * Sets flags that survive Next.js client navigations until consumed.
  * Dispatches {@link FORUM_COMPOSE_EVENT} when `window` exists.

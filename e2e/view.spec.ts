@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { installNoPrfWebAuthn, NO_PRF_REGISTER_BEGIN, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 
 const KEY = 'a'.repeat(64);
 const MISSING_KEY = 'b'.repeat(64);
@@ -7,8 +8,8 @@ const VIEW_PROFILE = {
   name: 'Ada',
   username: 'alice',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
-  lightningAddressVerified: false,
+  lightningAddress: 'alice@21.gifts',
+  lightningAddressVerified: true,
   createdAt: 1,
   hasPasskey: false,
   aboutMe: null,
@@ -27,8 +28,12 @@ const EMPTY_ACTIVITY = {
   },
 };
 
-test('e2e:check dynamic path token for /view/[viewKey]', async ({ page }) => {
+test('e2e:check dynamic path token for /view/[viewKey]', async ({ page, request }) => {
   await page.goto('/view/[viewKey]');
+  expect((await request.get('/view-key/[viewKey]/posts')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/shops')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/credits')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/replies')).status()).toBe(200);
 });
 
 test('public view profile default shows name and address', async ({ page }) => {
@@ -59,6 +64,38 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
+});
+
+test('Activate on a browser whose passkey has no PRF says it cannot hold a wallet', async ({
+  page,
+}) => {
+  await installNoPrfWebAuthn(page);
+  await page.route(new RegExp(`/view-key/${KEY}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(VIEW_PROFILE),
+    });
+  });
+  await page.route('**/view-key/**/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(NO_PRF_REGISTER_BEGIN),
+    });
+  });
+  await page.goto(`/view/${KEY}`);
+  await page.getByRole('button', { name: 'Activate' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE })).toBeVisible();
+  await expect(page.getByText('Could not set up a passkey. Please try again.')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
 test('public view profile claimed hides the Activate banner', async ({ page }) => {
@@ -97,7 +134,7 @@ test('signed-in visitor still sees Activate on an unclaimed public view', async 
         role: 'basis',
         name: 'Other',
         location: null,
-        lightningAddress: 'other@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -223,7 +260,7 @@ test('signed-in profile shows the unlabeled profile copy control without exposin
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -235,13 +272,16 @@ test('signed-in profile shows the unlabeled profile copy control without exposin
       }),
     });
   });
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(EMPTY_ACTIVITY),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    },
+  );
   await page.goto('/profile');
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);

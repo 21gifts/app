@@ -63,6 +63,7 @@ export function HandbookLightbox({
       role="dialog"
       aria-modal="true"
       aria-label={alt}
+      data-covers-chrome
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
       onClick={onClose}
     >

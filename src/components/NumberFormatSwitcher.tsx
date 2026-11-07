@@ -24,9 +24,10 @@ function sampleFor(style: NumberFormatStyle): string {
 }
 
 /**
- * Profile identity-card section: number grouping via SegmentedControl.
+ * Settings Display row: number grouping via SegmentedControl.
  *
- * Always visible on the signed-in Profile card. Not page chrome.
+ * Always visible on the signed-in Settings page. Not page chrome. The choice
+ * is a cookie on this device, which a muted line under the control says.
  *
  * @returns The number-format settings section.
  */
@@ -49,6 +50,7 @@ export function NumberFormatSwitcher(): ReactElement {
         onChange={setNumberFormat}
         ariaLabel={t('aria.numberFormat')}
       />
+      <p className="text-center text-xs text-app-muted">{t('settings.deviceOnly')}</p>
     </div>
   );
 }

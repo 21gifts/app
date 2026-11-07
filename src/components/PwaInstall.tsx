@@ -1,7 +1,7 @@
 'use client';
 
 import { Download } from 'lucide-react';
-import { useEffect, useId, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useId, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
@@ -22,6 +22,8 @@ export interface PwaInstallProps {
   placement: 'header' | 'hero' | 'menu';
   /** Menu row: called after click so the menu can close. */
   onMenuAction?: () => void;
+  /** Tells the menu to keep its host mounted while the iOS sheet is open. */
+  onIosSheetChange?: (open: boolean) => void;
 }
 
 let sharedDeferred: BeforeInstallPromptEvent | null = null;
@@ -70,6 +72,7 @@ export function PwaInstall({
   tone = 'app',
   placement,
   onMenuAction,
+  onIosSheetChange,
 }: PwaInstallProps): ReactElement | null {
   const { t } = useTranslations();
   const titleId = useId();
@@ -79,6 +82,10 @@ export function PwaInstall({
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const closeId = `${titleId}-close`;
+  const closeSheet = useCallback((): void => {
+    setSheetOpen(false);
+    onIosSheetChange?.(false);
+  }, [onIosSheetChange]);
 
   useEffect(() => {
     setReady(true);
@@ -113,14 +120,14 @@ export function PwaInstall({
         return;
       }
       event.stopPropagation();
-      setSheetOpen(false);
+      closeSheet();
     };
     document.addEventListener('keydown', onKeyDown, true);
     document.getElementById(closeId)?.focus();
     return () => {
       document.removeEventListener('keydown', onKeyDown, true);
     };
-  }, [sheetOpen, closeId]);
+  }, [sheetOpen, closeId, closeSheet]);
 
   if (!ready || !offer) {
     return null;
@@ -129,13 +136,10 @@ export function PwaInstall({
     return null;
   }
 
-  const closeSheet = (): void => {
-    setSheetOpen(false);
-  };
-
   const handleClick = (): void => {
     if (iosOffer) {
       setSheetOpen(true);
+      onIosSheetChange?.(true);
       onMenuAction?.();
       return;
     }
@@ -191,6 +195,7 @@ export function PwaInstall({
     sheetOpen && typeof document !== 'undefined'
       ? createPortal(
           <div
+            data-covers-chrome
             className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
             onMouseDown={(event) => {
               event.stopPropagation();

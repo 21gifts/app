@@ -144,7 +144,9 @@ const ADDRESS_ERROR_KEY: Record<ShopAddressField, Record<ShopAddressFieldProblem
 /**
  * Optional place pin control for a forum composer or staff editor.
  *
- * @param props - Current pin, change handler, optional staff commit, and shop validation state.
+ * @param props - Current pin, disabled flag, change handler, optional
+ * `previewSlot` (accepted and not read), optional staff-commit overrides
+ * (size, variant, label, `onCommit`), and shop validation state.
  * @returns Attach button and the place dialog.
  */
 export function PlaceField(props: {
@@ -155,6 +157,7 @@ export function PlaceField(props: {
   buttonVariant?: 'secondary' | 'ghost';
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
+  previewSlot?: HTMLElement | null;
   shopDetails?: boolean;
   /** Stored shop note text used to validate a changed shop name live. */
   shopText?: string;
@@ -656,6 +659,7 @@ export function PlaceField(props: {
       ? createPortal(
           <div
             ref={dialogRef}
+            data-covers-chrome
             className="fixed inset-0 z-50 flex items-end justify-center bg-app-overlay outline-none sm:items-center sm:p-4"
             role="dialog"
             aria-modal="true"

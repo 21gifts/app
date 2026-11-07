@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -10,54 +10,58 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { useLatestRateDay, useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
+import {
+  committedFiatFigure,
+  storedTypedFiat,
+  type FiatCode,
+  type StoredFiat,
+} from '@/lib/committed-fiat';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
   satsToFiatAmount,
+  typedFiatFigure,
   type FiatRateDay,
 } from '@/lib/stats-money';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   SHOP_STICKER_PICTOGRAM,
   SHOP_STICKER_PICTOGRAM_VIEW_BOX,
   type ShopStickerPictogramPart,
 } from '@/lib/shop-sticker-pictogram';
+import { isSmartphoneUserAgent, lightningHref, PAY_POLL_MS } from '@/lib/payment-link';
 import {
-  isAndroidUserAgent,
-  isSmartphoneUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
+  fetchShopInvoice,
+  fetchShopPayLink,
+  openShopPayment,
+  type ShopPayRequest,
+  type ShopPaymentStatus,
+  waitShopPayment,
+} from '@/lib/shop-payment';
+import type { MessageKey } from '@/lib/messages';
 
 function PayLinkAmount(props: {
   value: string;
   onValueChange: (value: string) => void;
   disabled: boolean;
   onUnitChange: (unit: AmountUnit) => void;
-  onRate: (day: FiatRateDay | null) => void;
-  onRateSettled: (settled: boolean) => void;
+  rateDay: FiatRateDay | null;
   onBlur: () => void;
   error?: string;
 }): ReactElement {
   const { t } = useTranslations();
-  const { rateDay, settled } = useLatestRateDayState();
-  const { onRate, onRateSettled } = props;
-  useEffect(() => {
-    onRate(rateDay);
-  }, [onRate, rateDay]);
-  useEffect(() => {
-    onRateSettled(settled);
-  }, [onRateSettled, settled]);
   return (
     <AmountEntry
       label={t('pay.amount')}
       placeholder={t('pay.amountPlaceholder')}
       value={props.value}
       disabled={props.disabled}
-      rateDay={rateDay}
+      rateDay={props.rateDay}
       onUnitChange={props.onUnitChange}
       onValueChange={props.onValueChange}
       onBlur={props.onBlur}
@@ -66,7 +70,8 @@ function PayLinkAmount(props: {
   );
 }
 
-interface PayCharge {
+interface PayCharge extends StoredFiat {
+  id: string | null;
   amountSats: number;
   expiresAt: string;
 }
@@ -94,12 +99,36 @@ function formatLeft(ms: number): string {
  * @param now - Clock in epoch milliseconds.
  * @returns The charge the page should show.
  */
+/** A stored decimal, or `null` when the field is absent or not a string. */
+function readDecimal(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+/** A stored fiat code, or `null` when the field is absent or not one of the four. */
+function readFiatCode(value: unknown): FiatCode | null {
+  if (value === 'USD' || value === 'CHF' || value === 'EUR' || value === 'PHP') {
+    return value;
+  }
+  return null;
+}
+
 function readCharge(value: unknown, now: number): PayCharge | null {
   if (value === null || typeof value !== 'object') {
     return null;
   }
-  const amountSats = (value as { amountSats?: unknown }).amountSats;
-  const expiresAt = (value as { expiresAt?: unknown }).expiresAt;
+  const record = value as {
+    id?: unknown;
+    amountSats?: unknown;
+    expiresAt?: unknown;
+    amountCurrency?: unknown;
+    amount?: unknown;
+    amountUsd?: unknown;
+    amountChf?: unknown;
+    amountEur?: unknown;
+    amountPhp?: unknown;
+  };
+  const amountSats = record.amountSats;
+  const expiresAt = record.expiresAt;
   if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
     return null;
   }
@@ -110,7 +139,17 @@ function readCharge(value: unknown, now: number): PayCharge | null {
   if (!Number.isFinite(expiresMs) || expiresMs <= now) {
     return null;
   }
-  return { amountSats, expiresAt };
+  return {
+    id: typeof record.id === 'string' ? record.id : null,
+    amountSats,
+    expiresAt,
+    amountCurrency: readFiatCode(record.amountCurrency),
+    amount: readDecimal(record.amount),
+    amountUsd: readDecimal(record.amountUsd),
+    amountChf: readDecimal(record.amountChf),
+    amountEur: readDecimal(record.amountEur),
+    amountPhp: readDecimal(record.amountPhp),
+  };
 }
 
 /**
@@ -119,25 +158,43 @@ function readCharge(value: unknown, now: number): PayCharge | null {
  */
 const INVOICE_QR_PLATE_WIDTH = 'w-[16.625rem]';
 
-/** Open Wallet of Satoshi on this invoice. */
-function openWallet(invoice: string, android: boolean): void {
-  window.location.href = android
-    ? walletOfSatoshiIntentHref(invoice)
-    : walletOfSatoshiHref(invoice);
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
 }
 
-/** Viewer's fiat for a till amount, or nothing when no gift-day rate is ready. */
-function ChargeFiat(props: { amountSats: number }): ReactElement | null {
-  const { fiat } = useFiatPreference();
+/** Hand this invoice to the device's Bitcoin wallet app with a generic `lightning:` link. */
+function openWallet(invoice: string): void {
+  window.location.href = lightningHref(invoice);
+}
+
+/**
+ * Fiat under a pay-link amount. A stored figure is shown as-is. With none,
+ * the current spot stands beside the bitcoin and is not written back.
+ */
+function ChargeFiat(props: {
+  amountSats: number;
+  rateDay: FiatRateDay | null;
+  stored: StoredFiat | null;
+}): ReactElement | null {
   const { numberFormat } = useNumberFormat();
-  const rateDay = useLatestRateDay();
-  const amount = satsToFiatAmount(props.amountSats, rateDay, fiat);
-  if (amount === null) {
+  const { fiat } = useFiatPreference();
+  const figure = props.stored === null ? null : committedFiatFigure(props.stored, fiat);
+  if (figure !== null) {
+    return (
+      <p className="text-center text-sm text-app-subtle">
+        {exactStoredFiat(figure.amount, figure.code, numberFormat)}
+      </p>
+    );
+  }
+  const spot = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
+  if (spot === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(amount, fiat, numberFormat)}
+      {formatFiatDisplay(spot, fiat, numberFormat)}
     </p>
   );
 }
@@ -190,6 +247,80 @@ function shopStroke(part: ShopStickerPictogramPart): {
 /** Five minutes, the same lock as an open till. */
 const PAYMENT_TTL_MS = 5 * 60 * 1000;
 
+/**
+ * Time until the pay link is read again for a quote.
+ *
+ * @param quoteExpiresAt - `quote.expiration` of the shown quote.
+ * @returns The time left, or the poll pause once that time has passed.
+ */
+function refetchDelay(quoteExpiresAt: string): number {
+  const left = Date.parse(quoteExpiresAt) - Date.now();
+  return left > 0 ? left : PAY_POLL_MS;
+}
+
+/** A shop payment the page shows (`quote.payment` of the pay link). */
+interface ShopPaymentView {
+  /** Shop payment id. */
+  id: string;
+  /** Whole sats of the payment. */
+  sats: number;
+  /**
+   * Whether the page showed this payment for the till's open charge (`true`)
+   * or opened it for the amount this payer entered (`false`). Fixed when the
+   * payment is shown: a till charge that runs out on the page stays in the
+   * profile, so the charge alone does not tell the two apart.
+   */
+  till: boolean;
+  /**
+   * Fiat under the bitcoin. For a till charge this is the stored figure
+   * (`committedFiatFigure`: a typed pair wins over the visitor snapshot), or
+   * `null` when none was stored (the current spot shows and is not written
+   * back). For an amount this payer entered, it is the typed fiat pair, or
+   * `null` when the amount was typed in bitcoin (bitcoin only).
+   */
+  typedFiat: { amount: string; code: FiatCode } | null;
+  /**
+   * End of the payment's window: the charge's `expiresAt`, or the payer's
+   * `expiresAt`; `null` when the opening answer had none (the quote's own
+   * time left still shows).
+   */
+  windowEndsAt: string | null;
+  /**
+   * The newest pay request read for this payment; `null` while the pay link
+   * could not be read yet after `POST /pay/:username/payment` opened it.
+   */
+  request: ShopPayRequest | null;
+  /** Whether `request` is still the pay link's answer for this payment. */
+  quoteLive: boolean;
+  /** BOLT11 from the callback's Lightning detail, once read. */
+  invoice: string | null;
+  /** The Lightning detail could not be read. */
+  invoiceFailed: boolean;
+  /** Last `paymentStatus` from `GET /lnurlp/wait/:payment`. */
+  paymentStatus: ShopPaymentStatus;
+  /** `status` is no longer `Pending`: the payment is paid or closed and never changes again. */
+  final: boolean;
+}
+
+/**
+ * Catalog key of a shop payment's status line.
+ *
+ * @param status - Last `paymentStatus`.
+ * @returns "waiting", "on its way", "paid", or "ended".
+ */
+function shopStatusKey(status: ShopPaymentStatus): MessageKey {
+  if (status === 'accepted') {
+    return 'pay.onItsWay';
+  }
+  if (status === 'paid') {
+    return 'pos.paid';
+  }
+  if (status === 'open') {
+    return 'pay.waiting';
+  }
+  return 'pay.ended';
+}
+
 /** Shop-sticker storefront, shown on a real pay link. */
 function ShopStickerIcon(): ReactElement {
   return (
@@ -207,10 +338,10 @@ function ShopStickerIcon(): ReactElement {
 }
 
 /**
- * Public LNURL payment form that creates one exact-amount BOLT11 invoice.
+ * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (a till charge shows the stored figure from `committedFiatFigure`, typed pair over the visitor snapshot, and the current spot when none was stored, not written back; an amount typed in fiat shows that typed figure; an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; when the wait route first answers that the api does not know the payment, the page reads the pay link once: the same payment for the same sats stays shown and its status is followed from the start, while anything else loads the pay profile again for a payment the page showed for the till's charge, or asks the payer for the amount again for a payment the payer opened (also after a till charge ran out on the page); otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -218,24 +349,45 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const { numberFormat } = useNumberFormat();
   const [unit, setUnit] = useState<AmountUnit>('btc');
   const [now, setNow] = useState(() => Date.now());
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [profile, setProfile] = useState<PayProfile | null>(null);
+  const { rateDay, loading: rateLoading } = useSpotRateState(profile !== null);
+  const rateSettled = !rateLoading;
   const [invalid, setInvalid] = useState(false);
   const [amount, setAmount] = useState('');
-  const [rateSettled, setRateSettled] = useState(false);
-  const [formError, setFormError] = useState<'amount' | 'rate' | 'loading' | 'failed' | null>(null);
+  const [formError, setFormError] = useState<
+    'amount' | 'rate' | 'failed' | 'start' | 'replaced' | 'loading' | null
+  >(null);
   const [amountTouched, setAmountTouched] = useState(false);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
+  const [mintedFigure, setMintedFigure] = useState<{ code: FiatCode; amount: string } | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const [shop, setShop] = useState<ShopPaymentView | null>(null);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
-  /* v8 ignore next 2 -- SSR has no navigator */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
+  const invoiceLoadRef = useRef(0);
+  /** Payment ids the page already started again for once, after the api did not know them. */
+  const restartedRef = useRef(new Set<string>());
+  /** Payment ids that closed without being paid; the page never shows them again. */
+  const closedRef = useRef(new Set<string>());
+  /**
+   * Payment ids whose pay request named other sats than the till's charge, for which the page
+   * already loaded the pay profile again once.
+   */
+  const amountReloadedRef = useRef(new Set<string>());
+  /**
+   * Per username, the end of the most recent `POST /pay/:username/payment` whose outcome stayed
+   * unknown (`openShopPayment`), including a call still running when the page left it. Kept for
+   * the lifetime of the page: switching to another pay link and back does not end it; only a
+   * call that returns a payment does.
+   */
+  const shopAmbiguousAtRef = useRef(new Map<string, number>());
+  /** Aborts the running **Continue** (its repeat and its wait) when the page leaves the pay link. */
+  const submitAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -249,6 +401,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setShop(null);
+    setMintedFigure(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -271,6 +425,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (!active) {
           return;
         }
+        // Same render as a reloaded charge: its first paint already counts from now.
+        setNow(Date.now());
         setProfile({
           name: body.name,
           username: body.username,
@@ -287,26 +443,40 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       });
     return () => {
       active = false;
+      // Leaving the pay link (another link, a reload, or unmount) stops a running Continue.
+      submitAbortRef.current?.abort();
+      submitAbortRef.current = null;
     };
-  }, [lightning]);
+  }, [lightning, reloadNonce]);
 
   const charge = profile?.charge ?? null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   const chargeLive = charge !== null && remaining > 0;
   const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
   const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
+  const shopId = shop?.id ?? null;
+  const shopSats = shop?.sats ?? null;
+  const quoteExpiresAt =
+    shop !== null && shop.paymentStatus === 'open' && shop.quoteLive && shop.request !== null
+      ? shop.request.quoteExpiresAt
+      : null;
+  // Only a waiting payment reads its pay link again: once it moved on, a plain or other
+  // pay request no longer means that another payer replaced it.
+  const awaitingRequest = shop !== null && shop.request === null && shop.paymentStatus === 'open';
 
   useEffect(() => {
-    if (charge === null && mintedExpiresAt === null) {
+    if (charge === null && mintedExpiresAt === null && shopId === null) {
       return;
     }
+    // The clock last moved at mount: a payment opened minutes later counts from now.
+    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);
     return () => {
       clearInterval(timer);
     };
-  }, [charge, mintedExpiresAt]);
+  }, [charge, mintedExpiresAt, shopId]);
 
   useEffect(() => {
     if (charge !== null && !chargeLive) {
@@ -324,26 +494,140 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setMintedFigure(null);
     setFormError(null);
     postingRef.current = false;
     setPosting(false);
   }, [invoice, mintedExpiresAt, now]);
 
+  /**
+   * Update the shown shop payment. A generation shows at most one shop payment
+   * and every caller checks its generation first, so this is that payment.
+   */
+  const patchShop = useCallback((patch: Partial<ShopPaymentView>): void => {
+    setShop((current) => {
+      /* v8 ignore next 3 -- callers check the generation, and a new generation starts without a shop payment */
+      if (current === null) {
+        return null;
+      }
+      return { ...current, ...patch };
+    });
+  }, []);
+
+  /**
+   * Read the shop payment's BOLT11 from the callback's Lightning detail.
+   * Drop a load superseded by a newer one.
+   */
+  const loadShopInvoice = useCallback(
+    async (request: ShopPayRequest, generation: number): Promise<void> => {
+      invoiceLoadRef.current += 1;
+      const load = invoiceLoadRef.current;
+      const pr = await fetchShopInvoice(request);
+      if (generationRef.current !== generation || invoiceLoadRef.current !== load) {
+        return;
+      }
+      patchShop(pr === null ? { invoiceFailed: true } : { invoice: pr, invoiceFailed: false });
+    },
+    [patchShop],
+  );
+
+  /** Show a shop payment of the pay link and read its invoice; never mints. */
+  const showShopPayment = useCallback(
+    (
+      id: string,
+      sats: number,
+      till: boolean,
+      typedFiat: ShopPaymentView['typedFiat'],
+      windowEndsAt: string | null,
+      request: ShopPayRequest | null,
+      generation: number,
+    ): void => {
+      // Same render as the payment: its first paint already counts from now.
+      setNow(Date.now());
+      setShop({
+        id,
+        sats,
+        till,
+        typedFiat,
+        windowEndsAt,
+        request,
+        quoteLive: true,
+        invoice: null,
+        invoiceFailed: false,
+        paymentStatus: 'open',
+        final: false,
+      });
+      if (request !== null) {
+        void loadShopInvoice(request, generation);
+      }
+    },
+    [loadShopInvoice],
+  );
+
   useEffect(() => {
     if (!chargeLive || profile === null || charge === null) {
       return;
     }
+    // Each attempt starts from nothing: a later answer of an earlier attempt (pay link,
+    // Lightning detail, or mint) is dropped, and only this attempt's one BOLT11 is shown.
+    generationRef.current += 1;
     const generation = generationRef.current;
+    setShop(null);
+    setInvoice(null);
+    setMintedSats(null);
+    setMintedExpiresAt(null);
     let active = true;
     postingRef.current = true;
     setPosting(true);
     setFormError(null);
-    void fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amountSats: charge.amountSats }),
-    })
-      .then(async (response) => {
+    void (async () => {
+      try {
+        const link = await fetchShopPayLink(profile.username);
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        if (link.kind === 'payment' && closedRef.current.has(link.request.payment)) {
+          // That payment closed unpaid and is never shown again; a pay request never mints.
+          setFormError('failed');
+          return;
+        }
+        if (link.kind === 'payment' && link.request.amountSats !== charge.amountSats) {
+          // The till replaced its charge after the pay profile was read: never show the old sats
+          // next to this payment's invoice. Load the profile again once per payment; when it still
+          // disagrees, nothing is shown and Pay reads again.
+          if (!amountReloadedRef.current.has(link.request.payment)) {
+            amountReloadedRef.current.add(link.request.payment);
+            setReloadNonce((nonce) => nonce + 1);
+            return;
+          }
+          setFormError('failed');
+          return;
+        }
+        if (link.kind === 'payment') {
+          // The window is the charge's `expiresAt`: no answer the page reads carries the payment's
+          // own window end, and the charge has no id to compare, so a charge the till replaced
+          // with one for the same sats after the profile was read keeps the old time left.
+          showShopPayment(
+            link.request.payment,
+            charge.amountSats,
+            true,
+            committedFiatFigure(charge, fiat),
+            charge.expiresAt,
+            link.request,
+            generation,
+          );
+          return;
+        }
+        if (link.kind === 'error') {
+          // A shop payment may exist; only the plain Lightning request mints. Pay reads again.
+          setFormError('failed');
+          return;
+        }
+        const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ amountSats: charge.amountSats }),
+        });
         const result = response.ok ? ((await response.json()) as { pr: string }) : null;
         if (!active || generationRef.current !== generation) {
           return;
@@ -353,18 +637,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         setInvoice(result.pr);
-      })
-      .catch(() => {
+      } catch {
         if (active && generationRef.current === generation) {
           setFormError('failed');
         }
-      })
-      .finally(() => {
+      } finally {
         if (active && generationRef.current === generation) {
           postingRef.current = false;
           setPosting(false);
         }
-      });
+      }
+    })();
     return () => {
       active = false;
       if (generationRef.current === generation) {
@@ -372,31 +655,194 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setPosting(false);
       }
     };
-  }, [charge, chargeLive, mintNonce, profile]);
+  }, [charge, chargeLive, fiat, mintNonce, profile, showShopPayment]);
 
   useEffect(() => {
+    if (shopId === null || !awaitingRequest || profile === null) {
+      return;
+    }
+    const username = profile.username;
+    const generation = generationRef.current;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const read = (): void => {
+      void fetchShopPayLink(username).then((link) => {
+        if (!active) {
+          return;
+        }
+        if (link.kind !== 'payment') {
+          // A failed read says nothing, and the plain request also answers once the payment was
+          // accepted or its window passed: keep it, the status poll tells which, and a status
+          // other than `open` ends these reads.
+          timer = setTimeout(read, PAY_POLL_MS);
+          return;
+        }
+        if (link.request.payment !== shopId || link.request.amountSats !== shopSats) {
+          // Another payer's amount replaced this one, or the pay request names other sats than
+          // the payer entered: back to the amount field.
+          setShop(null);
+          setFormError('replaced');
+          return;
+        }
+        patchShop({ request: link.request, quoteLive: true });
+        void loadShopInvoice(link.request, generation);
+      });
+    };
+    timer = setTimeout(read, PAY_POLL_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [shopId, shopSats, awaitingRequest, profile, patchShop, loadShopInvoice]);
+
+  useEffect(() => {
+    if (shopId === null || quoteExpiresAt === null || profile === null) {
+      return;
+    }
+    const username = profile.username;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const refetch = (): void => {
+      void fetchShopPayLink(username).then((link) => {
+        if (!active) {
+          return;
+        }
+        if (link.kind === 'error') {
+          // A failed read says nothing about the payment: keep it and read again. Its lines stay
+          // hidden once the quote has run out, until a read returns a new quote.
+          timer = setTimeout(refetch, PAY_POLL_MS);
+          return;
+        }
+        if (link.kind === 'plain' || link.request.payment !== shopId) {
+          patchShop({ quoteLive: false });
+          return;
+        }
+        patchShop({ request: link.request, quoteLive: true });
+        if (link.request.quoteExpiresAt === quoteExpiresAt) {
+          // The same expiry does not re-arm this effect, so arm it here.
+          timer = setTimeout(refetch, refetchDelay(quoteExpiresAt));
+        }
+      });
+    };
+    timer = setTimeout(refetch, refetchDelay(quoteExpiresAt));
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [shopId, quoteExpiresAt, profile, patchShop]);
+
+  const payUsername = profile?.username ?? null;
+  // Fixed when the payment was shown: a till charge that ran out on the page stays in `charge`,
+  // and the payer's own payment opened after it is still the payer's.
+  const shopTill = shop?.till ?? false;
+
+  useEffect(() => {
+    if (shopId === null || shopSats === null || payUsername === null) {
+      return;
+    }
+    const controller = new AbortController();
+    const generation = generationRef.current;
+    let pause: ReturnType<typeof setTimeout> | undefined;
+    let wake: (() => void) | undefined;
+    const stale = (): boolean => controller.signal.aborted || generationRef.current !== generation;
+    void (async () => {
+      let since: ShopPaymentStatus | null = null;
+      for (;;) {
+        const result = await waitShopPayment(shopId, since, controller.signal);
+        if (stale()) {
+          return;
+        }
+        if (result === 'missing' && !restartedRef.current.has(shopId)) {
+          // The api does not know this payment: start again from the pay link, once, for a till
+          // and for a payer's amount alike.
+          const link = await fetchShopPayLink(payUsername);
+          if (stale()) {
+            return;
+          }
+          // A failed read says nothing: keep the payment, and the next `missing` reads again.
+          if (link.kind !== 'error') {
+            restartedRef.current.add(shopId);
+            if (
+              link.kind === 'payment' &&
+              link.request.payment === shopId &&
+              link.request.amountSats === shopSats
+            ) {
+              // The pay link still names this payment for these sats: show it from this pay
+              // request and follow its status from the start.
+              patchShop({ request: link.request, quoteLive: true });
+              void loadShopInvoice(link.request, generation);
+              since = null;
+              continue;
+            }
+            if (shopTill) {
+              // Anything else, for a payment shown for the till's charge: the till's flow starts
+              // again from its profile.
+              setReloadNonce((nonce) => nonce + 1);
+              return;
+            }
+            // Another payment, other sats, or the plain request, for a payment this payer opened
+            // (even after a till charge ran out on the page): this payer's amount was replaced.
+            generationRef.current += 1;
+            setShop(null);
+            setFormError('replaced');
+            return;
+          }
+        }
+        if (result !== null && result !== 'missing') {
+          since = result.paymentStatus;
+          const final = result.status !== 'Pending';
+          patchShop({ paymentStatus: result.paymentStatus, final });
+          if (final) {
+            // Paid stays on screen; a closed payment leaves it (see the effect below).
+            return;
+          }
+          // The api holds a read with `since` while the status is unchanged: ask again at once.
+          continue;
+        }
+        // Only a failed or unreadable read, an unknown payment whose pay link could not be read,
+        // or an unknown payment after the one restart, pauses.
+        await new Promise<void>((resolve) => {
+          wake = resolve;
+          pause = setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (stale()) {
+          return;
+        }
+      }
+    })();
+    return () => {
+      controller.abort();
+      clearTimeout(pause);
+      wake?.();
+    };
+  }, [shopId, shopSats, shopTill, payUsername, patchShop, loadShopInvoice]);
+
+  useEffect(() => {
+    if (shop === null || !shop.final || shop.paymentStatus !== 'ended') {
+      return;
+    }
+    // Closed unpaid, it never changes again: back to the page's flow, as an expired minted
+    // invoice. A till still in its window reads its pay link again and stays payable by
+    // Lightning; a till that ran out shows the amount form.
+    closedRef.current.add(shop.id);
+    generationRef.current += 1;
+    setShop(null);
+    setFormError(null);
+    postingRef.current = false;
+    setPosting(false);
+    if (chargeLive) {
+      setMintNonce((nonce) => nonce + 1);
+    }
+  }, [shop, chargeLive]);
+
+  useEffect(() => {
+    // A submit that waited for the spot read is done once that read settles.
+    // The amount field then says what is wrong, so this sentence does not stay.
     if (formError !== 'loading' || !rateSettled) {
       return;
     }
-    /* v8 ignore next 3 -- loading is only set after a profile exists */
-    if (profile === null) {
-      return;
-    }
-    const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
-    if (parsed.kind === 'no-rate') {
-      setFormError('rate');
-      return;
-    }
-    if (
-      parsed.kind === 'sats' &&
-      parsed.sats >= profile.minSats &&
-      parsed.sats <= profile.maxSats
-    ) {
-      setFormError(null);
-      return;
-    }
-    setFormError('amount');
-  }, [amount, fiat, formError, profile, rateDay, rateSettled, unit]);
+    setFormError(null);
+  }, [formError, rateSettled]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -431,11 +877,68 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       return;
     }
     const amountSats = parsed.sats;
+    // The exact digits typed in fiat are the only fiat this payment ever shows.
+    const typedFiat = unit === 'fiat' ? { amount: amount.trim(), code: fiat } : null;
+    const username = profile.username;
 
     setFormError(null);
     postingRef.current = true;
     setPosting(true);
+    const controller = new AbortController();
+    submitAbortRef.current = controller;
     try {
+      const opening = await openShopPayment(username, amountSats, {
+        ambiguousAtMs: shopAmbiguousAtRef.current.get(username) ?? null,
+        signal: controller.signal,
+      });
+      // Recorded before the outcome is dropped: a call the page left may still have opened one.
+      if (opening.ambiguousAtMs === null) {
+        shopAmbiguousAtRef.current.delete(username);
+      } else {
+        shopAmbiguousAtRef.current.set(username, opening.ambiguousAtMs);
+      }
+      const start = opening.start;
+      if (start.kind === 'aborted' || generationRef.current !== generation) {
+        return;
+      }
+      if (start.kind === 'charge') {
+        setReloadNonce((nonce) => nonce + 1);
+        return;
+      }
+      if (start.kind === 'failed') {
+        setFormError('start');
+        return;
+      }
+      if (start.kind === 'opened') {
+        const link = await fetchShopPayLink(profile.username);
+        if (generationRef.current !== generation) {
+          return;
+        }
+        // Read right after opening, a plain request cannot be this payment accepted or its window
+        // passed: something else ended it, so it counts as replaced like another payment's quote.
+        // A pay request for other sats is not the amount this payer entered either: never show
+        // the entered sats beside its invoice, and count it as replaced too.
+        if (
+          link.kind === 'plain' ||
+          (link.kind === 'payment' &&
+            (link.request.payment !== start.payment || link.request.amountSats !== amountSats))
+        ) {
+          setFormError('replaced');
+          return;
+        }
+        // An unreadable pay link keeps the opened payment: it is read again, the status poll
+        // tells whether it moved on, and Continue would replace the live payment.
+        showShopPayment(
+          start.payment,
+          amountSats,
+          false,
+          typedFiat,
+          start.expiresAt,
+          link.kind === 'payment' ? link.request : null,
+          generation,
+        );
+        return;
+      }
       const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -454,12 +957,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       }
       setInvoice(result.pr);
       setMintedSats(result.amountSats);
+      setNow(Date.now());
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
+      setMintedFigure(typedFiatFigure(unit, amount, fiat));
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
       }
     } finally {
+      if (submitAbortRef.current === controller) {
+        submitAbortRef.current = null;
+      }
       if (generationRef.current === generation) {
         postingRef.current = false;
         setPosting(false);
@@ -489,6 +997,13 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   }
   const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
+  const shopWindowLeft =
+    shop === null || shop.windowEndsAt === null ? 0 : Date.parse(shop.windowEndsAt) - now;
+  // Only the status hides the invoice: a transfer made in time can still move the payment.
+  const shopOpen = shop !== null && shop.paymentStatus === 'open';
+  const quoteLeft = quoteExpiresAt === null ? 0 : Date.parse(quoteExpiresAt) - now;
+  const shopLines =
+    shop !== null && shopOpen && shop.request !== null && quoteLeft > 0 ? shop.request.lines : [];
 
   return (
     <PageChrome
@@ -509,7 +1024,86 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
               {profile.name}
             </h1>
-            {paymentActive && activeSats !== null ? (
+            {shop !== null ? (
+              <div className="flex w-full flex-col items-center gap-3">
+                {shopOpen && shopWindowLeft > 0 ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {t('pay.timeLeft', { time: formatLeft(shopWindowLeft) })}
+                  </p>
+                ) : null}
+                <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+                  {formatBitcoin(shop.sats, numberFormat)}
+                </p>
+                {shop.typedFiat !== null ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {exactStoredFiat(shop.typedFiat.amount, shop.typedFiat.code, numberFormat)}
+                  </p>
+                ) : shop.till ? (
+                  <ChargeFiat amountSats={shop.sats} rateDay={rateDay} stored={null} />
+                ) : null}
+                <p role="status" className="text-center text-xs text-app-subtle">
+                  {t(shopStatusKey(shop.paymentStatus))}
+                </p>
+                {shopOpen ? (
+                  <>
+                    {shop.invoiceFailed ? (
+                      <p role="alert" className="text-center text-sm text-app-danger">
+                        {t('pay.failed')}
+                      </p>
+                    ) : null}
+                    <div className={`flex max-w-full flex-col gap-3 ${INVOICE_QR_PLATE_WIDTH}`}>
+                      {shop.invoice !== null && showInvoiceQr ? (
+                        <QrCode value={shop.invoice} label={t('pay.invoiceQr')} />
+                      ) : null}
+                      <Button
+                        type="button"
+                        className="w-full"
+                        aria-label={t('forum.payOpenWalletAria')}
+                        disabled={shop.invoice === null && !shop.invoiceFailed}
+                        onClick={() => {
+                          if (shop.invoice !== null) {
+                            openWallet(shop.invoice);
+                            return;
+                          }
+                          const request = shop.request;
+                          /* v8 ignore next 3 -- a failed invoice read always had a pay request */
+                          if (request === null) {
+                            return;
+                          }
+                          patchShop({ invoiceFailed: false });
+                          void loadShopInvoice(request, generationRef.current);
+                        }}
+                      >
+                        {t('forum.payOpenWallet')}
+                      </Button>
+                      {shopLines.length > 0 ? (
+                        <>
+                          <ul className="flex w-full flex-col gap-1 text-sm">
+                            {shopLines.map((line) => (
+                              <li
+                                key={`${line.method}-${line.asset}`}
+                                className="flex justify-between gap-3"
+                              >
+                                <span className="text-app-subtle">{line.method}</span>
+                                <span className="tabular-nums lining-nums text-app-fg">
+                                  {`${line.amount} ${line.asset}`}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-center text-sm text-app-subtle">
+                            {t('pay.timeLeft', { time: formatLeft(quoteLeft) })}
+                          </p>
+                          <p className="text-center text-sm text-app-subtle">
+                            {t('pay.stablecoinScan')}
+                          </p>
+                        </>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            ) : paymentActive && activeSats !== null ? (
               <div className="flex w-full flex-col items-center gap-3">
                 {chargeLive && charge !== null ? (
                   <p className="text-center text-sm text-app-subtle">
@@ -523,7 +1117,15 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={activeSats} />
+                <ChargeFiat
+                  amountSats={activeSats}
+                  rateDay={rateDay}
+                  stored={
+                    chargeLive && charge !== null
+                      ? charge
+                      : (storedTypedFiat(mintedFigure ?? undefined) ?? null)
+                  }
+                />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}
@@ -538,19 +1140,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                     className="w-full"
                     aria-label={t('forum.payOpenWalletAria')}
                     disabled={posting || (invoice === null && formError !== 'failed')}
-                    icon={
-                      <img
-                        src="/wos-icon.png"
-                        alt=""
-                        width={20}
-                        height={20}
-                        aria-hidden="true"
-                        className="h-5 w-5 rounded-md ring-1 ring-white/30"
-                      />
-                    }
                     onClick={() => {
                       if (invoice !== null) {
-                        openWallet(invoice, android);
+                        openWallet(invoice);
                         return;
                       }
                       setMintNonce((nonce) => nonce + 1);
@@ -567,11 +1159,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   disabled={posting}
                   onUnitChange={setUnit}
                   onValueChange={setAmount}
+                  rateDay={rateDay}
                   onBlur={() => {
                     setAmountTouched(true);
                   }}
-                  onRate={setRateDay}
-                  onRateSettled={setRateSettled}
                   {...(payFieldError === null ? {} : { error: payFieldError })}
                 />
                 <Button
@@ -589,6 +1180,16 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 {formError === 'failed' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pay.failed')}
+                  </p>
+                ) : null}
+                {formError === 'start' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.startFailed')}
+                  </p>
+                ) : null}
+                {formError === 'replaced' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.replaced')}
                   </p>
                 ) : null}
               </form>

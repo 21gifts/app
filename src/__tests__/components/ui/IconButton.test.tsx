@@ -44,6 +44,13 @@ describe('IconButton', () => {
     expect(ghost.className).toContain('x');
 
     rerender(
+      <IconButton aria-label="Write" variant="primary" size="xl">
+        <span>+</span>
+      </IconButton>,
+    );
+    expect(screen.getByRole('button', { name: 'Write' }).className).toContain('h-14 w-14');
+
+    rerender(
       <IconButton aria-label="Ink" variant="ghost" tone="dark" size="sm">
         <span>I</span>
       </IconButton>,

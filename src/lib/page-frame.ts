@@ -1,8 +1,82 @@
 /**
+ * Edges and anchor used to place one popover inside the app frame.
+ */
+export type FrameBoxInput = {
+  frameLeft: number;
+  frameRight: number;
+  frameTop: number;
+  frameBottom: number;
+  anchorLeft: number;
+  anchorTop: number;
+  anchorBottom: number;
+  gap: number;
+  preferredWidth: number;
+  inset: number;
+  viewportHeight: number;
+};
+
+/**
+ * Pixel box for one popover clamped inside the app frame.
+ */
+export type PlacedFrameBox = {
+  left: number;
+  width: number;
+  maxHeight: number;
+  top: number | null;
+  bottom: number | null;
+};
+
+/**
+ * Place one popover inside the app frame.
+ *
+ * @param input - Frame edges, anchor, gap, preferred width, inset, and viewport height, in pixels.
+ * @returns The pixel box with maxHeight and exactly one of top or bottom, or null when the frame
+ *   cannot hold a box.
+ */
+export function fitBoxInFrame(input: FrameBoxInput): PlacedFrameBox | null {
+  const availableWidth = input.frameRight - input.frameLeft - input.inset * 2;
+  const availableHeight = input.frameBottom - input.frameTop - input.inset * 2;
+  if (!(availableWidth > 0) || !(availableHeight > 0) || !(input.preferredWidth > 0)) {
+    return null;
+  }
+  const width = Math.min(input.preferredWidth, availableWidth);
+  const minLeft = input.frameLeft + input.inset;
+  const maxLeft = input.frameRight - input.inset - width;
+  const left = Math.min(Math.max(input.anchorLeft, minLeft), maxLeft);
+  const topEdge = Math.max(input.anchorBottom + input.gap, input.frameTop + input.inset);
+  const spaceBelow = input.frameBottom - input.inset - topEdge;
+  const panelBottom = Math.min(input.anchorTop - input.gap, input.frameBottom - input.inset);
+  const spaceAbove = panelBottom - (input.frameTop + input.inset);
+  const MIN = 280;
+  if (spaceBelow >= MIN && spaceBelow >= spaceAbove) {
+    return { left, width, maxHeight: spaceBelow, top: topEdge, bottom: null };
+  }
+  if (spaceAbove >= MIN) {
+    return {
+      left,
+      width,
+      maxHeight: spaceAbove,
+      top: null,
+      bottom: input.viewportHeight - panelBottom,
+    };
+  }
+  return {
+    left,
+    width,
+    maxHeight: availableHeight,
+    top: input.frameTop + input.inset,
+    bottom: null,
+  };
+}
+
+/**
  * Problems with the live document. Empty means the page stays in the window.
  *
- * @returns Sideways-scroll and stick-out messages for boxes that leave the window horizontally or
- *   vertically. Empty when the page stays in the window.
+ * Also fails any fixed overlay that covers the app chrome row, unless an ancestor carries
+ * `data-covers-chrome` (the tour and the top toast do).
+ *
+ * @returns Sideways-scroll, stick-out, and chrome-cover messages for boxes that leave the window
+ *   horizontally or vertically or cover the chrome row. Empty when the page stays clean.
  */
 export function pageFrameProblems(): string[] {
   const problems: string[] = [];
@@ -35,12 +109,27 @@ export function pageFrameProblems(): string[] {
     return tag;
   }
 
+  const chrome = document.querySelector('[data-app-chrome]');
+  const chromeRect = chrome instanceof HTMLElement ? chrome.getBoundingClientRect() : null;
+
   const stickOut: string[] = [];
   for (const node of document.body.querySelectorAll('*')) {
     // Slides may only stick out of the window to the left or right.
     const slide = node.closest('[data-scroll-x]') !== null && !node.hasAttribute('data-scroll-x');
     const rect = node.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) {
+      continue;
+    }
+    if (
+      chromeRect !== null &&
+      rect.top <= chromeRect.bottom - 1 &&
+      rect.bottom >= chromeRect.top + 1 &&
+      rect.left <= chromeRect.right - 1 &&
+      rect.right >= chromeRect.left + 1 &&
+      getComputedStyle(node).position === 'fixed' &&
+      node.closest('[data-covers-chrome]') === null
+    ) {
+      problems.push(`fixed overlay covers the app chrome: ${labelFor(node)}`);
       continue;
     }
     const overflowX = rect.left < -1 || rect.right > window.innerWidth + 1;

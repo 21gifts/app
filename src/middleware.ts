@@ -1,4 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  buildCsp,
+  createCspNonce,
+  CSP_NONCE_HEADER,
+  CSP_REPORT_GROUP,
+  CSP_REPORT_PATH,
+  cspHeaderName,
+  getCspMode,
+} from '@/lib/csp';
 import { LOCALE_COOKIE } from '@/lib/locale';
 import { parseLocalizedPublicPath } from '@/lib/public-locale-path';
 
@@ -24,24 +33,33 @@ function opensDocument(request: NextRequest): boolean {
   return dest === null || dest === 'document';
 }
 
+function applyCsp(request: NextRequest): {
+  policy: string;
+  header: string;
+  requestHeaders: Headers;
+} {
+  const nonce = createCspNonce();
+  const policy = buildCsp(nonce);
+  const header = cspHeaderName(getCspMode());
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(CSP_NONCE_HEADER, nonce);
+  requestHeaders.set(header, policy);
+  return { policy, header, requestHeaders };
+}
+
+function attachCspResponse(response: NextResponse, header: string, policy: string): NextResponse {
+  response.headers.set(header, policy);
+  response.headers.set('Reporting-Endpoints', `${CSP_REPORT_GROUP}="${CSP_REPORT_PATH}"`);
+  return response;
+}
+
 /**
- * Route public language URLs, remember that language, and keep `/map` working.
- *
- * A `/:locale(en|de|es|fil)` path for `/`, `/about`, `/donate`, or `/rules`
- * is rewritten onto the existing page. The locale is passed as the
- * `x-21gifts-public-locale` request header. The `locale` cookie is set when
- * the browser opens that language URL as a page (`sec-fetch-dest` is
- * `document`, or the header is absent), including a prerender (`purpose` or
- * `sec-purpose` contains `prerender`, any case). A prefetch that is not a
- * prerender does not set it: `purpose` or `sec-purpose` contains `prefetch`
- * and not `prerender` (any case). In-app navigations do not set it either:
- * `sec-fetch-dest` is present and is not `document`. The rewrite and
- * `x-21gifts-public-locale` stay the same in every case. `/map`
- * keeps its query string and redirects to `/shops#map`. Other paths, including
- * `/de/login`, are left untouched and do not write the cookie.
+ * `/map` redirect, locale rewrite of public pages, CSP nonce on every other
+ * matched response.
  *
  * @param request - The incoming request.
- * @returns The locale rewrite, the shops redirect, or the untouched response.
+ * @returns A redirect to the shops map, a locale rewrite, or the request
+ * passed on with the policy headers.
  */
 export function middleware(request: NextRequest): NextResponse {
   if (request.nextUrl.pathname === '/map') {
@@ -51,26 +69,37 @@ export function middleware(request: NextRequest): NextResponse {
     return NextResponse.redirect(destination);
   }
 
-  const match = parseLocalizedPublicPath(request.nextUrl.pathname);
-  if (match === null) return NextResponse.next();
+  const { policy, header, requestHeaders } = applyCsp(request);
 
-  const destination = request.nextUrl.clone();
-  destination.pathname = match.path;
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-21gifts-public-locale', match.locale);
-  const response = NextResponse.rewrite(destination, { request: { headers: requestHeaders } });
-  if (opensDocument(request)) {
-    response.cookies.set(LOCALE_COOKIE, match.locale, {
-      path: '/',
-      maxAge: LOCALE_COOKIE_MAX_AGE,
-      sameSite: 'lax',
-      secure: requestIsHttps(request),
-    });
+  const match = parseLocalizedPublicPath(request.nextUrl.pathname);
+  if (match !== null) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = match.path;
+    requestHeaders.set('x-21gifts-public-locale', match.locale);
+    const response = NextResponse.rewrite(destination, { request: { headers: requestHeaders } });
+    attachCspResponse(response, header, policy);
+    if (opensDocument(request)) {
+      response.cookies.set(LOCALE_COOKIE, match.locale, {
+        path: '/',
+        maxAge: LOCALE_COOKIE_MAX_AGE,
+        sameSite: 'lax',
+        secure: requestIsHttps(request),
+      });
+    }
+    return response;
   }
-  return response;
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  return attachCspResponse(response, header, policy);
 }
 
-/** Match the public language URLs and the old map address. */
+/**
+ * Pages and route handlers. Build assets, the service worker, and files
+ * under `public/` are left out: they are not documents.
+ */
 export const config = {
-  matcher: ['/map', '/:locale(en|de|es|fil)', '/:locale(en|de|es|fil)/:path*'],
+  matcher: [
+    '/map',
+    '/((?!_next/static|_next/image|sw\\.js|favicon\\.ico|favicon\\.svg|apple-touch-icon\\.png|icon-192\\.png|icon-512\\.png|og\\.png|robots\\.txt|sitemap\\.xml|handbook-images/|happyland/).*)',
+  ],
 };

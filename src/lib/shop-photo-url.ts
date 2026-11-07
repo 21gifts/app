@@ -30,3 +30,45 @@ export function resolveShopPhotoUrl(url: string, apiBase?: string): string | nul
   }
   return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
 }
+
+/** Forum still path the app already proxies at the same origin. */
+const FORUM_STILL = /\/messages\/([^/]+)\/photo(?:\/([1-9]))?\.(?:jpe?g|png|webp)$/i;
+
+/**
+ * Point a public shop still at the same-origin photo proxy.
+ *
+ * The api publishes absolute `https://api.21.gifts/messages/…/photo.jpg`
+ * URLs (and `.png` / `.webp`). CSP `img-src` allows only `'self'`, so the
+ * browser loads `/messages/…/photo.jpg`, which this app proxies. The
+ * extension is normalized to `.jpg` because the api serves the stored bytes
+ * for every image extension. A URL that is not a forum still is returned
+ * unchanged. No I/O.
+ *
+ * @param url - Absolute photo URL already accepted by {@link resolveShopPhotoUrl}.
+ * @returns The same-origin proxy path, or `url` when it is not a forum still.
+ */
+export function sameOriginShopPhotoSrc(url: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return url;
+  }
+  const match = FORUM_STILL.exec(parsed.pathname);
+  if (match === null) {
+    return url;
+  }
+  let id: string;
+  try {
+    // The first group is `[^/]+`, so a match always carries it.
+    const rawId = match[1] as string;
+    id = encodeURIComponent(decodeURIComponent(rawId));
+  } catch {
+    return url;
+  }
+  const index = match[2];
+  return index === undefined ? `/messages/${id}/photo.jpg` : `/messages/${id}/photo/${index}.jpg`;
+}

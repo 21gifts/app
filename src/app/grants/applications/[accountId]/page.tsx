@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/grants/applications/[accountId]` — signed-in staff grant-application review.
  *
  * The chrome back returns to the previous in-app view (the card has no back
- * control). Requires name + address + living-room rules agreement via
+ * control). Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`. There is no `route.ts` beside
  * this page (Next.js forbids that); application HTTP lives under
  * `/funding/applications/:accountId`.

@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { Card } from '@/components/ui';
@@ -14,9 +16,11 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 /**
  * Public read-only identity card matching signed-in profile chrome without
  * edit or message actions; chart never replaced by `forum.loading`.
+ * When the member cannot receive yet (`lightningAddressVerified` false), the
+ * gifts block shows a "Can't receive yet" label instead of the address and QR.
  *
- * @param props - Public profile, view key, both activity series, and optional
- *   `activityFailed` for the chart.
+ * @param props - Public profile, view key, gift and loan activity series, and
+ *   optional `activityFailed` for both charts.
  * @returns The presentational card.
  */
 export function ViewProfileScreen({
@@ -24,19 +28,25 @@ export function ViewProfileScreen({
   viewKey,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   activityFailed = false,
 }: {
   profile: ViewProfile;
   viewKey: string;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   activityFailed?: boolean;
 }): ReactElement {
   const { t } = useTranslations();
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(profile.username, host);
-  const qr = openCryptoPayQrValue(profile.username, host);
+  // The api sends `lightningAddressVerified: false` when this member cannot receive yet.
+  const cannotReceive = !profile.lightningAddressVerified;
+  const address = cannotReceive ? null : giftsLightningAddress(profile.username, host);
+  const qr = cannotReceive ? null : openCryptoPayQrValue(profile.username, host);
   const [showQr, setShowQr] = useState(false);
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
@@ -58,6 +68,7 @@ export function ViewProfileScreen({
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
+      <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
       <AboutMeSection
         mode="public"
         aboutMe={profile.aboutMe}
@@ -92,7 +103,11 @@ export function ViewProfileScreen({
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
           {t('profile.giftsHeading')}
         </p>
-        {address !== null && address.trim() !== '' ? (
+        {cannotReceive ? (
+          <p className="text-center">
+            <CannotReceiveLabel />
+          </p>
+        ) : address !== null && address.trim() !== '' ? (
           <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
         ) : (
           <p className="min-w-0 truncate text-center text-sm text-app-fg">

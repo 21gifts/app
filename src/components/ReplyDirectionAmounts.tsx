@@ -49,19 +49,21 @@ export type ReplyDirectionAmountsProps = {
 export function ReplyDirectionAmounts(props: ReplyDirectionAmountsProps): ReactElement | null {
   const { t } = useTranslations();
   const received = props.receivedSats ?? 0;
+  const sentStored = props.sent === undefined ? {} : props.sent;
+  const receivedStored = props.received === undefined ? {} : props.received;
   const sentFiat = preferredFiatSuffix(
     props.sats,
     props.rateDay,
     props.fiat,
     props.numberFormat,
-    props.sent,
+    sentStored,
   );
   const receivedFiat = preferredFiatSuffix(
     received,
     props.rateDay,
     props.fiat,
     props.numberFormat,
-    props.received,
+    receivedStored,
   );
   const giftOnly = props.text === '' && props.sats > 0;
   const textGift = props.text !== '' && props.sats > 0;
