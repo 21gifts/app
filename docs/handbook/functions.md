@@ -3426,7 +3426,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** The one helper that times a wallet step as a performance span, so slow steps of the in-app wallet on phones show up. Each step is its own transaction (`op: wallet`, `parentSpan: null`) in the page's trace, so a long connect does not stretch the page load around it, and all steps of one page share its sampling decision.
 - **Inputs:** A fixed name (`wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`, `wallet.prepare`, `wallet.send`, `wallet.address.register`, `wallet.address.transfer`, `wallet.passkey`), the step as an async function, and optionally `route` (`spark`, `lightning`, or `onchain`) or `prompt` (`login`, `unlock`, or `recovery` for the passkey a social recovery creates and signs in with), and on the login prompt `held` (whether a held-back session was waiting). The types allow nothing else: no amount, invoice, address, key, recovery word, PRF output, or token. Every span also carries why this document was loaded, from `capturePageLoad`: `load` (`navigate`, `reload`, `back_forward`, `prerender`, or `unknown`) and `load_trigger` (`app` for App Router's fallback to a full page load, otherwise `other`), and how the app is displayed: `display` (`standalone` or `browser`, from `isStandaloneDisplay`), so passkey prompts can be counted per page load, cause, and display.
-- **Returns / side effects:** What the step resolves to; a rejection marks the span as failed and is passed on unchanged. Without a DSN, or when the trace is not sampled, it only runs the step and nothing is sent. The browser never creates a receive invoice: the api issues it, and the browser's request for it is an automatic fetch span.
+- **Returns / side effects:** What the step resolves to; a rejection marks the span as failed and is passed on unchanged. Without a DSN, or when the trace is not sampled, it only runs the step and nothing is sent. A receive invoice for a `<username>@host` payment comes from the api, and the browser's request for it is an automatic fetch span. The only invoice the browser creates is the move-funds sheet's amountless one (`receiveWalletInvoice`), which is not a traced step, like `receiveWalletSparkAddress`.
 - **Used by:** `connectWallet` (SDK load, connect, first synced balance read), `refreshWallet` (balance read), `registerWalletAddress`, `payFromWallet` (prepare and send, with the route), `usePasskeyLogin` (the login passkey prompt that returns the PRF bytes), `unlockWalletPhrase` (the seed passkey prompt), the recovery flow (`createNewPasskey` and its sign-in, `wallet.passkey` with `prompt: recovery`; the address claim, `wallet.address.transfer`; the balance send, `wallet.send` with `route: spark`), and `transferRemainingBalance` (`wallet.send`).
 
 ## Function: register
@@ -3501,10 +3501,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: isSmartphoneUserAgent
 
-- **Purpose:** Detects a smartphone so the public pay link can hide its invoice QR (`src/lib/payment-link.ts`). True for iPhone, iPod, and Android with `Mobile`; false for iPad, Android tablet (no `Mobile`), and desktop. Viewport width is irrelevant.
+- **Purpose:** Detects a smartphone so the public pay link can hide its invoice QR and the move-funds address step can offer **Open my other wallet** instead of the address QR (`src/lib/payment-link.ts`). True for iPhone, iPod, and Android with `Mobile`; false for iPad, Android tablet (no `Mobile`), and desktop. Viewport width is irrelevant.
 - **Inputs:** `userAgent` string (`navigator.userAgent`).
 - **Returns / side effects:** `true` iff the UA is a smartphone. No side effects.
-- **Used by:** `PayLinkScreen` only, to hide its invoice QR on a smartphone. Member pay sheets show no invoice QR on any device and do not call it.
+- **Used by:** `PayLinkScreen`, to hide its invoice QR on a smartphone, and `MoveFundsSheet`, to show **Open my other wallet** and no address QR on a smartphone. Member pay sheets show no invoice QR on any device and do not call it.
 
 ## Function: lightningHref
 

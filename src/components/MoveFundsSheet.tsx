@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Copy, Loader2, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { AppShellOverlay } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -140,13 +140,18 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
       nextOnboardingPath(state.account) === '/welcome',
   );
   const wallet = useWallet();
-  const [state, setState] = useState<MoveState>(null);
+  const [state, setStateValue] = useState<MoveState>(null);
   const [smartphone, setSmartphone] = useState(true);
   const { copied, copy } = useCopied();
   const [openWallet, setOpenWallet] = useState<OpenWalletState>('idle');
   /** Bumped on each step change, so a mint that answers after the member left step 2 does nothing. */
   const mintRun = useRef(0);
+  /** The step as of the last change, set with it, so a mint that answers before the next render sees it. */
   const stepRef = useRef<MoveStep | null>(null);
+  const setState = useCallback((next: MoveState): void => {
+    stepRef.current = next?.step ?? null;
+    setStateValue(next);
+  }, []);
   const rateDay = useSpotRate(state !== null);
   /** True while this sheet saw a member signed in, so only a sign-out drops a waiting request. */
   const wasSignedIn = useRef(false);
@@ -195,12 +200,9 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     return () => {
       window.removeEventListener(MOVE_FUNDS_EVENT, open);
     };
-  }, [signedIn, onboarded]);
+  }, [signedIn, onboarded, setState]);
 
   const step = state?.step ?? null;
-  useEffect(() => {
-    stepRef.current = step;
-  });
   const listening = signedIn && (step === 'go' || step === 'waiting');
   const shown = signedIn && step !== null;
 
@@ -228,7 +230,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     return () => {
       window.removeEventListener(LOGOUT_EVENT, onLogout);
     };
-  }, [step]);
+  }, [step, setState]);
 
   useEffect(() => {
     if (!listening) {
@@ -239,7 +241,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
       logInteraction('wallet_move_step', { step: 'done' });
       logInteraction('wallet_move_done', { amountSats: payment.amountSats });
     });
-  }, [listening]);
+  }, [listening, setState]);
 
   useEffect(() => {
     if (step === null) {
@@ -257,7 +259,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     return () => {
       window.removeEventListener('keydown', onKey);
     };
-  }, [step]);
+  }, [step, setState]);
 
   if (state === null || !signedIn) {
     return null;

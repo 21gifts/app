@@ -1144,8 +1144,11 @@ What a trace holds:
   or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
   page load during a client-side navigation, otherwise `other`;
   `src/lib/page-load.ts`). That lets passkey prompts be counted per page load,
-  cause, and display; there is no member id on any span. The browser never creates a
-  receive invoice; the api issues it, and that request is a fetch span.
+  cause, and display; there is no member id on any span. A receive invoice for
+  a `<username>@host` payment comes from the api, and that request is a fetch
+  span. The only invoice the browser creates is the move-funds sheet's
+  amountless one (`receiveWalletInvoice`), which is not a traced step, like
+  `receiveWalletSparkAddress`.
 - Wallet steps start their own transaction in the page's trace, so a slow
   connect does not stretch the page load, and all steps of a page share its
   sampling decision.

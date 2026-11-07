@@ -692,6 +692,30 @@ describe('MoveFundsSheet', () => {
     expect(screen.getByRole('dialog', { name: '₿500 arrived' })).toBeTruthy();
   });
 
+  it('ignores an invoice that answers in the same tick as a Log out, before the sheet renders again', async () => {
+    const late = deferred<string>();
+    vi.mocked(receiveWalletInvoice).mockReturnValueOnce(late.promise);
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    const { hrefs, restore } = recordHrefs();
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Open my other wallet' }));
+      await act(async () => {
+        window.dispatchEvent(new Event('21gifts:logout'));
+        late.resolve('lnbc1plate');
+        await late.promise;
+      });
+    } finally {
+      restore();
+    }
+    expect(hrefs).toEqual([]);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(events().filter(([name]) => name === 'wallet_move_step')).toEqual([
+      ['wallet_move_step', { step: 'go' }],
+    ]);
+  });
+
   it('hands over the fixture invoice under the move-invoice pin in a Playwright build only', async () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=move-invoice');
