@@ -1438,6 +1438,7 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  * A control is shown only when its values actually differ.
  * Popup shop links open client-side on plain primary clicks.
  * Closing a popup with focus inside returns focus to the pin's current cluster or pin.
+ * A focused pin or cluster leaving the visible map transfers focus to the map canvas.
  * Below sm, the table puts shop and country below the name instead of in columns.
  * Help measures its inner content plus padding and borders while keeping its pin.
  * If an empty response removes help, focus on its button or inside its panel
@@ -1655,7 +1656,11 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         markOffscreen(session.map, rect, cluster.element, cluster.position);
       }
       if (activePin !== undefined && activePin.element.isConnected) {
-        (focusTarget ?? activePin.element).focus();
+        const target = focusTarget ?? activePin.element;
+        const canvas =
+          target.closest('.is-offscreen') !== null ? session.map.getCanvas?.() : undefined;
+        if (canvas instanceof HTMLElement) canvas.focus({ preventScroll: true });
+        else target.focus();
       }
     },
     [clearClusters],

@@ -3810,6 +3810,57 @@ describe('HomeShops', () => {
     expect(document.activeElement).toBe(pin);
   });
 
+  it.each(['pin', 'cluster'] as const)(
+    'keeps focus on a visible %s and moves it to the canvas when it leaves the map',
+    async (kind): Promise<void> => {
+      const { handlers, map } = await setupClusterFocus();
+      const mapNode = document.getElementById('shop-places-map');
+      if (mapNode === null) throw new Error('missing map');
+      const canvas = document.createElement('canvas');
+      canvas.tabIndex = 0;
+      mapNode.appendChild(canvas);
+      const focusCanvas = vi.spyOn(canvas, 'focus');
+      let shift = 0;
+      Object.assign(map, {
+        getCanvas: () => canvas,
+        project: (position: [number, number]) => ({
+          x: position[0] * 10 - shift,
+          y: position[1] * 10,
+        }),
+        unproject: (point: [number, number]) => ({
+          lng: (point[0] + shift) / 10,
+          lat: point[1] / 10,
+        }),
+      });
+      map.transform.zoom = kind === 'pin' ? 18 : 10;
+      await act(async () => {
+        mapHandler(handlers, 'move')();
+      });
+      const target = kind === 'pin' ? pinByName('Cara') : clusterButton('is-weekly');
+      expect(target.closest('.is-offscreen')).toBeNull();
+      target.focus();
+      expect(document.activeElement).toBe(target);
+
+      await act(async () => {
+        mapHandler(handlers, 'move')();
+      });
+      const visible = kind === 'pin' ? target : clusterButton('is-weekly');
+      expect(visible.closest('.is-offscreen')).toBeNull();
+      expect(document.activeElement).toBe(visible);
+      expect(focusCanvas).not.toHaveBeenCalled();
+
+      shift = 1000;
+      await act(async () => {
+        mapHandler(handlers, 'move')();
+      });
+      const hidden = kind === 'pin' ? target : clusterButton('is-weekly');
+      expect(hidden.closest('.is-offscreen')).not.toBeNull();
+      expect(document.activeElement).toBe(canvas);
+      expect(focusCanvas).toHaveBeenCalledTimes(1);
+      expect(focusCanvas).toHaveBeenCalledWith({ preventScroll: true });
+    },
+  );
+
   it('does not move focus from the body when clusters repaint', async (): Promise<void> => {
     const { handlers } = await setupClusterFocus();
     expect(document.activeElement).toBe(document.body);

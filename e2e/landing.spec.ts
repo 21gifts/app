@@ -628,6 +628,27 @@ test('Function: HomeShops clusters overlapping pins and opens them', async ({ pa
   await expect(cluster).toHaveCount(0);
 });
 
+test('Function: HomeShops moves focus to the map when wheel zoom hides the focused pin', async ({
+  page,
+}) => {
+  await stubPublicMap(page);
+  await page.goto('/');
+  const canvas = page.locator('#shop-places-map .maplibregl-canvas');
+  const pin = page.locator('#shop-places-map button[aria-label="Sample, Daily"]');
+  await expect(pin).toBeVisible({ timeout: 20_000 });
+  await canvas.scrollIntoViewIfNeeded();
+  await expect(canvas).toHaveAttribute('tabindex', '0');
+  await pin.focus();
+  await expect(pin).toBeFocused();
+  const box = await canvas.boundingBox();
+  if (box === null) throw new Error('missing map canvas box');
+  await page.mouse.move(box.x + box.width - 120, box.y + box.height / 2);
+  await page.mouse.wheel(0, -600);
+  await expect(pin).toHaveClass(/is-offscreen/, { timeout: 10_000 });
+  await expect(pin).toBeHidden();
+  await expect(canvas).toBeFocused();
+});
+
 test('Function: HomeShops popup shows a photo when present and categories when they differ', async ({
   page,
 }) => {
