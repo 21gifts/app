@@ -1,5 +1,7 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { StrictMode, type ReactElement } from 'react';
+import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MoveFundsSheet } from '@/components/MoveFundsSheet';
 import { useChromeBack, type ChromeBackOverride } from '@/components/ViewHistoryRoot';
@@ -7,6 +9,8 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import type { Account } from '@/lib/api-types';
 import { logInteraction } from '@/lib/interaction-log';
+import type { Locale } from '@/lib/locale';
+import { getCatalog } from '@/lib/messages';
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest, type MoveFundsSource } from '@/lib/move-funds';
 import type { FiatRateDay } from '@/lib/stats-money';
 import type { WalletInvoice, WalletPayment } from '@/lib/wallet/wallet-sdk';
@@ -16,6 +20,8 @@ import {
   receiveWalletInvoice,
 } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
+import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { DEFAULT_NUMBER_FORMAT } from '@/lib/number-format';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
@@ -609,6 +615,40 @@ describe('MoveFundsSheet', () => {
       emit(received(12_000));
     });
     expect(screen.getByRole('dialog', { name: "₿12'000 arrived" })).toBeTruthy();
+  });
+
+  it('keeps the minted invoice when the app tree refreshes or the language changes on step 2', async () => {
+    vi.mocked(receiveWalletInvoice).mockResolvedValueOnce(minted('lnbc1pmove'));
+    // A router refresh hands the provider a new catalog object; a language switch a new locale.
+    function tree(locale: Locale): ReactElement {
+      return (
+        <LocaleProvider locale={locale} messages={{ ...getCatalog(locale) }}>
+          <NumberFormatProvider initial={DEFAULT_NUMBER_FORMAT}>
+            <FiatPreferenceProvider initial="CHF">
+              <MoveFundsSheet />
+            </FiatPreferenceProvider>
+          </NumberFormatProvider>
+        </LocaleProvider>
+      );
+    }
+    const { rerender } = render(tree('en'));
+    openByRequest();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      await Promise.resolve();
+    });
+    rerender(tree('en'));
+    rerender(tree('de'));
+    expect(receiveWalletInvoice).toHaveBeenCalledTimes(1);
+    const open = screen.getByRole('button', { name: getCatalog('de')['moveFunds.openWallet'] });
+    expect((open as HTMLButtonElement).disabled).toBe(false);
+    const { hrefs, restore } = recordHrefs();
+    try {
+      fireEvent.click(open);
+      expect(hrefs).toEqual(['lightning:lnbc1pmove']);
+    } finally {
+      restore();
+    }
   });
 
   it('mints a fresh invoice each time step 2 opens again', async () => {

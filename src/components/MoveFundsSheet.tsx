@@ -137,8 +137,9 @@ export interface MoveFundsSheetProps {
  *    21.gifts wallet could not create a payment request. Try again, or copy
  *    your address.** shows in its place with **Try again** (mints again), and
  *    the copy button stays. An invoice or a failure that answers after step 2
- *    was left, the sheet closed, or the member signed out is ignored. Then
- *    **I sent it**.
+ *    was left, the sheet closed, or the member signed out is ignored. A router
+ *    refresh or a language switch while step 2 is open keeps the invoice
+ *    already minted. Then **I sent it**.
  * 3. A spinner, **Waiting for your Bitcoin…**, and **Finish sending in your
  *    other wallet. This screen updates by itself.**
  * 4. A check, **₿X arrived** with its fiat, and **Your wallet now holds ₿Y ·
@@ -201,8 +202,14 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
   /** True while this sheet saw a member signed in, so only a sign-out drops a waiting request. */
   const wasSignedIn = useRef(false);
   const openChangeRef = useRef(onOpenChange);
+  /**
+   * The latest `t`, read by the mint: a router refresh or a language switch hands the sheet a new
+   * `t`, and that must not throw away the invoice minted for step 2 and mint another.
+   */
+  const tRef = useRef(t);
   useEffect(() => {
     openChangeRef.current = onOpenChange;
+    tRef.current = t;
   });
 
   useEffect(() => {
@@ -320,7 +327,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     } else if (pin === MINTING_VISUAL_PIN) {
       minted = new Promise<WalletInvoice>(() => undefined);
     } else {
-      minted = receiveWalletInvoice(t('moveFunds.invoiceNote'));
+      minted = receiveWalletInvoice(tRef.current('moveFunds.invoiceNote'));
     }
     // An answer counts only for the latest mint, while step 2 is open and a member is signed in.
     const current = (): boolean =>
@@ -342,7 +349,7 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
         setOpenWallet({ status: 'failed' });
       },
     );
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     if (step !== 'go' || !smartphone || !signedIn) {
