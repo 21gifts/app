@@ -43,7 +43,9 @@ describe('StatisticsPage', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<StatisticsPage />);
     expect(screen.getByTestId('statistics-screen')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Log in' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
+      '/login?next=%2Fstatistics',
+    );
     expect(screen.queryByTestId('signed-in-chrome')).toBeNull();
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',

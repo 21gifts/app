@@ -36,7 +36,9 @@ describe('HabitTrackerTopRight', () => {
   it('links to login when nobody is signed in', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<HabitTrackerTopRight />);
-    expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe('/login');
+    expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
+      '/login?next=%2Fhabit-tracker',
+    );
     expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
   });
 

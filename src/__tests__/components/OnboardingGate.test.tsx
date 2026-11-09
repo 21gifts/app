@@ -92,7 +92,10 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState(null, '', '/');
 });
+
+const POST_PATH = '/messages/0190a6f2-5b7c-7d1e-9f00-1234567890ab';
 
 describe('OnboardingGate', () => {
   it('renders login children while logged out', () => {
@@ -208,6 +211,55 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     expect(replace).toHaveBeenCalledWith('/welcome');
+  });
+
+  it('sends a finished account from login back to the view named by next', () => {
+    window.history.replaceState(null, '', `/login?next=${encodeURIComponent(POST_PATH)}`);
+    useAuthStore.setState({ session: 'tok', account: complete });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith(POST_PATH);
+    expect(replace).not.toHaveBeenCalledWith('/welcome');
+  });
+
+  it('keeps an unfinished account on its setup step even with a next path', () => {
+    window.history.replaceState(null, '', `/login?next=${encodeURIComponent(POST_PATH)}`);
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/setup/name');
+    expect(replace).not.toHaveBeenCalledWith(POST_PATH);
+  });
+
+  it.each([
+    ['missing', '/login'],
+    ['outside', `/login?next=${encodeURIComponent('//evil.com')}`],
+    ['login itself', `/login?next=${encodeURIComponent('/login?next=/wallet')}`],
+  ])('sends a finished account from login to welcome when next is %s', (_label, url) => {
+    window.history.replaceState(null, '', url);
+    useAuthStore.setState({ session: 'tok', account: complete });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/welcome');
+  });
+
+  it('sends a logged-out visitor on a gated screen to login carrying that screen', () => {
+    window.history.replaceState(null, '', '/inbox?thread=abc');
+    renderWithLocale(
+      <OnboardingGate screen="welcome">
+        <p>inbox-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith(`/login?next=${encodeURIComponent('/inbox?thread=abc')}`);
   });
 
   it('lets a complete account open wallet', async () => {
