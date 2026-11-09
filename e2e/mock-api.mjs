@@ -2038,7 +2038,7 @@ const server = http.createServer(async (req, res) => {
     }
     const id = decodeURIComponent(memberRepliesMatch[1]);
     if (id === E2E_MEMBER_ID) {
-      json(res, 200, { messages: E2E_MEMBER_REPLIES, hearts: E2E_MEMBER_REPLY_HEARTS });
+      json(res, 200, { messages: E2E_MEMBER_REPLIES });
       return;
     }
     if (id === account.id) {

@@ -2286,44 +2286,51 @@ async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
 }
 
 /** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
-async function fulfillMixedSatsMessages(page: Page): Promise<void> {
+async function fulfillMixedSatsMessages(
+  page: Page,
+  heartCounts: Readonly<Record<string, number>> = {},
+): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const messages = [
+      {
+        id: 'm3',
+        name: 'Ada',
+        text: 'Thank you both — that helps.',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 5,
+        payable: true,
+        hasPhoto: false,
+        role: 'moderator',
+      },
+      {
+        id: 'm2',
+        name: 'Carol',
+        text: 'I can send a small gift tomorrow.',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        role: 'verified',
+      },
+      {
+        id: 'm1',
+        name: 'Bob',
+        text: 'Does anyone have spare sats this week?',
+        createdAt: '2026-08-28T10:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+      },
+    ];
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        messages: [
-          {
-            id: 'm3',
-            name: 'Ada',
-            text: 'Thank you both — that helps.',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 5,
-            payable: true,
-            hasPhoto: false,
-            role: 'moderator',
-          },
-          {
-            id: 'm2',
-            name: 'Carol',
-            text: 'I can send a small gift tomorrow.',
-            createdAt: '2026-08-28T11:00:00.000Z',
-            sats: 21,
-            payable: true,
-            hasPhoto: false,
-            role: 'verified',
-          },
-          {
-            id: 'm1',
-            name: 'Bob',
-            text: 'Does anyone have spare sats this week?',
-            createdAt: '2026-08-28T10:00:00.000Z',
-            sats: 0,
-            payable: true,
-            hasPhoto: false,
-            role: 'basis',
-          },
-        ],
+        messages: messages.map((message) => {
+          const heartCount = heartCounts[message.id];
+          return heartCount === undefined ? message : { ...message, heartCount };
+        }),
       }),
     });
   });
@@ -10126,7 +10133,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await fulfillMixedSatsMessages(page);
+    await fulfillMixedSatsMessages(page, { m3: 2 });
     await page.route('**/forum/messages/**/replies', async (route) => {
       await route.fulfill({
         status: 200,
@@ -16790,9 +16797,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 post' }).click();
-    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
-    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
@@ -16844,13 +16849,14 @@ test.describe('onboarding screens', () => {
             hasPhoto: false,
             role: 'verified',
             replyCount: 0,
+            heartCount: 2,
           },
           postCount: 1,
           replyCount: 1,
         }),
       });
     });
-    await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
+    await page.route('**/forum/messages/**/replies', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -16869,7 +16875,7 @@ test.describe('onboarding screens', () => {
               videoContentType: null,
               role: 'verified',
               replyCount: 0,
-              parentId: '55555555-5555-4555-8555-555555555555',
+              parentId: '33333333-3333-4333-8333-333333333333',
             },
           ],
           hearts: [
@@ -16893,6 +16899,29 @@ test.describe('onboarding screens', () => {
               amountChf: null,
               amountEur: null,
               amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+              heartCount: 2,
             },
           ],
         }),
@@ -24453,6 +24482,7 @@ test.describe('onboarding screens', () => {
       hasPhoto: false,
       role: 'basis',
       replyCount: 1,
+      heartCount: 2,
     };
     const reply = {
       id: replyId,
@@ -43955,7 +43985,6 @@ test.describe('settings states', () => {
     await fulfillSpot(page);
     await openSettings(page);
     await expect(page.getByLabel('Heart amount')).toHaveValue('21');
-    await expect(page.getByText('₿21').first()).toBeVisible();
     await expect(page.getByText('$0.02').first()).toBeVisible();
     await page.getByLabel('Heart amount').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-settings-heart-amount');

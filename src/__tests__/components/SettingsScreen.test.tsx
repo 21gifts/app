@@ -223,7 +223,6 @@ describe('SettingsScreen', () => {
     renderWithLocale(<SettingsScreen />);
     const wallet = screen.getByRole('region', { name: 'Wallet' });
     expect(within(wallet).getAllByText('Heart amount').length).toBeGreaterThan(0);
-    expect(within(wallet).getByText('₿1')).toBeTruthy();
     expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe('1');
     expect(
       within(wallet).getByText(
@@ -239,7 +238,6 @@ describe('SettingsScreen', () => {
     expect((within(storedWallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe(
       '21',
     );
-    expect(within(storedWallet).getByText('₿21')).toBeTruthy();
   });
 
   it('converts a stored whole-sat heart amount after the fiat rate arrives', async () => {
@@ -279,7 +277,6 @@ describe('SettingsScreen', () => {
         '0.021',
       );
     });
-    expect(within(wallet).getByText('$0.02')).toBeTruthy();
     act(() => {
       useAuthStore.setState({
         session: 'sess',

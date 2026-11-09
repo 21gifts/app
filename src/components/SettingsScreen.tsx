@@ -11,7 +11,6 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
@@ -226,10 +225,6 @@ function HeartAmountRow(): ReactElement {
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('settings.heartAmount')}
       </p>
-      <p className="text-center text-lg font-semibold tabular-nums lining-nums text-app-fg">
-        <span>{formatBitcoin(savedSats, numberFormat)}</span>
-        {preferredFiatSuffix(savedSats, rateDay, fiat, numberFormat)}
-      </p>
       <form
         className="flex flex-col gap-2"
         onSubmit={(event) => {
@@ -239,6 +234,7 @@ function HeartAmountRow(): ReactElement {
       >
         <AmountEntry
           id="heart-sats"
+          layout="composer"
           label={t('settings.heartAmount')}
           value={draft}
           valueUnit={shownUnit}
